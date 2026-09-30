@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17101d">
+<meta name="description" content="Daily Life — local-first personal command center">
+<link rel="stylesheet" href="styles.css">
+<title>Daily Life</title>
+</head>
+<body>
+<div id="app"></div>
+<input id="restoreFile" type="file" accept="application/json" hidden>
+<script>
+
+const DB_NAME="daily-life-local-v2";
+const DB_VERSION=1;
+const STORE="kv";
+let __db;
+function openDB(){
+  if(__db) return Promise.resolve(__db);
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE)};
+    req.onsuccess=()=>{__db=req.result;resolve(__db)};
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function dbGet(key){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,"readonly"),req=tx.objectStore(STORE).get(key);
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function dbSet(key,value){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).put(value,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+  });
+}
+async function dbClear(){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).clear();
+    tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+  });
+}
+
+</script>
+<script>
+
+const $=s=>document.querySelector(s);
+const uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random());
+const ymd=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>`$${Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const blankState=()=>({
+  version:3,createdAt:new Date().toISOString(),
+  profile:{name:"",location:"Lincoln, Nebraska"},
+  settings:{
+    readers:["Me"],calTarget:2100,proteinTarget:100,
+    recurringTasks:[
+      {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
+    ],
+    mealPatterns:[]
+  },
+  tasks:[],workShifts:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
+  meals:[],shopping:[],homeLogs:[],outfits:[],tireLogs:[],accounts:[],bills:[],retirement:[]
+});
+let state=blankState(),view="today",installPrompt=null,weather=null;
+const themes=[["Lavender Moon","#c9b0ff","#f3a9ff","#9fdcff"],["Rosewater Sky","#f3b6cf","#e9b7ff","#a9d8ff"],["Peach Stardust","#ffc7a8","#f5b7d3","#c7b7ff"],["Bluebell Twilight","#aaaef8","#cab5ff","#8ed9ea"],["Fairy Garden","#a9e8c2","#d3b8ff","#f2c8df"],["Strawberry Night","#f4a5bf","#d7adff","#ffc6a8"],["Cotton Candy Cosmos","#d4b5ff","#ffb8da","#a7e5f4"]];
+async function save(){await dbSet("state",state)}
+function theme(){const t=themes[Math.abs(Math.floor(Date.now()/86400000))%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);return t[0]}
+function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
+function weatherText(c){if(c===0)return"Clear";if([1,2].includes(c))return"Partly cloudy";if(c===3)return"Cloudy";if([45,48].includes(c))return"Foggy";if([51,53,55,56,57].includes(c))return"Drizzle";if([61,63,65,66,67,80,81,82].includes(c))return"Rain";if([71,73,75,77,85,86].includes(c))return"Snow";if([95,96,99].includes(c))return"Thunderstorms";return"Mixed conditions"}
+async function getWeather(){async function go(lat,lon){try{const u=new URL("https://api.open-meteo.com/v1/forecast");u.searchParams.set("latitude",lat);u.searchParams.set("longitude",lon);u.searchParams.set("current","temperature_2m,apparent_temperature,weather_code,wind_speed_10m");u.searchParams.set("daily","temperature_2m_max,temperature_2m_min,precipitation_probability_max");u.searchParams.set("temperature_unit","fahrenheit");u.searchParams.set("wind_speed_unit","mph");u.searchParams.set("forecast_days","1");u.searchParams.set("timezone","auto");const j=await(await fetch(u)).json();weather={temp:Math.round(j.current.temperature_2m),feels:Math.round(j.current.apparent_temperature),code:j.current.weather_code,wind:Math.round(j.current.wind_speed_10m),high:Math.round(j.daily.temperature_2m_max[0]),low:Math.round(j.daily.temperature_2m_min[0]),rain:Math.round(j.daily.precipitation_probability_max[0]||0)};render()}catch(e){}}navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>go(40.8136,-96.7026),{timeout:5000,maximumAge:900000}):go(40.8136,-96.7026)}
+function ensureToday(){
+  const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
+  for(const t of state.settings.recurringTasks||[]){
+    if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
+  }
+  const ws=state.workShifts.find(x=>x.date===date);
+  if(ws?.scheduled&&!existing.has("UPS shift"))state.tasks.push({id:uid(),date,title:"UPS shift",category:"work",notes:`Scheduled ${ws.scheduled}`,done:!!ws.end,order:10});
+}
+
+function migrateState(s){
+  const b=blankState();
+  s=s||b;
+  s.version=3;
+  s.profile=s.profile||b.profile;
+  s.settings={...b.settings,...(s.settings||{})};
+  s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
+  s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
+  s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
+  for(const key of ["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","outfits","tireLogs","accounts","bills","retirement"]){
+    if(!Array.isArray(s[key]))s[key]=[];
+  }
+  return s;
+}
+function ensureMealPatterns(){
+  const patterns=state.settings.mealPatterns||[];
+  const today=new Date();
+  for(let offset=-14;offset<=35;offset++){
+    const d=new Date(today);d.setDate(today.getDate()+offset);
+    const date=ymd(d),wd=d.getDay();
+    for(const p of patterns){
+      if(Number(p.weekday)!==wd)continue;
+      if(state.meals.some(x=>x.date===date&&x.type==="dinner"))continue;
+      state.meals.push({id:uid(),date,type:"dinner",dish:p.dish||"",method:p.method||"",assigned:p.assigned||"",status:"planned",notes:p.notes||"",pattern:true});
+    }
+  }
+}
+const todayTasks=()=>state.tasks.filter(x=>x.date===ymd()).sort((a,b)=>(a.order||0)-(b.order||0));
+const water=()=>state.waterLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.oz||0),0);
+const stretch=()=>state.stretchLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.minutes||0),0);
+const food=()=>state.foodLogs.filter(x=>x.date===ymd());
+const reads=()=>state.readingLogs.filter(x=>x.date===ymd());
+const tire=()=>[...state.tireLogs].sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")))[0]||null;
+const work=()=>state.workShifts.find(x=>x.date===ymd())||null;
+function wh(w){if(!w?.start||!w?.end)return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
+function totals(){const f=food();return{cal:f.reduce((s,x)=>s+Number(x.calories||0),0),protein:f.reduce((s,x)=>s+Number(x.protein||0),0),monsters:f.filter(x=>x.category==="monster").length}}
+
+function monthlyReaderTickets(){
+  const prefix=ymd().slice(0,7), readers=state.settings.readers||[];
+  return readers.map(reader=>{
+    const daily={};
+    for(const r of state.readingLogs.filter(x=>x.reader===reader&&x.date.startsWith(prefix)))daily[r.date]=(daily[r.date]||0)+Number(r.pages||0);
+    let tickets=0,pages=0,days=0;
+    for(const p of Object.values(daily)){pages+=p;days++;tickets+=p>=40?3:p>=20?2:p>=5?1:0}
+    return {reader,tickets,pages,days};
+  });
+}
+function spinReaderWheel(){
+  const pool=[];
+  for(const r of monthlyReaderTickets())for(let i=0;i<r.tickets;i++)pool.push(r.reader);
+  if(!pool.length){alert("No Reader Wheel tickets earned yet this month.");return}
+  const winner=pool[Math.floor(Math.random()*pool.length)];
+  alert(`Reader Wheel winner: ${winner}!`);
+}
+function nav(id,icon,label){return`<button class="navbtn ${view===id?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
+function needsSetup(){return !state.profile?.name}
+function renderSetup(){return `<main class="app"><header><div><div class="eyebrow">Private local-first version</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Your personal information stays on this device. The public app code contains no personal data.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div></div></main>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div><div class="pill">✧ ${t}</div>${installPrompt?`<button class="btn primary small" style="margin-top:7px" onclick="installApp()">Install app</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("log","＋","Log")}${nav("family","♡","Family")}${nav("home","⌂","Home")}${nav("more","•••","More")}</nav>`}
+function todayView(m,f,w,h,tk,done,nt,tr){return`<div class="grid2"><div class="card glow"><div class="hero"><div class="orb">${m[1]}</div><div><div class="eyebrow">Moon today</div><h2>${m[0]}</h2><div class="muted small">${Math.round(m[3]*100)}% · lunar day ${m[2].toFixed(1)}</div></div></div></div><div class="card glow"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div></div><div class="grid2"><div class="card glow"><div class="eyebrow">Right now</div><h2>${esc(nt?.title||"Nothing urgent")}</h2><div class="muted">${esc(nt?.notes||"Tracked list is clear.")}</div></div><div class="card"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div></div></div><div class="grid2"><div class="metric"><div class="eyebrow">UPS</div><div class="big">${h.toFixed(2)} h</div><div class="muted small">${h?money(h*Number(w?.rate||22))+" est. gross":(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="metric"><div class="eyebrow">Food</div><div class="big">${Math.round(f.cal)} cal</div><div class="muted small">${Math.round(f.protein)} g protein</div></div><div class="metric"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><button class="btn primary" onclick="addWater(26)">+26 oz</button></div><div class="metric"><div class="eyebrow">Tire</div><div class="big">${tr?tr.psi+" PSI":"—"}</div><div class="muted small">${esc(tr?.notes||"No reading")}</div></div></div><div class="card"><div class="section-title"><h2>Today’s plan</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>`}
+function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div></div><div class="card"><div class="eyebrow">Self-care</div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div><div class="card"><div class="section-title"><h2>Food</h2><button class="btn primary" onclick="openFood()">+ Add</button></div><div class="grid3"><div class="metric"><div class="eyebrow">Calories</div><div class="big">${Math.round(f.cal)}</div></div><div class="metric"><div class="eyebrow">Protein</div><div class="big">${Math.round(f.protein)}g</div></div><div class="metric"><div class="eyebrow">Monsters</div><div class="big">${f.monsters}</div><button class="btn" onclick="monster()">+1</button></div></div>${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal</b></div>`).join("")}</div><div class="grid2"><div class="card"><div class="section-title"><h2>Work</h2><button class="btn" onclick="openWork()">Edit</button></div><div class="muted">${w?.start&&w?.end?`${w.start}–${w.end}`:(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="card"><div class="section-title"><h2>Tire</h2><button class="btn" onclick="openTire()">Log</button></div><div class="big">${tr?tr.psi+" PSI":"—"}</div></div></div><div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`}
+function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
+function familyView(){
+  const ticketRows=monthlyReaderTickets();
+  return `<div class="card glow"><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div>
+  <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((s,x)=>s+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
+  <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
+  <div class="card"><div class="section-title"><h2>Kids + chores</h2><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
+}
+function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function homeView(){const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null;return`<div class="card"><div class="section-title"><h2>Meals this week</h2><span class="tag">tap to edit</span></div>${week().map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner");return`<div class="row" onclick="openMeal('${d}')"><span><b>${dl(d)}</b></span><span>${esc(m?.dish||"Plan dinner")}</span></div>`}).join("")}</div><div class="card"><div class="section-title"><h2>Shopping</h2><button class="btn primary" onclick="openShopping()">+ Add</button></div>${state.shopping.filter(x=>x.status==="needed").map(x=>`<div class="row"><label class="task"><input type="checkbox" onchange="buy('${x.id}')"><span>${esc(x.item)}${x.qty?` · ${esc(x.qty)}`:""}${x.store?`<div class="muted small">${esc(x.store)}</div>`:""}</span></label></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div><div class="card glow"><div class="section-title"><h2>Home care</h2><button class="btn" onclick="openHome()">+ Log</button></div><div class="big">${days==null?"No fridge baseline":days+" days"}</div><div class="muted small">${last?`since fridge clean on ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`}
+function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
+function moreView(){
+  const checking=state.accounts.filter(x=>x.type==="checking").reduce((s,x)=>s+Number(x.balance||0),0),
+        savings=state.accounts.filter(x=>x.type==="savings").reduce((s,x)=>s+Number(x.balance||0),0),
+        house=state.accounts.find(x=>x.key==="house_fund")?.balance||0,
+        debt=state.accounts.filter(x=>x.type==="credit").reduce((s,x)=>s+Number(x.balance||0),0),
+        ret=state.retirement.reduce((s,x)=>s+Number(x.balance||0),0),
+        ms=monthSummary();
+  return `<div class="card glow"><div class="section-title"><h2>Money</h2><button class="btn" onclick="openAccount()">+ Account</button></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
+  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>Upcoming bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>${state.bills.sort((a,b)=>a.due.localeCompare(b.due)).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.status==="paid"?"checked":""} onchange="toggleBill('${x.id}',this.checked)"><span class="${x.status==="paid"?"done":""}">${dl(x.due)} · ${esc(x.name)}</span></label><b>${money(x.amount)}</b></div>`).join("")||`<div class="notice">No bills entered.</div>`}</div>
+  <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>
+  <div class="card"><div class="eyebrow">This month</div><div class="grid2"><div class="metric"><div class="small muted">Work</div><div class="big">${ms.work.toFixed(1)} h</div></div><div class="metric"><div class="small muted">Water</div><div class="big">${ms.water} oz</div></div><div class="metric"><div class="small muted">Stretch</div><div class="big">${ms.stretchDays} days</div></div><div class="metric"><div class="small muted">Reading</div><div class="big">${ms.pages} pages</div></div></div></div>
+  <div class="card"><div class="eyebrow">Wins today</div>${todayTasks().filter(x=>x.done).map(x=>`<div class="row"><span>✓ ${esc(x.title)}</span><b>${esc(x.category)}</b></div>`).join("")||`<div class="notice">No completed task boxes yet.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>People + recurring routines</h2><button class="btn" onclick="openPeople()">Edit readers</button></div><div class="row"><span>Readers</span><b>${(state.settings.readers||[]).length}</b></div>${(state.settings.recurringTasks||[]).map((x,i)=>`<div class="row"><span>${esc(x.title)}<div class="muted small">${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}</div></span><button class="btn" onclick="removeRoutine(${i})">Remove</button></div>`).join("")}<button class="btn" onclick="openRoutine()" style="margin-top:8px">+ Recurring task</button></div>
+  <div class="card"><div class="section-title"><h2>Weekly meal patterns</h2><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>${(state.settings.mealPatterns||[]).map((p,i)=>`<div class="row"><span>${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.weekday]} · ${esc(p.dish)}</span><button class="btn" onclick="removeMealPattern(${i})">Remove</button></div>`).join("")||`<div class="notice">No automatic meal patterns.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
+}
+function setView(v){view=v;render()}
+function modal(title,body,label,fn){const d=document.createElement("div");d.className="modal-backdrop";d.id="modal";d.innerHTML=`<div class="modal"><div class="section-title"><h2>${title}</h2><button class="btn" onclick="closeModal()">Close</button></div>${body}<div class="actions" style="margin-top:12px"><button class="btn primary" id="saveModal">${label||"Save"}</button></div></div>`;document.body.appendChild(d);document.querySelector("#saveModal").onclick=fn}
+function closeModal(){document.querySelector("#modal")?.remove()}
+function manualSetup(){modal("Start blank",`<div class="stack"><label>Your name<input id="name"></label><label>Reader names, comma-separated<input id="readers" placeholder="Me, Child 1, Child 2"></label></div>`,"Start",async()=>{const name=$("#name").value.trim();if(!name)return;state=blankState();state.profile.name=name;state.settings.readers=$("#readers").value.split(",").map(x=>x.trim()).filter(Boolean);if(!state.settings.readers.length)state.settings.readers=[name];await save();closeModal();render()})}
+async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
+function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
+async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
+async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.key===key);if(!x)state.selfCare.push({id:uid(),date:ymd(),key,done:true});else x.done=!x.done;await save();render()}
+async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",calories:10,protein:0});await save();render()}
+function openTask(){modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Category<input id="cat" value="life"></label><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100});await save();closeModal();render()})}
+function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><label>Calories<input id="fc" type="number"></label><label>Protein g<input id="fp" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",calories:Number($("#fc").value||0),protein:Number($("#fp").value||0)});await save();closeModal();render()})}
+function openWork(){const x=work()||{};modal("UPS shift",`<div class="stack"><label>Scheduled<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual start<input id="wa" type="time" value="${x.start||""}"></label><label>Actual end<input id="we" type="time" value="${x.end||""}"></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate||22}"></label></div>`,"Save",async()=>{let w=work();if(!w){w={id:uid(),date:ymd()};state.workShifts.push(w)}w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||22);const task=state.tasks.find(x=>x.date===ymd()&&x.title==="UPS shift");if(task&&w.end)task.done=true;await save();closeModal();render()})}
+function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp" type="number" step=".1"></label><label>Event<select id="te"><option>reading</option><option>fill</option><option>repair</option></select></label><label>Notes<input id="tn"></label></div>`,"Save",async()=>{const psi=Number($("#tp").value);if(!psi)return;state.tireLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),psi,event:$("#te").value,notes:$("#tn").value});await save();closeModal();render()})}
+function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
+function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
+async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+function openMeal(date){const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};modal(`Dinner · ${dl(date)}`,`<div class="stack"><label>Dinner<input id="md" value="${esc(x.dish||"")}"></label><label>Method<input id="mm" value="${esc(x.method||"")}"></label><label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label><label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label><label>Notes<textarea id="mn">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let m=state.meals.find(x=>x.date===date&&x.type==="dinner");if(!m){m={id:uid(),date,type:"dinner"};state.meals.push(m)}m.dish=$("#md").value;m.method=$("#mm").value;m.assigned=$("#ma").value;m.status=$("#mst").value;m.notes=$("#mn").value;await save();closeModal();render()})}
+function openShopping(){modal("Add shopping item",`<div class="stack"><label>Item<input id="si"></label><label>Quantity<input id="sq"></label><label>Store<input id="ss"></label></div>`,"Add",async()=>{const item=$("#si").value.trim();if(!item)return;state.shopping.push({id:uid(),item,qty:$("#sq").value,store:$("#ss").value,status:"needed"});await save();closeModal();render()})}
+async function buy(id){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought";await save();render()}
+function openHome(){modal("Log home care",`<div class="stack"><label>Area<input id="ha" value="Home"></label><label>Task<input id="ht"></label><label>Notes<input id="hn"></label></div>`,"Save",async()=>{const task=$("#ht").value.trim();if(!task)return;state.homeLogs.push({id:uid(),date:ymd(),area:$("#ha").value||"Home",task,status:"done",notes:$("#hn").value});await save();closeModal();render()})}
+function compressImage(file,max=1100,quality=.78){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>max){const scale=max/Math.max(w,h);w=Math.round(w*scale);h=Math.round(h*scale)}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
+function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("Today’s outfit",`<div class="stack"><label>Mirror photo<input id="op" type="file" accept="image/*"></label>${x.photo?`<img class="photo" src="${x.photo}">`:""}<label>Top<input id="ot" value="${esc(x.top||"")}"></label><label>Bottom<input id="ob" value="${esc(x.bottom||"")}"></label><label>Shoes<input id="os" value="${esc(x.shoes||"")}"></label><label>Outerwear<input id="oo" value="${esc(x.outerwear||"")}"></label><label>Accessories<input id="oa" value="${esc(x.accessories||"")}"></label><label>Occasion<input id="oc" value="${esc(x.occasion||"")}"></label><label>Comfort 1–5<input id="ocomf" type="number" min="1" max="5" value="${x.comfort||""}"></label><label>Confidence 1–5<input id="oconf" type="number" min="1" max="5" value="${x.confidence||""}"></label><label>Notes<textarea id="on">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let o=state.outfits.find(x=>x.date===ymd());if(!o){o={id:uid(),date:ymd()};state.outfits.push(o)}const file=$("#op").files[0];if(file)o.photo=await compressImage(file);Object.assign(o,{top:$("#ot").value,bottom:$("#ob").value,shoes:$("#os").value,outerwear:$("#oo").value,accessories:$("#oa").value,occasion:$("#oc").value,comfort:Number($("#ocomf").value||0)||null,confidence:Number($("#oconf").value||0)||null,notes:$("#on").value});await save();closeModal();render()})}
+
+function openAccount(key=""){
+  const x=state.accounts.find(a=>a.key===key)||{};
+  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;let a=x;if(!a.key){a={key:$("#ak").value.trim()||uid()};state.accounts.push(a)}a.name=name;a.type=$("#at").value;a.balance=Number($("#ab").value||0);if($("#ak").value.trim())a.key=$("#ak").value.trim();await save();closeModal();render()})
+}
+function openBill(){
+  modal("Add bill",`<div class="stack"><label>Bill name<input id="bn"></label><label>Amount<input id="ba" type="number" step=".01"></label><label>Due date<input id="bd" type="date"></label></div>`,"Add bill",async()=>{const name=$("#bn").value.trim(),due=$("#bd").value;if(!name||!due)return;state.bills.push({id:uid(),name,amount:Number($("#ba").value||0),due,status:"upcoming"});await save();closeModal();render()})
+}
+async function toggleBill(id,paid){const x=state.bills.find(b=>b.id===id);if(x)x.status=paid?"paid":"upcoming";await save();render()}
+function openPeople(){
+  modal("Readers / family names",`<div class="stack"><label>Names, comma-separated<input id="people" value="${esc((state.settings.readers||[]).join(", "))}"></label></div>`,"Save",async()=>{const names=$("#people").value.split(",").map(x=>x.trim()).filter(Boolean);if(names.length)state.settings.readers=names;await save();closeModal();render()})
+}
+function openRoutine(){
+  modal("Add recurring task",`<div class="stack"><label>Task<input id="rt"></label><label>Category<input id="rc" value="life"></label><label>Days<select id="rd" multiple size="7"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Notes<input id="rn"></label></div>`,"Add",async()=>{const title=$("#rt").value.trim();if(!title)return;const days=[...$("#rd").selectedOptions].map(o=>Number(o.value));state.settings.recurringTasks.push({title,category:$("#rc").value||"life",days:days.length?days:[0,1,2,3,4,5,6],order:100,notes:$("#rn").value});await save();closeModal();render()})
+}
+async function removeRoutine(i){if(confirm("Remove this recurring task?")){state.settings.recurringTasks.splice(i,1);await save();render()}}
+function openMealPattern(){
+  modal("Add weekly meal pattern",`<div class="stack"><label>Weekday<select id="mpd"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Dinner / rule<input id="mpn"></label><label>Method<input id="mpm" placeholder="crock-pot, pickup, away…"></label><label>Notes<input id="mpnotes"></label></div>`,"Add pattern",async()=>{const dish=$("#mpn").value.trim();if(!dish)return;state.settings.mealPatterns.push({weekday:Number($("#mpd").value),dish,method:$("#mpm").value,notes:$("#mpnotes").value});ensureMealPatterns();await save();closeModal();render()})
+}
+async function removeMealPattern(i){if(confirm("Remove this weekly meal pattern?")){state.settings.mealPatterns.splice(i,1);await save();render()}}
+async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=j;await save();render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function erase(){if(confirm("Erase ALL Daily Life data stored on this device?")){await dbClear();state=blankState();render()}}
+async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
+document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0])});
+async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await save();render();if(!needsSetup())getWeather();}
+init();
+
+</script>
+</body>
+</html>
