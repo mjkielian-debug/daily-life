@@ -37,24 +37,33 @@ Deno.serve(async(req:Request)=>{
   const plaidEnv=Deno.env.get("PLAID_ENV")||"production";
   if(!clientId||!secret)return json({error:"plaid_not_configured"},503);
 
+  let input:any={};
+  try{input=await req.json()}catch{}
+  const mode=input?.mode==="investment"?"investment":"bank";
+  const linkRequest:any={
+    client_id:clientId,
+    secret,
+    client_name:"Daily Life",
+    language:"en",
+    country_codes:["US"],
+    user:{client_user_id:user.id},
+    redirect_uri:"https://mjkielian-debug.github.io/daily-life/"
+  };
+  if(mode==="investment"){
+    linkRequest.products=["investments"];
+  }else{
+    linkRequest.products=["transactions"];
+    linkRequest.optional_products=["liabilities"];
+    linkRequest.transactions={days_requested:365};
+  }
+
   const response=await fetch(`https://${plaidEnv}.plaid.com/link/token/create`,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      client_id:clientId,
-      secret,
-      client_name:"Daily Life",
-      language:"en",
-      country_codes:["US"],
-      user:{client_user_id:user.id},
-      products:["transactions"],
-      optional_products:["investments","liabilities"],
-      transactions:{days_requested:365},
-      redirect_uri:"https://mjkielian-debug.github.io/daily-life/"
-    })
+    body:JSON.stringify(linkRequest)
   });
 
   const body=await response.json();
   if(!response.ok)return json({error:"plaid_error",detail:body},response.status);
-  return json({link_token:body.link_token,expiration:body.expiration});
+  return json({link_token:body.link_token,expiration:body.expiration,mode});
 });
