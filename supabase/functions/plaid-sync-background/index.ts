@@ -86,9 +86,10 @@ Deno.serve(async(req:Request)=>{
       if(secretError||!accessTokenValue)throw new Error("missing_access_token");
       const accessToken=String(accessTokenValue);
 
-      let accountsResult:any;
-      try{accountsResult=await plaidPost("/accounts/balance/get",{access_token:accessToken})}
-      catch{accountsResult=await plaidPost("/accounts/get",{access_token:accessToken})}
+      // Use /accounts/get for scheduled refreshes. Unlike the Balance endpoint,
+      // this endpoint is not a per-request Balance-product charge if the user
+      // ever leaves Plaid's free Trial plan.
+      const accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
 
       const accountRows=(accountsResult.accounts||[]).map((a:any)=>({
         owner_user_id:owner,
