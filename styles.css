@@ -121,3 +121,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .vehicle-maint-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.vehicle-maint-grid>div{display:grid;gap:3px;padding:9px 10px;border:1px solid var(--border);border-radius:13px;background:rgba(255,255,255,.025)}.vehicle-maint-grid b{font-size:.84rem}
 .month-overview{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 5%,var(--panel2)),var(--panel))}
 @media(max-width:520px){.vehicle-maint-grid{grid-template-columns:1fr}}
+
+.relationship-history{padding:10px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.02)}.relationship-history-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);cursor:pointer}.relationship-history-row:first-of-type{border-top:0}
