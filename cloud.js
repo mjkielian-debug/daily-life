@@ -390,7 +390,16 @@ function cloudApplyLifeEntry(row){
       const type=String(p.type||"dinner"),mealDate=String(p.date||date);
       let x=state.meals.find(x=>x.date===mealDate&&x.type===type);
       if(!x){x={id:uid(),date:mealDate,type,cloudEntryId:row.id};state.meals.push(x)}
-      Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),serveTime:String(p.serveTime||x.serveTime||""),startBy:String(p.startBy||x.startBy||""),ingredients:String(p.ingredients||x.ingredients||""),prepSteps:String(p.prepSteps||x.prepSteps||""),tomorrowPrep:String(p.tomorrowPrep||x.tomorrowPrep||""),cloudEntryId:row.id});
+      Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),serveTime:String(p.serveTime||x.serveTime||""),startBy:String(p.startBy||x.startBy||""),ingredients:String(p.ingredients||x.ingredients||""),prepSteps:String(p.prepSteps||x.prepSteps||""),tomorrowPrep:String(p.tomorrowPrep||x.tomorrowPrep||""),recipeState:String(p.recipeState||"ready"),recipeUpdatedAt:String(row.created_at||new Date().toISOString()),cloudEntryId:row.id});
+      if(Array.isArray(p.shopping)){
+        const key=`${mealDate}|${type}`;
+        state.shopping=(state.shopping||[]).filter(item=>!(item.source==="recipe"&&item.mealKey===key));
+        for(const raw of p.shopping){
+          const item=typeof raw==="string"?raw:String(raw?.item||"").trim();
+          if(!item)continue;
+          state.shopping.push({id:uid(),item,qty:typeof raw==="string"?"":String(raw?.qty||""),store:typeof raw==="string"?"":String(raw?.store||""),status:"needed",source:"recipe",mealKey:key,mealDate,dish,mealDish:dish,cloudEntryId:row.id});
+        }
+      }
       return true;
     }
     case "event":
@@ -485,12 +494,33 @@ function cloudApplyLifeEntry(row){
   }
 }
 
+async function cloudQueueRecipeRequest(meal){
+  const user=cloudUser();
+  if(!user||!cloudClient||!meal?.dish||!meal?.date)return false;
+  try{
+    const normalized=String(meal.dish).trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80);
+    const externalId=`recipe:${meal.date}:${meal.type||"dinner"}:${normalized}`;
+    const {data:existing,error:findError}=await cloudClient.from("life_entries")
+      .select("id,payload").eq("owner_user_id",user.id).eq("category","recipe_request").eq("external_id",externalId)
+      .order("created_at",{ascending:false}).limit(1);
+    if(findError)throw findError;
+    if((existing||[]).some(row=>String(row.payload?.status||"pending")==="pending"))return true;
+    const payload={status:"pending",date:meal.date,type:meal.type||"dinner",dish:String(meal.dish||""),method:String(meal.method||""),serveTime:String(meal.serveTime||""),startBy:String(meal.startBy||""),assigned:String(meal.assigned||""),requestedAt:new Date().toISOString()};
+    const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"recipe_request",occurred_at:new Date().toISOString(),local_date:meal.date,payload,source:"app",external_id:externalId});
+    if(error)throw error;
+    return true;
+  }catch(error){
+    cloudError=error?.message||"Could not request the recipe.";
+    return false;
+  }
+}
+
 async function cloudPullLifeEntries(showAlert=false){
   if(cloudEntryPullBusy||!cloudUser()||!cloudClient)return 0;
   cloudEntryPullBusy=true;
   try{
     const {data,error}=await cloudClient.from("life_entries")
-      .select("id,category,occurred_at,local_date,payload,source,created_at")
+      .select("id,category,occurred_at,local_date,payload,source,external_id,created_at")
       .eq("source","chatgpt")
       .order("created_at",{ascending:true})
       .limit(500);
