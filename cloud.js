@@ -412,8 +412,15 @@ function cloudApplyLifeEntry(row){
       if(p.paymentSetup&&typeof BILL_SETUPS!=="undefined"&&BILL_SETUPS.includes(String(p.paymentSetup)))b.paymentSetup=String(p.paymentSetup);
       if(p.amountType&&typeof BILL_AMOUNT_TYPES!=="undefined"&&BILL_AMOUNT_TYPES.includes(String(p.amountType)))b.amountType=String(p.amountType);
       if(p.frequency&&typeof BILL_FREQUENCIES!=="undefined"&&BILL_FREQUENCIES.includes(String(p.frequency)))b.frequency=String(p.frequency);
-      if(p.paymentAccountKey!==undefined)b.paymentAccountKey=String(p.paymentAccountKey||"");
-      if(p.desiredAccountKey!==undefined)b.desiredAccountKey=String(p.desiredAccountKey||"");
+      if(p.repeatMonths!==undefined&&typeof BILL_REPEATS!=="undefined"&&BILL_REPEATS.some(([n])=>n===Number(p.repeatMonths)))b.repeatMonths=Number(p.repeatMonths);
+      if(p.paymentAccountCloudId!==undefined){
+        const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.paymentAccountCloudId||""));
+        if(matches.length===1)b.paymentAccountKey=matches[0].key;
+      }else if(p.paymentAccountKey!==undefined)b.paymentAccountKey=String(p.paymentAccountKey||"");
+      if(p.desiredPaymentAccountCloudId!==undefined){
+        const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.desiredPaymentAccountCloudId||""));
+        if(matches.length===1)b.desiredAccountKey=matches[0].key;
+      }else if(p.desiredAccountKey!==undefined)b.desiredAccountKey=String(p.desiredAccountKey||"");
       b.lastCloudEntryId=row.id;
       return true;
     }
