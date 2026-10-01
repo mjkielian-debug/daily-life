@@ -141,6 +141,32 @@ ingredients are uncertain.
 Allowed budget categories are `transport`, `dining`, `household`,
 `personal`, `grocery`, `fun`, `cushion`, and `ebt`.
 
+### bill_add
+
+Adds a new upcoming bill only when the bill name + due date is not already
+present. This is useful for conversational requests such as "add this trial
+renewal to my bills."
+
+```json
+{
+  "category":"bill_add",
+  "payload":{
+    "name":"Streaming trial",
+    "amount":14.99,
+    "due":"2026-10-04",
+    "paymentSetup":"Autopay",
+    "amountType":"Fixed amount",
+    "frequency":"Trial / decision pending",
+    "repeatMonths":0
+  }
+}
+```
+
+When a synced Money account is known, private conversational entries may use
+`paymentAccountCloudId` (or `desiredPaymentAccountCloudId`). The installed
+app resolves that private cloud account ID to the user's local Money-account
+key; account keys do not need to be hard-coded into public app code.
+
 ### bill_update
 
 A bill update must identify exactly one bill. Prefer the app's bill ID. If no
@@ -150,7 +176,7 @@ ignored instead of guessing.
 ```json
 {
   "category":"bill_update",
-  "payload":{"bill_id":"uuid","status":"paid"}
+  "payload":{"bill_id":"uuid","status":"paid","repeatMonths":1,"paymentAccountCloudId":"private-cloud-account-id"}
 }
 ```
 
