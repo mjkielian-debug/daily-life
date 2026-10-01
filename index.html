@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2020">
+<link rel="stylesheet" href="styles.css?v=20261001-2035">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -505,10 +505,11 @@ function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(
 function homeView(){
   const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
         days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null,
-        shop=neededShoppingGroups(),dates=week(),weekMeals=dates.map(d=>state.meals.find(x=>x.date===d&&x.type==="dinner")).filter(Boolean),
-        planned=weekMeals.filter(m=>m.dish).length,ready=weekMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,choosing=weekMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
-  return `<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">${planned}/7 planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
-    ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m);return `<div class="row"><span onclick="openMeal('${d}')" style="flex:1"><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):""}</div></span>${m?.dish?`<span onclick="openMeal('${d}')" style="text-align:right">${esc(m.dish)}<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div></span>`:m?.recipeState==="suggestion-queued"?`<span class="muted small">✨ choosing…</span>`:`<div class="actions"><button class="btn small primary" onclick="requestMealSuggestion('${d}')">Pick for me</button><button class="btn small" onclick="openMeal('${d}')">Choose</button></div>`}</div>`}).join("")}</div>
+        shop=neededShoppingGroups(),dates=week(),today=ymd(),remainingDates=dates.filter(d=>d>=today),
+        remainingMeals=remainingDates.map(d=>state.meals.find(x=>x.date===d&&x.type==="dinner")).filter(Boolean),
+        planned=remainingMeals.filter(m=>m.dish).length,ready=remainingMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,choosing=remainingMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
+  return `<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
+    ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),past=d<today;return `<div class="row ${past?"past-row":""}"><span onclick="openMeal('${d}')" style="flex:1"><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):past?"Past":""}</div></span>${m?.dish?`<span onclick="openMeal('${d}')" style="text-align:right">${esc(m.dish)}<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div></span>`:past?`<span class="muted small">No meal logged</span>`:m?.recipeState==="suggestion-queued"?`<span class="muted small">✨ choosing…</span>`:`<div class="actions"><button class="btn small primary" onclick="requestMealSuggestion('${d}')">Pick for me</button><button class="btn small" onclick="openMeal('${d}')">Choose</button></div>`}</div>`}).join("")}</div>
     <div class="card"><div class="section-title"><div><h2>Grocery list</h2><div class="muted small">${shop.length} item${shop.length===1?"":"s"} needed · recipe ingredients appear automatically.</div></div><button class="btn primary" onclick="openShopping()">+ Add</button></div>
       ${shop.map(g=>`<div class="row grocery-row"><label class="task grow"><input type="checkbox" onchange='buyShoppingGroup(${JSON.stringify(g.ids)})'><span><b>${esc(g.item)}</b>${g.qty.length?` · ${esc([...new Set(g.qty)].join(" + "))}`:""}${g.meals.size?`<div class="muted small">For ${[...g.meals].map(esc).join(", ")}</div>`:""}${g.stores.size?`<div class="muted small">${[...g.stores].map(esc).join(" · ")}</div>`:""}</span></label><button class="btn small good" onclick='alreadyHaveShoppingGroup(${JSON.stringify(g.ids)})'>Already have</button></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div>
     <div class="card glow"><div class="section-title"><h2>Home care</h2><button class="btn" onclick="openHome()">+ Log</button></div><div class="big">${days==null?"No fridge baseline":days+" days"}</div><div class="muted small">${last?`since fridge clean on ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
@@ -694,7 +695,8 @@ async function requestMealSuggestion(date){
   render();
 }
 async function requestWeekSuggestions(){
-  const dates=week(),targets=dates.filter(date=>{
+  const today=ymd(),dates=week(),targets=dates.filter(date=>{
+    if(date<today)return false;
     const m=state.meals.find(x=>x.date===date&&x.type==="dinner");
     return !m?.dish&&m?.recipeState!=="suggestion-queued";
   });
@@ -980,7 +982,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2020").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2035").catch(()=>{});
 
 </script>
 </body>
