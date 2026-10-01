@@ -417,14 +417,14 @@ function cloudApplyLifeEntry(row){
     }
     case "pantry_inventory":{
       const items=Array.isArray(p.items)?p.items:[];if(!state.pantry||typeof state.pantry!=="object")state.pantry={items:[],updatedAt:"",scanId:""};
-      const merged=new Map();
-      for(const raw of [...(state.pantry.items||[]),...items]){
+      const merged=new Map(),base=String(p.mode||"merge")==="replace"?[]:(state.pantry.items||[]);
+      for(const raw of [...base,...items]){
         const name=typeof raw==="string"?raw:String(raw?.name||raw?.item||"").trim();if(!name)continue;
         const key=name.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
         if(!merged.has(key))merged.set(key,typeof raw==="string"?{name}:raw);
         else if(typeof raw==="object")merged.set(key,{...merged.get(key),...raw,name});
       }
-      state.pantry={items:[...merged.values()],updatedAt:String(row.created_at||new Date().toISOString()),scanId:String(p.scanId||"")};
+      state.pantry={items:[...merged.values()],updatedAt:String(row.created_at||new Date().toISOString()),scanId:String(p.scanId||""),mode:String(p.mode||"merge")};
       if(Array.isArray(state.pantryScans)){
         const scan=state.pantryScans.find(x=>x.id===String(p.scanId||""));
         if(scan){scan.status="ready";scan.completedAt=state.pantry.updatedAt}
@@ -552,7 +552,7 @@ async function cloudResizePantryPhoto(file){
     return await new Promise(resolve=>canvas.toBlob(b=>resolve(b||file),"image/jpeg",0.82));
   }catch{return file}
 }
-async function cloudUploadPantryPhotos(files,scanId){
+async function cloudUploadPantryPhotos(files,scanId,mode="replace"){
   const user=cloudUser();if(!user||!cloudClient||!files?.length)return false;
   try{
     const signedUrls=[],paths=[];
@@ -563,7 +563,7 @@ async function cloudUploadPantryPhotos(files,scanId){
       const {data:signed,error:signErr}=await cloudClient.storage.from("inventory-photos").createSignedUrl(path,86400);
       if(signErr)throw signErr;paths.push(path);signedUrls.push(signed.signedUrl);
     }
-    const payload={status:"pending",scanId,photoCount:files.length,paths,signedUrls,existingItems:(state.pantry?.items||[]).slice(0,200),requestedAt:new Date().toISOString()};
+    const payload={status:"pending",scanId,mode,photoCount:files.length,paths,signedUrls,existingItems:mode==="merge"?(state.pantry?.items||[]).slice(0,200):[],requestedAt:new Date().toISOString()};
     const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"pantry_scan_request",occurred_at:new Date().toISOString(),local_date:ymd(),payload,source:"app",external_id:`pantry-scan:${scanId}`});
     if(error)throw error;return true;
   }catch(error){cloudError=error?.message||"Could not upload pantry photos.";return false}
