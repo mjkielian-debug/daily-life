@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -463,6 +463,15 @@ function cloudApplyLifeEntry(row){
       const fingerprint=String(p.fingerprint||[p.periodStart||"",p.periodEnd||"",payDate,netPay.toFixed(2)].join("|"));
       if(state.paychecks.some(x=>x.fingerprint===fingerprint))return true;
       state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],vacationHours:Number(p.vacationHours||0),pstHours:Number(p.pstHours||0),optionWeekHours:Number(p.optionWeekHours||0),fingerprint});
+      return true;
+    }
+    case "birthday_plan_suggestion":{
+      const personName=String(p.personName||p.name||"").trim();if(!personName)return false;
+      if(!Array.isArray(state.birthdaySuggestions))state.birthdaySuggestions=[];
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").toLowerCase()===personName.toLowerCase());if(!person)return false;
+      if(state.birthdaySuggestions.some(x=>x.cloudEntryId===row.id))return true;
+      state.birthdaySuggestions.push({id:uid(),cloudEntryId:row.id,personId:person.id,personName,status:"proposed",theme:String(p.theme||""),cake:String(p.cake||""),activity:String(p.activity||""),location:String(p.location||""),food:String(p.food||""),decorations:String(p.decorations||""),notes:String(p.notes||""),reason:String(p.reason||""),budget:Number(p.budget||0),tasks:Array.isArray(p.tasks)?p.tasks:[],createdAt:String(row.created_at||new Date().toISOString())});
+      if(person.birthdayPlan&&typeof person.birthdayPlan==="object")person.birthdayPlan.suggestionState="ready";
       return true;
     }
     case "people_setup":{
@@ -639,6 +648,17 @@ async function cloudRecordMealFeedback(entry){
     const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"meal_feedback",occurred_at:new Date().toISOString(),local_date:payload.date,payload,source:"app",external_id:`meal-feedback:${String(entry.id||Date.now())}`});
     if(error)throw error;return true;
   }catch(error){cloudError=error?.message||"Could not save meal feedback.";return false}
+}
+
+async function cloudQueueBirthdayPlan(person,exclude=[]){
+  const user=cloudUser();if(!user||!cloudClient||!person?.name)return false;
+  try{
+    const cycle=(state.birthdaySuggestions||[]).filter(x=>x.personId===person.id).length+1;
+    const payload={status:"pending",personName:String(person.name),relationship:String(person.relationship||""),birthday:String(person.birthday||""),favoriteColors:person.favoriteColors||[],favoriteCharacters:person.favoriteCharacters||[],favoriteFoods:person.favoriteFoods||[],interests:person.interests||[],wishlist:(person.wishlist||[]).map(w=>({item:w.item,status:w.status,notes:w.notes||"",estimatedCost:Number(w.estimatedCost||0)})),currentPlan:person.birthdayPlan||{},exclude:Array.isArray(exclude)?exclude:[],requestedAt:new Date().toISOString()};
+    const externalId=`birthday-plan:${String(person.id||person.name).replace(/[^a-z0-9-]/gi,"-")}:${cycle}:${Date.now()}`;
+    const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"birthday_plan_request",occurred_at:new Date().toISOString(),local_date:ymd(),payload,source:"app",external_id:externalId});
+    if(error)throw error;return true;
+  }catch(error){cloudError=error?.message||"Could not request a birthday plan.";return false}
 }
 
 async function cloudQueueMealSuggestion(date,opts={}){
