@@ -115,3 +115,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .safe-spend{border-color:color-mix(in srgb,var(--primary) 34%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 8%,var(--panel2)),var(--panel))}
 
 .order-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border);cursor:pointer}.order-row:first-of-type{border-top:0}.order-row .tag{flex:none}
+
+.connection-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--border)}.connection-row:first-of-type{border-top:0}.connection-row .tag{flex:none}
