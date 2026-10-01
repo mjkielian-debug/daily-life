@@ -44,7 +44,7 @@ async function pullTransactions(accessToken:string,startCursor:string|null){
     while(hasMore){
       pages++;
       if(pages>30)throw new Error("too_many_transaction_pages");
-      const payload:any={access_token:accessToken,count:500,personal_finance_category_version:"v2"};
+      const payload:any={access_token:accessToken,count:500};
       if(cursor)payload.cursor=cursor;
       try{
         const body=await plaidPost("/transactions/sync",payload);
