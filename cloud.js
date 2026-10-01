@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -400,6 +400,42 @@ function cloudApplyLifeEntry(row){
           state.shopping.push({id:uid(),item,qty:typeof raw==="string"?"":String(raw?.qty||""),store:typeof raw==="string"?"":String(raw?.store||""),status:"needed",source:"recipe",mealKey:key,mealDate,dish,mealDish:dish,cloudEntryId:row.id});
         }
       }
+      return true;
+    }
+    case "meal_suggestion":{
+      const dish=String(p.dish||"").trim(),mealDate=String(p.date||date),type=String(p.type||"dinner");
+      if(!dish)return false;if(!Array.isArray(state.mealSuggestions))state.mealSuggestions=[];
+      if(state.mealSuggestions.some(x=>x.cloudEntryId===row.id))return true;
+      state.mealSuggestions.push({
+        id:uid(),cloudEntryId:row.id,date:mealDate,type,dish,method:String(p.method||""),assigned:String(p.assigned||""),
+        serveTime:String(p.serveTime||""),startBy:String(p.startBy||""),status:"proposed",recipeState:"ready",
+        ingredients:String(p.ingredients||""),prepSteps:String(p.prepSteps||""),tomorrowPrep:String(p.tomorrowPrep||""),notes:String(p.notes||""),
+        shopping:Array.isArray(p.shopping)?p.shopping:[],usesOnHand:Array.isArray(p.usesOnHand)?p.usesOnHand:[],reason:String(p.reason||""),
+        createdAt:String(row.created_at||new Date().toISOString())
+      });
+      return true;
+    }
+    case "pantry_inventory":{
+      const items=Array.isArray(p.items)?p.items:[];if(!state.pantry||typeof state.pantry!=="object")state.pantry={items:[],updatedAt:"",scanId:""};
+      const merged=new Map();
+      for(const raw of [...(state.pantry.items||[]),...items]){
+        const name=typeof raw==="string"?raw:String(raw?.name||raw?.item||"").trim();if(!name)continue;
+        const key=name.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+        if(!merged.has(key))merged.set(key,typeof raw==="string"?{name}:raw);
+        else if(typeof raw==="object")merged.set(key,{...merged.get(key),...raw,name});
+      }
+      state.pantry={items:[...merged.values()],updatedAt:String(row.created_at||new Date().toISOString()),scanId:String(p.scanId||"")};
+      if(Array.isArray(state.pantryScans)){
+        const scan=state.pantryScans.find(x=>x.id===String(p.scanId||""));
+        if(scan){scan.status="ready";scan.completedAt=state.pantry.updatedAt}
+      }
+      return true;
+    }
+    case "meal_feedback":{
+      const dish=String(p.dish||"").trim(),score=Number(p.score||0);if(!dish||!Number.isFinite(score))return false;
+      if(!Array.isArray(state.mealFeedback))state.mealFeedback=[];
+      if(state.mealFeedback.some(x=>x.cloudEntryId===row.id))return true;
+      state.mealFeedback.push({id:uid(),cloudEntryId:row.id,dish,score,label:String(p.label||""),date:String(p.date||date),createdAt:String(row.created_at||new Date().toISOString()),source:"chatgpt"});
       return true;
     }
     case "event":
@@ -507,17 +543,52 @@ function cloudApplyLifeEntry(row){
   }
 }
 
-async function cloudQueueMealSuggestion(date){
+async function cloudResizePantryPhoto(file){
+  try{
+    const bmp=await createImageBitmap(file),max=1600,scale=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    if(scale===1&&file.size<=3500000)return file;
+    const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bmp.width*scale));canvas.height=Math.max(1,Math.round(bmp.height*scale));
+    canvas.getContext("2d").drawImage(bmp,0,0,canvas.width,canvas.height);bmp.close?.();
+    return await new Promise(resolve=>canvas.toBlob(b=>resolve(b||file),"image/jpeg",0.82));
+  }catch{return file}
+}
+async function cloudUploadPantryPhotos(files,scanId){
+  const user=cloudUser();if(!user||!cloudClient||!files?.length)return false;
+  try{
+    const signedUrls=[],paths=[];
+    for(let i=0;i<files.length;i++){
+      const blob=await cloudResizePantryPhoto(files[i]),path=`${user.id}/${scanId}/${String(i+1).padStart(2,"0")}.jpg`;
+      const {error:upErr}=await cloudClient.storage.from("inventory-photos").upload(path,blob,{contentType:"image/jpeg",upsert:false});
+      if(upErr)throw upErr;
+      const {data:signed,error:signErr}=await cloudClient.storage.from("inventory-photos").createSignedUrl(path,86400);
+      if(signErr)throw signErr;paths.push(path);signedUrls.push(signed.signedUrl);
+    }
+    const payload={status:"pending",scanId,photoCount:files.length,paths,signedUrls,existingItems:(state.pantry?.items||[]).slice(0,200),requestedAt:new Date().toISOString()};
+    const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"pantry_scan_request",occurred_at:new Date().toISOString(),local_date:ymd(),payload,source:"app",external_id:`pantry-scan:${scanId}`});
+    if(error)throw error;return true;
+  }catch(error){cloudError=error?.message||"Could not upload pantry photos.";return false}
+}
+async function cloudRecordMealFeedback(entry){
+  const user=cloudUser();if(!user||!cloudClient||!entry?.dish)return false;
+  try{
+    const payload={dish:String(entry.dish),score:Number(entry.score||0),label:String(entry.label||""),date:String(entry.date||ymd()),createdAt:String(entry.createdAt||new Date().toISOString())};
+    const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"meal_feedback",occurred_at:new Date().toISOString(),local_date:payload.date,payload,source:"app",external_id:`meal-feedback:${String(entry.id||Date.now())}`});
+    if(error)throw error;return true;
+  }catch(error){cloudError=error?.message||"Could not save meal feedback.";return false}
+}
+
+async function cloudQueueMealSuggestion(date,opts={}){
   const user=cloudUser();if(!user||!cloudClient||!date)return false;
   try{
-    const externalId=`meal-suggestion:${date}:dinner`;
-    const {data:existing,error:findError}=await cloudClient.from("life_entries")
-      .select("id,payload").eq("owner_user_id",user.id).eq("category","meal_suggestion_request").eq("external_id",externalId)
-      .order("created_at",{ascending:false}).limit(1);
-    if(findError)throw findError;
-    if((existing||[]).some(row=>String(row.payload?.status||"pending")==="pending"))return true;
-    const recent=(state.meals||[]).filter(m=>m?.dish&&m.date<date).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(m=>m.dish);
-    const payload={status:"pending",date,type:"dinner",recentMeals:recent,requestedAt:new Date().toISOString()};
+    const prior=(state.mealSuggestions||[]).filter(x=>x.date===date).map(x=>x.dish).filter(Boolean);
+    const extra=Array.isArray(opts.excludeMeals)?opts.excludeMeals:[];
+    const excludeMeals=[...new Set([...prior,...extra])];
+    const cycle=(state.mealSuggestions||[]).filter(x=>x.date===date).length+1;
+    const externalId=`meal-suggestion:${date}:dinner:${cycle}:${Date.now()}`;
+    const recent=(state.meals||[]).filter(m=>m?.dish&&m.date<date).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12).map(m=>m.dish);
+    const pantry=(state.pantry?.items||[]).map(x=>typeof x==="string"?{name:x}:x).slice(0,150);
+    const feedback=(state.mealFeedback||[]).map(x=>({dish:x.dish,score:Number(x.score||0),label:x.label||""})).slice(-100);
+    const payload={status:"pending",date,type:"dinner",recentMeals:recent,excludeMeals,pantryItems:pantry,feedback,requestedAt:new Date().toISOString()};
     const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"meal_suggestion_request",occurred_at:new Date().toISOString(),local_date:date,payload,source:"app",external_id:externalId});
     if(error)throw error;return true;
   }catch(error){cloudError=error?.message||"Could not request a meal suggestion.";return false}
