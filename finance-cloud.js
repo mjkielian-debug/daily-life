@@ -5,6 +5,7 @@
 let cloudFinancialAccounts=[];
 let cloudRecentTransactions=[];
 let cloudUnreviewedTransactions=[];
+let cloudBankReviewRules=[];
 let cloudFinanceBusy=false;
 let cloudFinanceMessage="";
 
@@ -24,6 +25,7 @@ function cloudFinanceBalance(row){
 async function cloudFinanceInit(){
   if(!cloudUser?.()||!cloudClient)return;
   await cloudRefreshFinancialAccounts(true);
+  await cloudLoadBankReviewRules();
   await cloudImportBankSpending(false);
   const params=new URLSearchParams(location.search);
   const savedToken=sessionStorage.getItem("dailyLifePlaidLinkToken");
@@ -178,6 +180,29 @@ function openCloudAccountMap(remoteId){
   });
 }
 
+
+async function cloudLoadBankReviewRules(){
+  if(!cloudUser?.()||!cloudClient){cloudBankReviewRules=[];return}
+  const {data,error}=await cloudClient.from("bank_review_rules")
+    .select("id,match_field,match_operator,match_value,action,budget_category,note,active")
+    .eq("active",true)
+    .order("created_at",{ascending:true});
+  if(error){cloudFinanceMessage=error.message;cloudBankReviewRules=[];return}
+  cloudBankReviewRules=data||[];
+}
+
+function cloudBankRuleFor(t){
+  for(const rule of cloudBankReviewRules){
+    const raw=String(t?.[rule.match_field]??"");
+    const needle=String(rule.match_value||"");
+    const matched=rule.match_operator==="equals"
+      ? raw.toLowerCase()===needle.toLowerCase()
+      : raw.toLowerCase().includes(needle.toLowerCase());
+    if(matched)return rule;
+  }
+  return null;
+}
+
 function bankBudgetCategory(t){
   const primary=String(t.category_primary||"");
   const detailed=String(t.category_detailed||"");
@@ -236,14 +261,16 @@ async function cloudImportBankSpending(showAlert=false){
     const category=bankBudgetCategory(t);
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
     const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
+    const privateRule=cloudBankRuleFor(t);
     const knownBill=bankLooksLikeKnownBill(t);
-    if(review?.action==="ignored"||knownBill){
+    if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
       continue;
     }
-    if(!category){
+    const resolvedCategory=privateRule?.action==="category"?privateRule.budget_category:category;
+    if(!resolvedCategory){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
@@ -255,13 +282,14 @@ async function cloudImportBankSpending(showAlert=false){
       ...(existing||{id:uid()}),
       date:t.posted_date,
       amount:Math.round(Number(t.provider_amount||0)*100)/100,
-      category,
-      note:String(t.merchant_name||t.name||"Bank purchase"),
+      category:resolvedCategory,
+      note:String(privateRule?.note||t.merchant_name||t.name||"Bank purchase"),
       source:"bank",
       autoImported:true,
       bankTransactionId:t.provider_transaction_id,
       cloudFinancialAccountId:t.account_id
     };
+    if(privateRule?.action==="category")entry.reviewRuleId=privateRule.id;
     if(existing)Object.assign(existing,entry);else state.budget.spending.push(entry);
     changed++;
   }
