@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2250">
+<link rel="stylesheet" href="styles.css?v=20261001-2300">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2215"></script>
+<script src="cloud.js?v=20261001-2300"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:17,createdAt:new Date().toISOString(),
+  version:18,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,17);
+  s.version=Math.max(Number(s.version)||0,18);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -625,6 +625,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
+  ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
   ${todayTimelineCard()}
   ${tonightPrepCard()}
@@ -698,6 +699,33 @@ function sleepCard(){
   const x=sleepForDate(),hours=sleepHours(x);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
 }
+function activeDeliveries(){
+  const today=ymd();
+  return [...(state.deliveries||[])].filter(x=>!["delivered","cancelled"].includes(String(x.status||"").toLowerCase())&&(String(x.expectedDate||"")>=today||!x.expectedDate)).sort((a,b)=>String(a.expectedDate||"9999").localeCompare(String(b.expectedDate||"9999")));
+}
+function mailDeliveryCard(){
+  const today=ymd(),digests=(state.deliveries||[]).filter(x=>x.kind==="mail-digest"&&x.date===today),mailCount=digests.reduce((n,x)=>n+Number(x.mailpieceCount||0),0),packages=activeDeliveries();
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">📬 Mail + packages</div><h2>${mailCount?mailCount+" mailpiece"+(mailCount===1?"":"s")+" expected":packages.length?packages.length+" active package"+(packages.length===1?"":"s"):"Nothing active"}</h2></div><button class="btn" onclick="openDelivery()">+ Add</button></div>
+    ${digests.length?`<div class="muted small">USPS Informed Delivery captured for today${digests.reduce((n,x)=>n+Number(x.packageCount||0),0)?` · ${digests.reduce((n,x)=>n+Number(x.packageCount||0),0)} package notice`:""}.</div>`:""}
+    ${packages.slice(0,6).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.expectedDate?" · "+esc(dl(x.expectedDate)):""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"delivery")}</span></div>`).join("")}
+  </div>`;
+}
+function openDelivery(id=""){
+  const x=(state.deliveries||[]).find(x=>x.id===id)||{id:"",kind:"package",carrier:"",sender:"",status:"expected",expectedDate:"",notes:""};
+  modal(x.id?"Delivery":"Add delivery",`<div class="stack"><label>Carrier<input id="dcarrier" value="${esc(x.carrier||"")}" placeholder="USPS, UPS, FedEx…"></label><label>Sender / order<input id="dsender" value="${esc(x.sender||"")}"></label><div class="grid2"><label>Status<select id="dstatus">${["expected","in transit","out for delivery","delivered","delayed","cancelled"].map(v=>`<option ${(x.status||"expected")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Expected date<input id="ddate" type="date" value="${esc(x.expectedDate||"")}"></label></div><label>Notes<input id="dnotes" value="${esc(x.notes||"")}"></label></div>`,"Save",async()=>{let d=(state.deliveries||[]).find(x=>x.id===id);if(!d){d={id:uid(),kind:"package",date:ymd()};state.deliveries.push(d)}Object.assign(d,{carrier:$("#dcarrier").value.trim(),sender:$("#dsender").value.trim(),status:$("#dstatus").value,expectedDate:$("#ddate").value,notes:$("#dnotes").value.trim()});await save();closeModal();render()});
+}
+function workoutsThisWeek(){const dates=week();return (state.workouts||[]).filter(x=>dates.includes(x.date))}
+function fitnessCard(){
+  const rows=workoutsThisWeek(),minutes=rows.reduce((n,x)=>n+Number(x.minutes||0),0);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🏃 Movement + fitness</div><h2>${rows.length} session${rows.length===1?"":"s"} · ${minutes} min this week</h2></div><button class="btn" onclick="openWorkout()">+ Workout</button></div>${rows.slice().reverse().slice(0,5).map(x=>`<div class="row"><span><b>${esc(x.activity||"Workout")}</b><div class="muted small">${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span><b>${Number(x.minutes||0)} min</b></div>`).join("")||`<div class="notice">Log any workout or movement you want to see over time.</div>`}</div>`;
+}
+function openWorkout(){
+  modal("Log movement",`<div class="stack"><label>Activity<input id="woact" placeholder="Gym, walk, leg day…"></label><div class="grid2"><label>Date<input id="wodate" type="date" value="${ymd()}"></label><label>Minutes<input id="womin" type="number" min="1"></label></div><label>Notes<input id="wonotes"></label></div>`,"Save",async()=>{const activity=$("#woact").value.trim(),minutes=Number($("#womin").value||0);if(!activity||minutes<=0)return;state.workouts.push({id:uid(),date:$("#wodate").value||ymd(),activity,minutes,notes:$("#wonotes").value.trim()});await save();closeModal();render()});
+}
+function monthOverviewCard(){
+  const prefix=ymd().slice(0,7),workHours=(state.workShifts||[]).filter(x=>x.date?.startsWith(prefix)).reduce((n,x)=>n+wh(x),0),workouts=(state.workouts||[]).filter(x=>x.date?.startsWith(prefix)).length,reading=(state.readingLogs||[]).filter(x=>x.date?.startsWith(prefix)).reduce((n,x)=>n+Number(x.pages||0),0),chores=(state.chores||[]).filter(x=>x.date?.startsWith(prefix)&&x.done).length,meals=(state.meals||[]).filter(x=>x.date?.startsWith(prefix)&&x.status==="made").length,careDays=new Set((state.selfCare||[]).filter(x=>x.date?.startsWith(prefix)&&x.done).map(x=>x.date)).size;
+  return `<div class="card month-overview"><div class="eyebrow">Month at a glance</div><h2>${new Date(prefix+"-01T12:00:00").toLocaleDateString("en-US",{month:"long"})}</h2><div class="wins-grid"><div class="metric"><div class="big">${workHours.toFixed(1)}</div><div class="muted small">UPS hours</div></div><div class="metric"><div class="big">${workouts}</div><div class="muted small">workouts</div></div><div class="metric"><div class="big">${reading}</div><div class="muted small">pages read</div></div><div class="metric"><div class="big">${chores}</div><div class="muted small">chores done</div></div><div class="metric"><div class="big">${meals}</div><div class="muted small">meals made</div></div><div class="metric"><div class="big">${careDays}</div><div class="muted small">self-care days</div></div></div></div>`;
+}
 function projectUrgency(p){
   if(["done","closed"].includes(String(p.status||"")))return 99;
   const due=String(p.due||"");if(!due)return 50;
@@ -746,11 +774,14 @@ function logView(f,w,tr){
   <div class="grid2"><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div><div class="card"><div class="eyebrow">Self-care · last 7 days</div><div class="row"><span>Brush teeth</span><b>${selfCareCount("brush")}/7</b></div><div class="row"><span>Mouthwash</span><b>${selfCareCount("mouthwash")}/7</b></div><div class="row"><span>Shower</span><b>${selfCareCount("shower")}/7</b></div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div></div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
+  ${fitnessCard()}
   ${lifeAdminCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${w?.start&&w?.end?`${esc(fmtClock(w.start))}–${esc(fmtClock(w.end))}`:w?.scheduled?`Scheduled ${esc(fmtClock(w.scheduled))}`:"No shift logged"}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
   ${vehicleCard()}
   ${tireHistoryCard(tr)}
+  ${mailDeliveryCard()}
   ${weeklyWinsCard()}
+  ${monthOverviewCard()}
   ${sevenDayTrends()}
   ${householdRoutineCard()}
   ${homeCareCard()}
@@ -1495,7 +1526,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2250").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2300").catch(()=>{});
 
 </script>
 </body>
