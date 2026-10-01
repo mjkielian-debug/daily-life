@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2140">
+<link rel="stylesheet" href="styles.css?v=20261001-1650">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -239,8 +239,40 @@ function generatedMealDetails(m){
   }
   return `<div class="notice"><b>Recipe built for you</b>${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="muted small">${ingredients.map(x=>esc(ingredientParts(x).text)).join("<br>")}</div>`:""}${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}</div>`;
 }
+async function queueMissingMealRecipes(){
+  if(typeof cloudQueueRecipeRequest!=="function"||!cloudUser?.())return 0;
+  const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+14);const end=ymd(endDate);
+  const pending=(state.meals||[]).filter(m=>m?.dish&&m.date>=start&&m.date<=end&&(!m.ingredients||!m.prepSteps)&&m.status!=="made"&&m.status!=="skipped");
+  let queued=0;
+  for(const m of pending){
+    if(await cloudQueueRecipeRequest(m)){m.recipeState="queued";queued++}
+  }
+  if(queued)await save();
+  return queued;
+}
+function neededShoppingGroups(){
+  const groups=new Map();
+  for(const x of (state.shopping||[]).filter(x=>x.status==="needed")){
+    const key=String(x.item||"").trim().toLowerCase();
+    if(!key)continue;
+    if(!groups.has(key))groups.set(key,{item:x.item,ids:[],qty:[],stores:new Set(),meals:new Set(),recipe:false});
+    const g=groups.get(key);g.ids.push(x.id);
+    if(String(x.qty||"").trim())g.qty.push(String(x.qty).trim());
+    if(String(x.store||"").trim())g.stores.add(String(x.store).trim());
+    if(String(x.mealDish||"").trim())g.meals.add(String(x.mealDish).trim());
+    if(x.source==="recipe")g.recipe=true;
+  }
+  return [...groups.values()];
+}
+async function buyShoppingGroup(ids){for(const id of ids){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought"}await save();render()}
+function mealRecipeStatus(m){
+  if(!m?.dish)return"";
+  if(m.ingredients&&m.prepSteps)return"ready";
+  if(m.recipeState==="waiting_for_cloud")return"waiting";
+  return"building";
+}
 const todayChores=()=>state.chores.filter(x=>x.date===ymd());
-function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"have",text:line}}
+function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"check",text:line}}
 function upcomingEvents(days=14){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+days);
   const end=ymd(endDate);
@@ -250,8 +282,9 @@ function eventDayParts(date){const d=new Date(date+"T12:00:00");return{mon:d.toL
 function todayMealCard(){
   const meal=todayMeal(),tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const tm=state.meals.find(x=>x.date===ymd(tomorrow)&&x.type==="dinner");
   if(!meal)return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>Dinner is not planned yet</h2></div><button class="btn primary" onclick="openMeal('${ymd()}')">Plan dinner</button></div>${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
-  const ingredients=splitLines(meal.ingredients),prep=splitLines(meal.prepSteps),done=new Set((meal.prepDone||[]).map(Number));
+  const ingredients=splitLines(meal.ingredients),prep=splitLines(meal.prepSteps),done=new Set((meal.prepDone||[]).map(Number)),recipeStatus=mealRecipeStatus(meal);
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>${esc(meal.dish||"Dinner")}</h2><div class="muted small">${meal.method?esc(meal.method)+" · ":""}${meal.serveTime?"Serve "+esc(fmtClock(meal.serveTime)):""}${meal.startBy?" · start by "+esc(fmtClock(meal.startBy)):""}${meal.assigned?" · "+esc(meal.assigned):""}</div></div><button class="btn" onclick="openMeal('${ymd()}')">Edit</button></div>
+  ${recipeStatus!=="ready"?`<div class="notice">✨ ${recipeStatus==="waiting"?"Recipe request is waiting for your Daily Life cloud connection.":"Building your recipe, prep steps, and grocery list automatically."}</div>`:""}
   ${prep.length?`<div class="mini-heading">Do ahead</div><div class="priority-list">${prep.map((p,i)=>`<label class="priority-item"><input type="checkbox" ${done.has(i)?"checked":""} onchange="toggleMealPrep('${meal.id}',${i},this.checked)"><span class="grow ${done.has(i)?"done":""}">${esc(p)}</span></label>`).join("")}</div>`:""}
   ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="priority-list">${ingredients.map(line=>{const p=ingredientParts(line);return `<div class="priority-item"><span class="grow">${esc(p.text)}</span><span class="state ${p.state}">${p.state}</span></div>`}).join("")}</div>`:""}
   <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="setMealStatus('${meal.id}','made')">${meal.status==="made"?"✓ Made":"Mark made"}</button><button class="btn" onclick="openMeal('${ymd()}')">Recipe / details</button></div>
@@ -317,7 +350,16 @@ function familyView(){
   <div class="card"><div class="section-title"><h2>Kids + chores</h2><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
 }
 function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
-function homeView(){const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null;return`<div class="card"><div class="section-title"><h2>Meals this week</h2><span class="tag">tap to edit</span></div>${week().map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner");return`<div class="row" onclick="openMeal('${d}')"><span><b>${dl(d)}</b></span><span>${esc(m?.dish||"Plan dinner")}</span></div>`}).join("")}</div><div class="card"><div class="section-title"><h2>Shopping</h2><button class="btn primary" onclick="openShopping()">+ Add</button></div>${state.shopping.filter(x=>x.status==="needed").map(x=>`<div class="row"><label class="task"><input type="checkbox" onchange="buy('${x.id}')"><span>${esc(x.item)}${x.qty?` · ${esc(x.qty)}`:""}${x.store?`<div class="muted small">${esc(x.store)}</div>`:""}</span></label></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div><div class="card glow"><div class="section-title"><h2>Home care</h2><button class="btn" onclick="openHome()">+ Log</button></div><div class="big">${days==null?"No fridge baseline":days+" days"}</div><div class="muted small">${last?`since fridge clean on ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`}
+function homeView(){
+  const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
+        days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null,
+        shop=neededShoppingGroups();
+  return `<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">Pick the meal; Daily Life builds the recipe and groceries.</div></div><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div>
+    ${week().map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m);return `<div class="row" onclick="openMeal('${d}')"><span><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):""}</div></span><span style="text-align:right">${esc(m?.dish||"Plan dinner")}${m?.dish?`<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div>`:""}</span></div>`}).join("")}</div>
+    <div class="card"><div class="section-title"><div><h2>Grocery list</h2><div class="muted small">Recipe ingredients appear here automatically.</div></div><button class="btn primary" onclick="openShopping()">+ Add</button></div>
+      ${shop.map(g=>`<div class="row"><label class="task"><input type="checkbox" onchange='buyShoppingGroup(${JSON.stringify(g.ids)})'><span><b>${esc(g.item)}</b>${g.qty.length?` · ${esc([...new Set(g.qty)].join(" + "))}`:""}${g.meals.size?`<div class="muted small">For ${[...g.meals].map(esc).join(", ")}</div>`:""}${g.stores.size?`<div class="muted small">${[...g.stores].map(esc).join(" · ")}</div>`:""}</span></label></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div>
+    <div class="card glow"><div class="section-title"><h2>Home care</h2><button class="btn" onclick="openHome()">+ Log</button></div><div class="big">${days==null?"No fridge baseline":days+" days"}</div><div class="muted small">${last?`since fridge clean on ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
+}
 function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
 function moreView(){
   const checking=state.accounts.filter(x=>x.type==="checking").reduce((s,x)=>s+Number(x.balance||0),0),
@@ -754,9 +796,9 @@ async function erase(){if(confirm("Erase ALL Daily Life data stored on this devi
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
-async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2140").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1650").catch(()=>{});
 
 </script>
 </body>
