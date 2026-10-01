@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1950">
+<link rel="stylesheet" href="styles.css?v=20261001-2005">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -376,15 +376,15 @@ function todayChoresCard(){
 function todayTimelineItems(){
   const date=ymd(),items=[];
   const w=work();
-  if(w?.scheduled)items.push({time:w.scheduled,sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
-  if(w?.start)items.push({time:w.start,sort:w.start,icon:"📦",title:"UPS punch-in",detail:w.end?`Worked until ${fmtClock(w.end)}`:"Work"});
+  if(w?.scheduled)items.push({time:w.scheduled,end:"",sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
+  if(w?.start)items.push({time:w.start,end:w.end||"",sort:w.start,icon:"📦",title:"UPS punch-in",detail:w.end?`Worked until ${fmtClock(w.end)}`:"Work"});
   for(const e of (state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled")){
-    items.push({time:e.startTime||"",sort:e.startTime||"99:99",icon:e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
+    items.push({time:e.startTime||"",end:e.endTime||"",sort:e.startTime||"99:99",icon:e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
   }
   const meal=todayMeal();
   if(meal?.dish&&meal.status!=="made"){
-    if(meal.startBy)items.push({time:meal.startBy,sort:meal.startBy,icon:"🍳",title:`Start ${meal.dish}`,detail:"Dinner prep"});
-    if(meal.serveTime)items.push({time:meal.serveTime,sort:meal.serveTime,icon:"🍽️",title:`Serve ${meal.dish}`,detail:"Dinner"});
+    if(meal.startBy)items.push({time:meal.startBy,end:"",sort:meal.startBy,icon:"🍳",title:`Start ${meal.dish}`,detail:"Dinner prep"});
+    if(meal.serveTime)items.push({time:meal.serveTime,end:"",sort:meal.serveTime,icon:"🍽️",title:`Serve ${meal.dish}`,detail:"Dinner"});
   }
   return items.sort((a,b)=>a.sort.localeCompare(b.sort));
 }
@@ -467,11 +467,12 @@ function renderSetup(){const user=cloudUser?.();return `<main class="app"><heade
 function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div><div class="pill">✧ ${t}</div>${installPrompt?`<button class="btn primary small" style="margin-top:7px" onclick="installApp()">Install app</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("log","＋","Log")}${nav("family","♡","Family")}${nav("home","⌂","Home")}${nav("more","•••","More")}</nav>`}
 function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayView(m,f,w,h,tk,done,nt,tr){
   const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
-  const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
-  const nextTimed=todayTimelineItems().find(i=>i.time&&i.time>=nowHm);
+  const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),timeline=todayTimelineItems();
+  const activeTimed=timeline.find(i=>i.time&&i.end&&i.time<=nowHm&&i.end>nowHm);
+  const nextTimed=timeline.find(i=>i.time&&i.time>=nowHm);
   const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"";
-  const focusTitle=nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||nt?.title||"Nothing urgent";
-  const focusNote=nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":nt?.notes||"Tracked list is clear.";
+  const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||nt?.title||"Nothing urgent";
+  const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
   ${todayTimelineCard()}
@@ -957,7 +958,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1950").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2005").catch(()=>{});
 
 </script>
 </body>
