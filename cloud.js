@@ -315,8 +315,14 @@ function cloudSchedulePush(){
 }
 
 function cloudEntryAlreadyApplied(id){
+  if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
   const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","tireLogs"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
+}
+function cloudMarkEntryApplied(id){
+  if(!state.settings.appliedCloudEntryIds)state.settings.appliedCloudEntryIds=[];
+  if(!state.settings.appliedCloudEntryIds.includes(id))state.settings.appliedCloudEntryIds.push(id);
+  if(state.settings.appliedCloudEntryIds.length>3000)state.settings.appliedCloudEntryIds=state.settings.appliedCloudEntryIds.slice(-2500);
 }
 
 function cloudApplyLifeEntry(row){
@@ -373,6 +379,41 @@ function cloudApplyLifeEntry(row){
       const title=String(p.title||"").trim();if(!title)return false;
       state.tasks.push({...common,title,category:String(p.category||"life"),notes:String(p.notes||""),done:!!p.done,order:Number(p.order||100)});return true;
     }
+    case "meal":{
+      const dish=String(p.dish||"").trim();if(!dish)return false;
+      const type=String(p.type||"dinner"),mealDate=String(p.date||date);
+      let x=state.meals.find(x=>x.date===mealDate&&x.type===type);
+      if(!x){x={id:uid(),date:mealDate,type,cloudEntryId:row.id};state.meals.push(x)}
+      Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
+      return true;
+    }
+    case "budget_spending":{
+      const valid=new Set(["transport","dining","household","personal","grocery","fun","cushion","ebt"]);
+      const category=String(p.category||"").trim(),amount=Number(p.amount||0);
+      if(!valid.has(category)||!Number.isFinite(amount)||amount<=0)return false;
+      state.budget.spending.push({id:uid(),cloudEntryId:row.id,date:String(p.date||date),amount:Math.round(amount*100)/100,category,note:String(p.note||"ChatGPT entry"),source:"chatgpt"});
+      return true;
+    }
+    case "bill_update":{
+      const billId=String(p.bill_id||"").trim(),name=String(p.name||"").trim().toLowerCase(),due=String(p.due||"").trim();
+      let matches=billId?state.bills.filter(b=>b.id===billId):state.bills.filter(b=>(!name||String(b.name||"").trim().toLowerCase()===name)&&(!due||b.due===due));
+      if(matches.length!==1)return false;
+      const b=matches[0];
+      if(p.amount!==undefined&&Number.isFinite(Number(p.amount))&&Number(p.amount)>=0)b.amount=Math.round(Number(p.amount)*100)/100;
+      if(p.due&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.due)))b.due=String(p.due);
+      if(p.name)b.name=String(p.name).trim()||b.name;
+      if(["paid","upcoming"].includes(String(p.status))){
+        b.status=String(p.status);
+        if(b.status==="paid"&&typeof billRepeat==="function"&&billRepeat(b)&&typeof appendNextBill==="function")appendNextBill(b);
+      }
+      if(p.paymentSetup&&typeof BILL_SETUPS!=="undefined"&&BILL_SETUPS.includes(String(p.paymentSetup)))b.paymentSetup=String(p.paymentSetup);
+      if(p.amountType&&typeof BILL_AMOUNT_TYPES!=="undefined"&&BILL_AMOUNT_TYPES.includes(String(p.amountType)))b.amountType=String(p.amountType);
+      if(p.frequency&&typeof BILL_FREQUENCIES!=="undefined"&&BILL_FREQUENCIES.includes(String(p.frequency)))b.frequency=String(p.frequency);
+      if(p.paymentAccountKey!==undefined)b.paymentAccountKey=String(p.paymentAccountKey||"");
+      if(p.desiredAccountKey!==undefined)b.desiredAccountKey=String(p.desiredAccountKey||"");
+      b.lastCloudEntryId=row.id;
+      return true;
+    }
     default:return false;
   }
 }
@@ -388,7 +429,9 @@ async function cloudPullLifeEntries(showAlert=false){
       .limit(500);
     if(error)throw error;
     let applied=0;
-    for(const row of data||[])if(cloudApplyLifeEntry(row))applied++;
+    for(const row of data||[]){
+      if(cloudApplyLifeEntry(row)){cloudMarkEntryApplied(row.id);applied++}
+    }
     if(applied){
       await dbSet("state",state);
       cloudSchedulePush();
