@@ -27,6 +27,13 @@
 .bill-status.covered{color:var(--success)}.bill-status.short{color:var(--danger)}.bill-status.unknown{color:#ffe08a}
 .bill-row{align-items:flex-start;flex-wrap:wrap}.bill-info{flex:1;min-width:180px}.bill-actions{text-align:right;display:grid;gap:8px}
 .bill-details{margin:7px 0 0 26px;display:grid;gap:6px}.bill-details .actions{align-items:center}
+/* Native date/time controls must remain visible on this app's dark surfaces. */
+input[type="date"],input[type="time"],input[type="month"]{color-scheme:dark;min-height:46px}
+input::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;padding:6px}
+.bill-date-control{display:flex;gap:8px;align-items:center}.bill-date-control input{min-width:0;flex:1}
+.bill-date-control .btn{flex-shrink:0;border-color:var(--accent);color:var(--accent)}
+.bill-history summary{cursor:pointer;min-height:44px;padding:12px 0;font-weight:800}
+.bill-history{margin-top:12px;border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -79,7 +86,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:5,createdAt:new Date().toISOString(),
+  version:6,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska"},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,
@@ -110,7 +117,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,5);
+  s.version=Math.max(Number(s.version)||0,6);
   s.profile=s.profile||b.profile;
   s.settings={...b.settings,...(s.settings||{})};
   s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
@@ -122,6 +129,7 @@ function migrateState(s){
   for(const bill of s.bills){
     if(bill.paymentAccountKey===undefined)bill.paymentAccountKey="";
     if(bill.paymentSetup===undefined)bill.paymentSetup="Unknown";
+    if(bill.repeatMonths===undefined)bill.repeatMonths=0;
   }
   // Additive state migration: keep all existing records and unknown fields.
   if(!s.budget||typeof s.budget!=="object"||Array.isArray(s.budget))s.budget={};
@@ -258,7 +266,7 @@ function budgetView(){
   <div class="row"><span>${t.ebtSpent>t.ebt?"Over benefit plan":"Remaining benefit"}</span><b class="${t.ebtSpent>t.ebt?"budget-negative":""}">${budgetMoney(Math.abs(t.ebt-t.ebtSpent))}</b></div>
   <p class="muted small">Separate from cash. Record any cash portion of a grocery purchase under Cash Grocery Overflow. Unused benefits are not automatically carried forward.</p></div>
   <div class="card"><div class="section-title"><h2>Known bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
-  <p class="muted small">From your existing Bills list, by due date. Paid bills remain in the monthly plan; no automatic recurrence or duplicate spending entry.</p>
+  <p class="muted small">From your existing Bills list, by due date. Paid bills remain in the monthly plan. Repeating bills add their next occurrence when marked paid; bills are never duplicated as spending.</p>
   ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>`<div class="row budget-row"><span>${esc(b.name)}<div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"}</div></span><b>${budgetMoney(budgetCents(b.amount))}</b></div>`).join("")||`<div class="notice">No bills due this month. Add known bills before allocating money.</div>`}</div>
   <div class="card"><div class="section-title"><h2>Flexible categories</h2><button class="btn" onclick="autoSplitBudget()">Auto-split</button></div>
   <div class="row"><span>Cash after bills</span><b>${budgetMoney(t.flexible)}</b></div><div class="row"><span>Assigned limits</span><b>${budgetMoney(t.assigned)}</b></div><div class="row"><span>Cash spending logged</span><b>${budgetMoney(t.spent)}</b></div>
@@ -381,40 +389,96 @@ function billReadiness(){
     return {...result,before,after,status:after<0?"Short":setup==="Unknown"?"Setup unknown":"Covered"};
   });
 }
+// Each occurrence remains a separate bill; paid history is never recycled.
+const BILL_REPEATS=[[0,"Does not repeat"],[1,"Monthly"],[3,"Every 3 months"],[12,"Yearly"]];
+function billRepeat(b){return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
+function validBillDate(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return false;
+  const d=new Date(value+"T12:00:00");return !isNaN(d)&&ymd(d)===value;
+}
+function nextBillDate(b){
+  if(!validBillDate(b.due))return "";
+  const [year,month,day]=b.due.split("-").map(Number),anchor=Number(b.repeatDay)||day;
+  const d=new Date(year,month-1+(billRepeat(b)||1),1,12);
+  d.setDate(Math.min(anchor,new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate()));
+  return ymd(d);
+}
+function nextBillIndex(b){
+  const linked=state.bills.findIndex(x=>x.previousBillId===b.id&&b.id);
+  if(linked>=0)return linked;
+  const due=nextBillDate(b),name=String(b.name||"").trim().toLowerCase();
+  return due?state.bills.findIndex(x=>x!==b&&x.due===due&&String(x.name||"").trim().toLowerCase()===name):-1;
+}
+function nextBillDraft(b){return {name:b.name,amount:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",paymentSetup:recordedBillSetup(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
+function appendNextBill(b){
+  if(nextBillIndex(b)>=0||!validBillDate(b.due))return;
+  state.bills.push({...nextBillDraft(b),id:uid(),status:"upcoming"});
+}
+function openNextBill(index){
+  const b=state.bills[index];if(!b)return;
+  const next=nextBillIndex(b);if(next>=0){openBill(next);return}
+  openBill(-1,index);
+}
+function pickBillDate(){
+  const input=$("#bd");
+  try{if(input.showPicker){input.showPicker();return}}catch(error){}
+  input.focus();input.click();
+}
+function billRowView(r){
+  const b=r.bill,paid=b.status==="paid",tone=r.status==="Covered"?"covered":r.status==="Short"?"short":"unknown";
+  const note=r.after!==undefined?`${money(r.before/100)} available before this bill · ${r.after<0?money(-r.after/100)+" short":money(r.after/100)+" left"} after reserving it.`:r.status==="Balance unavailable"?"Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.":r.status==="Check bill"||r.status==="Check earlier bill"?"Correct the amount or due date before relying on this account’s readiness.":paid?"Paid · not reserved.":b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
+  const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1];
+  return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
+  <div class="bill-details"><div class="small muted">${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
+  ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
+  <div class="actions">${paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"&&r.status!=="Setup unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
+  <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${paid?"Edit paid bill":"Edit"}</button>
+  ${paid?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
+}
 function upcomingBillsView(){
-  const rows=billReadiness();
+  const rows=billReadiness(),unpaid=rows.filter(r=>r.bill.status!=="paid"),paid=rows.filter(r=>r.bill.status==="paid");
   return `<div class="card"><div class="section-title"><h2>Upcoming bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
   <p class="muted small">Readiness uses your recorded account balances, reserving unpaid bills in due-date order per account (same-day ties use list order). Paid bills reserve nothing. Future deposits and other spending are not predicted.</p>
   <p class="muted small">Payment setup is what you recorded, not independently verified autopay. Marking a bill paid does not change your account balance; update that balance separately.</p>
-  ${rows.map(r=>{const b=r.bill,paid=b.status==="paid",tone=r.status==="Covered"?"covered":r.status==="Short"?"short":"unknown";
-    const note=r.after!==undefined?`${money(r.before/100)} available before this bill · ${r.after<0?money(-r.after/100)+" short":money(r.after/100)+" left"} after reserving it.`:r.status==="Balance unavailable"?"Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.":r.status==="Check bill"||r.status==="Check earlier bill"?"Correct the amount or due date before relying on this account’s readiness.":paid?"Paid · not reserved.":b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
-    return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
-    <div class="bill-details"><div class="small muted">${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
-    <div class="actions">${paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"&&r.status!=="Setup unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
-    <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">Edit</button></div></div>`;
-  }).join("")||`<div class="notice">No bills entered.</div>`}</div>`;
+  ${unpaid.map(billRowView).join("")||`<div class="notice">No unpaid bills. Add a bill or create the next occurrence from paid history.</div>`}
+  ${paid.length?`<details class="bill-history"><summary>Paid history (${paid.length})</summary><p class="muted small">Paid bills stay here. Use Create next bill to keep a past payment intact. Unchecking a paid bill does not remove its next occurrence.</p>${paid.slice().reverse().map(billRowView).join("")}</details>`:""}</div>`;
 }
-function openBill(index=-1){
+function openBill(index=-1,sourceIndex=-1){
   const existing=index>=0?state.bills[index]:null;if(index>=0&&!existing)return;
-  const b=existing||{name:"",amount:null,due:"",paymentAccountKey:"",paymentSetup:"Unknown"};
+  const source=sourceIndex>=0?state.bills[sourceIndex]:null;
+  const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",paymentSetup:"Unknown",repeatMonths:0});
+  const paid=existing?.status==="paid";
   const accountOptions=state.accounts.filter(a=>a.key),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey);
-  modal(existing?"Edit bill":"Add bill",`<div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label><label>Due date<input id="bd" type="date" required value="${esc(b.due)}"></label>
+  modal(paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
+  ${paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
+  <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
+  <div><label for="bd">Due date</label><div class="bill-date-control"><input id="bd" type="date" required value="${esc(b.due)}"><button class="btn" type="button" onclick="pickBillDate()" aria-label="Choose bill due date">Choose date</button></div></div>
   <label>Payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
-  <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label></div>
+  <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
+  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
   <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
     for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
-    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,paymentSetup=$("#billSetup").value;
-    if(!name||!due||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup))return;
+    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,paymentSetup=$("#billSetup").value,repeatMonths=Number($("#billRepeat").value);
+    if(!name||!validBillDate(due)||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup)||!BILL_REPEATS.some(([n])=>n===repeatMonths))return;
     if(paymentAccountKey&&paymentAccountKey!==b.paymentAccountKey&&!state.accounts.some(a=>a.key===paymentAccountKey)){alert("That account is no longer available. Reopen the bill and choose an account.");return}
     const liveIndex=existing?state.bills.indexOf(existing):-1;if(existing&&liveIndex<0){alert("This bill changed. Close and reopen it before saving.");return}
+    if(source&&nextBillIndex(source)>=0){alert("A next bill already exists. Close this window and use View next bill.");return}
+    if(!existing&&state.bills.some(x=>x.due===due&&String(x.name||"").trim().toLowerCase()===name.toLowerCase())){alert("A bill with this name and due date already exists. Edit that bill, or use a distinct name for a separate bill.");return}
     const button=$("#saveModal");button.disabled=true;
-    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,paymentSetup};
+    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,paymentSetup,repeatMonths,
+      repeatDay:due===b.due&&b.repeatDay?b.repeatDay:Number(due.slice(8,10))};
+    if(source)entry.previousBillId=source.id;
     if(existing)state.bills[liveIndex]=entry;else state.bills.push(entry);
     try{await save();closeModal();render()}
     catch(error){if(existing)state.bills[liveIndex]=existing;else state.bills.splice(state.bills.indexOf(entry),1);button.disabled=false;alert("Could not save this bill on this device. Please try again.")}
   });
 }
-async function toggleBill(id,paid){const x=state.bills.find(b=>b.id===id);if(x)x.status=paid?"paid":"upcoming";await save();render()}
+async function toggleBill(id,paid){
+  const x=state.bills.find(b=>b.id===id);if(!x)return;
+  const before=structuredClone(state.bills);x.status=paid?"paid":"upcoming";
+  if(paid&&billRepeat(x))appendNextBill(x);
+  try{await save();render()}catch(error){state.bills=before;render();alert("Could not save this payment on this device. Please try again.")}
+}
 function openPeople(){
   modal("Readers / family names",`<div class="stack"><label>Names, comma-separated<input id="people" value="${esc((state.settings.readers||[]).join(", "))}"></label></div>`,"Save",async()=>{const names=$("#people").value.split(",").map(x=>x.trim()).filter(Boolean);if(names.length)state.settings.readers=names;await save();closeModal();render()})
 }
