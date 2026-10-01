@@ -57,3 +57,6 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .ingredient-row.compact{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--border)}.ingredient-row.compact:first-child{border-top:0}.recipe-ingredients{margin-top:4px}
 .evening-prep{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--panel2)),var(--panel))}.prep-icon{font-size:1.05rem;min-width:25px}
 @media(max-width:520px){.ingredient-row{align-items:flex-start}.ingredient-actions{max-width:120px}.ingredient-actions .btn{min-height:30px}}
+
+.grocery-row{align-items:flex-start}.grocery-row>.task{flex:1}.grocery-row>.btn{flex:0 0 auto}.past-row{opacity:.58}
+@media(max-width:520px){.grocery-row{align-items:center}.grocery-row>.btn{min-height:34px;padding:6px 8px;font-size:.72rem}}
