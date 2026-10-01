@@ -103,3 +103,6 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .missing-birthdays{margin-top:10px;padding-top:9px;border-top:1px solid var(--border);font-size:.76rem}.linkish{border:0;background:transparent;color:var(--primary);padding:0;font:inherit;font-weight:800;text-decoration:underline;text-underline-offset:2px}
 .school-notes{margin:10px 0;border:1px solid var(--border);border-radius:14px;padding:8px 10px;background:rgba(255,255,255,.025)}.school-notes summary{cursor:pointer;font-weight:800;color:var(--muted)}
+
+.birthday-budget{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border:1px solid color-mix(in srgb,var(--secondary) 25%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--secondary) 6%,transparent)}.birthday-budget>div{display:grid;gap:3px}.birthday-budget b{font-size:1.05rem}
+@media(max-width:520px){.birthday-budget{grid-template-columns:1fr 1fr}.birthday-budget>div:last-child{grid-column:1/-1}}
