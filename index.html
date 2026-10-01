@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2045">
+<link rel="stylesheet" href="styles.css?v=20261001-2055">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2035"></script>
+<script src="cloud.js?v=20261001-2055"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -377,10 +377,10 @@ function pantryCard(){
   </div>`;
 }
 function openPantryScan(){
-  modal("Scan food on hand",`<div class="stack"><div class="notice"><b>Take several pictures.</b><br>Fridge shelves, freezer, pantry/cabinets, fruit bowl, bread, and anything else you want considered. Daily Life will identify visible food and use it for meal suggestions.</div><label>Kitchen photos<input id="pantryPhotos" type="file" accept="image/*" multiple></label><div class="muted small">Select several photos at once when possible. If your phone only lets you take one camera photo at a time, scan the next area afterward and Daily Life will merge the inventory.</div></div>`,"Analyze photos",async()=>{
+  modal("Scan food on hand",`<div class="stack"><div class="notice"><b>Take several pictures.</b><br>Fridge shelves, freezer, pantry/cabinets, fruit bowl, bread, and anything else you want considered. Daily Life will identify visible food and use it for meal suggestions.</div><label>Kitchen photos<input id="pantryPhotos" type="file" accept="image/*" multiple></label><label class="task"><input id="replacePantry" type="checkbox" checked><span><b>This is a full kitchen scan</b><div class="muted small">Replace the old inventory with what these photos show. Turn this off when you are only adding one extra shelf/photo.</div></span></label><div class="muted small">Select several photos at once when possible.</div></div>`,"Analyze photos",async()=>{
     const files=[...($("#pantryPhotos")?.files||[])];if(!files.length)return;
-    const scan={id:uid(),createdAt:new Date().toISOString(),status:"uploading",photoCount:files.length};state.pantryScans.push(scan);await save();closeModal();render();
-    const ok=typeof cloudUploadPantryPhotos==="function"?await cloudUploadPantryPhotos(files,scan.id):false;
+    const mode=$("#replacePantry")?.checked!==false?"replace":"merge",scan={id:uid(),createdAt:new Date().toISOString(),status:"uploading",photoCount:files.length,mode};state.pantryScans.push(scan);await save();closeModal();render();
+    const ok=typeof cloudUploadPantryPhotos==="function"?await cloudUploadPantryPhotos(files,scan.id,mode):false;
     scan.status=ok?"queued":"error";await save();render();
     if(!ok)alert("The photos could not be queued. Make sure Daily Life cloud is signed in, then try again.");
   });
@@ -1052,7 +1052,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2045").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2055").catch(()=>{});
 
 </script>
 </body>
