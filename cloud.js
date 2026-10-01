@@ -518,7 +518,7 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(x.wishlist))x.wishlist=[];
       let w=x.wishlist.find(w=>String(w.item||"").trim().toLowerCase()===item.toLowerCase());
       if(!w){w={id:uid(),item};x.wishlist.push(w)}
-      w.status=String(p.status||w.status||"want");w.notes=String(p.notes||w.notes||"");w.updatedAt=String(row.created_at||new Date().toISOString());
+      w.status=String(p.status||w.status||"want");w.notes=String(p.notes||w.notes||"");w.store=String(p.store||w.store||"");if(p.estimatedCost!==undefined)w.estimatedCost=Number(p.estimatedCost||0);if(p.actualCost!==undefined)w.actualCost=Number(p.actualCost||0);w.updatedAt=String(row.created_at||new Date().toISOString());
       return true;
     }
     case "family_setup":{
