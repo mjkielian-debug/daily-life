@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2135">
+<link rel="stylesheet" href="styles.css?v=20261001-2155">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -606,14 +606,22 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
         hasBudget=bt&&Number(bt.income)>0;
   return `<div class="card today-money"><div class="section-title"><div><div class="eyebrow">💚 Money snapshot</div><h2>${money(checking)} checking</h2></div><button class="btn" onclick="setView('more')">Open Money</button></div><div class="grid3"><div class="metric"><div class="muted small">Budget remaining</div><div class="big">${hasBudget?budgetMoney(bt.remaining):"—"}</div></div><div class="metric"><div class="muted small">Bills next 7 days</div><div class="big">${bills.length}</div><div class="muted small">${bills.length?money(bills.reduce((sum,b)=>sum+Number(b.amount||0),0)):"none logged"}</div></div><div class="metric"><div class="muted small">Next known pay</div><div class="big">${pay?money(pay.netPay):"—"}</div><div class="muted small">${pay?.payDate?dl(pay.payDate):"No future statement yet"}</div></div></div></div>`;
 }
+function nextLifeAdminAction(){
+  const rows=[...(state.projects||[])].filter(p=>!["done","closed"].includes(String(p.status||""))&&p.nextAction).sort((a,b)=>projectUrgency(a)-projectUrgency(b)||String(a.due||"9999").localeCompare(String(b.due||"9999")));
+  const p=rows[0];if(!p)return null;
+  const due=p.due?Math.ceil((new Date(p.due+"T12:00:00")-new Date(ymd()+"T12:00:00"))/86400000):null;
+  if(due!==null&&due>14&&p.status==="waiting")return null;
+  return{title:p.nextAction,notes:[p.title,p.due?("due "+dl(p.due)):""].filter(Boolean).join(" · "),projectId:p.id};
+}
 function todayView(m,f,w,h,tk,done,nt,tr){
   const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
   const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),timeline=todayTimelineItems();
   const activeTimed=timeline.find(i=>i.time&&i.end&&i.time<=nowHm&&i.end>nowHm);
   const nextTimed=timeline.find(i=>i.time&&i.time>=nowHm);
-  const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"";
-  const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||nt?.title||"Nothing urgent";
-  const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":nt?.notes||"Tracked list is clear.";
+  const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"",
+        adminNow=nextLifeAdminAction();
+  const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
+  const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
   ${birthdayPrepCard()}
@@ -627,6 +635,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
     <div class="metric"><div class="eyebrow">Water</div><div class="big">${oz} oz</div>${todayProgress(oz,state.settings.waterTarget,"Water logged")}<div class="actions"><button class="btn primary small" onclick="addWater(26)">+26 oz</button><button class="btn small" onclick="setWaterGoal()">${state.settings.waterTarget?"Edit goal":"Set goal"}</button></div></div>
   </div>
   ${todayMoneySnapshot()}
+  ${nextLifeAdminAction()?`<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">📌 Life admin</div><h2>${esc(nextLifeAdminAction().title)}</h2><div class="muted small">${esc(nextLifeAdminAction().notes)}</div></div><button class="btn" onclick="openProject('${nextLifeAdminAction().projectId}')">Open</button></div></div>`:""}
   <div class="metric"><div class="eyebrow">Tire · last logged</div><div class="big">${tr?esc(tr.psi)+" PSI":"No reading"}</div><div class="muted small">${tr?.date?esc(dl(tr.date))+(tr.time?" · "+esc(tr.time):" · time not recorded"):"Date not recorded"}${tr?.event?" · "+esc(tr.event):""}</div>${tr?.notes?`<div class="muted small">${esc(tr.notes)}</div>`:""}<button class="btn small" onclick="openTire()">Log tire</button></div>
   <div class="card today-weather"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div>
   <details class="card today-moon"><summary><span class="orb">${m[1]}</span><span class="moon-label"><span class="eyebrow">Moon today · astronomy</span><br><b>${m[0]}</b><span class="muted small"> · ${Math.round(m[3]*100)}%</span></span><span class="muted small moon-toggle">Reflection ＋</span></summary><div class="moon-lens"><div class="muted small">Approx. ${Math.round(m[3]*100)}% illuminated · lunar day ${m[2].toFixed(1)}</div><div class="eyebrow">Astrology / spiritual lens${ml.sign?` · ${esc(ml.sign)}`:""}</div><b>${esc(ml.phaseAction)}</b>${ml.sign?`<p class="muted small">${esc(ml.sign)} themes: ${esc(ml.theme)}. ${esc(ml.question)}</p>`:`<p class="muted small">Astrology is a reflective tradition, not an astronomical or scientific prediction. Add your sun sign if you want a personalized prompt.</p><button class="btn small" onclick="openAstrologySettings()">Choose sun sign</button>`}</div></details>`;
@@ -1454,7 +1463,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2135").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2155").catch(()=>{});
 
 </script>
 </body>
