@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2145">
+<link rel="stylesheet" href="styles.css?v=20261001-2205">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -570,12 +570,115 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
 }
 function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div></div><div class="card"><div class="eyebrow">Self-care</div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div><div class="card"><div class="section-title"><h2>Food</h2><button class="btn primary" onclick="openFood()">+ Add</button></div><div class="grid3"><div class="metric"><div class="eyebrow">Calories</div><div class="big">${Math.round(f.cal)}</div></div><div class="metric"><div class="eyebrow">Protein</div><div class="big">${Math.round(f.protein)}g</div></div><div class="metric"><div class="eyebrow">Monsters</div><div class="big">${f.monsters}</div><button class="btn" onclick="monster()">+1</button></div></div>${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal</b></div>`).join("")}</div>${currentWeekWorkCard()}<div class="grid2"><div class="card"><div class="section-title"><h2>Work today</h2><button class="btn" onclick="openWork()">Edit</button></div><div class="muted">${w?.start&&w?.end?`${w.start}–${w.end}`:(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="card"><div class="section-title"><h2>Tire</h2><button class="btn" onclick="openTire()">Log</button></div><div class="big">${tr?tr.psi+" PSI":"—"}</div></div></div><div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`}
 function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
+function ensurePeopleProfiles(){
+  if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+  const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
+  for(const name of names){
+    if(!state.peopleProfiles.some(p=>String(p.name||"").toLowerCase()===name.toLowerCase())){
+      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],wishlist:[],birthdayPlan:{tasks:[]}});
+    }
+  }
+}
+function personById(id){return (state.peopleProfiles||[]).find(p=>p.id===id)}
+const commaList=v=>String(v||"").split(",").map(x=>x.trim()).filter(Boolean);
+function birthdayParts(value){
+  const v=String(value||"").trim(),m=v.match(/^(?:(\d{4})-)?(\d{1,2})-(\d{1,2})$/);
+  return m?{year:m[1]?Number(m[1]):0,month:Number(m[2]),day:Number(m[3])}:null;
+}
+function nextBirthdayInfo(p){
+  const b=birthdayParts(p?.birthday);if(!b)return null;
+  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),year=now.getFullYear();
+  let next=new Date(year,b.month-1,b.day);if(next<today)next=new Date(year+1,b.month-1,b.day);
+  const days=Math.round((next-today)/86400000),turning=b.year?next.getFullYear()-b.year:null;
+  return{date:next,days,turning,label:next.toLocaleDateString("en-US",{month:"long",day:"numeric"}),iso:ymd(next)};
+}
+function birthdayWishStats(p){
+  const list=Array.isArray(p?.wishlist)?p.wishlist:[],bought=list.filter(x=>["bought","wrapped","done"].includes(String(x.status))).length,wrapped=list.filter(x=>String(x.status)==="wrapped").length;
+  return{total:list.length,bought,wrapped};
+}
+function birthdayReadiness(p){
+  const plan=p?.birthdayPlan||{},tasks=Array.isArray(plan.tasks)?plan.tasks:[],stats=birthdayWishStats(p),points=[];
+  if(plan.theme)points.push(1);if(plan.cake)points.push(1);if(plan.activity)points.push(1);if(plan.location)points.push(1);
+  if(stats.total)points.push(stats.bought>=Math.min(1,stats.total)?1:0);
+  for(const t of tasks)points.push(t.done?1:0);
+  const done=points.reduce((a,b)=>a+b,0),total=points.length;
+  return{done,total,percent:total?Math.round(done*100/total):0};
+}
+function birthdayDashboard(){
+  ensurePeopleProfiles();
+  const rows=(state.peopleProfiles||[]).map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b).sort((a,b)=>a.b.days-b.b.days);
+  return `<div class="card priority-card birthday-dashboard"><div class="section-title"><div><div class="eyebrow">🎂 Birthdays</div><h2>Birthday planning</h2><div class="muted small">Wishes, favorites, gifts, themes, and planning live with each person.</div></div><button class="btn" onclick="openPersonProfile()">+ Person</button></div>
+    ${rows.length?rows.map(({p,b})=>{const r=birthdayReadiness(p),w=birthdayWishStats(p);return `<div class="birthday-row" onclick="openBirthdayPlanner('${p.id}')"><div class="birthday-date"><b>${esc(b.label)}</b><span>${b.days===0?"Today":b.days===1?"Tomorrow":b.days+" days"}</span></div><div class="grow"><b>${esc(p.name)}</b>${b.turning?`<div class="muted small">Turning ${b.turning}</div>`:""}<div class="muted small">${w.total} wish${w.total===1?"":"es"} · ${w.bought} bought${r.total?` · ${r.percent}% planned`:""}</div></div><span class="birthday-chevron">›</span></div>`}).join(""):`<div class="notice">Add birthdays to individual profiles and they’ll sort here by what’s coming next.</div>`}
+  </div>`;
+}
+function personCards(){
+  ensurePeopleProfiles();
+  return `<div class="people-grid">${(state.peopleProfiles||[]).map(p=>{const b=nextBirthdayInfo(p),w=birthdayWishStats(p),colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],ints=p.interests||[];return `<div class="card person-card"><div class="section-title"><div><div class="eyebrow">${esc(p.relationship||"Person")}</div><h2>${esc(p.name)}</h2></div><button class="btn small" onclick="openPersonProfile('${p.id}')">Profile</button></div>
+      ${b?`<button class="birthday-mini" onclick="openBirthdayPlanner('${p.id}')"><span>🎂 ${esc(b.label)}</span><b>${b.days===0?"Today":b.days+"d"}</b></button>`:`<button class="birthday-mini empty" onclick="openPersonProfile('${p.id}')"><span>🎂 Add birthday</span></button>`}
+      ${colors.length||chars.length||ints.length?`<div class="person-chips">${colors.slice(0,3).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.slice(0,3).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:`<div class="muted small">Add favorite colors, characters, and interests.</div>`}
+      <div class="row"><span>Birthday wishes</span><b>${w.total}</b></div>
+      ${(p.wishlist||[]).filter(x=>!["bought","wrapped","done"].includes(String(x.status))).slice(0,3).map(x=>`<div class="muted small">• ${esc(x.item)}</div>`).join("")}
+      <div class="actions" style="margin-top:10px"><button class="btn small primary" onclick="openBirthdayWish('${p.id}')">+ Wish</button><button class="btn small" onclick="openBirthdayPlanner('${p.id}')">Birthday plan</button></div>
+    </div>`}).join("")}</div>`;
+}
+function openPersonProfile(id=""){
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],wishlist:[],birthdayPlan:{tasks:[]}};
+  modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
+    <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
+    <label>Relationship<input id="prel" value="${esc(p.relationship||"")}" placeholder="child, partner, friend…"></label>
+    <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
+    <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
+    <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
+    <label>Interests<input id="pints" value="${esc((p.interests||[]).join(", "))}" placeholder="music, cooking, reptiles…"></label>
+    <label>Gift / size notes<textarea id="pnotes" rows="3" placeholder="Clothing sizes, things they collect, gift notes…">${esc(p.giftNotes||"")}</textarea></label>
+  </div>`,"Save",async()=>{
+    const name=$("#pname").value.trim();if(!name)return;let x=personById(id);
+    if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),birthday:$("#pbday").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),interests:commaList($("#pints").value),giftNotes:$("#pnotes").value.trim()});
+    await save();closeModal();render();
+  });
+}
+function openBirthdayWish(personId,wishId=""){
+  const p=personById(personId);if(!p)return;const w=(p.wishlist||[]).find(x=>x.id===wishId)||{};
+  modal(`Birthday wish · ${p.name}`,`<div class="stack"><label>Item / idea<input id="wi" value="${esc(w.item||"")}"></label><label>Status<select id="ws">${["want","maybe","bought","wrapped"].map(v=>`<option ${(w.status||"want")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Notes<input id="wn" value="${esc(w.notes||"")}"></label></div>`,"Save",async()=>{
+    const item=$("#wi").value.trim();if(!item)return;if(!Array.isArray(p.wishlist))p.wishlist=[];
+    let x=p.wishlist.find(x=>x.id===wishId);if(!x){x={id:uid()};p.wishlist.push(x)}
+    Object.assign(x,{item,status:$("#ws").value,notes:$("#wn").value.trim(),updatedAt:new Date().toISOString()});await save();closeModal();render();
+  });
+}
+function openBirthdayPlanner(personId){
+  const p=personById(personId);if(!p)return;const plan=p.birthdayPlan&&typeof p.birthdayPlan==="object"?p.birthdayPlan:{tasks:[]};if(!Array.isArray(plan.tasks))plan.tasks=[];
+  const wishes=(p.wishlist||[]);
+  modal(`Birthday plan · ${p.name}`,`<div class="stack birthday-editor">
+    <div class="birthday-planner-head">${nextBirthdayInfo(p)?`<b>🎂 ${esc(nextBirthdayInfo(p).label)}</b><span class="muted small">${nextBirthdayInfo(p).days} days away${nextBirthdayInfo(p).turning?` · turning ${nextBirthdayInfo(p).turning}`:""}</span>`:`<b>Birthday date not set</b>`}</div>
+    <label>Theme / vibe<input id="btheme" value="${esc(plan.theme||"")}" placeholder="Favorite character, colors, theme…"></label>
+    <label>Cake / dessert<input id="bcake" value="${esc(plan.cake||"")}"></label>
+    <label>Party / activity idea<input id="bactivity" value="${esc(plan.activity||"")}"></label>
+    <label>Location<input id="blocation" value="${esc(plan.location||"")}"></label>
+    <label>Budget<input id="bbudget" type="number" min="0" step="1" value="${plan.budget??""}"></label>
+    <label>Planning notes<textarea id="bnotes" rows="3">${esc(plan.notes||"")}</textarea></label>
+    <div class="mini-heading">Gift / wish list</div>
+    ${wishes.length?wishes.map(w=>`<button class="birthday-wish ${esc(w.status||"want")}" onclick="openBirthdayWish('${p.id}','${w.id}')"><span>${esc(w.item)}</span><b>${esc(w.status||"want")}</b></button>`).join(""):`<div class="muted small">No birthday wishes logged yet.</div>`}
+    <button class="btn" onclick="openBirthdayWish('${p.id}')">+ Add wish</button>
+    <div class="mini-heading">Planning checklist</div>
+    <div id="birthdayTasks">${plan.tasks.map((t,i)=>`<label class="task birthday-task"><input type="checkbox" ${t.done?"checked":""} onchange="toggleBirthdayPlanTask('${p.id}',${i},this.checked)"><span class="${t.done?"done":""}">${esc(t.text)}</span></label>`).join("")||`<div class="muted small">Add things like invitations, cake order, gifts, decorations, wrapping, or party supplies.</div>`}</div>
+    <label>Add checklist item<input id="btask" placeholder="Order cake"></label>
+  </div>`,"Save plan",async()=>{
+    p.birthdayPlan={...plan,theme:$("#btheme").value.trim(),cake:$("#bcake").value.trim(),activity:$("#bactivity").value.trim(),location:$("#blocation").value.trim(),budget:Number($("#bbudget").value||0),notes:$("#bnotes").value.trim(),tasks:plan.tasks};
+    const task=$("#btask").value.trim();if(task)p.birthdayPlan.tasks.push({text:task,done:false});
+    await save();closeModal();render();
+  });
+}
+async function toggleBirthdayPlanTask(personId,index,done){const p=personById(personId);if(!p?.birthdayPlan?.tasks?.[index])return;p.birthdayPlan.tasks[index].done=done;await save();render()}
+
 function familyView(){
+  ensurePeopleProfiles();
   const ticketRows=monthlyReaderTickets();
-  return `${schoolDashboard()}<div class="card glow"><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div>
-  <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((s,x)=>s+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
-  <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
-  <div class="card"><div class="section-title"><div><h2>Kids + chores</h2><div class="muted small">${(state.settings.choreRotations||[]).length?"Daily basics and rotating chores are filled in automatically.":"Add chores manually until a family routine is connected."}</div></div><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
+  return `${birthdayDashboard()}${personCards()}${schoolDashboard()}
+  <div class="card"><div class="section-title"><div><h2>Today’s family routines</h2><div class="muted small">Daily basics and rotating chores are filled in automatically.</div></div><button class="btn" onclick="openChore()">+ Chore</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>
+  <div class="card glow"><div class="section-title"><div><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted small">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div><button class="btn" onclick="openPeople()">Readers</button></div></div>
+  <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((sum,x)=>sum+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
+  <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>`;
 }
 function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
 function homeView(){
@@ -1059,7 +1162,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2145").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2205").catch(()=>{});
 
 </script>
 </body>
