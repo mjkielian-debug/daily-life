@@ -421,6 +421,19 @@ function cloudApplyLifeEntry(row){
       state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],fingerprint});
       return true;
     }
+    case "family_setup":{
+      const members=Array.isArray(p.familyMembers)?p.familyMembers.map(x=>({name:String(x?.name||x||"").trim()})).filter(x=>x.name):[];
+      if(members.length)state.settings.familyMembers=members;
+      if(Array.isArray(p.dailyKidBasics))state.settings.dailyKidBasics=p.dailyKidBasics.map(String).filter(Boolean);
+      if(Array.isArray(p.choreRotations))state.settings.choreRotations=p.choreRotations.map(r=>({members:(r.members||[]).map(String),chores:(r.chores||[]).map(String),anchorDate:String(r.anchorDate||"")}));
+      if(Array.isArray(p.recurringFamilyEvents))state.settings.recurringFamilyEvents=p.recurringFamilyEvents.map(r=>({
+        weekday:Number(r.weekday),title:String(r.title||""),child:String(r.child||""),type:String(r.type||"family"),
+        startTime:String(r.startTime||""),endTime:String(r.endTime||""),location:String(r.location||""),notes:String(r.notes||"")
+      }));
+      if(typeof ensureRecurringFamilyEvents==="function")ensureRecurringFamilyEvents();
+      if(typeof ensureFamilyDay==="function")ensureFamilyDay();
+      return true;
+    }
     case "profile_update":{
       const sign=String(p.sunSign||"").trim();
       const signs=new Set(["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"]);
