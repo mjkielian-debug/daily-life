@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -408,6 +408,13 @@ function cloudApplyLifeEntry(row){
           state.shopping.push({id:uid(),item,qty:typeof raw==="string"?"":String(raw?.qty||""),store:typeof raw==="string"?"":String(raw?.store||""),status:"needed",source:"recipe",mealKey:key,mealDate,dish,mealDish:dish,cloudEntryId:row.id});
         }
       }
+      return true;
+    }
+    case "grocery_order":{
+      if(!Array.isArray(state.orders))state.orders=[];
+      let x=state.orders.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.orders.push(x)}
+      Object.assign(x,{store:String(p.store||x.store||""),orderDate:String(p.orderDate||p.date||date),status:String(p.status||x.status||"ordered"),deliveryTime:String(p.deliveryTime||x.deliveryTime||""),total:Number(p.total||x.total||0),items:Array.isArray(p.items)?p.items:(x.items||[]),perishablesAway:Boolean(p.perishablesAway??x.perishablesAway),refundStatus:String(p.refundStatus||x.refundStatus||""),rating:String(p.rating||x.rating||""),notes:String(p.notes||x.notes||"")});
       return true;
     }
     case "meal_suggestion":{
