@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2345">
+<link rel="stylesheet" href="styles.css?v=20261001-2355">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2300"></script>
+<script src="cloud.js?v=20261001-2355"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:18,createdAt:new Date().toISOString(),
+  version:19,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,18);
+  s.version=Math.max(Number(s.version)||0,19);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -869,6 +869,15 @@ function personProgressHistory(p){
         read30=new Set((state.readingLogs||[]).filter(x=>x.reader===p.name&&x.date>=s30&&Number(x.pages||0)>0).map(x=>x.date)).size;
   return `<div><div class="mini-heading">Recent consistency</div><div class="grid2"><div class="metric"><div class="eyebrow">Last 7 days</div><div class="big">${chores7} chores</div><div class="muted small">${read7} reading days</div></div><div class="metric"><div class="eyebrow">Last 30 days</div><div class="big">${chores30} chores</div><div class="muted small">${read30} reading days</div></div></div></div>`;
 }
+function partnerCheckinHistory(p){
+  if(!isPartnerProfile(p))return"";
+  const rows=[...(state.relationshipCheckins||[])].filter(x=>String(x.personName||"")===String(p.name||"")).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
+  return `<div class="relationship-history"><div class="section-title"><div><div class="mini-heading">Relationship check-ins</div><div class="muted small">${rows.length?rows.length+" recent check-in"+(rows.length===1?"":"s"):"No check-ins logged yet"}</div></div><button class="btn small primary" onclick="closeModal();openRelationshipCheckin('${p.id}')">+ Log</button></div>${rows.map(x=>`<div class="relationship-history-row" onclick="closeModal();openRelationshipCheckin('${p.id}','${x.id}')"><div class="grow"><b>${esc(dl(x.date||ymd()))}</b>${x.summary?`<div class="muted small">${esc(x.summary)}</div>`:""}${x.nextStep?`<div class="small">Next: ${esc(x.nextStep)}</div>`:""}</div><span class="birthday-chevron">›</span></div>`).join("")}</div>`;
+}
+function openRelationshipCheckin(personId,id=""){
+  const p=personById(personId);if(!p)return;const x=(state.relationshipCheckins||[]).find(x=>x.id===id)||{id:"",personName:p.name,date:ymd(),summary:"",wentWell:"",needsAttention:"",agreements:"",nextStep:""};
+  modal(`Check-in · ${p.name}`,`<div class="stack"><label>Date<input id="rcdate" type="date" value="${esc(x.date||ymd())}"></label><label>Overall summary<textarea id="rcsummary" rows="2" placeholder="How did the check-in feel?">${esc(x.summary||"")}</textarea></label><label>What went well<textarea id="rcwell" rows="2">${esc(x.wentWell||"")}</textarea></label><label>What needs attention<textarea id="rcattention" rows="2">${esc(x.needsAttention||"")}</textarea></label><label>Agreements / concrete actions<textarea id="rcagreements" rows="3">${esc(x.agreements||"")}</textarea></label><label>Next step<input id="rcnext" value="${esc(x.nextStep||"")}"></label></div>`,"Save",async()=>{let r=(state.relationshipCheckins||[]).find(x=>x.id===id);if(!r){r={id:uid(),personName:p.name};state.relationshipCheckins.push(r)}Object.assign(r,{personName:p.name,date:$("#rcdate").value||ymd(),summary:$("#rcsummary").value.trim(),wentWell:$("#rcwell").value.trim(),needsAttention:$("#rcattention").value.trim(),agreements:$("#rcagreements").value.trim(),nextStep:$("#rcnext").value.trim(),updatedAt:new Date().toISOString()});await save();closeModal();render()});
+}
 function openPersonHub(id){
   const p=personById(id);if(!p)return;const child=isChildProfile(p),partner=isPartnerProfile(p),sum=personTodaySummary(p),b=nextBirthdayInfo(p),w=birthdayWishStats(p),personTasks=(state.tasks||[]).filter(t=>!t.done&&String(t.child||"")===String(p.name||"")).sort((a,b)=>a.date.localeCompare(b.date));
   const upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,8);
@@ -880,6 +889,7 @@ function openPersonHub(id){
     ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
     ${p.routineNotes?`<div class="notice"><b>Things to remember</b><div class="muted small">${esc(p.routineNotes).replace(/\n/g,"<br>")}</div></div>`:""}
     ${partner&&checkin.enabled?`<div class="relationship-card"><div class="eyebrow">💬 Weekly check-in</div><h3>${esc(dayNames[Number(checkin.weekday)]||"")} · ${esc(fmtClock(checkin.startTime||""))}</h3><div class="muted small">${Number(checkin.durationMinutes||30)} minutes${checkin.notes?" · "+esc(checkin.notes):""}</div></div>`:""}
+    ${partnerCheckinHistory(p)}
     ${child?`<div class="grid2"><div class="metric"><div class="eyebrow">Chores today</div><div class="big">${sum.done}/${sum.chores.length}</div></div><div class="metric"><div class="eyebrow">Reading today</div><div class="big">${sum.pages} pages</div></div></div>`:""}
     ${personTasks.length?`<div><div class="mini-heading">Needs attention</div>${personTasks.slice(0,8).map(t=>`<label class="row task"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${esc(dl(t.date))}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")}</div>`:""}
     ${(p.importantDates||[]).length?`<div><div class="mini-heading">Important dates</div>${p.importantDates.map(x=>`<div class="row"><span>${esc(x.label||x.title||"Date")}</span><b>${esc(x.date||"")}</b></div>`).join("")}</div>`:""}
@@ -1555,7 +1565,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2345").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2355").catch(()=>{});
 
 </script>
 </body>
