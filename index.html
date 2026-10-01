@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2155">
+<link rel="stylesheet" href="styles.css?v=20261001-2215">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2135"></script>
+<script src="cloud.js?v=20261001-2215"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:16,createdAt:new Date().toISOString(),
+  version:17,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,16);
+  s.version=Math.max(Number(s.version)||0,17);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -624,6 +624,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
+  ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${birthdayPrepCard()}
   ${todayTimelineCard()}
   ${tonightPrepCard()}
@@ -969,13 +970,30 @@ function familyView(){
   <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>`;
 }
 function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function activeOrders(){
+  return [...(state.orders||[])].filter(o=>!["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
+}
+function groceryOrdersCard(){
+  const rows=activeOrders(),recent=[...(state.orders||[])].filter(o=>["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||""))).slice(0,3);
+  let html='<div class="card"><div class="section-title"><div><div class="eyebrow">🛍 Grocery orders</div><h2>'+(rows.length?rows.length+' active':'No active order')+'</h2></div><button class="btn" onclick="openOrder()">+ Order</button></div>';
+  if(rows.length){for(const o of rows){const unavailable=(o.items||[]).filter(i=>i.status==='unavailable').length,sub=(o.items||[]).filter(i=>i.status==='substituted').length;html+='<div class="order-row" onclick="openOrder(\''+o.id+'\')"><div class="grow"><b>'+esc(o.store||'Grocery order')+'</b><div class="muted small">'+esc(o.status||'ordered')+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.total?' · '+money(o.total):'')+'</div><div class="muted small">'+(o.items||[]).length+' items'+(unavailable?' · '+unavailable+' unavailable':'')+(sub?' · '+sub+' substituted':'')+(o.perishablesAway?' · perishables put away':'')+'</div></div><span class="tag">'+esc(o.status||'ordered')+'</span></div>';}}
+  else if(recent.length){html+='<details><summary>Recent orders</summary>';for(const o of recent)html+='<div class="row" onclick="openOrder(\''+o.id+'\')"><span>'+esc(o.store||'Order')+' · '+esc(dl(o.orderDate||ymd()))+'</span><b>'+(o.total?money(o.total):'')+'</b></div>';html+='</details>';}
+  else html+='<div class="notice">Track Walmart/Sam’s grocery orders, unavailable items, substitutions, refunds, and putting perishables away.</div>';
+  return html+'</div>';
+}
+function openOrder(id=''){
+  const o=(state.orders||[]).find(x=>x.id===id)||{id:'',store:'',orderDate:ymd(),status:'ordered',deliveryTime:'',total:0,items:[],perishablesAway:false,refundStatus:'',rating:'',notes:''};
+  const itemText=(o.items||[]).map(i=>String(i.item||'')+' | '+String(i.status||'received')).join('\n');
+  const body='<div class="stack"><label>Store<input id="ostore" value="'+esc(o.store||'')+'"></label><div class="grid2"><label>Order date<input id="odate" type="date" value="'+esc(o.orderDate||ymd())+'"></label><label>Status<select id="ostatus">'+["ordered","shopping","on the way","delivered","complete","cancelled"].map(v=>'<option '+((o.status||'ordered')===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div><label>Delivery window / time<input id="otime" value="'+esc(o.deliveryTime||'')+'" placeholder="6–7 PM"></label><label>Total<input id="ototal" type="number" step=".01" value="'+(o.total||'')+'"></label><label>Items<textarea id="oitems" rows="6" placeholder="milk | received&#10;bread | unavailable&#10;cheese | substituted">'+esc(itemText)+'</textarea></label><label class="task"><input id="operish" type="checkbox" '+(o.perishablesAway?'checked':'')+'><span>Perishables put away</span></label><label>Refund / return status<input id="orefund" value="'+esc(o.refundStatus||'')+'"></label><label>Delivery rating<input id="orating" value="'+esc(o.rating||'')+'" placeholder="Optional"></label><label>Notes<textarea id="onotes" rows="2">'+esc(o.notes||'')+'</textarea></label></div>';
+  modal(o.id?'Order · '+(o.store||'Groceries'):'Add grocery order',body,'Save',async()=>{const store=$("#ostore").value.trim();if(!store)return;let x=(state.orders||[]).find(x=>x.id===id);if(!x){x={id:uid()};state.orders.push(x)}const items=$("#oitems").value.split(/\r?\n/).map(line=>{const parts=line.split('|');return{item:String(parts.shift()||'').trim(),status:parts.join('|').trim()||'received'}}).filter(i=>i.item);Object.assign(x,{store,orderDate:$("#odate").value,status:$("#ostatus").value,deliveryTime:$("#otime").value.trim(),total:Number($("#ototal").value||0),items,perishablesAway:$("#operish").checked,refundStatus:$("#orefund").value.trim(),rating:$("#orating").value.trim(),notes:$("#onotes").value.trim()});await save();closeModal();render()});
+}
 function homeView(){
   const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
         days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null,
         shop=neededShoppingGroups(),dates=week(),today=ymd(),remainingDates=dates.filter(d=>d>=today),
         remainingMeals=remainingDates.map(d=>state.meals.find(x=>x.date===d&&x.type==="dinner")).filter(Boolean),
         planned=remainingMeals.filter(m=>m.dish).length,ready=remainingMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,choosing=remainingMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
-  return `${pantryCard()}<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
+  return `${pantryCard()}${groceryOrdersCard()}<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
     ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),sg=latestMealSuggestion(d),past=d<today;return `<div class="row ${past?"past-row":""}"><span onclick="openMeal('${d}')" style="flex:1"><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):past?"Past":""}</div></span>${m?.dish?`<span onclick="openMeal('${d}')" style="text-align:right">${esc(m.dish)}<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div></span>`:past?`<span class="muted small">No meal logged</span>`:sg?suggestionCard(sg,true):m?.recipeState==="suggestion-queued"?`<span class="muted small">✨ choosing from your kitchen…</span>`:`<div class="actions"><button class="btn small primary" onclick="requestMealSuggestion('${d}')">Suggest</button><button class="btn small" onclick="openMeal('${d}')">Choose</button></div>`}</div>`}).join("")}</div>
     <div class="card"><div class="section-title"><div><h2>Grocery list</h2><div class="muted small">${shop.length} item${shop.length===1?"":"s"} needed · recipe ingredients appear automatically.</div></div><button class="btn primary" onclick="openShopping()">+ Add</button></div>
       ${shop.map(g=>`<div class="row grocery-row"><label class="task grow"><input type="checkbox" onchange='buyShoppingGroup(${JSON.stringify(g.ids)})'><span><b>${esc(g.item)}</b>${g.qty.length?` · ${esc([...new Set(g.qty)].join(" + "))}`:""}${g.meals.size?`<div class="muted small">For ${[...g.meals].map(esc).join(", ")}</div>`:""}${g.stores.size?`<div class="muted small">${[...g.stores].map(esc).join(" · ")}</div>`:""}</span></label><button class="btn small good" onclick='alreadyHaveShoppingGroup(${JSON.stringify(g.ids)})'>Already have</button></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div>
@@ -1463,7 +1481,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2155").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2215").catch(()=>{});
 
 </script>
 </body>
