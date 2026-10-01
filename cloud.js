@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -472,6 +472,27 @@ function cloudApplyLifeEntry(row){
       if(state.birthdaySuggestions.some(x=>x.cloudEntryId===row.id))return true;
       state.birthdaySuggestions.push({id:uid(),cloudEntryId:row.id,personId:person.id,personName,status:"proposed",theme:String(p.theme||""),cake:String(p.cake||""),activity:String(p.activity||""),location:String(p.location||""),food:String(p.food||""),decorations:String(p.decorations||""),notes:String(p.notes||""),reason:String(p.reason||""),budget:Number(p.budget||0),tasks:Array.isArray(p.tasks)?p.tasks:[],createdAt:String(row.created_at||new Date().toISOString())});
       if(person.birthdayPlan&&typeof person.birthdayPlan==="object")person.birthdayPlan.suggestionState="ready";
+      return true;
+    }
+    case "project":{
+      if(!Array.isArray(state.projects))state.projects=[];
+      const title=String(p.title||"").trim();if(!title)return false;
+      let x=state.projects.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.projects.push(x)}
+      Object.assign(x,{title,status:String(p.status||x.status||"open"),due:String(p.due||x.due||date||""),nextAction:String(p.nextAction||x.nextAction||""),notes:String(p.notes||x.notes||""),source:String(p.source||x.source||row.source||""),tasks:Array.isArray(p.tasks)?p.tasks:(x.tasks||[])});
+      return true;
+    }
+    case "vehicle_profile":{
+      if(!Array.isArray(state.vehicles))state.vehicles=[];
+      let x=state.vehicles.find(x=>x.cloudEntryId===row.id)||state.vehicles.find(x=>x.primary);
+      if(!x){x={id:uid(),primary:true};state.vehicles.push(x)}
+      Object.assign(x,{cloudEntryId:row.id,year:Number(p.year||x.year||0)||null,make:String(p.make||x.make||""),model:String(p.model||x.model||""),mileage:Number(p.mileage||x.mileage||0)||null,registrationDue:String(p.registrationDue||x.registrationDue||""),openRecalls:Number.isFinite(Number(p.openRecalls))?Number(p.openRecalls):x.openRecalls,estimatedValue:Number(p.estimatedValue||x.estimatedValue||0)||null,notes:String(p.notes||x.notes||"")});
+      return true;
+    }
+    case "vehicle_service":{
+      if(!Array.isArray(state.vehicleServices))state.vehicleServices=[];
+      if(state.vehicleServices.some(x=>x.cloudEntryId===row.id))return true;
+      state.vehicleServices.push({id:uid(),cloudEntryId:row.id,vehicleId:String(p.vehicleId||""),type:String(p.type||"Service"),date:String(p.date||date),mileage:Number(p.mileage||0)||null,cost:Number(p.cost||0),notes:String(p.notes||"")});
       return true;
     }
     case "people_setup":{
