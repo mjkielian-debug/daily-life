@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1900">
+<link rel="stylesheet" href="styles.css?v=20261001-1925">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -576,7 +576,7 @@ function spinReaderWheel(){
 function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
 function needsSetup(){return !state.profile?.name}
 function renderSetup(){const user=cloudUser?.();return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Start locally, restore a private backup, or sign in to your Daily Life cloud account. Public app code contains no personal records.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button>${user?`<button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>`:`<button class="btn" onclick="openCloudAuth()">Sign in / cloud account</button>`}</div></div></main>`}
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","🍽","Food")}${nav("more","$","Money")}${nav("log","＋","Life")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","🍽","Food")}${nav("more","$","Money")}${nav("log","◎","Life")}</nav>`}
 function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayView(m,f,w,h,tk,done,nt,tr){
   const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
   const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),timeline=todayTimelineItems();
@@ -613,6 +613,35 @@ function openSleep(){
   const x=sleepForDate()||{};
   modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="2" placeholder="Anything affecting sleep or energy…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
 }
+function lastHomeTask(task){
+  return [...(state.homeLogs||[])].filter(x=>String(x.task||"").toLowerCase()===String(task||"").toLowerCase()&&x.status==="done").sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")))[0]||null;
+}
+function homeTaskAge(task){
+  const x=lastHomeTask(task);if(!x)return null;return Math.max(0,Math.floor((Date.now()-new Date(x.date+"T12:00:00").getTime())/86400000));
+}
+async function quickHomeTask(task,area="Home"){
+  state.homeLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),area,task,status:"done",notes:"Quick log"});
+  await save();render();
+}
+function householdRoutineCard(){
+  const routines=[["Clean litter boxes","Cats"],["Clean toilets","Bathroom"],["Run robot vacuum","Floors"],["Clean refrigerator","Kitchen"]];
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Household cadence</div><h2>Track it — don’t remind me</h2></div><button class="btn" onclick="openHome()">Detailed log</button></div><div class="muted small">These are frequency logs only. Daily Life learns how often they actually happen without creating reminders.</div>${routines.map(([task,area])=>{const age=homeTaskAge(task),last=lastHomeTask(task);return `<div class="row"><span><b>${esc(task)}</b><div class="muted small">${last?(age===0?"Done today":age+" day"+(age===1?"":"s")+" ago"):"Not logged yet"}</div></span><button class="btn small good" onclick="quickHomeTask('${task.replace(/'/g,"&#39;")}','${area}')">Done</button></div>`}).join("")}</div>`;
+}
+function trendDates(days=7){const out=[];const d=new Date();for(let i=days-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}return out}
+function trendBar(value,max,label,display){
+  const pct=max>0?Math.max(3,Math.min(100,Math.round((Number(value)||0)*100/max))):3;
+  return `<div class="trend-col" title="${esc(label)} · ${esc(display)}"><div class="trend-value">${esc(display)}</div><div class="trend-track"><div class="trend-fill" style="height:${pct}%"></div></div><div class="trend-label">${esc(label)}</div></div>`;
+}
+function sevenDayTrends(){
+  const dates=trendDates(7),waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
+        foodVals=dates.map(d=>(state.foodLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.calories||0),0)),
+        proteinVals=dates.map(d=>(state.foodLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.protein||0),0)),
+        sleepVals=dates.map(d=>sleepHours((state.sleepLogs||[]).find(x=>x.date===d))),
+        maxWater=Math.max(1,...waterVals),maxFood=Math.max(1,...foodVals),maxProtein=Math.max(1,...proteinVals),maxSleep=Math.max(1,...sleepVals);
+  const labels=dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"}));
+  const row=(title,vals,max,fmt)=>`<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${vals.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`;
+  return `<div class="card"><div class="eyebrow">7-day trends</div><h2>Your actual patterns</h2><div class="muted small">A visual history of what you logged — no judgment and no reminder schedule.</div>${row("Water",waterVals,maxWater,v=>Math.round(v)+" oz")}${row("Calories",foodVals,maxFood,v=>Math.round(v)+"")}${row("Protein",proteinVals,maxProtein,v=>Math.round(v)+"g")}${row("Sleep",sleepVals,maxSleep,v=>v?v.toFixed(1)+"h":"—")}</div>`;
+}
 function sleepCard(){
   const x=sleepForDate(),hours=sleepHours(x);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
@@ -634,6 +663,8 @@ function logView(f,w,tr){
   ${currentWeekWorkCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${w?.start&&w?.end?`${esc(fmtClock(w.start))}–${esc(fmtClock(w.end))}`:w?.scheduled?`Scheduled ${esc(fmtClock(w.scheduled))}`:"No shift logged"}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
   ${tireHistoryCard(tr)}
+  ${sevenDayTrends()}
+  ${householdRoutineCard()}
   ${homeCareCard()}
   <div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`;
 }
@@ -1294,7 +1325,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1900").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1925").catch(()=>{});
 
 </script>
 </body>
