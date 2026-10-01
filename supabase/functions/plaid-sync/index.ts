@@ -12,7 +12,7 @@ function publicKey(){
   return JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")||"{}").default||Deno.env.get("SUPABASE_ANON_KEY");
 }
 function adminKey(){
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+  return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 }
 async function authenticatedUser(req:Request){
   const auth=req.headers.get("Authorization")||"";
@@ -88,14 +88,12 @@ Deno.serve(async(req:Request)=>{
   for(const connection of connections||[]){
     const now=new Date().toISOString();
     try{
-      const {data:secretRow,error:secretError}=await admin
-        .from("financial_connection_secrets")
-        .select("access_token")
-        .eq("connection_id",connection.id)
-        .eq("owner_user_id",user.id)
-        .single();
-      if(secretError||!secretRow?.access_token)throw new Error("missing_access_token");
-      const accessToken=String(secretRow.access_token);
+      const {data:accessTokenValue,error:secretError}=await admin.rpc("get_financial_access_token",{
+        p_connection_id:connection.id,
+        p_owner_user_id:user.id
+      });
+      if(secretError||!accessTokenValue)throw new Error("missing_access_token");
+      const accessToken=String(accessTokenValue);
 
       const accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
       const accountRows=(accountsResult.accounts||[]).map((a:any)=>({
