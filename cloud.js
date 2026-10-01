@@ -44,6 +44,7 @@ async function cloudInit(){
         if(cloudSession){
           await cloudRefreshMetadata();
           await cloudPrepareAutoSync();
+          if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
         }else cloudRemoteUpdatedAt=null;
         if(typeof render==="function")render();
       },0);
@@ -117,6 +118,7 @@ async function cloudSignInFromForm(){
     await cloudEnsureProfile();
     await cloudRefreshMetadata();
     await cloudPrepareAutoSync();
+    if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     closeModal();render();
   }catch(error){
     alert("Could not sign in: "+(error?.message||"Unknown error"));
@@ -134,6 +136,7 @@ async function cloudSignUpFromForm(){
       cloudSession=data.session;
       await cloudEnsureProfile();
       await cloudRefreshMetadata();
+      if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
       closeModal();render();
       alert("Daily Life cloud account created and signed in.");
     }else{
