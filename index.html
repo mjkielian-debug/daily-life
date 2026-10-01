@@ -211,7 +211,7 @@ function moreView(){
         ret=state.retirement.reduce((s,x)=>s+Number(x.balance||0),0),
         ms=monthSummary();
   return `<div class="card glow"><div class="section-title"><h2>Money</h2><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
-  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
+  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
   ${upcomingBillsView()}
   <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>
