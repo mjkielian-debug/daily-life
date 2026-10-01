@@ -81,3 +81,6 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .birthday-task{padding:7px 0}.person-editor textarea,.birthday-editor textarea{min-height:70px}
 .bottom-nav{gap:3px;padding-top:7px}.navbtn{min-height:52px;display:grid;place-items:center;align-content:center;gap:2px}.navbtn>div{line-height:1}.navbtn.active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent)}
 @media(max-width:520px){.people-grid{grid-template-columns:1fr}.birthday-row{grid-template-columns:96px 1fr auto}.header-tools{max-width:48%;}.pill{font-size:.66rem}}
+
+.person-hub-actions{display:flex;flex-wrap:wrap;gap:7px}.person-hub .metric{min-height:86px}.birthday-alert{border-color:color-mix(in srgb,var(--secondary) 35%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--secondary) 7%,var(--panel2)),var(--panel))}
+.birthday-inspo{padding:9px 10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--primary) 5%,transparent)}
