@@ -45,6 +45,7 @@ Deno.serve(async(req:Request)=>{
   let input:any;
   try{input=await req.json()}catch{return json({error:"invalid_json"},400)}
   const publicToken=String(input?.public_token||"");
+  const connectionType=input?.mode==="investment"?"investment":"bank";
   if(!publicToken)return json({error:"missing_public_token"},400);
 
   const url=Deno.env.get("SUPABASE_URL"),serviceKey=adminKey();
@@ -67,6 +68,7 @@ Deno.serve(async(req:Request)=>{
         provider:"plaid",
         provider_item_id:itemId,
         institution_name:institutionName,
+        connection_type:connectionType,
         status:"linked",
         last_synced_at:now,
         sync_error:null,
@@ -104,7 +106,7 @@ Deno.serve(async(req:Request)=>{
       if(accountsError)throw accountsError;
     }
 
-    return json({ok:true,connection_id:connection.id,item_id:itemId,accounts:rows.length});
+    return json({ok:true,connection_id:connection.id,item_id:itemId,connection_type:connectionType,accounts:rows.length});
   }catch(error:any){
     if(error?.message==="plaid_not_configured")return json({error:"plaid_not_configured"},503);
     if(error?.message==="plaid_error")return json({error:"plaid_error",detail:error.detail},error.status||502);
