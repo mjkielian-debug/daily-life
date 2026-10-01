@@ -10,7 +10,20 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="styles.css">
 <title>Daily Life</title>
-<style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}  
+<style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
+body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
+header .title{text-shadow:0 0 22px color-mix(in srgb,var(--primary) 30%,transparent)}
+.priority-card{border-color:color-mix(in srgb,var(--primary) 42%,var(--border));box-shadow:0 0 26px color-mix(in srgb,var(--primary) 10%,transparent)}
+.priority-card h2{margin:.2rem 0 .45rem}.priority-card .eyebrow{color:var(--primary)}
+.priority-list{display:grid;gap:7px;margin-top:8px}.priority-item{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border)}.priority-item:first-child{border-top:0}
+.priority-item .grow{flex:1;min-width:0}.priority-item .state{font-size:.72rem;font-weight:800;border:1px solid currentColor;border-radius:999px;padding:3px 7px;white-space:nowrap}
+.state.need{color:#ffb4c9}.state.check{color:#ffe08a}.state.have{color:var(--success)}
+.today-section-grid{display:grid;grid-template-columns:1fr;gap:12px}.sparkle{opacity:.75}.mini-heading{font-weight:850;margin-top:10px}.tomorrow-prep{margin-top:10px;padding:10px;border-radius:14px;background:color-mix(in srgb,var(--primary) 9%,transparent)}
+.upcoming-event{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}.event-date{min-width:58px;text-align:center;border:1px solid var(--border);border-radius:13px;padding:7px;background:color-mix(in srgb,var(--primary) 7%,transparent)}
+.event-date b{display:block;font-size:1.05rem}.event-date span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}
+.payroll-drop{border:1px dashed color-mix(in srgb,var(--primary) 60%,var(--border));border-radius:16px;padding:12px;background:color-mix(in srgb,var(--primary) 7%,transparent)}
+@media(min-width:720px){.today-section-grid{grid-template-columns:1fr 1fr}.today-section-grid .wide{grid-column:1/-1}}
+
 .budget-month{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .budget-month h2{font-size:1.15rem;margin:0}
 .budget-progress{display:block;width:100%;height:12px;margin:10px 0;accent-color:var(--primary)}
@@ -40,6 +53,7 @@ input::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;padding:6px}
 <body>
 <div id="app"></div>
 <input id="restoreFile" type="file" accept="application/json" hidden>
+<input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script>
 
 const DB_NAME="daily-life-local-v2";
@@ -80,6 +94,7 @@ async function dbClear(){
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261001-8"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
@@ -91,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:10,createdAt:new Date().toISOString(),
+  version:11,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -101,10 +116,21 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  meals:[],shopping:[],homeLogs:[],outfits:[],tireLogs:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  meals:[],shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
-const themes=[["Lavender Moon","#c9b0ff","#f3a9ff","#9fdcff"],["Rosewater Sky","#f3b6cf","#e9b7ff","#a9d8ff"],["Peach Stardust","#ffc7a8","#f5b7d3","#c7b7ff"],["Bluebell Twilight","#aaaef8","#cab5ff","#8ed9ea"],["Fairy Garden","#a9e8c2","#d3b8ff","#f2c8df"],["Strawberry Night","#f4a5bf","#d7adff","#ffc6a8"],["Cotton Candy Cosmos","#d4b5ff","#ffb8da","#a7e5f4"]];
+const themes=[
+  ["Moonlit Sage","#9fdeb2","#d7b8ff","#a9e8f3"],
+  ["Emerald Stardust","#72d59a","#f2b4d0","#cab8ff"],
+  ["Fairy Garden","#a9e8c2","#f2c8df","#d3b8ff"],
+  ["Celestial Moss","#83c9a1","#d8a8cf","#9fdcff"],
+  ["Aurora Meadow","#82dfbe","#cab5ff","#8ed9ea"],
+  ["Cosmic Clover","#70cf91","#f3b6cf","#f3d59b"],
+  ["Enchanted Forest","#69bd8c","#c5a4da","#94c9ef"],
+  ["Mint Moon","#9ce5ca","#f0b8d6","#c7b7ff"],
+  ["Venus Garden","#78cea6","#efb2c8","#f2dfb0"],
+  ["Lucky Stardust","#87d89d","#ffc7a8","#cbb7ff"]
+];
 async function save(){await dbSet("state",state);if(typeof cloudSchedulePush==="function")cloudSchedulePush()}
 function theme(){const t=themes[Math.abs(Math.floor(Date.now()/86400000))%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
@@ -154,7 +180,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,10);
+  s.version=Math.max(Number(s.version)||0,11);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -163,7 +189,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","outfits","tireLogs","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -202,6 +228,40 @@ const tire=()=>[...state.tireLogs].sort((a,b)=>(b.date+(b.time||"")).localeCompa
 const work=()=>state.workShifts.find(x=>x.date===ymd())||null;
 function wh(w){if(!w?.start||!w?.end)return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
 function totals(){const f=food();return{cal:f.reduce((s,x)=>s+Number(x.calories||0),0),protein:f.reduce((s,x)=>s+Number(x.protein||0),0),monsters:f.filter(x=>x.category==="monster").length}}
+const splitLines=v=>String(v||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+const fmtClock=v=>{if(!v)return"";const [h,m]=String(v).split(":").map(Number);if(!Number.isFinite(h))return String(v);return new Date(2000,0,1,h,m||0).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})};
+const todayMeal=()=>state.meals.find(x=>x.date===ymd()&&x.type==="dinner")||null;
+const todayChores=()=>state.chores.filter(x=>x.date===ymd());
+function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"have",text:line}}
+function upcomingEvents(days=14){
+  const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+days);
+  const end=ymd(endDate);
+  return (state.events||[]).filter(x=>x.date>=start&&x.date<=end&&x.status!=="cancelled").sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+}
+function eventDayParts(date){const d=new Date(date+"T12:00:00");return{mon:d.toLocaleDateString("en-US",{month:"short"}),day:d.getDate(),weekday:d.toLocaleDateString("en-US",{weekday:"short"})}}
+function todayMealCard(){
+  const meal=todayMeal(),tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const tm=state.meals.find(x=>x.date===ymd(tomorrow)&&x.type==="dinner");
+  if(!meal)return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>Dinner is not planned yet</h2></div><button class="btn primary" onclick="openMeal('${ymd()}')">Plan dinner</button></div>${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
+  const ingredients=splitLines(meal.ingredients),prep=splitLines(meal.prepSteps),done=new Set((meal.prepDone||[]).map(Number));
+  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>${esc(meal.dish||"Dinner")}</h2><div class="muted small">${meal.method?esc(meal.method)+" · ":""}${meal.serveTime?"Serve "+esc(fmtClock(meal.serveTime)):""}${meal.startBy?" · start by "+esc(fmtClock(meal.startBy)):""}${meal.assigned?" · "+esc(meal.assigned):""}</div></div><button class="btn" onclick="openMeal('${ymd()}')">Edit</button></div>
+  ${prep.length?`<div class="mini-heading">Do ahead</div><div class="priority-list">${prep.map((p,i)=>`<label class="priority-item"><input type="checkbox" ${done.has(i)?"checked":""} onchange="toggleMealPrep('${meal.id}',${i},this.checked)"><span class="grow ${done.has(i)?"done":""}">${esc(p)}</span></label>`).join("")}</div>`:""}
+  ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="priority-list">${ingredients.map(line=>{const p=ingredientParts(line);return `<div class="priority-item"><span class="grow">${esc(p.text)}</span><span class="state ${p.state}">${p.state}</span></div>`}).join("")}</div>`:""}
+  <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="setMealStatus('${meal.id}','made')">${meal.status==="made"?"✓ Made":"Mark made"}</button><button class="btn" onclick="openMeal('${ymd()}')">Recipe / details</button></div>
+  ${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
+}
+function todayChoresCard(){
+  const rows=todayChores(),done=rows.filter(x=>x.done).length;
+  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🧺 Family + chores</div><h2>${done} / ${rows.length} done</h2></div><button class="btn" onclick="openChore()">+ Add</button></div>${rows.length?`<div class="priority-list">${rows.map(x=>`<label class="priority-item"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="grow ${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>`).join("")}</div>`:`<div class="notice">No family chores are loaded for today yet.</div>`}</div>`;
+}
+function todayUpcomingCard(){
+  const events=upcomingEvents(14).slice(0,6);
+  return `<div class="card priority-card wide"><div class="section-title"><div><div class="eyebrow">✦ Upcoming</div><h2>Appointments, school + deadlines</h2></div><button class="btn" onclick="openEvent()">+ Add</button></div>${events.length?events.map(e=>{const d=eventDayParts(e.date);return `<div class="priority-item upcoming-event" onclick="openEvent('${e.date}','${e.id}')"><div class="event-date"><span>${esc(d.weekday)}</span><b>${d.day}</b><span>${esc(d.mon)}</span></div><div class="grow"><b>${esc(e.title)}</b><div class="muted small">${e.child?esc(e.child)+" · ":""}${e.startTime?esc(fmtClock(e.startTime))+(e.endTime?"–"+esc(fmtClock(e.endTime)):""):"All day"}${e.location?" · "+esc(e.location):""}</div>${e.source?`<div class="muted small">Source: ${esc(e.source)}</div>`:""}</div></div>`}).join(""):`<div class="notice">Nothing upcoming has been captured yet.</div>`}</div>`;
+}
+function latestPaycheck(){return [...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||"")))[0]||null}
+function upsPayrollCard(){
+  const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">UPS payroll</div><h2>${last?money(last.netPay)+" latest net":"No statements imported"}</h2></div><div class="actions"><button class="btn primary" onclick="document.querySelector('#payrollFile').click()">Import PDF</button><button class="btn" onclick="openPaycheck()">+ Manual</button></div></div><div class="payroll-drop muted small">Import a Dayforce earnings statement. The app keeps payroll numbers but discards employee number, SSN fragments, addresses, routing numbers and account digits.</div>${checks.map(p=>`<div class="row" onclick="openPaycheck('${p.id}')"><span><b>${esc(p.payDate?dl(p.payDate):"Paycheck")}</b><div class="muted small">${p.periodStart&&p.periodEnd?`${esc(dl(p.periodStart))}–${esc(dl(p.periodEnd))} · `:""}${Number(p.totalHours||0).toFixed(2)} h · ${money(p.grossPay)} gross</div></span><b>${money(p.netPay)}</b></div>`).join("")}</div>`;
+}
 
 function monthlyReaderTickets(){
   const prefix=ymd().slice(0,7), readers=state.settings.readers||[];
@@ -224,7 +284,21 @@ function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="mo
 function needsSetup(){return !state.profile?.name}
 function renderSetup(){const user=cloudUser?.();return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Start locally, restore a private backup, or sign in to your Daily Life cloud account. Public app code contains no personal records.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button>${user?`<button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>`:`<button class="btn" onclick="openCloudAuth()">Sign in / cloud account</button>`}</div></div></main>`}
 function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div><div class="pill">✧ ${t}</div>${installPrompt?`<button class="btn primary small" style="margin-top:7px" onclick="installApp()">Install app</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("log","＋","Log")}${nav("family","♡","Family")}${nav("home","⌂","Home")}${nav("more","•••","More")}</nav>`}
-function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayView(m,f,w,h,tk,done,nt,tr){const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water();return`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(nt?.title||"Nothing urgent")}</h2><div class="muted small">${esc(nt?.notes||"Tracked list is clear.")}</div></div> <div class="today-metrics"> <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div> <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":"No hours logged"}</div><div class="muted small">${actual?`${esc(w.start)}–${esc(w.end)}${Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}`:w?.start?`Started ${esc(w.start)} · end time needed`:w?.scheduled?`Scheduled ${esc(w.scheduled)}`:"No shift logged"}</div><button class="btn small" onclick="openWork()">Edit work</button></div> <div class="metric"><div class="eyebrow">Food</div><div class="big">${Math.round(f.cal)} cal</div>${todayProgress(f.cal,state.settings.calTarget,"Calories logged") }<div class="muted small">${Math.round(f.protein)} g protein</div>${todayProgress(f.protein,state.settings.proteinTarget,"Protein logged")}</div> <div class="metric"><div class="eyebrow">Water</div><div class="big">${oz} oz</div>${todayProgress(oz,state.settings.waterTarget,"Water logged")}<div class="actions"><button class="btn primary small" onclick="addWater(26)">+26 oz</button><button class="btn small" onclick="setWaterGoal()">${state.settings.waterTarget?"Edit goal":"Set goal"}</button></div></div> </div> <div class="metric"><div class="eyebrow">Tire · last logged</div><div class="big">${tr?esc(tr.psi)+" PSI":"No reading"}</div><div class="muted small">${tr?.date?esc(dl(tr.date))+(tr.time?" · "+esc(tr.time):" · time not recorded"):"Date not recorded"}${tr?.event?" · "+esc(tr.event):""}</div>${tr?.notes?`<div class="muted small">${esc(tr.notes)}</div>`:""}<button class="btn small" onclick="openTire()">Log tire</button></div> <details class="card today-moon"><summary><span class="orb">${m[1]}</span><span class="moon-label"><span class="eyebrow">Moon today · astronomy</span><br><b>${m[0]}</b><span class="muted small"> · ${Math.round(m[3]*100)}%</span></span><span class="muted small moon-toggle">Reflection ＋</span></summary><div class="moon-lens"><div class="muted small">Approx. ${Math.round(m[3]*100)}% illuminated · lunar day ${m[2].toFixed(1)}</div><div class="eyebrow">Astrology / spiritual lens${ml.sign?` · ${esc(ml.sign)}`:""}</div><b>${esc(ml.phaseAction)}</b>${ml.sign?`<p class="muted small">${esc(ml.sign)} themes: ${esc(ml.theme)}. ${esc(ml.question)}</p>`:`<p class="muted small">Astrology is a reflective tradition, not an astronomical or scientific prediction. Add your sun sign if you want a personalized prompt.</p><button class="btn small" onclick="openAstrologySettings()">Choose sun sign</button>`}</div></details> <div class="card today-weather"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div> <div class="card"><div class="section-title"><h2>Today’s plan</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>`} 
+function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayView(m,f,w,h,tk,done,nt,tr){
+  const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water();
+  return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(nt?.title||"Nothing urgent")}</h2><div class="muted small">${esc(nt?.notes||"Tracked list is clear.")}</div></div>
+  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
+  <div class="card"><div class="section-title"><h2>Today’s schedule + plan</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
+  <div class="today-metrics">
+    <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
+    <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":"No hours logged"}</div><div class="muted small">${actual?`${esc(w.start)}–${esc(w.end)}${Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}`:w?.start?`Started ${esc(w.start)} · end time needed`:w?.scheduled?`Scheduled ${esc(w.scheduled)}`:"No shift logged"}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
+    <div class="metric"><div class="eyebrow">Food logged</div><div class="big">${Math.round(f.cal)} cal</div>${todayProgress(f.cal,state.settings.calTarget,"Calories logged")}<div class="muted small">${Math.round(f.protein)} g protein</div>${todayProgress(f.protein,state.settings.proteinTarget,"Protein logged")}</div>
+    <div class="metric"><div class="eyebrow">Water</div><div class="big">${oz} oz</div>${todayProgress(oz,state.settings.waterTarget,"Water logged")}<div class="actions"><button class="btn primary small" onclick="addWater(26)">+26 oz</button><button class="btn small" onclick="setWaterGoal()">${state.settings.waterTarget?"Edit goal":"Set goal"}</button></div></div>
+  </div>
+  <div class="metric"><div class="eyebrow">Tire · last logged</div><div class="big">${tr?esc(tr.psi)+" PSI":"No reading"}</div><div class="muted small">${tr?.date?esc(dl(tr.date))+(tr.time?" · "+esc(tr.time):" · time not recorded"):"Date not recorded"}${tr?.event?" · "+esc(tr.event):""}</div>${tr?.notes?`<div class="muted small">${esc(tr.notes)}</div>`:""}<button class="btn small" onclick="openTire()">Log tire</button></div>
+  <div class="card today-weather"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div>
+  <details class="card today-moon"><summary><span class="orb">${m[1]}</span><span class="moon-label"><span class="eyebrow">Moon today · astronomy</span><br><b>${m[0]}</b><span class="muted small"> · ${Math.round(m[3]*100)}%</span></span><span class="muted small moon-toggle">Reflection ＋</span></summary><div class="moon-lens"><div class="muted small">Approx. ${Math.round(m[3]*100)}% illuminated · lunar day ${m[2].toFixed(1)}</div><div class="eyebrow">Astrology / spiritual lens${ml.sign?` · ${esc(ml.sign)}`:""}</div><b>${esc(ml.phaseAction)}</b>${ml.sign?`<p class="muted small">${esc(ml.sign)} themes: ${esc(ml.theme)}. ${esc(ml.question)}</p>`:`<p class="muted small">Astrology is a reflective tradition, not an astronomical or scientific prediction. Add your sun sign if you want a personalized prompt.</p><button class="btn small" onclick="openAstrologySettings()">Choose sun sign</button>`}</div></details>`;
+}
 function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div></div><div class="card"><div class="eyebrow">Self-care</div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div><div class="card"><div class="section-title"><h2>Food</h2><button class="btn primary" onclick="openFood()">+ Add</button></div><div class="grid3"><div class="metric"><div class="eyebrow">Calories</div><div class="big">${Math.round(f.cal)}</div></div><div class="metric"><div class="eyebrow">Protein</div><div class="big">${Math.round(f.protein)}g</div></div><div class="metric"><div class="eyebrow">Monsters</div><div class="big">${f.monsters}</div><button class="btn" onclick="monster()">+1</button></div></div>${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal</b></div>`).join("")}</div><div class="grid2"><div class="card"><div class="section-title"><h2>Work</h2><button class="btn" onclick="openWork()">Edit</button></div><div class="muted">${w?.start&&w?.end?`${w.start}–${w.end}`:(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="card"><div class="section-title"><h2>Tire</h2><button class="btn" onclick="openTire()">Log</button></div><div class="big">${tr?tr.psi+" PSI":"—"}</div></div></div><div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`}
 function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
 function familyView(){
@@ -248,6 +322,7 @@ function moreView(){
   <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
   ${upcomingBillsView()}
+  ${upsPayrollCard()}
   <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>
   <div class="card"><div class="eyebrow">This month</div><div class="grid2"><div class="metric"><div class="small muted">Work</div><div class="big">${ms.work.toFixed(1)} h</div></div><div class="metric"><div class="small muted">Water</div><div class="big">${ms.water} oz</div></div><div class="metric"><div class="small muted">Stretch</div><div class="big">${ms.stretchDays} days</div></div><div class="metric"><div class="small muted">Reading</div><div class="big">${ms.pages} pages</div></div></div></div>
   <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div><p class="muted small">Moon phase and illumination are astronomy. The sign-based prompts are optional astrology/spiritual reflections, not scientific predictions.</p></div>
@@ -403,7 +478,90 @@ function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp
 function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
 async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
-function openMeal(date){const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};modal(`Dinner · ${dl(date)}`,`<div class="stack"><label>Dinner<input id="md" value="${esc(x.dish||"")}"></label><label>Method<input id="mm" value="${esc(x.method||"")}"></label><label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label><label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label><label>Notes<textarea id="mn">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let m=state.meals.find(x=>x.date===date&&x.type==="dinner");if(!m){m={id:uid(),date,type:"dinner"};state.meals.push(m)}m.dish=$("#md").value;m.method=$("#mm").value;m.assigned=$("#ma").value;m.status=$("#mst").value;m.notes=$("#mn").value;await save();closeModal();render()})}
+function openMeal(date){
+  const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
+  modal(`Dinner · ${dl(date)}`,`<div class="stack">
+    <label>Dinner<input id="md" value="${esc(x.dish||"")}"></label>
+    <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Crock-pot, oven, stovetop…"></label>
+    <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
+    <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
+    <label>Ingredients<textarea id="ming" rows="6" placeholder="One per line. Prefix with have:, need:, or check:">${esc(x.ingredients||"")}</textarea></label>
+    <label>Prep / do-ahead steps<textarea id="mprep" rows="5" placeholder="One step per line">${esc(x.prepSteps||"")}</textarea></label>
+    <label>Tonight for tomorrow<textarea id="mtom" rows="3" placeholder="Example: Move chicken thighs from freezer to refrigerator">${esc(x.tomorrowPrep||"")}</textarea></label>
+    <label>Recipe / cooking notes<textarea id="mn" rows="5">${esc(x.notes||"")}</textarea></label>
+    <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
+  </div>`,"Save",async()=>{
+    let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+    if(!m){m={id:uid(),date,type:"dinner",prepDone:[]};state.meals.push(m)}
+    Object.assign(m,{dish:$("#md").value,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,ingredients:$("#ming").value,prepSteps:$("#mprep").value,tomorrowPrep:$("#mtom").value,status:$("#mst").value,notes:$("#mn").value});
+    if(!Array.isArray(m.prepDone))m.prepDone=[];
+    await save();closeModal();render();
+  });
+}
+async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
+async function setMealStatus(id,status){const m=state.meals.find(x=>x.id===id);if(!m)return;m.status=status;await save();render()}
+function openEvent(date=ymd(),id=""){
+  const x=state.events.find(e=>e.id===id)||{};
+  modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
+    <label>Title<input id="etitle" value="${esc(x.title||"")}"></label>
+    <label>Child / person<input id="echild" value="${esc(x.child||"")}"></label>
+    <label>Type<select id="etype">${["school","appointment","deadline","activity","family","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Date<input id="edate" type="date" value="${esc(x.date||date)}"></label>
+    <div class="grid2"><label>Start<input id="estart" type="time" value="${esc(x.startTime||"")}"></label><label>End<input id="eend" type="time" value="${esc(x.endTime||"")}"></label></div>
+    <label>Location<input id="eloc" value="${esc(x.location||"")}"></label>
+    <label>Notes<textarea id="enotes">${esc(x.notes||"")}</textarea></label>
+    <label>Status<select id="estatus"><option ${(x.status||"confirmed")==="confirmed"?"selected":""}>confirmed</option><option ${x.status==="tentative"?"selected":""}>tentative</option><option ${x.status==="cancelled"?"selected":""}>cancelled</option></select></label>
+  </div>`,"Save",async()=>{
+    const title=$("#etitle").value.trim(),eventDate=$("#edate").value;if(!title||!eventDate)return;
+    let e=state.events.find(e=>e.id===id);if(!e){e={id:uid(),source:"Manual"};state.events.push(e)}
+    Object.assign(e,{title,child:$("#echild").value,type:$("#etype").value,date:eventDate,startTime:$("#estart").value,endTime:$("#eend").value,location:$("#eloc").value,notes:$("#enotes").value,status:$("#estatus").value});
+    await save();closeModal();render();
+  });
+}
+function openPaycheck(id=""){
+  const x=state.paychecks.find(p=>p.id===id)||{};
+  modal(x.id?"Edit UPS paycheck":"Add UPS paycheck",`<div class="stack">
+    <div class="grid2"><label>Period start<input id="pps" type="date" value="${esc(x.periodStart||"")}"></label><label>Period end<input id="ppe" type="date" value="${esc(x.periodEnd||"")}"></label></div>
+    <label>Pay date<input id="ppd" type="date" value="${esc(x.payDate||"")}"></label>
+    <div class="grid2"><label>Regular hours<input id="prh" type="number" step=".0001" value="${x.regularHours??""}"></label><label>OT hours<input id="poh" type="number" step=".0001" value="${x.overtimeHours??""}"></label></div>
+    <div class="grid2"><label>Regular rate<input id="prr" type="number" step=".01" value="${x.regularRate??""}"></label><label>OT rate<input id="por" type="number" step=".01" value="${x.overtimeRate??""}"></label></div>
+    <div class="grid2"><label>Gross pay<input id="pg" type="number" step=".01" value="${x.grossPay??""}"></label><label>Net pay<input id="pn" type="number" step=".01" value="${x.netPay??""}"></label></div>
+    <div class="grid2"><label>Taxes<input id="pt" type="number" step=".01" value="${x.taxes??""}"></label><label>Deductions<input id="pde" type="number" step=".01" value="${x.deductions??""}"></label></div>
+    <label>Reimbursements<input id="pre" type="number" step=".01" value="${x.reimbursements??""}"></label>
+    <label>Direct-deposit amounts (comma separated)<input id="pdd" value="${esc((x.directDeposits||[]).join(", "))}"></label>
+    <label>Notes<textarea id="pnotes">${esc(x.notes||"")}</textarea></label>
+  </div>`,"Save",async()=>{
+    const periodStart=$("#pps").value,periodEnd=$("#ppe").value,payDate=$("#ppd").value;if(!payDate)return;
+    let p=state.paychecks.find(p=>p.id===id);if(!p){p={id:uid(),source:"manual"};state.paychecks.push(p)}
+    const directDeposits=$("#pdd").value.split(",").map(v=>Number(v.trim())).filter(Number.isFinite);
+    Object.assign(p,{periodStart,periodEnd,payDate,regularHours:Number($("#prh").value||0),overtimeHours:Number($("#poh").value||0),regularRate:Number($("#prr").value||0),overtimeRate:Number($("#por").value||0),grossPay:Number($("#pg").value||0),netPay:Number($("#pn").value||0),taxes:Number($("#pt").value||0),deductions:Number($("#pde").value||0),reimbursements:Number($("#pre").value||0),directDeposits,notes:$("#pnotes").value});
+    p.totalHours=Number(p.regularHours||0)+Number(p.overtimeHours||0);p.fingerprint=[p.periodStart,p.periodEnd,p.payDate,p.netPay.toFixed(2)].join("|");
+    await save();closeModal();render();
+  });
+}
+const moneyNum=v=>Number(String(v||"").replace(/[$,]/g,""))||0;
+function payrollDate(v){const m=String(v||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?`${m[3]}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`:""}
+function rx1(text,re){const m=text.match(re);return m?m[1]:""}
+async function importPayrollStatement(file){
+  if(!file)return;
+  try{
+    if(!window.pdfjsLib)throw new Error("PDF reader did not load.");
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let text="";
+    for(let n=1;n<=pdf.numPages;n++){const page=await pdf.getPage(n),content=await page.getTextContent();text+=" "+content.items.map(i=>i.str).join(" ")}
+    const payDate=payrollDate(rx1(text,/Pay Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i));
+    const pm=text.match(/Pay Period:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})/i),periodStart=pm?payrollDate(pm[1]):"",periodEnd=pm?payrollDate(pm[2]):"";
+    const reg=text.match(/REGULAR\s+([\d.]+)\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i),ot=text.match(/OVERTIME\s+([\d.]+)\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i);
+    const earn=text.match(/Earnings\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i);
+    const p={id:uid(),source:"Dayforce PDF",periodStart,periodEnd,payDate,regularHours:reg?Number(reg[1]):0,regularRate:reg?Number(reg[2]):moneyNum(rx1(text,/Pay Rate:\s*([\d.]+)/i)),regularPay:reg?moneyNum(reg[3]):0,overtimeHours:ot?Number(ot[1]):0,overtimeRate:ot?Number(ot[2]):0,overtimePay:ot?moneyNum(ot[3]):0,totalHours:earn?Number(earn[1]):moneyNum(rx1(text,/TOTAL HOURS\s+([\d.]+)/i)),grossPay:earn?moneyNum(earn[2]):0,taxes:moneyNum(rx1(text,/Taxes\s+\$?([\d,]+\.\d{2})/i)),deductions:moneyNum(rx1(text,/Deductions\s+\$?([\d,]+\.\d{2})/i)),reimbursements:moneyNum(rx1(text,/Reimbursements\s+\$?([\d,]+\.\d{2})/i)),netPay:moneyNum(rx1(text,/Net Pay\s+\$?([\d,]+\.\d{2})/i)),directDeposits:[...text.matchAll(/Direct Deposit\s+\d+\s+X+\d+\s+\$?([\d,]+\.\d{2})/gi)].map(m=>moneyNum(m[1])),vacationHours:moneyNum(rx1(text,/Vacation Hours Balance:\s*([\d.]+)/i)),pstHours:moneyNum(rx1(text,/PST Bank Hrly Balance:\s*([\d.]+)/i)),optionWeekHours:moneyNum(rx1(text,/Option Week Hours Balance:\s*([\d.]+)/i)),importedAt:new Date().toISOString()};
+    if(!p.payDate||!p.netPay)throw new Error("I could not confidently recognize this Dayforce earnings statement.");
+    p.fingerprint=[p.periodStart,p.periodEnd,p.payDate,p.netPay.toFixed(2)].join("|");
+    if(state.paychecks.some(x=>x.fingerprint===p.fingerprint)){alert("That earnings statement is already in Daily Life.");return}
+    state.paychecks.push(p);await save();render();alert(`Imported UPS paycheck: ${p.totalHours.toFixed(2)} hours · ${money(p.netPay)} net.`);
+  }catch(error){alert("Could not import that payroll PDF: "+(error?.message||"Unknown error"))}
+  finally{document.querySelector("#payrollFile").value=""}
+}
+
 function openShopping(){modal("Add shopping item",`<div class="stack"><label>Item<input id="si"></label><label>Quantity<input id="sq"></label><label>Store<input id="ss"></label></div>`,"Add",async()=>{const item=$("#si").value.trim();if(!item)return;state.shopping.push({id:uid(),item,qty:$("#sq").value,store:$("#ss").value,status:"needed"});await save();closeModal();render()})}
 async function buy(id){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought";await save();render()}
 function openHome(){modal("Log home care",`<div class="stack"><label>Area<input id="ha" value="Home"></label><label>Task<input id="ht"></label><label>Notes<input id="hn"></label></div>`,"Save",async()=>{const task=$("#ht").value.trim();if(!task)return;state.homeLogs.push({id:uid(),date:ymd(),area:$("#ha").value||"Home",task,status:"done",notes:$("#hn").value});await save();closeModal();render()})}
@@ -575,7 +733,7 @@ async function restore(file){try{const j=JSON.parse(await file.text());if(!j.ver
 async function erase(){if(confirm("Erase ALL Daily Life data stored on this device?")){await dbClear();state=blankState();render()}}
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
-document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0])});
+document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
