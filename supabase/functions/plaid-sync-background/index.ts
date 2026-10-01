@@ -85,10 +85,17 @@ Deno.serve(async(req:Request)=>{
       if(secretError||!accessTokenValue)throw new Error("missing_access_token");
       const accessToken=String(accessTokenValue);
 
-      // Use /accounts/get for scheduled refreshes. Unlike the Balance endpoint,
-      // this endpoint is not a per-request Balance-product charge if the user
-      // ever leaves Plaid's free Trial plan.
-      const accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
+      // Bank/card connections use /accounts/get to avoid per-request Balance
+      // charges if the user ever leaves the free Trial plan. Investment Items
+      // use the Investments product they were explicitly connected with.
+      let accountsResult:any;
+      if(connection.connection_type==="investment"){
+        try{accountsResult=await plaidPost("/investments/holdings/get",{access_token:accessToken})}
+        catch(error:any){
+          if(["PRODUCT_NOT_READY","PRODUCTS_NOT_SUPPORTED"].includes(String(error?.detail?.error_code||"")))accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
+          else throw error;
+        }
+      }else accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
 
       const accountRows=(accountsResult.accounts||[]).map((a:any)=>({
         owner_user_id:owner,
