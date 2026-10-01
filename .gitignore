@@ -1,0 +1,12 @@
+# Never commit secrets
+.env
+.env.*
+!.env.example
+
+# Supabase local/dev state
+.supabase/
+supabase/.temp/
+
+# Local tooling
+.DS_Store
+node_modules/
