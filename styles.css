@@ -108,3 +108,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:520px){.birthday-budget{grid-template-columns:1fr 1fr}.birthday-budget>div:last-child{grid-column:1/-1}}
 
 .person-relationship-mini{margin:6px 0 8px;padding:7px 9px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));background:color-mix(in srgb,var(--accent) 6%,transparent);font-size:.75rem;color:var(--muted)}
+
+.birthday-suggestion{padding:12px;border:1px solid color-mix(in srgb,var(--secondary) 34%,var(--border));border-radius:15px;background:linear-gradient(180deg,color-mix(in srgb,var(--secondary) 8%,var(--panel2)),color-mix(in srgb,var(--primary) 4%,var(--panel)))}.birthday-suggestion h3{margin:4px 0 7px}
