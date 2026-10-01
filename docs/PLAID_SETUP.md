@@ -36,11 +36,18 @@ Life public repo.
 
 - `plaid-link-token`: creates a user-scoped Link token
 - `plaid-exchange`: exchanges the one-time public token and stores the access
-  token in Vault
-- `plaid-sync`: updates balances and transaction history using
-  `/transactions/sync`
+  token encrypted in Supabase Vault
+- `plaid-sync`: updates balances and transaction history when the signed-in
+  app requests a refresh
+- `plaid-sync-background`: runs from Supabase Cron every six hours so linked
+  accounts continue updating while the PWA is closed
 
 The browser never receives a Plaid access token.
+
+Scheduled refreshes deliberately use Plaid `/accounts/get` rather than the
+per-request Balance endpoint. Balance is free during the Trial plan, but it can
+become per-request billed after a future upgrade. This keeps the background
+design safer if the pricing plan ever changes.
 
 ## Budget behavior
 
