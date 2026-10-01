@@ -35,6 +35,7 @@ async function cloudInit(){
     if(cloudSession){
       await cloudRefreshMetadata();
       await cloudPrepareAutoSync();
+      await cloudPullLifeEntries(false);
     }
     cloudClient.auth.onAuthStateChange((_event,session)=>{
       cloudSession=session||null;
@@ -44,6 +45,7 @@ async function cloudInit(){
         if(cloudSession){
           await cloudRefreshMetadata();
           await cloudPrepareAutoSync();
+          await cloudPullLifeEntries(false);
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
         }else cloudRemoteUpdatedAt=null;
         if(typeof render==="function")render();
@@ -118,6 +120,7 @@ async function cloudSignInFromForm(){
     await cloudEnsureProfile();
     await cloudRefreshMetadata();
     await cloudPrepareAutoSync();
+    await cloudPullLifeEntries(false);
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     closeModal();render();
   }catch(error){
