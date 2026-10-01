@@ -49,6 +49,7 @@ Deno.serve(async(req:Request)=>{
       user:{client_user_id:user.id},
       products:["transactions"],
       optional_products:["investments","liabilities"],
+      transactions:{days_requested:365},
       redirect_uri:"https://mjkielian-debug.github.io/daily-life/"
     })
   });
