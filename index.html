@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2106">
+<link rel="stylesheet" href="styles.css?v=20261001-2140">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -231,6 +231,14 @@ function totals(){const f=food();return{cal:f.reduce((s,x)=>s+Number(x.calories|
 const splitLines=v=>String(v||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 const fmtClock=v=>{if(!v)return"";const [h,m]=String(v).split(":").map(Number);if(!Number.isFinite(h))return String(v);return new Date(2000,0,1,h,m||0).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})};
 const todayMeal=()=>state.meals.find(x=>x.date===ymd()&&x.type==="dinner")||null;
+const mealKey=(date,type="dinner")=>`${date}|${type}`;
+function generatedMealDetails(m){
+  const ingredients=splitLines(m?.ingredients),prep=splitLines(m?.prepSteps);
+  if(!ingredients.length&&!prep.length&&!m?.notes){
+    return `<div class="notice">${m?.recipeState==="queued"?"Building the recipe and grocery list automatically…":"Save the meal name and Daily Life will build the recipe, prep steps, and grocery list for you."}</div>`;
+  }
+  return `<div class="notice"><b>Recipe built for you</b>${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="muted small">${ingredients.map(x=>esc(ingredientParts(x).text)).join("<br>")}</div>`:""}${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}</div>`;
+}
 const todayChores=()=>state.chores.filter(x=>x.date===ymd());
 function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"have",text:line}}
 function upcomingEvents(days=14){
@@ -481,21 +489,33 @@ async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.
 function openMeal(date){
   const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
   modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor">
-    <label>Dinner<input id="md" value="${esc(x.dish||"")}"></label>
-    <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Crock-pot, oven, stovetop…"></label>
+    <div class="notice"><b>You choose the meal. I build the rest.</b><br><span class="muted small">After you save, Daily Life automatically requests the recipe, ingredients, prep steps, and grocery list. You do not need to type those.</span></div>
+    <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Pot roast, chili, tacos…"></label>
+    <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Optional — crock-pot, oven, stovetop…"></label>
     <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
     <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
-    <label>Ingredients<textarea id="ming" rows="3" placeholder="Ritz crackers">${esc(x.ingredients||"")}</textarea><div class="muted small field-help">One item per line. Start it with <b>have:</b>, <b>need:</b>, or <b>check:</b>.</div></label>
-    <label>Prep / do-ahead steps<textarea id="mprep" rows="3" placeholder="One step per line">${esc(x.prepSteps||"")}</textarea></label>
-    <label>Tonight for tomorrow<textarea id="mtom" rows="2" placeholder="Move chicken thighs from freezer to refrigerator">${esc(x.tomorrowPrep||"")}</textarea></label>
-    <label>Recipe / cooking notes<textarea id="mn" rows="3">${esc(x.notes||"")}</textarea></label>
     <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
-  </div>`,"Save",async()=>{
+    ${generatedMealDetails(x)}
+  </div>`,"Save meal",async()=>{
+    const newDish=$("#md").value.trim();if(!newDish)return;
     let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
     if(!m){m={id:uid(),date,type:"dinner",prepDone:[]};state.meals.push(m)}
-    Object.assign(m,{dish:$("#md").value,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,ingredients:$("#ming").value,prepSteps:$("#mprep").value,tomorrowPrep:$("#mtom").value,status:$("#mst").value,notes:$("#mn").value});
+    const changed=String(m.dish||"").trim().toLowerCase()!==newDish.toLowerCase();
+    if(changed){
+      const key=mealKey(date,"dinner");
+      state.shopping=(state.shopping||[]).filter(item=>!(item.source==="recipe"&&item.mealKey===key));
+      m.ingredients="";m.prepSteps="";m.tomorrowPrep="";m.notes="";m.prepDone=[];m.recipeState="queued";
+    }
+    Object.assign(m,{dish:newDish,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,status:$("#mst").value});
     if(!Array.isArray(m.prepDone))m.prepDone=[];
-    await save();closeModal();render();
+    if(!m.ingredients&&!m.prepSteps)m.recipeState="queued";
+    await save();
+    if(typeof cloudQueueRecipeRequest==="function"&&(changed||!m.ingredients)){
+      const queued=await cloudQueueRecipeRequest(m);
+      if(!queued&&m.recipeState==="queued")m.recipeState="waiting_for_cloud";
+      await save();
+    }
+    closeModal();render();
   });
 }
 async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
@@ -736,7 +756,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2106").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2140").catch(()=>{});
 
 </script>
 </body>
