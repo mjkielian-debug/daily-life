@@ -86,7 +86,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:6,createdAt:new Date().toISOString(),
+  version:7,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska"},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,
@@ -117,7 +117,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,6);
+  s.version=Math.max(Number(s.version)||0,7);
   s.profile=s.profile||b.profile;
   s.settings={...b.settings,...(s.settings||{})};
   s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
@@ -130,6 +130,9 @@ function migrateState(s){
     if(bill.paymentAccountKey===undefined)bill.paymentAccountKey="";
     if(bill.paymentSetup===undefined)bill.paymentSetup="Unknown";
     if(bill.repeatMonths===undefined)bill.repeatMonths=0;
+    if(bill.desiredAccountKey===undefined)bill.desiredAccountKey="";
+    if(bill.amountType===undefined)bill.amountType="Fixed amount";
+    if(bill.frequency===undefined)bill.frequency=Number(bill.repeatMonths)===1?"Monthly":Number(bill.repeatMonths)===12?"Annual":Number(bill.repeatMonths)>0?"Irregular":"One-time";
   }
   // Additive state migration: keep all existing records and unknown fields.
   if(!s.budget||typeof s.budget!=="object"||Array.isArray(s.budget))s.budget={};
@@ -227,20 +230,21 @@ const budgetCents=value=>Number.isFinite(Number(value))?Math.round(Math.max(0,Nu
 const budgetMoney=cents=>money(cents/100);
 function budgetPlan(month=budgetMonth){
   const saved=state.budget.months[month]||{};
-  return {...saved,income:saved.income??null,ebt:saved.ebt??null,limits:{...(saved.limits||{})}};
+  return {...saved,income:saved.income??null,ebt:saved.ebt??null,ebtStart:saved.ebtStart??null,limits:{...(saved.limits||{})}};
 }
 function budgetTotals(month=budgetMonth){
   const plan=budgetPlan(month),bills=state.bills.filter(b=>String(b.due||"").slice(0,7)===month);
   const logs=state.budget.spending.filter(x=>String(x.date||"").slice(0,7)===month);
   const billTotal=bills.reduce((sum,b)=>sum+budgetCents(b.amount),0);
-  const income=budgetCents(plan.income),ebt=budgetCents(plan.ebt);
+  const income=budgetCents(plan.income),ebt=budgetCents(plan.ebt),ebtStart=budgetCents(plan.ebtStart);
   const assigned=BUDGET_CATEGORIES.reduce((sum,c)=>sum+budgetCents(plan.limits[c.id]),0);
   const spent=logs.filter(x=>x.category!=="ebt").reduce((sum,x)=>sum+budgetCents(x.amount),0);
   const ebtSpent=logs.filter(x=>x.category==="ebt").reduce((sum,x)=>sum+budgetCents(x.amount),0);
   const [year,mo]=month.split("-").map(Number),days=new Date(year,mo,0).getDate(),today=ymd();
   const daysLeft=month<today.slice(0,7)?0:month===today.slice(0,7)?days-Number(today.slice(8))+1:days;
   const flexible=income-billTotal,remaining=flexible-spent;
-  return {plan,bills,logs,billTotal,income,ebt,assigned,spent,ebtSpent,flexible,remaining,
+  const ebtAvailable=ebtStart+ebt-ebtSpent;
+  return {plan,bills,logs,billTotal,income,ebt,ebtStart,ebtAvailable,assigned,spent,ebtSpent,flexible,remaining,
     left:income-billTotal-assigned,daysLeft,weekly:daysLeft?Math.max(0,remaining)*7/daysLeft:0};
 }
 function budgetProgress(spent,limit,label){
@@ -261,13 +265,13 @@ function budgetView(){
   ${t.remaining<0?`<p class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</p>`:""}
   <p class="muted small">Planning estimates, not your bank balance. Only bills entered for this month and spending logged here are included.</p></div>
   <div class="card"><div class="section-title"><h2>EBT / grocery benefit</h2><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
-  <div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
-  ${budgetProgress(t.ebtSpent,t.ebt,"EBT spending")}
-  <div class="row"><span>${t.ebtSpent>t.ebt?"Over benefit plan":"Remaining benefit"}</span><b class="${t.ebtSpent>t.ebt?"budget-negative":""}">${budgetMoney(Math.abs(t.ebt-t.ebtSpent))}</b></div>
-  <p class="muted small">Separate from cash. Record any cash portion of a grocery purchase under Cash Grocery Overflow. Unused benefits are not automatically carried forward.</p></div>
+  <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
+  ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
+  <div class="row"><span>${t.ebtAvailable<0?"Over available EBT":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
+  <p class="muted small">EBT available = starting carryover + this month’s benefit − EBT spending. Keep EBT separate from cash; log any cash portion of a grocery purchase under Cash Grocery Overflow.</p></div>
   <div class="card"><div class="section-title"><h2>Known bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
   <p class="muted small">From your existing Bills list, by due date. Paid bills remain in the monthly plan. Repeating bills add their next occurrence when marked paid; bills are never duplicated as spending.</p>
-  ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>`<div class="row budget-row"><span>${esc(b.name)}<div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"}</div></span><b>${budgetMoney(budgetCents(b.amount))}</b></div>`).join("")||`<div class="notice">No bills due this month. Add known bills before allocating money.</div>`}</div>
+  ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>{const current=state.accounts.find(a=>a.key===b.paymentAccountKey),desired=state.accounts.find(a=>a.key===b.desiredAccountKey);return`<div class="row budget-row"><span>${esc(b.name)}<div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"} · ${esc(recordedBillAmountType(b))} · ${esc(recordedBillFrequency(b))}</div><div class="muted small">Current: ${esc(current?.name||"Unassigned")}${desired&&desired.key!==b.paymentAccountKey?` · Desired: ${esc(desired.name)}`:""}</div></span><div><b>${budgetMoney(budgetCents(b.amount))}</b><button class="btn small" onclick="openBill(${state.bills.indexOf(b)})">Edit</button></div></div>`}).join("")||`<div class="notice">No bills due this month. Add known bills before allocating money.</div>`}</div>
   <div class="card"><div class="section-title"><h2>Flexible categories</h2><button class="btn" onclick="autoSplitBudget()">Auto-split</button></div>
   <div class="row"><span>Cash after bills</span><b>${budgetMoney(t.flexible)}</b></div><div class="row"><span>Assigned limits</span><b>${budgetMoney(t.assigned)}</b></div><div class="row"><span>Cash spending logged</span><b>${budgetMoney(t.spent)}</b></div>
   <p class="muted small">Auto-split optionally replaces the seven limits with an equal share of expected cash income minus all this month’s bills. EBT and account balances are excluded.</p></div>
@@ -297,9 +301,9 @@ async function persistBudgetEdit(before){
 }
 function openBudgetIncome(){
   const month=budgetMonth,p=budgetPlan(month);
-  modal("Monthly income & benefits",`<p class="muted small">${month} · Enter expected take-home cash income. Keep grocery benefits separate.</p><div class="stack">${budgetAmountInput("budgetIncome","Expected monthly cash income",p.income)}${budgetAmountInput("budgetEBT","Monthly EBT / grocery benefit",p.ebt)}</div>`,"Save",async()=>{
-    let income,ebt;try{income=readBudgetAmount("budgetIncome");ebt=readBudgetAmount("budgetEBT")}catch{return}
-    const before=structuredClone(state.budget);state.budget.months[month]={...budgetPlan(month),income,ebt};await persistBudgetEdit(before);
+  modal("Monthly income & benefits",`<p class="muted small">${month} · Enter expected take-home cash income. Keep grocery benefits separate.</p><div class="stack">${budgetAmountInput("budgetIncome","Expected monthly cash income",p.income)}${budgetAmountInput("budgetEBTStart","Starting EBT balance / carryover",p.ebtStart)}${budgetAmountInput("budgetEBT","Monthly EBT / grocery benefit",p.ebt)}</div>`,"Save",async()=>{
+    let income,ebtStart,ebt;try{income=readBudgetAmount("budgetIncome");ebtStart=readBudgetAmount("budgetEBTStart");ebt=readBudgetAmount("budgetEBT")}catch{return}
+    const before=structuredClone(state.budget);state.budget.months[month]={...budgetPlan(month),income,ebtStart,ebt};await persistBudgetEdit(before);
   });
 }
 function openBudgetLimit(id){
@@ -364,12 +368,16 @@ function openAccount(key=""){
     const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
     const a=oldKey?x:{key:newKey};if(!oldKey)state.accounts.push(a);
     Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0)});
-    if(oldKey&&oldKey!==newKey)for(const b of state.bills)if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;
+    if(oldKey&&oldKey!==newKey)for(const b of state.bills){if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;if(b.desiredAccountKey===oldKey)b.desiredAccountKey=newKey}
     try{await save();closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
 }
 // Readiness is a local balance estimate, never a bank/autopay verification.
 const BILL_SETUPS=["Autopay","Scheduled","Manual","Unknown"];
+const BILL_AMOUNT_TYPES=["Fixed amount","Full/current bill","Statement balance","Variable/estimate"];
+const BILL_FREQUENCIES=["Monthly","Annual","Irregular","One-time","Trial / decision pending"];
 function recordedBillSetup(bill){return BILL_SETUPS.includes(bill.paymentSetup)?bill.paymentSetup:"Unknown"}
+function recordedBillAmountType(bill){return BILL_AMOUNT_TYPES.includes(bill.amountType)?bill.amountType:"Fixed amount"}
+function recordedBillFrequency(bill){return BILL_FREQUENCIES.includes(bill.frequency)?bill.frequency:(billRepeat(bill)===1?"Monthly":billRepeat(bill)===12?"Annual":billRepeat(bill)>0?"Irregular":"One-time")}
 function billReadiness(){
   const remaining=new Map();
   // Equal due dates keep their original list order for deterministic reservations.
@@ -409,7 +417,7 @@ function nextBillIndex(b){
   const due=nextBillDate(b),name=String(b.name||"").trim().toLowerCase();
   return due?state.bills.findIndex(x=>x!==b&&x.due===due&&String(x.name||"").trim().toLowerCase()===name):-1;
 }
-function nextBillDraft(b){return {name:b.name,amount:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",paymentSetup:recordedBillSetup(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
+function nextBillDraft(b){return {name:b.name,amount:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",desiredAccountKey:b.desiredAccountKey||"",paymentSetup:recordedBillSetup(b),amountType:recordedBillAmountType(b),frequency:recordedBillFrequency(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
 function appendNextBill(b){
   if(nextBillIndex(b)>=0||!validBillDate(b.due))return;
   state.bills.push({...nextBillDraft(b),id:uid(),status:"upcoming"});
@@ -427,9 +435,11 @@ function pickBillDate(){
 function billRowView(r){
   const b=r.bill,paid=b.status==="paid",tone=r.status==="Covered"?"covered":r.status==="Short"?"short":"unknown";
   const note=r.after!==undefined?`${money(r.before/100)} available before this bill · ${r.after<0?money(-r.after/100)+" short":money(r.after/100)+" left"} after reserving it.`:r.status==="Balance unavailable"?"Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.":r.status==="Check bill"||r.status==="Check earlier bill"?"Correct the amount or due date before relying on this account’s readiness.":paid?"Paid · not reserved.":b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
-  const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1];
+  const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1],desired=state.accounts.find(a=>a.key===b.desiredAccountKey),amountType=recordedBillAmountType(b),frequency=recordedBillFrequency(b);
   return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
-  <div class="bill-details"><div class="small muted">${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
+  <div class="bill-details"><div class="small muted">Current payment: ${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
+  ${desired&&desired.key!==b.paymentAccountKey?`<div class="small muted">Desired payment account: ${esc(desired.name)}</div>`:""}
+  <div class="small muted">${esc(amountType)} · ${esc(frequency)}</div>
   ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
   <div class="actions">${paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"&&r.status!=="Setup unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
   <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${paid?"Edit paid bill":"Edit"}</button>
@@ -446,26 +456,30 @@ function upcomingBillsView(){
 function openBill(index=-1,sourceIndex=-1){
   const existing=index>=0?state.bills[index]:null;if(index>=0&&!existing)return;
   const source=sourceIndex>=0?state.bills[sourceIndex]:null;
-  const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",paymentSetup:"Unknown",repeatMonths:0});
+  const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",desiredAccountKey:"",paymentSetup:"Unknown",amountType:"Fixed amount",frequency:"One-time",repeatMonths:0});
   const paid=existing?.status==="paid";
-  const accountOptions=state.accounts.filter(a=>a.key),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey);
+  const accountOptions=state.accounts.filter(a=>a.key),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
   modal(paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
   ${paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
   <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
   <div><label for="bd">Due date</label><div class="bill-date-control"><input id="bd" type="date" required value="${esc(b.due)}"><button class="btn" type="button" onclick="pickBillDate()" aria-label="Choose bill due date">Choose date</button></div></div>
-  <label>Payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
+  <label>Current payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
+  <label>Desired payment account (optional)<select id="billDesiredAccount"><option value="">No change planned</option>${desiredMissing?`<option value="${esc(b.desiredAccountKey)}" selected>Previously desired account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.desiredAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
   <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
+  <label>Amount type<select id="billAmountType">${BILL_AMOUNT_TYPES.map(type=>`<option ${recordedBillAmountType(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
+  <label>Bill frequency / status<select id="billFrequency">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
   ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
   <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
     for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
-    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,paymentSetup=$("#billSetup").value,repeatMonths=Number($("#billRepeat").value);
-    if(!name||!validBillDate(due)||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup)||!BILL_REPEATS.some(([n])=>n===repeatMonths))return;
+    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
+    if(!name||!validBillDate(due)||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup)||!BILL_AMOUNT_TYPES.includes(amountType)||!BILL_FREQUENCIES.includes(frequency)||!BILL_REPEATS.some(([n])=>n===repeatMonths))return;
     if(paymentAccountKey&&paymentAccountKey!==b.paymentAccountKey&&!state.accounts.some(a=>a.key===paymentAccountKey)){alert("That account is no longer available. Reopen the bill and choose an account.");return}
+    if(desiredAccountKey&&desiredAccountKey!==b.desiredAccountKey&&!state.accounts.some(a=>a.key===desiredAccountKey)){alert("That desired account is no longer available. Reopen the bill and choose an account.");return}
     const liveIndex=existing?state.bills.indexOf(existing):-1;if(existing&&liveIndex<0){alert("This bill changed. Close and reopen it before saving.");return}
     if(source&&nextBillIndex(source)>=0){alert("A next bill already exists. Close this window and use View next bill.");return}
     if(!existing&&state.bills.some(x=>x.due===due&&String(x.name||"").trim().toLowerCase()===name.toLowerCase())){alert("A bill with this name and due date already exists. Edit that bill, or use a distinct name for a separate bill.");return}
     const button=$("#saveModal");button.disabled=true;
-    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,paymentSetup,repeatMonths,
+    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,desiredAccountKey,paymentSetup,amountType,frequency,repeatMonths,
       repeatDay:due===b.due&&b.repeatDay?b.repeatDay:Number(due.slice(8,10))};
     if(source)entry.previousBillId=source.id;
     if(existing)state.bills[liveIndex]=entry;else state.bills.push(entry);
