@@ -383,7 +383,7 @@ function cloudApplyLifeEntry(row){
     }
     case "task":{
       const title=String(p.title||"").trim();if(!title)return false;
-      state.tasks.push({...common,title,category:String(p.category||"life"),notes:String(p.notes||""),done:!!p.done,order:Number(p.order||100)});return true;
+      state.tasks.push({...common,title,category:String(p.category||"life"),child:String(p.child||""),notes:String(p.notes||""),done:!!p.done,order:Number(p.order||100)});return true;
     }
     case "meal":{
       const dish=String(p.dish||"").trim();if(!dish)return false;
