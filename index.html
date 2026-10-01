@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2300">
+<link rel="stylesheet" href="styles.css?v=20261001-2315">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -860,6 +860,15 @@ function personTodaySummary(p){
         upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")))[0];
   return{chores,done:chores.filter(x=>x.done).length,pages,schoolTasks,upcoming};
 }
+function personProgressHistory(p){
+  if(!isChildProfile(p))return"";
+  const now=new Date(),d7=new Date(now),d30=new Date(now);d7.setDate(now.getDate()-6);d30.setDate(now.getDate()-29);const s7=ymd(d7),s30=ymd(d30),
+        chores7=(state.chores||[]).filter(x=>x.child===p.name&&x.date>=s7&&x.done).length,
+        chores30=(state.chores||[]).filter(x=>x.child===p.name&&x.date>=s30&&x.done).length,
+        read7=new Set((state.readingLogs||[]).filter(x=>x.reader===p.name&&x.date>=s7&&Number(x.pages||0)>0).map(x=>x.date)).size,
+        read30=new Set((state.readingLogs||[]).filter(x=>x.reader===p.name&&x.date>=s30&&Number(x.pages||0)>0).map(x=>x.date)).size;
+  return `<div><div class="mini-heading">Recent consistency</div><div class="grid2"><div class="metric"><div class="eyebrow">Last 7 days</div><div class="big">${chores7} chores</div><div class="muted small">${read7} reading days</div></div><div class="metric"><div class="eyebrow">Last 30 days</div><div class="big">${chores30} chores</div><div class="muted small">${read30} reading days</div></div></div></div>`;
+}
 function openPersonHub(id){
   const p=personById(id);if(!p)return;const child=isChildProfile(p),partner=isPartnerProfile(p),sum=personTodaySummary(p),b=nextBirthdayInfo(p),w=birthdayWishStats(p),personTasks=(state.tasks||[]).filter(t=>!t.done&&String(t.child||"")===String(p.name||"")).sort((a,b)=>a.date.localeCompare(b.date));
   const upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,8);
@@ -1526,7 +1535,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2300").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2315").catch(()=>{});
 
 </script>
 </body>
