@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1810">
+<link rel="stylesheet" href="styles.css?v=20261001-1900">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -346,6 +346,40 @@ function todayChoresCard(){
   for(const x of rows){if(!groups.has(x.child))groups.set(x.child,[]);groups.get(x.child).push(x)}
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🧺 Family + chores</div><h2>${done} / ${rows.length} done</h2></div><button class="btn" onclick="openChore()">+ Add</button></div>${rows.length?`<div class="priority-list">${[...groups.entries()].map(([child,items])=>`<div class="priority-item"><div class="grow"><b>${esc(child)}</b>${items.map(x=>`<label class="task" style="margin-top:7px"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.chore)}</span></label>`).join("")}</div></div>`).join("")}</div>`:`<div class="notice">No family chores are loaded for today yet.</div>`}</div>`;
 }
+function todayTimelineItems(){
+  const date=ymd(),items=[];
+  const w=work();
+  if(w?.scheduled)items.push({time:w.scheduled,sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
+  if(w?.start)items.push({time:w.start,sort:w.start,icon:"📦",title:"UPS punch-in",detail:w.end?`Worked until ${fmtClock(w.end)}`:"Work"});
+  for(const e of (state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled")){
+    items.push({time:e.startTime||"",sort:e.startTime||"99:99",icon:e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
+  }
+  const meal=todayMeal();
+  if(meal?.dish&&meal.status!=="made"){
+    if(meal.startBy)items.push({time:meal.startBy,sort:meal.startBy,icon:"🍳",title:`Start ${meal.dish}`,detail:"Dinner prep"});
+    if(meal.serveTime)items.push({time:meal.serveTime,sort:meal.serveTime,icon:"🍽️",title:`Serve ${meal.dish}`,detail:"Dinner"});
+  }
+  return items.sort((a,b)=>a.sort.localeCompare(b.sort));
+}
+function todayTimelineCard(){
+  const items=todayTimelineItems();
+  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">⏱ Today’s timeline</div><h2>What happens when</h2></div><button class="btn" onclick="openEvent()">+ Event</button></div>
+    ${items.length?items.map(i=>`<div class="timeline-item" ${i.eventId?`onclick="openEvent('${ymd()}','${i.eventId}')"`:""}><div class="timeline-time">${i.time?esc(fmtClock(i.time)):"Anytime"}</div><div class="timeline-dot">${i.icon}</div><div class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</div></div>`).join(""):`<div class="notice">No timed items yet today.</div>`}</div>`;
+}
+function isSchoolEvent(e){
+  const source=String(e?.source||"").toLowerCase(),type=String(e?.type||"").toLowerCase();
+  return type==="school"||type==="deadline"||source.includes("school")||source.includes("lps")||((state.settings.familyMembers||[]).some(m=>String(m?.name||m)===String(e?.child||""))&&type==="activity");
+}
+function schoolDashboard(){
+  const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
+  const events=(state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e)).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+  const kids=(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"")).filter(Boolean);
+  return `<div class="card priority-card school-card"><div class="section-title"><div><div class="eyebrow">🎒 School</div><h2>Grades, assignments + upcoming</h2></div><a class="btn primary" href="https://synergyvue.lps.org/PXP2_Login_Parent.aspx?regenerateSessionId=true" target="_blank" rel="noopener">Open ParentVUE</a></div>
+    <div class="notice">School emails can feed dates and deadlines into Daily Life automatically. Direct ParentVUE grade/assignment syncing is not connected yet, so use ParentVUE for the live gradebook.</div>
+    ${kids.length?`<div class="school-kids">${kids.map(k=>{const mine=events.filter(e=>String(e.child||"")===k).slice(0,4);return `<div class="school-kid"><b>${esc(k)}</b>${mine.length?mine.map(e=>`<div class="school-item" onclick="openEvent('${e.date}','${e.id}')"><span>${esc(dl(e.date))}</span><span class="grow">${esc(e.title)}${e.startTime?` · ${esc(fmtClock(e.startTime))}`:""}</span></div>`).join(""):`<div class="muted small">No upcoming school items captured.</div>`}</div>`}).join("")}</div>`:""}
+  </div>`;
+}
+
 function todayUpcomingCard(){
   const events=upcomingEvents(14).slice(0,6);
   return `<div class="card priority-card wide"><div class="section-title"><div><div class="eyebrow">✦ Upcoming</div><h2>Appointments, school + deadlines</h2></div><button class="btn" onclick="openEvent()">+ Add</button></div>${events.length?events.map(e=>{const d=eventDayParts(e.date);return `<div class="priority-item upcoming-event" onclick="openEvent('${e.date}','${e.id}')"><div class="event-date"><span>${esc(d.weekday)}</span><b>${d.day}</b><span>${esc(d.mon)}</span></div><div class="grow"><b>${esc(e.title)}</b><div class="muted small">${e.child?esc(e.child)+" · ":""}${e.startTime?esc(fmtClock(e.startTime))+(e.endTime?"–"+esc(fmtClock(e.endTime)):""):e.endTime?"Ends "+esc(fmtClock(e.endTime)):"All day"}${e.location?" · "+esc(e.location):""}</div>${e.source?`<div class="muted small">Source: ${esc(e.source)}</div>`:""}</div></div>`}).join(""):`<div class="notice">Nothing upcoming has been captured yet.</div>`}</div>`;
@@ -382,7 +416,8 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
   const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(nt?.title||foodNow||"Nothing urgent")}</h2><div class="muted small">${esc(nt?.notes||(!nt&&foodNow?"Food plan is surfaced here so it does not get buried.":"Tracked list is clear."))}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
-  <div class="card"><div class="section-title"><h2>Today’s schedule + plan</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
+  ${todayTimelineCard()}
+  <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
   <div class="today-metrics">
     <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
     <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":"No hours logged"}</div><div class="muted small">${actual?`${esc(w.start)}–${esc(w.end)}${Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}`:w?.start?`Started ${esc(w.start)} · end time needed`:w?.scheduled?`Scheduled ${esc(w.scheduled)}`:"No shift logged"}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
@@ -397,7 +432,7 @@ function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class=
 function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
 function familyView(){
   const ticketRows=monthlyReaderTickets();
-  return `<div class="card glow"><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div>
+  return `${schoolDashboard()}<div class="card glow"><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div>
   <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((s,x)=>s+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
   <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
   <div class="card"><div class="section-title"><div><h2>Kids + chores</h2><div class="muted small">${(state.settings.choreRotations||[]).length?"Daily basics and rotating chores are filled in automatically.":"Add chores manually until a family routine is connected."}</div></div><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
@@ -863,7 +898,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1810").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1900").catch(()=>{});
 
 </script>
 </body>
