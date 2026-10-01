@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2340">
+<link rel="stylesheet" href="styles.css?v=20261001-2355">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -208,9 +208,23 @@ function ensureRecurringFamilyEvents(){
     }
   }
 }
+function ensureBirthdayEvents(){
+  ensurePeopleProfiles();
+  for(const p of state.peopleProfiles||[]){
+    const b=nextBirthdayInfo(p);if(!b)continue;
+    const title=`${p.name}'s birthday`;
+    if(!(state.events||[]).some(e=>e.date===b.iso&&e.type==="birthday"&&String(e.child||"")===String(p.name||""))){
+      state.events.push({id:uid(),date:b.iso,title,child:p.name,type:"birthday",startTime:"",endTime:"",location:"",status:"confirmed",source:"Birthday profile",notes:b.turning?`Turning ${b.turning}`:"",generated:"birthday"});
+    }
+    const plan=p.birthdayPlan||{};
+    if(plan.partyDate&&!(state.events||[]).some(e=>e.date===plan.partyDate&&e.type==="birthday-party"&&String(e.child||"")===String(p.name||""))){
+      state.events.push({id:uid(),date:plan.partyDate,title:`${p.name}'s birthday party`,child:p.name,type:"birthday-party",startTime:String(plan.partyTime||""),endTime:"",location:String(plan.location||""),status:"confirmed",source:"Birthday plan",notes:[plan.theme,plan.activity].filter(Boolean).join(" · "),generated:"birthday-party"});
+    }
+  }
+}
 function ensureToday(){
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
-  ensureFamilyDay(date);ensureRecurringFamilyEvents();
+  ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();
   for(const t of state.settings.recurringTasks||[]){
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
@@ -471,7 +485,7 @@ function todayTimelineItems(){
   if(w?.scheduled)items.push({time:w.scheduled,end:"",sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
   if(w?.start)items.push({time:w.start,end:w.end||"",sort:w.start,icon:"📦",title:"UPS punch-in",detail:w.end?`Worked until ${fmtClock(w.end)}`:"Work"});
   for(const e of (state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled")){
-    items.push({time:e.startTime||"",end:e.endTime||"",sort:e.startTime||"99:99",icon:e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
+    items.push({time:e.startTime||"",end:e.endTime||"",sort:e.startTime||"99:99",icon:e.type==="birthday"||e.type==="birthday-party"?"🎂":e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
   }
   const meal=todayMeal();
   if(meal?.dish&&meal.status!=="made"){
@@ -1220,7 +1234,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2340").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2355").catch(()=>{});
 
 </script>
 </body>
