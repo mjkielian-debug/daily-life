@@ -20,6 +20,8 @@ const cloudMetaKey=name=>`dailyLifeCloud:${cloudUser()?.id||"guest"}:${name}`;
 const cloudAutoEnabled=()=>!!cloudUser()&&localStorage.getItem(cloudMetaKey("auto"))==="1";
 const cloudLastPushed=()=>cloudUser()?localStorage.getItem(cloudMetaKey("lastPushed")):null;
 const cloudSetLastPushed=value=>{if(cloudUser()&&value)localStorage.setItem(cloudMetaKey("lastPushed"),value)};
+const cloudLastSignature=()=>cloudUser()?localStorage.getItem(cloudMetaKey("lastSignature")):null;
+const cloudSetLastSignature=value=>{if(cloudUser()&&value)localStorage.setItem(cloudMetaKey("lastSignature"),value)};
 
 async function cloudInit(){
   try{
@@ -162,6 +164,13 @@ function cloudStateForUpload(){
   return copy;
 }
 
+function cloudStateSignature(){
+  const text=JSON.stringify(cloudStateForUpload());
+  let h=2166136261;
+  for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}
+  return (h>>>0).toString(16)+":"+text.length;
+}
+
 async function cloudRefreshMetadata(){
   const user=cloudUser();if(!user||!cloudClient)return;
   const {data,error}=await cloudClient.from("app_snapshots")
@@ -214,7 +223,7 @@ async function cloudPushSnapshotInternal(forceOverwrite=false){
     updated_at:now
   },{onConflict:"owner_user_id"});
   if(error)throw error;
-  cloudRemoteUpdatedAt=now;cloudSetLastPushed(now);cloudNeedsReview=false;
+  cloudRemoteUpdatedAt=now;cloudSetLastPushed(now);cloudSetLastSignature(cloudStateSignature());cloudNeedsReview=false;
   return true;
 }
 
@@ -248,6 +257,7 @@ async function cloudRestoreSnapshot(){
     await dbSet("state",state);
     cloudRemoteUpdatedAt=data.updated_at||null;
     cloudSetLastPushed(cloudRemoteUpdatedAt);
+    cloudSetLastSignature(cloudStateSignature());
     cloudNeedsReview=false;cloudAutoCanPush=cloudAutoEnabled();
     await cloudPullLifeEntries(false);
     render();alert("Cloud copy restored to this device.");
@@ -295,6 +305,7 @@ function cloudDisableAutoSync(){
 
 function cloudSchedulePush(){
   if(!cloudAutoEnabled()||!cloudAutoCanPush||cloudNeedsReview||!cloudUser())return;
+  if(cloudStateSignature()===cloudLastSignature())return;
   if(cloudPushTimer)clearTimeout(cloudPushTimer);
   cloudPushTimer=setTimeout(async()=>{
     cloudPushTimer=null;
