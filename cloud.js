@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -455,6 +455,52 @@ function cloudApplyLifeEntry(row){
       const fingerprint=String(p.fingerprint||[p.periodStart||"",p.periodEnd||"",payDate,netPay.toFixed(2)].join("|"));
       if(state.paychecks.some(x=>x.fingerprint===fingerprint))return true;
       state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],vacationHours:Number(p.vacationHours||0),pstHours:Number(p.pstHours||0),optionWeekHours:Number(p.optionWeekHours||0),fingerprint});
+      return true;
+    }
+    case "people_setup":{
+      if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+      for(const raw of Array.isArray(p.people)?p.people:[]){
+        const name=String(raw?.name||"").trim();if(!name)continue;
+        let x=state.peopleProfiles.find(x=>String(x.name||"").toLowerCase()===name.toLowerCase());
+        if(!x){x={id:uid(),name,wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
+        Object.assign(x,{
+          name,relationship:String(raw.relationship||x.relationship||""),birthday:String(raw.birthday||x.birthday||""),
+          favoriteColors:Array.isArray(raw.favoriteColors)?raw.favoriteColors.map(String):x.favoriteColors||[],
+          favoriteCharacters:Array.isArray(raw.favoriteCharacters)?raw.favoriteCharacters.map(String):x.favoriteCharacters||[],
+          interests:Array.isArray(raw.interests)?raw.interests.map(String):x.interests||[],
+          giftNotes:String(raw.giftNotes||x.giftNotes||"")
+        });
+        if(Array.isArray(raw.wishlist)){
+          if(!Array.isArray(x.wishlist))x.wishlist=[];
+          for(const wish of raw.wishlist){
+            const item=typeof wish==="string"?wish:String(wish?.item||"").trim();if(!item)continue;
+            let existing=x.wishlist.find(w=>String(w.item||"").trim().toLowerCase()===item.toLowerCase());
+            if(!existing){existing={id:uid(),item};x.wishlist.push(existing)}
+            existing.status=typeof wish==="string"?(existing.status||"want"):String(wish.status||existing.status||"want");
+            existing.notes=typeof wish==="string"?(existing.notes||""):String(wish.notes||existing.notes||"");
+          }
+        }
+        if(raw.birthdayPlan&&typeof raw.birthdayPlan==="object")x.birthdayPlan={...(x.birthdayPlan||{}),...raw.birthdayPlan,tasks:Array.isArray(raw.birthdayPlan.tasks)?raw.birthdayPlan.tasks:(x.birthdayPlan?.tasks||[])};
+      }
+      return true;
+    }
+    case "person_update":{
+      const name=String(p.name||"").trim();if(!name)return false;if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+      let x=state.peopleProfiles.find(x=>String(x.name||"").toLowerCase()===name.toLowerCase());
+      if(!x){x={id:uid(),name,wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
+      for(const key of ["relationship","birthday","giftNotes"])if(p[key]!==undefined)x[key]=String(p[key]||"");
+      for(const key of ["favoriteColors","favoriteCharacters","interests"])if(Array.isArray(p[key]))x[key]=p[key].map(String);
+      if(p.birthdayPlan&&typeof p.birthdayPlan==="object")x.birthdayPlan={...(x.birthdayPlan||{}),...p.birthdayPlan,tasks:Array.isArray(p.birthdayPlan.tasks)?p.birthdayPlan.tasks:(x.birthdayPlan?.tasks||[])};
+      return true;
+    }
+    case "birthday_wish":{
+      const name=String(p.name||"").trim(),item=String(p.item||"").trim();if(!name||!item)return false;if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+      let x=state.peopleProfiles.find(x=>String(x.name||"").toLowerCase()===name.toLowerCase());
+      if(!x){x={id:uid(),name,wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
+      if(!Array.isArray(x.wishlist))x.wishlist=[];
+      let w=x.wishlist.find(w=>String(w.item||"").trim().toLowerCase()===item.toLowerCase());
+      if(!w){w={id:uid(),item};x.wishlist.push(w)}
+      w.status=String(p.status||w.status||"want");w.notes=String(p.notes||w.notes||"");w.updatedAt=String(row.created_at||new Date().toISOString());
       return true;
     }
     case "family_setup":{
