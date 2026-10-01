@@ -98,3 +98,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .weekly-wins{background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 6%,var(--panel2)),var(--panel))}.wins-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.wins-grid .metric{min-height:78px}
 @media(max-width:520px){.wins-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.today-money{border-color:color-mix(in srgb,var(--primary) 24%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 5%,var(--panel2)),var(--panel))}
