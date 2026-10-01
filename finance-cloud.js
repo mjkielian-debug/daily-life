@@ -27,15 +27,16 @@ async function cloudFinanceInit(){
   await cloudImportBankSpending(false);
   const params=new URLSearchParams(location.search);
   const savedToken=sessionStorage.getItem("dailyLifePlaidLinkToken");
+  const savedMode=sessionStorage.getItem("dailyLifePlaidMode")||"bank";
   if(params.has("oauth_state_id")&&savedToken&&window.Plaid){
-    setTimeout(()=>openPlaidHandler(savedToken,true),0);
+    setTimeout(()=>openPlaidHandler(savedToken,true,savedMode),0);
   }
 }
 
 async function cloudRefreshFinancialAccounts(updateMapped=true){
   if(!cloudUser?.()||!cloudClient){cloudFinancialAccounts=[];return}
   const {data,error}=await cloudClient.from("financial_accounts")
-    .select("id,connection_id,display_name,mask,account_type,account_subtype,currency,available_balance,current_balance,balance_as_of,metadata,financial_connections(institution_name,last_synced_at,status,sync_error)")
+    .select("id,connection_id,display_name,mask,account_type,account_subtype,currency,available_balance,current_balance,balance_as_of,metadata,financial_connections(institution_name,connection_type,last_synced_at,status,sync_error)")
     .order("display_name",{ascending:true});
   if(error){cloudFinanceMessage=error.message;return}
   cloudFinancialAccounts=data||[];
@@ -61,24 +62,25 @@ function cloudFinancePanel(){
     return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><span class="tag">cloud required</span></div><p class="muted">Sign in to a Daily Life cloud account before connecting banks.</p><button class="btn" onclick="openCloudAuth()">Sign in</button></div>`;
   }
   const rows=cloudFinancialAccounts;
-  return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><div class="actions"><button class="btn primary" onclick="startPlaidLink()">Connect bank</button><button class="btn" onclick="cloudSyncBanks(true)">Sync now</button></div></div>
+  return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><div class="actions"><button class="btn primary" onclick="startPlaidLink('bank')">Connect bank / card</button><button class="btn" onclick="startPlaidLink('investment')">Connect retirement / investment</button><button class="btn" onclick="cloudSyncBanks(true)">Sync now</button></div></div>
   <p class="muted small">Bank credentials are entered only in Plaid Link. Daily Life stores provider tokens server-side, never in this public app code. Balances below update mapped Money accounts.</p>
   ${cloudFinanceMessage?`<div class="notice">${esc(cloudFinanceMessage)}</div>`:""}
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
     const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id);
     const fresh=r.balance_as_of||c.last_synced_at;
-    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(r.account_subtype||r.account_type||"account")}${fresh?` · synced ${esc(new Date(fresh).toLocaleString())}`:""}</div></span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
+    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")}${fresh?` · synced ${esc(new Date(fresh).toLocaleString())}`:""}</div></span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
   }).join(""):`<div class="notice">No financial accounts connected yet.</div>`}</div>`;
 }
 
-async function startPlaidLink(){
+async function startPlaidLink(mode="bank"){
   if(cloudFinanceBusy)return;
+  mode=mode==="investment"?"investment":"bank";
   if(!cloudUser?.()){openCloudAuth();return}
   if(!window.Plaid){alert("Plaid Link did not load. Try reopening Daily Life.");return}
   cloudFinanceBusy=true;cloudFinanceMessage="";
   try{
-    const {data,error}=await cloudClient.functions.invoke("plaid-link-token",{body:{}});
+    const {data,error}=await cloudClient.functions.invoke("plaid-link-token",{body:{mode}});
     if(error){
       const msg=String(error.message||"");
       if(msg.includes("non-2xx"))throw new Error("Bank sync is built but Plaid credentials still need to be added to the private backend.");
@@ -86,14 +88,15 @@ async function startPlaidLink(){
     }
     if(!data?.link_token)throw new Error(data?.error==="plaid_not_configured"?"Bank sync is built but Plaid credentials still need to be added to the private backend.":"Could not create a bank-link session.");
     sessionStorage.setItem("dailyLifePlaidLinkToken",data.link_token);
-    openPlaidHandler(data.link_token,false);
+    sessionStorage.setItem("dailyLifePlaidMode",mode);
+    openPlaidHandler(data.link_token,false,mode);
   }catch(error){
     cloudFinanceMessage=error?.message||"Could not start bank connection.";
     alert(cloudFinanceMessage);render();
   }finally{cloudFinanceBusy=false}
 }
 
-function openPlaidHandler(token,returningFromOAuth){
+function openPlaidHandler(token,returningFromOAuth,mode="bank"){
   if(!window.Plaid)return;
   const config={
     token,
@@ -101,10 +104,12 @@ function openPlaidHandler(token,returningFromOAuth){
       try{
         const {data,error}=await cloudClient.functions.invoke("plaid-exchange",{body:{
           public_token:publicToken,
-          institution_name:metadata?.institution?.name||null
+          institution_name:metadata?.institution?.name||null,
+          mode
         }});
         if(error||!data?.ok)throw error||new Error(data?.error||"Exchange failed");
         sessionStorage.removeItem("dailyLifePlaidLinkToken");
+        sessionStorage.removeItem("dailyLifePlaidMode");
         if(location.search)history.replaceState({},"",location.pathname);
         await cloudSyncBanks(false);
         alert("Financial account connected.");
@@ -114,7 +119,7 @@ function openPlaidHandler(token,returningFromOAuth){
       }finally{handler.destroy()}
     },
     onExit:(error)=>{
-      if(error?.error_code==="INVALID_LINK_TOKEN")sessionStorage.removeItem("dailyLifePlaidLinkToken");
+      if(error?.error_code==="INVALID_LINK_TOKEN"){sessionStorage.removeItem("dailyLifePlaidLinkToken");sessionStorage.removeItem("dailyLifePlaidMode")}
       if(error?.display_message)cloudFinanceMessage=error.display_message;
       handler.destroy();render();
     }
