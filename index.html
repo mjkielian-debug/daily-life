@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2255">
+<link rel="stylesheet" href="styles.css?v=20261001-2305">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -447,6 +447,19 @@ function todayMealCard(){
   ${meal.status==="made"?mealFeedbackControls(meal):""}
   ${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
 }
+function birthdayPrepCard(){
+  ensurePeopleProfiles();
+  const next=(state.peopleProfiles||[]).map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b&&x.b.days<=45).sort((a,b)=>a.b.days-b.b.days)[0];
+  if(!next)return"";
+  const {p,b}=next,plan=p.birthdayPlan||{},wish=birthdayWishStats(p),r=birthdayReadiness(p),needs=[];
+  if(!plan.theme)needs.push("choose a theme / vibe");
+  if(!plan.activity)needs.push("decide party or activity");
+  if(!plan.cake)needs.push("plan cake / dessert");
+  if(!wish.total)needs.push("collect gift ideas");
+  else if(wish.bought<wish.total)needs.push(`${wish.total-wish.bought} gift idea${wish.total-wish.bought===1?"":"s"} still not bought`);
+  if(b.days<=7&&wish.bought&&!wish.wrapped)needs.push("wrap gifts");
+  return `<div class="card priority-card birthday-alert"><div class="section-title"><div><div class="eyebrow">🎂 Birthday coming up</div><h2>${esc(p.name)} · ${b.days===0?"today":b.days===1?"tomorrow":b.days+" days"}</h2><div class="muted small">${esc(b.label)}${b.turning?` · turning ${b.turning}`:""}${r.total?` · ${r.percent}% planned`:""}</div></div><button class="btn primary" onclick="openBirthdayPlanner('${p.id}')">Plan</button></div>${needs.length?`<div class="mini-heading">Next birthday things</div><div class="muted small">${needs.slice(0,4).map(x=>"• "+esc(x)).join("<br>")}</div>`:`<div class="notice">Birthday basics are in good shape.</div>`}</div>`;
+}
 function todayChoresCard(){
   const rows=todayChores(),done=rows.filter(x=>x.done).length,groups=new Map();
   for(const x of rows){if(!groups.has(x.child))groups.set(x.child,[]);groups.get(x.child).push(x)}
@@ -557,6 +570,7 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
+  ${birthdayPrepCard()}
   ${todayTimelineCard()}
   ${tonightPrepCard()}
   <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
@@ -1172,7 +1186,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2255").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2305").catch(()=>{});
 
 </script>
 </body>
