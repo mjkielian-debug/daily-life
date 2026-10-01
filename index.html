@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2235">
+<link rel="stylesheet" href="styles.css?v=20261001-2255">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2145"></script>
+<script src="cloud.js?v=20261001-2255"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -245,6 +245,8 @@ function migrateState(s){
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
     if(!Array.isArray(p.favoriteCharacters))p.favoriteCharacters=[];
     if(!Array.isArray(p.interests))p.interests=[];
+    if(!Array.isArray(p.favoriteFoods))p.favoriteFoods=[];
+    if(!p.sizes||typeof p.sizes!=="object")p.sizes={};
     if(!Array.isArray(p.wishlist))p.wishlist=[];
     if(!p.birthdayPlan||typeof p.birthdayPlan!=="object")p.birthdayPlan={};
   }
@@ -568,14 +570,19 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
   <div class="card today-weather"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div>
   <details class="card today-moon"><summary><span class="orb">${m[1]}</span><span class="moon-label"><span class="eyebrow">Moon today · astronomy</span><br><b>${m[0]}</b><span class="muted small"> · ${Math.round(m[3]*100)}%</span></span><span class="muted small moon-toggle">Reflection ＋</span></summary><div class="moon-lens"><div class="muted small">Approx. ${Math.round(m[3]*100)}% illuminated · lunar day ${m[2].toFixed(1)}</div><div class="eyebrow">Astrology / spiritual lens${ml.sign?` · ${esc(ml.sign)}`:""}</div><b>${esc(ml.phaseAction)}</b>${ml.sign?`<p class="muted small">${esc(ml.sign)} themes: ${esc(ml.theme)}. ${esc(ml.question)}</p>`:`<p class="muted small">Astrology is a reflective tradition, not an astronomical or scientific prediction. Add your sun sign if you want a personalized prompt.</p><button class="btn small" onclick="openAstrologySettings()">Choose sun sign</button>`}</div></details>`;
 }
-function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div></div><div class="card"><div class="eyebrow">Self-care</div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div><div class="card"><div class="section-title"><h2>Food</h2><button class="btn primary" onclick="openFood()">+ Add</button></div><div class="grid3"><div class="metric"><div class="eyebrow">Calories</div><div class="big">${Math.round(f.cal)}</div></div><div class="metric"><div class="eyebrow">Protein</div><div class="big">${Math.round(f.protein)}g</div></div><div class="metric"><div class="eyebrow">Monsters</div><div class="big">${f.monsters}</div><button class="btn" onclick="monster()">+1</button></div></div>${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal</b></div>`).join("")}</div>${currentWeekWorkCard()}<div class="grid2"><div class="card"><div class="section-title"><h2>Work today</h2><button class="btn" onclick="openWork()">Edit</button></div><div class="muted">${w?.start&&w?.end?`${w.start}–${w.end}`:(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="card"><div class="section-title"><h2>Tire</h2><button class="btn" onclick="openTire()">Log</button></div><div class="big">${tr?tr.psi+" PSI":"—"}</div></div></div><div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`}
+function homeCareCard(){
+  const last=[...(state.homeLogs||[])].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
+        days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div><div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
+}
+function logView(f,w,tr){return`<div class="grid2"><div class="card"><div class="eyebrow">Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div></div><div class="card"><div class="eyebrow">Self-care</div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div><div class="card"><div class="section-title"><h2>Food</h2><button class="btn primary" onclick="openFood()">+ Add</button></div><div class="grid3"><div class="metric"><div class="eyebrow">Calories</div><div class="big">${Math.round(f.cal)}</div></div><div class="metric"><div class="eyebrow">Protein</div><div class="big">${Math.round(f.protein)}g</div></div><div class="metric"><div class="eyebrow">Monsters</div><div class="big">${f.monsters}</div><button class="btn" onclick="monster()">+1</button></div></div>${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal</b></div>`).join("")}</div>${currentWeekWorkCard()}<div class="grid2"><div class="card"><div class="section-title"><h2>Work today</h2><button class="btn" onclick="openWork()">Edit</button></div><div class="muted">${w?.start&&w?.end?`${w.start}–${w.end}`:(w?.scheduled?`Scheduled ${w.scheduled}`:"No shift")}</div></div><div class="card"><div class="section-title"><h2>Tire</h2><button class="btn" onclick="openTire()">Log</button></div><div class="big">${tr?tr.psi+" PSI":"—"}</div></div></div><div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>${homeCareCard()}`}
 function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
 function ensurePeopleProfiles(){
   if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
   for(const name of names){
     if(!state.peopleProfiles.some(p=>String(p.name||"").toLowerCase()===name.toLowerCase())){
-      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],wishlist:[],birthdayPlan:{tasks:[]}});
+      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}});
     }
   }
 }
@@ -613,28 +620,30 @@ function birthdayDashboard(){
 }
 function personCards(){
   ensurePeopleProfiles();
-  return `<div class="people-grid">${(state.peopleProfiles||[]).map(p=>{const b=nextBirthdayInfo(p),w=birthdayWishStats(p),colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],ints=p.interests||[];return `<div class="card person-card"><div class="section-title"><div><div class="eyebrow">${esc(p.relationship||"Person")}</div><h2>${esc(p.name)}</h2></div><button class="btn small" onclick="openPersonProfile('${p.id}')">Profile</button></div>
+  return `<div class="people-grid">${(state.peopleProfiles||[]).map(p=>{const b=nextBirthdayInfo(p),w=birthdayWishStats(p),colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],ints=p.interests||[],foods=p.favoriteFoods||[];return `<div class="card person-card"><div class="section-title"><div><div class="eyebrow">${esc(p.relationship||"Person")}</div><h2>${esc(p.name)}</h2></div><button class="btn small" onclick="openPersonProfile('${p.id}')">Profile</button></div>
       ${b?`<button class="birthday-mini" onclick="openBirthdayPlanner('${p.id}')"><span>🎂 ${esc(b.label)}</span><b>${b.days===0?"Today":b.days+"d"}</b></button>`:`<button class="birthday-mini empty" onclick="openPersonProfile('${p.id}')"><span>🎂 Add birthday</span></button>`}
-      ${colors.length||chars.length||ints.length?`<div class="person-chips">${colors.slice(0,3).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.slice(0,3).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:`<div class="muted small">Add favorite colors, characters, and interests.</div>`}
+      ${colors.length||chars.length||ints.length||foods.length?`<div class="person-chips">${colors.slice(0,3).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.slice(0,3).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}${foods.slice(0,2).map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}</div>`:`<div class="muted small">Add favorite colors, characters, foods, and interests.</div>`}
       <div class="row"><span>Birthday wishes</span><b>${w.total}</b></div>
       ${(p.wishlist||[]).filter(x=>!["bought","wrapped","done"].includes(String(x.status))).slice(0,3).map(x=>`<div class="muted small">• ${esc(x.item)}</div>`).join("")}
       <div class="actions" style="margin-top:10px"><button class="btn small primary" onclick="openBirthdayWish('${p.id}')">+ Wish</button><button class="btn small" onclick="openBirthdayPlanner('${p.id}')">Birthday plan</button></div>
     </div>`}).join("")}</div>`;
 }
 function openPersonProfile(id=""){
-  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],wishlist:[],birthdayPlan:{tasks:[]}};
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
     <label>Relationship<input id="prel" value="${esc(p.relationship||"")}" placeholder="child, partner, friend…"></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
     <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
+    <label>Favorite foods / treats<input id="pfoods" value="${esc((p.favoriteFoods||[]).join(", "))}" placeholder="Chocolate cake, pizza, strawberries…"></label>
     <label>Interests<input id="pints" value="${esc((p.interests||[]).join(", "))}" placeholder="music, cooking, reptiles…"></label>
+    <div class="grid2"><label>Clothing size<input id="pclothes" value="${esc(p.sizes?.clothing||"")}"></label><label>Shoe size<input id="pshoes" value="${esc(p.sizes?.shoes||"")}"></label></div>
     <label>Gift / size notes<textarea id="pnotes" rows="3" placeholder="Clothing sizes, things they collect, gift notes…">${esc(p.giftNotes||"")}</textarea></label>
   </div>`,"Save",async()=>{
     const name=$("#pname").value.trim();if(!name)return;let x=personById(id);
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),birthday:$("#pbday").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),interests:commaList($("#pints").value),giftNotes:$("#pnotes").value.trim()});
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),birthday:$("#pbday").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim()});
     await save();closeModal();render();
   });
 }
@@ -651,6 +660,7 @@ function openBirthdayPlanner(personId){
   const wishes=(p.wishlist||[]);
   modal(`Birthday plan · ${p.name}`,`<div class="stack birthday-editor">
     <div class="birthday-planner-head">${nextBirthdayInfo(p)?`<b>🎂 ${esc(nextBirthdayInfo(p).label)}</b><span class="muted small">${nextBirthdayInfo(p).days} days away${nextBirthdayInfo(p).turning?` · turning ${nextBirthdayInfo(p).turning}`:""}</span>`:`<b>Birthday date not set</b>`}</div>
+    ${(p.favoriteColors||[]).length||(p.favoriteCharacters||[]).length||(p.favoriteFoods||[]).length||(p.interests||[]).length?`<div class="birthday-inspo"><div class="mini-heading">Planning inspiration</div><div class="person-chips">${(p.favoriteColors||[]).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${(p.favoriteCharacters||[]).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${(p.favoriteFoods||[]).map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${(p.interests||[]).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
     <label>Theme / vibe<input id="btheme" value="${esc(plan.theme||"")}" placeholder="Favorite character, colors, theme…"></label>
     <label>Cake / dessert<input id="bcake" value="${esc(plan.cake||"")}"></label>
     <label>Party / activity idea<input id="bactivity" value="${esc(plan.activity||"")}"></label>
@@ -692,7 +702,7 @@ function homeView(){
     <div class="card"><div class="section-title"><div><h2>Grocery list</h2><div class="muted small">${shop.length} item${shop.length===1?"":"s"} needed · recipe ingredients appear automatically.</div></div><button class="btn primary" onclick="openShopping()">+ Add</button></div>
       ${shop.map(g=>`<div class="row grocery-row"><label class="task grow"><input type="checkbox" onchange='buyShoppingGroup(${JSON.stringify(g.ids)})'><span><b>${esc(g.item)}</b>${g.qty.length?` · ${esc([...new Set(g.qty)].join(" + "))}`:""}${g.meals.size?`<div class="muted small">For ${[...g.meals].map(esc).join(", ")}</div>`:""}${g.stores.size?`<div class="muted small">${[...g.stores].map(esc).join(" · ")}</div>`:""}</span></label><button class="btn small good" onclick='alreadyHaveShoppingGroup(${JSON.stringify(g.ids)})'>Already have</button></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div>
     <div class="card"><div class="eyebrow">♡ Meal memory</div><h2>What your family likes</h2>${[...new Set((state.mealFeedback||[]).filter(x=>Number(x.score)>0).sort((a,b)=>Number(b.score)-Number(a.score)).map(x=>x.dish))].slice(0,8).map(d=>`<div class="row"><span>${esc(d)}</span><b>${feedbackScoreLabel(dishFeedbackScore(d))}</b></div>`).join("")||`<div class="notice">Rate meals after dinner and Daily Life will learn what to repeat more often.</div>`}</div>
-    <div class="card glow"><div class="section-title"><h2>Home care</h2><button class="btn" onclick="openHome()">+ Log</button></div><div class="big">${days==null?"No fridge baseline":days+" days"}</div><div class="muted small">${last?`since fridge clean on ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
+`;
 }
 function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
 function moreView(){
@@ -1162,7 +1172,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2235").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2255").catch(()=>{});
 
 </script>
 </body>
