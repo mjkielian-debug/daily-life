@@ -507,6 +507,22 @@ function cloudApplyLifeEntry(row){
   }
 }
 
+async function cloudQueueMealSuggestion(date){
+  const user=cloudUser();if(!user||!cloudClient||!date)return false;
+  try{
+    const externalId=`meal-suggestion:${date}:dinner`;
+    const {data:existing,error:findError}=await cloudClient.from("life_entries")
+      .select("id,payload").eq("owner_user_id",user.id).eq("category","meal_suggestion_request").eq("external_id",externalId)
+      .order("created_at",{ascending:false}).limit(1);
+    if(findError)throw findError;
+    if((existing||[]).some(row=>String(row.payload?.status||"pending")==="pending"))return true;
+    const recent=(state.meals||[]).filter(m=>m?.dish&&m.date<date).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(m=>m.dish);
+    const payload={status:"pending",date,type:"dinner",recentMeals:recent,requestedAt:new Date().toISOString()};
+    const {error}=await cloudClient.from("life_entries").insert({owner_user_id:user.id,category:"meal_suggestion_request",occurred_at:new Date().toISOString(),local_date:date,payload,source:"app",external_id:externalId});
+    if(error)throw error;return true;
+  }catch(error){cloudError=error?.message||"Could not request a meal suggestion.";return false}
+}
+
 async function cloudQueueRecipeRequest(meal){
   const user=cloudUser();
   if(!user||!cloudClient||!meal?.dish||!meal?.date)return false;
