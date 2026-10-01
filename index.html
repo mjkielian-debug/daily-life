@@ -442,6 +442,22 @@ function pickBillDate(){
   try{if(input.showPicker){input.showPicker();return}}catch(error){}
   input.focus();input.click();
 }
+function syncBillFrequencyRepeat(){
+  const frequency=$("#billFrequency"),repeat=$("#billRepeat");
+  if(!frequency||!repeat)return;
+  if(frequency.value==="Monthly")repeat.value="1";
+  else if(frequency.value==="Annual")repeat.value="12";
+  else if(frequency.value==="One-time")repeat.value="0";
+}
+function syncBillRepeatFrequency(){
+  const frequency=$("#billFrequency"),repeat=$("#billRepeat");
+  if(!frequency||!repeat)return;
+  const months=Number(repeat.value);
+  if(months===1)frequency.value="Monthly";
+  else if(months===12)frequency.value="Annual";
+  else if(months>0)frequency.value="Irregular";
+  else if(frequency.value!=="Trial / decision pending")frequency.value="One-time";
+}
 function billRowView(r){
   const b=r.bill,paid=b.status==="paid",tone=r.status==="Covered"?"covered":r.status==="Short"?"short":"unknown";
   const note=r.after!==undefined?`${money(r.before/100)} available before this bill · ${r.after<0?money(-r.after/100)+" short":money(r.after/100)+" left"} after reserving it.`:r.status==="Balance unavailable"?"Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.":r.status==="Check bill"||r.status==="Check earlier bill"?"Correct the amount or due date before relying on this account’s readiness.":paid?"Paid · not reserved.":b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
@@ -477,8 +493,8 @@ function openBill(index=-1,sourceIndex=-1){
   <label>Desired payment account (optional)<select id="billDesiredAccount"><option value="">No change planned</option>${desiredMissing?`<option value="${esc(b.desiredAccountKey)}" selected>Previously desired account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.desiredAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
   <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
   <label>Amount type<select id="billAmountType">${BILL_AMOUNT_TYPES.map(type=>`<option ${recordedBillAmountType(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
-  <label>Bill frequency / status<select id="billFrequency">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
-  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
+  <label>Bill frequency / status<select id="billFrequency" onchange="syncBillFrequencyRepeat()">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
+  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat" onchange="syncBillRepeatFrequency()">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
   <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
     for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
     const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
