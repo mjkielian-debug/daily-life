@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -408,6 +408,25 @@ function cloudApplyLifeEntry(row){
           state.shopping.push({id:uid(),item,qty:typeof raw==="string"?"":String(raw?.qty||""),store:typeof raw==="string"?"":String(raw?.store||""),status:"needed",source:"recipe",mealKey:key,mealDate,dish,mealDish:dish,cloudEntryId:row.id});
         }
       }
+      return true;
+    }
+    case "mail_digest":{
+      if(!Array.isArray(state.deliveries))state.deliveries=[];
+      if(state.deliveries.some(x=>x.cloudEntryId===row.id))return true;
+      state.deliveries.push({id:uid(),cloudEntryId:row.id,kind:"mail-digest",date:String(p.date||date),mailpieceCount:Number(p.mailpieceCount||0),packageCount:Number(p.packageCount||0),carrier:"USPS",status:"digest",notes:String(p.notes||"")});
+      return true;
+    }
+    case "delivery_update":{
+      if(!Array.isArray(state.deliveries))state.deliveries=[];
+      let x=state.deliveries.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),kind:"package",cloudEntryId:row.id,externalId:String(row.external_id||"")};state.deliveries.push(x)}
+      Object.assign(x,{carrier:String(p.carrier||x.carrier||""),sender:String(p.sender||x.sender||""),status:String(p.status||x.status||"expected"),expectedDate:String(p.expectedDate||p.date||x.expectedDate||date),notes:String(p.notes||x.notes||"")});
+      return true;
+    }
+    case "workout":{
+      if(!Array.isArray(state.workouts))state.workouts=[];
+      if(state.workouts.some(x=>x.cloudEntryId===row.id))return true;
+      state.workouts.push({id:uid(),cloudEntryId:row.id,date:String(p.date||date),activity:String(p.activity||"Workout"),minutes:Number(p.minutes||0),notes:String(p.notes||"")});
       return true;
     }
     case "grocery_order":{
