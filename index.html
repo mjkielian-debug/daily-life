@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2245">
+<link rel="stylesheet" href="styles.css?v=20261001-2135">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2230"></script>
+<script src="cloud.js?v=20261001-2135"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:15,createdAt:new Date().toISOString(),
+  version:16,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,15);
+  s.version=Math.max(Number(s.version)||0,16);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -688,6 +688,39 @@ function sleepCard(){
   const x=sleepForDate(),hours=sleepHours(x);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
 }
+function projectUrgency(p){
+  if(["done","closed"].includes(String(p.status||"")))return 99;
+  const due=String(p.due||"");if(!due)return 50;
+  const days=Math.ceil((new Date(due+"T12:00:00")-new Date(ymd()+"T12:00:00"))/86400000);
+  return days<0?-10:days<=7?0:days<=30?10:30;
+}
+function lifeAdminCard(){
+  const rows=[...(state.projects||[])].filter(p=>!["done","closed"].includes(String(p.status||""))).sort((a,b)=>projectUrgency(a)-projectUrgency(b)||String(a.due||"9999").localeCompare(String(b.due||"9999"))).slice(0,10);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">📌 Life admin</div><h2>Applications, benefits + paperwork</h2></div><button class="btn" onclick="openProject()">+ Project</button></div>
+    ${rows.length?rows.map(p=>{const tasks=Array.isArray(p.tasks)?p.tasks:[],done=tasks.filter(t=>t.done).length;return `<div class="project-row" onclick="openProject('${p.id}')"><div class="grow"><b>${esc(p.title||"Project")}</b><div class="muted small">${esc(p.status||"open")}${p.due?` · ${esc(dl(p.due))}`:""}${p.source?` · ${esc(p.source)}`:""}</div>${p.nextAction?`<div class="small">Next: ${esc(p.nextAction)}</div>`:""}</div><div class="project-count">${done}/${tasks.length}</div></div>`}).join(""):`<div class="notice">No active life-admin projects.</div>`}
+  </div>`;
+}
+function openProject(id=""){
+  const x=(state.projects||[]).find(p=>p.id===id)||{id:"",title:"",status:"open",due:"",nextAction:"",notes:"",tasks:[]};
+  modal(x.id?`Project · ${x.title}`:"Add life project",`<div class="stack"><label>Title<input id="prtitle" value="${esc(x.title||"")}"></label><div class="grid2"><label>Status<select id="prstatus">${["open","waiting","in progress","done","closed"].map(v=>`<option ${(x.status||"open")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Due / milestone<input id="prdue" type="date" value="${esc(x.due||"")}"></label></div><label>Next action<input id="prnext" value="${esc(x.nextAction||"")}"></label><label>Notes<textarea id="prnotes" rows="3">${esc(x.notes||"")}</textarea></label><div class="mini-heading">Checklist</div>${(x.tasks||[]).map((t,i)=>`<label class="task"><input type="checkbox" ${t.done?"checked":""} onchange="toggleProjectTask('${x.id}',${i},this.checked)"><span class="${t.done?"done":""}">${esc(t.text)}</span></label>`).join("")}<label>Add checklist item<input id="prtask"></label></div>`,"Save",async()=>{const title=$("#prtitle").value.trim();if(!title)return;let p=(state.projects||[]).find(p=>p.id===id);if(!p){p={id:uid(),tasks:[]};state.projects.push(p)}Object.assign(p,{title,status:$("#prstatus").value,due:$("#prdue").value,nextAction:$("#prnext").value.trim(),notes:$("#prnotes").value.trim()});const task=$("#prtask").value.trim();if(task)p.tasks.push({text:task,done:false});await save();closeModal();render()});
+}
+async function toggleProjectTask(id,index,done){const p=(state.projects||[]).find(p=>p.id===id);if(!p?.tasks?.[index])return;p.tasks[index].done=done;await save();render()}
+function primaryVehicle(){return (state.vehicles||[]).find(v=>v.primary)||(state.vehicles||[])[0]||null}
+function vehicleCard(){
+  const v=primaryVehicle(),services=[...(state.vehicleServices||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚙 Vehicle</div><h2>${v?esc([v.year,v.make,v.model].filter(Boolean).join(" ")):"No vehicle profile"}</h2></div><button class="btn" onclick="openVehicle()">${v?"Edit":"Add"}</button></div>
+    ${v?`<div class="grid3"><div class="metric"><div class="muted small">Mileage</div><div class="big">${v.mileage?Number(v.mileage).toLocaleString():"—"}</div></div><div class="metric"><div class="muted small">Registration</div><div class="big">${v.registrationDue?esc(dl(v.registrationDue)):"—"}</div></div><div class="metric"><div class="muted small">Open recalls</div><div class="big">${Number.isFinite(Number(v.openRecalls))?Number(v.openRecalls):"—"}</div></div></div>${v.notes?`<div class="muted small">${esc(v.notes)}</div>`:""}`:`<div class="notice">Add the vehicle once; tire readings and maintenance can live underneath it.</div>`}
+    <div class="section-title" style="margin-top:10px"><h3>Service / maintenance</h3><button class="btn small" onclick="openVehicleService()">+ Log</button></div>${services.map(x=>`<div class="row"><span>${esc(x.type||"Service")}<div class="muted small">${esc(dl(x.date))}${x.mileage?` · ${Number(x.mileage).toLocaleString()} mi`:""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.cost?money(x.cost):""}</b></div>`).join("")||`<div class="muted small">No service history logged yet.</div>`}
+  </div>`;
+}
+function openVehicle(){
+  const v=primaryVehicle()||{};
+  modal(v.id?"Vehicle profile":"Add vehicle",`<div class="stack"><div class="grid3"><label>Year<input id="vyear" type="number" value="${v.year||""}"></label><label>Make<input id="vmake" value="${esc(v.make||"")}"></label><label>Model<input id="vmodel" value="${esc(v.model||"")}"></label></div><label>Mileage<input id="vmiles" type="number" value="${v.mileage||""}"></label><label>Registration due<input id="vreg" type="date" value="${esc(v.registrationDue||"")}"></label><label>Open recalls<input id="vrecalls" type="number" min="0" value="${v.openRecalls??""}"></label><label>Notes<textarea id="vnotes" rows="3">${esc(v.notes||"")}</textarea></label></div>`,"Save",async()=>{let x=primaryVehicle();if(!x){x={id:uid(),primary:true};state.vehicles.push(x)}Object.assign(x,{year:Number($("#vyear").value||0)||null,make:$("#vmake").value.trim(),model:$("#vmodel").value.trim(),mileage:Number($("#vmiles").value||0)||null,registrationDue:$("#vreg").value,openRecalls:Number($("#vrecalls").value||0),notes:$("#vnotes").value.trim()});await save();closeModal();render()});
+}
+function openVehicleService(){
+  const v=primaryVehicle();
+  modal("Log vehicle service",`<div class="stack"><label>Service / issue<input id="vstype" placeholder="Oil change, tire repair…"></label><label>Date<input id="vsdate" type="date" value="${ymd()}"></label><div class="grid2"><label>Mileage<input id="vsmiles" type="number" value="${v?.mileage||""}"></label><label>Cost<input id="vscost" type="number" step=".01"></label></div><label>Notes<input id="vsnotes"></label></div>`,"Save",async()=>{const type=$("#vstype").value.trim(),date=$("#vsdate").value;if(!type||!date)return;const mileage=Number($("#vsmiles").value||0)||null;state.vehicleServices.push({id:uid(),vehicleId:v?.id||"",type,date,mileage,cost:Number($("#vscost").value||0),notes:$("#vsnotes").value.trim()});if(v&&mileage)v.mileage=Math.max(Number(v.mileage||0),mileage);await save();closeModal();render()});
+}
 function tireHistoryCard(tr){
   const rows=[...(state.tireLogs||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,6);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚗 Tire + car</div><h2>${tr?esc(tr.psi)+" PSI":"No reading"}</h2></div><button class="btn" onclick="openTire()">Log</button></div>${rows.map(x=>`<div class="row"><span>${esc(dl(x.date))}${x.time?` · ${esc(fmtClock(x.time))}`:""}<div class="muted small">${esc(x.event||"reading")}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.psi)} PSI</b></div>`).join("")||`<div class="notice">No tire history yet.</div>`}</div>`;
@@ -703,7 +736,9 @@ function logView(f,w,tr){
   <div class="grid2"><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div><div class="card"><div class="eyebrow">Self-care · last 7 days</div><div class="row"><span>Brush teeth</span><b>${selfCareCount("brush")}/7</b></div><div class="row"><span>Mouthwash</span><b>${selfCareCount("mouthwash")}/7</b></div><div class="row"><span>Shower</span><b>${selfCareCount("shower")}/7</b></div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div></div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
+  ${lifeAdminCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${w?.start&&w?.end?`${esc(fmtClock(w.start))}–${esc(fmtClock(w.end))}`:w?.scheduled?`Scheduled ${esc(fmtClock(w.scheduled))}`:"No shift logged"}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
+  ${vehicleCard()}
   ${tireHistoryCard(tr)}
   ${weeklyWinsCard()}
   ${sevenDayTrends()}
@@ -939,6 +974,18 @@ function homeView(){
 `;
 }
 function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
+function safeToSpendSnapshot(){
+  const cash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
+        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),rows=billReadiness().filter(r=>r.bill.status!=="paid"),reservedBy=new Map();
+  for(const r of rows){if(!r.account||!["checking","savings"].includes(r.account.type))continue;const amount=Number(r.bill.amount);if(!Number.isFinite(amount)||amount<0)continue;reservedBy.set(r.account.key,(reservedBy.get(r.account.key)||0)+amount)}
+  const reserved=[...reservedBy.values()].reduce((a,b)=>a+b,0),cushion=budgetCents(budgetPlan().limits?.cushion)/100,safe=total-reserved-cushion,
+        incomplete=rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status));
+  return{total,reserved,cushion,safe,incomplete};
+}
+function safeToSpendCard(){
+  const x=safeToSpendSnapshot();
+  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"after reserves"}</span></div><div class="row"><span>Tracked cash</span><b>${money(x.total)}</b></div><div class="row"><span>Unpaid bills reserved</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div><p class="muted small">Estimate only. It uses recorded checking/savings balances, unpaid bills assigned to those accounts, and your monthly Cushion category. Future deposits and unlogged spending are not predicted.${x.incomplete?" Some bills/accounts still need setup.":""}</p></div>`;
+}
 function moreView(){
   const checking=state.accounts.filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         savings=state.accounts.filter(x=>x.type==="savings").reduce((sum,x)=>sum+Number(x.balance||0),0),
@@ -946,6 +993,7 @@ function moreView(){
         debt=state.accounts.filter(x=>x.type==="credit").reduce((sum,x)=>sum+Number(x.balance||0),0),
         ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0);
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
+  ${safeToSpendCard()}
   <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
   ${upcomingBillsView()}
@@ -1406,7 +1454,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2245").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2135").catch(()=>{});
 
 </script>
 </body>
