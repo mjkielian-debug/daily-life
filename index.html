@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2120">
+<link rel="stylesheet" href="styles.css?v=20261001-2135">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -448,6 +448,7 @@ function upsPayrollCard(){
   const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">UPS payroll</div><h2>${last?money(last.netPay)+" latest net":"No statements imported"}</h2></div><div class="actions"><button class="btn primary" onclick="document.querySelector('#payrollFile').click()">Import PDF</button><button class="btn" onclick="openPaycheck()">+ Manual</button></div></div>
     <div class="payroll-drop muted small">Import a Dayforce earnings statement. Daily Life compares official payroll hours with your logged daily shifts. Sensitive employee/bank identifiers are discarded.</div>
+    ${last?`<div class="grid3 payroll-balances"><div class="metric"><div class="eyebrow">Vacation</div><div class="big">${Number(last.vacationHours||0).toFixed(0)} h</div></div><div class="metric"><div class="eyebrow">PST</div><div class="big">${Number(last.pstHours||0).toFixed(0)} h</div></div><div class="metric"><div class="eyebrow">Option week</div><div class="big">${Number(last.optionWeekHours||0).toFixed(0)} h</div></div></div>`:""}
     ${checks.map(p=>{const r=payrollReconcile(p),label=r.status==="match"?"✓ matches daily log":r.status==="close"?"△ small difference":r.status==="review"?"⚠ review daily punches":"no comparison";return `<div class="paycheck-row" onclick="openPaycheck('${p.id}')"><div class="row"><span><b>${esc(p.payDate?dl(p.payDate):"Paycheck")}</b><div class="muted small">${p.periodStart&&p.periodEnd?`${esc(dl(p.periodStart))}–${esc(dl(p.periodEnd))} · `:""}${Number(p.totalHours||0).toFixed(2)} official h · ${money(p.grossPay)} gross</div></span><b>${money(p.netPay)}</b></div>${p.periodStart&&p.periodEnd?`<div class="reconcile ${r.status}"><span>${label}</span><span>Daily log ${r.logged.toFixed(2)} h · difference ${r.diff>=0?"+":""}${r.diff.toFixed(2)} h</span></div>`:""}</div>`}).join("")}
   </div>`;
 }
@@ -986,7 +987,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2120").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2135").catch(()=>{});
 
 </script>
 </body>
