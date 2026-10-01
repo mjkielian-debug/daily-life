@@ -400,6 +400,31 @@ function cloudApplyLifeEntry(row){
       state.budget.spending.push({id:uid(),cloudEntryId:row.id,date:String(p.date||date),amount:Math.round(amount*100)/100,category,note:String(p.note||"ChatGPT entry"),source:"chatgpt"});
       return true;
     }
+    case "bill_add":{
+      const name=String(p.name||"").trim(),due=String(p.due||"").trim(),amount=Number(p.amount);
+      if(!name||!/^\d{4}-\d{2}-\d{2}$/.test(due)||!Number.isFinite(amount)||amount<0)return false;
+      if(state.bills.some(b=>String(b.name||"").trim().toLowerCase()===name.toLowerCase()&&b.due===due))return true;
+      let paymentAccountKey=String(p.paymentAccountKey||"");
+      if(p.paymentAccountCloudId!==undefined){
+        const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.paymentAccountCloudId||""));
+        if(matches.length===1)paymentAccountKey=matches[0].key;
+      }
+      let desiredAccountKey=String(p.desiredAccountKey||"");
+      if(p.desiredPaymentAccountCloudId!==undefined){
+        const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.desiredPaymentAccountCloudId||""));
+        if(matches.length===1)desiredAccountKey=matches[0].key;
+      }
+      const paymentSetup=typeof BILL_SETUPS!=="undefined"&&BILL_SETUPS.includes(String(p.paymentSetup))?String(p.paymentSetup):"Unknown";
+      const amountType=typeof BILL_AMOUNT_TYPES!=="undefined"&&BILL_AMOUNT_TYPES.includes(String(p.amountType))?String(p.amountType):"Fixed amount";
+      const frequency=typeof BILL_FREQUENCIES!=="undefined"&&BILL_FREQUENCIES.includes(String(p.frequency))?String(p.frequency):"One-time";
+      const repeatMonths=typeof BILL_REPEATS!=="undefined"&&BILL_REPEATS.some(([n])=>n===Number(p.repeatMonths))?Number(p.repeatMonths):0;
+      state.bills.push({
+        id:uid(),name,amount:Math.round(amount*100)/100,due,status:"upcoming",
+        paymentAccountKey,desiredAccountKey,paymentSetup,amountType,frequency,repeatMonths,
+        repeatDay:Number(due.slice(8,10)),cloudEntryId:row.id
+      });
+      return true;
+    }
     case "bill_update":{
       const billId=String(p.bill_id||"").trim(),name=String(p.name||"").trim().toLowerCase(),due=String(p.due||"").trim();
       let matches=billId?state.bills.filter(b=>b.id===billId):state.bills.filter(b=>(!name||String(b.name||"").trim().toLowerCase()===name)&&(!due||b.due===due));
