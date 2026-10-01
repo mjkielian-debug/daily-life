@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2215">
+<link rel="stylesheet" href="styles.css?v=20261001-2230">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1027,11 +1027,23 @@ function moreView(){
   ${upsPayrollCard()}
   <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>`;
 }
+function connectionsCard(){
+  const signed=!!cloudUser?.();
+  return `<div class="card"><div class="eyebrow">🔗 Connections</div><h2>What is automated</h2>
+    <div class="connection-row"><span><b>Daily Life cloud</b><div class="muted small">Private cross-device life entries and snapshots</div></span><span class="tag">${signed?"signed in":"local only"}</span></div>
+    <div class="connection-row"><span><b>Gmail → schedule</b><div class="muted small">School dates, appointments, deadlines and action items are handled by the ChatGPT background sync.</div></span><span class="tag">email-assisted</span></div>
+    <div class="connection-row"><span><b>ParentVUE</b><div class="muted small">School email can flow in automatically; live grades and assignments are not directly connected.</div></span><span class="tag">partial</span></div>
+    <div class="connection-row"><span><b>UPS / Dayforce</b><div class="muted small">Daily punches are logged/reconciled in Daily Life; official earnings statements can be imported. Direct punch sync is not connected.</div></span><span class="tag">partial</span></div>
+    <div class="connection-row"><span><b>Kitchen photos</b><div class="muted small">Private food photos can become pantry inventory and meal suggestions.</div></span><span class="tag">${signed?"ready to test":"cloud needed"}</span></div>
+    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Your People data is private to your account. Tanner is included as a person, but account sharing/invites are not enabled yet.</div></span><span class="tag">private</span></div>
+  </div>`;
+}
 function settingsView(){
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h2>Settings + routines</h2></div><button class="btn" onclick="setView('today')">Done</button></div><div class="notice">The bottom bar is for the parts of Daily Life you use all the time. Setup, recurring rules, cloud, and backup live here.</div></div>
   <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div></div>
   <div class="card"><div class="section-title"><h2>Recurring routines</h2><button class="btn" onclick="openRoutine()">+ Routine</button></div>${(state.settings.recurringTasks||[]).map((x,i)=>`<div class="row"><span>${esc(x.title)}<div class="muted small">${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}</div></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join("")||`<div class="notice">No recurring tasks.</div>`}</div>
   <div class="card"><div class="section-title"><h2>Weekly meal patterns</h2><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>${(state.settings.mealPatterns||[]).map((p,i)=>`<div class="row"><span>${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.weekday]} · ${esc(p.dish)}</span><button class="btn small" onclick="removeMealPattern(${i})">Remove</button></div>`).join("")||`<div class="notice">No automatic meal patterns.</div>`}</div>
+  ${connectionsCard()}
   ${cloudPanel()}
   <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
 }
@@ -1481,7 +1493,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2215").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2230").catch(()=>{});
 
 </script>
 </body>
