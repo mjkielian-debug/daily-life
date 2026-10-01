@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2230">
+<link rel="stylesheet" href="styles.css?v=20261001-2250">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1002,16 +1002,18 @@ function homeView(){
 }
 function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
 function safeToSpendSnapshot(){
-  const cash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
-        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),rows=billReadiness().filter(r=>r.bill.status!=="paid"),reservedBy=new Map();
+  const allCash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
+        protectedCash=allCash.filter(a=>a.protectFromSpending||a.key==="house_fund"),
+        cash=allCash.filter(a=>!a.protectFromSpending&&a.key!=="house_fund"),
+        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),protectedTotal=protectedCash.reduce((sum,a)=>sum+Number(a.balance||0),0),rows=billReadiness().filter(r=>r.bill.status!=="paid"),reservedBy=new Map();
   for(const r of rows){if(!r.account||!["checking","savings"].includes(r.account.type))continue;const amount=Number(r.bill.amount);if(!Number.isFinite(amount)||amount<0)continue;reservedBy.set(r.account.key,(reservedBy.get(r.account.key)||0)+amount)}
   const reserved=[...reservedBy.values()].reduce((a,b)=>a+b,0),cushion=budgetCents(budgetPlan().limits?.cushion)/100,safe=total-reserved-cushion,
         incomplete=rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status));
-  return{total,reserved,cushion,safe,incomplete};
+  return{total,protectedTotal,reserved,cushion,safe,incomplete};
 }
 function safeToSpendCard(){
   const x=safeToSpendSnapshot();
-  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"after reserves"}</span></div><div class="row"><span>Tracked cash</span><b>${money(x.total)}</b></div><div class="row"><span>Unpaid bills reserved</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div><p class="muted small">Estimate only. It uses recorded checking/savings balances, unpaid bills assigned to those accounts, and your monthly Cushion category. Future deposits and unlogged spending are not predicted.${x.incomplete?" Some bills/accounts still need setup.":""}</p></div>`;
+  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"after reserves"}</span></div><div class="row"><span>Spendable cash accounts</span><b>${money(x.total)}</b></div>${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}<div class="row"><span>Unpaid bills reserved</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div><p class="muted small">Estimate only. It excludes accounts marked protected, then uses recorded checking/savings balances, unpaid bills assigned to those accounts, and your monthly Cushion category. Future deposits and unlogged spending are not predicted.${x.incomplete?" Some bills/accounts still need setup.":""}</p></div>`;
 }
 function moreView(){
   const checking=state.accounts.filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
@@ -1327,12 +1329,12 @@ function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("T
 
 function openAccount(key=""){
   const x=state.accounts.find(a=>a.key===key)||{};
-  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
+  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label class="task"><input id="aprotect" type="checkbox" ${x.protectFromSpending||x.key==="house_fund"?"checked":""}><span><b>Keep out of safe-to-spend</b><div class="muted small">Use for house fund or other earmarked savings you do not want treated as available.</div></span></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
     const oldKey=x.key,newKey=$("#ak").value.trim()||oldKey||uid();
     if(state.accounts.some(a=>a!==x&&a.key===newKey)){alert("That account key is already in use. Choose a unique key.");return}
     const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
     const a=oldKey?x:{key:newKey};if(!oldKey)state.accounts.push(a);
-    Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0)});
+    Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
     if(oldKey&&oldKey!==newKey)for(const b of state.bills){if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;if(b.desiredAccountKey===oldKey)b.desiredAccountKey=newKey}
     try{await save();closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
 }
@@ -1493,7 +1495,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2230").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2250").catch(()=>{});
 
 </script>
 </body>
