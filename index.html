@@ -260,7 +260,8 @@ function budgetProgress(spent,limit,label){
   return `<progress class="budget-progress ${spent>limit?"over":""}" max="100" value="${percent}" aria-label="${esc(label)}" aria-valuetext="${esc(budgetMoney(spent))} spent of ${esc(budgetMoney(limit))}">${percent}%</progress>`;
 }
 function budgetView(){
-  const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
+        actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0};
   return `<div class="card glow"><div class="section-title"><h2>Budget</h2><button class="btn" onclick="setView('more')">Back to Money</button></div>
   <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
   <p class="muted small">Monthly cash plan · stored on this device. New months start blank.</p>
@@ -272,6 +273,7 @@ function budgetView(){
   ${t.plan.income===null?`<p class="notice">Enter expected cash income to begin. EBT does not increase cash available.</p>`:""}
   ${t.remaining<0?`<p class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</p>`:""}
   <p class="muted small">Planning estimates, not your bank balance. Only bills entered for this month and spending logged here are included.</p></div>
+  ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported into this budget</span><b>${money(actual.imported)}</b></div><p class="muted small">Actuals come from connected posted transactions. “Bank-identified income” only counts transactions the provider classifies as income, so refunds and transfers are not silently treated as earnings.</p></div>`:""}
   <div class="card"><div class="section-title"><h2>EBT / grocery benefit</h2><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
   <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
   ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
