@@ -86,3 +86,9 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .birthday-inspo{padding:9px 10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--primary) 5%,transparent)}
 
 .gift-board-row{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left;font:inherit}.gift-board-row:first-of-type{border-top:0}.gift-board-row .tag{flex:none}
+
+.relationship-card{padding:12px;border-radius:15px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.relationship-card h3{margin:4px 0}.relationship-settings{padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.life-intro{background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 7%,var(--panel2)),var(--panel))}
+.nutrition-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:10px 0}.nutrition-grid .metric{min-height:86px}
+@media(max-width:600px){.nutrition-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
