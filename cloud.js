@@ -418,7 +418,7 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.paychecks))state.paychecks=[];
       const fingerprint=String(p.fingerprint||[p.periodStart||"",p.periodEnd||"",payDate,netPay.toFixed(2)].join("|"));
       if(state.paychecks.some(x=>x.fingerprint===fingerprint))return true;
-      state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],fingerprint});
+      state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],vacationHours:Number(p.vacationHours||0),pstHours:Number(p.pstHours||0),optionWeekHours:Number(p.optionWeekHours||0),fingerprint});
       return true;
     }
     case "family_setup":{
