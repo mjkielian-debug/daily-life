@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -351,7 +351,15 @@ function cloudApplyLifeEntry(row){
     }
     case "food":{
       const name=String(p.name||"").trim();if(!name)return false;
-      state.foodLogs.push({...common,name,category:String(p.category||"food"),calories:Number(p.calories||0),protein:Number(p.protein||0),notes:String(p.notes||"")});
+      state.foodLogs.push({...common,name,category:String(p.category||"food"),calories:Number(p.calories||0),protein:Number(p.protein||0),carbs:Number(p.carbs||0),fat:Number(p.fat||0),fiber:Number(p.fiber||0),caffeineMg:Number(p.caffeineMg||0),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||"")});
+      return true;
+    }
+    case "sleep":{
+      if(!Array.isArray(state.sleepLogs))state.sleepLogs=[];
+      const sleepDate=String(p.date||date),bedtime=String(p.bedtime||""),wakeTime=String(p.wakeTime||""),energy=Number(p.energy||0);
+      let x=state.sleepLogs.find(x=>x.date===sleepDate&&x.cloudEntryId===row.id);
+      if(!x){x={...common,date:sleepDate};state.sleepLogs.push(x)}
+      Object.assign(x,{bedtime,wakeTime,energy:Number.isFinite(energy)?energy:0,notes:String(p.notes||""),cloudEntryId:row.id});
       return true;
     }
     case "work_shift":{
@@ -470,6 +478,9 @@ function cloudApplyLifeEntry(row){
           favoriteFoods:Array.isArray(raw.favoriteFoods)?raw.favoriteFoods.map(String):x.favoriteFoods||[],
           interests:Array.isArray(raw.interests)?raw.interests.map(String):x.interests||[],
           sizes:raw.sizes&&typeof raw.sizes==="object"?{...(x.sizes||{}),...raw.sizes}:x.sizes||{},
+          importantDates:Array.isArray(raw.importantDates)?raw.importantDates:x.importantDates||[],
+          sharedPlans:Array.isArray(raw.sharedPlans)?raw.sharedPlans:x.sharedPlans||[],
+          recurringCheckin:raw.recurringCheckin&&typeof raw.recurringCheckin==="object"?{...(x.recurringCheckin||{}),...raw.recurringCheckin}:x.recurringCheckin||{},
           giftNotes:String(raw.giftNotes||x.giftNotes||"")
         });
         if(Array.isArray(raw.wishlist)){
@@ -493,6 +504,9 @@ function cloudApplyLifeEntry(row){
       for(const key of ["relationship","birthday","giftNotes"])if(p[key]!==undefined)x[key]=String(p[key]||"");
       for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests"])if(Array.isArray(p[key]))x[key]=p[key].map(String);
       if(p.sizes&&typeof p.sizes==="object")x.sizes={...(x.sizes||{}),...p.sizes};
+      if(Array.isArray(p.importantDates))x.importantDates=p.importantDates;
+      if(Array.isArray(p.sharedPlans))x.sharedPlans=p.sharedPlans;
+      if(p.recurringCheckin&&typeof p.recurringCheckin==="object")x.recurringCheckin={...(x.recurringCheckin||{}),...p.recurringCheckin};
       if(p.birthdayPlan&&typeof p.birthdayPlan==="object")x.birthdayPlan={...(x.birthdayPlan||{}),...p.birthdayPlan,tasks:Array.isArray(p.birthdayPlan.tasks)?p.birthdayPlan.tasks:(x.birthdayPlan?.tasks||[])};
       return true;
     }
