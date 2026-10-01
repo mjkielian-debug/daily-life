@@ -3,6 +3,7 @@
 // only short-lived Link tokens and user-scoped financial rows protected by RLS.
 
 let cloudFinancialAccounts=[];
+let cloudRecentTransactions=[];
 let cloudUnreviewedTransactions=[];
 let cloudFinanceBusy=false;
 let cloudFinanceMessage="";
@@ -209,11 +210,11 @@ async function cloudImportBankSpending(showAlert=false){
     .gte("posted_date",cutoffDate)
     .eq("pending",false)
     .eq("is_transfer",false)
-    .gt("provider_amount",0)
     .order("posted_date",{ascending:true})
     .limit(2000);
   if(error){cloudFinanceMessage=error.message;return 0}
 
+  cloudRecentTransactions=data||[];
   const remoteIds=new Set((data||[]).map(t=>t.provider_transaction_id));
   cloudUnreviewedTransactions=[];
   let changed=0;
@@ -226,6 +227,7 @@ async function cloudImportBankSpending(showAlert=false){
   changed+=before-state.budget.spending.length;
 
   for(const t of data||[]){
+    if(Number(t.provider_amount||0)<=0)continue;
     const category=bankBudgetCategory(t);
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
     const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
@@ -263,6 +265,17 @@ async function cloudImportBankSpending(showAlert=false){
   return changed;
 }
 
+
+function cloudBudgetActuals(month){
+  const rows=cloudRecentTransactions.filter(t=>String(t.posted_date||"").slice(0,7)===month&&!t.pending&&!t.is_transfer);
+  const income=rows.filter(t=>Number(t.provider_amount)<0&&String(t.category_primary||"")==="INCOME")
+    .reduce((sum,t)=>sum+Math.abs(Number(t.provider_amount||0)),0);
+  const outflow=rows.filter(t=>Number(t.provider_amount)>0)
+    .reduce((sum,t)=>sum+Number(t.provider_amount||0),0);
+  const imported=(state.budget?.spending||[]).filter(x=>String(x.date||"").slice(0,7)===month&&x.source==="bank")
+    .reduce((sum,x)=>sum+Number(x.amount||0),0);
+  return {income,outflow,imported,count:rows.length};
+}
 
 function openBankTransactionReview(index=0){
   const t=cloudUnreviewedTransactions[index];if(!t)return;
