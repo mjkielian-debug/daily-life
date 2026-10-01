@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2150">
+<link rel="stylesheet" href="styles.css?v=20261001-2210">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -809,7 +809,7 @@ function birthdayGiftBoard(){
   const open=rows.filter(x=>!["bought","wrapped","done"].includes(String(x.w.status))).slice(0,12),
         bought=rows.filter(x=>["bought","wrapped"].includes(String(x.w.status))).length;
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🎁 Birthday gifts</div><h2>Wish list + shopping</h2><div class="muted small">${open.length} open idea${open.length===1?"":"s"} · ${bought} bought / wrapped</div></div></div>
-    ${open.length?open.map(({p,w})=>`<button class="gift-board-row" onclick="openBirthdayWish('${p.id}','${w.id}')"><span><b>${esc(w.item)}</b><div class="muted small">${esc(p.name)}${w.store?" · "+esc(w.store):""}${w.notes?" · "+esc(w.notes):""}</div></span><span style="text-align:right"><span class="tag">${esc(w.status||"want")}</span>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small" style="margin-top:4px">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`).join(""):`<div class="notice">No open birthday gift ideas right now.</div>`}
+    ${open.length?open.map(({p,w})=>`<button class="gift-board-row" onclick="closeModal();openBirthdayWish('${p.id}','${w.id}')"><span><b>${esc(w.item)}</b><div class="muted small">${esc(p.name)}${w.store?" · "+esc(w.store):""}${w.notes?" · "+esc(w.notes):""}</div></span><span style="text-align:right"><span class="tag">${esc(w.status||"want")}</span>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small" style="margin-top:4px">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`).join(""):`<div class="notice">No open birthday gift ideas right now.</div>`}
   </div>`;
 }
 function personCards(){
@@ -875,7 +875,7 @@ function openBirthdayPlanner(personId){
     ${(()=>{const spend=birthdaySpend(p);return spend.budget||spend.total?`<div class="birthday-budget"><div><span class="muted small">Budget</span><b>${money(spend.budget)}</b></div><div><span class="muted small">Spent</span><b>${money(spend.total)}</b></div><div><span class="muted small">Remaining</span><b>${money(Math.max(0,spend.budget-spend.total))}</b></div></div>`:""})()}
     <div class="mini-heading">Gift / wish list</div>
     ${wishes.length?wishes.map(w=>`<button class="birthday-wish ${esc(w.status||"want")}" onclick="openBirthdayWish('${p.id}','${w.id}')"><span>${esc(w.item)}${w.store?`<div class="muted small">${esc(w.store)}</div>`:""}</span><span style="text-align:right"><b>${esc(w.status||"want")}</b>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`).join(""):`<div class="muted small">No birthday wishes logged yet.</div>`}
-    <button class="btn" onclick="openBirthdayWish('${p.id}')">+ Add wish</button>
+    <button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Add wish</button>
     <div class="mini-heading">Planning checklist</div>
     <div id="birthdayTasks">${plan.tasks.map((t,i)=>`<label class="task birthday-task"><input type="checkbox" ${t.done?"checked":""} onchange="toggleBirthdayPlanTask('${p.id}',${i},this.checked)"><span class="${t.done?"done":""}">${esc(t.text)}</span></label>`).join("")||`<div class="muted small">Add things like invitations, cake order, gifts, decorations, wrapping, or party supplies.</div>`}</div>
     <label>Add checklist item<input id="btask" placeholder="Order cake"></label>
@@ -1147,7 +1147,7 @@ function openEvent(date=ymd(),id=""){
   modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
     <label>Title<input id="etitle" value="${esc(x.title||"")}"></label>
     <label>Child / person<input id="echild" value="${esc(x.child||"")}"></label>
-    <label>Type<select id="etype">${["school","appointment","deadline","activity","family","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Type<select id="etype">${["school","appointment","deadline","activity","family","birthday","birthday-party","relationship","attendance","teacher-message","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
     <label>Date<input id="edate" type="date" value="${esc(x.date||date)}"></label>
     <div class="grid2"><label>Start<input id="estart" type="time" value="${esc(x.startTime||"")}"></label><label>End<input id="eend" type="time" value="${esc(x.endTime||"")}"></label></div>
     <label>Location<input id="eloc" value="${esc(x.location||"")}"></label>
@@ -1378,7 +1378,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2150").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2210").catch(()=>{});
 
 </script>
 </body>
