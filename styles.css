@@ -64,3 +64,8 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .school-actions{margin:10px 0 12px;padding:10px;border:1px solid color-mix(in srgb,var(--primary) 30%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--primary) 6%,transparent)}
 .school-action{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border)}
 .school-action:first-of-type{border-top:0}.school-action input{width:auto;margin-top:3px}
+
+.pantry-card{overflow:hidden}.pantry-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pantry-chip{display:inline-flex;align-items:center;border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border));background:color-mix(in srgb,var(--primary) 8%,transparent);border-radius:999px;padding:5px 8px;font-size:.72rem}
+.suggestion-card{border-color:color-mix(in srgb,var(--primary) 48%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 10%,var(--panel2)),var(--panel))}.suggestion-compact{display:grid;gap:5px;min-width:150px;max-width:260px;text-align:right}.suggestion-compact .actions{justify-content:flex-end}.suggestion-compact .btn{min-height:31px;padding:5px 8px;font-size:.7rem}
+.meal-feedback{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}.meal-feedback .actions{margin-top:6px}.meal-feedback .muted{margin-top:6px}
+@media(max-width:520px){.pantry-card .section-title{align-items:flex-start}.suggestion-compact{max-width:180px}.suggestion-compact .actions{justify-content:flex-end}.meal-feedback .actions .btn{flex:1 1 45%}}
