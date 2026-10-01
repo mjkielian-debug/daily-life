@@ -480,15 +480,15 @@ function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id
 async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
 function openMeal(date){
   const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
-  modal(`Dinner · ${dl(date)}`,`<div class="stack">
+  modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor">
     <label>Dinner<input id="md" value="${esc(x.dish||"")}"></label>
     <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Crock-pot, oven, stovetop…"></label>
     <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
     <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
-    <label>Ingredients<textarea id="ming" rows="6" placeholder="One per line. Prefix with have:, need:, or check:">${esc(x.ingredients||"")}</textarea></label>
-    <label>Prep / do-ahead steps<textarea id="mprep" rows="5" placeholder="One step per line">${esc(x.prepSteps||"")}</textarea></label>
-    <label>Tonight for tomorrow<textarea id="mtom" rows="3" placeholder="Example: Move chicken thighs from freezer to refrigerator">${esc(x.tomorrowPrep||"")}</textarea></label>
-    <label>Recipe / cooking notes<textarea id="mn" rows="5">${esc(x.notes||"")}</textarea></label>
+    <label>Ingredients<textarea id="ming" rows="3" placeholder="Ritz crackers">${esc(x.ingredients||"")}</textarea><div class="muted small field-help">One item per line. Start it with <b>have:</b>, <b>need:</b>, or <b>check:</b>.</div></label>
+    <label>Prep / do-ahead steps<textarea id="mprep" rows="3" placeholder="One step per line">${esc(x.prepSteps||"")}</textarea></label>
+    <label>Tonight for tomorrow<textarea id="mtom" rows="2" placeholder="Move chicken thighs from freezer to refrigerator">${esc(x.tomorrowPrep||"")}</textarea></label>
+    <label>Recipe / cooking notes<textarea id="mn" rows="3">${esc(x.notes||"")}</textarea></label>
     <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
   </div>`,"Save",async()=>{
     let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
