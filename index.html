@@ -510,7 +510,7 @@ function openMeal(date){
     if(!Array.isArray(m.prepDone))m.prepDone=[];
     if(!m.ingredients&&!m.prepSteps)m.recipeState="queued";
     await save();
-    if(typeof cloudQueueRecipeRequest==="function"&&(changed||!m.ingredients)){
+    if(typeof cloudQueueRecipeRequest==="function"&&(changed||m.recipeState!=="ready")){
       const queued=await cloudQueueRecipeRequest(m);
       if(!queued&&m.recipeState==="queued")m.recipeState="waiting_for_cloud";
       await save();
