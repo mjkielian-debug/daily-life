@@ -467,7 +467,9 @@ function cloudApplyLifeEntry(row){
           name,relationship:String(raw.relationship||x.relationship||""),birthday:String(raw.birthday||x.birthday||""),
           favoriteColors:Array.isArray(raw.favoriteColors)?raw.favoriteColors.map(String):x.favoriteColors||[],
           favoriteCharacters:Array.isArray(raw.favoriteCharacters)?raw.favoriteCharacters.map(String):x.favoriteCharacters||[],
+          favoriteFoods:Array.isArray(raw.favoriteFoods)?raw.favoriteFoods.map(String):x.favoriteFoods||[],
           interests:Array.isArray(raw.interests)?raw.interests.map(String):x.interests||[],
+          sizes:raw.sizes&&typeof raw.sizes==="object"?{...(x.sizes||{}),...raw.sizes}:x.sizes||{},
           giftNotes:String(raw.giftNotes||x.giftNotes||"")
         });
         if(Array.isArray(raw.wishlist)){
@@ -489,7 +491,8 @@ function cloudApplyLifeEntry(row){
       let x=state.peopleProfiles.find(x=>String(x.name||"").toLowerCase()===name.toLowerCase());
       if(!x){x={id:uid(),name,wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
       for(const key of ["relationship","birthday","giftNotes"])if(p[key]!==undefined)x[key]=String(p[key]||"");
-      for(const key of ["favoriteColors","favoriteCharacters","interests"])if(Array.isArray(p[key]))x[key]=p[key].map(String);
+      for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests"])if(Array.isArray(p[key]))x[key]=p[key].map(String);
+      if(p.sizes&&typeof p.sizes==="object")x.sizes={...(x.sizes||{}),...p.sizes};
       if(p.birthdayPlan&&typeof p.birthdayPlan==="object")x.birthdayPlan={...(x.birthdayPlan||{}),...p.birthdayPlan,tasks:Array.isArray(p.birthdayPlan.tasks)?p.birthdayPlan.tasks:(x.birthdayPlan?.tasks||[])};
       return true;
     }
