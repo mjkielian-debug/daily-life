@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2230">
+<link rel="stylesheet" href="styles.css?v=20261001-2245">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -848,6 +848,33 @@ function openPersonProfile(id=""){
     await save();closeModal();render();
   });
 }
+function latestBirthdaySuggestion(personId){
+  return [...(state.birthdaySuggestions||[])].filter(x=>x.personId===personId&&x.status==="proposed").sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
+}
+async function requestBirthdaySuggestion(personId,exclude=[]){
+  const p=personById(personId);if(!p)return;
+  if(typeof cloudQueueBirthdayPlan==="function"){
+    p.birthdayPlan=p.birthdayPlan||{};p.birthdayPlan.suggestionState="queued";await save();render();
+    const ok=await cloudQueueBirthdayPlan(p,exclude);
+    if(!ok){p.birthdayPlan.suggestionState="waiting_for_cloud";await save();render()}
+  }
+}
+async function acceptBirthdaySuggestion(id){
+  const sug=(state.birthdaySuggestions||[]).find(x=>x.id===id);if(!sug)return;const p=personById(sug.personId);if(!p)return;
+  const plan=p.birthdayPlan||{tasks:[]};for(const k of ["theme","cake","activity","location","food","decorations","notes"])if(sug[k]&&!plan[k])plan[k]=sug[k];
+  if(Number(sug.budget)>0&&!Number(plan.budget))plan.budget=Number(sug.budget);
+  if(Array.isArray(sug.tasks)){if(!Array.isArray(plan.tasks))plan.tasks=[];for(const text of sug.tasks){const t=typeof text==="string"?text:String(text?.text||"").trim();if(t&&!plan.tasks.some(x=>String(x.text||"").toLowerCase()===t.toLowerCase()))plan.tasks.push({text:t,done:false})}}
+  plan.suggestionState="accepted";p.birthdayPlan=plan;sug.status="accepted";await save();render();
+}
+async function rejectBirthdaySuggestion(id){
+  const sug=(state.birthdaySuggestions||[]).find(x=>x.id===id);if(!sug)return;sug.status="rejected";await save();await requestBirthdaySuggestion(sug.personId,[sug.theme,sug.activity].filter(Boolean));render();
+}
+function birthdaySuggestionHTML(p){
+  const sug=latestBirthdaySuggestion(p.id),stateLabel=p.birthdayPlan?.suggestionState;
+  if(!sug)return stateLabel==="queued"?`<div class="notice">✨ Building a birthday idea from ${esc(p.name)}’s favorites…</div>`:`<button class="btn primary" onclick="closeModal();requestBirthdaySuggestion('${p.id}')">✨ Suggest a birthday plan</button>`;
+  return `<div class="birthday-suggestion"><div class="eyebrow">✨ Suggested birthday plan</div><h3>${esc(sug.theme||"Birthday idea")}</h3>${sug.reason?`<div class="muted small">${esc(sug.reason)}</div>`:""}<div class="grid2"><div><div class="mini-heading">Activity</div><div>${esc(sug.activity||"—")}</div></div><div><div class="mini-heading">Cake</div><div>${esc(sug.cake||"—")}</div></div></div>${sug.food?`<div class="muted small"><b>Food:</b> ${esc(sug.food)}</div>`:""}${sug.decorations?`<div class="muted small"><b>Decor:</b> ${esc(sug.decorations)}</div>`:""}<div class="actions" style="margin-top:9px"><button class="btn primary" onclick="acceptBirthdaySuggestion('${sug.id}');closeModal()">Use this plan</button><button class="btn" onclick="rejectBirthdaySuggestion('${sug.id}');closeModal()">Another idea</button></div></div>`;
+}
+
 function openBirthdayWish(personId,wishId=""){
   const p=personById(personId);if(!p)return;const w=(p.wishlist||[]).find(x=>x.id===wishId)||{};
   modal(`Gift idea · ${p.name}`,`<div class="stack"><label>Item / idea<input id="wi" value="${esc(w.item||"")}"></label><label>Status<select id="ws">${["want","maybe","bought","wrapped"].map(v=>`<option ${(w.status||"want")===v?"selected":""}>${v}</option>`).join("")}</select></label><div class="grid2"><label>Estimated cost<input id="west" type="number" min="0" step=".01" value="${w.estimatedCost??""}"></label><label>Actual cost<input id="wact" type="number" min="0" step=".01" value="${w.actualCost??""}"></label></div><label>Store / where to get it<input id="wstore" value="${esc(w.store||"")}"></label><label>Notes<input id="wn" value="${esc(w.notes||"")}"></label></div>`,"Save",async()=>{
@@ -862,6 +889,7 @@ function openBirthdayPlanner(personId){
   modal(`Birthday plan · ${p.name}`,`<div class="stack birthday-editor">
     <div class="birthday-planner-head">${nextBirthdayInfo(p)?`<b>🎂 ${esc(nextBirthdayInfo(p).label)}</b><span class="muted small">${nextBirthdayInfo(p).days} days away${nextBirthdayInfo(p).turning?` · turning ${nextBirthdayInfo(p).turning}`:""}</span>`:`<b>Birthday date not set</b>`}</div>
     ${(p.favoriteColors||[]).length||(p.favoriteCharacters||[]).length||(p.favoriteFoods||[]).length||(p.interests||[]).length?`<div class="birthday-inspo"><div class="mini-heading">Planning inspiration</div><div class="person-chips">${(p.favoriteColors||[]).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${(p.favoriteCharacters||[]).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${(p.favoriteFoods||[]).map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${(p.interests||[]).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
+    ${birthdaySuggestionHTML(p)}
     <label>Theme / vibe<input id="btheme" value="${esc(plan.theme||"")}" placeholder="Favorite character, colors, theme…"></label>
     <label>Cake / dessert<input id="bcake" value="${esc(plan.cake||"")}"></label>
     <label>Party / activity idea<input id="bactivity" value="${esc(plan.activity||"")}"></label>
@@ -1378,7 +1406,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2230").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2245").catch(()=>{});
 
 </script>
 </body>
