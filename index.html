@@ -90,10 +90,10 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:8,createdAt:new Date().toISOString(),
+  version:9,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska"},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
     ],
@@ -121,13 +121,14 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,8);
+  s.version=Math.max(Number(s.version)||0,9);
   s.profile=s.profile||b.profile;
   s.settings={...b.settings,...(s.settings||{})};
   s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
+  if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
   for(const key of ["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","outfits","tireLogs","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
