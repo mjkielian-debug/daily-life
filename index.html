@@ -78,7 +78,9 @@ async function dbClear(){
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="cloud.js"></script>
+<script src="finance-cloud.js"></script>
 <script>
 
 const $=s=>document.querySelector(s);
@@ -208,6 +210,7 @@ function moreView(){
         ms=monthSummary();
   return `<div class="card glow"><div class="section-title"><h2>Money</h2><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
   <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
+  ${cloudFinancePanel()}
   ${upcomingBillsView()}
   <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>
   <div class="card"><div class="eyebrow">This month</div><div class="grid2"><div class="metric"><div class="small muted">Work</div><div class="big">${ms.work.toFixed(1)} h</div></div><div class="metric"><div class="small muted">Water</div><div class="big">${ms.water} oz</div></div><div class="metric"><div class="small muted">Stretch</div><div class="big">${ms.stretchDays} days</div></div><div class="metric"><div class="small muted">Reading</div><div class="big">${ms.pages} pages</div></div></div></div>
@@ -365,7 +368,7 @@ function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("T
 
 function openAccount(key=""){
   const x=state.accounts.find(a=>a.key===key)||{};
-  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
+  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
     const oldKey=x.key,newKey=$("#ak").value.trim()||oldKey||uid();
     if(state.accounts.some(a=>a!==x&&a.key===newKey)){alert("That account key is already in use. Choose a unique key.");return}
     const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
@@ -513,7 +516,7 @@ async function erase(){if(confirm("Erase ALL Daily Life data stored on this devi
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0])});
-async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
