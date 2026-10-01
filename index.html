@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1930">
+<link rel="stylesheet" href="styles.css?v=20261001-1950">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -276,7 +276,11 @@ function generatedMealDetails(m){
   if(!ingredients.length&&!prep.length&&!m?.notes){
     return `<div class="notice">${m?.recipeState==="queued"?"Building the recipe and grocery list automatically…":"Save the meal name and Daily Life will build the recipe, prep steps, and grocery list for you."}</div>`;
   }
-  return `<div class="notice"><b>Recipe built for you</b>${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="muted small">${ingredients.map(x=>esc(ingredientParts(x).text)).join("<br>")}</div>`:""}${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}</div>`;
+  return `<div class="notice recipe-built"><b>Recipe built for you</b>
+    ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div>`:""}
+    ${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}
+    ${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}
+  </div>`;
 }
 async function queueMissingMealRecipes(){
   if(typeof cloudQueueRecipeRequest!=="function"||!cloudUser?.())return 0;
@@ -303,7 +307,30 @@ function neededShoppingGroups(){
   }
   return [...groups.values()];
 }
-async function buyShoppingGroup(ids){for(const id of ids){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought"}await save();render()}
+const normFood=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function markIngredientHaveForShopping(item){
+  const needle=normFood(item?.item);if(!needle)return;
+  const meals=(state.meals||[]).filter(m=>!item?.mealKey||mealKey(m.date,m.type||"dinner")===item.mealKey);
+  for(const m of meals){
+    const lines=splitLines(m.ingredients);let changed=false;
+    const next=lines.map(line=>{const p=ingredientParts(line),hay=normFood(p.text);if(hay.includes(needle)||needle.includes(hay)){changed=true;return "have: "+p.text}return line});
+    if(changed)m.ingredients=next.join("\n");
+  }
+}
+async function buyShoppingGroup(ids){
+  for(const id of ids){const x=state.shopping.find(x=>x.id===id);if(x){x.status="bought";markIngredientHaveForShopping(x)}}
+  await save();render();
+}
+async function setIngredientState(mealId,index,nextState){
+  const m=state.meals.find(x=>x.id===mealId);if(!m)return;
+  const lines=splitLines(m.ingredients);if(index<0||index>=lines.length)return;
+  const p=ingredientParts(lines[index]),key=mealKey(m.date,m.type||"dinner"),needle=normFood(p.text);
+  lines[index]=nextState+": "+p.text;m.ingredients=lines.join("\n");
+  const matches=(state.shopping||[]).filter(x=>x.status==="needed"&&x.source==="recipe"&&x.mealKey===key&&(normFood(x.item)===needle||normFood(x.item).includes(needle)||needle.includes(normFood(x.item))));
+  if(nextState==="have"){for(const x of matches)x.status="removed";}
+  if(nextState==="need"&&!matches.length)state.shopping.push({id:uid(),item:p.text,qty:"",store:"",status:"needed",source:"recipe",mealKey:key,mealDate:m.date,dish:m.dish,mealDish:m.dish});
+  await save();render();
+}
 function mealRecipeStatus(m){
   if(!m?.dish)return"";
   if(m.ingredients&&m.prepSteps)return"ready";
@@ -336,7 +363,7 @@ function todayMealCard(){
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>${esc(meal.dish||"Dinner")}</h2><div class="muted small">${meal.method?esc(meal.method)+" · ":""}${meal.serveTime?"Serve "+esc(fmtClock(meal.serveTime)):""}${meal.startBy?" · start by "+esc(fmtClock(meal.startBy)):""}${meal.assigned?" · "+esc(meal.assigned):""}</div></div><button class="btn" onclick="openMeal('${ymd()}')">Edit</button></div>
   ${recipeStatus!=="ready"?`<div class="notice">✨ ${recipeStatus==="waiting"?"Recipe request is waiting for your Daily Life cloud connection.":"Building your recipe, prep steps, and grocery list automatically."}</div>`:""}
   ${prep.length?`<div class="mini-heading">Do ahead</div><div class="priority-list">${prep.map((p,i)=>`<label class="priority-item"><input type="checkbox" ${done.has(i)?"checked":""} onchange="toggleMealPrep('${meal.id}',${i},this.checked)"><span class="grow ${done.has(i)?"done":""}">${esc(p)}</span></label>`).join("")}</div>`:""}
-  ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="priority-list">${ingredients.map(line=>{const p=ingredientParts(line);return `<div class="priority-item"><span class="grow">${esc(p.text)}</span><span class="state ${p.state}">${p.state}</span></div>`}).join("")}</div>`:""}
+  ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="priority-list">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="priority-item ingredient-row"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${meal.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${meal.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div>`:""}
   ${recipeNeedSummary(meal)}
   <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="setMealStatus('${meal.id}','made')">${meal.status==="made"?"✓ Made":"Mark made"}</button><button class="btn" onclick="openMeal('${ymd()}')">Recipe / details</button></div>
   ${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
@@ -360,6 +387,16 @@ function todayTimelineItems(){
     if(meal.serveTime)items.push({time:meal.serveTime,sort:meal.serveTime,icon:"🍽️",title:`Serve ${meal.dish}`,detail:"Dinner"});
   }
   return items.sort((a,b)=>a.sort.localeCompare(b.sort));
+}
+function tonightPrepCard(){
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const date=ymd(tomorrow);
+  const meal=(state.meals||[]).find(m=>m.date===date&&m.type==="dinner"),events=(state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled").sort((a,b)=>(a.startTime||"99:99").localeCompare(b.startTime||"99:99"));
+  const items=[];
+  if(meal?.tomorrowPrep)items.push({icon:"🍽️",title:meal.tomorrowPrep,detail:`For tomorrow’s ${meal.dish||"dinner"}`});
+  for(const e of events.filter(e=>e.startTime&&e.startTime<"09:00").slice(0,4))items.push({icon:isSchoolEvent(e)?"🎒":"📅",title:`Tomorrow ${fmtClock(e.startTime)} · ${e.title}`,detail:e.child||e.location||""});
+  for(const e of events.filter(e=>e.type==="deadline").slice(0,4))items.push({icon:"⚑",title:`Due tomorrow · ${e.title}`,detail:e.child||""});
+  if(!items.length)return"";
+  return `<div class="card priority-card evening-prep"><div class="eyebrow">🌙 Before bed</div><h2>Set tomorrow up</h2>${items.map(i=>`<div class="priority-item"><span class="prep-icon">${i.icon}</span><span class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</span></div>`).join("")}</div>`;
 }
 function todayTimelineCard(){
   const items=todayTimelineItems();
@@ -438,6 +475,7 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
   ${todayTimelineCard()}
+  ${tonightPrepCard()}
   <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
   <div class="today-metrics">
     <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
@@ -919,7 +957,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1930").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1950").catch(()=>{});
 
 </script>
 </body>
