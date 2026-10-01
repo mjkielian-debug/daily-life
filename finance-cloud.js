@@ -143,6 +143,7 @@ async function cloudSyncBanks(showAlert=false){
     }
     if(data?.error==="plaid_not_configured")throw new Error("Plaid credentials still need to be added to the private backend.");
     await cloudRefreshFinancialAccounts(true);
+    await cloudLoadBankReviewRules();
     await cloudImportBankSpending(false);
     if(showAlert){
       const connected=(data?.connections||[]).length;
