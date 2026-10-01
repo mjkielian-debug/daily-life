@@ -94,7 +94,14 @@ Deno.serve(async(req:Request)=>{
       if(secretError||!accessTokenValue)throw new Error("missing_access_token");
       const accessToken=String(accessTokenValue);
 
-      const accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
+      let accountsResult:any;
+      if(connection.connection_type==="investment"){
+        try{accountsResult=await plaidPost("/investments/holdings/get",{access_token:accessToken})}
+        catch(error:any){
+          if(["PRODUCT_NOT_READY","PRODUCTS_NOT_SUPPORTED"].includes(String(error?.detail?.error_code||"")))accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
+          else throw error;
+        }
+      }else accountsResult=await plaidPost("/accounts/get",{access_token:accessToken});
       const accountRows=(accountsResult.accounts||[]).map((a:any)=>({
         owner_user_id:user.id,
         connection_id:connection.id,
