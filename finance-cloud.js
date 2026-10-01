@@ -320,7 +320,7 @@ function openBankTransactionReview(index=0){
     ["personal","Personal/Health"],["grocery","Cash Grocery Overflow"],["fun","Entertainment/Fun"],
     ["cushion","Cushion"],["__ignore__","Not budget spending / ignore"]
   ];
-  const options=categories.map(pair=>'<option value="'+pair[0]+'">'+pair[1]+'</option>').join("");
+  const options='<option value="" selected disabled>Choose a category</option>'+categories.map(pair=>'<option value="'+pair[0]+'">'+pair[1]+'</option>').join("");
   modal("Review bank transaction",
     '<div class="row"><span><b>'+esc(label)+'</b><div class="muted small">'+esc(t.posted_date||"")+' · bank-synced</div></span><b>'+money(amount)+'</b></div>'+
     '<div class="stack"><label>Budget category<select id="bankReviewCategory">'+options+'</select></label>'+
@@ -328,6 +328,7 @@ function openBankTransactionReview(index=0){
     '<p class="muted small">Daily Life could not categorize this confidently, so it was excluded until you review it.</p>',
     "Save review",async()=>{
       const category=document.querySelector("#bankReviewCategory").value;
+      if(!category){alert("Choose a category or Not budget spending / ignore.");return}
       const id=t.provider_transaction_id;
       if(!state.settings.bankTransactionReviews)state.settings.bankTransactionReviews={};
       if(category==="__ignore__"){
