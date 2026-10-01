@@ -84,3 +84,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .person-hub-actions{display:flex;flex-wrap:wrap;gap:7px}.person-hub .metric{min-height:86px}.birthday-alert{border-color:color-mix(in srgb,var(--secondary) 35%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--secondary) 7%,var(--panel2)),var(--panel))}
 .birthday-inspo{padding:9px 10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--primary) 5%,transparent)}
+
+.gift-board-row{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left;font:inherit}.gift-board-row:first-of-type{border-top:0}.gift-board-row .tag{flex:none}
