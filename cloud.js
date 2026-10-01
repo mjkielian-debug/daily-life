@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","tireLogs"];
+  const arrays=["tasks","workShifts","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","meals","shopping","homeLogs","tireLogs","events","paychecks"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -390,7 +390,26 @@ function cloudApplyLifeEntry(row){
       const type=String(p.type||"dinner"),mealDate=String(p.date||date);
       let x=state.meals.find(x=>x.date===mealDate&&x.type===type);
       if(!x){x={id:uid(),date:mealDate,type,cloudEntryId:row.id};state.meals.push(x)}
-      Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
+      Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),serveTime:String(p.serveTime||x.serveTime||""),startBy:String(p.startBy||x.startBy||""),ingredients:String(p.ingredients||x.ingredients||""),prepSteps:String(p.prepSteps||x.prepSteps||""),tomorrowPrep:String(p.tomorrowPrep||x.tomorrowPrep||""),cloudEntryId:row.id});
+      return true;
+    }
+    case "event":
+    case "school_event":{
+      const title=String(p.title||"").trim(),eventDate=String(p.date||date);
+      if(!title||!/^\d{4}-\d{2}-\d{2}$/.test(eventDate))return false;
+      if(!Array.isArray(state.events))state.events=[];
+      let x=state.events.find(e=>e.cloudEntryId===row.id)||state.events.find(e=>e.date===eventDate&&String(e.title||"").trim().toLowerCase()===title.toLowerCase()&&String(e.startTime||"")===String(p.startTime||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id};state.events.push(x)}
+      Object.assign(x,{date:eventDate,title,child:String(p.child||x.child||""),type:String(p.type||x.type||(row.category==="school_event"?"school":"other")),startTime:String(p.startTime||x.startTime||""),endTime:String(p.endTime||x.endTime||""),location:String(p.location||x.location||""),status:String(p.status||x.status||"confirmed"),source:String(p.source||x.source||"ChatGPT"),notes:String(p.notes||x.notes||""),sourceRef:String(p.sourceRef||x.sourceRef||row.external_id||""),cloudEntryId:row.id});
+      return true;
+    }
+    case "paycheck":{
+      const payDate=String(p.payDate||date),netPay=Number(p.netPay||0);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(payDate)||!Number.isFinite(netPay)||netPay<=0)return false;
+      if(!Array.isArray(state.paychecks))state.paychecks=[];
+      const fingerprint=String(p.fingerprint||[p.periodStart||"",p.periodEnd||"",payDate,netPay.toFixed(2)].join("|"));
+      if(state.paychecks.some(x=>x.fingerprint===fingerprint))return true;
+      state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],fingerprint});
       return true;
     }
     case "profile_update":{
