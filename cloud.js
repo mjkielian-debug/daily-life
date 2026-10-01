@@ -544,7 +544,11 @@ async function cloudPullLifeEntries(showAlert=false){
 }
 
 document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible"&&cloudAutoEnabled()&&cloudUser()){
-    cloudPrepareAutoSync().then(()=>{if(typeof render==="function")render()}).catch(()=>{});
-  }
+  if(document.visibilityState!=="visible"||!cloudUser())return;
+  const sync=cloudAutoEnabled()?cloudPrepareAutoSync():cloudPullLifeEntries(false);
+  Promise.resolve(sync).then(async()=>{
+    if(typeof queueMissingMealRecipes==="function")await queueMissingMealRecipes();
+    if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
+    if(typeof render==="function")render();
+  }).catch(()=>{});
 });
