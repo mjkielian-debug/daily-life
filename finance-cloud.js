@@ -3,6 +3,7 @@
 // only short-lived Link tokens and user-scoped financial rows protected by RLS.
 
 let cloudFinancialAccounts=[];
+let cloudUnreviewedTransactions=[];
 let cloudFinanceBusy=false;
 let cloudFinanceMessage="";
 
@@ -62,6 +63,7 @@ function cloudFinancePanel(){
   return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><div class="actions"><button class="btn primary" onclick="startPlaidLink()">Connect bank</button><button class="btn" onclick="cloudSyncBanks(true)">Sync now</button></div></div>
   <p class="muted small">Bank credentials are entered only in Plaid Link. Daily Life stores provider tokens server-side, never in this public app code. Balances below update mapped Money accounts.</p>
   ${cloudFinanceMessage?`<div class="notice">${esc(cloudFinanceMessage)}</div>`:""}
+  ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
     const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id);
     const fresh=r.balance_as_of||c.last_synced_at;
@@ -213,6 +215,7 @@ async function cloudImportBankSpending(showAlert=false){
   if(error){cloudFinanceMessage=error.message;return 0}
 
   const remoteIds=new Set((data||[]).map(t=>t.provider_transaction_id));
+  cloudUnreviewedTransactions=[];
   let changed=0;
   // Remove disappeared provider transactions only when Daily Life auto-created
   // the entry and the user has not edited it.
@@ -225,10 +228,19 @@ async function cloudImportBankSpending(showAlert=false){
   for(const t of data||[]){
     const category=bankBudgetCategory(t);
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
-    if(!category||bankLooksLikeKnownBill(t)){
+    const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
+    const knownBill=bankLooksLikeKnownBill(t);
+    if(review?.action==="ignored"||knownBill){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
+      continue;
+    }
+    if(!category){
+      if(existing?.autoImported&&!existing.userEdited){
+        state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
+      }
+      if(!existing&&!review)cloudUnreviewedTransactions.push(t);
       continue;
     }
     if(existing?.userEdited)continue;
@@ -249,6 +261,44 @@ async function cloudImportBankSpending(showAlert=false){
   if(changed)await save();
   if(showAlert)alert(changed?`Updated ${changed} bank-linked budget entr${changed===1?"y":"ies"}.`:"Bank-linked budget spending is already up to date.");
   return changed;
+}
+
+
+function openBankTransactionReview(index=0){
+  const t=cloudUnreviewedTransactions[index];if(!t)return;
+  const label=String(t.merchant_name||t.name||"Bank transaction");
+  const amount=Math.round(Number(t.provider_amount||0)*100)/100;
+  const categories=[
+    ["transport","Transportation/Gas"],["dining","Dining/Convenience"],["household","Household/Shopping"],
+    ["personal","Personal/Health"],["grocery","Cash Grocery Overflow"],["fun","Entertainment/Fun"],
+    ["cushion","Cushion"],["__ignore__","Not budget spending / ignore"]
+  ];
+  const options=categories.map(pair=>'<option value="'+pair[0]+'">'+pair[1]+'</option>').join("");
+  modal("Review bank transaction",
+    '<div class="row"><span><b>'+esc(label)+'</b><div class="muted small">'+esc(t.posted_date||"")+' · bank-synced</div></span><b>'+money(amount)+'</b></div>'+
+    '<div class="stack"><label>Budget category<select id="bankReviewCategory">'+options+'</select></label>'+
+    '<label>Budget note<input id="bankReviewNote" value="'+esc(label)+'"></label></div>'+
+    '<p class="muted small">Daily Life could not categorize this confidently, so it was excluded until you review it.</p>',
+    "Save review",async()=>{
+      const category=document.querySelector("#bankReviewCategory").value;
+      const id=t.provider_transaction_id;
+      if(!state.settings.bankTransactionReviews)state.settings.bankTransactionReviews={};
+      if(category==="__ignore__"){
+        state.settings.bankTransactionReviews[id]={action:"ignored",reviewedAt:new Date().toISOString()};
+      }else{
+        state.budget.spending.push({
+          id:uid(),date:t.posted_date,amount,category,
+          note:document.querySelector("#bankReviewNote").value.trim()||label,
+          source:"bank",autoImported:false,userEdited:true,
+          bankTransactionId:id,cloudFinancialAccountId:t.account_id
+        });
+        state.settings.bankTransactionReviews[id]={action:"categorized",category,reviewedAt:new Date().toISOString()};
+      }
+      await save();closeModal();
+      await cloudImportBankSpending(false);
+      render();
+    }
+  );
 }
 
 let financeAutoTimer=null;
