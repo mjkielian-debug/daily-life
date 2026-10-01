@@ -393,6 +393,16 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{dish,method:String(p.method||x.method||""),assigned:String(p.assigned||x.assigned||""),status:String(p.status||x.status||"planned"),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
       return true;
     }
+    case "profile_update":{
+      const sign=String(p.sunSign||"").trim();
+      const signs=new Set(["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"]);
+      let changed=false;
+      if(p.sunSign!==undefined&&(!sign||signs.has(sign))){
+        state.profile=state.profile||{};
+        if(String(state.profile.sunSign||"")!==sign){state.profile.sunSign=sign;changed=true}
+      }
+      return changed;
+    }
     case "budget_spending":{
       const valid=new Set(["transport","dining","household","personal","grocery","fun","cushion","ebt"]);
       const category=String(p.category||"").trim(),amount=Number(p.amount||0);
