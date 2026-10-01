@@ -106,3 +106,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .birthday-budget{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border:1px solid color-mix(in srgb,var(--secondary) 25%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--secondary) 6%,transparent)}.birthday-budget>div{display:grid;gap:3px}.birthday-budget b{font-size:1.05rem}
 @media(max-width:520px){.birthday-budget{grid-template-columns:1fr 1fr}.birthday-budget>div:last-child{grid-column:1/-1}}
+
+.person-relationship-mini{margin:6px 0 8px;padding:7px 9px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));background:color-mix(in srgb,var(--accent) 6%,transparent);font-size:.75rem;color:var(--muted)}
