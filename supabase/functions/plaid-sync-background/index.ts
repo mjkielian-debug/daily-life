@@ -70,7 +70,7 @@ Deno.serve(async(req:Request)=>{
 
   const {data:connections,error:connectionsError}=await admin
     .from("financial_connections")
-    .select("id,owner_user_id,provider_item_id,transactions_cursor")
+    .select("id,owner_user_id,provider_item_id,transactions_cursor,connection_type")
     .eq("provider","plaid");
   if(connectionsError)return json({error:"database_error",detail:connectionsError.message},500);
 
@@ -111,59 +111,63 @@ Deno.serve(async(req:Request)=>{
         if(error)throw error;
       }
 
-      const {data:dbAccounts,error:dbAccountError}=await admin
-        .from("financial_accounts")
-        .select("id,provider_account_id")
-        .eq("owner_user_id",owner)
-        .eq("connection_id",connection.id);
-      if(dbAccountError)throw dbAccountError;
-      const accountMap=new Map((dbAccounts||[]).map((a:any)=>[String(a.provider_account_id),a.id]));
+      let tx:any={added:[],modified:[],removed:[],nextCursor:connection.transactions_cursor||null};
+      let removedIds:string[]=[];
+      if(connection.connection_type!=="investment"){
+        const {data:dbAccounts,error:dbAccountError}=await admin
+          .from("financial_accounts")
+          .select("id,provider_account_id")
+          .eq("owner_user_id",owner)
+          .eq("connection_id",connection.id);
+        if(dbAccountError)throw dbAccountError;
+        const accountMap=new Map((dbAccounts||[]).map((a:any)=>[String(a.provider_account_id),a.id]));
 
-      const tx=await pullTransactions(accessToken,connection.transactions_cursor||null);
-      const transactionRows=[...tx.added,...tx.modified].flatMap((t:any)=>{
-        const accountId=accountMap.get(String(t.account_id));
-        if(!accountId)return [];
-        const primary=String(t.personal_finance_category?.primary||"");
-        return [{
-          owner_user_id:owner,
-          account_id:accountId,
-          provider_transaction_id:String(t.transaction_id),
-          posted_date:t.date||null,
-          authorized_at:t.authorized_datetime||t.authorized_date||null,
-          merchant_name:t.merchant_name||null,
-          name:t.name||null,
-          provider_amount:Number(t.amount||0),
-          currency:String(t.iso_currency_code||"USD"),
-          pending:!!t.pending,
-          is_transfer:primary.startsWith("TRANSFER_"),
-          category_primary:primary||null,
-          category_detailed:t.personal_finance_category?.detailed||null,
-          metadata:{
-            confidence_level:t.personal_finance_category?.confidence_level||null,
-            pending_transaction_id:t.pending_transaction_id||null,
-            payment_channel:t.payment_channel||null
-          },
-          updated_at:now
-        }];
-      });
-      if(transactionRows.length){
-        const {error}=await admin.from("financial_transactions")
-          .upsert(transactionRows,{onConflict:"owner_user_id,provider_transaction_id"});
-        if(error)throw error;
-      }
-      const removedIds=(tx.removed||[]).map((x:any)=>String(x.transaction_id)).filter(Boolean);
-      if(removedIds.length){
-        const {error}=await admin.from("financial_transactions")
-          .delete().eq("owner_user_id",owner).in("provider_transaction_id",removedIds);
-        if(error)throw error;
+        tx=await pullTransactions(accessToken,connection.transactions_cursor||null);
+        const transactionRows=[...tx.added,...tx.modified].flatMap((t:any)=>{
+          const accountId=accountMap.get(String(t.account_id));
+          if(!accountId)return [];
+          const primary=String(t.personal_finance_category?.primary||"");
+          return [{
+            owner_user_id:owner,
+            account_id:accountId,
+            provider_transaction_id:String(t.transaction_id),
+            posted_date:t.date||null,
+            authorized_at:t.authorized_datetime||t.authorized_date||null,
+            merchant_name:t.merchant_name||null,
+            name:t.name||null,
+            provider_amount:Number(t.amount||0),
+            currency:String(t.iso_currency_code||"USD"),
+            pending:!!t.pending,
+            is_transfer:primary.startsWith("TRANSFER_"),
+            category_primary:primary||null,
+            category_detailed:t.personal_finance_category?.detailed||null,
+            metadata:{
+              confidence_level:t.personal_finance_category?.confidence_level||null,
+              pending_transaction_id:t.pending_transaction_id||null,
+              payment_channel:t.payment_channel||null
+            },
+            updated_at:now
+          }];
+        });
+        if(transactionRows.length){
+          const {error}=await admin.from("financial_transactions")
+            .upsert(transactionRows,{onConflict:"owner_user_id,provider_transaction_id"});
+          if(error)throw error;
+        }
+        removedIds=(tx.removed||[]).map((x:any)=>String(x.transaction_id)).filter(Boolean);
+        if(removedIds.length){
+          const {error}=await admin.from("financial_transactions")
+            .delete().eq("owner_user_id",owner).in("provider_transaction_id",removedIds);
+          if(error)throw error;
+        }
       }
 
       const {error:updateError}=await admin.from("financial_connections").update({
-        transactions_cursor:tx.nextCursor||connection.transactions_cursor||null,
+        transactions_cursor:connection.connection_type==="investment"?connection.transactions_cursor||null:(tx.nextCursor||connection.transactions_cursor||null),
         last_synced_at:now,status:"linked",sync_error:null,updated_at:now
       }).eq("id",connection.id).eq("owner_user_id",owner);
       if(updateError)throw updateError;
-      results.push({connection_id:connection.id,ok:true,accounts:accountRows.length,added:tx.added.length,modified:tx.modified.length,removed:removedIds.length});
+      results.push({connection_id:connection.id,connection_type:connection.connection_type||"bank",ok:true,accounts:accountRows.length,added:tx.added.length,modified:tx.modified.length,removed:removedIds.length});
     }catch(error:any){
       await admin.from("financial_connections").update({
         sync_error:error?.detail?.error_code||error?.message||"sync_failed",
