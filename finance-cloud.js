@@ -22,6 +22,7 @@ function cloudFinanceBalance(row){
 async function cloudFinanceInit(){
   if(!cloudUser?.()||!cloudClient)return;
   await cloudRefreshFinancialAccounts(true);
+  await cloudImportBankSpending(false);
   const params=new URLSearchParams(location.search);
   const savedToken=sessionStorage.getItem("dailyLifePlaidLinkToken");
   if(params.has("oauth_state_id")&&savedToken&&window.Plaid){
@@ -132,6 +133,7 @@ async function cloudSyncBanks(showAlert=false){
     }
     if(data?.error==="plaid_not_configured")throw new Error("Plaid credentials still need to be added to the private backend.");
     await cloudRefreshFinancialAccounts(true);
+    await cloudImportBankSpending(false);
     if(showAlert){
       const connected=(data?.connections||[]).length;
       alert(connected?`Synced ${connected} financial connection${connected===1?"":"s"}.`:"No linked financial connections to sync yet.");
@@ -166,6 +168,87 @@ function openCloudAccountMap(remoteId){
     if(!local.type||local.type==="other")local.type=cloudFinanceType(remote);
     await save();closeModal();render();
   });
+}
+
+function bankBudgetCategory(t){
+  const primary=String(t.category_primary||"");
+  const detailed=String(t.category_detailed||"");
+  if(primary==="FOOD_AND_DRINK")return detailed.includes("GROCERIES")?"grocery":"dining";
+  if(primary==="TRANSPORTATION")return "transport";
+  if(primary==="GENERAL_MERCHANDISE"||primary==="HOME_IMPROVEMENT")return "household";
+  if(primary==="MEDICAL"||primary==="PERSONAL_CARE")return "personal";
+  if(primary==="ENTERTAINMENT")return "fun";
+  return null;
+}
+
+function normalizeBillWords(value){
+  return String(value||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/)
+    .filter(x=>x.length>=4&&!["payment","monthly","bill","autopay","subscription"].includes(x));
+}
+
+function bankLooksLikeKnownBill(t){
+  const amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
+  if(!Number.isFinite(amount)||isNaN(posted))return false;
+  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
+  return (state.bills||[]).some(b=>{
+    const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
+    if(!Number.isFinite(billAmount)||isNaN(due)||Math.abs(billAmount-amount)>.05)return false;
+    const days=Math.abs((posted-due)/86400000);if(days>5)return false;
+    return normalizeBillWords(b.name).some(w=>words.has(w));
+  });
+}
+
+async function cloudImportBankSpending(showAlert=false){
+  if(!cloudUser?.()||!cloudClient||typeof state==="undefined")return 0;
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-93);
+  const cutoffDate=cutoff.toISOString().slice(0,10);
+  const {data,error}=await cloudClient.from("financial_transactions")
+    .select("provider_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
+    .gte("posted_date",cutoffDate)
+    .eq("pending",false)
+    .eq("is_transfer",false)
+    .gt("provider_amount",0)
+    .order("posted_date",{ascending:true})
+    .limit(2000);
+  if(error){cloudFinanceMessage=error.message;return 0}
+
+  const remoteIds=new Set((data||[]).map(t=>t.provider_transaction_id));
+  let changed=0;
+  // Remove disappeared provider transactions only when Daily Life auto-created
+  // the entry and the user has not edited it.
+  const before=state.budget.spending.length;
+  state.budget.spending=state.budget.spending.filter(x=>!(
+    x.source==="bank"&&x.autoImported&&!x.userEdited&&x.date>=cutoffDate&&x.bankTransactionId&&!remoteIds.has(x.bankTransactionId)
+  ));
+  changed+=before-state.budget.spending.length;
+
+  for(const t of data||[]){
+    const category=bankBudgetCategory(t);
+    const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
+    if(!category||bankLooksLikeKnownBill(t)){
+      if(existing?.autoImported&&!existing.userEdited){
+        state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
+      }
+      continue;
+    }
+    if(existing?.userEdited)continue;
+    const entry={
+      ...(existing||{id:uid()}),
+      date:t.posted_date,
+      amount:Math.round(Number(t.provider_amount||0)*100)/100,
+      category,
+      note:String(t.merchant_name||t.name||"Bank purchase"),
+      source:"bank",
+      autoImported:true,
+      bankTransactionId:t.provider_transaction_id,
+      cloudFinancialAccountId:t.account_id
+    };
+    if(existing)Object.assign(existing,entry);else state.budget.spending.push(entry);
+    changed++;
+  }
+  if(changed)await save();
+  if(showAlert)alert(changed?`Updated ${changed} bank-linked budget entr${changed===1?"y":"ies"}.`:"Bank-linked budget spending is already up to date.");
+  return changed;
 }
 
 let financeAutoTimer=null;
