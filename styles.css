@@ -60,3 +60,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .grocery-row{align-items:flex-start}.grocery-row>.task{flex:1}.grocery-row>.btn{flex:0 0 auto}.past-row{opacity:.58}
 @media(max-width:520px){.grocery-row{align-items:center}.grocery-row>.btn{min-height:34px;padding:6px 8px;font-size:.72rem}}
+
+.school-actions{margin:10px 0 12px;padding:10px;border:1px solid color-mix(in srgb,var(--primary) 30%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--primary) 6%,transparent)}
+.school-action{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border)}
+.school-action:first-of-type{border-top:0}.school-action input{width:auto;margin-top:3px}
