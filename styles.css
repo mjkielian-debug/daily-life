@@ -100,3 +100,6 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:520px){.wins-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .today-money{border-color:color-mix(in srgb,var(--primary) 24%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 5%,var(--panel2)),var(--panel))}
+
+.missing-birthdays{margin-top:10px;padding-top:9px;border-top:1px solid var(--border);font-size:.76rem}.linkish{border:0;background:transparent;color:var(--primary);padding:0;font:inherit;font-weight:800;text-decoration:underline;text-underline-offset:2px}
+.school-notes{margin:10px 0;border:1px solid var(--border);border-radius:14px;padding:8px 10px;background:rgba(255,255,255,.025)}.school-notes summary{cursor:pointer;font-weight:800;color:var(--muted)}
