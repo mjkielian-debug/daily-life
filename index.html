@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1705">
+<link rel="stylesheet" href="styles.css?v=20261001-1745">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -110,6 +110,7 @@ const blankState=()=>({
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
+    familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
     ],
@@ -168,8 +169,46 @@ function moonLens(m){
 }
 function weatherText(c){if(c===0)return"Clear";if([1,2].includes(c))return"Partly cloudy";if(c===3)return"Cloudy";if([45,48].includes(c))return"Foggy";if([51,53,55,56,57].includes(c))return"Drizzle";if([61,63,65,66,67,80,81,82].includes(c))return"Rain";if([71,73,75,77,85,86].includes(c))return"Snow";if([95,96,99].includes(c))return"Thunderstorms";return"Mixed conditions"}
 async function getWeather(){async function go(lat,lon){try{const u=new URL("https://api.open-meteo.com/v1/forecast");u.searchParams.set("latitude",lat);u.searchParams.set("longitude",lon);u.searchParams.set("current","temperature_2m,apparent_temperature,weather_code,wind_speed_10m");u.searchParams.set("daily","temperature_2m_max,temperature_2m_min,precipitation_probability_max");u.searchParams.set("temperature_unit","fahrenheit");u.searchParams.set("wind_speed_unit","mph");u.searchParams.set("forecast_days","1");u.searchParams.set("timezone","auto");const j=await(await fetch(u)).json();weather={temp:Math.round(j.current.temperature_2m),feels:Math.round(j.current.apparent_temperature),code:j.current.weather_code,wind:Math.round(j.current.wind_speed_10m),high:Math.round(j.daily.temperature_2m_max[0]),low:Math.round(j.daily.temperature_2m_min[0]),rain:Math.round(j.daily.precipitation_probability_max[0]||0)};render()}catch(e){}}navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>go(40.8136,-96.7026),{timeout:5000,maximumAge:900000}):go(40.8136,-96.7026)}
+function dateDayIndex(date){
+  return Math.floor(new Date(date+"T12:00:00").getTime()/86400000);
+}
+function ensureFamilyDay(date=ymd()){
+  const settings=state.settings||{}, existing=new Set((state.chores||[]).filter(x=>x.date===date).map(x=>String(x.child||"")+"|"+String(x.chore||"")));
+  for(const child of settings.familyMembers||[]){
+    const name=String(child?.name||child||"").trim();if(!name)continue;
+    const basics=(settings.dailyKidBasics||[]).filter(Boolean);
+    if(basics.length){
+      const chore=basics.join(" · "),key=name+"|"+chore;
+      if(!existing.has(key)){state.chores.push({id:uid(),date,child:name,chore,done:false,generated:"daily-basics"});existing.add(key)}
+    }
+  }
+  for(const r of settings.choreRotations||[]){
+    const members=(r.members||[]).map(String).filter(Boolean),chores=(r.chores||[]).map(String).filter(Boolean);
+    if(members.length<2||chores.length<2)continue;
+    const anchor=String(r.anchorDate||date),offset=Math.abs(dateDayIndex(date)-dateDayIndex(anchor));
+    for(let i=0;i<members.length;i++){
+      const chore=chores[(i+offset)%chores.length],key=members[i]+"|"+chore;
+      if(chore&&!existing.has(key)){state.chores.push({id:uid(),date,child:members[i],chore,done:false,generated:"rotation"});existing.add(key)}
+    }
+  }
+}
+function ensureRecurringFamilyEvents(){
+  const defs=state.settings?.recurringFamilyEvents||[],today=new Date();
+  for(let offset=-1;offset<=21;offset++){
+    const d=new Date(today);d.setDate(today.getDate()+offset);const date=ymd(d),wd=d.getDay();
+    for(const r of defs){
+      if(Number(r.weekday)!==wd)continue;
+      const title=String(r.title||"").trim();if(!title)continue;
+      const child=String(r.child||""),startTime=String(r.startTime||"");
+      const exists=(state.events||[]).some(e=>e.date===date&&String(e.title||"").toLowerCase()===title.toLowerCase()&&String(e.child||"")===child&&String(e.startTime||"")===startTime);
+      if(exists)continue;
+      state.events.push({id:uid(),date,title,child,type:String(r.type||"family"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),status:"confirmed",source:"Family routine",notes:String(r.notes||""),generated:"recurring"});
+    }
+  }
+}
 function ensureToday(){
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
+  ensureFamilyDay(date);ensureRecurringFamilyEvents();
   for(const t of state.settings.recurringTasks||[]){
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
@@ -302,8 +341,9 @@ function todayMealCard(){
   ${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
 }
 function todayChoresCard(){
-  const rows=todayChores(),done=rows.filter(x=>x.done).length;
-  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🧺 Family + chores</div><h2>${done} / ${rows.length} done</h2></div><button class="btn" onclick="openChore()">+ Add</button></div>${rows.length?`<div class="priority-list">${rows.map(x=>`<label class="priority-item"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="grow ${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>`).join("")}</div>`:`<div class="notice">No family chores are loaded for today yet.</div>`}</div>`;
+  const rows=todayChores(),done=rows.filter(x=>x.done).length,groups=new Map();
+  for(const x of rows){if(!groups.has(x.child))groups.set(x.child,[]);groups.get(x.child).push(x)}
+  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🧺 Family + chores</div><h2>${done} / ${rows.length} done</h2></div><button class="btn" onclick="openChore()">+ Add</button></div>${rows.length?`<div class="priority-list">${[...groups.entries()].map(([child,items])=>`<div class="priority-item"><div class="grow"><b>${esc(child)}</b>${items.map(x=>`<label class="task" style="margin-top:7px"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.chore)}</span></label>`).join("")}</div></div>`).join("")}</div>`:`<div class="notice">No family chores are loaded for today yet.</div>`}</div>`;
 }
 function todayUpcomingCard(){
   const events=upcomingEvents(14).slice(0,6);
@@ -359,7 +399,7 @@ function familyView(){
   return `<div class="card glow"><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div>
   <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((s,x)=>s+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
   <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
-  <div class="card"><div class="section-title"><h2>Kids + chores</h2><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
+  <div class="card"><div class="section-title"><div><h2>Kids + chores</h2><div class="muted small">${(state.settings.choreRotations||[]).length?"Daily basics and rotating chores are filled in automatically.":"Add chores manually until a family routine is connected."}</div></div><button class="btn" onclick="openChore()">+ Add</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>`;
 }
 function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
 function homeView(){
@@ -808,9 +848,9 @@ async function erase(){if(confirm("Erase ALL Daily Life data stored on this devi
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
-async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1705").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1745").catch(()=>{});
 
 </script>
 </body>
