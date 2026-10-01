@@ -363,6 +363,66 @@ function upcomingEvents(days=14){
   return (state.events||[]).filter(x=>x.date>=start&&x.date<=end&&x.status!=="cancelled").sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
 }
 function eventDayParts(date){const d=new Date(date+"T12:00:00");return{mon:d.toLocaleDateString("en-US",{month:"short"}),day:d.getDate(),weekday:d.toLocaleDateString("en-US",{weekday:"short"})}}
+function latestMealSuggestion(date){
+  return [...(state.mealSuggestions||[])].filter(x=>x.date===date&&x.status==="proposed").sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
+}
+function pantryItems(){return Array.isArray(state.pantry?.items)?state.pantry.items:[]}
+function pantryItemName(x){return typeof x==="string"?x:String(x?.name||x?.item||"").trim()}
+function pantryCard(){
+  const items=pantryItems(),latest=[...(state.pantryScans||[])].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0];
+  const status=latest?.status==="queued"||latest?.status==="uploading"?"✨ Analyzing your kitchen photos…":latest?.status==="error"?"Scan needs another try":items.length?`${items.length} items recognized`:"No kitchen scan yet";
+  return `<div class="card priority-card pantry-card"><div class="section-title"><div><div class="eyebrow">📸 Kitchen on hand</div><h2>${esc(status)}</h2><div class="muted small">Photograph your fridge, freezer, pantry, and counters. Suggestions will prioritize what you already have and show only the extras to buy.</div></div><button class="btn primary" onclick="openPantryScan()">Scan food</button></div>
+    ${items.length?`<div class="pantry-chips">${items.slice(0,36).map(x=>`<span class="pantry-chip">${esc(pantryItemName(x))}</span>`).join("")}</div>${items.length>36?`<div class="muted small">+${items.length-36} more items</div>`:""}`:`<div class="notice">Take a few overlapping photos so labels, produce, freezer food, and pantry shelves are visible.</div>`}
+    ${state.pantry?.updatedAt?`<div class="muted small" style="margin-top:8px">Last analyzed ${esc(new Date(state.pantry.updatedAt).toLocaleString())}</div>`:""}
+  </div>`;
+}
+function openPantryScan(){
+  modal("Scan food on hand",`<div class="stack"><div class="notice"><b>Take several pictures.</b><br>Fridge shelves, freezer, pantry/cabinets, fruit bowl, bread, and anything else you want considered. Daily Life will identify visible food and use it for meal suggestions.</div><label>Kitchen photos<input id="pantryPhotos" type="file" accept="image/*" multiple></label><div class="muted small">Select several photos at once when possible. If your phone only lets you take one camera photo at a time, scan the next area afterward and Daily Life will merge the inventory.</div></div>`,"Analyze photos",async()=>{
+    const files=[...($("#pantryPhotos")?.files||[])];if(!files.length)return;
+    const scan={id:uid(),createdAt:new Date().toISOString(),status:"uploading",photoCount:files.length};state.pantryScans.push(scan);await save();closeModal();render();
+    const ok=typeof cloudUploadPantryPhotos==="function"?await cloudUploadPantryPhotos(files,scan.id):false;
+    scan.status=ok?"queued":"error";await save();render();
+    if(!ok)alert("The photos could not be queued. Make sure Daily Life cloud is signed in, then try again.");
+  });
+}
+function feedbackScoreLabel(v){return v>=3?"Family favorite":v>0?"Liked":v<0?"Not a hit":""}
+function dishFeedbackScore(dish){
+  const key=normFood(dish);return (state.mealFeedback||[]).filter(x=>normFood(x.dish)===key).reduce((n,x)=>n+Number(x.score||0),0);
+}
+async function rateMeal(mealId,score,label){
+  const m=state.meals.find(x=>x.id===mealId);if(!m?.dish)return;
+  const entry={id:uid(),dish:m.dish,score:Number(score),label:String(label||""),date:m.date,createdAt:new Date().toISOString(),source:"app"};
+  state.mealFeedback.push(entry);m.feedbackScore=Number(score);m.feedbackLabel=entry.label;await save();
+  if(typeof cloudRecordMealFeedback==="function")await cloudRecordMealFeedback(entry);
+  render();
+}
+function mealFeedbackControls(m){
+  if(!m?.dish)return"";
+  const total=dishFeedbackScore(m.dish),label=feedbackScoreLabel(total);
+  return `<div class="meal-feedback"><div class="mini-heading">How did it go?</div><div class="actions"><button class="btn small good" onclick="rateMeal('${m.id}',3,'kids-loved-it')">❤️ Kids loved it</button><button class="btn small" onclick="rateMeal('${m.id}',1,'good')">👍 Good</button><button class="btn small" onclick="rateMeal('${m.id}',-2,'not-a-hit')">Not a hit</button><button class="btn small danger" onclick="rateMeal('${m.id}',-5,'do-not-suggest')">Don’t suggest</button></div>${label?`<div class="muted small">Meal memory: ${esc(label)} · score ${total>0?"+":""}${total}</div>`:""}</div>`;
+}
+function suggestionCard(sug,compact=false){
+  if(!sug)return"";
+  const need=Array.isArray(sug.shopping)?sug.shopping.length:0,onHand=Array.isArray(sug.usesOnHand)?sug.usesOnHand:[];
+  if(compact)return `<div class="suggestion-compact"><b>✨ ${esc(sug.dish)}</b><div class="muted small">${onHand.length?`Uses ${onHand.slice(0,4).map(pantryItemName).join(", ")} · `:""}${need} to buy</div><div class="actions"><button class="btn small primary" onclick="acceptMealSuggestion('${sug.id}')">Use it</button><button class="btn small" onclick="rejectMealSuggestion('${sug.id}')">Another</button></div></div>`;
+  return `<div class="card priority-card suggestion-card"><div class="eyebrow">✨ Suggested from what you have</div><h2>${esc(sug.dish)}</h2>${sug.reason?`<div class="muted">${esc(sug.reason)}</div>`:""}${onHand.length?`<div class="mini-heading">Uses on hand</div><div class="pantry-chips">${onHand.map(x=>`<span class="pantry-chip">${esc(pantryItemName(x))}</span>`).join("")}</div>`:""}<div class="muted small" style="margin-top:8px">${need?need+" extra grocery item"+(need===1?"":"s"):"No extra groceries listed"}</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="acceptMealSuggestion('${sug.id}')">Yes — use this</button><button class="btn" onclick="rejectMealSuggestion('${sug.id}')">No — new suggestion</button></div></div>`;
+}
+async function acceptMealSuggestion(id){
+  const sug=state.mealSuggestions.find(x=>x.id===id);if(!sug)return;
+  let m=state.meals.find(x=>x.date===sug.date&&x.type===(sug.type||"dinner"));
+  if(!m){m={id:uid(),date:sug.date,type:sug.type||"dinner",prepDone:[]};state.meals.push(m)}
+  for(const k of ["dish","method","assigned","serveTime","startBy","status","recipeState","ingredients","prepSteps","tomorrowPrep","notes"])if(sug[k]!==undefined)m[k]=sug[k];
+  m.status=m.status||"planned";m.recipeState="ready";m.suggestionAccepted=true;
+  const key=mealKey(m.date,m.type||"dinner");state.shopping=(state.shopping||[]).filter(x=>!(x.source==="recipe"&&x.mealKey===key));
+  for(const raw of sug.shopping||[]){const item=typeof raw==="string"?raw:String(raw?.item||"").trim();if(!item)continue;state.shopping.push({id:uid(),item,qty:typeof raw==="string"?"":String(raw?.qty||""),store:typeof raw==="string"?"":String(raw?.store||""),status:"needed",source:"recipe",mealKey:key,mealDate:m.date,dish:m.dish,mealDish:m.dish})}
+  sug.status="accepted";await save();render();
+}
+async function rejectMealSuggestion(id){
+  const sug=state.mealSuggestions.find(x=>x.id===id);if(!sug)return;sug.status="rejected";
+  let m=state.meals.find(x=>x.date===sug.date&&x.type===(sug.type||"dinner"));if(m&&!m.dish)m.recipeState="suggestion-queued";
+  await save();if(typeof cloudQueueMealSuggestion==="function")await cloudQueueMealSuggestion(sug.date,{excludeMeals:[sug.dish]});render();
+}
+
 function todayMealCard(){
   const meal=todayMeal(),tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const tm=state.meals.find(x=>x.date===ymd(tomorrow)&&x.type==="dinner");
   if(!meal||(!meal.dish&&meal.recipeState!=="suggestion-queued"))return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>Dinner is not planned yet</h2></div><div class="actions"><button class="btn primary" onclick="requestMealSuggestion('${ymd()}')">Pick for me</button><button class="btn" onclick="openMeal('${ymd()}')">Choose meal</button></div></div>${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
