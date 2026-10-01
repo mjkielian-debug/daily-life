@@ -12,7 +12,7 @@ function publicKey(){
   return JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")||"{}").default||Deno.env.get("SUPABASE_ANON_KEY");
 }
 function adminKey(){
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+  return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 }
 async function authenticatedUser(req:Request){
   const auth=req.headers.get("Authorization")||"";
@@ -76,12 +76,11 @@ Deno.serve(async(req:Request)=>{
       .single();
     if(connectionError)throw connectionError;
 
-    const {error:secretError}=await admin.from("financial_connection_secrets").upsert({
-      connection_id:connection.id,
-      owner_user_id:user.id,
-      access_token:accessToken,
-      updated_at:now
-    },{onConflict:"connection_id"});
+    const {error:secretError}=await admin.rpc("store_financial_access_token",{
+      p_connection_id:connection.id,
+      p_owner_user_id:user.id,
+      p_access_token:accessToken
+    });
     if(secretError)throw secretError;
 
     const rows=(accountsResult.accounts||[]).map((a:any)=>({
