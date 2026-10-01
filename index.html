@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2035">
+<link rel="stylesheet" href="styles.css?v=20261001-2050">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -414,9 +414,11 @@ function isSchoolEvent(e){
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
   const events=(state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e)).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+  const schoolTasks=(state.tasks||[]).filter(t=>!t.done&&t.category==="school"&&t.date>=start&&t.date<=end).sort((a,b)=>(a.date+(a.order||100)).localeCompare(b.date+(b.order||100)));
   const kids=(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"")).filter(Boolean);
   return `<div class="card priority-card school-card"><div class="section-title"><div><div class="eyebrow">🎒 School</div><h2>Grades, assignments + upcoming</h2></div><a class="btn primary" href="https://synergyvue.lps.org/PXP2_Login_Parent.aspx?regenerateSessionId=true" target="_blank" rel="noopener">Open ParentVUE</a></div>
-    <div class="notice">School emails can feed dates and deadlines into Daily Life automatically. Direct ParentVUE grade/assignment syncing is not connected yet, so use ParentVUE for the live gradebook.</div>
+    <div class="notice">School emails can feed dates, deadlines, and concrete action items into Daily Life automatically. ParentVUE remains the live source for grades and assignment details.</div>
+    ${schoolTasks.length?`<div class="school-actions"><div class="mini-heading">Action needed</div>${schoolTasks.slice(0,8).map(t=>`<label class="school-action task"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.child?esc(t.child)+" · ":""}${esc(dl(t.date))}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")}</div>`:""}
     ${kids.length?`<div class="school-kids">${kids.map(k=>{const mine=events.filter(e=>String(e.child||"")===k).slice(0,4);return `<div class="school-kid"><b>${esc(k)}</b>${mine.length?mine.map(e=>`<div class="school-item" onclick="openEvent('${e.date}','${e.id}')"><span>${esc(dl(e.date))}</span><span class="grow">${esc(e.title)}${e.startTime?` · ${esc(fmtClock(e.startTime))}`:""}</span></div>`).join(""):`<div class="muted small">No upcoming school items captured.</div>`}</div>`}).join("")}</div>`:""}
   </div>`;
 }
@@ -982,7 +984,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2035").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2050").catch(()=>{});
 
 </script>
 </body>
