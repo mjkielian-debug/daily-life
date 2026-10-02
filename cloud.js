@@ -570,7 +570,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -595,6 +595,28 @@ function cloudApplyLifeEntry(row){
       let x=state.selfCare.find(x=>x.date===date&&x.key===key);
       if(x)Object.assign(x,{done:p.done!==false,cloudEntryId:row.id});
       else state.selfCare.push({...common,key,done:p.done!==false});
+      return true;
+    }
+    case "personal_care":{
+      if(!Array.isArray(state.selfCareActivities))state.selfCareActivities=[];
+      if(!Array.isArray(state.settings.personalCareActivities))state.settings.personalCareActivities=[];
+      let key=String(p.key||"").trim(),label=String(p.label||p.name||"").trim(),group=String(p.group||"Other");
+      const builtins={
+        "hair wash":"hair_wash","wash hair":"hair_wash","hair mask":"hair_mask","deep condition":"hair_mask",
+        "shave":"shave","body grooming":"shave","nails":"nails","manicure":"nails","face mask":"face_mask",
+        "exfoliate":"exfoliate","exfoliation":"exfoliate","brows":"brows","eyebrows":"brows","foot care":"foot_care"
+      };
+      if(!key&&label)key=builtins[label.toLowerCase()]||"";
+      if(!key&&label){
+        const existing=state.settings.personalCareActivities.find(x=>String(x.label||"").trim().toLowerCase()===label.toLowerCase());
+        if(existing)key=existing.key;
+        else{
+          key="personal_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12);
+          state.settings.personalCareActivities.push({key,label,group,builtin:false});
+        }
+      }
+      if(!key)return false;
+      state.selfCareActivities.push({...common,key,time:String(p.time||""),notes:String(p.notes||""),source:"chatgpt"});
       return true;
     }
     case "food":{
