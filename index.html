@@ -1654,7 +1654,7 @@ function logView(f,w,tr){
   }
   return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
 }
-function care(key,label)function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
+function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
 function ensurePeopleProfiles(){
   if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
