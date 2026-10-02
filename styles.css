@@ -346,3 +346,10 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:380px){
   .people-hero-stats{grid-template-columns:1fr}
 }
+
+.person-family-link{margin:5px 0 2px;padding-left:52px}
+.person-hub-context{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:-2px}
+.elfster-btn{
+  border-color:color-mix(in srgb,var(--secondary) 38%,var(--border));
+  background:linear-gradient(135deg,color-mix(in srgb,var(--secondary) 10%,transparent),color-mix(in srgb,var(--accent) 6%,transparent))
+}
