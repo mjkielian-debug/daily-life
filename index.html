@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-living13">
+<link rel="stylesheet" href="styles.css?v=20261002-selfcare2">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:26,createdAt:new Date().toISOString(),
+  version:27,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},
@@ -116,7 +116,7 @@ const blankState=()=>({
     ],
     mealPatterns:[]
   },
-  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
+  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants";
@@ -233,7 +233,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,26);
+  s.version=Math.max(Number(s.version)||0,27);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -241,6 +241,7 @@ function migrateState(s){
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.selfCareHabits=Array.isArray(s.settings.selfCareHabits)?s.settings.selfCareHabits:[];
+  s.settings.personalCareActivities=Array.isArray(s.settings.personalCareActivities)?s.settings.personalCareActivities:[];
   s.settings.petCare={...b.settings.petCare,...(s.settings.petCare&&typeof s.settings.petCare==="object"?s.settings.petCare:{})};
   s.settings.garden={...b.settings.garden,...(s.settings.garden&&typeof s.settings.garden==="object"?s.settings.garden:{})};
   for(const d of DEFAULT_SELF_CARE_HABITS){
@@ -255,7 +256,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -816,7 +817,7 @@ function moodLabel(value){
   return WELLNESS_MOODS.find(([n])=>n===Number(value))?.[1]||"Not checked in";
 }
 function setSelfCareTab(tab){
-  if(!["today","routines","track"].includes(tab))tab="today";
+  if(!["today","routines","personal","track"].includes(tab))tab="today";
   selfCareTab=tab;localStorage.setItem("dailyLifeSelfCareTab",tab);render();
   requestAnimationFrame(()=>document.querySelector(".self-care-card")?.scrollIntoView({block:"start"}));
 }
@@ -824,6 +825,7 @@ function selfCareTabs(){
   return `<div class="self-care-tabs" role="tablist" aria-label="Self care sections">
     <button class="${selfCareTab==="today"?"active":""}" onclick="setSelfCareTab('today')">Today</button>
     <button class="${selfCareTab==="routines"?"active":""}" onclick="setSelfCareTab('routines')">Routines</button>
+    <button class="${selfCareTab==="personal"?"active":""}" onclick="setSelfCareTab('personal')">Personal care</button>
     <button class="${selfCareTab==="track"?"active":""}" onclick="setSelfCareTab('track')">Track</button>
   </div>`;
 }
@@ -863,6 +865,61 @@ function careDaysInWindow(days){
   const dates=trendDates(days),set=new Set((state.selfCare||[]).filter(x=>x.done&&dates.includes(x.date)).map(x=>x.date));
   return set.size;
 }
+
+const PERSONAL_CARE_DEFAULTS=[
+  ["hair_wash","Hair wash","Hair"],
+  ["hair_mask","Hair mask / deep condition","Hair"],
+  ["shave","Shave / body grooming","Body"],
+  ["nails","Nails","Beauty"],
+  ["face_mask","Face mask","Skin"],
+  ["exfoliate","Exfoliate","Skin"],
+  ["brows","Brows","Beauty"],
+  ["foot_care","Foot care","Body"]
+];
+function personalCareDefinitions(){
+  const custom=Array.isArray(state.settings?.personalCareActivities)?state.settings.personalCareActivities:[];
+  return [...PERSONAL_CARE_DEFAULTS.map(([key,label,group])=>({key,label,group,builtin:true})),...custom];
+}
+function lastPersonalCare(key){
+  return [...(state.selfCareActivities||[])].filter(x=>x.key===key).sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||"")))[0]||null;
+}
+function personalCareCount(key,days=30){
+  const d=new Date();d.setDate(d.getDate()-(days-1));const start=ymd(d);
+  return (state.selfCareActivities||[]).filter(x=>x.key===key&&x.date>=start&&x.date<=ymd()).length;
+}
+function personalCareAge(key){
+  const x=lastPersonalCare(key);return x?daysSinceDate(x.date):null;
+}
+function personalCareWhen(key){
+  const x=lastPersonalCare(key),age=x?personalCareAge(key):null;
+  if(!x)return"Not logged yet";
+  if(age===0)return"Today";
+  if(age===1)return"Yesterday";
+  return age+" days ago";
+}
+async function quickPersonalCare(key){
+  state.selfCareActivities.push({id:uid(),key,date:ymd(),time:new Date().toTimeString().slice(0,5),notes:""});
+  await save();render();
+}
+function openPersonalCareLog(key=""){
+  const defs=personalCareDefinitions(),current=defs.find(x=>x.key===key);
+  modal("Log personal care",`<div class="stack"><label>Care item<select id="pcaKey">${defs.map(x=>`<option value="${x.key}" ${x.key===key?"selected":""}>${esc(x.label)}</option>`).join("")}</select></label><div class="grid2"><label>Date<input id="pcaDate" type="date" value="${ymd()}"></label><label>Time<input id="pcaTime" type="time" value="${new Date().toTimeString().slice(0,5)}"></label></div><label>Notes<textarea id="pcaNotes" rows="3" placeholder="Optional — product, style, how it went…"></textarea></label></div>`,"Save",async()=>{
+    state.selfCareActivities.push({id:uid(),key:$("#pcaKey").value,date:$("#pcaDate").value||ymd(),time:$("#pcaTime").value,notes:$("#pcaNotes").value.trim()});await save();closeModal();render();
+  });
+}
+function openPersonalCareSettings(){
+  modal("Add personal-care item",`<div class="stack"><label>Name<input id="pcaLabel" placeholder="Dry shampoo, manicure, hair color…"></label><label>Section<select id="pcaGroup"><option>Hair</option><option>Skin</option><option>Beauty</option><option>Body</option><option>Other</option></select></label><div class="muted small">This adds a frequency log only. It does not create a schedule or reminder.</div></div>`,"Add",async()=>{
+    const label=$("#pcaLabel").value.trim();if(!label)return;
+    state.settings.personalCareActivities=Array.isArray(state.settings.personalCareActivities)?state.settings.personalCareActivities:[];
+    state.settings.personalCareActivities.push({key:"personal_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12),label,group:$("#pcaGroup").value,builtin:false});await save();closeModal();render();
+  });
+}
+function selfCarePersonalPanel(){
+  const defs=personalCareDefinitions(),groups=["Hair","Skin","Beauty","Body","Other"];
+  return `<div class="routine-intro"><b>Things that matter, but not every day.</b><div class="muted small">Log them when they happen. Daily Life shows the actual frequency instead of turning them into another checklist.</div></div>
+    <div class="actions" style="margin-bottom:10px"><button class="btn" onclick="openPersonalCareLog()">+ Detailed log</button><button class="btn" onclick="openPersonalCareSettings()">+ Custom item</button></div>
+    ${groups.map(group=>{const rows=defs.filter(x=>x.group===group);if(!rows.length)return"";return`<div class="personal-care-group"><div class="mini-heading">${esc(group)}</div><div class="personal-care-grid">${rows.map(x=>`<div class="personal-care-item"><button class="personal-care-main" onclick="openPersonalCareLog('${x.key}')"><b>${esc(x.label)}</b><small>${esc(personalCareWhen(x.key))} · ${personalCareCount(x.key,30)}x in 30d</small></button><button class="btn small good" onclick="quickPersonalCare('${x.key}')">Done</button></div>`).join("")}</div></div>`}).join("")}`;
+}
 function selfCareTrackPanel(){
   const habits=selfCareHabits(),dates=trendDates(7),total=Math.max(1,habits.length),
         waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((n,x)=>n+Number(x.oz||0),0)),
@@ -872,11 +929,12 @@ function selfCareTrackPanel(){
   return `<div class="care-track-summary"><div class="metric"><div class="eyebrow">Care days</div><div class="big">${careDaysInWindow(7)}/7</div><div class="muted small">any self-care logged</div></div><div class="metric"><div class="eyebrow">30-day care days</div><div class="big">${careDaysInWindow(30)}</div></div><div class="metric"><div class="eyebrow">Avg water</div><div class="big">${Math.round(avgWater)} oz</div><div class="muted small">last 7 days</div></div><div class="metric"><div class="eyebrow">Avg sleep</div><div class="big">${avgSleep?avgSleep.toFixed(1)+" h":"—"}</div><div class="muted small">logged nights</div></div></div>
   <div class="mini-heading">Last 7 days</div><div class="care-week-strip">${dates.map(d=>{const count=habits.filter(h=>selfCareDone(h.key,d)).length,pct=Math.round(count*100/total),label=new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"});return `<div class="care-day"><span>${label}</span><div class="care-day-ring" style="--pct:${pct}"><b>${count}</b></div></div>`}).join("")}</div>
   <div class="mini-heading">Most frequently logged · 30 days</div>${ranked.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><b>${h.count} day${h.count===1?"":"s"}</b></div>`).join("")}
+  ${personalCareDefinitions().some(x=>lastPersonalCare(x.key))?`<div class="mini-heading">Personal-care frequency · 30 days</div>${personalCareDefinitions().filter(x=>personalCareCount(x.key,30)>0).sort((a,b)=>personalCareCount(b.key,30)-personalCareCount(a.key,30)).slice(0,8).map(x=>`<div class="row compact-row"><span>${esc(x.label)}<div class="muted small">${esc(personalCareWhen(x.key))}</div></span><b>${personalCareCount(x.key,30)}x</b></div>`).join("")}`:""}
   <details class="self-care-history"><summary>All habit history</summary><div class="muted small" style="margin:8px 0 4px">Days logged, not a score or requirement.</div>${habits.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><span class="self-care-window"><b>${selfCareCount(h.key,7)}/7</b><span class="muted small">7d</span><b>${selfCareCount(h.key,30)}/30</b><span class="muted small">30d</span></span></div>`).join("")}</details>`;
 }
 function selfCareCard(){
   const stats=selfCareTodayStats();
-  const body=selfCareTab==="routines"?selfCareRoutinesPanel():selfCareTab==="track"?selfCareTrackPanel():selfCareTodayPanel();
+  const body=selfCareTab==="routines"?selfCareRoutinesPanel():selfCareTab==="personal"?selfCarePersonalPanel():selfCareTab==="track"?selfCareTrackPanel():selfCareTodayPanel();
   return `<div class="card self-care-card sparkle-card"><div class="section-title"><div><div class="eyebrow">Self care</div><h2>Care that fits your actual life</h2><div class="muted small">Track what happened, notice patterns, and keep routines flexible. Nothing here creates a reminder unless you ask for one.</div></div><button class="btn" onclick="openSelfCareSettings()">Customize</button></div>
   ${selfCareTabs()}
   ${selfCareTab==="today"?`<div class="self-care-progress-label"><span>Today</span><b>${stats.done}/${stats.total}</b></div><div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>`:""}
