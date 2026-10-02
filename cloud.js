@@ -628,6 +628,46 @@ function cloudApplyLifeEntry(row){
       const child=String(p.child||"").trim(),chore=String(p.chore||"").trim();if(!child||!chore)return false;
       state.chores.push({...common,child,chore,done:!!p.done});return true;
     }
+    case "pet_profile":{
+      if(!Array.isArray(state.pets))state.pets=[];
+      const name=String(p.name||p.petName||p.pet||"").trim();if(!name)return false;
+      let x=state.pets.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(!x){x={id:uid(),name};state.pets.push(x)}
+      Object.assign(x,{
+        name,
+        species:String(p.species||x.species||"pet"),
+        lifestyle:String(p.lifestyle||x.lifestyle||""),
+        birthday:String(p.birthday||x.birthday||""),
+        diet:String(p.diet||x.diet||""),
+        vet:String(p.vet||x.vet||""),
+        medications:String(p.medications||x.medications||""),
+        microchip:String(p.microchip||x.microchip||""),
+        personality:String(p.personality||x.personality||""),
+        favorites:String(p.favorites||x.favorites||""),
+        notes:String(p.notes||x.notes||""),
+        cloudEntryId:row.id
+      });
+      return true;
+    }
+    case "plant_profile":{
+      if(!Array.isArray(state.plants))state.plants=[];
+      const name=String(p.name||p.plantName||p.plant||"").trim();if(!name)return false;
+      let x=state.plants.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(!x){x={id:uid(),name};state.plants.push(x)}
+      Object.assign(x,{
+        name,
+        type:String(p.type||p.plantType||x.type||"Plant"),
+        status:String(p.status||x.status||"Active"),
+        location:String(p.location||x.location||""),
+        light:String(p.light||x.light||""),
+        waterEveryDays:Number(p.waterEveryDays??x.waterEveryDays??0),
+        plantedDate:String(p.plantedDate||x.plantedDate||""),
+        source:String(p.source||x.source||"ChatGPT"),
+        notes:String(p.notes||x.notes||""),
+        cloudEntryId:row.id
+      });
+      return true;
+    }
     case "pet_care":{
       if(!Array.isArray(state.petLogs))state.petLogs=[];
       const petName=String(p.petName||p.pet||"").trim(),type=String(p.type||p.careType||"Note").trim()||"Note";
@@ -678,11 +718,17 @@ function cloudApplyLifeEntry(row){
     }
     case "shopping":{
       const item=String(p.item||"").trim();if(!item)return false;
-      state.shopping.push({id:common.id,cloudEntryId:row.id,item,qty:String(p.qty||""),store:String(p.store||""),status:String(p.status||"needed")});return true;
+      state.shopping.push({id:common.id,cloudEntryId:row.id,item,qty:String(p.qty||""),store:String(p.store||""),status:String(p.status||"needed"),source:String(p.source||"manual")});return true;
     }
     case "home_care":{
       const task=String(p.task||"").trim();if(!task)return false;
-      state.homeLogs.push({...common,area:String(p.area||"Home"),task,status:String(p.status||"done"),notes:String(p.notes||"")});return true;
+      const status=String(p.status||"done"),notes=String(p.notes||"");
+      state.homeLogs.push({...common,area:String(p.area||"Home"),task,status,notes});
+      if(status==="done"&&/litter/i.test(task)){
+        if(!Array.isArray(state.petLogs))state.petLogs=[];
+        state.petLogs.push({...common,petId:"",type:"Litter",time:String(p.time||""),value:"",notes:notes||"Logged from home care",source:"chatgpt"});
+      }
+      return true;
     }
     case "task":{
       const title=String(p.title||"").trim();if(!title)return false;
