@@ -204,7 +204,7 @@ async function dbClear(){
 <script src="sharing.js?v=20261002-share4"></script>
 <script src="finance-cloud.js?v=20261002-moneystrategy1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
-<script src="vault.js?v=20261002-vault3"></script>
+<script src="vault.js?v=20261002-vault4"></script>
 <script>
 
 const $=s=>document.querySelector(s);
@@ -3365,7 +3365,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261002-floral1").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261002-vaulttest1").catch(()=>{});
 
 </script>
 </body>
