@@ -6,8 +6,14 @@
   "display": "standalone",
   "background_color": "#08130e",
   "theme_color": "#11221a",
-  "description": "Private local-first personal and family command center.",
+  "description": "A calm, private personal and family command center for daily life.",
   "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
