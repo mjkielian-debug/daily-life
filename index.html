@@ -225,7 +225,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
@@ -366,7 +366,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -1210,13 +1210,23 @@ function isSchoolEvent(e){
 function childProfiles(){return (state.peopleProfiles||[]).filter(p=>isChildProfile(p)&&livesWithUser(p))}
 function kidsMoneyAccount(personId){
   let a=(state.kidsMoneyAccounts||[]).find(x=>x.personId===personId);
-  if(!a){a={id:uid(),personId,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(a)}
+  if(!a){a={id:uid(),personId,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak",lastReconciledAt:""};state.kidsMoneyAccounts.push(a)}
   return a;
 }
+function kidsMoneyHasActual(a){return a?.actualBalance!==null&&a?.actualBalance!==""&&Number.isFinite(Number(a.actualBalance))}
 function kidsMoneyTransactionsFor(personId){return (state.kidsMoneyTransactions||[]).filter(x=>x.personId===personId).sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||"")))}
+function kidsMoneyPendingBreakdown(personId){
+  const rows=kidsMoneyTransactionsFor(personId).filter(x=>String(x.status||"")==="pending");
+  return{
+    add:rows.reduce((sum,x)=>sum+Math.max(0,Number(x.amount||0)),0),
+    subtract:rows.reduce((sum,x)=>sum+Math.max(0,-Number(x.amount||0)),0),
+    net:rows.reduce((sum,x)=>sum+Number(x.amount||0),0),
+    count:rows.length
+  };
+}
 function kidsMoneyPending(personId){
-  const rows=kidsMoneyTransactionsFor(personId),pending=rows.filter(x=>String(x.status||"")==="pending").reduce((sum,x)=>sum+Math.max(0,Number(x.amount||0)),0);
-  if(pending>0)return pending;
+  const p=kidsMoneyPendingBreakdown(personId);
+  if(p.add>0)return p.add;
   const a=kidsMoneyAccount(personId);
   return Math.max(0,Number(a.pendingToFund||0));
 }
@@ -1225,9 +1235,17 @@ function kidsMoneyOpenDelta(personId){
 }
 function kidsMoneyLedger(personId){return kidsMoneyTransactionsFor(personId).reduce((sum,x)=>sum+Number(x.amount||0),0)}
 function kidsMoneyExpected(personId){
-  const a=kidsMoneyAccount(personId),base=a.actualBalance===null||a.actualBalance===""?0:Number(a.actualBalance||0);
-  return base+kidsMoneyOpenDelta(personId);
+  const a=kidsMoneyAccount(personId);
+  return kidsMoneyHasActual(a)?Number(a.actualBalance||0)+kidsMoneyOpenDelta(personId):kidsMoneyLedger(personId);
 }
+function kidsMoneyLatestReconciliation(personId){
+  return [...(state.kidsMoneyReconciliations||[])].filter(x=>x.personId===personId).sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
+}
+function kidsMoneyGoalProgress(personId){
+  const a=kidsMoneyAccount(personId),goal=Number(a.savingsGoal||0),balance=Math.max(0,kidsMoneyExpected(personId));
+  return{goal,balance,percent:goal>0?Math.min(100,Math.round(balance*100/goal)):0};
+}
+
 function kidsMoneyCard(){
   const kids=childProfiles();
   return `<div class="card kids-money-card"><div class="section-title"><div><div class="eyebrow">Kids Money</div><h2>Modak + app-side ledger</h2><div class="muted small">Track what each child should have, including amounts not actually funded yet. Daily Life does not claim money moved unless you record it as funded or reconcile an actual balance.</div></div></div>
