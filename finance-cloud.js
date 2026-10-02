@@ -17,6 +17,49 @@ function cloudFinanceType(row){
   return "other";
 }
 
+function cloudFinanceStrategy(row){
+  const x=row?.metadata?.dailyLifeStrategy;
+  return x&&typeof x==="object"?x:{};
+}
+function cloudApplyFinanceStrategy(local,remote){
+  if(!local||!remote)return false;
+  const x=cloudFinanceStrategy(remote);let changed=false;
+  const assign=(key,value)=>{
+    if(value===undefined||value===null)return;
+    if(local[key]!==value){local[key]=value;changed=true}
+  };
+  assign("strategy",x.strategy);
+  assign("directDepositRequired",x.directDepositRequired);
+  assign("billPayAllowed",x.billPayAllowed);
+  assign("minimumOperatingBalance",Number.isFinite(Number(x.minimumOperatingBalance))?Math.max(0,Number(x.minimumOperatingBalance)):undefined);
+  assign("preferredCashHome",x.preferredCashHome);
+  assign("exitAccount",x.exitAccount);
+  assign("avoidNewBills",x.avoidNewBills);
+  assign("strategyNote",x.note);
+  return changed;
+}
+async function cloudSaveFinanceStrategy(local){
+  if(!cloudUser?.()||!cloudClient||!local?.cloudAccountId)return false;
+  const remote=cloudFinancialAccounts.find(x=>x.id===local.cloudAccountId);
+  if(!remote)return false;
+  const metadata=remote.metadata&&typeof remote.metadata==="object"?{...remote.metadata}:{};
+  metadata.dailyLifeStrategy={
+    ...(metadata.dailyLifeStrategy&&typeof metadata.dailyLifeStrategy==="object"?metadata.dailyLifeStrategy:{}),
+    strategy:String(local.strategy||"Standard"),
+    directDepositRequired:!!local.directDepositRequired,
+    billPayAllowed:local.billPayAllowed==null?null:!!local.billPayAllowed,
+    minimumOperatingBalance:Math.max(0,Number(local.minimumOperatingBalance||0)),
+    preferredCashHome:!!local.preferredCashHome,
+    exitAccount:!!local.exitAccount,
+    avoidNewBills:!!local.avoidNewBills,
+    note:String(local.strategyNote||"")
+  };
+  const {error}=await cloudClient.from("financial_accounts").update({metadata,updated_at:new Date().toISOString()}).eq("id",local.cloudAccountId);
+  if(error)throw error;
+  remote.metadata=metadata;
+  return true;
+}
+
 function cloudFinanceBalance(row){
   if(row.account_type==="depository"&&row.available_balance!=null)return Number(row.available_balance);
   return Number(row.current_balance||0);
@@ -54,6 +97,7 @@ async function cloudRefreshFinancialAccounts(updateMapped=true){
       const asOf=remote.balance_as_of||remote.financial_connections?.last_synced_at||null;
       if(local.balanceAsOf!==asOf){local.balanceAsOf=asOf;changed=true}
       local.syncSource="plaid";
+      if(cloudApplyFinanceStrategy(local,remote))changed=true;
     }
     if(changed)await save();
   }
@@ -96,9 +140,9 @@ function cloudFinancePanel(){
   ${cloudFinanceMessage?`<div class="notice">${esc(cloudFinanceMessage)}</div>`:""}
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
-    const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id);
+    const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id),strategy=cloudFinanceStrategy(r);
     const fresh=r.balance_as_of||c.last_synced_at;
-    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")}${fresh?` · synced ${esc(new Date(fresh).toLocaleString())}`:""}</div></span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
+    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")}${fresh?` · synced ${esc(new Date(fresh).toLocaleString())}`:""}</div>${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
   }).join(""):`<div class="notice">No financial accounts connected yet.</div>`}</div>`;
 }
 
@@ -204,6 +248,7 @@ function openCloudAccountMap(remoteId){
       balance:cloudFinanceBalance(remote),
       balanceAsOf:remote.balance_as_of||remote.financial_connections?.last_synced_at||null
     });
+    cloudApplyFinanceStrategy(local,remote);
     if(!local.type||local.type==="other")local.type=cloudFinanceType(remote);
     await save();closeModal();render();
   });
