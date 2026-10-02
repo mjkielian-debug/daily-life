@@ -167,6 +167,10 @@ async function cloudPullHouseholdMembers(){
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
       p.wishlist=cloudMergeWishlist(p.wishlist,meta.wishlist,meta.elfsterWishes);
+      if(Array.isArray(meta.personNotes)){
+        const seen=new Set((p.personNotes||[]).map(n=>String(n.id||"")));
+        p.personNotes=[...(p.personNotes||[]),...meta.personNotes.filter(n=>n&&(!n.id||!seen.has(String(n.id))))];
+      }
       for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests","importantDates","sharedPlans"]){
         if(Array.isArray(meta[key])&&(!Array.isArray(p[key])||!p[key].length))p[key]=meta[key];
       }
@@ -205,6 +209,7 @@ async function cloudUpsertPersonProfile(p){
       elfsterUrl:String(p.elfsterUrl||""),
       elfsterLastSyncedAt:String(p.elfsterLastSyncedAt||existingMeta.elfsterLastSyncedAt||""),
       wishlist:Array.isArray(p.wishlist)?p.wishlist:[],
+      personNotes:Array.isArray(p.personNotes)?p.personNotes:[],
       favoriteColors:Array.isArray(p.favoriteColors)?p.favoriteColors:[],
       favoriteCharacters:Array.isArray(p.favoriteCharacters)?p.favoriteCharacters:[],
       favoriteFoods:Array.isArray(p.favoriteFoods)?p.favoriteFoods:[],
