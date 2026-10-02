@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#17101d">
+<meta name="theme-color" content="#11221a">
 <meta name="description" content="Daily Life — local-first personal command center">
   <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="styles.css?v=20261001-2225">
 <title>Daily Life</title>
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:21,createdAt:new Date().toISOString(),
+  version:23,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],
@@ -116,10 +116,10 @@ const blankState=()=>({
     ],
     mealPatterns:[]
   },
-  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
+  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-let state=blankState(),view="today",installPrompt=null,weather=null;
+let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
   ["Emerald Blush","#69c58e","#e8b8c7","#e7d3a0"],
@@ -233,7 +233,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,22);
+  s.version=Math.max(Number(s.version)||0,23);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -241,10 +241,19 @@ function migrateState(s){
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.selfCareHabits=Array.isArray(s.settings.selfCareHabits)?s.settings.selfCareHabits:[];
-  if(!s.settings.selfCareHabits.length)s.settings.selfCareHabits=DEFAULT_SELF_CARE_HABITS.map(x=>({...x}));
+  for(const d of DEFAULT_SELF_CARE_HABITS){
+    const existing=s.settings.selfCareHabits.find(h=>h.key===d.key);
+    if(!existing)s.settings.selfCareHabits.push({...d});
+    else{
+      if(existing.label===undefined)existing.label=d.label;
+      if(existing.group===undefined)existing.group=d.group;
+      if(existing.routine===undefined)existing.routine=d.routine;
+      if(existing.builtin===undefined)existing.builtin=d.builtin;
+    }
+  }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -684,7 +693,7 @@ function spinReaderWheel(){
 function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
 function needsSetup(){return !state.profile?.name}
 function renderSetup(){const user=cloudUser?.();return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Start locally, restore a private backup, or sign in to your Daily Life cloud account. Public app code contains no personal records.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button>${user?`<button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>`:`<button class="btn" onclick="openCloudAuth()">Sign in / cloud account</button>`}</div></div></main>`}
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","🍽","Food")}${nav("more","$","Money")}${nav("log","◎","Life")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayMoneySnapshot(){
   const checking=(state.accounts||[]).filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         month=ymd().slice(0,7),bt=typeof budgetTotals==="function"?budgetTotals(month):null,
@@ -693,6 +702,10 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
         upcomingIncome=expectedIncomeOccurrences(end),pay=upcomingIncome[0]||null,
         hasBudget=bt&&Number(bt.income)>0;
   return `<div class="card today-money"><div class="section-title"><div><div class="eyebrow">💚 Money snapshot</div><h2>${money(checking)} checking</h2></div><button class="btn" onclick="setView('more')">Open Money</button></div><div class="grid3"><div class="metric"><div class="muted small">Budget remaining</div><div class="big">${hasBudget?budgetMoney(bt.remaining):"—"}</div></div><div class="metric"><div class="muted small">Bills next 7 days</div><div class="big">${bills.length}</div><div class="muted small">${bills.length?money(bills.reduce((sum,b)=>sum+Number(b.amount||0),0)):"none logged"}</div></div><div class="metric"><div class="muted small">Next expected income</div><div class="big">${pay?money(pay.amount):"—"}</div><div class="muted small">${pay?`${esc(pay.name)} · ${esc(dl(pay.date))}`:"Nothing scheduled yet"}</div></div></div></div>`;
+}
+function todayCareSnapshotCard(){
+  const stats=selfCareTodayStats(),x=wellnessForDate(),sleep=sleepHours(sleepForDate());
+  return `<div class="card today-care-snapshot"><div class="section-title"><div><div class="eyebrow">✧ Self care</div><h2>${stats.done}/${stats.total} logged today</h2></div><button class="btn" onclick="setView('log')">Open Care</button></div><div class="today-care-inline"><span><b>${x?.mood?esc(moodLabel(x.mood)):"No mood check-in"}</b><small>feeling</small></span><span><b>${Math.round(water())} oz</b><small>water</small></span><span><b>${sleep?sleep.toFixed(1)+" h":"—"}</b><small>sleep</small></span></div></div>`;
 }
 function nextLifeAdminAction(){
   const rows=[...(state.projects||[])].filter(p=>!["done","closed"].includes(String(p.status||""))&&p.nextAction).sort((a,b)=>projectUrgency(a)-projectUrgency(b)||String(a.due||"9999").localeCompare(String(b.due||"9999")));
@@ -711,7 +724,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
-  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>
+  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
@@ -735,20 +748,24 @@ function sleepHours(log){
   if(!log?.bedtime||!log?.wakeTime)return 0;const [bh,bm]=log.bedtime.split(":").map(Number),[wh,wm]=log.wakeTime.split(":").map(Number);let mins=wh*60+(wm||0)-(bh*60+(bm||0));if(mins<0)mins+=1440;return mins/60;
 }
 const DEFAULT_SELF_CARE_HABITS=[
-  {key:"brush",label:"Brush teeth",group:"Essentials",builtin:true},
-  {key:"floss",label:"Floss",group:"Essentials",builtin:true},
-  {key:"mouthwash",label:"Mouthwash",group:"Essentials",builtin:true},
-  {key:"shower",label:"Shower",group:"Essentials",builtin:true},
-  {key:"wash_face",label:"Wash face",group:"Skin + body",builtin:true},
-  {key:"skincare",label:"Skincare",group:"Skin + body",builtin:true},
-  {key:"body_lotion",label:"Body lotion",group:"Skin + body",builtin:true},
-  {key:"hair_care",label:"Hair care",group:"Skin + body",builtin:true},
-  {key:"fresh_clothes",label:"Fresh clothes",group:"Skin + body",builtin:true},
-  {key:"outside",label:"Fresh air / outside",group:"Reset + restore",builtin:true},
-  {key:"quiet_time",label:"Quiet time",group:"Reset + restore",builtin:true},
-  {key:"journal",label:"Journal",group:"Reset + restore",builtin:true},
-  {key:"meditate",label:"Meditation",group:"Reset + restore",builtin:true},
-  {key:"wind_down",label:"Bedtime wind-down",group:"Reset + restore",builtin:true}
+  {key:"brush",label:"Brush teeth",group:"Essentials",routine:"anytime",builtin:true},
+  {key:"floss",label:"Floss",group:"Essentials",routine:"evening",builtin:true},
+  {key:"mouthwash",label:"Mouthwash",group:"Essentials",routine:"evening",builtin:true},
+  {key:"shower",label:"Shower",group:"Essentials",routine:"anytime",builtin:true},
+  {key:"deodorant",label:"Deodorant",group:"Essentials",routine:"morning",builtin:true},
+  {key:"wash_face",label:"Wash face",group:"Beauty + grooming",routine:"morning",builtin:true},
+  {key:"skincare",label:"Skincare",group:"Beauty + grooming",routine:"evening",builtin:true},
+  {key:"body_lotion",label:"Body lotion",group:"Beauty + grooming",routine:"evening",builtin:true},
+  {key:"hair_care",label:"Hair care",group:"Beauty + grooming",routine:"anytime",builtin:true},
+  {key:"fresh_clothes",label:"Fresh clothes",group:"Beauty + grooming",routine:"morning",builtin:true},
+  {key:"outside",label:"Fresh air / outside",group:"Reset + restore",routine:"anytime",builtin:true},
+  {key:"quiet_time",label:"Quiet time",group:"Reset + restore",routine:"anytime",builtin:true},
+  {key:"journal",label:"Journal",group:"Reset + restore",routine:"evening",builtin:true},
+  {key:"meditate",label:"Meditation",group:"Reset + restore",routine:"anytime",builtin:true},
+  {key:"wind_down",label:"Bedtime wind-down",group:"Reset + restore",routine:"evening",builtin:true}
+];
+const WELLNESS_MOODS=[
+  [1,"Very low"],[2,"Low"],[3,"Okay"],[4,"Good"],[5,"Really good"]
 ];
 function selfCareHabits(){
   const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[];
@@ -761,30 +778,99 @@ function selfCareTodayStats(){
   const habits=selfCareHabits(),done=habits.filter(h=>selfCareDone(h.key)).length;
   return{done,total:habits.length,percent:habits.length?Math.round(done*100/habits.length):0};
 }
+function wellnessForDate(date=ymd()){
+  return (state.wellnessLogs||[]).find(x=>x.date===date)||null;
+}
+function moodLabel(value){
+  return WELLNESS_MOODS.find(([n])=>n===Number(value))?.[1]||"Not checked in";
+}
+function setSelfCareTab(tab){
+  if(!["today","routines","track"].includes(tab))tab="today";
+  selfCareTab=tab;localStorage.setItem("dailyLifeSelfCareTab",tab);render();
+  requestAnimationFrame(()=>document.querySelector(".self-care-card")?.scrollIntoView({block:"start"}));
+}
+function selfCareTabs(){
+  return `<div class="self-care-tabs" role="tablist" aria-label="Self care sections">
+    <button class="${selfCareTab==="today"?"active":""}" onclick="setSelfCareTab('today')">Today</button>
+    <button class="${selfCareTab==="routines"?"active":""}" onclick="setSelfCareTab('routines')">Routines</button>
+    <button class="${selfCareTab==="track"?"active":""}" onclick="setSelfCareTab('track')">Track</button>
+  </div>`;
+}
 function selfCareGroupCard(group,habits){
   const done=habits.filter(h=>selfCareDone(h.key)).length;
   return `<div class="self-care-group"><div class="self-care-group-head"><div><div class="mini-heading">${esc(group)}</div><div class="muted small">${done} of ${habits.length} logged today</div></div><span class="self-care-count">${done}/${habits.length}</span></div><div class="self-care-grid">${habits.map(h=>care(h.key,h.label)).join("")}</div></div>`;
 }
-function selfCareHistory(){
-  const habits=selfCareHabits();
-  return `<details class="self-care-history"><summary>Patterns over time</summary><div class="muted small" style="margin:8px 0 4px">Days logged, not a score or requirement.</div>${habits.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><span class="self-care-window"><b>${selfCareCount(h.key,7)}/7</b><span class="muted small">7d</span><b>${selfCareCount(h.key,30)}/30</b><span class="muted small">30d</span></span></div>`).join("")}</details>`;
+function selfCareBalanceCards(){
+  const sleep=sleepHours(sleepForDate()),waterNow=water(),waterGoal=Number(state.settings.waterTarget||0),stretchNow=stretch(),f=totals();
+  return `<div class="care-balance-grid">
+    <button class="care-balance" onclick="openSleep()"><span>Sleep</span><b>${sleep?sleep.toFixed(1)+" h":"Log"}</b><small>${sleepForDate()?.energy?"Energy "+sleepForDate().energy+"/5":"Bed + wake time"}</small></button>
+    <button class="care-balance" onclick="customWater()"><span>Hydration</span><b>${Math.round(waterNow)} oz</b><small>${waterGoal?Math.round(waterNow*100/waterGoal)+"% of goal":"Tap to add water"}</small></button>
+    <button class="care-balance" onclick="addStretch(5)"><span>Movement</span><b>${stretchNow} min</b><small>Tap to add 5 min</small></button>
+    <button class="care-balance" onclick="openFood()"><span>Nourishment</span><b>${Math.round(f.protein)}g protein</b><small>${Math.round(f.cal)} calories logged</small></button>
+  </div>`;
+}
+function wellnessCheckinCard(){
+  const x=wellnessForDate();
+  return `<div class="wellness-checkin"><div><div class="mini-heading">How are you feeling?</div><div class="muted small">${x?.mood?esc(moodLabel(x.mood)):"No check-in yet"}${x?.note?" · "+esc(x.note):""}</div></div><button class="btn small" onclick="openWellnessCheckin()">${x?"Edit":"Check in"}</button></div>`;
+}
+function selfCareTodayPanel(){
+  const habits=selfCareHabits(),groups=["Essentials","Beauty + grooming","Reset + restore"],
+        customs=[...new Set(habits.map(h=>h.group).filter(g=>!groups.includes(g)))];
+  return `${wellnessCheckinCard()}${selfCareBalanceCards()}${[...groups,...customs].map(group=>{const rows=habits.filter(h=>h.group===group);return rows.length?selfCareGroupCard(group,rows):""}).join("")}`;
+}
+function routineName(value){return value==="morning"?"Morning":value==="evening"?"Evening":"Anytime"}
+function routinePanel(routine){
+  const rows=selfCareHabits().filter(h=>(h.routine||"anytime")===routine),done=rows.filter(h=>selfCareDone(h.key)).length;
+  return `<div class="routine-panel"><div class="self-care-group-head"><div><div class="mini-heading">${routineName(routine)}</div><div class="muted small">${done}/${rows.length} logged today</div></div></div><div class="self-care-grid">${rows.map(h=>care(h.key,h.label)).join("")||'<div class="muted small">No habits assigned here yet.</div>'}</div></div>`;
+}
+function selfCareRoutinesPanel(){
+  return `<div class="routine-intro"><b>Shape the day without adding reminders.</b><div class="muted small">These are just grouped check-ins. Move habits between morning, anytime, and evening whenever your routine changes.</div></div>
+  ${routinePanel("morning")}${routinePanel("anytime")}${routinePanel("evening")}
+  <div class="actions" style="margin-top:10px"><button class="btn" onclick="openSelfCareSettings()">Edit habits + routine groups</button></div>`;
+}
+function careDaysInWindow(days){
+  const dates=trendDates(days),set=new Set((state.selfCare||[]).filter(x=>x.done&&dates.includes(x.date)).map(x=>x.date));
+  return set.size;
+}
+function selfCareTrackPanel(){
+  const habits=selfCareHabits(),dates=trendDates(7),total=Math.max(1,habits.length),
+        waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((n,x)=>n+Number(x.oz||0),0)),
+        sleepVals=dates.map(d=>sleepHours((state.sleepLogs||[]).find(x=>x.date===d))).filter(Boolean),
+        avgWater=waterVals.reduce((a,b)=>a+b,0)/7,avgSleep=sleepVals.length?sleepVals.reduce((a,b)=>a+b,0)/sleepVals.length:0,
+        ranked=habits.map(h=>({...h,count:selfCareCount(h.key,30)})).sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label)).slice(0,5);
+  return `<div class="care-track-summary"><div class="metric"><div class="eyebrow">Care days</div><div class="big">${careDaysInWindow(7)}/7</div><div class="muted small">any self-care logged</div></div><div class="metric"><div class="eyebrow">30-day care days</div><div class="big">${careDaysInWindow(30)}</div></div><div class="metric"><div class="eyebrow">Avg water</div><div class="big">${Math.round(avgWater)} oz</div><div class="muted small">last 7 days</div></div><div class="metric"><div class="eyebrow">Avg sleep</div><div class="big">${avgSleep?avgSleep.toFixed(1)+" h":"—"}</div><div class="muted small">logged nights</div></div></div>
+  <div class="mini-heading">Last 7 days</div><div class="care-week-strip">${dates.map(d=>{const count=habits.filter(h=>selfCareDone(h.key,d)).length,pct=Math.round(count*100/total),label=new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"});return `<div class="care-day"><span>${label}</span><div class="care-day-ring" style="--pct:${pct}"><b>${count}</b></div></div>`}).join("")}</div>
+  <div class="mini-heading">Most frequently logged · 30 days</div>${ranked.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><b>${h.count} day${h.count===1?"":"s"}</b></div>`).join("")}
+  <details class="self-care-history"><summary>All habit history</summary><div class="muted small" style="margin:8px 0 4px">Days logged, not a score or requirement.</div>${habits.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><span class="self-care-window"><b>${selfCareCount(h.key,7)}/7</b><span class="muted small">7d</span><b>${selfCareCount(h.key,30)}/30</b><span class="muted small">30d</span></span></div>`).join("")}</details>`;
 }
 function selfCareCard(){
-  const habits=selfCareHabits(),stats=selfCareTodayStats(),groups=["Essentials","Skin + body","Reset + restore"],
-        customs=[...new Set(habits.map(h=>h.group).filter(g=>!groups.includes(g)))];
-  return `<div class="card self-care-card sparkle-card"><div class="section-title"><div><div class="eyebrow">Self care</div><h2>${stats.done} of ${stats.total} logged today</h2><div class="muted small">A fuller record of what actually happened — hygiene, grooming, and restoration. No reminders are created.</div></div><button class="btn" onclick="openSelfCareSettings()">Customize</button></div>
-  <div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>
-  ${[...groups,...customs].map(group=>{const rows=habits.filter(h=>h.group===group);return rows.length?selfCareGroupCard(group,rows):""}).join("")}
-  ${selfCareHistory()}</div>`;
+  const stats=selfCareTodayStats();
+  const body=selfCareTab==="routines"?selfCareRoutinesPanel():selfCareTab==="track"?selfCareTrackPanel():selfCareTodayPanel();
+  return `<div class="card self-care-card sparkle-card"><div class="section-title"><div><div class="eyebrow">Self care</div><h2>Care that fits your actual life</h2><div class="muted small">Track what happened, notice patterns, and keep routines flexible. Nothing here creates a reminder unless you ask for one.</div></div><button class="btn" onclick="openSelfCareSettings()">Customize</button></div>
+  ${selfCareTabs()}
+  ${selfCareTab==="today"?`<div class="self-care-progress-label"><span>Today</span><b>${stats.done}/${stats.total}</b></div><div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>`:""}
+  <div class="self-care-tab-panel">${body}</div></div>`;
 }
-function openSelfCareSettings(){
-  const customs=selfCareHabits().filter(h=>!h.builtin);
-  modal("Customize self care",`<div class="stack"><p class="muted small">Add anything you want to track. This stays a frequency log; adding an item does not create a reminder.</p><label>Habit name<input id="schlabel" placeholder="Nails, hair mask, reading, face mask…"></label><label>Section<select id="schgroup"><option>Essentials</option><option>Skin + body</option><option>Reset + restore</option><option>Other</option></select></label>${customs.length?`<div><div class="mini-heading">Custom habits</div>${customs.map(h=>`<div class="row"><span>${esc(h.label)}<div class="muted small">${esc(h.group)}</div></span><button type="button" class="btn small danger" onclick="removeSelfCareHabit('${h.key}')">Remove</button></div>`).join("")}</div>`:""}</div>`,"Add habit",async()=>{
-    const label=$("#schlabel").value.trim(),group=$("#schgroup").value;if(!label)return;
-    const key="custom_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12);
-    state.settings.selfCareHabits.push({key,label,group,builtin:false});
+function openWellnessCheckin(){
+  const x=wellnessForDate()||{};
+  modal("Daily check-in",`<div class="stack"><label>How are you feeling?<select id="wcmood"><option value="0">Choose</option>${WELLNESS_MOODS.map(([n,label])=>`<option value="${n}" ${Number(x.mood)===n?"selected":""}>${label}</option>`).join("")}</select></label><label>What is taking up space today?<textarea id="wcnote" rows="3" placeholder="Optional — a sentence is enough.">${esc(x.note||"")}</textarea></label><label>Something that helped or felt good<textarea id="wcgood" rows="2" placeholder="Optional">${esc(x.good||"")}</textarea></label></div>`,"Save",async()=>{
+    let row=wellnessForDate();if(!row){row={id:uid(),date:ymd()};state.wellnessLogs.push(row)}
+    row.mood=Number($("#wcmood").value||0);row.note=$("#wcnote").value.trim();row.good=$("#wcgood").value.trim();
     await save();closeModal();render();
   });
+}
+function openSelfCareSettings(){
+  const habits=selfCareHabits();
+  modal("Customize self care",`<div class="stack"><p class="muted small">Add what matters to you and put each item where it naturally fits. This changes tracking only — it does not create reminders.</p><label>New habit<input id="schlabel" placeholder="Nails, hair mask, reading, face mask…"></label><div class="grid2"><label>Section<select id="schgroup"><option>Essentials</option><option>Beauty + grooming</option><option>Reset + restore</option><option>Other</option></select></label><label>Routine<select id="schroutine"><option value="morning">Morning</option><option value="anytime" selected>Anytime</option><option value="evening">Evening</option></select></label></div><div><div class="mini-heading">Your habits</div>${habits.map(h=>`<div class="habit-setting-row"><div class="grow"><b>${esc(h.label)}</b><div class="muted small">${esc(h.group)}${h.builtin?" · built in":""}</div></div><select aria-label="Routine for ${esc(h.label)}" onchange="updateSelfCareHabitRoutine('${h.key}',this.value)"><option value="morning" ${h.routine==="morning"?"selected":""}>Morning</option><option value="anytime" ${(h.routine||"anytime")==="anytime"?"selected":""}>Anytime</option><option value="evening" ${h.routine==="evening"?"selected":""}>Evening</option></select>${!h.builtin?`<button type="button" class="btn small danger" onclick="removeSelfCareHabit('${h.key}')">Remove</button>`:""}</div>`).join("")}</div></div>`,"Add habit",async()=>{
+    const label=$("#schlabel").value.trim(),group=$("#schgroup").value,routine=$("#schroutine").value;if(!label)return;
+    const key="custom_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12);
+    state.settings.selfCareHabits.push({key,label,group,routine,builtin:false});
+    await save();closeModal();render();
+  });
+}
+async function updateSelfCareHabitRoutine(key,routine){
+  const h=state.settings.selfCareHabits.find(h=>h.key===key);if(!h||!["morning","anytime","evening"].includes(routine))return;
+  h.routine=routine;await save();
 }
 async function removeSelfCareHabit(key){
   const habit=selfCareHabits().find(h=>h.key===key);if(!habit||habit.builtin)return;
@@ -795,7 +881,7 @@ function selfCareCount(key,days=7){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-(days-1));const start=ymd(cutoff);
   return new Set((state.selfCare||[]).filter(x=>x.key===key&&x.done&&x.date>=start&&x.date<=ymd()).map(x=>x.date)).size;
 }
-function openSleep(){
+function openSleep(){function openSleep(){
   const x=sleepForDate()||{};
   modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="2" placeholder="Anything affecting sleep or energy…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
 }
@@ -914,9 +1000,7 @@ function homeCareCard(){
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div><div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
 }
 function logView(f,w,tr){
-  return `<div class="card glow life-intro"><div class="eyebrow">＋ Life</div><h2>Health, work, car + home</h2><div class="muted small">The things you want to notice over time without turning Today into a wall of trackers.</div></div>
-  <div class="grid2">${sleepCard()}<div class="card"><div class="eyebrow">💧 Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div></div>
-  <div class="grid2"><div class="card"><div class="eyebrow">Movement reset</div><div class="big">${stretch()} min</div><div class="muted small">Stretching logged today</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5 min</button><button class="btn" onclick="addStretch(10)">+10 min</button></div></div><div class="card self-care-mini"><div class="eyebrow">Care snapshot</div><div class="big">${selfCareTodayStats().done}/${selfCareTodayStats().total}</div><div class="muted small">self-care habits logged today</div><div class="actions"><button class="btn" onclick="document.querySelector('.self-care-card')?.scrollIntoView({behavior:'smooth'})">Open self care</button></div></div></div>
+  return `<div class="card glow life-intro"><div class="eyebrow">✧ Care + Life</div><h2>Take care of yourself, then keep life moving</h2><div class="muted small">Self care comes first here; work, car, home, and longer-term patterns stay underneath it.</div></div>
   ${selfCareCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
