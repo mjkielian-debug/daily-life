@@ -665,7 +665,7 @@ function cloudApplyLifeEntry(row){
     }
     case "food":{
       const name=String(p.name||"").trim();if(!name)return false;
-      state.foodLogs.push({...common,name,category:String(p.category||"food"),calories:Number(p.calories||0),protein:Number(p.protein||0),carbs:Number(p.carbs||0),fat:Number(p.fat||0),fiber:Number(p.fiber||0),caffeineMg:Number(p.caffeineMg||0),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||"")});
+      state.foodLogs.push({...common,name,category:String(p.category||"food"),quantity:Number(p.quantity||1)>0?Number(p.quantity||1):1,calories:Number(p.calories||0),protein:Number(p.protein||0),carbs:Number(p.carbs||0),fat:Number(p.fat||0),fiber:Number(p.fiber||0),caffeineMg:Number(p.caffeineMg||0),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||"")});
       return true;
     }
     case "sleep":{
