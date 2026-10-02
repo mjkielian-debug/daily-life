@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:19,createdAt:new Date().toISOString(),
+  version:20,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,19);
+  s.version=Math.max(Number(s.version)||0,20);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -1453,6 +1453,70 @@ const BILL_FREQUENCIES=["Monthly","Annual","Irregular","One-time","Trial / decis
 function recordedBillSetup(bill){return BILL_SETUPS.includes(bill.paymentSetup)?bill.paymentSetup:"Unknown"}
 function recordedBillAmountType(bill){return BILL_AMOUNT_TYPES.includes(bill.amountType)?bill.amountType:"Fixed amount"}
 function recordedBillFrequency(bill){return BILL_FREQUENCIES.includes(bill.frequency)?bill.frequency:(billRepeat(bill)===1?"Monthly":billRepeat(bill)===12?"Annual":billRepeat(bill)>0?"Irregular":"One-time")}
+const INCOME_FREQUENCIES=["One-time","Weekly","Every 2 weeks","Monthly"];
+function addIncomeDate(date,frequency){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return"";
+  const d=new Date(date+"T12:00:00");
+  if(frequency==="Weekly")d.setDate(d.getDate()+7);
+  else if(frequency==="Every 2 weeks")d.setDate(d.getDate()+14);
+  else if(frequency==="Monthly"){const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate()));}
+  else return"";
+  return ymd(d);
+}
+function expectedIncomeOccurrences(untilDate){
+  const today=ymd(),out=[];
+  for(const src of state.expectedIncome||[]){
+    if(src.enabled===false)continue;
+    const amount=Number(src.amount||0),start=String(src.date||"");
+    if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(start))continue;
+    const frequency=INCOME_FREQUENCIES.includes(src.frequency)?src.frequency:"One-time";
+    let date=start,guard=0;
+    while(date&&date<=untilDate&&guard++<100){
+      if(date>=today)out.push({sourceId:src.id,date,amount,accountKey:String(src.accountKey||""),transferable:src.transferable!==false,name:String(src.name||"Expected income"),confidence:String(src.confidence||"confirmed"),frequency,notes:String(src.notes||"")});
+      if(frequency==="One-time")break;
+      date=addIncomeDate(date,frequency);
+    }
+  }
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));
+}
+function incomeBefore(date,accountKey){
+  return expectedIncomeOccurrences(date).filter(x=>x.accountKey===accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function transferableIncomeBefore(date){
+  return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function paycheckEstimatePreset(){
+  const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8);
+  if(rows.length<2)return null;
+  const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(Math.max(1,Math.round((new Date(rows[i].payDate+"T12:00:00")-new Date(rows[i-1].payDate+"T12:00:00"))/86400000)));
+  gaps.sort((a,b)=>a-b);const interval=gaps[Math.floor(gaps.length/2)]||7,avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length;
+  let next=rows[rows.length-1].payDate;do{const d=new Date(next+"T12:00:00");d.setDate(d.getDate()+interval);next=ymd(d)}while(next<ymd());
+  return{name:"Paycheck estimate",amount:Math.round(avgNet*100)/100,date:next,frequency:interval<=9?"Weekly":interval<=17?"Every 2 weeks":"One-time",confidence:"estimate",transferable:true,notes:`Estimated from ${rows.length} recent imported paychecks; review the amount and deposit account.`};
+}
+function openPaycheckEstimate(){const p=paycheckEstimatePreset();if(!p){alert("Import at least two pay statements first.");return}openExpectedIncome("",p)}
+function openExpectedIncome(id="",preset=null){
+  const x=(state.expectedIncome||[]).find(v=>v.id===id)||preset||{id:"",name:"",amount:"",date:ymd(),frequency:"One-time",accountKey:"",transferable:true,enabled:true,confidence:"confirmed",notes:""};
+  const accounts=(state.accounts||[]).filter(a=>a.key&&["checking","savings"].includes(a.type));
+  modal(x.id?"Expected income":"Add expected income",`<div class="stack">
+    <label>Income name<input id="einame" value="${esc(x.name||"")}" placeholder="Paycheck, support, reimbursement…"></label>
+    <div class="grid2"><label>Expected amount<input id="eiamount" type="number" min="0" step=".01" value="${x.amount??""}"></label><label>Next expected date<input id="eidate" type="date" value="${esc(x.date||ymd())}"></label></div>
+    <label>Repeats<select id="eifreq">${INCOME_FREQUENCIES.map(v=>`<option ${String(x.frequency||"One-time")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Deposit account<select id="eiaccount"><option value="">Choose account</option>${accounts.map(a=>`<option value="${esc(a.key)}" ${a.key===x.accountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
+    <label class="task"><input id="eitransfer" type="checkbox" ${x.transferable!==false?"checked":""}><span>Can be transferred to another spending account if a bill needs it</span></label>
+    <label class="task"><input id="eienabled" type="checkbox" ${x.enabled!==false?"checked":""}><span>Include this income in bill projections</span></label>
+    <label>Notes<input id="einotes" value="${esc(x.notes||"")}"></label>
+    ${x.confidence==="estimate"?`<div class="notice"><b>Estimate</b><div class="muted small">This came from recent pay history. Confirm the amount/date when you know them.</div></div>`:""}
+    ${x.id?`<button class="btn danger" type="button" onclick="removeExpectedIncome('${x.id}')">Remove expected income</button>`:""}
+  </div>`,"Save",async()=>{const name=$("#einame").value.trim(),amount=Number($("#eiamount").value||0),date=$("#eidate").value,frequency=$("#eifreq").value,accountKey=$("#eiaccount").value;if(!name||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!INCOME_FREQUENCIES.includes(frequency))return;let e=(state.expectedIncome||[]).find(v=>v.id===id);if(!e){e={id:uid()};state.expectedIncome.push(e)}Object.assign(e,{name,amount:Math.round(amount*100)/100,date,frequency,accountKey,transferable:$("#eitransfer").checked,enabled:$("#eienabled").checked,confidence:x.confidence||"confirmed",notes:$("#einotes").value.trim()});await save();closeModal();render()});
+}
+async function removeExpectedIncome(id){if(!confirm("Remove this expected income?"))return;state.expectedIncome=(state.expectedIncome||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function expectedIncomeCard(){
+  const end=new Date();end.setDate(end.getDate()+45);const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset();
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Expected income</div><h2>Money arriving before bills</h2></div><div class="actions"><button class="btn primary" onclick="openExpectedIncome()">+ Income</button>${estimate?`<button class="btn" onclick="openPaycheckEstimate()">Use pay estimate</button>`:""}</div></div>
+    <p class="muted small">Only income you include here is used in bill projections. The deposit account matters; transferable income can also support a bill from another spending account.</p>
+    ${occurrences.length?occurrences.map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No expected income is being counted yet.</div>`}
+  </div>`;
+}
 function billReadiness(){
   const remaining=new Map();
   // Equal due dates keep their original list order for deterministic reservations.
