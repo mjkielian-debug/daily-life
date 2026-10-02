@@ -534,3 +534,16 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:10px 0
 }
 .seed-plan button span{display:grid;gap:2px}.seed-plan small{color:var(--muted)}
+
+.pet-handoff-card{border-color:color-mix(in srgb,var(--secondary) 28%,var(--border))}
+.pet-handoff-card .row b{max-width:62%;text-align:right;overflow-wrap:anywhere}
+.garden-weather{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.garden-weather span{display:grid;gap:2px;padding:9px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.022)}
+.garden-weather b{font-family:Georgia,serif;font-size:.98rem}
+.garden-weather small{color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:.06em}
+.garden-harvest-card{border-color:color-mix(in srgb,var(--accent) 26%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 6%,transparent),transparent 40%),linear-gradient(180deg,var(--panel2),var(--panel))}
+@media(max-width:460px){
+  .garden-weather{grid-template-columns:1fr}
+  .pet-handoff-card .row{align-items:flex-start;flex-direction:column}
+  .pet-handoff-card .row b{max-width:100%;text-align:left}
+}
