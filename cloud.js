@@ -747,6 +747,7 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{scheduled:String(p.scheduled||x.scheduled||""),start:String(p.start||x.start||""),end:String(p.end||x.end||""),rate:Number(p.rate??x.rate??0),status:String(p.status||x.status||""),endedUnknown:p.endedUnknown!==undefined?!!p.endedUnknown:!!x.endedUnknown,notes:String(p.notes??x.notes??""),source:String(p.source||x.source||""),cloudEntryId:row.id});
       if(p.officialHours!==undefined&&Number.isFinite(Number(p.officialHours)))x.officialHours=Number(p.officialHours);
       if(p.officialGrossPay!==undefined&&Number.isFinite(Number(p.officialGrossPay)))x.officialGrossPay=Number(p.officialGrossPay);
+      if(p.officialRate!==undefined&&Number.isFinite(Number(p.officialRate)))x.officialRate=Number(p.officialRate);
       if(p.rawStartDecimal!==undefined&&Number.isFinite(Number(p.rawStartDecimal)))x.rawStartDecimal=Number(p.rawStartDecimal);
       if(p.rawEndDecimal!==undefined&&Number.isFinite(Number(p.rawEndDecimal)))x.rawEndDecimal=Number(p.rawEndDecimal);
       if(p.payCode!==undefined)x.payCode=String(p.payCode||"");
