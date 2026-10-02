@@ -72,10 +72,11 @@ function cloudPanel(){
     return `<div class="card"><div class="section-title"><h2>Cloud account</h2><span class="tag">optional</span></div><p class="muted">Sign in to keep a private cloud copy and later use the same Daily Life account on another device. Local data stays on this device until you explicitly upload it.</p>${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}<button class="btn primary" onclick="openCloudAuth()">Sign in / create account</button></div>`;
   }
   const updated=cloudRemoteUpdatedAt?new Date(cloudRemoteUpdatedAt).toLocaleString():"No cloud copy yet";
-  const auto=cloudAutoEnabled();
+  const auto=cloudAutoEnabled(),lastLifePull=localStorage.getItem(cloudMetaKey("lastLifePull")),lastLifePullText=lastLifePull?new Date(lastLifePull).toLocaleString():"Not scanned yet";
   return `<div class="card glow"><div class="section-title"><h2>Cloud account</h2><span class="tag">${auto?"auto sync on":"signed in"}</span></div>
   <div class="row"><span>Account</span><b>${esc(user.email||"Signed in")}</b></div>
   <div class="row"><span>Cloud copy</span><b>${esc(updated)}</b></div>
+  <div class="row"><span>ChatGPT log scan</span><b>${esc(lastLifePullText)}</b></div>
   ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
   <p class="muted small">Your device keeps its IndexedDB copy. Outfit photos remain local while photo storage is built separately.</p>
@@ -1457,6 +1458,7 @@ async function cloudPullLifeEntries(showAlert=false){
       const message=applied?("Added "+applied+" new ChatGPT log entr"+(applied===1?"y":"ies")+" to this device."):"No new ChatGPT logs to add.";
       alert(message+capNote);
     }
+    if(cloudUser())localStorage.setItem(cloudMetaKey("lastLifePull"),new Date().toISOString());
     return applied;
   }catch(error){
     cloudError=error?.message||"Could not pull conversational logs.";
