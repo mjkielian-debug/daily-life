@@ -278,6 +278,7 @@ async function cloudPullHouseholdMembers(){
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
       if(Array.isArray(meta.familyLinks))p.familyLinks=meta.familyLinks.filter(x=>x&&x.name).map(x=>({name:String(x.name),label:String(x.label||"")}));
+      if(Array.isArray(meta.schoolContacts))p.schoolContacts=meta.schoolContacts.filter(x=>x&&(x.name||x.email)).map(x=>({name:String(x.name||""),role:String(x.role||""),email:String(x.email||""),notes:String(x.notes||"")}));
       p.wishlist=cloudMergeWishlist(p.wishlist,meta.wishlist,meta.elfsterWishes);
       if(Array.isArray(meta.personNotes)){
         const seen=new Set((p.personNotes||[]).map(n=>String(n.id||"")));
@@ -323,6 +324,7 @@ async function cloudUpsertPersonProfile(p){
       wishlist:Array.isArray(p.wishlist)?p.wishlist:[],
       personNotes:Array.isArray(p.personNotes)?p.personNotes:[],
       familyLinks:Array.isArray(p.familyLinks)?p.familyLinks:[],
+      schoolContacts:Array.isArray(p.schoolContacts)?p.schoolContacts:[],
       favoriteColors:Array.isArray(p.favoriteColors)?p.favoriteColors:[],
       favoriteCharacters:Array.isArray(p.favoriteCharacters)?p.favoriteCharacters:[],
       favoriteFoods:Array.isArray(p.favoriteFoods)?p.favoriteFoods:[],
