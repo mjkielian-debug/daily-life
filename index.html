@@ -3397,21 +3397,45 @@ function parsePunchHistory(text){
   const byDate=new Map();for(const x of out){const prev=byDate.get(x.date);if(!prev)byDate.set(x.date,x);else{for(const k of ["start","end","rawStartDecimal","rawEndDecimal","officialHours","officialGrossPay","payCode","timecardVerified"])if((prev[k]===undefined||prev[k]==="")&&x[k]!==undefined)prev[k]=x[k]}}
   return [...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
+function parseUpsTimecardSummary(text){
+  const raw=String(text||""),rows=parsePunchHistory(raw),
+        gross=raw.match(/This\s+Weeks?\s+Gross\s+Pay:\s*\$?([\d,]+(?:\.\d+)?)/i),
+        hours=raw.match(/Total\s+Hours:\s*([\d.]+)/i),
+        updated=raw.match(/LAST\s+UPDATED:\s*([^\r\n]+)/i);
+  return{
+    totalHours:hours?Number(hours[1]):null,
+    grossPay:gross?Number(gross[1].replace(/,/g,"")):null,
+    lastUpdatedRaw:updated?updated[1].trim():"",
+    periodStart:rows[0]?.date||"",
+    periodEnd:rows[rows.length-1]?.date||"",
+    importedAt:new Date().toISOString(),
+    source:"UPS timecard text"
+  };
+}
+
 function openPunchImport(){
-  modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Paste copied timesheet text.</b><br><span class="muted small">Daily Life looks for a date plus one or two clock times on each line. One time becomes punch-in; two become punch-in + punch-out. Review the confirmation before anything is saved.</span></div><label>Workforce / Dayforce text<textarea id="punchText" rows="10" placeholder="10/01/2026  4:31 AM  8:42 AM&#10;10/02/2026  4:28 AM  8:36 AM"></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times.</div></span></label></div>`,"Import",async()=>{
-    const rows=parsePunchHistory($("#punchText").value);if(!rows.length){alert("No dated punch rows were recognized. Try pasting lines that include the date and punch time(s).");return}
-    const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")+(Number.isFinite(Number(x.officialHours))?" · "+Number(x.officialHours).toFixed(2)+" h":"")+(Number(x.officialGrossPay)>0?" · "+money(x.officialGrossPay):"")).join("\n");
-    if(!confirm("Import "+rows.length+" punch row"+(rows.length===1?"":"s")+"?\n\n"+preview+(rows.length>10?"\n…":"")))return;
+  modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Paste the copied UPS timecard text.</b><br><span class="muted small">Daily Life understands both normal clock times and UPS decimal punches such as 4.80 → 8.48. If the weekly header is included, it also keeps UPS's official Total Hours, Gross Pay, and Last Updated value.</span></div><label>UPS / Dayforce / Workforce text<textarea id="punchText" rows="12" placeholder="LAST UPDATED: ...&#10;This Weeks Gross Pay: ...&#10;Total Hours: ...&#10;Date    Pay Code    Start Time    End Time ..."></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times. Official UPS credited hours are still saved separately.</div></span></label></div>`,"Import",async()=>{
+    const raw=$("#punchText").value,rows=parsePunchHistory(raw),summary=parseUpsTimecardSummary(raw);if(!rows.length){alert("No dated punch rows were recognized. Paste the table rows that contain the work date and punch values.");return}
+    const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")+(Number.isFinite(Number(x.officialHours))?" · "+Number(x.officialHours).toFixed(2)+" h":"")+(Number(x.officialGrossPay)>0?" · "+money(x.officialGrossPay):"")).join("\n"),
+          header=[Number.isFinite(summary.totalHours)?"UPS weekly total "+summary.totalHours.toFixed(2)+" h":"",Number.isFinite(summary.grossPay)?"UPS weekly gross "+money(summary.grossPay):"",summary.lastUpdatedRaw?"Updated "+summary.lastUpdatedRaw:""].filter(Boolean).join(" · ");
+    if(!confirm("Import "+rows.length+" punch row"+(rows.length===1?"":"s")+"?"+(header?"\n"+header:"")+"\n\n"+preview+(rows.length>10?"\n…":"")))return;
     const overwrite=$("#punchOverwrite").checked;
     for(const x of rows){
       let w=(state.workShifts||[]).find(v=>v.date===x.date);if(!w){w={id:uid(),date:x.date};state.workShifts.push(w)}
       if(x.start&&(overwrite||!w.start))w.start=x.start;if(x.end&&(overwrite||!w.end))w.end=x.end;
       if(Number.isFinite(Number(x.officialHours))){w.officialHours=Number(x.officialHours);w.timecardVerified=!!x.timecardVerified}
       if(Number(x.officialGrossPay)>0)w.officialGrossPay=Number(x.officialGrossPay);
+      if(Number(x.officialHours)>0&&Number(x.officialGrossPay)>0){
+        w.officialRate=Number(x.officialGrossPay)/Number(x.officialHours);
+        if(overwrite||!Number(w.rate))w.rate=w.officialRate;
+      }
       if(x.rawStartDecimal!==undefined)w.rawStartDecimal=Number(x.rawStartDecimal);if(x.rawEndDecimal!==undefined)w.rawEndDecimal=Number(x.rawEndDecimal);
       if(x.payCode)w.payCode=String(x.payCode);
       if(w.end){w.endedUnknown=false;w.status="completed"}else if(w.start){w.endedUnknown=x.date<ymd();w.status=w.endedUnknown?"completed-needs-end":"in-progress"}
       w.source=x.timecardVerified?"UPS timecard text":"Workforce / Dayforce text import";w.importedAt=new Date().toISOString();w.timecardUpdatedAt=x.timecardVerified?new Date().toISOString():(w.timecardUpdatedAt||"");
+    }
+    if(Number.isFinite(summary.totalHours)||Number.isFinite(summary.grossPay)||summary.lastUpdatedRaw){
+      state.settings.upsTimecardSummary={...summary,rowCount:rows.length};
     }
     await save();closeModal();render();
   });
