@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people7">
+<link rel="stylesheet" href="styles.css?v=20261002-people8">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-people5"></script>
+<script src="cloud.js?v=20261002-people6"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -1349,6 +1349,31 @@ function peopleTabs(){
     <button class="${peopleTab==="household"?"active":""}" onclick="setPeopleTab('household')">Household</button>
   </div>`;
 }
+function familyConnectionClusters(){
+  const profiles=state.peopleProfiles||[],byName=new Map(profiles.map(p=>[String(p.name||"").trim().toLowerCase(),p])),
+        visited=new Set(),clusters=[];
+  for(const p of profiles){
+    if(visited.has(p.id)||!(p.familyLinks||[]).length)continue;
+    const stack=[p],members=[];
+    while(stack.length){
+      const cur=stack.pop();if(!cur||visited.has(cur.id))continue;
+      visited.add(cur.id);members.push(cur);
+      for(const link of cur.familyLinks||[]){
+        const match=byName.get(String(link.name||"").trim().toLowerCase());
+        if(match&&!visited.has(match.id))stack.push(match);
+      }
+    }
+    if(members.length>1)clusters.push(members);
+  }
+  return clusters.sort((a,b)=>b.length-a.length||String(a[0]?.name||"").localeCompare(String(b[0]?.name||"")));
+}
+function familyConnectionsCard(){
+  const clusters=familyConnectionClusters();
+  if(!clusters.length)return"";
+  return `<div class="card family-connections-card"><div class="section-title"><div><div class="eyebrow">Family connections</div><h2>${clusters.length} linked family group${clusters.length===1?"":"s"}</h2><div class="muted small">These connections come from private People profiles, not household membership.</div></div></div>
+    <div class="family-cluster-grid">${clusters.map(group=>`<div class="family-cluster">${group.map(p=>`<button onclick="openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(p.name)}</b><small>${esc(relationshipLabel(p))}</small></span></button>`).join("")}</div>`).join("")}</div>
+  </div>`;
+}
 function peopleAgendaItems(){
   const profileByName=new Map((state.peopleProfiles||[]).map(p=>[String(p.name||"").trim().toLowerCase(),p])),rows=[];
   for(const e of state.events||[]){
@@ -1411,7 +1436,7 @@ function familyRoutinesCard(){
 }
 function familyView(){
   ensurePeopleProfiles();
-  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
+  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${familyConnectionsCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
   return `${peopleTabs()}${body}`;
 }
 function readingView(){
