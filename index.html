@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-living11">
+<link rel="stylesheet" href="styles.css?v=20261002-living13">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1343,12 +1343,12 @@ function openLivingSupply(kind="pet"){
   });
 }
 function livingThingsLaunchCard(){
-  const pets=(state.pets||[]).length,plants=(state.plants||[]).length,due=(state.plants||[]).filter(p=>plantCareState(p).due).length;
-  return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due?due+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
+  const pets=(state.pets||[]).filter(p=>p.status!=="Archived").length,plants=(state.plants||[]).length,due=(state.plants||[]).filter(p=>plantCareState(p).due).length,petDue=duePetRoutines().length,today=ymd(),soonDate=new Date(today+"T12:00:00");soonDate.setDate(soonDate.getDate()+7);const soon=ymd(soonDate),gardenDue=(state.gardenTasks||[]).filter(t=>!t.done&&t.due&&t.due<=soon).length;
+  return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${petDue?petDue+" care item"+(petDue===1?"":"s")+" due":pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due+gardenDue?(due+gardenDue)+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
 }
 function todayLivingThingsCard(){
   const today=ymd(),horizonDate=new Date(today+"T12:00:00");horizonDate.setDate(horizonDate.getDate()+14);const horizon=ymd(horizonDate),
-        plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[],
+        plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=(state.pets||[]).filter(p=>p.status!=="Archived"),petRoutinesDue=duePetRoutines(),gardenTasksDue=(state.gardenTasks||[]).filter(t=>!t.done&&t.due&&t.due<=horizon),
         nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=today&&x.nextDate<=horizon).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0],
         planting=[];
   for(const x of state.gardenSeeds||[]){
@@ -1358,6 +1358,8 @@ function todayLivingThingsCard(){
   if(!pets.length&&!state.plants?.length&&!(state.gardenSeeds||[]).length)return"";
   return `<div class="card today-living"><div class="section-title"><div><div class="eyebrow">Pets + plants</div><h2>Living things</h2></div><div class="actions">${pets.length?'<button class="btn" onclick="setView(\'pets\')">Pets</button>':""}${(state.plants?.length||state.gardenSeeds?.length)?'<button class="btn" onclick="setView(\'garden\')">Garden</button>':""}</div></div>
     ${plantsDue.length?`<div class="row"><span>Plants needing water/check</span><b>${plantsDue.length}</b></div>`:""}
+    ${petRoutinesDue.length?`<div class="row"><span>Pet care routines due</span><b>${petRoutinesDue.length}</b></div>`:""}
+    ${gardenTasksDue.length?`<div class="row"><span>Garden tasks due soon</span><b>${gardenTasksDue.length}</b></div>`:""}
     ${nextPetCare?`<div class="row"><span><b>Next pet care</b><div class="muted small">${petForCare?esc(petForCare.name)+" · ":""}${esc(nextPetCare.type)}</div></span><b>${esc(dl(nextPetCare.nextDate))}</b></div>`:""}
     ${nextPlanting?`<div class="row"><span><b>Next planting step</b><div class="muted small">${esc(nextPlanting.x.name)} · ${esc(nextPlanting.kind)}</div></span><b>${esc(dl(nextPlanting.date))}</b></div>`:""}
     ${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
