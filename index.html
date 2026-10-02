@@ -1523,9 +1523,13 @@ function payrollLoggedHours(p){
   return (state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).reduce((sum,w)=>sum+wh(w),0);
 }
 function payrollReconcile(p){
-  const logged=payrollLoggedHours(p),official=Number(p?.totalHours||0),diff=official-logged;
-  if(!official)return {logged,official,diff,status:"unknown"};
-  return {logged,official,diff,status:Math.abs(diff)<=0.10?"match":Math.abs(diff)<=0.50?"close":"review"};
+  const rows=p?.periodStart&&p?.periodEnd?(state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).sort((a,b)=>a.date.localeCompare(b.date)):[],
+        logged=rows.reduce((sum,w)=>sum+wh(w),0),official=Number(p?.totalHours||0),diff=official-logged,
+        needsEnd=rows.filter(w=>workNeedsPunchOut(w)),
+        incomplete=rows.filter(w=>w.start&&!w.end&&!workNeedsPunchOut(w));
+  if(!official)return {logged,official,diff,status:"unknown",rows,needsEnd,incomplete};
+  const status=needsEnd.length||incomplete.length?"review":Math.abs(diff)<=0.10?"match":Math.abs(diff)<=0.50?"close":"review";
+  return {logged,official,diff,status,rows,needsEnd,incomplete};
 }
 function upsEmploymentProfile(){
   return (state.employmentProfiles||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
