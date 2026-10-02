@@ -96,7 +96,7 @@ async function dbClear(){
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261001-2225"></script>
-<script src="finance-cloud.js?v=20261001-5"></script>
+<script src="finance-cloud.js?v=20261001-6"></script>
 <script>
 
 const $=s=>document.querySelector(s);
@@ -1601,9 +1601,12 @@ function dueDateOutlookCard(){
   </div>`;
 }
 function expectedIncomeCard(){
-  const end=new Date();end.setDate(end.getDate()+45);const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset();
+  const end=new Date();end.setDate(end.getDate()+45);
+  const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset(),
+        bankSuggestions=typeof cloudRecurringIncomeSuggestions==="function"?cloudRecurringIncomeSuggestions():[];
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Expected income</div><h2>Money arriving before bills</h2></div><div class="actions"><button class="btn primary" onclick="openExpectedIncome()">+ Income</button>${estimate?`<button class="btn" onclick="openPaycheckEstimate()">Use pay estimate</button>`:""}</div></div>
     <p class="muted small">All enabled sources here — paychecks, child support, reimbursements, or other recurring income — are used in bill projections when they are scheduled on or before a bill’s due date. The deposit account matters; transferable income can also support a bill from another spending account.</p>
+    ${bankSuggestions.length?`<div class="notice"><b>Recurring bank income found</b><div class="muted small">Daily Life found ${bankSuggestions.length} stable non-payroll deposit pattern${bankSuggestions.length===1?"":"s"} in your private synced history. It will not count one until you save it as expected income.</div><button class="btn small" onclick="openCloudRecurringIncomeSuggestion(0)">Review suggestion</button></div>`:""}
     ${occurrences.length?occurrences.map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No expected income is being counted yet.</div>`}
   </div>`;
 }
