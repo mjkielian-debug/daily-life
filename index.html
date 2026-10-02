@@ -419,6 +419,11 @@ function migrateState(s){
     if(p.profileScope===undefined)p.profileScope=p.livesWithUser?"household":"extended";
     if(p.relatedTo===undefined)p.relatedTo="";
     if(!Array.isArray(p.schoolContacts))p.schoolContacts=[];
+    for(const contact of p.schoolContacts){
+      if(contact.status===undefined)contact.status="";
+      if(contact.schoolYear===undefined)contact.schoolYear="";
+      if(contact.source===undefined)contact.source="";
+    }
     if(p.elfsterUrl===undefined)p.elfsterUrl="";
     if(p.elfsterLastSyncedAt===undefined)p.elfsterLastSyncedAt="";
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
@@ -1332,16 +1337,64 @@ async function removeKidsMoneyTransaction(id){
   const personId=x.personId;state.kidsMoneyTransactions=(state.kidsMoneyTransactions||[]).filter(v=>v.id!==id);await save();closeModal();openKidsMoney(personId);
 }
 
+function schoolContactStatus(contact){
+  const explicit=String(contact?.status||"").toLowerCase();
+  if(["current","historical","verify"].includes(explicit))return explicit;
+  const notes=String(contact?.notes||"");
+  if(/current\s+2026-27/i.test(notes))return"current";
+  if(/historical|2025|not yet confirmed/i.test(notes))return"historical";
+  return"";
+}
+function schoolContactStatusLabel(contact){
+  const s=schoolContactStatus(contact);
+  return s==="current"?"current":s==="historical"?"history":s==="verify"?"verify":"";
+}
+function schoolContactsFor(personId){
+  return personById(personId)?.schoolContacts||[];
+}
+function openSchoolContact(personId,index=-1){
+  const p=personById(personId);if(!p)return;
+  if(!Array.isArray(p.schoolContacts))p.schoolContacts=[];
+  const x=index>=0?p.schoolContacts[index]:null,contact=x||{name:"",role:"",email:"",notes:"",status:"current",schoolYear:"2026-27",source:""};
+  modal((x?"Edit":"Add")+" school contact · "+p.name,`<div class="stack">
+    <label>Name<input id="scname" value="${esc(contact.name||"")}" placeholder="Teacher or support staff name"></label>
+    <label>Role / class<input id="scrole" value="${esc(contact.role||"")}" placeholder="Homeroom, Math, Band, Speech-Language Pathologist…"></label>
+    <label>Email<input id="scemail" type="email" value="${esc(contact.email||"")}"></label>
+    <div class="grid2"><label>Status<select id="scstatus">${[["current","Current"],["verify","Needs verification"],["historical","Historical"]].map(([v,l])=>`<option value="${v}" ${schoolContactStatus(contact)===v?"selected":""}>${l}</option>`).join("")}</select></label><label>School year<input id="scyear" value="${esc(contact.schoolYear||"")}" placeholder="2026-27"></label></div>
+    <label>Notes<textarea id="scnotes" rows="3">${esc(contact.notes||"")}</textarea></label>
+    ${contact.source?`<div class="muted small">Source: ${esc(contact.source)}</div>`:""}
+    ${x?`<button type="button" class="btn danger" onclick="removeSchoolContact('${personId}',${index})">Remove contact</button>`:""}
+  </div>`,"Save",async()=>{
+    const name=$("#scname").value.trim(),email=$("#scemail").value.trim();if(!name&&!email)return;
+    const value={name,role:$("#scrole").value.trim(),email,notes:$("#scnotes").value.trim(),status:$("#scstatus").value,schoolYear:$("#scyear").value.trim(),source:contact.source||"App"};
+    if(index>=0)p.schoolContacts[index]=value;else p.schoolContacts.push(value);
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+  });
+}
+async function removeSchoolContact(personId,index){
+  const p=personById(personId);if(!p||!Array.isArray(p.schoolContacts)||!p.schoolContacts[index])return;
+  if(!confirm("Remove this school contact from "+p.name+"'s private profile?"))return;
+  p.schoolContacts.splice(index,1);await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+}
+function openSchoolContactsManager(personId){
+  const p=personById(personId);if(!p)return;const contacts=p.schoolContacts||[];
+  modal("School contacts · "+p.name,`<div class="stack"><div class="row"><span><b>${esc(p.school||"School not set")}</b><div class="muted small">${p.grade?esc(String(p.grade)+" grade"):"Grade not set"}</div></span><button type="button" class="btn primary" onclick="closeModal();openSchoolContact('${p.id}')">+ Contact</button></div>
+    ${contacts.length?contacts.map((x,i)=>`<button type="button" class="school-contact-edit" onclick="closeModal();openSchoolContact('${p.id}',${i})"><span><b>${esc(x.name||x.email||"Contact")}</b><small>${esc(x.role||"Role not set")}${x.schoolYear?" · "+esc(x.schoolYear):""}</small></span><span class="tag">${esc(schoolContactStatusLabel(x)||"contact")}</span></button>`).join(""):`<div class="notice">No teacher or support contacts saved yet.</div>`}
+  </div>`,"Done",()=>{closeModal();render()});
+}
 function schoolContactsCard(){
   const kids=childProfiles(),withSchool=kids.filter(p=>p.school||p.grade||(p.schoolContacts||[]).length);
-  return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School contacts</div><h2>Teachers + support staff</h2><div class="muted small">School, grade, teachers, specialists, and support contacts live on each child's private People profile.</div></div></div>${withSchool.length?withSchool.map(p=>{
-    const contacts=p.schoolContacts||[],where=[p.school,p.grade?String(p.grade)+" grade":""].filter(Boolean).join(" · ");
-    return `<details class="school-contact-child" ${contacts.length?"":"open"}><summary><span><b>${esc(p.name)}</b><small>${esc(where||"School details not set")}${contacts.length?" · "+contacts.length+" contact"+(contacts.length===1?"":"s"):""}</small></span></summary>
-      ${contacts.length?contacts.map(x=>{const current=/current\s+2026-27/i.test(String(x.notes||"")),historical=/historical|2025|not yet confirmed/i.test(String(x.notes||""));return `<div class="row school-contact-row"><span><b>${esc(x.name||"Contact")} ${current?'<span class="tag">current</span>':historical?'<span class="tag">history / verify</span>':""}</b><div class="muted small">${esc(x.role||"")}${x.notes?" · "+esc(x.notes):""}</div></span>${x.email?`<a class="btn small" href="mailto:${esc(x.email)}">${esc(x.email)}</a>`:""}</div>`}).join(""):`<div class="notice">No teacher contacts saved yet.</div>`}
-      <button class="btn small" onclick="openPersonProfile('${p.id}')">Edit school profile</button>
-    </details>`;
-  }).join(""):"<div class='notice'>School details will appear here as they are added to child profiles.</div>"}</div>`;
+  return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School & support contacts</div><h2>Teachers, specialists + support staff</h2><div class="muted small">Contacts are stored privately with each child profile. Current staff stay easy to reach; older contacts can remain as history without cluttering the main view.</div></div></div>
+  ${withSchool.length?withSchool.map(p=>{
+    const contacts=p.schoolContacts||[],current=contacts.filter(x=>schoolContactStatus(x)!=="historical"),historical=contacts.filter(x=>schoolContactStatus(x)==="historical"),where=[p.school,p.grade?String(p.grade)+" grade":""].filter(Boolean).join(" · ");
+    return `<div class="school-contact-child-card"><div class="section-title"><div><h3>${esc(p.name)}</h3><div class="muted small">${esc(where||"School details not set")} · ${current.length} active/verify contact${current.length===1?"":"s"}</div></div><button class="btn small" onclick="openSchoolContactsManager('${p.id}')">Manage</button></div>
+      ${current.length?current.map((x,i)=>{const idx=contacts.indexOf(x),label=schoolContactStatusLabel(x);return `<div class="school-contact-person"><button class="school-contact-main" onclick="openSchoolContact('${p.id}',${idx})"><b>${esc(x.name||"Contact")}${label?` <span class="tag">${esc(label)}</span>`:""}</b><small>${esc(x.role||"")}${x.schoolYear?" · "+esc(x.schoolYear):""}${x.notes?" · "+esc(x.notes):""}</small></button>${x.email?`<a class="btn small" href="mailto:${esc(x.email)}">Email</a>`:""}</div>`}).join(""):`<div class="notice">No current teacher/support contacts saved yet.</div>`}
+      ${historical.length?`<details class="school-contact-history"><summary>Past contacts (${historical.length})</summary>${historical.map(x=>`<div class="muted small">${esc(x.name||x.email)}${x.role?" · "+esc(x.role):""}${x.schoolYear?" · "+esc(x.schoolYear):""}</div>`).join("")}</details>`:""}
+    </div>`;
+  }).join(""):`<div class="notice">School details will appear here as they are added to child profiles.</div>`}
+  </div>`;
 }
+
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
   const events=dedupeEventList((state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
@@ -2523,7 +2576,7 @@ function openPersonProfile(id=""){
     <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label>
     <div class="grid2"><label>School<input id="pschool" value="${esc(p.school||"")}" placeholder="Everett Elementary"></label><label>Grade<input id="pgrade" value="${esc(p.grade||"")}" placeholder="3rd"></label></div>
     <div class="grid2"><label>School / legal name<input id="pschoolname" value="${esc(p.schoolName||"")}" placeholder="Only if school uses a different name"></label><label>Other names / aliases<input id="paliases" value="${esc((p.aliases||[]).join(", "))}" placeholder="Nickname, school name…"></label></div>
-    <label>School / teacher contacts<textarea id="pschoolcontacts" rows="5" placeholder="Teacher name | role/class | email | notes">${esc((p.schoolContacts||[]).map(x=>[x.name||"",x.role||"",x.email||"",x.notes||""].join(" | ")).join("\n"))}</textarea></label>
+    ${p.id?`<button type="button" class="btn" onclick="closeModal();openSchoolContactsManager(\'${p.id}\')">Manage teachers + support contacts</button>`:`<div class="notice">Save this person first, then add teacher/support contacts from their profile.</div>`}
     <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
@@ -2544,8 +2597,7 @@ function openPersonProfile(id=""){
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
     const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
-    const schoolContacts=$("#pschoolcontacts").value.split(/\r?\n/).map(line=>{const parts=line.split("|").map(x=>String(x||"").trim());return{name:parts[0]||"",role:parts[1]||"",email:parts[2]||"",notes:parts.slice(3).join(" | ")}}).filter(x=>x.name||x.email);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolName:$("#pschoolname").value.trim(),aliases:commaList($("#paliases").value),schoolContacts,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolName:$("#pschoolname").value.trim(),aliases:commaList($("#paliases").value),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
