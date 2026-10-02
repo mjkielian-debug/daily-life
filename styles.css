@@ -1594,3 +1594,161 @@ input,select,textarea{
   .care-hub-title{font-size:1.2rem}
   .care-page-tabs button{min-width:68px;padding-inline:10px}
 }
+
+/* Floral depth pass — visible botanical artwork, still readable */
+body{
+  background:
+    radial-gradient(circle at 94% 3%,rgba(239,184,202,.20),transparent 25rem),
+    radial-gradient(circle at 3% 19%,rgba(155,211,170,.16),transparent 25rem),
+    linear-gradient(180deg,#14241c 0%,#0d1813 54%,#09120e 100%);
+}
+.app{
+  position:relative;
+  background:
+    url("botanical-bg.svg?v=20261002-1") center top/760px auto repeat-y,
+    radial-gradient(circle at 100% 2%,rgba(243,170,196,.20),transparent 23%),
+    radial-gradient(circle at 3% 27%,rgba(169,213,181,.15),transparent 29%),
+    radial-gradient(circle at 90% 68%,rgba(239,216,167,.08),transparent 22%),
+    transparent;
+}
+header{position:relative;overflow:visible}
+header:after{
+  content:"";position:absolute;right:-17px;top:32px;width:112px;height:86px;
+  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  opacity:.23;pointer-events:none;transform:rotate(7deg);z-index:0
+}
+header>*{position:relative;z-index:1}
+.floral-card{overflow:hidden}
+.floral-card:after{
+  content:"";position:absolute;right:-22px;bottom:-23px;width:145px;height:112px;
+  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  opacity:.22;pointer-events:none;transform:rotate(-7deg)
+}
+.floral-card>*{position:relative;z-index:1}
+.today-focus,.care-hub-header,.people-hero,.money-strategy-card,.garden-hero,.pet-hero{
+  overflow:hidden
+}
+.today-focus:after,.care-hub-header:after,.people-hero:after,.money-strategy-card:after,.garden-hero:after,.pet-hero:after{
+  content:"";position:absolute;right:-27px;bottom:-30px;width:138px;height:108px;
+  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  opacity:.13;pointer-events:none
+}
+.today-focus>*,.care-hub-header>*,.people-hero>*,.money-strategy-card>*,.garden-hero>*,.pet-hero>*{position:relative;z-index:1}
+.card{
+  backdrop-filter:blur(2px);
+  box-shadow:0 18px 46px rgba(0,0,0,.28),0 8px 30px rgba(199,121,149,.07),inset 0 1px 0 rgba(255,247,250,.025)
+}
+
+/* Spirituality */
+.spirituality-hero{
+  background:
+    radial-gradient(circle at 88% 6%,rgba(239,184,202,.20),transparent 35%),
+    radial-gradient(circle at 8% 92%,rgba(155,211,170,.11),transparent 34%),
+    linear-gradient(150deg,#294237,#1d3027 60%,#18271f);
+  border-color:rgba(239,184,202,.38)
+}
+.spirituality-title{
+  margin:3px 0 7px;color:var(--cream);font-family:Georgia,"Times New Roman",serif;
+  font-size:1.62rem;line-height:1.06
+}
+.spirituality-tabs{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:5px;margin-top:14px;
+  border:1px solid rgba(239,184,202,.28);border-radius:17px;
+  background:linear-gradient(145deg,rgba(239,184,202,.10),rgba(155,211,170,.04))
+}
+.spirituality-tabs button{
+  border:0;border-radius:12px;min-height:39px;background:transparent;color:var(--muted);font-weight:850
+}
+.spirituality-tabs button.active{
+  color:#102117;background:linear-gradient(135deg,#b9dfc4 0%,#b4dac0 46%,#edb7c9 100%);
+  box-shadow:0 7px 18px rgba(239,184,202,.12)
+}
+.daily-reading-card{
+  border-color:rgba(239,184,202,.38);
+  background:
+    radial-gradient(circle at 90% 6%,rgba(239,184,202,.19),transparent 31%),
+    radial-gradient(circle at 5% 95%,rgba(234,212,167,.08),transparent 29%),
+    linear-gradient(155deg,#2a4438,#1b2d25 67%,#17251f)
+}
+.spiritual-reading-text{
+  color:color-mix(in srgb,var(--cream) 90%,var(--muted) 10%);
+  font-family:Georgia,"Times New Roman",serif;font-size:1.02rem;line-height:1.62;margin:12px 0
+}
+.spiritual-practice-line{
+  display:grid;gap:4px;padding:12px 13px;margin:10px 0 12px;border-radius:16px;
+  border:1px solid rgba(234,212,167,.26);background:linear-gradient(145deg,rgba(234,212,167,.08),rgba(239,184,202,.05))
+}
+.spiritual-practice-line span{color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.11em;font-weight:900}
+.spiritual-practice-line b{line-height:1.4}
+.spiritual-practice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.spiritual-practice-grid button{
+  display:flex;align-items:center;gap:9px;text-align:left;min-height:48px;padding:10px 11px;
+  border:1px solid rgba(239,184,202,.22);border-radius:16px;background:rgba(255,255,255,.022);color:var(--text)
+}
+.spiritual-practice-grid button span{
+  width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(155,211,170,.38);color:var(--primary)
+}
+.spiritual-practice-grid button.done{
+  border-color:rgba(155,211,170,.42);background:linear-gradient(145deg,rgba(155,211,170,.13),rgba(239,184,202,.06))
+}
+.spiritual-practice-grid button.done span{background:var(--primary);color:#102117}
+.spiritual-season-card{border-color:rgba(234,212,167,.30)}
+.spiritual-moon{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;
+  margin-top:10px;padding:11px;border:1px solid rgba(239,184,202,.20);border-radius:16px;background:rgba(255,255,255,.02)
+}
+.spiritual-moon .moon-mark{
+  width:45px;height:45px;border-radius:50%;display:grid;place-items:center;font-size:1.55rem;
+  background:linear-gradient(145deg,rgba(239,184,202,.17),rgba(234,212,167,.09));border:1px solid rgba(239,184,202,.26)
+}
+.spiritual-moon span:last-child{display:grid;gap:3px}.spiritual-moon small{color:var(--muted);line-height:1.35}
+.tarot-card-shell{display:grid;grid-template-columns:minmax(150px,185px) minmax(0,1fr);gap:16px;align-items:center;margin-top:12px}
+.tarot-card-shell.compact{grid-template-columns:120px minmax(0,1fr);gap:12px}
+.tarot-card-face{
+  min-height:255px;border-radius:22px;padding:14px 12px;display:grid;grid-template-rows:auto 1fr auto auto;place-items:center;text-align:center;
+  color:var(--cream);border:1px solid rgba(234,212,167,.46);
+  background:
+    url("botanical-sprig.svg?v=20261002-1") 115% 105%/105px auto no-repeat,
+    radial-gradient(circle at 50% 40%,rgba(239,184,202,.18),transparent 37%),
+    linear-gradient(160deg,#18372a,#2e4438 55%,#5b3948 130%);
+  box-shadow:0 15px 34px rgba(0,0,0,.28),inset 0 0 0 4px rgba(255,244,236,.035)
+}
+.tarot-card-shell.compact .tarot-card-face{min-height:185px;border-radius:18px;padding:10px}
+.tarot-stars{color:var(--champagne);font-size:.72rem;letter-spacing:.16em}
+.tarot-symbol{font-size:2.2rem;color:var(--blush);text-shadow:0 0 20px rgba(239,184,202,.20)}
+.tarot-name{font-family:Georgia,serif;font-size:1.07rem;font-weight:700;line-height:1.1}
+.tarot-card-shell.compact .tarot-name{font-size:.86rem}
+.tarot-orientation{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.13em}
+.tarot-copy{min-width:0}.tarot-copy p{color:var(--muted);line-height:1.5}.tarot-copy>b{color:var(--cream);line-height:1.4}
+.ritual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ritual-card{margin:0;min-width:0;border-color:rgba(239,184,202,.24)}
+.ritual-card:nth-child(3n+1){
+  background:
+    radial-gradient(circle at 100% 0,rgba(239,184,202,.16),transparent 35%),
+    linear-gradient(150deg,#294137,#1a2c24)
+}
+.ritual-card:nth-child(3n+2){
+  background:
+    radial-gradient(circle at 0 100%,rgba(155,211,170,.11),transparent 36%),
+    linear-gradient(150deg,#263d32,#192a22)
+}
+.today-spirituality,.spirituality-launch{
+  border-color:rgba(239,184,202,.32);
+  background:
+    radial-gradient(circle at 95% 0,rgba(239,184,202,.17),transparent 34%),
+    linear-gradient(150deg,#294137,#1a2d24)
+}
+@media(max-width:560px){
+  .tarot-card-shell{grid-template-columns:1fr}
+  .tarot-card-face{width:min(220px,78vw);justify-self:center}
+  .tarot-card-shell.compact{grid-template-columns:105px minmax(0,1fr)}
+  .tarot-card-shell.compact .tarot-card-face{width:105px;min-height:165px}
+  .ritual-grid{grid-template-columns:1fr}
+  .spirituality-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:390px){
+  .spiritual-practice-grid{grid-template-columns:1fr}
+  .tarot-card-shell.compact{grid-template-columns:1fr}
+  .tarot-card-shell.compact .tarot-card-face{width:min(190px,70vw)}
+}
