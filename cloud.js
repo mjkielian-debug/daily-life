@@ -692,6 +692,26 @@ function cloudApplyLifeEntry(row){
       });
       return true;
     }
+    case "pet_routine":{
+      if(!Array.isArray(state.petCareRoutines))state.petCareRoutines=[];
+      const title=String(p.title||p.name||"").trim();if(!title)return false;
+      const petName=String(p.petName||p.pet||"").trim();
+      const pet=petName?(state.pets||[]).find(x=>String(x.name||"").trim().toLowerCase()===petName.toLowerCase()):null;
+      let x=state.petCareRoutines.find(x=>String(x.title||"").trim().toLowerCase()===title.toLowerCase()&&String(x.petId||"")===String(pet?.id||""));
+      if(!x){x={id:uid()};state.petCareRoutines.push(x)}
+      Object.assign(x,{
+        petId:pet?.id||"",
+        title,
+        type:String(p.type||x.type||"Other"),
+        everyDays:Math.max(0,Number(p.everyDays??x.everyDays??0)),
+        nextDate:String(p.nextDate||x.nextDate||date||""),
+        lastDone:String(p.lastDone||x.lastDone||""),
+        notes:String(p.notes||x.notes||""),
+        active:p.active!==false,
+        cloudEntryId:row.id
+      });
+      return true;
+    }
     case "pet_care":{
       if(!Array.isArray(state.petLogs))state.petLogs=[];
       const petName=String(p.petName||p.pet||"").trim(),type=String(p.type||p.careType||"Note").trim()||"Note";
