@@ -488,9 +488,16 @@ function liveWorkHours(w,now=new Date()){
   return Math.max(0,(nowM-start)/60);
 }
 function wh(w){if(!w?.start||!w?.end||!workEndConfirmed(w))return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
+function workCreditedHours(w){
+  const official=Number(w?.officialHours);
+  return w?.timecardVerified&&Number.isFinite(official)&&official>=0?official:wh(w);
+}
 function workStatusText(w){
   if(!w)return"No shift logged";
-  if(w.start&&workEndConfirmed(w))return `${fmtClock(w.start)}–${fmtClock(w.end)}`;
+  if(w.start&&workEndConfirmed(w)){
+    const official=w.timecardVerified&&Number.isFinite(Number(w.officialHours))?` · ${Number(w.officialHours).toFixed(2)} official h`:"";
+    return `${fmtClock(w.start)}–${fmtClock(w.end)}${official}`;
+  }
   if(workNeedsPunchOut(w))return `Worked from ${fmtClock(w.start)} · punch-out time needed`;
   if(w.start){const h=liveWorkHours(w);return `Started ${fmtClock(w.start)}${h>0?` · ${h.toFixed(2)} h so far`:""} · end time ${w.end?"needs confirmation":"needed"}`;}
   return w.scheduled?`Scheduled ${fmtClock(w.scheduled)}`:"No shift logged";
@@ -1523,11 +1530,11 @@ function todayUpcomingCard(){
 function latestPaycheck(){return [...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||"")))[0]||null}
 function payrollLoggedHours(p){
   if(!p?.periodStart||!p?.periodEnd)return 0;
-  return (state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).reduce((sum,w)=>sum+wh(w),0);
+  return (state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).reduce((sum,w)=>sum+workCreditedHours(w),0);
 }
 function payrollReconcile(p){
   const rows=p?.periodStart&&p?.periodEnd?(state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).sort((a,b)=>a.date.localeCompare(b.date)):[],
-        logged=rows.reduce((sum,w)=>sum+wh(w),0),official=Number(p?.totalHours||0),diff=official-logged,
+        logged=rows.reduce((sum,w)=>sum+workCreditedHours(w),0),official=Number(p?.totalHours||0),diff=official-logged,
         needsEnd=rows.filter(w=>workNeedsPunchOut(w)),
         incomplete=rows.filter(w=>w.start&&!w.end&&!workNeedsPunchOut(w));
   if(!official)return {logged,official,diff,status:"unknown",rows,needsEnd,incomplete};
@@ -1603,8 +1610,9 @@ function seasonalIncomeCard(){
   </div>`;
 }
 function currentWeekWorkCard(){
-  const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0),needs=rows.filter(w=>workNeedsPunchOut(w));
-  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} confirmed hours</h2><div class="muted small">${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times only"}</div></div><div class="actions"><button class="btn" onclick="openWork()">Edit today</button><button class="btn" onclick="openPunchImport()">Paste punches</button></div></div>${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
+  const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),
+        total=rows.reduce((sum,w)=>sum+workCreditedHours(w),0),officialGross=rows.reduce((sum,w)=>sum+(w.timecardVerified?Number(w.officialGrossPay||0):0),0),needs=rows.filter(w=>workNeedsPunchOut(w));
+  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} ${rows.some(w=>w.timecardVerified)?"official / confirmed":"confirmed"} hours</h2><div class="muted small">${officialGross>0?money(officialGross)+" official gross · ":""}${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times; official UPS totals win when imported."}</div></div><div class="actions"><button class="btn" onclick="openWork()">Edit today</button><button class="btn" onclick="openPunchImport()">Paste punches</button></div></div>${rows.length?rows.map(w=>{const hrs=workCreditedHours(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${w.timecardVerified&&Number(w.officialGrossPay)>0?money(w.officialGrossPay)+" gross":needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
 }
 function upsPayrollCard(){
   const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
@@ -3365,35 +3373,52 @@ function parsePunchClock(value,ampm=""){
   const ap=String(ampm||"").toUpperCase();if(ap){if(h<1||h>12)return"";if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0}else if(h>23)return"";
   return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0");
 }
+function decimalHourClock(value){
+  const n=Number(value);if(!Number.isFinite(n)||n<0||n>=24)return"";
+  let total=Math.round(n*60),h=Math.floor(total/60)%24,m=total%60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
 function parsePunchHistory(text){
   const out=[];
   for(const raw of String(text||"").split(/\r?\n/)){
     const line=raw.trim(),date=parsePunchDate(line);if(!line||!date)continue;
+    if(/PAY\s+ACTUAL/i.test(line)){
+      const afterDate=line.slice(Math.max(0,line.search(/\b\d{1,2}\/\d{1,2}\/20\d{2}\b/))).replace(/^.*?\b\d{1,2}\/\d{1,2}\/20\d{2}\b/,""),
+            nums=[...afterDate.matchAll(/\b(\d+(?:\.\d+)?)\b/g)].map(m=>Number(m[1]));
+      if(nums.length>=6&&nums[4]>0){
+        out.push({date,start:decimalHourClock(nums[0]),end:decimalHourClock(nums[1]),rawStartDecimal:nums[0],rawEndDecimal:nums[1],officialHours:nums[4],officialGrossPay:nums[5],payCode:"PAY ACTUAL",timecardVerified:true,raw:line});
+        continue;
+      }
+    }
     const times=[...line.matchAll(/\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi)].map(m=>parsePunchClock(m[1],m[2]||"")).filter(Boolean);
     if(!times.length)continue;
     out.push({date,start:times[0],end:times[1]||"",raw:line});
   }
-  const byDate=new Map();for(const x of out){const prev=byDate.get(x.date);if(!prev)byDate.set(x.date,x);else{if(!prev.start&&x.start)prev.start=x.start;if(!prev.end&&x.end)prev.end=x.end}}
+  const byDate=new Map();for(const x of out){const prev=byDate.get(x.date);if(!prev)byDate.set(x.date,x);else{for(const k of ["start","end","rawStartDecimal","rawEndDecimal","officialHours","officialGrossPay","payCode","timecardVerified"])if((prev[k]===undefined||prev[k]==="")&&x[k]!==undefined)prev[k]=x[k]}}
   return [...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 function openPunchImport(){
   modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Paste copied timesheet text.</b><br><span class="muted small">Daily Life looks for a date plus one or two clock times on each line. One time becomes punch-in; two become punch-in + punch-out. Review the confirmation before anything is saved.</span></div><label>Workforce / Dayforce text<textarea id="punchText" rows="10" placeholder="10/01/2026  4:31 AM  8:42 AM&#10;10/02/2026  4:28 AM  8:36 AM"></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times.</div></span></label></div>`,"Import",async()=>{
     const rows=parsePunchHistory($("#punchText").value);if(!rows.length){alert("No dated punch rows were recognized. Try pasting lines that include the date and punch time(s).");return}
-    const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")).join("\n");
+    const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")+(Number.isFinite(Number(x.officialHours))?" · "+Number(x.officialHours).toFixed(2)+" h":"")+(Number(x.officialGrossPay)>0?" · "+money(x.officialGrossPay):"")).join("\n");
     if(!confirm("Import "+rows.length+" punch row"+(rows.length===1?"":"s")+"?\n\n"+preview+(rows.length>10?"\n…":"")))return;
     const overwrite=$("#punchOverwrite").checked;
     for(const x of rows){
       let w=(state.workShifts||[]).find(v=>v.date===x.date);if(!w){w={id:uid(),date:x.date};state.workShifts.push(w)}
       if(x.start&&(overwrite||!w.start))w.start=x.start;if(x.end&&(overwrite||!w.end))w.end=x.end;
+      if(Number.isFinite(Number(x.officialHours))){w.officialHours=Number(x.officialHours);w.timecardVerified=!!x.timecardVerified}
+      if(Number(x.officialGrossPay)>0)w.officialGrossPay=Number(x.officialGrossPay);
+      if(x.rawStartDecimal!==undefined)w.rawStartDecimal=Number(x.rawStartDecimal);if(x.rawEndDecimal!==undefined)w.rawEndDecimal=Number(x.rawEndDecimal);
+      if(x.payCode)w.payCode=String(x.payCode);
       if(w.end){w.endedUnknown=false;w.status="completed"}else if(w.start){w.endedUnknown=x.date<ymd();w.status=w.endedUnknown?"completed-needs-end":"in-progress"}
-      w.source=w.source||"Workforce / Dayforce text import";w.importedAt=new Date().toISOString();
+      w.source=x.timecardVerified?"UPS timecard text":"Workforce / Dayforce text import";w.importedAt=new Date().toISOString();w.timecardUpdatedAt=x.timecardVerified?new Date().toISOString():(w.timecardUpdatedAt||"");
     }
     await save();closeModal();render();
   });
 }
 function openWork(date=ymd()){
   const x=(state.workShifts||[]).find(w=>w.date===date)||{};
-  modal("UPS shift · "+dl(date),`<div class="stack"><div class="notice"><b>Use actual punch times when known.</b><br><span class="muted small">If the shift is over but the real punch-out is not confirmed yet, mark that instead of estimating. Payroll reconciliation will keep this date flagged until you enter the actual end.</span></div><label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label class="task"><input id="wended" type="checkbox" ${workNeedsPunchOut(x)?"checked":""}><span><b>Shift is over; punch-out time still needs confirmation</b></span></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label><label>Notes<input id="wnotes" value="${esc(x.notes||"")}"></label></div>`,"Save",async()=>{
+  modal("UPS shift · "+dl(date),`<div class="stack"><div class="notice"><b>Use actual punch times when known.</b><br><span class="muted small">If the shift is over but the real punch-out is not confirmed yet, mark that instead of estimating. Payroll reconciliation will keep this date flagged until you enter the actual end.</span></div>${x.timecardVerified?`<div class="notice"><b>Official UPS timecard:</b> ${Number(x.officialHours||0).toFixed(2)} h${Number(x.officialGrossPay)>0?" · "+money(x.officialGrossPay)+" gross":""}${x.rawStartDecimal!==undefined?" · raw punches "+Number(x.rawStartDecimal).toFixed(2)+" → "+Number(x.rawEndDecimal).toFixed(2):""}</div>`:""}<label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label class="task"><input id="wended" type="checkbox" ${workNeedsPunchOut(x)?"checked":""}><span><b>Shift is over; punch-out time still needs confirmation</b></span></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label><label>Notes<input id="wnotes" value="${esc(x.notes||"")}"></label></div>`,"Save",async()=>{
     let w=(state.workShifts||[]).find(w=>w.date===date);if(!w){w={id:uid(),date};state.workShifts.push(w)}
     w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||0);w.notes=$("#wnotes").value.trim();w.endedUnknown=!w.end&&$("#wended").checked;w.status=w.end?"completed":w.endedUnknown?"completed-needs-end":w.start?"in-progress":"scheduled";
     const task=state.tasks.find(t=>t.date===date&&t.title==="UPS shift");if(task&&(workEndConfirmed(w)||workNeedsPunchOut(w)))task.done=true;
