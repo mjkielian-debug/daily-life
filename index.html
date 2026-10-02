@@ -2453,6 +2453,52 @@ function connectionsCard(){
     <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Separate accounts with an opt-in shared itinerary. Money, Vault, self-care, and private People data stay private.</div></span><span class="tag">${typeof sharingConnected==="function"&&sharingConnected()?"connected":"optional"}</span></div>
   </div>`;
 }
+function systemHealthChecks(){
+  const issues=[],info=[];
+  const people=state.peopleProfiles||[],personIds=new Set(people.map(p=>p.id));
+  const duplicateNames=[...new Set(people.map(p=>String(p.name||"").trim().toLowerCase()).filter((n,i,a)=>n&&a.indexOf(n)!==i))];
+  if(duplicateNames.length)issues.push(`${duplicateNames.length} duplicate People name${duplicateNames.length===1?"":"s"} need review`);
+  const orphanKids=(state.kidsMoneyAccounts||[]).filter(a=>a.personId&&!personIds.has(a.personId)).length;
+  if(orphanKids)issues.push(`${orphanKids} Kids Money account${orphanKids===1?"":"s"} no longer match a People profile`);
+  const oldSpelling=JSON.stringify({
+    people:state.peopleProfiles,
+    tasks:state.tasks,
+    chores:state.chores,
+    events:state.events,
+    readers:state.settings?.readers,
+    familyMembers:state.settings?.familyMembers,
+    routines:state.settings?.recurringFamilyEvents
+  }).match(/Dimitri/gi)?.length||0;
+  if(oldSpelling)issues.push(`Found ${oldSpelling} old “Dimitri” spelling reference${oldSpelling===1?"":"s"}; use Demitri`);
+  const badBills=(state.bills||[]).filter(b=>Number(b.amount)<0||!String(b.name||"").trim()).length;
+  if(badBills)issues.push(`${badBills} bill record${badBills===1?"":"s"} need review`);
+  const unfinishedUps=(state.workShifts||[]).filter(w=>w.date<ymd()&&w.start&&!w.end).length;
+  if(unfinishedUps)issues.push(`${unfinishedUps} past UPS shift${unfinishedUps===1?"":"s"} still need a punch-out`);
+  if(typeof cloudUser==="function"&&cloudUser()){
+    if(!cloudRemoteUpdatedAt)issues.push("No full private cloud snapshot has been created yet");
+    if(typeof cloudError==="string"&&cloudError)issues.push("Cloud reported an error: "+cloudError);
+    else info.push("Cloud account signed in");
+  }else info.push("Cloud account not signed in on this device");
+  if(typeof sharingConnected==="function"&&sharingConnected())info.push("Household sharing connected");
+  else info.push("Household sharing not connected");
+  if(typeof vaultEnvelope!=="undefined"&&vaultEnvelope)info.push("Encrypted Private Vault exists on this device");
+  else info.push("Private Vault not created on this device");
+  info.push(`${people.length} People profiles · ${(state.events||[]).length} events · ${(state.tasks||[]).length} tasks`);
+  return{issues,info};
+}
+function systemHealthCard(){
+  const h=systemHealthChecks();
+  return `<div class="card"><div class="section-title"><div><h2>System health</h2><div class="muted small">A quick check for broken links, unfinished setup, and common data problems.</div></div><span class="tag">${h.issues.length?h.issues.length+" to review":"looks good"}</span></div>
+    ${h.issues.length?`<div class="warning"><b>${h.issues.length} item${h.issues.length===1?"":"s"} to review</b><br><span class="muted small">${esc(h.issues[0])}${h.issues.length>1?" · +"+(h.issues.length-1)+" more":""}</span></div>`:`<div class="notice"><b>No obvious structural problems found.</b></div>`}
+    <div class="actions"><button class="btn primary" onclick="openDiagnostics()">Run full self-check</button></div>
+  </div>`;
+}
+function openDiagnostics(){
+  const h=systemHealthChecks();
+  const rows=h.issues.length?h.issues.map(x=>`<div class="row"><span>⚠ ${esc(x)}</span></div>`).join(""):`<div class="notice">No obvious structural problems found.</div>`;
+  modal("Daily Life self-check",`<div class="stack"><div class="mini-heading">Needs review</div>${rows}<div class="mini-heading">Status</div>${h.info.map(x=>`<div class="row"><span>${esc(x)}</span><b>✓</b></div>`).join("")}<div class="notice"><b>Safe check only.</b><br><span class="muted small">This does not erase, merge, or rewrite your records. It only reports what it can verify from the data currently loaded on this device.</span></div></div>`,"Done",()=>closeModal());
+}
+
 function settingsView(){
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h2>Settings + routines</h2></div><button class="btn" onclick="setView('today')">Done</button></div><div class="notice">The bottom bar is for the parts of Daily Life you use all the time. Setup, recurring rules, cloud, and backup live here.</div></div>
   <div class="card"><div class="section-title"><div><h2>Private Vault</h2><div class="muted small">Encrypted logins, identity documents, medical records, insurance and school paperwork.</div></div><button class="btn primary" onclick="setView('vault')">Open Vault</button></div><div class="muted small">Vault data is stored separately from ordinary Daily Life state and normal cloud snapshots.</div></div> <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div></div>
@@ -2461,6 +2507,7 @@ function settingsView(){
   ${connectionsCard()}
   ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
   ${cloudPanel()}
+  ${systemHealthCard()}
   <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
 }
 
