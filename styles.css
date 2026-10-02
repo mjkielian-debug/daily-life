@@ -2654,3 +2654,71 @@ body::before{
   .school-snapshot-head{align-items:flex-start}
   .school-snapshot-card .section-title{align-items:flex-start}
 }
+
+
+/* UPS work-log reconciliation */
+.work-week-card{
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--primary) 8%,transparent),transparent 32%),
+    linear-gradient(165deg,color-mix(in srgb,var(--panel2) 97%,var(--primary) 3%),var(--panel));
+}
+.work-day-row{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  text-align:left;
+  border:0;
+  border-top:1px solid var(--border);
+  background:transparent;
+  color:var(--text);
+  padding:9px 0;
+  font:inherit;
+}
+.work-day-row>span{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.work-day-row>span:last-child{text-align:right}
+.work-day-row b{font-size:.78rem}
+.work-day-row small{
+  color:var(--muted);
+  font-size:.64rem;
+  line-height:1.35;
+}
+.payroll-audit{
+  margin:7px 0 11px;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(255,255,255,.018);
+}
+.payroll-audit.match{
+  border-color:color-mix(in srgb,var(--primary) 34%,var(--border));
+}
+.payroll-audit.close{
+  border-color:color-mix(in srgb,var(--accent) 38%,var(--border));
+}
+.payroll-audit.review{
+  border-color:color-mix(in srgb,var(--secondary) 46%,var(--border));
+}
+.payroll-audit>.row{
+  padding:0;
+  border:0;
+}
+.work-issue-dates{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  align-items:center;
+  padding-top:8px;
+  margin-top:8px;
+  border-top:1px dashed var(--border);
+}
+.work-issue-dates>div{width:100%}
+.payroll-audit .notice{
+  margin-top:8px;
+  font-size:.68rem;
+}
