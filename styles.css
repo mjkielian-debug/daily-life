@@ -123,3 +123,12 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:520px){.vehicle-maint-grid{grid-template-columns:1fr}}
 
 .relationship-history{padding:10px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.02)}.relationship-history-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);cursor:pointer}.relationship-history-row:first-of-type{border-top:0}
+
+/* Mobile meal prep rows: keep checkboxes compact so recipe text gets the full card width. */
+.priority-card .priority-item{width:100%;min-width:0;box-sizing:border-box}
+.priority-card .priority-item input[type="checkbox"]{width:22px;min-width:22px;height:22px;flex:0 0 22px;margin:1px 0 0;padding:0}
+.priority-card .priority-item .grow{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal;white-space:normal}
+@media(max-width:520px){
+  .priority-card .priority-item{gap:10px;align-items:flex-start}
+  .priority-card .priority-item .grow{font-size:.88rem;line-height:1.35}
+}
