@@ -294,6 +294,20 @@ function migrateState(s){
     if(routine.nextDate===undefined)routine.nextDate="";
     if(routine.lastDone===undefined)routine.lastDone="";
   }
+  for(const a of s.kidsMoneyAccounts){
+    if(a.provider===undefined)a.provider="Modak";
+    if(a.actualBalance===undefined)a.actualBalance=null;
+    if(a.actualAsOf===undefined)a.actualAsOf="";
+    if(a.savingsGoal===undefined)a.savingsGoal=0;
+    if(a.goalName===undefined)a.goalName="";
+    if(a.notes===undefined)a.notes="";
+    const legacyPending=Math.max(0,Number(a.pendingToFund||0));
+    const hasPending=s.kidsMoneyTransactions.some(x=>x.personId===a.personId&&String(x.status||"")==="pending");
+    if(legacyPending>0&&!hasPending){
+      s.kidsMoneyTransactions.push({id:uid(),personId:a.personId,amount:legacyPending,label:"Legacy pending amount",type:"add",status:"pending",date:ymd(),notes:"Migrated from the older pending-to-fund field.",createdAt:new Date().toISOString()});
+    }
+    a.pendingToFund=0;
+  }
   for(const p of s.peopleProfiles){
     if(p.livesWithUser===undefined)p.livesWithUser=isChildProfile(p);
     if(p.profileScope===undefined)p.profileScope=p.livesWithUser?"household":"extended";
