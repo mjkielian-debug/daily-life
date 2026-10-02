@@ -527,6 +527,32 @@ function cloudApplyLifeEntry(row){
       state.vehicleServices.push({id:uid(),cloudEntryId:row.id,vehicleId:String(p.vehicleId||""),type:String(p.type||"Service"),date:String(p.date||date),mileage:Number(p.mileage||0)||null,cost:Number(p.cost||0),notes:String(p.notes||"")});
       return true;
     }
+    case "person_rename":{
+      const oldName=String(p.oldName||"").trim(),newName=String(p.newName||"").trim();
+      if(!oldName||!newName||oldName===newName)return false;
+      const eq=v=>String(v||"").trim().toLowerCase()===oldName.toLowerCase();
+      const replaceName=v=>eq(v)?newName:v;
+      if(Array.isArray(state.peopleProfiles))for(const x of state.peopleProfiles)if(eq(x.name))x.name=newName;
+      if(Array.isArray(state.settings?.familyMembers))for(const x of state.settings.familyMembers){if(typeof x==="string"){const i=state.settings.familyMembers.indexOf(x);if(eq(x))state.settings.familyMembers[i]=newName}else if(eq(x?.name))x.name=newName}
+      if(Array.isArray(state.settings?.readers))state.settings.readers=state.settings.readers.map(replaceName);
+      if(Array.isArray(state.settings?.choreRotations))for(const r of state.settings.choreRotations)if(Array.isArray(r.members))r.members=r.members.map(replaceName);
+      if(Array.isArray(state.settings?.recurringFamilyEvents))for(const r of state.settings.recurringFamilyEvents)if(eq(r.child))r.child=newName;
+      for(const key of ["chores","tasks","events"]){if(Array.isArray(state[key]))for(const x of state[key])if(eq(x.child))x.child=newName}
+      if(Array.isArray(state.readingLogs))for(const x of state.readingLogs)if(eq(x.reader))x.reader=newName;
+      if(Array.isArray(state.relationshipCheckins))for(const x of state.relationshipCheckins)if(eq(x.personName))x.personName=newName;
+      return true;
+    }
+    case "family_routine_upsert":{
+      const r=p.routine&&typeof p.routine==="object"?p.routine:p;
+      const weekday=Number(r.weekday),title=String(r.title||"").trim(),child=String(r.child||"").trim(),startTime=String(r.startTime||"");
+      if(!Number.isInteger(weekday)||weekday<0||weekday>6||!title)return false;
+      if(!Array.isArray(state.settings.recurringFamilyEvents))state.settings.recurringFamilyEvents=[];
+      const match=state.settings.recurringFamilyEvents.find(x=>Number(x.weekday)===weekday&&String(x.title||"").trim().toLowerCase()===title.toLowerCase()&&String(x.child||"").trim().toLowerCase()===child.toLowerCase());
+      const value={weekday,title,child,type:String(r.type||"activity"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),notes:String(r.notes||"")};
+      if(match)Object.assign(match,value);else state.settings.recurringFamilyEvents.push(value);
+      if(typeof ensureRecurringFamilyEvents==="function")ensureRecurringFamilyEvents();
+      return true;
+    }
     case "people_setup":{
       if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
       for(const raw of Array.isArray(p.people)?p.people:[]){
