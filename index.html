@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-living9">
+<link rel="stylesheet" href="styles.css?v=20261002-living10">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-living4"></script>
+<script src="cloud.js?v=20261002-living5"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -1060,7 +1060,7 @@ function openPetCareSettings(){
   const x=petCareSettings();
   modal("Shared pet setup",`<div class="stack"><div class="grid2"><label>Robot litter boxes<input id="pcrobot" type="number" min="0" value="${Number(x.robotLitterBoxes||0)}"></label><label>Standard litter boxes<input id="pcstandard" type="number" min="0" value="${Number(x.standardLitterBoxes||0)}"></label></div><label>Feeding routine<textarea id="pcfeeding" rows="2" placeholder="What, how much, when…">${esc(x.feedingRoutine||"")}</textarea></label><div class="grid2"><label>Carrier / supplies location<input id="pccarrier" value="${esc(x.carrierLocation||"")}"></label><label>Emergency vet / contact<input id="pcvet" value="${esc(x.emergencyVet||"")}"></label></div><label>Pet-sitter handoff notes<textarea id="pcsitter" rows="3" placeholder="What someone else needs to know">${esc(x.sitterNotes||"")}</textarea></label><label>Shared care notes<textarea id="pcnotes" rows="3" placeholder="Litter details, quirks, supplies…">${esc(x.notes||"")}</textarea></label><div class="muted small">This is a tracking/setup area only. It does not create reminders.</div></div>`,"Save",async()=>{
     state.settings.petCare={robotLitterBoxes:Math.max(0,Number($("#pcrobot").value||0)),standardLitterBoxes:Math.max(0,Number($("#pcstandard").value||0)),feedingRoutine:$("#pcfeeding").value.trim(),carrierLocation:$("#pccarrier").value.trim(),emergencyVet:$("#pcvet").value.trim(),sitterNotes:$("#pcsitter").value.trim(),notes:$("#pcnotes").value.trim(),configured:true};
-    await save();closeModal();render();
+    await save();if(typeof cloudUpsertPetHouseholdCare==="function")await cloudUpsertPetHouseholdCare();closeModal();render();
   });
 }
 
