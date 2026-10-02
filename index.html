@@ -88,6 +88,72 @@ header .header-tools{flex-shrink:0}
   .section-title>.actions .btn{flex:1 1 auto}
 }
 </style>
+
+<style id="botanical-accessibility-polish">
+/* Finishing pass: comfortable native controls, clearer keyboard focus, and mobile-safe dialogs. */
+label.task{
+  min-height:44px;
+  align-items:center;
+  cursor:pointer;
+}
+label.task input[type="checkbox"],
+label.task input[type="radio"]{
+  width:20px;
+  height:20px;
+  min-width:20px;
+  flex:0 0 20px;
+  accent-color:var(--primary);
+  cursor:pointer;
+}
+input[type="date"],
+input[type="time"],
+input[type="month"],
+input[type="datetime-local"]{
+  color-scheme:dark;
+}
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button{
+  border:1px solid color-mix(in srgb,var(--secondary) 55%,var(--border));
+  border-radius:12px;
+  background:var(--primary);
+  color:#172a21;
+  padding:9px 12px;
+  margin-right:10px;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+:is(button,.btn,a,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:3px solid color-mix(in srgb,var(--accent) 82%,white);
+  outline-offset:3px;
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--primary) 18%,transparent);
+}
+.modal,
+.modal *{
+  min-width:0;
+}
+.modal{
+  max-width:min(94vw,720px);
+  overflow-wrap:anywhere;
+}
+.modal .row,
+.modal .actions,
+.modal .section-title{
+  flex-wrap:wrap;
+}
+dialog,
+[role="dialog"]{
+  max-width:calc(100vw - 24px);
+  overflow-wrap:anywhere;
+}
+@media(max-width:520px){
+  .modal{max-width:calc(100vw - 18px)}
+  .modal input,
+  .modal select,
+  .modal textarea,
+  .modal .btn{max-width:100%}
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
