@@ -580,6 +580,35 @@ function todayChoresCard(){
   for(const x of rows){if(!groups.has(x.child))groups.set(x.child,[]);groups.get(x.child).push(x)}
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🧺 Family + chores</div><h2>${done} / ${rows.length} done</h2></div><button class="btn" onclick="openChore()">+ Add</button></div>${rows.length?`<div class="priority-list">${[...groups.entries()].map(([child,items])=>`<div class="priority-item"><div class="grow"><b>${esc(child)}</b>${items.map(x=>`<label class="task" style="margin-top:7px"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.chore)}</span></label>`).join("")}</div></div>`).join("")}</div>`:`<div class="notice">No family chores are loaded for today yet.</div>`}</div>`;
 }
+
+function hmMinutes(v){const m=String(v||"").match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
+function minutesHm(n){n=Math.max(0,Math.min(1439,Math.round(Number(n)||0)));return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
+function shiftDateString(date,days){const d=new Date(String(date||ymd())+"T12:00:00");d.setDate(d.getDate()+Number(days||0));return ymd(d)}
+function setItineraryDate(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return;itineraryDate=date;localStorage.setItem("dailyLifeItineraryDate",date);render()}
+function shiftItineraryDate(days){setItineraryDate(shiftDateString(itineraryDate,days))}
+function workForDate(date){return (state.workShifts||[]).find(x=>x.date===date)||null}
+function mealForDate(date){return (state.meals||[]).find(x=>x.date===date&&x.type==="dinner")||null}
+function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x=>x.date===date)}
+function itineraryFixedItems(date){
+  const items=[],w=workForDate(date);
+  if(w){const start=w.start||w.scheduled||"",confirmed=!!(w.start&&workEndConfirmed(w));if(start)items.push({id:"work:"+date,start,end:confirmed?w.end:"",title:w.start?"UPS work":"UPS scheduled start",detail:confirmed?("Worked until "+fmtClock(w.end)):"Work",fixed:true,kind:"work",icon:"📦",source:"work"})}
+  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){if(!e.startTime)continue;items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id})}
+  const meal=mealForDate(date);if(meal?.dish&&meal.status!=="made"){if(meal.startBy)items.push({id:"meal-start:"+date,start:meal.startBy,end:"",title:"Start "+meal.dish,detail:"Dinner prep",fixed:false,kind:"meal",icon:"🍳",source:"meal"});if(meal.serveTime)items.push({id:"meal-serve:"+date,start:meal.serveTime,end:"",title:"Serve "+meal.dish,detail:"Dinner",fixed:false,kind:"meal",icon:"🍽️",source:"meal"})}
+  for(const x of itineraryCustomBlocks(date))if(x.start)items.push({id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",kind:x.kind||"flexible",icon:"◷",source:"custom",sourceId:x.id,done:!!x.done});
+  return items.sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+}
+function itinerarySuggestedBlocks(date){
+  if(state.settings?.itinerary?.showFlexible===false)return[];
+  const out=[],w=workForDate(date),meal=mealForDate(date),weekday=new Date(date+"T12:00:00").getDay(),kids=childProfiles();
+  if(w?.end){const m=hmMinutes(w.end);if(m!==null)out.push({start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat, drink water + reset",detail:"After work reset",icon:"♡"})}
+  if(kids.length&&weekday!==0&&weekday!==6){out.push({start:"15:30",end:"16:15",title:"Snack + homework launch",detail:"Flexible after-school transition",icon:"🎒"});out.push({start:"16:15",end:"17:15",title:"Homework + reading",detail:"Schoolwork + 20-minute reading rhythm",icon:"📚"})}
+  out.push({start:meal?.serveTime||"17:30",end:meal?.serveTime?minutesHm((hmMinutes(meal.serveTime)||1050)+60):"18:30",title:"Dinner + kitchen reset",detail:meal?.dish||"Flexible dinner block",icon:"🍽️"});
+  if(kids.length){out.push({start:"18:45",end:"19:45",title:"Chores + showers / baths",detail:"Flexible family evening reset",icon:"🧺"});out.push({start:"20:00",end:"20:45",title:"Bedtime wind-down",detail:"Reading, pajamas + settle the house",icon:"🌙"})}
+  const tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00");
+  if(tm?.tomorrowPrep||early.length)out.push({start:"20:45",end:"21:15",title:"Set tomorrow up",detail:[tm?.tomorrowPrep,early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
+  return out.map((x,i)=>({...x,id:"suggest:"+date+":"+i,fixed:false,kind:"flexible",source:"suggested"}));
+}
+function itineraryDayItems(date){return [...itineraryFixedItems(date),...itinerarySuggestedBlocks(date)].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.fixed?-1:1))}
 function todayTimelineItems(){
   const date=ymd(),items=[];
   const w=work();
