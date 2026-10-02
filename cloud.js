@@ -53,7 +53,8 @@ async function cloudInit(){
           await cloudPullHouseholdMembers();
       await cloudPullPetProfiles();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
-        }else cloudRemoteUpdatedAt=null;
+          if(typeof sharingInit==="function")await sharingInit();
+        }else{cloudRemoteUpdatedAt=null;if(typeof sharingReset==="function")sharingReset()}
         if(typeof render==="function")render();
       },0);
     });
@@ -392,6 +393,7 @@ async function cloudSignInFromForm(){
     await cloudPullHouseholdMembers();
       await cloudPullPetProfiles();
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
+    if(typeof sharingInit==="function")await sharingInit();
     closeModal();render();
   }catch(error){
     alert("Could not sign in: "+(error?.message||"Unknown error"));
@@ -410,6 +412,7 @@ async function cloudSignUpFromForm(){
       await cloudEnsureProfile();
       await cloudRefreshMetadata();
       if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
+      if(typeof sharingInit==="function")await sharingInit();
       closeModal();render();
       alert("Daily Life cloud account created and signed in.");
     }else{
@@ -425,11 +428,13 @@ async function cloudSignOut(){
   if(!confirm("Sign out of the Daily Life cloud account? Local records on this device will remain here."))return;
   const {error}=await cloudClient.auth.signOut();
   if(error){alert("Could not sign out: "+error.message);return}
-  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;render();
+  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;if(typeof sharingReset==="function")sharingReset();render();
 }
 
 function cloudStateForUpload(){
   const copy=structuredClone(state);
+  // Shared household entries live in shared_entries, not inside either person's private snapshot.
+  if(Array.isArray(copy.events))copy.events=copy.events.filter(x=>!x.sharedEntryId);
   // Large base64 photos remain local for now. A private Storage bucket will be
   // added separately so snapshots stay small and reliable.
   if(Array.isArray(copy.outfits)){
