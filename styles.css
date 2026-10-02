@@ -1525,3 +1525,72 @@ input,select,textarea{
   .brand-copy .title{font-size:1.55rem}
   .header-tools .pill{display:none}
 }
+
+/* Care page cleanup + stronger hierarchy */
+.care-hub-header{
+  padding:14px 14px 12px;
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--secondary) 10%,transparent),transparent 34%),
+    linear-gradient(150deg,color-mix(in srgb,var(--primary) 8%,var(--panel2)),var(--panel));
+}
+.care-hub-title{
+  margin:2px 0 10px;
+  color:var(--cream);
+  font-family:Georgia,serif;
+  font-size:1.34rem;
+  font-weight:700;
+  line-height:1.08;
+}
+.care-page-tabs{
+  display:flex;gap:7px;overflow-x:auto;padding:3px 0 2px;
+  scrollbar-width:none;overscroll-behavior-inline:contain
+}
+.care-page-tabs::-webkit-scrollbar{display:none}
+.care-page-tabs button{
+  flex:0 0 auto;min-width:72px;min-height:40px;padding:8px 12px;
+  border:1px solid color-mix(in srgb,var(--secondary) 24%,var(--border));
+  border-radius:999px;
+  background:rgba(255,255,255,.025);
+  color:color-mix(in srgb,var(--cream) 78%,var(--muted) 22%);
+  font-weight:850;font-size:.8rem
+}
+.care-page-tabs button.active{
+  color:#102117;
+  border-color:color-mix(in srgb,var(--primary) 52%,var(--secondary) 30%);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 86%,white 14%),color-mix(in srgb,var(--secondary) 58%,var(--primary) 42%));
+  box-shadow:0 6px 16px color-mix(in srgb,var(--secondary) 10%,transparent)
+}
+.care-section-intro{
+  display:grid;gap:3px;margin:12px 2px 7px;padding:0 5px;
+}
+.care-section-intro b{
+  color:var(--cream);font-size:1rem;font-weight:900
+}
+.care-section-intro span{
+  color:color-mix(in srgb,var(--muted) 88%,white 12%);
+  font-size:.78rem;line-height:1.35
+}
+
+/* Make small section headers readable on dark green */
+.eyebrow{
+  color:color-mix(in srgb,var(--secondary) 80%,white 20%);
+  font-size:.74rem;
+  font-weight:900;
+  letter-spacing:.105em;
+  line-height:1.25
+}
+.section-title h2{
+  font-family:inherit;
+  font-size:1.06rem;
+  font-weight:900;
+  line-height:1.16;
+  letter-spacing:-.01em;
+  color:var(--cream)
+}
+.card>.eyebrow + h2{
+  line-height:1.08
+}
+@media(max-width:420px){
+  .care-hub-title{font-size:1.2rem}
+  .care-page-tabs button{min-width:68px;padding-inline:10px}
+}
