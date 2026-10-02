@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-careclean1">
+<link rel="stylesheet" href="styles.css?v=20261002-floralspirit1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -97,6 +97,7 @@ async function dbClear(){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261002-schoolmoney1"></script>
 <script src="finance-cloud.js?v=20261002-moneystrategy1"></script>
+<script src="spirituality.js?v=20261002-spirit1"></script>
 <script>
 
 const $=s=>document.querySelector(s);
@@ -1651,7 +1652,7 @@ function logView(f,w,tr){
   }else if(careTab==="patterns"){
     body=`${careSectionIntro("Patterns","A quieter place for weekly and monthly trends—nothing here is a score.")}${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
   }else{
-    body=`${careSectionIntro("Me","Self care, movement and personal tracking. Food stays in the Food tab so this page stays manageable.")}${selfCareCard()}${fitnessCard()}${careOutfitCard()}`;
+    body=`${careSectionIntro("Me","Self care, movement and personal tracking. Food stays in the Food tab so this page stays manageable.")}${spiritualityLaunchCard()}${selfCareCard()}${fitnessCard()}${careOutfitCard()}`;
   }
   return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
 }
@@ -2335,7 +2336,7 @@ async function removeBudgetSpending(index){
   const before=structuredClone(state.budget);state.budget.spending.splice(index,1);await persistBudgetEdit(before);
 }
 
-function setView(v){view=v;render()}
+function setView(v){view=v;if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();render()}
 function modal(title,body,label,fn){const d=document.createElement("div");d.className="modal-backdrop";d.id="modal";d.innerHTML=`<div class="modal"><div class="section-title"><h2>${title}</h2><button class="btn" onclick="closeModal()">Close</button></div>${body}<div class="actions" style="margin-top:12px"><button class="btn primary" id="saveModal">${label||"Save"}</button></div></div>`;document.body.appendChild(d);document.querySelector("#saveModal").onclick=fn}
 function closeModal(){document.querySelector("#modal")?.remove()}
 function manualSetup(){modal("Start blank",`<div class="stack"><label>Your name<input id="name"></label><label>Reader names, comma-separated<input id="readers" placeholder="Me, Child 1, Child 2"></label></div>`,"Start",async()=>{const name=$("#name").value.trim();if(!name)return;state=blankState();state.profile.name=name;state.settings.readers=$("#readers").value.split(",").map(x=>x.trim()).filter(Boolean);if(!state.settings.readers.length)state.settings.readers=[name];await save();closeModal();render()})}
