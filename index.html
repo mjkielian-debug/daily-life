@@ -712,6 +712,16 @@ function todayCareSnapshotCard(){
   const stats=selfCareTodayStats(),x=wellnessForDate(),sleep=sleepHours(sleepForDate());
   return `<div class="card today-care-snapshot"><div class="section-title"><div><div class="eyebrow">✧ Self care</div><h2>${stats.done}/${stats.total} logged today</h2></div><button class="btn" onclick="setView('log')">Open Care</button></div><div class="today-care-inline"><span><b>${x?.mood?esc(moodLabel(x.mood)):"No mood check-in"}</b><small>feeling</small></span><span><b>${Math.round(water())} oz</b><small>water</small></span><span><b>${sleep?sleep.toFixed(1)+" h":"—"}</b><small>sleep</small></span></div></div>`;
 }
+function todayPeopleSnapshotCard(){
+  ensurePeopleProfiles();
+  const nextPlan=peopleAgendaItems()[0]||null;
+  const nextBirthday=(state.peopleProfiles||[]).map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b).sort((a,b)=>a.b.days-b.b.days)[0]||null;
+  if(!nextPlan&&!nextBirthday)return"";
+  return `<div class="card today-people"><div class="section-title"><div><div class="eyebrow">People</div><h2>Coming up with your people</h2></div><button class="btn" onclick="setView('family')">Open People</button></div>
+    ${nextPlan?`<div class="today-people-row"><span><b>${esc(nextPlan.title)}</b><div class="muted small">${esc(nextPlan.person.name)}${nextPlan.location?" · "+esc(nextPlan.location):""}</div></span><b>${esc(dl(nextPlan.date))}${nextPlan.time?" · "+esc(fmtClock(nextPlan.time)):""}</b></div>`:""}
+    ${nextBirthday?`<div class="today-people-row"><span><b>${esc(nextBirthday.p.name)}'s birthday</b><div class="muted small">${nextBirthday.b.days===0?"Today":nextBirthday.b.days===1?"Tomorrow":nextBirthday.b.days+" days away"}</div></span><b>${esc(nextBirthday.b.label)}</b></div>`:""}
+  </div>`;
+}
 function nextLifeAdminAction(){
   const rows=[...(state.projects||[])].filter(p=>!["done","closed"].includes(String(p.status||""))&&p.nextAction).sort((a,b)=>projectUrgency(a)-projectUrgency(b)||String(a.due||"9999").localeCompare(String(b.due||"9999")));
   const p=rows[0];if(!p)return null;
@@ -729,7 +739,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
-  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}
+  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}${todayPeopleSnapshotCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
