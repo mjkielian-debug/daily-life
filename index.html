@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people9">
+<link rel="stylesheet" href="styles.css?v=20261002-living1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-people6"></script>
+<script src="cloud.js?v=20261002-living1"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:23,createdAt:new Date().toISOString(),
+  version:24,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],pets:[],petLogs:[],plants:[],plantLogs:[],gardenTasks:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="";
 const themes=[
@@ -233,7 +233,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,23);
+  s.version=Math.max(Number(s.version)||0,24);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -253,7 +253,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","plants","plantLogs","gardenTasks","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -698,7 +698,7 @@ function spinReaderWheel(){
 function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget")||(id==="family"&&view==="reading"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
 function needsSetup(){return !state.profile?.name}
 function renderSetup(){const user=cloudUser?.();return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Start locally, restore a private backup, or sign in to your Daily Life cloud account. Public app code contains no personal records.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button>${user?`<button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>`:`<button class="btn" onclick="openCloudAuth()">Sign in / cloud account</button>`}</div></div></main>`}
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayMoneySnapshot(){
   const checking=(state.accounts||[]).filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         month=ymd().slice(0,7),bt=typeof budgetTotals==="function"?budgetTotals(month):null,
@@ -739,7 +739,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
-  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}${todayPeopleSnapshotCard()}
+  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}${todayPeopleSnapshotCard()}${todayLivingThingsCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
@@ -1014,9 +1014,115 @@ function homeCareCard(){
         days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null;
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div><div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
 }
+
+function daysSinceDate(date){
+  if(!date)return null;
+  const d=new Date(date+"T12:00:00");if(Number.isNaN(d.getTime()))return null;
+  return Math.max(0,Math.floor((new Date(ymd()+"T12:00:00")-d)/86400000));
+}
+function lastPetLog(petId,type=""){
+  return [...(state.petLogs||[])].filter(x=>(!petId||x.petId===petId)&&(!type||x.type===type)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||"")))[0]||null;
+}
+function petById(id){return (state.pets||[]).find(p=>p.id===id)}
+function petCard(p){
+  const last=lastPetLog(p.id),vet=lastPetLog(p.id,"Vet"),weight=lastPetLog(p.id,"Weight");
+  return `<div class="card pet-card"><div class="pet-card-head"><div class="pet-avatar">${String(p.species||"pet").toLowerCase()==="cat"?"♢":"♡"}</div><div class="grow"><div class="eyebrow">${esc(p.species||"Pet")}</div><h2>${esc(p.name||"Pet")}</h2><div class="muted small">${p.birthday?"Birthday "+esc(p.birthday):"Birthday not set"}${p.diet?" · "+esc(p.diet):""}</div></div><button class="btn" onclick="openPetProfile('${p.id}')">Edit</button></div>
+    <div class="pet-quick-actions"><button onclick="openPetLog('${p.id}','Food')">Food</button><button onclick="openPetLog('${p.id}','Water')">Water</button><button onclick="openPetLog('${p.id}','Medication')">Meds</button><button onclick="openPetLog('${p.id}','Note')">Note</button></div>
+    ${last?`<div class="muted small">Latest: ${esc(last.type)} · ${esc(dl(last.date))}${last.notes?" · "+esc(last.notes):""}</div>`:"<div class='muted small'>No care history logged yet.</div>"}
+    ${weight?`<div class="person-detail-line"><span>Latest weight</span><b>${esc(weight.value||"")}${weight.value?" lb":""}</b></div>`:""}
+    ${vet?`<div class="person-detail-line"><span>Last vet log</span><b>${esc(dl(vet.date))}</b></div>`:""}
+  </div>`;
+}
+function petsView(){
+  const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
+        litter=logs.find(x=>x.type==="Litter");
+  return `<div class="card glow pet-hero"><div class="section-title"><div><div class="eyebrow">Pets</div><h2>${pets.length?pets.length+" pet"+(pets.length===1?"":"s"):"Your pets"}</h2><div class="muted small">Profiles, care, vet notes, medications, weight, and shared household pet care.</div></div><div class="actions"><button class="btn primary" onclick="openPetProfile()">+ Pet</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div></div>
+  <div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
+  <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button></div>
+    <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}</div>
+    <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openPetLog('','Supplies')">Supplies</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
+  </div>
+  <div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>
+  ${logs.slice(0,15).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
+}
+function openPetProfile(id=""){
+  const p=petById(id)||{id:"",name:"",species:"cat",birthday:"",diet:"",vet:"",medications:"",microchip:"",notes:""};
+  modal(p.id?`Pet · ${p.name}`:"Add pet",`<div class="stack"><div class="grid2"><label>Name<input id="petname" value="${esc(p.name||"")}"></label><label>Species<input id="petspecies" value="${esc(p.species||"")}" placeholder="cat, dog…"></label></div><label>Birthday / gotcha date<input id="petbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label><label>Food / diet notes<input id="petdiet" value="${esc(p.diet||"")}"></label><label>Vet<input id="petvet" value="${esc(p.vet||"")}"></label><label>Medications / recurring care<textarea id="petmeds" rows="2">${esc(p.medications||"")}</textarea></label><label>Microchip / ID note<input id="petchip" value="${esc(p.microchip||"")}"></label><label>Notes<textarea id="petnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const name=$("#petname").value.trim();if(!name)return;let x=petById(id);
+    if(!x){x={id:uid()};state.pets.push(x)}
+    Object.assign(x,{name,species:$("#petspecies").value.trim()||"pet",birthday:$("#petbday").value.trim(),diet:$("#petdiet").value.trim(),vet:$("#petvet").value.trim(),medications:$("#petmeds").value.trim(),microchip:$("#petchip").value.trim(),notes:$("#petnotes").value.trim()});
+    await save();if(typeof cloudUpsertPetProfile==="function")await cloudUpsertPetProfile(x);closeModal();render();
+  });
+}
+function openPetLog(petId="",preset=""){
+  const options=(state.pets||[]).map(p=>`<option value="${p.id}" ${p.id===petId?"selected":""}>${esc(p.name)}</option>`).join("");
+  const types=["Food","Water","Litter","Medication","Weight","Grooming","Vet","Supplies","Note","Other"];
+  modal("Pet care log",`<div class="stack"><label>Pet<select id="plpet"><option value="">Shared / all pets</option>${options}</select></label><div class="grid2"><label>Care type<select id="pltype">${types.map(v=>`<option ${v===preset?"selected":""}>${v}</option>`).join("")}</select></label><label>Date<input id="pldate" type="date" value="${ymd()}"></label></div><div class="grid2"><label>Time<input id="pltime" type="time" value="${new Date().toTimeString().slice(0,5)}"></label><label>Value / amount<input id="plvalue" placeholder="Optional"></label></div><label>Notes<textarea id="plnotes" rows="3"></textarea></label></div>`,"Save",async()=>{
+    state.petLogs.push({id:uid(),petId:$("#plpet").value,type:$("#pltype").value,date:$("#pldate").value||ymd(),time:$("#pltime").value,value:$("#plvalue").value.trim(),notes:$("#plnotes").value.trim()});
+    await save();closeModal();render();
+  });
+}
+function lastPlantLog(plantId,type=""){
+  return [...(state.plantLogs||[])].filter(x=>x.plantId===plantId&&(!type||x.type===type)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")))[0]||null;
+}
+function plantById(id){return (state.plants||[]).find(p=>p.id===id)}
+function plantCareState(p){
+  const last=lastPlantLog(p.id,"Watered"),days=last?daysSinceDate(last.date):null,every=Math.max(0,Number(p.waterEveryDays||0));
+  if(!every)return{label:last?"Last watered "+days+"d ago":"No water schedule",due:false,days};
+  if(days===null)return{label:"Watering not logged yet",due:true,days:null};
+  const left=every-days;
+  return left<=0?{label:left===0?"Water today":Math.abs(left)+"d overdue",due:true,days}:{label:"Water in "+left+"d",due:false,days};
+}
+function plantCard(p){
+  const care=plantCareState(p),last=lastPlantLog(p.id);
+  return `<div class="card plant-card ${care.due?"plant-due":""}"><div class="plant-card-head"><div class="plant-leaf">⌁</div><div class="grow"><div class="eyebrow">${esc(p.type||"Plant")}</div><h2>${esc(p.name||"Plant")}</h2><div class="muted small">${esc(p.location||"Location not set")}${p.light?" · "+esc(p.light):""}</div></div><button class="btn" onclick="openPlant('${p.id}')">Edit</button></div><div class="plant-status">${esc(care.label)}</div><div class="actions"><button class="btn primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button><button class="btn" onclick="logPlantCare('${p.id}')">Care log</button></div>${last?`<div class="muted small">Latest: ${esc(last.type)} · ${esc(dl(last.date))}</div>`:""}</div>`;
+}
+function gardenView(){
+  const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999"))),
+        logs=[...(state.plantLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, watering, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
+    <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div></div>
+  ${due.length?`<div class="card garden-due"><div class="eyebrow">Needs attention</div><h2>Water / check</h2>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
+  <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
+  <div class="card"><div class="section-title"><div><div class="eyebrow">Garden tasks</div><h2>Projects + seasonal jobs</h2></div><button class="btn" onclick="openGardenTask()">+ Task</button></div>${tasks.map(t=>`<label class="row task"><input type="checkbox" onchange="toggleGardenTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.due?esc(dl(t.due)):"No due date"}${t.area?" · "+esc(t.area):""}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")||"<div class='notice'>No open garden tasks.</div>"}</div>
+  <div class="card"><div class="eyebrow">Plant history</div><h2>Recent care</h2>${logs.slice(0,15).map(x=>{const p=plantById(x.plantId);return`<div class="row"><span><b>${esc(x.type)}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span></div>`}).join("")||"<div class='notice'>No plant care logged yet.</div>"}</div>`;
+}
+function openPlant(id=""){
+  const p=plantById(id)||{id:"",name:"",type:"Houseplant",location:"",light:"",waterEveryDays:"",plantedDate:"",source:"",notes:""};
+  modal(p.id?`Plant · ${p.name}`:"Add plant",`<div class="stack"><div class="grid2"><label>Name<input id="gname" value="${esc(p.name||"")}" placeholder="Basil, pothos, tomato bed…"></label><label>Type<select id="gtype">${["Houseplant","Herb","Vegetable","Fruit","Flower","Tree / shrub","Garden bed","Other"].map(v=>`<option ${p.type===v?"selected":""}>${v}</option>`).join("")}</select></label></div><div class="grid2"><label>Location<input id="gloc" value="${esc(p.location||"")}" placeholder="Kitchen window, front bed…"></label><label>Light<input id="glight" value="${esc(p.light||"")}" placeholder="Full sun, bright indirect…"></label></div><div class="grid2"><label>Water every N days<input id="gwater" type="number" min="0" value="${esc(p.waterEveryDays||"")}"></label><label>Planted / acquired<input id="gdate" type="date" value="${esc(p.plantedDate||"")}"></label></div><label>Source / variety<input id="gsource" value="${esc(p.source||"")}"></label><label>Care notes<textarea id="gnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const name=$("#gname").value.trim();if(!name)return;let x=plantById(id);if(!x){x={id:uid()};state.plants.push(x)}
+    Object.assign(x,{name,type:$("#gtype").value,location:$("#gloc").value.trim(),light:$("#glight").value.trim(),waterEveryDays:Number($("#gwater").value||0),plantedDate:$("#gdate").value,source:$("#gsource").value.trim(),notes:$("#gnotes").value.trim()});
+    await save();closeModal();render();
+  });
+}
+function logPlantCare(plantId,preset="Checked"){
+  const p=plantById(plantId);if(!p)return;
+  const types=["Watered","Fertilized","Repotted","Pruned","Harvested","Planted","Pest treatment","Checked"];
+  modal(`Plant care · ${p.name}`,`<div class="stack"><div class="grid2"><label>Care<select id="gctype">${types.map(v=>`<option ${v===preset?"selected":""}>${v}</option>`).join("")}</select></label><label>Date<input id="gcdate" type="date" value="${ymd()}"></label></div><label>Notes<textarea id="gcnotes" rows="3"></textarea></label></div>`,"Save",async()=>{
+    state.plantLogs.push({id:uid(),plantId,type:$("#gctype").value,date:$("#gcdate").value||ymd(),notes:$("#gcnotes").value.trim()});await save();closeModal();render();
+  });
+}
+function openGardenTask(id=""){
+  const t=(state.gardenTasks||[]).find(x=>x.id===id)||{id:"",title:"",due:"",area:"",notes:"",done:false};
+  modal(t.id?"Garden task":"Add garden task",`<div class="stack"><label>Task<input id="gttitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>Due date<input id="gtdue" type="date" value="${esc(t.due||"")}"></label><label>Area<input id="gtarea" value="${esc(t.area||"")}" placeholder="Front bed, indoor plants…"></label></div><label>Notes<textarea id="gtnotes" rows="3">${esc(t.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const title=$("#gttitle").value.trim();if(!title)return;let x=(state.gardenTasks||[]).find(x=>x.id===id);if(!x){x={id:uid(),done:false};state.gardenTasks.push(x)}
+    Object.assign(x,{title,due:$("#gtdue").value,area:$("#gtarea").value.trim(),notes:$("#gtnotes").value.trim()});await save();closeModal();render();
+  });
+}
+async function toggleGardenTask(id,done){const t=(state.gardenTasks||[]).find(x=>x.id===id);if(t)t.done=done;await save();render()}
+function livingThingsLaunchCard(){
+  const pets=(state.pets||[]).length,plants=(state.plants||[]).length,due=(state.plants||[]).filter(p=>plantCareState(p).due).length;
+  return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due?due+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
+}
+function todayLivingThingsCard(){
+  const plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[];
+  if(!pets.length&&!state.plants?.length)return"";
+  return `<div class="card today-living"><div class="section-title"><div><div class="eyebrow">Pets + plants</div><h2>Living things</h2></div><div class="actions">${pets.length?'<button class="btn" onclick="setView(\'pets\')">Pets</button>':""}${state.plants?.length?'<button class="btn" onclick="setView(\'garden\')">Plants</button>':""}</div></div>${plantsDue.length?`<div class="row"><span>Plants needing water/check</span><b>${plantsDue.length}</b></div>`:""}${pets.length?`<div class="row"><span>Pet profiles</span><b>${pets.length}</b></div>`:""}${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
+}
 function logView(f,w,tr){
   return `<div class="card glow life-intro"><div class="eyebrow">✧ Care + Life</div><h2>Take care of yourself, then keep life moving</h2><div class="muted small">Self care comes first here; work, car, home, and longer-term patterns stay underneath it.</div></div>
   ${selfCareCard()}
+  ${livingThingsLaunchCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
   ${upsContractPayCard()}
