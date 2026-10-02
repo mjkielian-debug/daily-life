@@ -36,6 +36,7 @@ async function cloudInit(){
       await cloudRefreshMetadata();
       await cloudPrepareAutoSync();
       await cloudPullLifeEntries(false);
+      await cloudPullHouseholdMembers();
     }
     cloudClient.auth.onAuthStateChange((_event,session)=>{
       cloudSession=session||null;
@@ -46,6 +47,7 @@ async function cloudInit(){
           await cloudRefreshMetadata();
           await cloudPrepareAutoSync();
           await cloudPullLifeEntries(false);
+          await cloudPullHouseholdMembers();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
         }else cloudRemoteUpdatedAt=null;
         if(typeof render==="function")render();
@@ -109,6 +111,81 @@ async function cloudEnsureProfile(){
   if(error)throw error;
 }
 
+async function cloudPullHouseholdMembers(){
+  const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return 0;
+  try{
+    const {data,error}=await cloudClient.from("household_members")
+      .select("id,display_name,relationship,birthday,metadata,updated_at")
+      .eq("owner_user_id",user.id)
+      .order("created_at",{ascending:true});
+    if(error)throw error;
+    if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+    let changed=0;
+    for(const row of data||[]){
+      const name=String(row.display_name||"").trim();if(!name)continue;
+      const relationship=String(row.relationship||"").trim();
+      let p=state.peopleProfiles.find(x=>x.cloudMemberId===row.id);
+      if(!p)p=state.peopleProfiles.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase()&&(!relationship||String(x.relationship||"").trim().toLowerCase()===relationship.toLowerCase()));
+      const meta=row.metadata&&typeof row.metadata==="object"?row.metadata:{};
+      if(!p){
+        p={id:uid(),name,relationship,birthday:row.birthday||meta.birthdayText||"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+        state.peopleProfiles.push(p);changed++;
+      }
+      const before=JSON.stringify(p);
+      p.cloudMemberId=row.id;
+      p.name=name;
+      if(relationship)p.relationship=relationship;
+      if(row.birthday)p.birthday=row.birthday;
+      else if(!p.birthday&&meta.birthdayText)p.birthday=String(meta.birthdayText);
+      for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests","importantDates","sharedPlans"]){
+        if(Array.isArray(meta[key])&&(!Array.isArray(p[key])||!p[key].length))p[key]=meta[key];
+      }
+      if(meta.sizes&&typeof meta.sizes==="object"&&(!p.sizes||!Object.keys(p.sizes).length))p.sizes=meta.sizes;
+      for(const key of ["giftNotes","routineNotes"])if(meta[key]&&!p[key])p[key]=String(meta[key]);
+      if(JSON.stringify(p)!==before)changed++;
+    }
+    if(changed)await dbSet("state",state);
+    return changed;
+  }catch(error){
+    cloudError=error?.message||"Could not sync private People profiles.";
+    return 0;
+  }
+}
+
+async function cloudUpsertPersonProfile(p){
+  const user=cloudUser();if(!user||!cloudClient||!p?.name)return false;
+  const birthdayText=String(p.birthday||"").trim(),birthday=/^\d{4}-\d{2}-\d{2}$/.test(birthdayText)?birthdayText:null;
+  const payload={
+    owner_user_id:user.id,
+    display_name:String(p.name).trim(),
+    relationship:String(p.relationship||"").trim()||null,
+    birthday,
+    metadata:{
+      birthdayText:birthday?null:birthdayText||null,
+      favoriteColors:Array.isArray(p.favoriteColors)?p.favoriteColors:[],
+      favoriteCharacters:Array.isArray(p.favoriteCharacters)?p.favoriteCharacters:[],
+      favoriteFoods:Array.isArray(p.favoriteFoods)?p.favoriteFoods:[],
+      interests:Array.isArray(p.interests)?p.interests:[],
+      sizes:p.sizes&&typeof p.sizes==="object"?p.sizes:{},
+      giftNotes:String(p.giftNotes||""),
+      importantDates:Array.isArray(p.importantDates)?p.importantDates:[],
+      sharedPlans:Array.isArray(p.sharedPlans)?p.sharedPlans:[],
+      routineNotes:String(p.routineNotes||"")
+    },
+    updated_at:new Date().toISOString()
+  };
+  let result;
+  if(p.cloudMemberId){
+    result=await cloudClient.from("household_members").update(payload).eq("id",p.cloudMemberId).eq("owner_user_id",user.id).select("id").maybeSingle();
+  }else{
+    result=await cloudClient.from("household_members").insert(payload).select("id").single();
+  }
+  if(result.error)throw result.error;
+  if(result.data?.id)p.cloudMemberId=result.data.id;
+  await dbSet("state",state);
+  return true;
+}
+
 async function cloudSignInFromForm(){
   if(cloudBusy)return;
   const creds=cloudCredentials();if(!creds)return;
@@ -121,6 +198,7 @@ async function cloudSignInFromForm(){
     await cloudRefreshMetadata();
     await cloudPrepareAutoSync();
     await cloudPullLifeEntries(false);
+    await cloudPullHouseholdMembers();
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     closeModal();render();
   }catch(error){
@@ -860,6 +938,7 @@ document.addEventListener("visibilitychange",()=>{
   Promise.resolve(sync).then(async()=>{
     if(typeof queueMissingMealRecipes==="function")await queueMissingMealRecipes();
     if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
+    if(typeof cloudPullHouseholdMembers==="function")await cloudPullHouseholdMembers();
     if(typeof render==="function")render();
   }).catch(()=>{});
 });
