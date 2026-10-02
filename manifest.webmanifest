@@ -4,12 +4,12 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#08130e",
-  "theme_color": "#11221a",
+  "background_color": "#0b1813",
+  "theme_color": "#183528",
   "description": "A calm, private personal and family command center for daily life.",
   "icons": [
     {
-      "src": "icon.svg?v=20261002-1",
+      "src": "icon.svg?v=20261002-botanical1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
