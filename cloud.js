@@ -1177,12 +1177,22 @@ async function cloudPullLifeEntries(showAlert=false){
       .order("created_at",{ascending:true})
       .limit(500);
     if(error)throw error;
-    let applied=0;
+    let applied=0;const petProfileEntryIds=new Set();
     for(const row of data||[]){
-      if(cloudApplyLifeEntry(row)){cloudMarkEntryApplied(row.id);applied++}
+      if(cloudApplyLifeEntry(row)){
+        cloudMarkEntryApplied(row.id);applied++;
+        if(row.category==="pet_profile")petProfileEntryIds.add(row.id);
+      }
     }
     if(applied){
       await dbSet("state",state);
+      if(petProfileEntryIds.size&&typeof cloudUpsertPetProfile==="function"){
+        for(const pet of state.pets||[]){
+          if(petProfileEntryIds.has(pet.cloudEntryId)){
+            try{await cloudUpsertPetProfile(pet)}catch(e){}
+          }
+        }
+      }
       cloudSchedulePush();
       if(typeof render==="function")render();
     }
