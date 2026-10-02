@@ -81,13 +81,7 @@ function cloudPanel(){
   <p class="muted small">Your device keeps its IndexedDB copy. Outfit photos remain local while photo storage is built separately.</p>
   ${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}
   <div class="actions">
-    ${cloudNeedsReview?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Use cloud copy</button><button class="btn" onclick="cloudKeepThisDevice()">Keep this device</button>`:`
-      <button class="btn primary" onclick="cloudUploadSnapshot()">Upload now</button>
-      <button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>
-      <button class="btn" onclick="cloudPullLifeEntries(true)">Pull ChatGPT logs</button>
-      ${auto?`<button class="btn" onclick="cloudDisableAutoSync()">Turn auto sync off</button>`:`<button class="btn" onclick="cloudEnableAutoSync()">Enable auto sync</button>`}
-    `}
-    <button class="btn" onclick="cloudSignOut()">Sign out</button>
+    ${cloudNeedsReview?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Use cloud copy</button><button class="btn" onclick="cloudKeepThisDevice()">Keep this device</button>`:`\n      ${!cloudRemoteUpdatedAt?`<button class="btn primary" onclick="cloudCreateFirstBackup()">Create first backup + auto sync</button><button class="btn" onclick="cloudUploadSnapshot()">Upload one-time copy</button>`:`<button class="btn primary" onclick="cloudUploadSnapshot()">Upload now</button>`}\n      <button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>\n      <button class="btn" onclick="cloudPullLifeEntries(true)">Pull ChatGPT logs</button>\n      ${cloudRemoteUpdatedAt?(auto?`<button class="btn" onclick="cloudDisableAutoSync()">Turn auto sync off</button>`:`<button class="btn" onclick="cloudEnableAutoSync()">Enable auto sync</button>`):""}\n    `}\n    <button class="btn" onclick="cloudSignOut()">Sign out</button>
   </div></div>`;
 }
 
@@ -517,7 +511,7 @@ async function cloudPushSnapshotInternal(forceOverwrite=false){
   return true;
 }
 
-async function cloudUploadSnapshot(){
+async function cloudCreateFirstBackup(){\n  const user=cloudUser();\n  if(!user||!cloudClient){openCloudAuth();return}\n  await cloudRefreshMetadata();\n  if(cloudRemoteUpdatedAt){alert("A cloud copy already exists for this account. Use Upload now or Restore cloud copy instead.");render();return}\n  if(!confirm("Create your first private cloud backup from this device and keep it automatically synced afterward?"))return;\n  cloudBusy=true;cloudError="";\n  try{\n    await cloudPullLifeEntries(false);\n    await cloudPullHouseholdMembers();\n    await cloudPullPetProfiles();\n    await cloudPushSnapshotInternal(true);\n    localStorage.setItem(cloudMetaKey("auto"),"1");\n    cloudAutoCanPush=true;cloudNeedsReview=false;\n    render();alert("First private cloud backup created. Automatic sync is now on.");\n  }catch(error){\n    cloudError=error?.message||"Could not create the first cloud backup.";\n    render();alert("Could not create the first cloud backup. Your local data was not changed.");\n  }finally{cloudBusy=false}\n}\n\nasync function cloudUploadSnapshot(){
   const user=cloudUser();
   if(!user||!cloudClient){openCloudAuth();return}
   if(!confirm("Upload this device's current Daily Life data to your private cloud copy? This replaces the previous cloud snapshot but does not erase local data."))return;
