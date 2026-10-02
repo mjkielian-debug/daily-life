@@ -2781,3 +2781,37 @@ body::before{
     justify-self:start;
   }
 }
+
+
+/* Editable vehicle service rows */
+.vehicle-service-row{
+  align-items:center;
+  gap:10px;
+}
+.vehicle-service-row>span:first-child{
+  min-width:0;
+}
+.vehicle-service-row>span:first-child b{
+  display:block;
+  margin-bottom:2px;
+}
+.vehicle-service-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.vehicle-service-actions>b{
+  white-space:nowrap;
+}
+@media(max-width:520px){
+  .vehicle-service-row{
+    align-items:flex-start;
+  }
+  .vehicle-service-actions{
+    flex-direction:column;
+    align-items:flex-end;
+    gap:5px;
+  }
+}
