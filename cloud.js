@@ -36,8 +36,8 @@ async function cloudInit(){
       await cloudPullProfile();
       await cloudRefreshMetadata();
       await cloudPrepareAutoSync();
-      await cloudPullLifeEntries(false);
       await cloudPullHouseholdMembers();
+      await cloudPullLifeEntries(false);
       await cloudPullPetProfiles();
     }
     cloudClient.auth.onAuthStateChange((_event,session)=>{
@@ -389,8 +389,8 @@ async function cloudBootstrapThisDevice(){
   cloudBusy=true;cloudError="";
   try{
     await cloudPullProfile();
-    await cloudPullLifeEntries(false);
     await cloudPullHouseholdMembers();
+    await cloudPullLifeEntries(false);
     await cloudPullPetProfiles();
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     if(typeof sharingInit==="function")await sharingInit();
@@ -417,9 +417,9 @@ async function cloudSignInFromForm(){
     await cloudEnsureProfile();
     await cloudRefreshMetadata();
     await cloudPrepareAutoSync();
-    await cloudPullLifeEntries(false);
     await cloudPullHouseholdMembers();
-      await cloudPullPetProfiles();
+    await cloudPullLifeEntries(false);
+    await cloudPullPetProfiles();
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     if(typeof sharingInit==="function")await sharingInit();
     closeModal();render();
@@ -603,8 +603,8 @@ async function cloudRestoreSnapshot(){
     cloudSetLastPushed(cloudRemoteUpdatedAt);
     cloudSetLastSignature(cloudStateSignature());
     cloudNeedsReview=false;cloudAutoCanPush=cloudAutoEnabled();
-    await cloudPullLifeEntries(false);
     await cloudPullHouseholdMembers();
+    await cloudPullLifeEntries(false);
     await cloudPullPetProfiles();
     render();alert("Cloud copy restored to this device.");
   }catch(error){
@@ -1458,9 +1458,9 @@ document.addEventListener("visibilitychange",()=>{
   const sync=cloudAutoEnabled()?cloudPrepareAutoSync():cloudPullLifeEntries(false);
   Promise.resolve(sync).then(async()=>{
     if(typeof queueMissingMealRecipes==="function")await queueMissingMealRecipes();
-    if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
     if(typeof cloudPullHouseholdMembers==="function")await cloudPullHouseholdMembers();
-      await cloudPullPetProfiles();
+    if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
+    if(typeof cloudPullPetProfiles==="function")await cloudPullPetProfiles();
     if(typeof render==="function")render();
   }).catch(()=>{});
 });
