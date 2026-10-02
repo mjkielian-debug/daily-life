@@ -1190,7 +1190,7 @@ function openPersonProfile(id=""){
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
     <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
-    <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="Robin's daughter, Tanner's brother, Ted + Linsay's son…"></label>
+    <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="sister's daughter, partner's brother, their child…"></label>
     <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
