@@ -728,11 +728,6 @@ function itineraryFixedItems(date){
     if(!e.startTime)continue;
     items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId});
   }
-  const meal=mealForDate(date);
-  if(meal?.dish&&meal.status!=="made"){
-    if(meal.startBy)items.push({id:"meal-start:"+date,start:meal.startBy,end:"",title:"Start "+meal.dish,detail:"Dinner prep",fixed:false,kind:"meal",icon:"🍳",source:"meal"});
-    if(meal.serveTime)items.push({id:"meal-serve:"+date,start:meal.serveTime,end:"",title:"Serve "+meal.dish,detail:"Dinner",fixed:false,kind:"meal",icon:"🍽️",source:"meal"});
-  }
   for(const x of itineraryCustomBlocks(date))if(x.start)items.push({
     id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",
     kind:x.kind||"flexible",icon:x.icon||"◷",source:"custom",sourceId:x.id,done:!!x.done,shared:!!x.sharedEntryId,
@@ -778,7 +773,12 @@ function itinerarySuggestedBlocks(date){
   }
   const requestedDinnerStart=hmMinutes(meal?.serveTime||"17:30")??1050,kidsGoneByDinner=kidsAwayAt!==null&&kidsAwayAt<=requestedDinnerStart,
         dinnerStart=meal?.serveTime?requestedDinnerStart:(kidsGoneByDinner?Math.max(requestedDinnerStart,kidsAwayAt+30):requestedDinnerStart),
-        dinnerLength=meal?.serveTime?60:45;
+        dinnerLength=meal?.serveTime?60:45,
+        mealPrepStart=hmMinutes(meal?.startBy);
+  if(meal?.dish&&mealPrepStart!==null&&mealPrepStart<dinnerStart){
+    const prepEnd=Math.min(dinnerStart,Math.max(mealPrepStart+20,dinnerStart));
+    add({templateKey:"meal-prep",start:minutesHm(mealPrepStart),end:minutesHm(prepEnd),title:"Make "+meal.dish,detail:[meal.method,"Dinner prep"].filter(Boolean).join(" · "),icon:"🍳"});
+  }
   add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
   if(kids.length&&(kidsAwayAt===null||kidsAwayAt>18*60+45)){
     add({templateKey:"chores",start:"18:45",end:"19:45",title:"Chores + showers / baths",detail:itineraryRoutineDetail(date,"chores","Family evening reset"),icon:"🧺"});
@@ -789,6 +789,50 @@ function itinerarySuggestedBlocks(date){
   const tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00");
   if(tm?.tomorrowPrep||early.length)add({templateKey:"tomorrow-prep",start:"20:45",end:"21:15",title:"Set tomorrow up",detail:[tm?.tomorrowPrep,early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
   return out.map((x,i)=>({...x,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested"}));
+}
+
+function itineraryRoutineWindow(x,date){
+  const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=hmMinutes(prefs.dayEnd||"21:30")??1290,
+        desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
+  if(x.templateKey==="work-morning")return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
+  if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
+  if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
+  if(x.templateKey==="homework")return{start:15*60,end:18*60+30};
+  if(x.templateKey==="meal-prep")return{start:Math.max(15*60,desired-60),end:Math.min(dayEnd,desired+120)};
+  if(x.templateKey==="dinner")return{start:16*60+30,end:20*60+30};
+  if(x.templateKey==="chores")return{start:17*60+30,end:21*60};
+  if(x.templateKey==="wind-down")return{start:19*60,end:dayEnd};
+  if(x.templateKey==="tomorrow-prep")return{start:19*60+30,end:dayEnd};
+  return{start:dayStart,end:dayEnd};
+}
+function itineraryFitRoutines(date,blockingItems,routines){
+  const {dayStart,dayEnd}=itineraryEffectiveIntervals(blockingItems,date),
+        gaps=itineraryOpenGaps(blockingItems,date).map(g=>({...g})),
+        placed=[];
+  const ordered=routines.slice().sort((a,b)=>(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
+  for(const x of ordered){
+    const desired=hmMinutes(x.start);if(desired===null)continue;
+    const rawEnd=hmMinutes(x.end),duration=Math.max(15,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
+          window=itineraryRoutineWindow(x,date);
+    let best=null;
+    for(let i=0;i<gaps.length;i++){
+      const g=gaps[i],rangeStart=Math.max(g.start,window.start,dayStart),rangeEnd=Math.min(g.end,window.end,dayEnd);
+      if(rangeEnd-rangeStart<duration)continue;
+      const candidate=Math.max(rangeStart,Math.min(desired,rangeEnd-duration)),
+            distance=Math.abs(candidate-desired);
+      if(!best||distance<best.distance||(distance===best.distance&&candidate<best.start))best={i,start:candidate,end:candidate+duration,distance};
+    }
+    if(!best){
+      placed.push({...x,skippedByConflict:true,originalStart:x.start,originalEnd:x.end});
+      continue;
+    }
+    const g=gaps[best.i],moved=best.start!==desired,
+          row={...x,start:minutesHm(best.start),end:minutesHm(best.end),movedByPlanner:moved,originalStart:x.start,originalEnd:x.end};
+    placed.push(row);
+    const parts=[];if(g.start<best.start)parts.push({start:g.start,end:best.start});if(best.end<g.end)parts.push({start:best.end,end:g.end});
+    gaps.splice(best.i,1,...parts);
+  }
+  return placed;
 }
 
 function itineraryTaskMinutes(task){
@@ -806,15 +850,23 @@ function itineraryTaskCandidates(date){
   return (state.tasks||[]).filter(t=>t.date===date&&!t.done&&!/^(ups shift|everyone reading)$/i.test(String(t.title||""))).sort((a,b)=>(Number(a.order||100)-Number(b.order||100))||String(a.title||"").localeCompare(String(b.title||"")));
 }
 function itineraryTaskPreferredRange(task,date){
-  const pref=String(task?.itineraryPreference||"any"),w=workForDate(date);
-  if(task?.itineraryStart){const s=hmMinutes(task.itineraryStart);return s===null?null:{start:s,end:s+itineraryTaskMinutes(task)}}
-  if(pref==="morning")return{start:8*60,end:12*60};
-  if(pref==="afternoon")return{start:12*60,end:17*60};
-  if(pref==="after-school")return{start:15*60,end:18*60+30};
-  if(pref==="evening")return{start:18*60,end:21*60+30};
+  const pref=String(task?.itineraryPreference||"any"),w=workForDate(date),
+        now=date===ymd()?new Date():null,
+        currentFloor=now?Math.min(21*60+30,Math.ceil((now.getHours()*60+now.getMinutes()+5)/5)*5):0,
+        clamp=r=>({start:Math.max(r.start,currentFloor),end:r.end});
+  if(task?.itineraryStart){
+    const s=hmMinutes(task.itineraryStart),mins=itineraryTaskMinutes(task);
+    if(s===null)return null;
+    return date===ymd()&&s<currentFloor?clamp({start:currentFloor,end:Math.max(currentFloor+mins,s+mins)}):{start:s,end:s+mins};
+  }
+  if(pref==="morning")return clamp({start:8*60,end:12*60});
+  if(pref==="afternoon")return clamp({start:12*60,end:17*60});
+  if(pref==="after-school")return clamp({start:15*60,end:18*60+30});
+  if(pref==="evening")return clamp({start:18*60,end:21*60+30});
   const workEnd=hmMinutes(w?.end);
-  return{start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:9*60),end:21*60+30};
+  return clamp({start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:9*60),end:21*60+30});
 }
+
 function itineraryEffectiveIntervals(items,date){
   const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=hmMinutes(prefs.dayEnd||"21:30")??1290,
         sorted=items.filter(x=>hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
@@ -875,7 +927,11 @@ function itineraryRestBlocks(items,date){
   return out;
 }
 function itineraryDayItems(date){
-  const base=[...itineraryFixedItems(date),...itinerarySuggestedBlocks(date)],
+  const anchors=itineraryFixedItems(date),
+        routinesRaw=itinerarySuggestedBlocks(date),
+        routines=itineraryFitRoutines(date,anchors,routinesRaw),
+        visibleRoutines=routines.filter(x=>!x.skippedByConflict),
+        base=[...anchors,...visibleRoutines],
         tasks=itineraryAutoTaskBlocks(date,base),
         used=[...base,...tasks],
         open=itineraryRestBlocks(used,date);
@@ -933,7 +989,7 @@ function itineraryFlowCard(date){
       <div class="planner-time"><b>${esc(fmtClock(x.start))}</b><span>${x.end?esc(fmtClock(x.end)):x.endUnknown?"End TBD":""}</span>${duration?`<small>${esc(duration)}</small>`:""}</div>
       <div class="planner-content">
         <div class="planner-topline"><span class="planner-icon">${x.icon||"•"}</span><b class="planner-title">${esc(x.title)}</b><span class="planner-kind">${esc(type)}</span></div>
-        ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}
+        ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}${x.movedByPlanner?`<div class="planner-moved">Moved around a fixed commitment · originally ${esc(fmtClock(x.originalStart))}${x.originalEnd?"–"+esc(fmtClock(x.originalEnd)):""}</div>`:""}
         ${x.endUnknown?`<div class="planner-caution">Daily Life will not auto-schedule tasks inside this unknown work span.</div>`:""}
         ${x.source==="task"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryTask('${x.sourceId}')">Edit timing</button></div>`:""}
         ${x.source==="custom"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryBlock('${date}','${x.sourceId}')">Edit</button></div>`:""}
