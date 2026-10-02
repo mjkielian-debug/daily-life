@@ -325,13 +325,15 @@ function bankBillMatch(t){
 function bankLooksLikeKnownBill(t){return !!bankBillMatch(t)}
 
 function bankApplyBillPayment(t){
+  const transactionId=String(t.provider_transaction_id||"");
+  const linked=(state.bills||[]).find(b=>transactionId&&String(b.paidByBankTransactionId||"")===transactionId);
+  if(linked)return linked;
   const bill=bankBillMatch(t);if(!bill)return null;
-  if(bill.paidByBankTransactionId===t.provider_transaction_id)return bill;
   bill.status="paid";
   bill.paidDate=String(t.posted_date||"");
   bill.paidAmount=Math.round(Number(t.provider_amount||0)*100)/100;
   bill.paidSource="bank";
-  bill.paidByBankTransactionId=String(t.provider_transaction_id||"");
+  bill.paidByBankTransactionId=transactionId;
   bill.paidMerchant=String(t.merchant_name||t.name||"").trim();
   if(typeof billRepeat==="function"&&billRepeat(bill)&&typeof appendNextBill==="function")appendNextBill(bill);
   return bill;
@@ -368,9 +370,10 @@ async function cloudImportBankSpending(showAlert=false){
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
     const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
     const privateRule=cloudBankRuleFor(t);
+    const alreadyLinked=(state.bills||[]).some(b=>String(b.paidByBankTransactionId||"")===String(t.provider_transaction_id||""));
     const matchedBill=bankApplyBillPayment(t);
     const knownBill=!!matchedBill;
-    if(matchedBill)changed++;
+    if(matchedBill&&!alreadyLinked)changed++;
     if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
