@@ -312,7 +312,7 @@ async function cloudPullHouseholdMembers(){
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
       if(Array.isArray(meta.familyLinks))p.familyLinks=meta.familyLinks.filter(x=>x&&x.name).map(x=>({name:String(x.name),label:String(x.label||"")}));
-      if(Array.isArray(meta.schoolContacts))p.schoolContacts=meta.schoolContacts.filter(x=>x&&(x.name||x.email)).map(x=>({name:String(x.name||""),role:String(x.role||""),email:String(x.email||""),notes:String(x.notes||"")}));
+      if(Array.isArray(meta.schoolContacts))p.schoolContacts=meta.schoolContacts.filter(x=>x&&(x.name||x.email)).map(x=>({name:String(x.name||""),role:String(x.role||""),email:String(x.email||""),notes:String(x.notes||""),status:String(x.status||""),schoolYear:String(x.schoolYear||""),source:String(x.source||"")}));
       p.wishlist=cloudMergeWishlist(p.wishlist,meta.wishlist,meta.elfsterWishes);
       if(Array.isArray(meta.personNotes)){
         const seen=new Set((p.personNotes||[]).map(n=>String(n.id||"")));
@@ -1063,6 +1063,34 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.mealFeedback))state.mealFeedback=[];
       if(state.mealFeedback.some(x=>x.cloudEntryId===row.id))return true;
       state.mealFeedback.push({id:uid(),cloudEntryId:row.id,dish,score,label:String(p.label||""),date:String(p.date||date),createdAt:String(row.created_at||new Date().toISOString()),source:"chatgpt"});
+      return true;
+    }
+    case "school_contact":{
+      const childRaw=String(p.child||p.person||p.student||"").trim(),
+            contactName=String(p.contactName||p.teacher||p.name||"").trim(),
+            email=String(p.email||"").trim(),
+            role=String(p.role||p.className||p.subject||"").trim();
+      if(!childRaw||(!contactName&&!email))return false;
+      const child=typeof canonicalPersonName==="function"?canonicalPersonName(childRaw):childRaw;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===String(child||"").toLowerCase());
+      if(!person)return false;
+      if(!Array.isArray(person.schoolContacts))person.schoolContacts=[];
+      const emailKey=email.toLowerCase(),nameKey=contactName.toLowerCase();
+      let contact=person.schoolContacts.find(x=>emailKey&&String(x.email||"").trim().toLowerCase()===emailKey);
+      if(!contact&&nameKey)contact=person.schoolContacts.find(x=>String(x.name||"").trim().toLowerCase()===nameKey&&(!role||String(x.role||"").trim().toLowerCase()===role.toLowerCase()));
+      if(!contact){contact={};person.schoolContacts.push(contact)}
+      Object.assign(contact,{
+        name:contactName||String(contact.name||""),
+        role:role||String(contact.role||""),
+        email:email||String(contact.email||""),
+        notes:String(p.notes??contact.notes??""),
+        status:String(p.status||contact.status||"current"),
+        schoolYear:String(p.schoolYear||contact.schoolYear||""),
+        source:String(p.source||contact.source||"ChatGPT / email")
+      });
+      if(p.school!==undefined)person.school=String(p.school||person.school||"");
+      if(p.grade!==undefined)person.grade=String(p.grade||person.grade||"");
+      person.lastSchoolContactEntryId=row.id;
       return true;
     }
     case "event":
