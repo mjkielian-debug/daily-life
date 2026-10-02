@@ -2575,6 +2575,7 @@ function openEvent(date=ymd(),id="",person=""){
     <label>Notes<textarea id="enotes">${esc(x.notes||"")}</textarea></label>
     ${typeof sharingEventControl==="function"?sharingEventControl(x):""}
     <label>Status<select id="estatus"><option ${(x.status||"confirmed")==="confirmed"?"selected":""}>confirmed</option><option ${x.status==="tentative"?"selected":""}>tentative</option><option ${x.status==="cancelled"?"selected":""}>cancelled</option></select></label>
+    ${x.id&&(!x.source||x.source==="Manual"||x.source==="Shared household")?`<button type="button" class="btn danger" onclick="removeEvent('${x.id}')">Delete event</button>`:""}
   </div>`,"Save",async()=>{
     const title=$("#etitle").value.trim(),eventDate=$("#edate").value;if(!title||!eventDate)return;
     const shareRequested=$("#eshared")?$("#eshared").checked:!!x.shared;
@@ -2586,6 +2587,13 @@ function openEvent(date=ymd(),id="",person=""){
     }
     await save();closeModal();render();
   });
+}
+async function removeEvent(id){
+  const e=(state.events||[]).find(x=>x.id===id);if(!e)return;
+  if(!confirm(`Delete "${e.title||"this event"}"?`))return;
+  if(e.sharedEntryId&&typeof sharingMakeEventPrivate==="function"){const ok=await sharingMakeEventPrivate(e);if(!ok)return}
+  state.events=(state.events||[]).filter(x=>x.id!==id);
+  await save();closeModal();render();
 }
 function openPaycheck(id=""){
   const x=state.paychecks.find(p=>p.id===id)||{};
