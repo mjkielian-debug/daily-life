@@ -49,9 +49,9 @@ async function cloudInit(){
           await cloudPullProfile();
           await cloudRefreshMetadata();
           await cloudPrepareAutoSync();
-          await cloudPullLifeEntries(false);
           await cloudPullHouseholdMembers();
-      await cloudPullPetProfiles();
+          await cloudPullLifeEntries(false);
+          await cloudPullPetProfiles();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
           if(typeof sharingInit==="function")await sharingInit();
         }else{cloudRemoteUpdatedAt=null;if(typeof sharingReset==="function")sharingReset()}
