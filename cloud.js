@@ -570,7 +570,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -725,6 +725,26 @@ function cloudApplyLifeEntry(row){
       const petName=String(p.petName||p.pet||"").trim();if(!petName)return false;
       const pet=(state.pets||[]).find(x=>String(x.name||"").trim().toLowerCase()===petName.toLowerCase());if(!pet)return false;
       state.petRecords.push({...common,petId:pet.id,type:String(p.type||"Vet visit"),nextDate:String(p.nextDate||""),provider:String(p.provider||""),cost:Number(p.cost||0),notes:String(p.notes||""),source:"chatgpt"});
+      return true;
+    }
+    case "plant_routine":{
+      if(!Array.isArray(state.plantCareRoutines))state.plantCareRoutines=[];
+      const title=String(p.title||p.name||"").trim();if(!title)return false;
+      const plantName=String(p.plantName||p.plant||"").trim();
+      const plant=plantName?(state.plants||[]).find(x=>String(x.name||"").trim().toLowerCase()===plantName.toLowerCase()):null;
+      let x=state.plantCareRoutines.find(x=>String(x.title||"").trim().toLowerCase()===title.toLowerCase()&&String(x.plantId||"")===String(plant?.id||""));
+      if(!x){x={id:uid()};state.plantCareRoutines.push(x)}
+      Object.assign(x,{
+        plantId:plant?.id||"",
+        title,
+        type:String(p.type||x.type||"Other"),
+        everyDays:Math.max(0,Number(p.everyDays??x.everyDays??0)),
+        nextDate:String(p.nextDate||x.nextDate||date||""),
+        lastDone:String(p.lastDone||x.lastDone||""),
+        notes:String(p.notes||x.notes||""),
+        active:p.active!==false,
+        cloudEntryId:row.id
+      });
       return true;
     }
     case "plant_care":{
