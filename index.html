@@ -887,7 +887,15 @@ function itineraryTaskMinutes(task){
   return 20;
 }
 function itineraryTaskCandidates(date){
-  return (state.tasks||[]).filter(t=>t.date===date&&!t.done&&!/^(ups shift|everyone reading)$/i.test(String(t.title||""))).sort((a,b)=>(Number(a.order||100)-Number(b.order||100))||String(a.title||"").localeCompare(String(b.title||"")));
+  const today=ymd(),oldest=shiftDateString(today,-30);
+  return (state.tasks||[]).filter(t=>{
+    if(t.done||/^(ups shift|everyone reading)$/i.test(String(t.title||"")))return false;
+    if(date===today)return String(t.date||"")>=oldest&&String(t.date||"")<=today;
+    return t.date===date;
+  }).sort((a,b)=>{
+    const overdueA=date===today&&a.date<today?0:1,overdueB=date===today&&b.date<today?0:1;
+    return overdueA-overdueB||String(a.date||"").localeCompare(String(b.date||""))||(Number(a.order||100)-Number(b.order||100))||String(a.title||"").localeCompare(String(b.title||""));
+  });
 }
 function itineraryTaskPreferredRange(task,date){
   const learned=itineraryTaskPattern(task),pref=String(task?.itineraryPreference||learned?.preference||"any"),w=workForDate(date),
@@ -935,7 +943,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
   for(const t of tasks){
     if(t.itineraryStart){
       const s=hmMinutes(t.itineraryStart),mins=itineraryTaskMinutes(t);
-      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false});
+      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.date<date?"Carried forward from "+dl(t.date):"",t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:t.date<date});
       else waiting.push(t);
     }else waiting.push(t);
   }
@@ -949,7 +957,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
     }
     if(chosen<0)continue;
     const g=gaps[chosen],endAt=startAt+mins;
-    planned.push({id:"task:"+t.id,start:minutesHm(startAt),end:minutesHm(endAt),title:t.title,detail:[t.child,t.notes,"Suggested from your task list"].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:true});
+    planned.push({id:"task:"+t.id,start:minutesHm(startAt),end:minutesHm(endAt),title:t.title,detail:[t.child,t.date<date?"Carried forward from "+dl(t.date):"",t.notes,"Suggested from your task list"].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:true,carriedForward:t.date<date});
     const parts=[];if(g.start<startAt)parts.push({start:g.start,end:startAt});if(endAt<g.end)parts.push({start:endAt,end:g.end});gaps.splice(chosen,1,...parts);
   }
   return planned;
@@ -1018,7 +1026,7 @@ function itineraryTypeLabel(x){
   if(x.endUnknown)return"TIME TBD";
   if(x.estimatedEnd)return"ANCHOR · EST.";
   if(x.fixed)return"ANCHOR";
-  if(x.source==="task")return x.autoPlanned?"TASK · AUTO":"TASK";
+  if(x.source==="task")return x.carriedForward?(x.autoPlanned?"TASK · CARRYOVER":"TASK · CARRYOVER"):x.autoPlanned?"TASK · AUTO":"TASK";
   if(x.source==="suggested")return x.learnedRoutine?"ROUTINE · LEARNED":"ROUTINE";
   if(x.source==="custom")return"YOUR BLOCK";
   if(x.kind==="gap")return"OPEN";
@@ -1102,7 +1110,7 @@ function printItineraryWeek(date=itineraryDate){
 function itineraryView(){
   const date=itineraryDate||ymd(),meal=mealForDate(date),items=itineraryDayItems(date),
         placedTaskIds=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
-        tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done&&!placedTaskIds.has(x.id)),
+        tasks=itineraryTaskCandidates(date).filter(x=>!placedTaskIds.has(x.id)),
         chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
   return `<div class="card glow itinerary-hero">
     <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Your daily lesson plan</h2><div class="muted small">A realistic agenda built from work, school, family commitments, routines, and the tasks you give Daily Life.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
