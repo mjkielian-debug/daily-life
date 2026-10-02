@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people2">
+<link rel="stylesheet" href="styles.css?v=20261002-people3">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-people2"></script>
+<script src="cloud.js?v=20261002-people3"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -277,6 +277,7 @@ function migrateState(s){
     if(p.profileScope===undefined)p.profileScope=p.livesWithUser?"household":"extended";
     if(p.relatedTo===undefined)p.relatedTo="";
     if(p.elfsterUrl===undefined)p.elfsterUrl="";
+    if(p.elfsterLastSyncedAt===undefined)p.elfsterLastSyncedAt="";
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
     if(!Array.isArray(p.favoriteCharacters))p.favoriteCharacters=[];
     if(!Array.isArray(p.interests))p.interests=[];
@@ -1139,6 +1140,7 @@ function openPersonHub(id){
   const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   modal(p.name,`<div class="stack person-hub">
     <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    ${p.elfsterUrl?`<div class="elfster-sync-line">Elfster linked${p.elfsterLastSyncedAt?` · last update ${new Date(p.elfsterLastSyncedAt).toLocaleString()}`:" · waiting for first sync"}</div>`:""}
     <div class="person-hub-context"><span class="tag">${esc(relationshipLabel(p))}</span><span class="tag">${livesWithUser(p)?"household":"extended family / other"}</span>${p.relatedTo?`<span class="muted small">${esc(p.relatedTo)}</span>`:""}</div>
     ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
     ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
@@ -1179,7 +1181,7 @@ function personCardCompact(p){
     <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))} · ${livesWithUser(p)?"household":"extended"}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
     ${p.relatedTo?`<div class="muted small person-family-link">${esc(p.relatedTo)}</div>`:""}
     ${b?`<div class="person-detail-line"><span>Birthday</span><b>${esc(b.label)}${b.days<=30?" · "+b.days+"d":""}</b></div>`:""}
-    ${p.elfsterUrl?`<div class="person-detail-line"><span>Gifts</span><b>Elfster linked</b></div>`:""}
+    ${p.elfsterUrl?`<div class="person-detail-line"><span>Gifts</span><b>Elfster linked${p.elfsterLastSyncedAt?` · ${new Date(p.elfsterLastSyncedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"})}`:""}</b></div>`:""}
     ${ints.length?`<div class="person-chips">${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:""}
     ${foods.length?`<div class="muted small">Likes: ${foods.slice(0,3).map(esc).join(", ")}</div>`:""}
     ${plans.length||dates.length?`<div class="person-mini-meta">${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
@@ -1246,7 +1248,7 @@ function openBirthdayWish(personId,wishId=""){
   modal(`Gift idea · ${p.name}`,`<div class="stack">${p.elfsterUrl?`<button type="button" class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Open ${esc(p.name)}'s Elfster wishlist ↗</button>`:""}<label>Item / idea<input id="wi" value="${esc(w.item||"")}"></label><div class="grid2"><label>Source<select id="wsource">${["My idea","Elfster","Other"].map(v=>`<option ${(w.source||"My idea")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Status<select id="ws">${["want","maybe","bought","wrapped"].map(v=>`<option ${(w.status||"want")===v?"selected":""}>${v}</option>`).join("")}</select></label></div><div class="grid2"><label>Estimated cost<input id="west" type="number" min="0" step=".01" value="${w.estimatedCost??""}"></label><label>Actual cost<input id="wact" type="number" min="0" step=".01" value="${w.actualCost??""}"></label></div><label>Store / where to get it<input id="wstore" value="${esc(w.store||"")}"></label><label>Item link<input id="wurl" type="url" value="${esc(w.url||"")}" placeholder="Optional product or Elfster link"></label><label>Notes<input id="wn" value="${esc(w.notes||"")}"></label></div>`,"Save",async()=>{
     const item=$("#wi").value.trim();if(!item)return;if(!Array.isArray(p.wishlist))p.wishlist=[];
     let x=p.wishlist.find(x=>x.id===wishId);if(!x){x={id:uid()};p.wishlist.push(x)}
-    Object.assign(x,{item,source:$("#wsource").value,status:$("#ws").value,estimatedCost:Number($("#west").value||0),actualCost:Number($("#wact").value||0),store:$("#wstore").value.trim(),url:$("#wurl").value.trim(),notes:$("#wn").value.trim(),updatedAt:new Date().toISOString()});await save();closeModal();render();
+    Object.assign(x,{item,source:$("#wsource").value,status:$("#ws").value,estimatedCost:Number($("#west").value||0),actualCost:Number($("#wact").value||0),store:$("#wstore").value.trim(),url:$("#wurl").value.trim(),notes:$("#wn").value.trim(),updatedAt:new Date().toISOString()});await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
   });
 }
 function openBirthdayPlanner(personId){
