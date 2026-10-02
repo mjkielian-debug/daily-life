@@ -908,17 +908,24 @@ function openPersonalCareLog(key=""){
   });
 }
 function openPersonalCareSettings(){
-  modal("Add personal-care item",`<div class="stack"><label>Name<input id="pcaLabel" placeholder="Dry shampoo, manicure, hair color…"></label><label>Section<select id="pcaGroup"><option>Hair</option><option>Skin</option><option>Beauty</option><option>Body</option><option>Other</option></select></label><div class="muted small">This adds a frequency log only. It does not create a schedule or reminder.</div></div>`,"Add",async()=>{
+  const custom=Array.isArray(state.settings?.personalCareActivities)?state.settings.personalCareActivities:[];
+  modal("Personal-care items",`<div class="stack"><label>New item<input id="pcaLabel" placeholder="Dry shampoo, manicure, hair color…"></label><label>Section<select id="pcaGroup"><option>Hair</option><option>Skin</option><option>Beauty</option><option>Body</option><option>Other</option></select></label><div class="muted small">This adds a frequency log only. It does not create a schedule or reminder.</div>${custom.length?`<div><div class="mini-heading">Custom items</div>${custom.map(x=>`<div class="row compact-row"><span>${esc(x.label)}<div class="muted small">${esc(x.group||"Other")}</div></span><button type="button" class="btn small danger" onclick="removePersonalCareDefinition('${x.key}')">Remove</button></div>`).join("")}</div>`:""}</div>`,"Add",async()=>{
     const label=$("#pcaLabel").value.trim();if(!label)return;
     state.settings.personalCareActivities=Array.isArray(state.settings.personalCareActivities)?state.settings.personalCareActivities:[];
     state.settings.personalCareActivities.push({key:"personal_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12),label,group:$("#pcaGroup").value,builtin:false});await save();closeModal();render();
   });
 }
+async function removePersonalCareDefinition(key){
+  const def=(state.settings.personalCareActivities||[]).find(x=>x.key===key);if(!def)return;
+  state.settings.personalCareActivities=(state.settings.personalCareActivities||[]).filter(x=>x.key!==key);
+  await save();closeModal();render();
+}
 function selfCarePersonalPanel(){
   const defs=personalCareDefinitions(),groups=["Hair","Skin","Beauty","Body","Other"];
   return `<div class="routine-intro"><b>Things that matter, but not every day.</b><div class="muted small">Log them when they happen. Daily Life shows the actual frequency instead of turning them into another checklist.</div></div>
     <div class="actions" style="margin-bottom:10px"><button class="btn" onclick="openPersonalCareLog()">+ Detailed log</button><button class="btn" onclick="openPersonalCareSettings()">+ Custom item</button></div>
-    ${groups.map(group=>{const rows=defs.filter(x=>x.group===group);if(!rows.length)return"";return`<div class="personal-care-group"><div class="mini-heading">${esc(group)}</div><div class="personal-care-grid">${rows.map(x=>`<div class="personal-care-item"><button class="personal-care-main" onclick="openPersonalCareLog('${x.key}')"><b>${esc(x.label)}</b><small>${esc(personalCareWhen(x.key))} · ${personalCareCount(x.key,30)}x in 30d</small></button><button class="btn small good" onclick="quickPersonalCare('${x.key}')">Done</button></div>`).join("")}</div></div>`}).join("")}`;
+    ${groups.map(group=>{const rows=defs.filter(x=>x.group===group);if(!rows.length)return"";return`<div class="personal-care-group"><div class="mini-heading">${esc(group)}</div><div class="personal-care-grid">${rows.map(x=>`<div class="personal-care-item"><button class="personal-care-main" onclick="openPersonalCareLog('${x.key}')"><b>${esc(x.label)}</b><small>${esc(personalCareWhen(x.key))} · ${personalCareCount(x.key,30)}x in 30d</small></button><button class="btn small good" onclick="quickPersonalCare('${x.key}')">Done</button></div>`).join("")}</div></div>`}).join("")}
+    ${(state.selfCareActivities||[]).length?`<details class="self-care-history"><summary>Recent personal-care history</summary>${[...(state.selfCareActivities||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,20).map(x=>{const d=defs.find(v=>v.key===x.key);return`<div class="row compact-row"><span><b>${esc(d?.label||x.key)}</b><div class="muted small">${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.time?esc(fmtClock(x.time)):""}</b></div>`}).join("")}</details>`:""}`;
 }
 function selfCareTrackPanel(){
   const habits=selfCareHabits(),dates=trendDates(7),total=Math.max(1,habits.length),
