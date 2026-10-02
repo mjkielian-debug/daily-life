@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261002-16";
+const CACHE_NAME="daily-life-shell-20261002-17";
 const APP_SHELL=[
   "./",
   "./index.html",
