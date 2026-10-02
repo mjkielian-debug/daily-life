@@ -1600,9 +1600,8 @@ function seasonalIncomeCard(){
   </div>`;
 }
 function currentWeekWorkCard(){
-  const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0);
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} logged hours</h2></div><button class="btn" onclick="openWork()">Edit today</button></div>
-    ${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w);return `<div class="row"><span><b>${esc(dl(w.date))}</b><div class="muted small">${esc(workStatusText(w))}</div></span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":"—"}</b></div>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
+  const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0),needs=rows.filter(w=>workNeedsPunchOut(w));
+  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} confirmed hours</h2><div class="muted small">${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times only"}</div></div><button class="btn" onclick="openWork()">Edit today</button></div>${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
 }
 function upsPayrollCard(){
   const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
