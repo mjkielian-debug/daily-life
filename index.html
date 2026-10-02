@@ -611,9 +611,9 @@ function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x
 function itineraryFixedItems(date){
   const items=[],w=workForDate(date);
   if(w){const start=w.start||w.scheduled||"",confirmed=!!(w.start&&workEndConfirmed(w));if(start)items.push({id:"work:"+date,start,end:confirmed?w.end:"",title:w.start?"UPS work":"UPS scheduled start",detail:confirmed?("Worked until "+fmtClock(w.end)):"Work",fixed:true,kind:"work",icon:"📦",source:"work"})}
-  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){if(!e.startTime)continue;items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id})}
+  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){if(!e.startTime)continue;items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId})}
   const meal=mealForDate(date);if(meal?.dish&&meal.status!=="made"){if(meal.startBy)items.push({id:"meal-start:"+date,start:meal.startBy,end:"",title:"Start "+meal.dish,detail:"Dinner prep",fixed:false,kind:"meal",icon:"🍳",source:"meal"});if(meal.serveTime)items.push({id:"meal-serve:"+date,start:meal.serveTime,end:"",title:"Serve "+meal.dish,detail:"Dinner",fixed:false,kind:"meal",icon:"🍽️",source:"meal"})}
-  for(const x of itineraryCustomBlocks(date))if(x.start)items.push({id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",kind:x.kind||"flexible",icon:"◷",source:"custom",sourceId:x.id,done:!!x.done});
+  for(const x of itineraryCustomBlocks(date))if(x.start)items.push({id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",kind:x.kind||"flexible",icon:"◷",source:"custom",sourceId:x.id,done:!!x.done,shared:!!x.sharedEntryId});
   return items.sort((a,b)=>String(a.start).localeCompare(String(b.start)));
 }
 function itinerarySuggestedBlocks(date){
@@ -653,7 +653,7 @@ function itineraryFlowCard(date){
     <div class="day-flow-list">${items.map(x=>`<div class="day-flow-row ${x.fixed?"is-fixed":"is-flex"} ${x.done?"is-done":""}" ${itineraryBlockOpenAction(x,date)}>
       <div class="day-flow-time"><b>${esc(fmtClock(x.start))}</b>${x.end?`<small>${esc(fmtClock(x.end))}</small>`:""}</div>
       <div class="day-flow-line"><span></span></div>
-      <div class="day-flow-content"><div class="day-flow-title"><span>${x.icon||""}</span><b>${esc(x.title)}</b><span class="tag">${x.fixed?"fixed":x.source==="suggested"?"flexible":"planned"}</span></div>${x.detail?`<div class="muted small">${esc(x.detail)}</div>`:""}${x.source==="custom"?`<label class="task" onclick="event.stopPropagation()"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label>`:""}</div>
+      <div class="day-flow-content"><div class="day-flow-title"><span>${x.icon||""}</span><b>${esc(x.title)}</b><span class="tag">${x.fixed?"fixed":x.source==="suggested"?"flexible":"planned"}</span>${x.shared?`<span class="tag">shared</span>`:""}</div>${x.detail?`<div class="muted small">${esc(x.detail)}</div>`:""}${x.source==="custom"?`<label class="task" onclick="event.stopPropagation()"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label>`:""}</div>
     </div>`).join("")||`<div class="notice">No time blocks yet.</div>`}</div>
   </div>`;
 }
