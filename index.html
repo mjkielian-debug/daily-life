@@ -776,8 +776,9 @@ function itinerarySuggestedBlocks(date){
         dinnerLength=meal?.serveTime?60:45,
         mealPrepStart=hmMinutes(meal?.startBy);
   if(meal?.dish&&mealPrepStart!==null&&mealPrepStart<dinnerStart){
-    const prepEnd=Math.min(dinnerStart,Math.max(mealPrepStart+20,dinnerStart));
-    add({templateKey:"meal-prep",start:minutesHm(mealPrepStart),end:minutesHm(prepEnd),title:"Make "+meal.dish,detail:[meal.method,"Dinner prep"].filter(Boolean).join(" · "),icon:"🍳"});
+    const method=String(meal.method||""),prepMinutes=/crock|slow cooker|multi.?cooker|instant pot|pressure cooker/i.test(method)?25:30,
+          prepEnd=Math.min(dinnerStart,mealPrepStart+prepMinutes);
+    add({templateKey:"meal-prep",start:minutesHm(mealPrepStart),end:minutesHm(prepEnd),title:"Start "+meal.dish,detail:[method,"Active dinner prep"].filter(Boolean).join(" · "),icon:"🍳"});
   }
   add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
   if(kids.length&&(kidsAwayAt===null||kidsAwayAt>18*60+45)){
@@ -938,6 +939,13 @@ function itineraryDayItems(date){
   return [...used,...open].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
+function itineraryPlanningDiagnostics(date){
+  const anchors=itineraryFixedItems(date),raw=itinerarySuggestedBlocks(date),fitted=itineraryFitRoutines(date,anchors,raw),
+        skipped=fitted.filter(x=>x.skippedByConflict),
+        moved=fitted.filter(x=>x.movedByPlanner&&!x.skippedByConflict);
+  return{skipped,moved};
+}
+
 function itineraryStatusForDate(date,items){
   if(date!==ymd())return null;
   const now=new Date(),hm=now.getHours()*60+now.getMinutes();
@@ -978,7 +986,7 @@ function itineraryTypeLabel(x){
   return"PLAN";
 }
 function itineraryFlowCard(date){
-  const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items),
+  const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items),diagnostics=itineraryPlanningDiagnostics(date),
         fixed=items.filter(x=>x.fixed).length,tasks=items.filter(x=>x.source==="task").length,
         open=items.filter(x=>x.kind==="gap").reduce((sum,x)=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return sum+(s!==null&&e!==null?Math.max(0,e-s):0)},0);
   let lastPhase="";
@@ -1002,6 +1010,7 @@ function itineraryFlowCard(date){
     <div class="planner-heading"><div><div class="eyebrow">Today’s agenda</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2><div class="muted small">Anchors stay fixed. Daily Life fits routines and your task list into the usable spaces around them.</div></div><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button></div>
     ${status?`<div class="planner-now"><span>NOW</span><div><b>${esc(status.title.replace(/^Right now · /,""))}</b><small>${esc(status.detail)}</small></div></div>`:""}
     <div class="planner-summary"><span><b>${fixed}</b><small>anchors</small></span><span><b>${tasks}</b><small>tasks placed</small></span><span><b>${open}</b><small>open minutes</small></span></div>
+    ${diagnostics.skipped.length?('<div class="planner-needs-time"><div><b>Needs a time</b><small>These routines could not fit around today’s fixed commitments.</small></div>'+diagnostics.skipped.map(x=>'<button onclick="openSuggestedItineraryBlock(\''+date+'\',\''+x.templateKey+'\')"><span>'+(x.icon||'◷')+'</span><b>'+esc(x.title)+'</b><small>was '+esc(fmtClock(x.originalStart||x.start))+(x.originalEnd?'–'+esc(fmtClock(x.originalEnd)):'')+' · tap to adjust</small></button>').join('')+'</div>'):""}
     <div class="planner-list">${rows||`<div class="notice">No time blocks yet.</div>`}</div>
   </div>`;
 }
