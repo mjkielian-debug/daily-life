@@ -881,7 +881,7 @@ function selfCareCount(key,days=7){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-(days-1));const start=ymd(cutoff);
   return new Set((state.selfCare||[]).filter(x=>x.key===key&&x.done&&x.date>=start&&x.date<=ymd()).map(x=>x.date)).size;
 }
-function openSleep(){function openSleep(){
+function openSleep(){
   const x=sleepForDate()||{};
   modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="2" placeholder="Anything affecting sleep or energy…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
 }
