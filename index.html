@@ -330,7 +330,7 @@ function ensureBirthdayEvents(){
 }
 function ensureToday(){
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
-  ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();ensureSchoolAssignmentTasks(date);
+  ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();ensureSchoolAssignmentTasks(date);ensureVehicleMaintenanceTasks(date);
   for(const t of state.settings.recurringTasks||[]){
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
@@ -2023,6 +2023,66 @@ function openProject(id=""){
 async function toggleProjectTask(id,index,done){const p=(state.projects||[]).find(p=>p.id===id);if(!p?.tasks?.[index])return;p.tasks[index].done=done;await save();render()}
 function primaryVehicle(){return (state.vehicles||[]).find(v=>v.primary)||(state.vehicles||[])[0]||null}
 function isFuelService(x){return /fuel|gas/i.test(String(x?.type||""))||Number(x?.gallons||0)>0}
+function latestVehicleService(vehicleId,pattern){
+  return [...(state.vehicleServices||[])].filter(x=>(!vehicleId||!x.vehicleId||x.vehicleId===vehicleId)&&pattern.test(String(x.type||"")))
+    .sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||Number(b.mileage||0)-Number(a.mileage||0))[0]||null;
+}
+function vehicleMaintenanceSnapshot(v=primaryVehicle()){
+  if(!v)return{oil:null,rotation:null};
+  const currentMiles=Number(v.mileage||0),
+        oilLast=latestVehicleService(v.id,/oil/i),
+        rotationLast=latestVehicleService(v.id,/rotation/i),
+        build=(key,label,last,dueMiles,dueDate,interval)=>{
+          const miles=Number(dueMiles||0)||null,date=String(dueDate||""),every=Number(interval||0)||null,
+                mileageDue=!!(miles&&currentMiles&&currentMiles>=miles),
+                dateDue=!!(date&&date<=ymd()),
+                due=mileageDue||dateDue,
+                milesRemaining=miles&&currentMiles?miles-currentMiles:null;
+          return{key,label,last,dueMiles:miles,dueDate:date,interval:every,due,mileageDue,dateDue,milesRemaining,currentMiles};
+        };
+  return{
+    oil:build("oil","Oil change",oilLast,v.oilDueMiles,v.oilDueDate,v.oilIntervalMiles),
+    rotation:build("rotation","Tire rotation",rotationLast,v.rotationDueMiles,v.rotationDueDate,v.rotationIntervalMiles)
+  };
+}
+function vehicleMaintenanceText(x){
+  if(!x)return{main:"not set",detail:""};
+  let main="not set";
+  if(x.due)main="DUE";
+  else if(x.dueMiles)main=Number(x.dueMiles).toLocaleString()+" mi";
+  else if(x.dueDate)main=dl(x.dueDate);
+  else if(x.interval)main="log a service to calculate";
+  const detail=[
+    x.last?(x.last.mileage?"Last "+Number(x.last.mileage).toLocaleString()+" mi":x.last.date?"Last "+dl(x.last.date):""):"",
+    x.interval?"every "+Number(x.interval).toLocaleString()+" mi":"",
+    !x.due&&x.milesRemaining!==null&&x.milesRemaining>0?Number(x.milesRemaining).toLocaleString()+" mi remaining":""
+  ].filter(Boolean).join(" · ");
+  return{main,detail};
+}
+function recalculateVehicleMaintenance(v=primaryVehicle()){
+  if(!v)return;
+  const oil=latestVehicleService(v.id,/oil/i),rotation=latestVehicleService(v.id,/rotation/i),
+        oi=Number(v.oilIntervalMiles||0),ri=Number(v.rotationIntervalMiles||0);
+  if(oil?.mileage&&oi>0)v.oilDueMiles=Number(oil.mileage)+oi;
+  if(rotation?.mileage&&ri>0)v.rotationDueMiles=Number(rotation.mileage)+ri;
+}
+function ensureVehicleMaintenanceTasks(date=ymd()){
+  if(!Array.isArray(state.tasks))state.tasks=[];
+  const v=primaryVehicle();if(!v)return;
+  const snap=vehicleMaintenanceSnapshot(v);
+  for(const x of [snap.oil,snap.rotation]){
+    if(!x)continue;
+    let task=state.tasks.find(t=>t.sourceMaintenance===x.key&&!t.done);
+    if(x.due&&!task){
+      task={id:uid(),date,title:x.label+" due",category:"car",notes:[x.dueMiles?Number(x.dueMiles).toLocaleString()+" mi due":"",x.dueDate?"Due "+x.dueDate:""].filter(Boolean).join(" · "),done:false,order:35,sourceMaintenance:x.key,itineraryMinutes:60,itineraryPreference:"afternoon"};
+      state.tasks.push(task);
+    }else if(!x.due&&task){
+      task.done=true;
+      task.notes=[task.notes,"Maintenance no longer shows due"].filter(Boolean).join(" · ");
+    }
+  }
+}
+
 function vehicleFuelStats(vehicleId=""){
   const fills=(state.vehicleServices||[]).filter(x=>(!vehicleId||!x.vehicleId||x.vehicleId===vehicleId)&&isFuelService(x)&&Number(x.mileage)>0&&Number(x.gallons)>0)
     .sort((a,b)=>Number(a.mileage)-Number(b.mileage)||String(a.date||"").localeCompare(String(b.date||"")));
@@ -2040,16 +2100,16 @@ function vehicleFuelStats(vehicleId=""){
   return{fills,latest,byId,avgMpg,mpgs};
 }
 function vehicleCard(){
-  const v=primaryVehicle(),services=[...(state.vehicleServices||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,8),fuel=vehicleFuelStats(v?.id);
+  const v=primaryVehicle(),services=[...(state.vehicleServices||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,8),fuel=vehicleFuelStats(v?.id),maintenance=vehicleMaintenanceSnapshot(v),oil=vehicleMaintenanceText(maintenance.oil),rotation=vehicleMaintenanceText(maintenance.rotation);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚙 Vehicle</div><h2>${v?esc([v.year,v.make,v.model].filter(Boolean).join(" ")):"No vehicle profile"}</h2></div><button class="btn" onclick="openVehicle()">${v?"Edit":"Add"}</button></div>
-    ${v?`<div class="grid3"><div class="metric"><div class="muted small">Mileage</div><div class="big">${v.mileage?Number(v.mileage).toLocaleString():"—"}</div></div><div class="metric"><div class="muted small">Registration</div><div class="big">${v.registrationDue?esc(dl(v.registrationDue)):"—"}</div></div><div class="metric"><div class="muted small">Open recalls</div><div class="big">${Number.isFinite(Number(v.openRecalls))?Number(v.openRecalls):"—"}</div></div></div><div class="vehicle-maint-grid"><div><span class="muted small">Oil change</span><b>${v.oilDueMiles?Number(v.oilDueMiles).toLocaleString()+" mi":v.oilDueDate?esc(dl(v.oilDueDate)):"not set"}</b></div><div><span class="muted small">Tire rotation</span><b>${v.rotationDueMiles?Number(v.rotationDueMiles).toLocaleString()+" mi":v.rotationDueDate?esc(dl(v.rotationDueDate)):"not set"}</b></div><div><span class="muted small">Tread / tires</span><b>${esc(v.tireTread||"not logged")}</b></div><div><span class="muted small">Estimated value</span><b>${v.estimatedValue?money(v.estimatedValue):"—"}</b></div></div>${v.appointmentDate?`<div class="notice"><b>Service appointment:</b> ${esc(dl(v.appointmentDate))}${v.appointmentTime?" · "+esc(fmtClock(v.appointmentTime)):""}${v.appointmentPlace?" · "+esc(v.appointmentPlace):""}</div>`:""}${v.notes?`<div class="muted small">${esc(v.notes)}</div>`:""}`:`<div class="notice">Add the vehicle once; tire readings and maintenance can live underneath it.</div>`}
+    ${v?`<div class="grid3"><div class="metric"><div class="muted small">Mileage</div><div class="big">${v.mileage?Number(v.mileage).toLocaleString():"—"}</div></div><div class="metric"><div class="muted small">Registration</div><div class="big">${v.registrationDue?esc(dl(v.registrationDue)):"—"}</div></div><div class="metric"><div class="muted small">Open recalls</div><div class="big">${Number.isFinite(Number(v.openRecalls))?Number(v.openRecalls):"—"}</div></div></div><div class="vehicle-maint-grid"><div class="${maintenance.oil?.due?"maintenance-due":""}"><span class="muted small">Oil change</span><b>${esc(oil.main)}</b>${oil.detail?`<small>${esc(oil.detail)}</small>`:""}</div><div class="${maintenance.rotation?.due?"maintenance-due":""}"><span class="muted small">Tire rotation</span><b>${esc(rotation.main)}</b>${rotation.detail?`<small>${esc(rotation.detail)}</small>`:""}</div><div><span class="muted small">Tread / tires</span><b>${esc(v.tireTread||"not logged")}</b><small>${v.tireTread?"Saved tire note":"Add tread or tire condition when checked"}</small></div><div><span class="muted small">Estimated value</span><b>${v.estimatedValue?money(v.estimatedValue):"—"}</b><small>${v.estimatedValue?"Manual estimate":"Optional"}</small></div></div>${v.appointmentDate?`<div class="notice"><b>Service appointment:</b> ${esc(dl(v.appointmentDate))}${v.appointmentTime?" · "+esc(fmtClock(v.appointmentTime)):""}${v.appointmentPlace?" · "+esc(v.appointmentPlace):""}</div>`:""}${v.notes?`<div class="muted small">${esc(v.notes)}</div>`:""}`:`<div class="notice">Add the vehicle once; tire readings and maintenance can live underneath it.</div>`}
     ${fuel.latest?`<div class="fuel-economy-summary"><div><span class="muted small">Latest fuel-up</span><b>${Number(fuel.latest.gallons).toFixed(3)} gal · ${fuel.latest.cost?money(fuel.latest.cost):"cost not logged"}</b><small>${fuel.byId.get(fuel.latest.id)?.pricePerGallon?"$"+fuel.byId.get(fuel.latest.id).pricePerGallon.toFixed(2)+"/gal":""}</small></div><div><span class="muted small">Fuel economy</span><b>${fuel.byId.get(fuel.latest.id)?.mpg?fuel.byId.get(fuel.latest.id).mpg.toFixed(1)+" MPG":fuel.avgMpg?fuel.avgMpg.toFixed(1)+" MPG avg":"Need another full fill"}</b><small>${fuel.mpgs.length?"Calculated from full-to-full odometer fills":"Trip T2 is saved but not used unless its reset point is confirmed."}</small></div></div>`:""}
     <div class="section-title" style="margin-top:10px"><h3>Service / maintenance</h3><button class="btn small" onclick="openVehicleService()">+ Log</button></div>${services.map(x=>{const fm=fuel.byId.get(x.id);return `<div class="row vehicle-service-row"><span><b>${esc(x.type||"Service")}</b><div class="muted small">${esc(dl(x.date))}${x.mileage?` · ${Number(x.mileage).toLocaleString()} mi`:""}${Number(x.gallons)>0?` · ${Number(x.gallons).toFixed(3)} gal`:""}${fm?.mpg?` · ${fm.mpg.toFixed(1)} MPG`:""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="vehicle-service-actions"><b>${x.cost?money(x.cost):""}</b><button class="btn small" onclick="openVehicleService('${x.id}')">Edit</button></span></div>`}).join("")||`<div class="muted small">No service history logged yet.</div>`}
   </div>`;
 }
 function openVehicle(){
   const v=primaryVehicle()||{};
-  modal(v.id?"Vehicle profile":"Add vehicle",`<div class="stack"><div class="grid3"><label>Year<input id="vyear" type="number" value="${v.year||""}"></label><label>Make<input id="vmake" value="${esc(v.make||"")}"></label><label>Model<input id="vmodel" value="${esc(v.model||"")}"></label></div><label>Mileage<input id="vmiles" type="number" value="${v.mileage||""}"></label><label>Registration due<input id="vreg" type="date" value="${esc(v.registrationDue||"")}"></label><label>Open recalls<input id="vrecalls" type="number" min="0" value="${v.openRecalls??""}"></label><div class="grid2"><label>Oil due mileage<input id="voilmiles" type="number" value="${v.oilDueMiles||""}"></label><label>Oil due date<input id="voildate" type="date" value="${esc(v.oilDueDate||"")}"></label></div><div class="grid2"><label>Rotation due mileage<input id="vrotml" type="number" value="${v.rotationDueMiles||""}"></label><label>Rotation due date<input id="vrotdate" type="date" value="${esc(v.rotationDueDate||"")}"></label></div><label>Tire tread / tire notes<input id="vtread" value="${esc(v.tireTread||"")}"></label><label>Estimated value<input id="vvalue" type="number" step=".01" value="${v.estimatedValue||""}"></label><div class="grid3"><label>Service appointment<input id="vapptdate" type="date" value="${esc(v.appointmentDate||"")}"></label><label>Time<input id="vapptime" type="time" value="${esc(v.appointmentTime||"")}"></label><label>Place<input id="vapptplace" value="${esc(v.appointmentPlace||"")}"></label></div><label>Notes<textarea id="vnotes" rows="3">${esc(v.notes||"")}</textarea></label></div>`,"Save",async()=>{let x=primaryVehicle();if(!x){x={id:uid(),primary:true};state.vehicles.push(x)}Object.assign(x,{year:Number($("#vyear").value||0)||null,make:$("#vmake").value.trim(),model:$("#vmodel").value.trim(),mileage:Number($("#vmiles").value||0)||null,registrationDue:$("#vreg").value,openRecalls:Number($("#vrecalls").value||0),oilDueMiles:Number($("#voilmiles").value||0)||null,oilDueDate:$("#voildate").value,rotationDueMiles:Number($("#vrotml").value||0)||null,rotationDueDate:$("#vrotdate").value,tireTread:$("#vtread").value.trim(),estimatedValue:Number($("#vvalue").value||0)||null,appointmentDate:$("#vapptdate").value,appointmentTime:$("#vapptime").value,appointmentPlace:$("#vapptplace").value.trim(),notes:$("#vnotes").value.trim()});await save();closeModal();render()});
+  modal(v.id?"Vehicle profile":"Add vehicle",`<div class="stack"><div class="grid3"><label>Year<input id="vyear" type="number" value="${v.year||""}"></label><label>Make<input id="vmake" value="${esc(v.make||"")}"></label><label>Model<input id="vmodel" value="${esc(v.model||"")}"></label></div><label>Mileage<input id="vmiles" type="number" value="${v.mileage||""}"></label><label>Registration due<input id="vreg" type="date" value="${esc(v.registrationDue||"")}"></label><label>Open recalls<input id="vrecalls" type="number" min="0" value="${v.openRecalls??""}"></label><div class="mini-heading">Maintenance rhythm</div><div class="grid2"><label>Oil interval (miles)<input id="voilinterval" type="number" min="0" value="${v.oilIntervalMiles||""}" placeholder="Set from your car/service plan"></label><label>Rotation interval (miles)<input id="vrotinterval" type="number" min="0" value="${v.rotationIntervalMiles||""}" placeholder="Set from your tire/service plan"></label></div><div class="grid2"><label>Next oil due mileage<input id="voilmiles" type="number" value="${v.oilDueMiles||""}"></label><label>Oil due date<input id="voildate" type="date" value="${esc(v.oilDueDate||"")}"></label></div><div class="grid2"><label>Next rotation due mileage<input id="vrotml" type="number" value="${v.rotationDueMiles||""}"></label><label>Rotation due date<input id="vrotdate" type="date" value="${esc(v.rotationDueDate||"")}"></label></div><div class="notice"><span class="muted small">Daily Life will not guess a maintenance interval. Once you set one, logging a matching oil change or tire rotation with mileage can calculate the next due mileage automatically.</span></div><label>Tire tread / tire notes<input id="vtread" value="${esc(v.tireTread||"")}"></label><label>Estimated value<input id="vvalue" type="number" step=".01" value="${v.estimatedValue||""}"></label><div class="grid3"><label>Service appointment<input id="vapptdate" type="date" value="${esc(v.appointmentDate||"")}"></label><label>Time<input id="vapptime" type="time" value="${esc(v.appointmentTime||"")}"></label><label>Place<input id="vapptplace" value="${esc(v.appointmentPlace||"")}"></label></div><label>Notes<textarea id="vnotes" rows="3">${esc(v.notes||"")}</textarea></label></div>`,"Save",async()=>{let x=primaryVehicle();if(!x){x={id:uid(),primary:true};state.vehicles.push(x)}Object.assign(x,{year:Number($("#vyear").value||0)||null,make:$("#vmake").value.trim(),model:$("#vmodel").value.trim(),mileage:Number($("#vmiles").value||0)||null,registrationDue:$("#vreg").value,openRecalls:Number($("#vrecalls").value||0),oilIntervalMiles:Number($("#voilinterval").value||0)||null,rotationIntervalMiles:Number($("#vrotinterval").value||0)||null,oilDueMiles:Number($("#voilmiles").value||0)||null,oilDueDate:$("#voildate").value,rotationDueMiles:Number($("#vrotml").value||0)||null,rotationDueDate:$("#vrotdate").value,tireTread:$("#vtread").value.trim(),estimatedValue:Number($("#vvalue").value||0)||null,appointmentDate:$("#vapptdate").value,appointmentTime:$("#vapptime").value,appointmentPlace:$("#vapptplace").value.trim(),notes:$("#vnotes").value.trim()});recalculateVehicleMaintenance(x);ensureVehicleMaintenanceTasks(ymd());await save();closeModal();render()});
 }
 function openVehicleService(id=""){
   const v=primaryVehicle(),existing=(state.vehicleServices||[]).find(x=>x.id===id)||null,
@@ -2061,6 +2121,7 @@ function openVehicleService(id=""){
     if(!row){row={id:uid(),vehicleId:v?.id||""};state.vehicleServices.push(row)}
     Object.assign(row,{vehicleId:row.vehicleId||v?.id||"",type,date,mileage,cost:Number($("#vscost").value||0),gallons,tripMeter,fullTank:$("#vsfull").checked,notes:$("#vsnotes").value.trim()});
     if(v&&mileage)v.mileage=Math.max(Number(v.mileage||0),mileage);
+    if(v){recalculateVehicleMaintenance(v);ensureVehicleMaintenanceTasks(ymd())}
     await save();closeModal();render();
   });
 }
@@ -2068,6 +2129,7 @@ async function removeVehicleService(id){
   const x=(state.vehicleServices||[]).find(v=>v.id===id);if(!x)return;
   if(!confirm("Remove this vehicle service entry?"))return;
   state.vehicleServices=(state.vehicleServices||[]).filter(v=>v.id!==id);
+  const vehicle=primaryVehicle();if(vehicle){recalculateVehicleMaintenance(vehicle);ensureVehicleMaintenanceTasks(ymd())}
   await save();closeModal();render();
 }
 
