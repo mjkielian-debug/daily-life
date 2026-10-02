@@ -311,6 +311,78 @@ function cloudBudgetActuals(month){
   return {income,outflow,imported,count:rows.length};
 }
 
+function cloudIncomeSuggestionName(detail){
+  if(detail==="INCOME_CHILD_SUPPORT")return "Child support";
+  return String(detail||"Recurring income").replace(/^INCOME_/,"").toLowerCase().replace(/_/g," ").replace(/\b\w/g,m=>m.toUpperCase());
+}
+
+function cloudAdvanceIncomeDate(date,frequency){
+  if(typeof addIncomeDate==="function")return addIncomeDate(date,frequency);
+  const d=new Date(String(date||"")+"T12:00:00");
+  if(isNaN(d))return "";
+  if(frequency==="Weekly")d.setDate(d.getDate()+7);
+  else if(frequency==="Every 2 weeks")d.setDate(d.getDate()+14);
+  else if(frequency==="Monthly"){const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate()));}
+  else return "";
+  return d.toISOString().slice(0,10);
+}
+
+function cloudRecurringIncomeSuggestions(){
+  if(typeof state==="undefined"||!Array.isArray(cloudRecentTransactions))return [];
+  const groups=new Map();
+  for(const t of cloudRecentTransactions){
+    const amount=Math.abs(Number(t.provider_amount||0)),detail=String(t.category_detailed||"");
+    if(t.pending||t.is_transfer||Number(t.provider_amount)>=0||String(t.category_primary||"")!=="INCOME"||!Number.isFinite(amount)||amount<=0)continue;
+    // Payroll is already handled by the payroll estimator and seasonality model.
+    if(detail==="INCOME_SALARY")continue;
+    const key=detail+"|"+String(t.account_id||"");
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(t);
+  }
+  const existing=(state.expectedIncome||[]).filter(x=>x.enabled!==false);
+  const norm=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const today=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),out=[];
+  for(const rows of groups.values()){
+    if(rows.length<3)continue;
+    rows.sort((a,b)=>String(a.posted_date).localeCompare(String(b.posted_date)));
+    const amounts=rows.map(x=>Math.abs(Number(x.provider_amount||0))).sort((a,b)=>a-b),
+          median=amounts[Math.floor(amounts.length/2)],spread=amounts[amounts.length-1]-amounts[0];
+    // Only suggest highly stable deposits; variable income should be reviewed manually.
+    if(spread>Math.max(1,median*.05))continue;
+    const gaps=[];
+    for(let i=1;i<rows.length;i++){
+      const a=new Date(rows[i-1].posted_date+"T12:00:00"),b=new Date(rows[i].posted_date+"T12:00:00");
+      gaps.push(Math.round((b-a)/86400000));
+    }
+    gaps.sort((a,b)=>a-b);
+    const gap=gaps[Math.floor(gaps.length/2)]||0;
+    let frequency="";
+    if(gap>=6&&gap<=8)frequency="Weekly";
+    else if(gap>=12&&gap<=16)frequency="Every 2 weeks";
+    else if(gap>=27&&gap<=33)frequency="Monthly";
+    else continue;
+    const latest=rows[rows.length-1],detail=String(latest.category_detailed||""),name=cloudIncomeSuggestionName(detail);
+    if(existing.some(x=>norm(x.name)===norm(name)||norm(x.name).includes(norm(name))||norm(name).includes(norm(x.name))))continue;
+    let next=cloudAdvanceIncomeDate(String(latest.posted_date||""),frequency),guard=0;
+    while(next&&next<today&&guard++<20)next=cloudAdvanceIncomeDate(next,frequency);
+    if(!next)continue;
+    const local=(state.accounts||[]).find(a=>a.cloudAccountId===String(latest.account_id||""));
+    out.push({
+      name,amount:Math.round(median*100)/100,date:next,frequency,
+      accountKey:local?.key||"",transferable:true,enabled:true,confidence:"estimate",
+      notes:"Suggested from a stable recurring pattern in private bank history. Confirm the schedule if it changes.",
+      occurrences:rows.length
+    });
+  }
+  return out.sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+}
+
+function openCloudRecurringIncomeSuggestion(index=0){
+  const suggestion=cloudRecurringIncomeSuggestions()[index];
+  if(!suggestion||typeof openExpectedIncome!=="function")return;
+  openExpectedIncome("",suggestion);
+}
+
 function openBankTransactionReview(index=0){
   const t=cloudUnreviewedTransactions[index];if(!t)return;
   const label=String(t.merchant_name||t.name||"Bank transaction");
