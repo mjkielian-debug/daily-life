@@ -296,7 +296,7 @@ function normalizeBillWords(value){
 
 function bankBillMatch(t){
   const amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
-  if(!Number.isFinite(amount)||amount<=0||isNaN(posted)||t.is_transfer)return null;
+  if(!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
   const candidates=(state.bills||[]).filter(b=>{
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
@@ -318,6 +318,12 @@ function bankBillMatch(t){
     return {bill:b,days,accountMatch,nameMatch,score:(accountMatch?8:0)+(nameMatch?5:0)+Math.max(0,4-days/2)};
   }).sort((a,b)=>b.score-a.score||a.days-b.days);
   const best=scored[0],second=scored[1];
+  if(t.is_transfer){
+    const setup=String(best.bill?.paymentSetup||"").toLowerCase();
+    if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
+    if(best.accountMatch&&candidates.length===1&&best.days<=1&&["autopay","scheduled"].includes(setup))return best.bill;
+    return null;
+  }
   if(best.accountMatch)return best.bill;
   if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
   if(candidates.length===1&&best.days<=3)return best.bill;
@@ -362,7 +368,6 @@ async function cloudImportBankSpending(showAlert=false){
   const {data,error}=await cloudClient.from("financial_transactions")
     .select("provider_transaction_id,pending_transaction_id:metadata->>pending_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
     .gte("posted_date",cutoffDate)
-    .eq("is_transfer",false)
     .order("posted_date",{ascending:true})
     .limit(2000);
   if(error){cloudFinanceMessage=error.message;return 0}
@@ -398,6 +403,12 @@ async function cloudImportBankSpending(showAlert=false){
     const knownBill=!!matchedBill;
     if(matchResult?.changed)changed++;
     if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
+      if(existing?.autoImported&&!existing.userEdited){
+        state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
+      }
+      continue;
+    }
+    if(t.is_transfer){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
