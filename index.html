@@ -1543,7 +1543,7 @@ function transferableIncomeBefore(date){
 function transferableIncomeBeforeAccount(date,accountKey){
   return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey===accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
 }
-function paycheckEstimatePreset(){function paycheckEstimatePreset(){
+function paycheckEstimatePreset(){
   const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8),
         seasonal=upsSeasonality();
   let interval=7,avgNet=0,next="";
@@ -1603,7 +1603,7 @@ function dueDateOutlookCard(){
     }).join("")}
   </div>`;
 }
-function expectedIncomeCard(){function expectedIncomeCard(){
+function expectedIncomeCard(){
   const end=new Date();end.setDate(end.getDate()+45);
   const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset(),
         bankSuggestions=typeof cloudRecurringIncomeSuggestions==="function"?cloudRecurringIncomeSuggestions():[];
@@ -1673,7 +1673,7 @@ function transferInstruction(r){
   if(r?.status!=="Transfer needed"||!Array.isArray(r.transfers)||!r.transfers.length)return"";
   return r.transfers.map(t=>`Transfer ${money(t.amount/100)} from ${t.fromName} → ${t.toName}`).join("; ");
 }
-// Each occurrence remains a separate bill; paid history is never recycled.// Each occurrence remains a separate bill; paid history is never recycled.
+// Each occurrence remains a separate bill; paid history is never recycled.
 const BILL_REPEATS=[[0,"Does not repeat"],[1,"Monthly"],[3,"Every 3 months"],[12,"Yearly"]];
 function billRepeat(b){return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
 function validBillDate(value){
