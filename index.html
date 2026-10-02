@@ -109,7 +109,7 @@ const blankState=()=>({
   version:24,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,notes:"",configured:false},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -241,6 +241,7 @@ function migrateState(s){
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.selfCareHabits=Array.isArray(s.settings.selfCareHabits)?s.settings.selfCareHabits:[];
+  s.settings.petCare={...b.settings.petCare,...(s.settings.petCare&&typeof s.settings.petCare==="object"?s.settings.petCare:{})};
   for(const d of DEFAULT_SELF_CARE_HABITS){
     const existing=s.settings.selfCareHabits.find(h=>h.key===d.key);
     if(!existing)s.settings.selfCareHabits.push({...d});
@@ -1052,6 +1053,14 @@ function livingSuppliesCard(kind){
   const label=kind==="garden"?"Garden supplies":"Pet supplies";
   return `<div class="card living-supplies"><div class="section-title"><div><div class="eyebrow">Shopping</div><h2>${label}</h2></div><button class="btn" onclick="setView('home')">Open full list</button></div>${rows.slice(0,8).map(x=>`<div class="row"><span><b>${esc(x.item)}</b><div class="muted small">${esc(x.qty||"")}${x.store?" · "+esc(x.store):""}</div></span></div>`).join("")}</div>`;
 }
+function petCareSettings(){return state.settings?.petCare||{robotLitterBoxes:0,standardLitterBoxes:0,notes:"",configured:false}}
+function openPetCareSettings(){
+  const x=petCareSettings();
+  modal("Shared pet setup",`<div class="stack"><div class="grid2"><label>Robot litter boxes<input id="pcrobot" type="number" min="0" value="${Number(x.robotLitterBoxes||0)}"></label><label>Standard litter boxes<input id="pcstandard" type="number" min="0" value="${Number(x.standardLitterBoxes||0)}"></label></div><label>Shared care notes<textarea id="pcnotes" rows="3" placeholder="Feeding setup, litter details, supplies…">${esc(x.notes||"")}</textarea></label><div class="muted small">This is a tracking setup only. It does not create reminders.</div></div>`,"Save",async()=>{
+    state.settings.petCare={robotLitterBoxes:Math.max(0,Number($("#pcrobot").value||0)),standardLitterBoxes:Math.max(0,Number($("#pcstandard").value||0)),notes:$("#pcnotes").value.trim(),configured:true};
+    await save();closeModal();render();
+  });
+}
 function petsView(){
   const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
         litter=logs.find(x=>x.type==="Litter");
@@ -1059,8 +1068,9 @@ function petsView(){
   <div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
   ${petCareSummaryCard()}
   ${livingSuppliesCard("pet")}
-  <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button></div>
-    <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}</div>
+  <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><div class="actions"><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button><button class="btn" onclick="openPetCareSettings()">Setup</button></div></div>
+    ${petCareSettings().configured?`<div class="pet-setup-stats"><span><b>${Number(petCareSettings().robotLitterBoxes||0)}</b><small>robot boxes</small></span><span><b>${Number(petCareSettings().standardLitterBoxes||0)}</b><small>standard boxes</small></span><span><b>${Number(petCareSettings().robotLitterBoxes||0)+Number(petCareSettings().standardLitterBoxes||0)}</b><small>total boxes</small></span></div>`:""}
+    <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}${petCareSettings().notes?" · "+esc(petCareSettings().notes):""}</div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openLivingSupply('pet')">Add supply</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
   </div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>
