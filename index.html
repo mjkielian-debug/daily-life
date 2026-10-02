@@ -2113,6 +2113,103 @@ function homeView(){
     <div class="card"><div class="eyebrow">♡ Meal memory</div><h2>What your family likes</h2>${[...new Set((state.mealFeedback||[]).filter(x=>Number(x.score)>0).sort((a,b)=>Number(b.score)-Number(a.score)).map(x=>x.dish))].slice(0,8).map(d=>`<div class="row"><span>${esc(d)}</span><b>${feedbackScoreLabel(dishFeedbackScore(d))}</b></div>`).join("")||`<div class="notice">Rate meals after dinner and Daily Life will learn what to repeat more often.</div>`}</div>
 `;
 }
+
+function inventorySetTab(tab){inventoryTab=tab==="map"?"map":"items";localStorage.setItem("dailyLifeInventoryTab",inventoryTab);render()}
+function inventorySetCategory(category){inventoryCategory=category||"All";localStorage.setItem("dailyLifeInventoryCategory",inventoryCategory);render()}
+function inventorySetSearch(value){inventorySearch=String(value||"");render()}
+function inventoryRoomById(id){return (state.houseRooms||[]).find(x=>x.id===id)||null}
+function inventoryLocationById(id){return (state.inventoryLocations||[]).find(x=>x.id===id)||null}
+function inventoryRoomLabel(id){return inventoryRoomById(id)?.name||""}
+function inventoryLocationLabel(item){
+  const loc=inventoryLocationById(item?.locationId),room=inventoryRoomById(item?.roomId||loc?.roomId);
+  return [room?.name,loc?.name].filter(Boolean).join(" · ");
+}
+function inventoryCategories(){
+  const defaults=["Household","Cleaning","Bathroom","Clothing","Kids","School","Electronics","Tools","Seasonal","Other"];
+  return [...new Set([...defaults,...(state.inventoryItems||[]).map(x=>String(x.category||"").trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+}
+function inventoryEnsureRoom(name){
+  name=String(name||"").trim();if(!name)return"";
+  let room=(state.houseRooms||[]).find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(!room){room={id:uid(),name,notes:""};state.houseRooms.push(room)}
+  return room.id;
+}
+function inventoryEnsureLocation(roomId,name){
+  name=String(name||"").trim();if(!name)return"";
+  let loc=(state.inventoryLocations||[]).find(x=>x.roomId===roomId&&String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(!loc){loc={id:uid(),roomId,name,notes:""};state.inventoryLocations.push(loc)}
+  return loc.id;
+}
+function inventoryVisibleItems(){
+  const q=String(inventorySearch||"").trim().toLowerCase(),cat=inventoryCategory||"All";
+  return [...(state.inventoryItems||[])].filter(x=>{
+    if(cat!=="All"&&String(x.category||"Other")!==cat)return false;
+    if(!q)return true;
+    const hay=[x.name,x.category,x.status,x.notes,inventoryLocationLabel(x)].join(" ").toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+}
+function inventoryView(){
+  const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
+  const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
+  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button></div>`;
+  if(inventoryTab==="map"){
+    return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
+    <div class="card"><div class="section-title"><div><h2>House map</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
+    ${rooms.length?rooms.map(room=>{
+      const locs=locations.filter(x=>x.roomId===room.id),roomItems=all.filter(x=>x.roomId===room.id||locs.some(l=>l.id===x.locationId));
+      return `<details class="inventory-room" open><summary><span><b>${esc(room.name)}</b><small>${roomItems.length} item${roomItems.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span><button class="btn small" onclick="event.preventDefault();event.stopPropagation();openInventoryRoom('${room.id}')">Edit</button></summary>
+      <div class="inventory-room-body">
+      ${locs.length?locs.map(loc=>{const li=all.filter(x=>x.locationId===loc.id);return `<div class="inventory-location"><div class="row"><span><b>${esc(loc.name)}</b><div class="muted small">${li.length} item${li.length===1?"":"s"}${loc.notes?" · "+esc(loc.notes):""}</div></span><button class="btn small" onclick="openInventoryLocation('${loc.id}')">Edit</button></div>${li.slice(0,8).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></button>`).join("")}${li.length>8?`<div class="muted small">+${li.length-8} more</div>`:""}</div>`}).join(""):`<div class="notice">No shelves, bins, closets, or other locations added in this room yet.</div>`}
+      ${roomItems.filter(x=>!x.locationId).length?`<div class="inventory-location"><div class="mini-heading">Room-level items</div>${roomItems.filter(x=>!x.locationId).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span></button>`).join("")}</div>`:""}
+      </div></details>`;
+    }).join(""):`<div class="notice">Add your first room, then add shelves, closets, bins, drawers, or other storage spots inside it.</div>`}
+    </div>`;
+  }
+  return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
+  <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
+  <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
+  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.</div>`}
+  </div>`;
+}
+function openInventoryItem(id=""){
+  const x=(state.inventoryItems||[]).find(v=>v.id===id)||{id:"",name:"",category:"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:""};
+  const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
+  modal(x.id?"Inventory item":"Add inventory item",`<div class="stack">
+    <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
+    <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
+    <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
+    <label>Status<select id="invstatus">${["Have","Low","Need","Stored","Lent out","Donate / sell","Gone"].map(v=>`<option ${String(x.status||"Have")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Notes<textarea id="invnotes" rows="3">${esc(x.notes||"")}</textarea></label>
+    ${x.id?`<button type="button" class="btn danger" onclick="removeInventoryItem('${x.id}')">Remove item</button>`:""}
+  </div>`,"Save",async()=>{
+    const name=$("#invname").value.trim();if(!name)return;
+    const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
+    let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeInventoryItem(id){
+  const x=(state.inventoryItems||[]).find(v=>v.id===id);if(!x||!confirm(`Remove "${x.name||"this item"}" from inventory?`))return;
+  state.inventoryItems=(state.inventoryItems||[]).filter(v=>v.id!==id);await save();closeModal();render();
+}
+function openInventoryRoom(id=""){
+  const x=(state.houseRooms||[]).find(v=>v.id===id)||{id:"",name:"",notes:""};
+  modal(x.id?"Edit room":"Add room",`<div class="stack"><label>Room name<input id="irname" value="${esc(x.name||"")}" placeholder="Kitchen, bedroom, basement…"></label><label>Notes<textarea id="irnotes" rows="3">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const name=$("#irname").value.trim();if(!name)return;
+    let row=(state.houseRooms||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.houseRooms.push(row)}
+    Object.assign(row,{name,notes:$("#irnotes").value.trim()});await save();closeModal();render();
+  });
+}
+function openInventoryLocation(id="",roomId=""){
+  const x=(state.inventoryLocations||[]).find(v=>v.id===id)||{id:"",roomId:roomId||"",name:"",notes:""};
+  modal(x.id?"Edit storage location":"Add storage location",`<div class="stack"><label>Room<select id="ilroom"><option value="">Choose a room</option>${(state.houseRooms||[]).map(r=>`<option value="${r.id}" ${x.roomId===r.id?"selected":""}>${esc(r.name)}</option>`).join("")}</select></label><label>Location name<input id="ilname" value="${esc(x.name||"")}" placeholder="Pantry shelf, linen closet, garage bin…"></label><label>Notes<textarea id="ilnotes" rows="3">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const rid=$("#ilroom").value,name=$("#ilname").value.trim();if(!rid||!name)return;
+    let row=(state.inventoryLocations||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryLocations.push(row)}
+    Object.assign(row,{roomId:rid,name,notes:$("#ilnotes").value.trim()});await save();closeModal();render();
+  });
+}
 function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
 function safeToSpendSnapshot(){
   const allCash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
