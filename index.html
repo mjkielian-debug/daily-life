@@ -1296,11 +1296,12 @@ function livingThingsLaunchCard(){
   return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due?due+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
 }
 function todayLivingThingsCard(){
-  const plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[],
-        nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=ymd()).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0],
+  const today=ymd(),horizonDate=new Date(today+"T12:00:00");horizonDate.setDate(horizonDate.getDate()+14);const horizon=ymd(horizonDate),
+        plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[],
+        nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=today&&x.nextDate<=horizon).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0],
         planting=[];
   for(const x of state.gardenSeeds||[]){
-    for(const [kind,date] of [["Start indoors",x.startIndoorsDate],["Direct sow",x.directSowDate],["Transplant",x.transplantDate]])if(date&&date>=ymd())planting.push({x,kind,date});
+    for(const [kind,date] of [["Start indoors",x.startIndoorsDate],["Direct sow",x.directSowDate],["Transplant",x.transplantDate]])if(date&&date>=today&&date<=horizon)planting.push({x,kind,date});
   }
   planting.sort((a,b)=>String(a.date).localeCompare(String(b.date)));const nextPlanting=planting[0],petForCare=nextPetCare?petById(nextPetCare.petId):null;
   if(!pets.length&&!state.plants?.length&&!(state.gardenSeeds||[]).length)return"";
