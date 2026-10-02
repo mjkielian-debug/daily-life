@@ -542,6 +542,24 @@ function cloudApplyLifeEntry(row){
       if(Array.isArray(state.relationshipCheckins))for(const x of state.relationshipCheckins)if(eq(x.personName))x.personName=newName;
       return true;
     }
+    case "chore_rotation_update":{
+      const members=Array.isArray(p.members)?p.members.map(String).filter(Boolean):[],
+            chores=Array.isArray(p.chores)?p.chores.map(String).filter(Boolean):[],
+            anchorDate=String(p.anchorDate||date||"");
+      if(members.length<2||chores.length<2||!anchorDate)return false;
+      if(!Array.isArray(state.settings.choreRotations))state.settings.choreRotations=[];
+      let r=state.settings.choreRotations.find(x=>{
+        const a=(x.members||[]).map(v=>String(v).toLowerCase()).sort().join("|"),
+              b=members.map(v=>String(v).toLowerCase()).sort().join("|");
+        return a===b;
+      });
+      if(!r){r={members:[...members],chores:[...chores],anchorDate};state.settings.choreRotations.push(r)}
+      else Object.assign(r,{members:[...members],chores:[...chores],anchorDate});
+      const today=typeof ymd==="function"?ymd():String(date||"");
+      state.chores=(state.chores||[]).filter(x=>!(x.generated==="rotation"&&x.date>=today&&members.some(m=>String(m).toLowerCase()===String(x.child||"").toLowerCase())));
+      if(typeof ensureFamilyDay==="function")ensureFamilyDay(today);
+      return true;
+    }
     case "family_routine_upsert":{
       const r=p.routine&&typeof p.routine==="object"?p.routine:p;
       const weekday=Number(r.weekday),title=String(r.title||"").trim(),child=String(r.child||"").trim(),startTime=String(r.startTime||"");
