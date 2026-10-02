@@ -2722,3 +2722,62 @@ body::before{
   margin-top:8px;
   font-size:.68rem;
 }
+
+
+/* Today smart agenda preview */
+.today-agenda-preview{
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent) 7%,transparent),transparent 32%),
+    linear-gradient(165deg,color-mix(in srgb,var(--panel2) 97%,var(--primary) 3%),var(--panel));
+}
+.today-agenda-row{
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:9px 0;
+  border-top:1px solid var(--border);
+}
+.today-agenda-row.is-fixed{
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--primary) 72%,transparent);
+  padding-left:8px;
+}
+.today-agenda-row.is-gap{
+  opacity:.72;
+}
+.today-agenda-time{
+  display:grid;
+  gap:1px;
+  font-variant-numeric:tabular-nums;
+}
+.today-agenda-time b{font-size:.76rem}
+.today-agenda-time small{
+  color:var(--muted);
+  font-size:.62rem;
+}
+.today-agenda-row>.grow{
+  min-width:0;
+}
+.today-agenda-row>.grow>b{
+  display:block;
+  font-size:.79rem;
+  line-height:1.3;
+}
+.today-agenda-row>.grow>.muted{
+  font-size:.64rem;
+  line-height:1.35;
+  margin-top:2px;
+}
+.today-agenda-row>.tag{
+  font-size:.5rem;
+  white-space:nowrap;
+}
+@media(max-width:520px){
+  .today-agenda-row{
+    grid-template-columns:66px minmax(0,1fr);
+  }
+  .today-agenda-row>.tag{
+    grid-column:2;
+    justify-self:start;
+  }
+}
