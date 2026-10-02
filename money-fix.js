@@ -43,3 +43,37 @@
   };
   if(typeof render==="function")render();
 })();
+
+// Vehicle service duplicate cleanup
+(function(){
+  async function normalizeVehicleServiceDuplicates(){
+    if(typeof state==="undefined"||!Array.isArray(state.vehicleServices))return false;
+    const rows=state.vehicleServices,out=[];let changed=false;
+    const fuel=x=>/fuel|gas/i.test(String(x?.type||""))||Number(x?.gallons||0)>0;
+    const same=(a,b)=>{
+      if(!fuel(a)||!fuel(b)||String(a.date||"")!==String(b.date||""))return false;
+      const am=Number(a.mileage||0),bm=Number(b.mileage||0),ac=Number(a.cost||0),bc=Number(b.cost||0),ag=Number(a.gallons||0),bg=Number(b.gallons||0);
+      if(am&&bm&&am!==bm)return false;
+      if(ac&&bc&&Math.abs(ac-bc)>.01)return false;
+      if(ag&&bg&&Math.abs(ag-bg)>.005)return false;
+      return !!((am&&bm)||(ac&&bc)||(ag&&bg));
+    };
+    const richness=x=>["mileage","cost","gallons","tripMeter","notes","cloudEntryId"].reduce((n,k)=>n+(x?.[k]!==undefined&&x?.[k]!==null&&x?.[k]!==""?1:0),0)+(x?.fullTank?1:0);
+    for(const row of rows){
+      const i=out.findIndex(x=>same(x,row));
+      if(i<0){out.push(row);continue}
+      changed=true;
+      const a=out[i],primary=richness(row)>richness(a)?row:a,other=primary===row?a:row,merged={...primary};
+      for(const k of ["vehicleId","type","date","mileage","cost","gallons","tripMeter","fullTank","cloudEntryId","source","importedAt"])if((merged[k]===undefined||merged[k]===null||merged[k]==="")&&other?.[k]!==undefined)merged[k]=other[k];
+      if(String(other?.notes||"").length>String(merged.notes||"").length)merged.notes=other.notes;
+      out[i]=merged;
+    }
+    if(!changed)return false;
+    state.vehicleServices=out;
+    if(typeof dbSet==="function")await dbSet("state",state);
+    if(typeof render==="function")render();
+    return true;
+  }
+  const run=()=>setTimeout(()=>normalizeVehicleServiceDuplicates().catch(()=>{}),0);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
+})();
