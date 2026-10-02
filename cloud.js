@@ -76,6 +76,7 @@ function cloudPanel(){
   return `<div class="card glow"><div class="section-title"><h2>Cloud account</h2><span class="tag">${auto?"auto sync on":"signed in"}</span></div>
   <div class="row"><span>Account</span><b>${esc(user.email||"Signed in")}</b></div>
   <div class="row"><span>Cloud copy</span><b>${esc(updated)}</b></div>
+  ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
   <p class="muted small">Your device keeps its IndexedDB copy. Outfit photos remain local while photo storage is built separately.</p>
   ${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}
