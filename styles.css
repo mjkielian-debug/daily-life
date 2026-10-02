@@ -1821,3 +1821,105 @@ header>*{position:relative;z-index:1}
   .intake-progress-grid{grid-template-columns:1fr}
   .intake-macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* 2026-10-02 botanical contrast refresh */
+body{
+  background:
+    radial-gradient(circle at 15% 8%,rgba(130,205,156,.10),transparent 24%),
+    radial-gradient(circle at 90% 14%,rgba(239,184,202,.08),transparent 22%),
+    var(--bg);
+}
+.app{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+.app::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  width:min(760px,100%);
+  margin:0 auto;
+  pointer-events:none;
+  z-index:0;
+  background-image:url("botanical-bg.svg");
+  background-position:center top;
+  background-repeat:repeat-y;
+  background-size:100% auto;
+  opacity:.95;
+  filter:drop-shadow(0 0 18px rgba(130,205,156,.08));
+}
+.app>*{position:relative;z-index:1}
+header{
+  position:relative;
+  min-height:78px;
+  padding-right:92px;
+}
+header::after{
+  content:"";
+  position:absolute;
+  right:-12px;
+  top:-18px;
+  width:128px;
+  height:100px;
+  background:url("botanical-sprig.svg") center/contain no-repeat;
+  opacity:.72;
+  pointer-events:none;
+  transform:rotate(6deg);
+}
+.title,
+h1,h2,h3,
+.section-title h2,
+.card h2,
+.modal h2{
+  color:#fffdf8;
+  font-weight:900;
+  text-shadow:0 1px 0 rgba(0,0,0,.7),0 0 14px rgba(130,205,156,.14);
+}
+.title{letter-spacing:-.02em}
+.eyebrow{
+  color:#d5ebdc;
+  font-weight:900;
+  text-shadow:0 1px 0 rgba(0,0,0,.55);
+}
+.section-title{
+  position:relative;
+}
+.section-title h2::after{
+  content:"";
+  display:inline-block;
+  width:28px;
+  height:22px;
+  margin-left:7px;
+  vertical-align:-5px;
+  background:url("botanical-sprig.svg") center/contain no-repeat;
+  opacity:.62;
+}
+.card{
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(25,49,38,.97),rgba(17,34,26,.98));
+  border-color:rgba(222,255,231,.18);
+}
+.card:nth-of-type(4n+1)::after{
+  content:"";
+  position:absolute;
+  right:-28px;
+  bottom:-34px;
+  width:126px;
+  height:98px;
+  background:url("botanical-sprig.svg") center/contain no-repeat;
+  opacity:.17;
+  pointer-events:none;
+  transform:rotate(-8deg);
+}
+.card>*{position:relative;z-index:1}
+.muted{color:#c9d8cf}
+.tag{color:#d8e4dc}
+@media(max-width:520px){
+  header{padding-right:72px}
+  header::after{width:104px;height:86px;right:-18px;top:-12px;opacity:.62}
+  .section-title h2::after{width:23px;height:19px;margin-left:4px}
+}
