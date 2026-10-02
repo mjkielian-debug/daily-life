@@ -690,10 +690,10 @@ function spinReaderWheel(){
   const winner=pool[Math.floor(Math.random()*pool.length)];
   alert(`Reader Wheel winner: ${winner}!`);
 }
-function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
+function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget")||(id==="family"&&view==="reading"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
 function needsSetup(){return !state.profile?.name}
 function renderSetup(){const user=cloudUser?.();return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Start locally, restore a private backup, or sign in to your Daily Life cloud account. Public app code contains no personal records.</p><div class="warning">If you already have the private starter backup that came with this package, use <b>Restore private starter backup</b>. Do not upload that backup to a public website or GitHub repository.</div><div class="actions" style="margin-top:12px"><button class="btn primary" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button>${user?`<button class="btn" onclick="cloudRestoreSnapshot()">Restore cloud copy</button>`:`<button class="btn" onclick="openCloudAuth()">Sign in / cloud account</button>`}</div></div></main>`}
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life ✦</div><div class="muted small">${esc(state.profile.name)} · local-first</div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="home"?homeView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 function todayProgress(value,target,label){const max=Number(target);return Number.isFinite(max)&&max>0?`<progress class="today-progress" max="${max}" value="${Math.max(0,Math.min(max,Number(value)||0))}" aria-label="${esc(label)}"></progress><div class="muted small">${Math.round(value)} / ${max}</div>`:""} function setWaterGoal(){modal("Water goal",`<label>Daily goal (oz)<input id="waterGoal" type="number" min="1" max="1000" step="1" value="${esc(state.settings.waterTarget||"")}"></label>`,"Save",async()=>{const n=Number($("#waterGoal").value);if(!Number.isFinite(n)||n<=0||n>1000)return;state.settings.waterTarget=n;await save();closeModal();render()})} function todayMoneySnapshot(){
   const checking=(state.accounts||[]).filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         month=ymd().slice(0,7),bt=typeof budgetTotals==="function"?budgetTotals(month):null,
@@ -1029,7 +1029,21 @@ function ensurePeopleProfiles(){
   }
 }
 function personById(id){return (state.peopleProfiles||[]).find(p=>p.id===id)}
-function isChildProfile(p){return String(p?.relationship||"").toLowerCase()==="child"}
+function normalizedRelationship(p){return String(p?.relationship||"person").trim().toLowerCase()}
+function isChildProfile(p){return ["child","son","daughter"].includes(normalizedRelationship(p))}
+function isSiblingProfile(p){return ["sister","brother","sibling"].includes(normalizedRelationship(p))}
+function isAdultFamilyProfile(p){return ["sister","brother","sibling","mother","father","mom","dad","parent","aunt","uncle","cousin","grandparent","grandmother","grandfather"].includes(normalizedRelationship(p))}
+function relationshipGroup(p){
+  if(isChildProfile(p))return"Children";
+  if(isPartnerProfile(p))return"Partner";
+  if(isAdultFamilyProfile(p))return"Family";
+  if(["friend","best friend"].includes(normalizedRelationship(p)))return"Friends";
+  return"Other people";
+}
+function relationshipLabel(p){
+  const r=String(p?.relationship||"Person").trim();
+  return r?r.charAt(0).toUpperCase()+r.slice(1):"Person";
+}
 function isPartnerProfile(p){return ["partner","boyfriend","girlfriend","spouse"].includes(String(p?.relationship||"").toLowerCase())}
 function nextWeekdayDate(weekday,from=new Date()){
   const d=new Date(from.getFullYear(),from.getMonth(),from.getDate()),diff=(Number(weekday)-d.getDay()+7)%7;d.setDate(d.getDate()+diff);return d;
@@ -1140,20 +1154,30 @@ function birthdayGiftBoard(){
 }
 function personCards(){
   ensurePeopleProfiles();
-  return `<div class="people-grid">${(state.peopleProfiles||[]).map(p=>{const b=nextBirthdayInfo(p),w=birthdayWishStats(p),colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],ints=p.interests||[],foods=p.favoriteFoods||[],checkin=p.recurringCheckin||{};return `<div class="card person-card"><div class="section-title"><div><div class="eyebrow">${esc(p.relationship||"Person")}</div><h2>${esc(p.name)}</h2></div><button class="btn small" onclick="openPersonHub('${p.id}')">Open</button></div>
-      ${b?`<button class="birthday-mini" onclick="openBirthdayPlanner('${p.id}')"><span>🎂 ${esc(b.label)}</span><b>${b.days===0?"Today":b.days+"d"}</b></button>`:`<button class="birthday-mini empty" onclick="openPersonProfile('${p.id}')"><span>🎂 Add birthday</span></button>`}
-      ${isPartnerProfile(p)&&checkin.enabled?`<div class="person-relationship-mini">💬 ${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][Number(checkin.weekday)]||""} ${fmtClock(checkin.startTime||"")} · ${Number(checkin.durationMinutes||30)} min</div>`:""}
-      ${colors.length||chars.length||ints.length||foods.length?`<div class="person-chips">${colors.slice(0,3).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.slice(0,3).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}${foods.slice(0,2).map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}</div>`:`<div class="muted small">Add favorite colors, characters, foods, and interests.</div>`}
-      <div class="row"><span>Birthday wishes</span><b>${w.total}</b></div>
-      ${(p.wishlist||[]).filter(x=>!["bought","wrapped","done"].includes(String(x.status))).slice(0,3).map(x=>`<div class="muted small">• ${esc(x.item)}</div>`).join("")}
-      <div class="actions" style="margin-top:10px"><button class="btn small primary" onclick="openBirthdayWish('${p.id}')">+ Wish</button><button class="btn small" onclick="openBirthdayPlanner('${p.id}')">Birthday plan</button></div>
-    </div>`}).join("")}</div>`;
+  const groups=["Children","Partner","Family","Friends","Other people"];
+  const profiles=state.peopleProfiles||[];
+  if(!profiles.length)return `<div class="card"><div class="notice">No people profiles yet.</div></div>`;
+  return groups.map(group=>{
+    const rows=profiles.filter(p=>relationshipGroup(p)===group);
+    if(!rows.length)return"";
+    return `<section class="people-section"><div class="people-section-title"><div><div class="eyebrow">${esc(group)}</div><h2>${rows.length} ${rows.length===1?"person":"people"}</h2></div></div><div class="people-grid">${rows.map(p=>personCardCompact(p)).join("")}</div></section>`;
+  }).join("");
 }
-function openPersonProfile(id=""){
+function personCardCompact(p){
+  const b=nextBirthdayInfo(p),ints=p.interests||[],foods=p.favoriteFoods||[],plans=p.sharedPlans||[],dates=p.importantDates||[];
+  return `<div class="card person-card compact-person-card" onclick="openPersonHub('${p.id}')">
+    <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
+    ${b?`<div class="person-detail-line"><span>Birthday</span><b>${esc(b.label)}${b.days<=30?" · "+b.days+"d":""}</b></div>`:""}
+    ${ints.length?`<div class="person-chips">${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:""}
+    ${foods.length?`<div class="muted small">Likes: ${foods.slice(0,3).map(esc).join(", ")}</div>`:""}
+    ${plans.length||dates.length?`<div class="person-mini-meta">${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
+  </div>`;
+}
+function openPersonProfilefunction openPersonProfile(id=""){
   ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
-    <label>Relationship<input id="prel" value="${esc(p.relationship||"")}" placeholder="child, partner, friend…"></label>
+    <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, partner, friend…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
     <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
@@ -1171,7 +1195,7 @@ function openPersonProfile(id=""){
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
     Object.assign(x,{name,relationship:$("#prel").value.trim(),birthday:$("#pbday").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
-    await save();closeModal();render();
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
 function latestBirthdaySuggestion(personId){
@@ -1241,16 +1265,35 @@ function openBirthdayPlanner(personId){
 }
 async function toggleBirthdayPlanTask(personId,index,done){const p=personById(personId);if(!p?.birthdayPlan?.tasks?.[index])return;p.birthdayPlan.tasks[index].done=done;await save();render()}
 
+function peopleOverviewCard(){
+  const profiles=state.peopleProfiles||[],children=profiles.filter(isChildProfile).length,family=profiles.filter(p=>isAdultFamilyProfile(p)||isPartnerProfile(p)).length,
+        upcoming=profiles.map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b&&x.b.days<=45).sort((a,b)=>a.b.days-b.b.days);
+  return `<div class="card glow people-hero"><div class="section-title"><div><div class="eyebrow">People</div><h2>The people in your life</h2><div class="muted small">Profiles, birthdays, preferences, plans, and things you want to remember about each person.</div></div><div class="actions"><button class="btn primary" onclick="openPersonProfile()">+ Person</button><button class="btn" onclick="setView('reading')">Reading</button></div></div>
+    <div class="people-hero-stats"><span><b>${profiles.length}</b><small>profiles</small></span><span><b>${children}</b><small>children</small></span><span><b>${family}</b><small>family / partner</small></span></div>
+    ${upcoming.length?`<div class="people-upcoming"><div class="mini-heading">Coming up</div>${upcoming.slice(0,4).map(({p,b})=>`<button onclick="openPersonHub('${p.id}')"><span>${esc(p.name)}</span><b>${esc(b.label)} · ${b.days===0?"today":b.days+"d"}</b></button>`).join("")}</div>`:""}
+  </div>`;
+}
+function familyRoutinesCard(){
+  const rows=state.chores.filter(x=>x.date===ymd());
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">This stays separate from adult people profiles.</div></div><button class="btn" onclick="openChore()">+ Chore</button></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No family routines logged today.</div>`}</div>`;
+}
 function familyView(){
   ensurePeopleProfiles();
-  const ticketRows=monthlyReaderTickets();
-  return `${birthdayDashboard()}${birthdayGiftBoard()}${personCards()}${schoolDashboard()}
-  <div class="card"><div class="section-title"><div><h2>Today’s family routines</h2><div class="muted small">Daily basics and rotating chores are filled in automatically.</div></div><button class="btn" onclick="openChore()">+ Chore</button></div>${state.chores.filter(x=>x.date===ymd()).map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No chores today yet.</div>`}</div>
-  <div class="card glow"><div class="section-title"><div><div class="eyebrow">Reading</div><h2>Everyone reads</h2><div class="muted small">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div><button class="btn" onclick="openPeople()">Readers</button></div></div>
-  <div class="grid2">${(state.settings.readers||[]).map(n=>{const p=reads().filter(x=>x.reader===n).reduce((sum,x)=>sum+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="card"><h2>${esc(n)}</h2><div class="big">${p} pages</div><div class="muted small">${t} tickets today</div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div>
-  <div class="card"><div class="section-title"><h2>Reader Wheel · this month</h2><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading days</span><b>${r.tickets} tickets</b></div>`).join("")}</div>`;
+  return `${peopleOverviewCard()}${personCards()}${birthdayDashboard()}${birthdayGiftBoard()}${schoolDashboard()}${familyRoutinesCard()}`;
 }
-function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function readingView(){
+  const ticketRows=monthlyReaderTickets(),todayReads=reads(),totalPages=todayReads.reduce((sum,x)=>sum+Number(x.pages||0),0),
+        month=ymd().slice(0,7),monthLogs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
+        monthPages=monthLogs.reduce((sum,x)=>sum+Number(x.pages||0),0),monthDays=new Set(monthLogs.map(x=>x.date)).size;
+  return `<div class="card glow reading-hero"><div class="section-title"><div><div class="eyebrow">Reading</div><h2>Reading lives here now</h2><div class="muted small">Pages, reading days, tickets, and the reader wheel are separate from People profiles.</div></div><button class="btn" onclick="setView('family')">Back to People</button></div>
+    <div class="people-hero-stats"><span><b>${totalPages}</b><small>pages today</small></span><span><b>${monthPages}</b><small>pages this month</small></span><span><b>${monthDays}</b><small>reading days</small></span></div>
+  </div>
+  <div class="card"><div class="section-title"><div><h2>Readers</h2><div class="muted small">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div><button class="btn" onclick="openPeople()">Edit readers</button></div>
+  <div class="reader-grid">${(state.settings.readers||[]).map(n=>{const p=todayReads.filter(x=>x.reader===n).reduce((sum,x)=>sum+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="reader-card"><div><div class="eyebrow">${esc(n)}</div><div class="big">${p} pages</div><div class="muted small">${t} ticket${t===1?"":"s"} today</div></div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div></div>
+  <div class="card"><div class="section-title"><div><h2>Reader Wheel · this month</h2><div class="muted small">Tickets reflect reading logged during the current month.</div></div><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading day${r.days===1?"":"s"}</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
+  <div class="card"><div class="eyebrow">Recent reading</div><h2>Latest logs</h2>${[...(state.readingLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,12).map(x=>`<div class="row"><span><b>${esc(x.reader)}</b><div class="muted small">${esc(dl(x.date))}${x.book?" · "+esc(x.book):""}</div></span><b>${Number(x.pages||0)} pages</b></div>`).join("")||`<div class="notice">No reading logged yet.</div>`}</div>`;
+}
+function week(){function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
 function activeOrders(){
   return [...(state.orders||[])].filter(o=>!["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
 }
