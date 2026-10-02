@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2015">
+<link rel="stylesheet" href="styles.css?v=20261001-2050">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-1925"></script>
+<script src="cloud.js?v=20261001-2050"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -1133,6 +1133,7 @@ function moreView(){
   ${netWorthCard()}
   <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
+  ${expectedIncomeCard()}
   ${upcomingBillsView()}
   ${upsPayrollCard()}
   <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>`;
@@ -1518,22 +1519,33 @@ function expectedIncomeCard(){
   </div>`;
 }
 function billReadiness(){
-  const remaining=new Map();
-  // Equal due dates keep their original list order for deterministic reservations.
-  return state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index).map(row=>{
-    const b=row.bill,setup=recordedBillSetup(b),matches=state.accounts.filter(a=>a.key&&a.key===b.paymentAccountKey),account=matches.length===1?matches[0]:null;
-    const result={...row,setup,account};
+  const spentByAccount=new Map(),sorted=state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
+  const spendableAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&!a.protectFromSpending&&a.key!=="house_fund"&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance)));
+  const spendableStarting=spendableAccounts.reduce((sum,a)=>sum+Math.round(Number(a.balance)*100),0);
+  let spentGlobal=0;
+  return sorted.map(row=>{
+    const b=row.bill,setup=recordedBillSetup(b),matches=state.accounts.filter(a=>a.key&&a.key===b.paymentAccountKey),account=matches.length===1?matches[0]:null,result={...row,setup,account};
     if(b.status==="paid")return {...result,status:"Paid"};
     if(!account)return {...result,status:"Needs account"};
-    // Credit balances in this app represent debt, not cash available to pay bills.
     const balance=Number(account.balance);
     if(!["checking","savings"].includes(account.type)||account.balance===null||account.balance===""||!Number.isFinite(balance))return {...result,status:"Balance unavailable"};
-    const amount=Number(b.amount);
-    if(b.amount===null||b.amount===""||!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(String(b.due||""))){remaining.set(account.key,null);return {...result,status:"Check bill"}}
-    const before=remaining.has(account.key)?remaining.get(account.key):Math.round(balance*100);
-    if(before===null)return {...result,status:"Check earlier bill"};
-    const after=before-Math.round(amount*100);remaining.set(account.key,after);
-    return {...result,before,after,status:after<0?"Short":setup==="Unknown"?"Setup unknown":"Covered"};
+    const amount=Number(b.amount),due=String(b.due||"");
+    if(b.amount===null||b.amount===""||!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(due))return {...result,status:"Check bill"};
+    const amountC=Math.round(amount*100),prior=spentByAccount.get(account.key)||0,currentBefore=Math.round(balance*100)-prior,currentAfter=currentBefore-amountC,
+          projectedIncome=incomeBefore(due,account.key),projectedBefore=currentBefore+projectedIncome,projectedAfter=projectedBefore-amountC;
+    spentByAccount.set(account.key,prior+amountC);
+    const accountSpendable=!account.protectFromSpending&&account.key!=="house_fund";
+    let globalProjectedAfter=null;
+    if(accountSpendable){
+      const globalBefore=spendableStarting+transferableIncomeBefore(due)-spentGlobal;
+      globalProjectedAfter=globalBefore-amountC;
+      spentGlobal+=amountC;
+    }
+    let status="Projected short";
+    if(currentAfter>=0)status="Covered now";
+    else if(projectedAfter>=0)status="Covered by due date";
+    else if(accountSpendable&&globalProjectedAfter!==null&&globalProjectedAfter>=0)status="Transfer needed";
+    return {...result,currentBefore,currentAfter,projectedIncome,projectedBefore,projectedAfter,globalProjectedAfter,status};
   });
 }
 // Each occurrence remains a separate bill; paid history is never recycled.
@@ -1588,25 +1600,34 @@ function syncBillRepeatFrequency(){
   else if(frequency.value!=="Trial / decision pending")frequency.value="One-time";
 }
 function billRowView(r){
-  const b=r.bill,paid=b.status==="paid",tone=r.status==="Covered"?"covered":r.status==="Short"?"short":"unknown";
-  const note=r.after!==undefined?`${money(r.before/100)} available before this bill · ${r.after<0?money(-r.after/100)+" short":money(r.after/100)+" left"} after reserving it.`:r.status==="Balance unavailable"?"Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.":r.status==="Check bill"||r.status==="Check earlier bill"?"Correct the amount or due date before relying on this account’s readiness.":paid?"Paid · not reserved.":b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
+  const b=r.bill,paid=b.status==="paid",tone=["Covered now","Covered by due date"].includes(r.status)?"covered":r.status==="Projected short"?"short":r.status==="Transfer needed"?"transfer":"unknown";
+  let note="";
+  if(r.currentAfter!==undefined){
+    if(r.status==="Covered now")note=`${money(r.currentBefore/100)} available now before this bill · ${money(r.currentAfter/100)} left after reserving it now.`;
+    else if(r.status==="Covered by due date")note=`${money(r.currentBefore/100)} available now · +${money(r.projectedIncome/100)} expected into ${r.account?.name||"this account"} by ${dl(b.due)} · ${money(r.projectedAfter/100)} projected left after the bill.`;
+    else if(r.status==="Transfer needed")note=`${money(-r.projectedAfter/100)} still needs to be moved into ${r.account?.name||"the payment account"} by ${dl(b.due)}. Across transferable spending cash and expected income, ${money(r.globalProjectedAfter/100)} is projected to remain after this bill.`;
+    else note=`${r.projectedIncome>0?"+"+money(r.projectedIncome/100)+" expected into this account before the due date · ":""}${money(-r.projectedAfter/100)} projected short by ${dl(b.due)} after earlier bills.`;
+  }else if(r.status==="Balance unavailable")note="Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.";
+  else if(r.status==="Check bill")note="Correct the amount or due date before relying on this projection.";
+  else if(paid)note="Paid · not reserved.";
+  else note=b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
   const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1],desired=state.accounts.find(a=>a.key===b.desiredAccountKey),amountType=recordedBillAmountType(b),frequency=recordedBillFrequency(b);
   return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
   <div class="bill-details"><div class="small muted">Current payment: ${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
   ${desired&&desired.key!==b.paymentAccountKey?`<div class="small muted">Desired payment account: ${esc(desired.name)}</div>`:""}
   <div class="small muted">${esc(amountType)} · ${esc(frequency)}</div>
   ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
-  <div class="actions">${paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"&&r.status!=="Setup unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
+  <div class="actions">${paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
   <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${paid?"Edit paid bill":"Edit"}</button>
   ${paid?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
 }
 function upcomingBillsView(){
   const rows=billReadiness(),unpaid=rows.filter(r=>r.bill.status!=="paid"),paid=rows.filter(r=>r.bill.status==="paid");
   return `<div class="card"><div class="section-title"><h2>Upcoming bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
-  <p class="muted small">Readiness uses your recorded account balances, reserving unpaid bills in due-date order per account (same-day ties use list order). Paid bills reserve nothing. Future deposits and other spending are not predicted.</p>
-  <p class="muted small">Payment setup is what you recorded, not independently verified autopay. Marking a bill paid does not change your account balance; update that balance separately.</p>
+  <p class="muted small">Projection starts with recorded account balances, reserves unpaid bills in due-date order, and adds expected income that arrives on or before each due date. Income assigned to a different spending account can produce a <b>Transfer needed</b> result instead of a false “Short.”</p>
+  <p class="muted small">Expected income is still an estimate until it arrives. Other spending is not predicted. Payment setup is what you recorded, not independently verified autopay.</p>
   ${unpaid.map(billRowView).join("")||`<div class="notice">No unpaid bills. Add a bill or create the next occurrence from paid history.</div>`}
-  ${paid.length?`<details class="bill-history"><summary>Paid history (${paid.length})</summary><p class="muted small">Paid bills stay here. Use Create next bill to keep a past payment intact. Unchecking a paid bill does not remove its next occurrence.</p>${paid.slice().reverse().map(billRowView).join("")}</details>`:""}</div>`;
+  ${paid.length?`<details class="bill-history"><summary>Paid history (${paid.length})</summary><p class="muted small">Paid bills stay here. Use Create next bill to keep a past payment intact.</p>${paid.slice().reverse().map(billRowView).join("")}</details>`:""}</div>`;
 }
 function openBill(index=-1,sourceIndex=-1){
   const existing=index>=0?state.bills[index]:null;if(index>=0&&!existing)return;
@@ -1667,7 +1688,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2015").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2050").catch(()=>{});
 
 </script>
 </body>
