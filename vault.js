@@ -320,3 +320,10 @@ function vaultChangePasscode(){
   });
 }
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&vaultUnlocked)vaultSoftLock()});
+
+
+// Compatibility helper used by the UPS work UI in index.html.
+// A finished shift with no confirmed punch-out must not be counted as live hours.
+function workNeedsPunchOut(w){
+  return !!(w?.start&&!w?.end&&(w?.endedUnknown||w?.status==="completed-needs-end"));
+}
