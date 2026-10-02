@@ -96,6 +96,7 @@ async function dbClear(){
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261002-setup3"></script>
+<script src="sharing.js?v=20261002-share1"></script>
 <script src="finance-cloud.js?v=20261002-moneystrategy1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
 <script src="vault.js?v=20261002-vault2"></script>
@@ -2332,7 +2333,7 @@ function connectionsCard(){
     <div class="connection-row"><span><b>UPS / Dayforce</b><div class="muted small">Daily punches are logged/reconciled in Daily Life; official earnings statements can be imported. Direct punch sync is not connected.</div></span><span class="tag">partial</span></div>
     <div class="connection-row"><span><b>Kitchen photos</b><div class="muted small">Private food photos can become pantry inventory and meal suggestions.</div></span><span class="tag">${signed?"ready to test":"cloud needed"}</span></div>
     <div class="connection-row"><span><b>ChatGPT → Pets + Garden</b><div class="muted small">Pet care, vet records, plant care, garden tasks, journal notes, and seeds can flow into the matching Daily Life sections through private cloud entries.</div></span><span class="tag">${signed?"connected":"cloud needed"}</span></div>
-    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Your People data is private to your account. Household sharing and account invites are not enabled yet.</div></span><span class="tag">private</span></div>
+    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Separate accounts with an opt-in shared itinerary. Money, Vault, self-care, and private People data stay private.</div></span><span class="tag">${typeof sharingConnected==="function"&&sharingConnected()?"connected":"optional"}</span></div>
   </div>`;
 }
 function settingsView(){
@@ -2341,6 +2342,7 @@ function settingsView(){
   <div class="card"><div class="section-title"><h2>Recurring routines</h2><button class="btn" onclick="openRoutine()">+ Routine</button></div>${(state.settings.recurringTasks||[]).map((x,i)=>`<div class="row"><span>${esc(x.title)}<div class="muted small">${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}</div></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join("")||`<div class="notice">No recurring tasks.</div>`}</div>
   <div class="card"><div class="section-title"><h2>Weekly meal patterns</h2><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>${(state.settings.mealPatterns||[]).map((p,i)=>`<div class="row"><span>${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.weekday]} · ${esc(p.dish)}</span><button class="btn small" onclick="removeMealPattern(${i})">Remove</button></div>`).join("")||`<div class="notice">No automatic meal patterns.</div>`}</div>
   ${connectionsCard()}
+  ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
   ${cloudPanel()}
   <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
 }
@@ -2565,11 +2567,17 @@ function openEvent(date=ymd(),id="",person=""){
     <div class="grid2"><label>Start<input id="estart" type="time" value="${esc(x.startTime||"")}"></label><label>End<input id="eend" type="time" value="${esc(x.endTime||"")}"></label></div>
     <label>Location<input id="eloc" value="${esc(x.location||"")}"></label>
     <label>Notes<textarea id="enotes">${esc(x.notes||"")}</textarea></label>
+    ${typeof sharingEventControl==="function"?sharingEventControl(x):""}
     <label>Status<select id="estatus"><option ${(x.status||"confirmed")==="confirmed"?"selected":""}>confirmed</option><option ${x.status==="tentative"?"selected":""}>tentative</option><option ${x.status==="cancelled"?"selected":""}>cancelled</option></select></label>
   </div>`,"Save",async()=>{
     const title=$("#etitle").value.trim(),eventDate=$("#edate").value;if(!title||!eventDate)return;
+    const shareRequested=$("#eshared")?$("#eshared").checked:!!x.shared;
     let e=state.events.find(e=>e.id===id);if(!e){e={id:uid(),source:"Manual"};state.events.push(e)}
     Object.assign(e,{title,child:$("#echild").value,type:$("#etype").value,date:eventDate,startTime:$("#estart").value,endTime:$("#eend").value,location:$("#eloc").value,notes:$("#enotes").value,status:$("#estatus").value});
+    if(typeof sharingCanShare==="function"&&sharingCanShare()){
+      if(shareRequested){const ok=await sharingUpsertEvent(e);if(!ok)return}
+      else if(e.sharedEntryId){const ok=await sharingMakeEventPrivate(e);if(!ok)return}
+    }
     await save();closeModal();render();
   });
 }
@@ -3022,7 +3030,7 @@ async function erase(){if(confirm("Erase ALL Daily Life data stored on this devi
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
-async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 init();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2225").catch(()=>{});
 
