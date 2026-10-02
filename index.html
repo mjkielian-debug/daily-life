@@ -1246,43 +1246,92 @@ function kidsMoneyGoalProgress(personId){
   return{goal,balance,percent:goal>0?Math.min(100,Math.round(balance*100/goal)):0};
 }
 
+function kidsMoneyGoalHTML(personId){
+  const p=personById(personId),g=kidsMoneyGoalProgress(personId);
+  if(!g.goal)return"";
+  return `<div class="kids-money-goal"><div class="row"><span><b>${esc(kidsMoneyAccount(personId).goalName||"Savings goal")}</b><div class="muted small">${money(g.balance)} of ${money(g.goal)}</div></span><b>${g.percent}%</b></div><progress max="100" value="${g.percent}" aria-label="${esc((p?.name||"Child")+" savings goal")}">${g.percent}%</progress></div>`;
+}
 function kidsMoneyCard(){
   const kids=childProfiles();
-  return `<div class="card kids-money-card"><div class="section-title"><div><div class="eyebrow">Kids Money</div><h2>Modak + app-side ledger</h2><div class="muted small">Track what each child should have, including amounts not actually funded yet. Daily Life does not claim money moved unless you record it as funded or reconcile an actual balance.</div></div></div>
-  ${kids.length?`<div class="kids-money-grid">${kids.map(p=>{const a=kidsMoneyAccount(p.id),pending=kidsMoneyPending(p.id),expected=kidsMoneyExpected(p.id);return`<button class="kid-money-tile" onclick="openKidsMoney('${p.id}')"><span><b>${esc(p.name)}</b><small>${a.actualBalance===null||a.actualBalance===""?"Actual balance not synced":"Actual "+money(a.actualBalance)+(a.actualAsOf?" · "+dl(a.actualAsOf):"")}</small></span><span><b>${money(expected)}</b><small>${a.actualBalance===null||a.actualBalance===""?"open app ledger":"expected balance"}</small>${pending?`<small class="pending-money">${money(pending)} pending to fund</small>`:""}</span></button>`}).join("")}</div>`:"<div class='notice'>No household child profiles are available yet.</div>"}
-  <div class="notice" style="margin-top:10px"><b>Modak connection:</b> not connected. Actual balances and transfers require a supported secure integration; this tracker is the app-side record in the meantime.</div><div class="actions" style="margin-top:10px"><a class="btn" href="https://app.modakmakers.com/parents" target="_blank" rel="noopener">Open Modak</a></div></div>`;
+  return `<div class="card kids-money-card"><div class="section-title"><div><div class="eyebrow">Kids Money</div><h2>Modak + app-side ledger</h2><div class="muted small">The app keeps two ideas separate: what Modak actually shows, and what each child should have after any pending or ledger-only changes.</div></div></div>
+  ${kids.length?`<div class="kids-money-grid">${kids.map(p=>{const a=kidsMoneyAccount(p.id),pending=kidsMoneyPendingBreakdown(p.id),expected=kidsMoneyExpected(p.id),hasActual=kidsMoneyHasActual(a),goal=kidsMoneyGoalProgress(p.id);return`<button class="kid-money-tile" onclick="openKidsMoney('${p.id}')"><span><b>${esc(p.name)}</b><small>${hasActual?"Actual "+money(a.actualBalance)+(a.actualAsOf?" · "+dl(a.actualAsOf):""):"No actual balance entered yet"}</small>${goal.goal?`<small>${esc(a.goalName||"Savings goal")} · ${goal.percent}%</small>`:""}</span><span><b>${money(expected)}</b><small>${hasActual?"expected after open ledger":"app ledger total"}</small>${pending.add?`<small class="pending-money">+${money(pending.add)} pending to fund</small>`:""}${pending.subtract?`<small class="pending-money">−${money(pending.subtract)} pending spending</small>`:""}</span></button>`}).join("")}</div>`:"<div class='notice'>No household child profiles are available yet.</div>"}
+  <div class="notice" style="margin-top:10px"><b>Modak connection:</b> secure live sync is not connected, so actual balances still need to be reconciled manually. The app-side ledger remains useful in the meantime and does not claim a transfer happened unless you mark it funded.</div><div class="actions" style="margin-top:10px"><a class="btn" href="https://app.modakmakers.com/parents" target="_blank" rel="noopener">Open Modak</a></div></div>`;
 }
 function openKidsMoney(personId){
-  const p=personById(personId);if(!p)return;const a=kidsMoneyAccount(personId),rows=kidsMoneyTransactionsFor(personId),expected=kidsMoneyExpected(personId),pending=kidsMoneyPending(personId);
-  modal(`Kids Money · ${p.name}`,`<div class="stack"><div class="kids-money-summary"><span><b>${a.actualBalance===null||a.actualBalance===""?"—":money(a.actualBalance)}</b><small>actual / reconciled</small></span><span><b>${money(pending)}</b><small>pending to fund</small></span><span><b>${money(expected)}</b><small>${a.actualBalance===null||a.actualBalance===""?"open ledger":"expected"}</small></span></div>
-  <div class="grid2"><button type="button" class="btn primary" onclick="openKidsMoneyEntry('${personId}','add')">+ Add money</button><button type="button" class="btn" onclick="openKidsMoneyEntry('${personId}','subtract')">− Spending / subtract</button></div><a class="btn" href="https://app.modakmakers.com/parents" target="_blank" rel="noopener">Open Modak to fund / reconcile</a>
-  <div class="notice"><b>How this works:</b> Pending and ledger-only entries change what the balance should be. Funded entries are treated as real money movement and are folded into the actual balance when an actual balance is known.</div>
-  <div class="mini-heading">Reconcile actual Modak balance</div><div class="grid2"><label>Actual balance<input id="kmactual" type="number" step=".01" value="${a.actualBalance??""}"></label><label>As of<input id="kmasof" type="date" value="${esc(a.actualAsOf||"")}"></label></div>
-  <div class="grid2"><label>Savings goal name<input id="kmgoalname" value="${esc(a.goalName||"")}"></label><label>Goal amount<input id="kmgoal" type="number" min="0" step=".01" value="${Number(a.savingsGoal||0)||""}"></label></div>
-  <label>Notes<textarea id="kmnotes" rows="2">${esc(a.notes||"")}</textarea></label>
-  <div><div class="mini-heading">Recent activity</div>${rows.slice(0,12).map(x=>`<div class="row compact-row"><span><b>${esc(x.label||x.type||"Money")}</b><div class="muted small">${esc(dl(x.date))}${x.status?" · "+esc(x.status):""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="kids-money-entry-actions"><b class="${Number(x.amount)<0?"budget-negative":""}">${money(x.amount)}</b>${String(x.status||"")==="pending"?`<button type="button" class="btn small" onclick="fundKidsMoneyTransaction('${x.id}')">Mark funded</button>`:""}</span></div>`).join("")||"<div class='muted small'>No app-side money activity yet.</div>"}</div></div>`,"Save",async()=>{
-    a.actualBalance=$("#kmactual").value===""?null:Number($("#kmactual").value);a.actualAsOf=$("#kmasof").value;a.pendingToFund=0;a.goalName=$("#kmgoalname").value.trim();a.savingsGoal=Number($("#kmgoal").value||0);a.notes=$("#kmnotes").value.trim();await save();closeModal();render();
+  const p=personById(personId);if(!p)return;
+  const a=kidsMoneyAccount(personId),rows=kidsMoneyTransactionsFor(personId),expected=kidsMoneyExpected(personId),
+        pending=kidsMoneyPendingBreakdown(personId),hasActual=kidsMoneyHasActual(a),last=kidsMoneyLatestReconciliation(personId);
+  modal(`Kids Money · ${p.name}`,`<div class="stack">
+    <div class="kids-money-summary">
+      <span><b>${hasActual?money(a.actualBalance):"—"}</b><small>actual Modak${a.actualAsOf?" · "+dl(a.actualAsOf):""}</small></span>
+      <span><b>${money(expected)}</b><small>${hasActual?"expected after open ledger":"app ledger total"}</small></span>
+      <span><b>${pending.count}</b><small>pending item${pending.count===1?"":"s"}</small></span>
+    </div>
+    ${pending.add||pending.subtract?`<div class="grid2"><div class="metric"><div class="eyebrow">Pending to fund</div><div class="big">+${money(pending.add)}</div></div><div class="metric"><div class="eyebrow">Pending spending</div><div class="big">${money(-pending.subtract)}</div></div></div>`:""}
+    ${kidsMoneyGoalHTML(personId)}
+    <div class="grid2"><button type="button" class="btn primary" onclick="openKidsMoneyEntry('${personId}','add')">+ Add money</button><button type="button" class="btn" onclick="openKidsMoneyEntry('${personId}','subtract')">− Spending / subtract</button></div>
+    <a class="btn" href="https://app.modakmakers.com/parents" target="_blank" rel="noopener">Open Modak to fund / reconcile</a>
+    <div class="notice"><b>Expected balance:</b> ${hasActual?"actual Modak balance + pending and ledger-only changes":"all app-side transactions because no actual Modak balance has been entered yet"}. Funded entries remain part of the ledger even when no actual balance exists.</div>
+
+    <div class="mini-heading">Reconcile actual Modak balance</div>
+    <div class="grid2"><label>Actual balance<input id="kmactual" type="number" step=".01" value="${a.actualBalance??""}"></label><label>Balance date<input id="kmasof" type="date" value="${esc(a.actualAsOf||ymd())}"></label></div>
+    ${pending.count?`<label class="task"><input id="kmclearincluded" type="checkbox"><span><b>This real balance already includes pending entries dated on or before the balance date</b><div class="muted small">Those entries will be marked reconciled/funded without adding them to the actual balance a second time.</div></span></label>`:""}
+    ${last?`<div class="muted small">Last reconciliation: ${esc(dl(last.date||String(last.createdAt||"").slice(0,10)))} · actual ${money(last.actualBalance)} · app difference ${last.difference>=0?"+":""}${money(last.difference)}</div>`:""}
+
+    <div class="grid2"><label>Savings goal name<input id="kmgoalname" value="${esc(a.goalName||"")}"></label><label>Goal amount<input id="kmgoal" type="number" min="0" step=".01" value="${Number(a.savingsGoal||0)||""}"></label></div>
+    <label>Notes<textarea id="kmnotes" rows="2">${esc(a.notes||"")}</textarea></label>
+
+    <div><div class="mini-heading">Recent activity</div>
+      ${rows.slice(0,16).map(x=>`<div class="row compact-row"><span><b>${esc(x.label||x.type||"Money")}</b><div class="muted small">${esc(dl(x.date))} · ${esc(x.reconciledAt?"funded · reconciled":x.status||"ledger")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="kids-money-entry-actions"><b class="${Number(x.amount)<0?"budget-negative":""}">${money(x.amount)}</b>${String(x.status||"")==="pending"?`<button type="button" class="btn small" onclick="fundKidsMoneyTransaction('${x.id}')">Mark funded</button>`:""}${["pending","ledger"].includes(String(x.status||""))?`<button type="button" class="btn small" onclick="removeKidsMoneyTransaction('${x.id}')">Remove</button>`:""}</span></div>`).join("")||"<div class='muted small'>No app-side money activity yet.</div>"}
+    </div>
+  </div>`,"Save",async()=>{
+    const beforeExpected=kidsMoneyExpected(personId),previousActual=kidsMoneyHasActual(a)?Number(a.actualBalance):null,
+          nextActual=$("#kmactual").value===""?null:Number($("#kmactual").value),nextDate=$("#kmasof").value||ymd(),
+          changedActual=nextActual!==previousActual||String(a.actualAsOf||"")!==String(nextDate||"");
+    let clearedPending=0;
+    if(nextActual!==null&&Number.isFinite(nextActual)&&$("#kmclearincluded")?.checked){
+      const now=new Date().toISOString();
+      for(const x of state.kidsMoneyTransactions||[]){
+        if(x.personId!==personId||String(x.status||"")!=="pending"||String(x.date||"")>nextDate)continue;
+        x.status="funded";x.fundedAt=x.fundedAt||now;x.reconciledAt=now;clearedPending++;
+      }
+    }
+    a.actualBalance=nextActual!==null&&Number.isFinite(nextActual)?nextActual:null;
+    a.actualAsOf=a.actualBalance===null?"":nextDate;
+    a.pendingToFund=0;
+    a.goalName=$("#kmgoalname").value.trim();a.savingsGoal=Number($("#kmgoal").value||0);a.notes=$("#kmnotes").value.trim();
+    if(a.actualBalance!==null&&changedActual){
+      const now=new Date().toISOString();a.lastReconciledAt=now;
+      state.kidsMoneyReconciliations.push({id:uid(),personId,date:a.actualAsOf,actualBalance:a.actualBalance,previousExpected:beforeExpected,difference:a.actualBalance-beforeExpected,clearedPending,createdAt:now});
+    }
+    await save();closeModal();render();
   });
 }
 function openKidsMoneyEntry(personId,mode="add"){
   const p=personById(personId);if(!p)return;
-  modal((mode==="subtract"?"Subtract":"Add")+" · "+p.name,`<div class="stack"><label>Amount<input id="kmeamount" type="number" min="0" step=".01"></label><label>Type<select id="kmetype">${["Allowance / chore","Gift","Purchase / spending","Savings","Adjustment","Other"].map(v=>`<option>${v}</option>`).join("")}</select></label><label>Status<select id="kmestatus"><option value="pending">Pending / not funded yet</option><option value="funded">Funded / reflected in actual money</option><option value="ledger">Ledger only</option></select></label><label>Date<input id="kmedate" type="date" value="${ymd()}"></label><label>Notes<textarea id="kmenotes" rows="2"></textarea></label></div>`,"Save",async()=>{
+  modal((mode==="subtract"?"Subtract":"Add")+" · "+p.name,`<div class="stack"><label>Amount<input id="kmeamount" type="number" min="0" step=".01"></label><label>Type<select id="kmetype">${["Allowance / chore","Gift","Purchase / spending","Savings","Adjustment","Other"].map(v=>`<option>${v}</option>`).join("")}</select></label><label>Status<select id="kmestatus"><option value="pending">Pending / not reflected in Modak yet</option><option value="funded">Funded / real money movement</option><option value="ledger">Ledger only / what should happen</option></select></label><label>Date<input id="kmedate" type="date" value="${ymd()}"></label><label>Notes<textarea id="kmenotes" rows="2"></textarea></label><div class="muted small">If there is no actual Modak balance entered yet, funded entries still count toward the app ledger. Once you reconcile a real balance, funded entries are treated as already reflected in that real balance.</div></div>`,"Save",async()=>{
     let amount=Math.abs(Number($("#kmeamount").value||0));if(!amount)return;if(mode==="subtract")amount=-amount;const status=$("#kmestatus").value;
     state.kidsMoneyTransactions.push({id:uid(),personId,amount,label:$("#kmetype").value,type:mode,status,date:$("#kmedate").value||ymd(),notes:$("#kmenotes").value.trim(),createdAt:new Date().toISOString()});
     const a=kidsMoneyAccount(personId);a.pendingToFund=0;
-    if(status==="funded"&&a.actualBalance!==null&&a.actualBalance!==""){a.actualBalance=Number(a.actualBalance||0)+amount;a.actualAsOf=$("#kmedate").value||ymd()}
+    if(status==="funded"&&kidsMoneyHasActual(a)){a.actualBalance=Number(a.actualBalance||0)+amount;a.actualAsOf=$("#kmedate").value||ymd()}
     await save();closeModal();openKidsMoney(personId);
   });
 }
 async function fundKidsMoneyTransaction(id){
   const x=(state.kidsMoneyTransactions||[]).find(v=>v.id===id);if(!x||String(x.status||"")!=="pending")return;
   const p=personById(x.personId),a=kidsMoneyAccount(x.personId);
-  if(!confirm(`Mark ${money(Math.abs(Number(x.amount||0)))} for ${p?.name||"this child"} as actually funded?`))return;
+  if(!confirm(`Mark ${money(Math.abs(Number(x.amount||0)))} for ${p?.name||"this child"} as actually reflected in Modak?`))return;
   x.status="funded";x.fundedAt=new Date().toISOString();
-  if(a.actualBalance!==null&&a.actualBalance!==""){a.actualBalance=Number(a.actualBalance||0)+Number(x.amount||0);a.actualAsOf=ymd()}
+  if(kidsMoneyHasActual(a)){a.actualBalance=Number(a.actualBalance||0)+Number(x.amount||0);a.actualAsOf=ymd()}
   a.pendingToFund=0;
   await save();closeModal();openKidsMoney(x.personId);
 }
+async function removeKidsMoneyTransaction(id){
+  const x=(state.kidsMoneyTransactions||[]).find(v=>v.id===id);if(!x||!["pending","ledger"].includes(String(x.status||"")))return;
+  if(!confirm("Remove this app-side money entry? No Modak transfer will be changed."))return;
+  const personId=x.personId;state.kidsMoneyTransactions=(state.kidsMoneyTransactions||[]).filter(v=>v.id!==id);await save();closeModal();openKidsMoney(personId);
+}
+
 function schoolContactsCard(){
   const kids=childProfiles(),withSchool=kids.filter(p=>p.school||p.grade||(p.schoolContacts||[]).length);
   return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School contacts</div><h2>Teachers + support staff</h2><div class="muted small">School, grade, teachers, specialists, and support contacts live on each child's private People profile.</div></div></div>${withSchool.length?withSchool.map(p=>{
