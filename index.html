@@ -1180,6 +1180,7 @@ function openPetRecord(id=""){
 function petRoutineById(id){return (state.petCareRoutines||[]).find(x=>x.id===id)}
 function petRoutineDueState(r){
   if(r.active===false)return{due:false,label:"Paused",days:null};
+  const linkedPet=r.petId?petById(r.petId):null;if(linkedPet?.status==="Archived")return{due:false,label:"Pet archived",days:null};
   const today=ymd(),date=String(r.nextDate||"");
   if(!date)return{due:false,label:r.lastDone?"Last done "+dl(r.lastDone):"No next date",days:null};
   const days=Math.ceil((new Date(date+"T12:00:00")-new Date(today+"T12:00:00"))/86400000);
@@ -1189,7 +1190,7 @@ function petRoutineDueState(r){
 }
 function duePetRoutines(){return (state.petCareRoutines||[]).filter(r=>petRoutineDueState(r).due).sort((a,b)=>String(a.nextDate||"").localeCompare(String(b.nextDate||"")))}
 function petRoutinesCard(){
-  const rows=[...(state.petCareRoutines||[])].filter(r=>r.active!==false).sort((a,b)=>String(a.nextDate||"9999").localeCompare(String(b.nextDate||"9999")));
+  const rows=[...(state.petCareRoutines||[])].filter(r=>r.active!==false&&(!r.petId||petById(r.petId)?.status!=="Archived")).sort((a,b)=>String(a.nextDate||"9999").localeCompare(String(b.nextDate||"9999")));
   let body="";
   for(const r of rows){
     const p=petById(r.petId),s=petRoutineDueState(r);
@@ -1364,6 +1365,7 @@ function gardenHarvestCard(){
 function plantRoutineById(id){return (state.plantCareRoutines||[]).find(x=>x.id===id)}
 function plantRoutineDueState(r){
   if(r.active===false)return{due:false,label:"Paused",days:null};
+  const linkedPlant=r.plantId?plantById(r.plantId):null;if(["Finished","Dormant"].includes(linkedPlant?.status))return{due:false,label:linkedPlant.status,days:null};
   const today=ymd(),date=String(r.nextDate||"");
   if(!date)return{due:false,label:r.lastDone?"Last done "+dl(r.lastDone):"No next date",days:null};
   const days=Math.ceil((new Date(date+"T12:00:00")-new Date(today+"T12:00:00"))/86400000);
@@ -1373,7 +1375,7 @@ function plantRoutineDueState(r){
 }
 function duePlantRoutines(){return (state.plantCareRoutines||[]).filter(r=>plantRoutineDueState(r).due).sort((a,b)=>String(a.nextDate||"").localeCompare(String(b.nextDate||"")))}
 function plantRoutinesCard(){
-  const rows=[...(state.plantCareRoutines||[])].filter(r=>r.active!==false).sort((a,b)=>String(a.nextDate||"9999").localeCompare(String(b.nextDate||"9999")));
+  const rows=[...(state.plantCareRoutines||[])].filter(r=>r.active!==false&&(!r.plantId||!["Finished","Dormant"].includes(plantById(r.plantId)?.status))).sort((a,b)=>String(a.nextDate||"9999").localeCompare(String(b.nextDate||"9999")));
   let body="";
   for(const r of rows){
     const p=plantById(r.plantId),s=plantRoutineDueState(r);
@@ -1397,12 +1399,13 @@ async function completePlantRoutine(id){
   await save();render();
 }
 function gardenView(){
-  const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),
+  const plants=(state.plants||[]).filter(p=>p.status!=="Finished"),finished=(state.plants||[]).filter(p=>p.status==="Finished"),due=plants.filter(p=>plantCareState(p).due),
         tasks=(state.gardenTasks||[]).filter(t=>!t.done);
   const plantBody=`${gardenSeasonCard()}
     ${plantRoutinesCard()}
     ${due.length?`<div class="card garden-due"><div class="section-title"><div><div class="eyebrow">Needs attention</div><h2>Water / check</h2></div>${due.length>1?'<button class="btn primary" onclick="waterAllDuePlants()">Water all</button>':""}</div>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
     <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
+    ${finished.length?`<details class="card finished-plants"><summary>${finished.length} finished plant${finished.length===1?"":"s"} · history kept</summary>${finished.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(p.type||"Plant")}${p.location?" · "+esc(p.location):""}</div></span><button class="btn small" onclick="openPlant('${p.id}')">Open</button></div>`).join("")}</details>`:""}
     ${livingSuppliesCard("garden")}`;
   const seedBody=`${seedInventoryCard()}${livingSuppliesCard("garden")}`;
   const journalBody=`${gardenHarvestCard()}${gardenJournalCard()}${gardenTasksCard()}${gardenHistoryCard()}`;
