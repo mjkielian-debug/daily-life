@@ -4,7 +4,7 @@
 */
 const VAULT_DB_KEY="secure-vault-v1";
 const VAULT_ITERATIONS=310000;
-let vaultEnvelope=null,vaultData=null,vaultKey=null,vaultWarmKey=null,vaultWarmUntil=0,vaultUnlocked=false,vaultLockTimer=null;
+let vaultEnvelope=null,vaultData=null,vaultKey=null,vaultWarmKey=null,vaultWarmUntil=0,vaultUnlocked=false,vaultLockTimer=null,vaultCloudUpdatedAt="";
 
 function vaultBytesToB64(bytes){
   let out="",chunk=0x8000;
@@ -98,31 +98,58 @@ function vaultOwnerNames(){
   return [...new Set(out.filter(Boolean))];
 }
 function vaultCloudSignedIn(){return typeof cloudUser==="function"&&!!cloudUser()&&typeof cloudClient!=="undefined"&&!!cloudClient}
+async function vaultRefreshCloudMetadata(){
+  if(!vaultCloudSignedIn()){vaultCloudUpdatedAt="";return""}
+  try{
+    const user=cloudUser(),{data,error}=await cloudClient.from("vault_backups").select("updated_at").eq("owner_user_id",user.id).maybeSingle();
+    if(error)throw error;
+    vaultCloudUpdatedAt=String(data?.updated_at||"");
+    return vaultCloudUpdatedAt;
+  }catch{vaultCloudUpdatedAt="";return""}
+}
+function vaultCloudTimeLabel(){
+  return vaultCloudUpdatedAt?new Date(vaultCloudUpdatedAt).toLocaleString():"No encrypted cloud backup yet";
+}
 function vaultEnvelopeValid(x){return x?.format==="daily-life-encrypted-vault"&&!!x?.salt&&!!x?.iv&&!!x?.ciphertext}
 async function vaultUploadCloudBackup(){
   const user=typeof cloudUser==="function"?cloudUser():null;if(!user||!cloudClient){alert("Sign in to Daily Life cloud first.");return}
   if(!vaultEnvelope){alert("Create or import a vault first.");return}
   const bytes=JSON.stringify(vaultEnvelope).length;
   if(bytes>12*1024*1024){alert("This encrypted vault backup is too large for the built-in cloud backup. Export the encrypted backup file instead.");return}
-  if(!confirm("Upload the encrypted vault backup to your private Daily Life cloud account? The server receives ciphertext only; your vault passcode is not uploaded."))return;
   try{
-    const {error}=await cloudClient.from("vault_backups").upsert({owner_user_id:user.id,envelope:vaultEnvelope,updated_at:new Date().toISOString()},{onConflict:"owner_user_id"});
+    const {data:remote,error:readError}=await cloudClient.from("vault_backups").select("updated_at").eq("owner_user_id",user.id).maybeSingle();
+    if(readError)throw readError;
+    const remoteTime=remote?.updated_at?new Date(remote.updated_at).getTime():0,localTime=vaultEnvelope?.updatedAt?new Date(vaultEnvelope.updatedAt).getTime():0;
+    if(remoteTime&&localTime&&remoteTime>localTime+2000){
+      if(!confirm("The encrypted cloud Vault backup is newer than the Vault on this device. Overwriting it could discard newer encrypted records. Continue anyway?"))return;
+    }else if(!confirm("Upload the encrypted Vault backup to your private Daily Life cloud account? The server receives ciphertext only; your Vault passcode is not uploaded."))return;
+    const now=new Date().toISOString();
+    const {error}=await cloudClient.from("vault_backups").upsert({owner_user_id:user.id,envelope:vaultEnvelope,updated_at:now},{onConflict:"owner_user_id"});
     if(error)throw error;
-    alert("Encrypted vault cloud backup saved.");
-  }catch(error){alert("Could not save the encrypted vault cloud backup: "+(error?.message||"Unknown error"))}
+    vaultCloudUpdatedAt=now;
+    if(typeof render==="function")render();
+    alert("Encrypted Vault cloud backup saved.");
+  }catch(error){alert("Could not save the encrypted Vault cloud backup: "+(error?.message||"Unknown error"))}
 }
 async function vaultRestoreCloudBackup(){
   const user=typeof cloudUser==="function"?cloudUser():null;if(!user||!cloudClient){alert("Sign in to Daily Life cloud first.");return}
   try{
     const {data,error}=await cloudClient.from("vault_backups").select("envelope,updated_at").eq("owner_user_id",user.id).maybeSingle();
     if(error)throw error;
-    if(!data?.envelope){alert("No encrypted vault cloud backup exists for this account yet.");return}
-    if(!vaultEnvelopeValid(data.envelope)){alert("The stored encrypted vault backup is invalid.");return}
-    if(vaultEnvelope&&!confirm("Replace the encrypted vault currently stored on this device with the private cloud backup?"))return;
+    if(!data?.envelope){vaultCloudUpdatedAt="";alert("No encrypted Vault cloud backup exists for this account yet.");return}
+    if(!vaultEnvelopeValid(data.envelope)){alert("The stored encrypted Vault backup is invalid.");return}
+    vaultCloudUpdatedAt=String(data.updated_at||"");
+    const remoteTime=data.updated_at?new Date(data.updated_at).getTime():0,localTime=vaultEnvelope?.updatedAt?new Date(vaultEnvelope.updatedAt).getTime():0;
+    if(vaultEnvelope){
+      const message=localTime&&remoteTime&&localTime>remoteTime+2000
+        ?"The local Vault is newer than the encrypted cloud backup. Restoring the cloud copy could discard newer local encrypted records. Replace the local Vault anyway?"
+        :"Replace the encrypted Vault currently stored on this device with the private cloud backup?";
+      if(!confirm(message))return;
+    }
     await dbSet(VAULT_DB_KEY,data.envelope);vaultEnvelope=data.envelope;vaultData=null;vaultKey=null;vaultWarmKey=null;vaultWarmUntil=0;vaultUnlocked=false;
     if(typeof render==="function")render();
-    alert("Encrypted vault cloud backup restored. Unlock it with the vault passcode.");
-  }catch(error){alert("Could not restore the encrypted vault cloud backup: "+(error?.message||"Unknown error"))}
+    alert("Encrypted Vault cloud backup restored. Unlock it with the Vault passcode.");
+  }catch(error){alert("Could not restore the encrypted Vault cloud backup: "+(error?.message||"Unknown error"))}
 }
 
 function vaultTypeLabel(type){
