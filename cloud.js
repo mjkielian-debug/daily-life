@@ -574,7 +574,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -621,6 +621,20 @@ function cloudApplyLifeEntry(row){
       }
       if(!key)return false;
       state.selfCareActivities.push({...common,key,time:String(p.time||""),notes:String(p.notes||""),source:"chatgpt"});
+      return true;
+    }
+    case "spirituality_journal":{
+      if(!Array.isArray(state.spiritualityJournal))state.spiritualityJournal=[];
+      const note=String(p.note||p.notes||p.text||"").trim();if(!note)return false;
+      state.spiritualityJournal.push({...common,type:String(p.type||"Reflection"),note,createdAt:String(row.created_at||new Date().toISOString()),source:"chatgpt"});
+      return true;
+    }
+    case "spirituality_practice":{
+      if(!Array.isArray(state.spiritualityPracticeLogs))state.spiritualityPracticeLogs=[];
+      let x=state.spiritualityPracticeLogs.find(x=>x.date===date);
+      if(!x){x={...common,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(x)}
+      for(const key of ["reading","tarot","stillness","ritual"])if(p[key]!==undefined)x[key]=!!p[key];
+      x.cloudEntryId=row.id;
       return true;
     }
     case "food":{
