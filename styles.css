@@ -606,3 +606,20 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 }
 .self-care-supplies .section-title{margin:0 0 5px}
 .finished-plants summary{cursor:pointer;font-weight:800;color:color-mix(in srgb,var(--text) 90%,var(--primary) 10%)}
+
+/* School contacts + Kids Money */
+.school-contacts-card{border-color:color-mix(in srgb,var(--primary) 24%,var(--border))}
+.school-contact-child{border-top:1px solid var(--border);padding:9px 0}
+.school-contact-child summary{cursor:pointer;font-weight:800}
+.school-contact-row{align-items:flex-start}
+.school-contact-row .btn{overflow-wrap:anywhere;max-width:52%}
+.kids-money-card{border-color:color-mix(in srgb,var(--accent) 30%,var(--border))}
+.kids-money-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.kid-money-tile{display:flex;justify-content:space-between;gap:12px;text-align:left;border:1px solid var(--border);border-radius:16px;padding:11px;background:rgba(255,255,255,.025);color:var(--text)}
+.kid-money-tile span{display:grid;gap:2px;min-width:0}.kid-money-tile span:last-child{text-align:right}
+.kid-money-tile small{color:var(--muted);font-size:.68rem}.pending-money{color:var(--accent)!important}
+.kids-money-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kids-money-summary span{display:grid;gap:2px;padding:10px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025)}
+.kids-money-summary b{font-family:Georgia,serif;font-size:1.05rem}
+.kids-money-summary small{color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.06em}
+@media(max-width:520px){.kids-money-grid{grid-template-columns:1fr}.kids-money-summary{grid-template-columns:1fr}.school-contact-row .btn{max-width:100%}}
