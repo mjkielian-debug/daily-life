@@ -1053,7 +1053,7 @@ function petsView(){
   ${petCareSummaryCard()}
   <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button></div>
     <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}</div>
-    <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openPetLog('','Supplies')">Supplies</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
+    <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openLivingSupply('pet')">Add supply</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
   </div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>
   ${logs.slice(0,15).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
@@ -1094,9 +1094,9 @@ function plantCard(p){
 function gardenView(){
   const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999"))),
         logs=[...(state.plantLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
-  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, watering, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
+  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, watering, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="openLivingSupply('garden')">+ Supply</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
     <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div></div>
-  ${due.length?`<div class="card garden-due"><div class="eyebrow">Needs attention</div><h2>Water / check</h2>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
+  ${due.length?`<div class="card garden-due"><div class="section-title"><div><div class="eyebrow">Needs attention</div><h2>Water / check</h2></div>${due.length>1?'<button class="btn primary" onclick="waterAllDuePlants()">Water all</button>':""}</div>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
   <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">Garden tasks</div><h2>Projects + seasonal jobs</h2></div><button class="btn" onclick="openGardenTask()">+ Task</button></div>${tasks.map(t=>`<label class="row task"><input type="checkbox" onchange="toggleGardenTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.due?esc(dl(t.due)):"No due date"}${t.area?" · "+esc(t.area):""}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")||"<div class='notice'>No open garden tasks.</div>"}</div>
   <div class="card"><div class="eyebrow">Plant history</div><h2>Recent care</h2>${logs.slice(0,15).map(x=>{const p=plantById(x.plantId);return`<div class="row"><span><b>${esc(x.type)}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span></div>`}).join("")||"<div class='notice'>No plant care logged yet.</div>"}</div>`;
@@ -1124,6 +1124,21 @@ function openGardenTask(id=""){
   });
 }
 async function toggleGardenTask(id,done){const t=(state.gardenTasks||[]).find(x=>x.id===id);if(t)t.done=done;await save();render()}
+async function waterAllDuePlants(){
+  const due=(state.plants||[]).filter(p=>plantCareState(p).due);
+  if(!due.length)return;
+  const date=ymd();
+  for(const p of due)state.plantLogs.push({id:uid(),plantId:p.id,type:"Watered",date,notes:"Water all due plants"});
+  await save();render();
+}
+function openLivingSupply(kind="pet"){
+  const title=kind==="garden"?"Add garden supply":"Add pet supply";
+  modal(title,`<div class="stack"><label>Item<input id="lsitem" placeholder="${kind==="garden"?"Potting soil, seeds, fertilizer…":"Cat food, litter, treats…"}"></label><div class="grid2"><label>Quantity<input id="lsqty"></label><label>Store<input id="lsstore"></label></div></div>`,"Add to shopping list",async()=>{
+    const item=$("#lsitem").value.trim();if(!item)return;
+    state.shopping.push({id:uid(),item,qty:$("#lsqty").value.trim(),store:$("#lsstore").value.trim(),status:"needed",source:kind});
+    await save();closeModal();render();
+  });
+}
 function livingThingsLaunchCard(){
   const pets=(state.pets||[]).length,plants=(state.plants||[]).length,due=(state.plants||[]).filter(p=>plantCareState(p).due).length;
   return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due?due+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
