@@ -1201,7 +1201,7 @@ function birthdayGiftBoard(){
     ${purchased.length?`<details class="gift-purchased"><summary>Purchased / wrapped · ${purchased.length}</summary>${purchased.slice(0,20).map(giftRow).join("")}</details>`:""}
   </div>`;
 }
-function setPeopleFilterfunction setPeopleFilter(value){
+function setPeopleFilter(value){
   peopleFilter=value||"all";localStorage.setItem("dailyLifePeopleFilter",peopleFilter);render();
 }
 function setPeopleSearch(value){
