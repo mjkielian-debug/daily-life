@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11221a">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
+<link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2225">
+<link rel="stylesheet" href="styles.css?v=20261002-0845">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1314,6 +1314,29 @@ function incomePatternCard(){
         avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length,avgGross=rows.reduce((n,p)=>n+Number(p.grossPay||0),0)/rows.length,avgHours=rows.reduce((n,p)=>n+Number(p.totalHours||0),0)/rows.length,mult=30.44/interval,monthly=avgNet*mult;
   return `<div class="card"><div class="eyebrow">Income pattern</div><h2>${money(avgNet)} average recent net</h2><div class="grid3"><div class="metric"><div class="muted small">Pay cadence</div><div class="big">~${interval}d</div></div><div class="metric"><div class="muted small">Avg gross</div><div class="big">${money(avgGross)}</div></div><div class="metric"><div class="muted small">Avg hours</div><div class="big">${avgHours.toFixed(1)}</div></div></div><div class="row"><span>Approx. monthly net at recent cadence</span><b>${money(monthly)}</b></div><p class="muted small">Pattern estimate from the most recent ${rows.length} imported paychecks. It is not a prediction or guarantee of future hours or income.</p></div>`;
 }
+function moneyNextStepsCard(){
+  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)).slice(0,12),actions=[];
+  for(const r of rows){
+    const b=r.bill,due=dl(b.due);
+    if(r.status==="Transfer needed"){
+      actions.push({kind:"transfer",title:transferInstruction(r),detail:`${b.name} · due ${due}`,index:r.index});
+    }else if(r.status==="Projected short"){
+      const short=Math.max(0,-Number(r.projectedAfter||0))/100;
+      actions.push({kind:"short",title:`Still short ${money(short)} for ${b.name}`,detail:`Projected shortage by ${due} after earlier bills and expected income.`,index:r.index});
+    }else if(r.status==="Needs account"){
+      actions.push({kind:"setup",title:`Choose a payment account for ${b.name}`,detail:`Due ${due} · Daily Life cannot project this bill until an account is assigned.`,index:r.index});
+    }else if(r.status==="Balance unavailable"){
+      actions.push({kind:"setup",title:`Update the balance used for ${b.name}`,detail:`Due ${due} · readiness needs a checking or savings balance.`,index:r.index});
+    }else if(r.status==="Check bill"){
+      actions.push({kind:"setup",title:`Check ${b.name} amount or due date`,detail:"The bill needs valid details before Daily Life can rely on the projection.",index:r.index});
+    }
+  }
+  const covered=rows.filter(r=>["Covered now","Covered by due date"].includes(r.status)).length;
+  return `<div class="card money-actions-card"><div class="section-title"><div><div class="eyebrow">Next steps</div><h2>${actions.length?actions.length+" money action"+(actions.length===1?"":"s"):"Nothing urgent to move"}</h2></div><span class="tag">${covered} covered</span></div>
+    <div class="muted small">Transfer suggestions reserve the same dollars across later bills, so one account balance is not recommended twice.</div>
+    ${actions.length?actions.slice(0,7).map(a=>`<div class="money-action ${a.kind}" onclick="openBill(${a.index})"><div class="money-action-mark">${a.kind==="transfer"?"↔":a.kind==="short"?"!":"·"}</div><div class="grow"><b>${esc(a.title)}</b><div class="muted small">${esc(a.detail)}</div></div><span class="money-action-chevron">›</span></div>`).join(""):`<div class="money-all-clear">✦ Current upcoming bills do not need a transfer or setup fix based on the information entered.</div>`}
+  </div>`;
+}
 function moreView(){
   const checking=state.accounts.filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         savings=state.accounts.filter(x=>x.type==="savings").reduce((sum,x)=>sum+Number(x.balance||0),0),
@@ -1321,6 +1344,7 @@ function moreView(){
         debt=state.accounts.filter(x=>x.type==="credit").reduce((sum,x)=>sum+Number(x.balance||0),0),
         ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0);
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
+  ${moneyNextStepsCard()}
   ${safeToSpendCard()}
   ${dueDateOutlookCard()}
   ${incomePatternCard()}
