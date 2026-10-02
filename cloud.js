@@ -156,7 +156,7 @@ async function cloudPullPetProfiles(){
       const before=JSON.stringify(p);
       p.cloudPetId=row.id;p.name=name;p.species=String(row.species||meta.species||"pet");
       if(row.birthday)p.birthday=row.birthday;else if(!p.birthday&&meta.birthdayText)p.birthday=String(meta.birthdayText);
-      for(const key of ["diet","vet","medications","microchip","lifestyle","personality","favorites","notes"])if(meta[key]!==undefined)p[key]=String(meta[key]||"");
+      for(const key of ["diet","vet","medications","microchip","lifestyle","personality","favorites","status","notes"])if(meta[key]!==undefined)p[key]=String(meta[key]||"");
       if(meta.householdCare&&typeof meta.householdCare==="object"&&!(state.settings?.petCare?.configured)){
         state.settings=state.settings||{};
         state.settings.petCare={
@@ -204,6 +204,7 @@ async function cloudUpsertPetProfile(p){
       lifestyle:String(p.lifestyle||""),
       personality:String(p.personality||""),
       favorites:String(p.favorites||""),
+      status:String(p.status||"Active"),
       notes:String(p.notes||"")
     },
     updated_at:new Date().toISOString()
@@ -644,6 +645,7 @@ function cloudApplyLifeEntry(row){
         microchip:String(p.microchip||x.microchip||""),
         personality:String(p.personality||x.personality||""),
         favorites:String(p.favorites||x.favorites||""),
+        status:String(p.status||x.status||"Active"),
         notes:String(p.notes||x.notes||""),
         cloudEntryId:row.id
       });
