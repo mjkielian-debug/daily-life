@@ -1268,9 +1268,19 @@ function livingThingsLaunchCard(){
   return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due?due+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
 }
 function todayLivingThingsCard(){
-  const plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[],nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=ymd()).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0];
-  if(!pets.length&&!state.plants?.length)return"";
-  return `<div class="card today-living"><div class="section-title"><div><div class="eyebrow">Pets + plants</div><h2>Living things</h2></div><div class="actions">${pets.length?'<button class="btn" onclick="setView(\'pets\')">Pets</button>':""}${state.plants?.length?'<button class="btn" onclick="setView(\'garden\')">Plants</button>':""}</div></div>${plantsDue.length?`<div class="row"><span>Plants needing water/check</span><b>${plantsDue.length}</b></div>`:""}${pets.length?`<div class="row"><span>Pet profiles</span><b>${pets.length}</b></div>`:""}${nextPetCare?`<div class="row"><span>Next planned pet care</span><b>${esc(dl(nextPetCare.nextDate))}</b></div>`:""}${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
+  const plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=state.pets||[],
+        nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=ymd()).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0],
+        planting=[];
+  for(const x of state.gardenSeeds||[]){
+    for(const [kind,date] of [["Start indoors",x.startIndoorsDate],["Direct sow",x.directSowDate],["Transplant",x.transplantDate]])if(date&&date>=ymd())planting.push({x,kind,date});
+  }
+  planting.sort((a,b)=>String(a.date).localeCompare(String(b.date)));const nextPlanting=planting[0],petForCare=nextPetCare?petById(nextPetCare.petId):null;
+  if(!pets.length&&!state.plants?.length&&!(state.gardenSeeds||[]).length)return"";
+  return `<div class="card today-living"><div class="section-title"><div><div class="eyebrow">Pets + plants</div><h2>Living things</h2></div><div class="actions">${pets.length?'<button class="btn" onclick="setView(\'pets\')">Pets</button>':""}${(state.plants?.length||state.gardenSeeds?.length)?'<button class="btn" onclick="setView(\'garden\')">Garden</button>':""}</div></div>
+    ${plantsDue.length?`<div class="row"><span>Plants needing water/check</span><b>${plantsDue.length}</b></div>`:""}
+    ${nextPetCare?`<div class="row"><span><b>Next pet care</b><div class="muted small">${petForCare?esc(petForCare.name)+" · ":""}${esc(nextPetCare.type)}</div></span><b>${esc(dl(nextPetCare.nextDate))}</b></div>`:""}
+    ${nextPlanting?`<div class="row"><span><b>Next planting step</b><div class="muted small">${esc(nextPlanting.x.name)} · ${esc(nextPlanting.kind)}</div></span><b>${esc(dl(nextPlanting.date))}</b></div>`:""}
+    ${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
 }
 function logView(f,w,tr){
   return `<div class="card glow life-intro"><div class="eyebrow">✧ Care + Life</div><h2>Take care of yourself, then keep life moving</h2><div class="muted small">Self care comes first here; work, car, home, and longer-term patterns stay underneath it.</div></div>
