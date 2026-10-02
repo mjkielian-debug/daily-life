@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people3">
+<link rel="stylesheet" href="styles.css?v=20261002-people4">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-people3"></script>
+<script src="cloud.js?v=20261002-people4"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -119,7 +119,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today";
+let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
   ["Emerald Blush","#69c58e","#e8b8c7","#e7d3a0"],
@@ -1139,7 +1139,7 @@ function openPersonHub(id){
   const colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],foods=p.favoriteFoods||[],ints=p.interests||[],checkin=p.recurringCheckin||{};
   const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   modal(p.name,`<div class="stack person-hub">
-    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openPersonPlan('${p.id}')">+ Plan</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
     ${p.elfsterUrl?`<div class="elfster-sync-line">Elfster linked${p.elfsterLastSyncedAt?` · last update ${new Date(p.elfsterLastSyncedAt).toLocaleString()}`:" · waiting for first sync"}</div>`:""}
     <div class="person-hub-context"><span class="tag">${esc(relationshipLabel(p))}</span><span class="tag">${livesWithUser(p)?"household":"extended family / other"}</span>${p.relatedTo?`<span class="muted small">${esc(p.relatedTo)}</span>`:""}</div>
     ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
@@ -1204,14 +1204,14 @@ function openPersonProfile(id=""){
     <div class="grid2"><label>Clothing size<input id="pclothes" value="${esc(p.sizes?.clothing||"")}"></label><label>Shoe size<input id="pshoes" value="${esc(p.sizes?.shoes||"")}"></label></div>
     <label>Gift / size notes<textarea id="pnotes" rows="3" placeholder="Clothing sizes, things they collect, gift notes…">${esc(p.giftNotes||"")}</textarea></label>
     <label>Important dates<textarea id="pdates" rows="2" placeholder="Anniversary | 2026-05-10&#10;Tradition | 12-24">${esc((p.importantDates||[]).map(x=>`${x.label||x.title||""} | ${x.date||""}`).join("\n"))}</textarea></label>
-    <label>Plans / things to remember<textarea id="pplans" rows="2" placeholder="One plan per line">${esc((p.sharedPlans||[]).map(x=>typeof x==="string"?x:x.title||"").join("\n"))}</textarea></label>
+    <label>Plans / things to remember<textarea id="pplans" rows="3" placeholder="Dinner together | 2026-10-18&#10;Call about holiday plans">${esc((p.sharedPlans||[]).map(x=>typeof x==="string"?x:[x.title||"Plan",x.date||""].filter(Boolean).join(" | ")).join("\n"))}</textarea></label>
     <label>Routine / preference notes<textarea id="proutine" rows="2" placeholder="Morning shower preference, pickup notes, routines…">${esc(p.routineNotes||"")}</textarea></label>
     <div class="relationship-settings"><div class="mini-heading">Recurring check-in (optional)</div><label class="task"><input id="pcheckenabled" type="checkbox" ${p.recurringCheckin?.enabled?"checked":""}><span>Use a recurring check-in for this person</span></label><div class="grid3"><label>Weekday<select id="pcheckday">${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<option value="${i}" ${Number(p.recurringCheckin?.weekday)===i?"selected":""}>${d}</option>`).join("")}</select></label><label>Time<input id="pchecktime" type="time" value="${esc(p.recurringCheckin?.startTime||"")}"></label><label>Minutes<input id="pcheckmins" type="number" min="15" step="5" value="${p.recurringCheckin?.durationMinutes||30}"></label></div></div>
   </div>`,"Save",async()=>{
     const name=$("#pname").value.trim();if(!name)return;let x=personById(id);
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
-    const sharedPlans=$("#pplans").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
     Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
@@ -1283,6 +1283,48 @@ function openBirthdayPlanner(personId){
 }
 async function toggleBirthdayPlanTask(personId,index,done){const p=personById(personId);if(!p?.birthdayPlan?.tasks?.[index])return;p.birthdayPlan.tasks[index].done=done;await save();render()}
 
+function setPeopleTab(tab){
+  if(!["people","birthdays","household"].includes(tab))tab="people";
+  peopleTab=tab;localStorage.setItem("dailyLifePeopleTab",tab);render();
+}
+function peopleTabs(){
+  return `<div class="people-tabs" role="tablist" aria-label="People sections">
+    <button class="${peopleTab==="people"?"active":""}" onclick="setPeopleTab('people')">People</button>
+    <button class="${peopleTab==="birthdays"?"active":""}" onclick="setPeopleTab('birthdays')">Birthdays + gifts</button>
+    <button class="${peopleTab==="household"?"active":""}" onclick="setPeopleTab('household')">Household</button>
+  </div>`;
+}
+function peopleAgendaItems(){
+  const profileByName=new Map((state.peopleProfiles||[]).map(p=>[String(p.name||"").trim().toLowerCase(),p])),rows=[];
+  for(const e of state.events||[]){
+    if(!e.date||e.date<ymd()||e.status==="cancelled")continue;
+    const p=profileByName.get(String(e.child||"").trim().toLowerCase());if(!p)continue;
+    rows.push({kind:"event",person:p,date:e.date,title:e.title||"Event",time:e.startTime||"",location:e.location||"",id:e.id});
+  }
+  for(const p of state.peopleProfiles||[])for(const plan of p.sharedPlans||[]){
+    if(!plan||typeof plan==="string"||!plan.date||plan.date<ymd())continue;
+    rows.push({kind:"plan",person:p,date:plan.date,title:plan.title||"Plan",time:plan.time||"",location:plan.location||"",id:plan.id||""});
+  }
+  return rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+}
+function peopleAgendaCard(){
+  const rows=peopleAgendaItems().slice(0,10);
+  return `<div class="card people-agenda"><div class="section-title"><div><div class="eyebrow">Coming up together</div><h2>Plans + visits</h2><div class="muted small">Anything tied to a person can live here—dinner, visits, parties, outings, appointments, or things you want to remember.</div></div></div>
+  ${rows.length?rows.map(x=>`<button class="people-agenda-row" onclick="${x.kind==="event"?`openEvent('${x.date}','${x.id}','${esc(x.person.name)}')`:`openPersonPlan('${x.person.id}','${x.id}')`}"><div class="agenda-date"><b>${new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</b><span>${new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})}</span></div><div class="grow"><b>${esc(x.title)}</b><div class="muted small">${esc(x.person.name)}${x.time?" · "+esc(fmtClock(x.time)):""}${x.location?" · "+esc(x.location):""}</div></div><span class="person-open">›</span></button>`).join(""):`<div class="notice">No upcoming people plans captured yet. Open a person and tap <b>+ Plan</b> when something comes up.</div>`}
+  </div>`;
+}
+function openPersonPlan(personId,planId=""){
+  const p=personById(personId);if(!p)return;
+  if(!Array.isArray(p.sharedPlans))p.sharedPlans=[];
+  const existing=p.sharedPlans.find(x=>x&&typeof x==="object"&&x.id===planId);
+  const plan=existing||{id:"",title:"",date:ymd(),time:"",location:"",notes:""};
+  modal(`Plan · ${p.name}`,`<div class="stack"><label>Plan<input id="pptitle" value="${esc(plan.title||"")}" placeholder="Dinner, visit, birthday outing…"></label><div class="grid2"><label>Date<input id="ppdate" type="date" value="${esc(plan.date||ymd())}"></label><label>Time<input id="pptime" type="time" value="${esc(plan.time||"")}"></label></div><label>Location<input id="pploc" value="${esc(plan.location||"")}"></label><label>Notes<textarea id="ppnotes" rows="3">${esc(plan.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const title=$("#pptitle").value.trim(),date=$("#ppdate").value;if(!title)return;
+    let x=existing;if(!x){x={id:uid()};p.sharedPlans.push(x)}
+    Object.assign(x,{title,date,time:$("#pptime").value,location:$("#pploc").value.trim(),notes:$("#ppnotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+  });
+}
 function peopleOverviewCard(){
   const profiles=state.peopleProfiles||[],household=profiles.filter(livesWithUser).length,extended=profiles.filter(p=>!livesWithUser(p)).length,
         upcoming=profiles.map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b&&x.b.days<=45).sort((a,b)=>a.b.days-b.b.days);
@@ -1297,7 +1339,8 @@ function familyRoutinesCard(){
 }
 function familyView(){
   ensurePeopleProfiles();
-  return `${peopleOverviewCard()}${personCards()}${birthdayDashboard()}${birthdayGiftBoard()}${schoolDashboard()}${familyRoutinesCard()}`;
+  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleAgendaCard()}${personCards()}`;
+  return `${peopleTabs()}${body}`;
 }
 function readingView(){
   const ticketRows=monthlyReaderTickets(),todayReads=reads(),totalPages=todayReads.reduce((sum,x)=>sum+Number(x.pages||0),0),
