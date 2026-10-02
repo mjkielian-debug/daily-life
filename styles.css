@@ -353,3 +353,12 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border-color:color-mix(in srgb,var(--secondary) 38%,var(--border));
   background:linear-gradient(135deg,color-mix(in srgb,var(--secondary) 10%,transparent),color-mix(in srgb,var(--accent) 6%,transparent))
 }
+
+.people-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;margin:0 0 12px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.024)}
+.people-tabs button{min-height:39px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:800;padding:8px}
+.people-tabs button.active{color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)}
+.people-agenda{border-color:color-mix(in srgb,var(--primary) 26%,var(--border))}
+.people-agenda-row{width:100%;display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left}
+.agenda-date{width:50px;min-height:50px;border:1px solid var(--border);border-radius:14px;display:grid;place-items:center;align-content:center;background:rgba(255,255,255,.025)}
+.agenda-date b{font-family:Georgia,serif;font-size:.86rem}.agenda-date span{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:460px){.people-tabs{grid-template-columns:1fr}.people-agenda-row{grid-template-columns:50px minmax(0,1fr) auto}}
