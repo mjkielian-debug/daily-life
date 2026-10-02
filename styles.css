@@ -2815,3 +2815,22 @@ body::before{
     gap:5px;
   }
 }
+
+
+/* Vehicle maintenance planner */
+.vehicle-maint-grid>div{
+  display:grid;
+  gap:3px;
+}
+.vehicle-maint-grid>div>small{
+  color:var(--muted);
+  font-size:.62rem;
+  line-height:1.35;
+}
+.vehicle-maint-grid>div.maintenance-due{
+  border-color:color-mix(in srgb,var(--secondary) 56%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 8%,transparent),rgba(255,255,255,.018));
+}
+.vehicle-maint-grid>div.maintenance-due>b{
+  color:color-mix(in srgb,var(--secondary) 82%,white 18%);
+}
