@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people1">
+<link rel="stylesheet" href="styles.css?v=20261002-people2">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-people1"></script>
+<script src="cloud.js?v=20261002-people2"></script>
 <script src="finance-cloud.js?v=20261001-7"></script>
 <script>
 
@@ -1133,12 +1133,13 @@ function openRelationshipCheckin(personId,id=""){
   modal(`Check-in · ${p.name}`,`<div class="stack"><label>Date<input id="rcdate" type="date" value="${esc(x.date||ymd())}"></label><label>Overall summary<textarea id="rcsummary" rows="2" placeholder="How did the check-in feel?">${esc(x.summary||"")}</textarea></label><label>What went well<textarea id="rcwell" rows="2">${esc(x.wentWell||"")}</textarea></label><label>What needs attention<textarea id="rcattention" rows="2">${esc(x.needsAttention||"")}</textarea></label><label>Agreements / concrete actions<textarea id="rcagreements" rows="3">${esc(x.agreements||"")}</textarea></label><label>Next step<input id="rcnext" value="${esc(x.nextStep||"")}"></label></div>`,"Save",async()=>{let r=(state.relationshipCheckins||[]).find(x=>x.id===id);if(!r){r={id:uid(),personName:p.name};state.relationshipCheckins.push(r)}Object.assign(r,{personName:p.name,date:$("#rcdate").value||ymd(),summary:$("#rcsummary").value.trim(),wentWell:$("#rcwell").value.trim(),needsAttention:$("#rcattention").value.trim(),agreements:$("#rcagreements").value.trim(),nextStep:$("#rcnext").value.trim(),updatedAt:new Date().toISOString()});await save();closeModal();render()});
 }
 function openPersonHub(id){
-  const p=personById(id);if(!p)return;const child=isChildProfile(p),partner=isPartnerProfile(p),sum=personTodaySummary(p),b=nextBirthdayInfo(p),w=birthdayWishStats(p),personTasks=(state.tasks||[]).filter(t=>!t.done&&String(t.child||"")===String(p.name||"")).sort((a,b)=>a.date.localeCompare(b.date));
+  const p=personById(id);if(!p)return;const child=isChildProfile(p)&&livesWithUser(p),partner=isPartnerProfile(p),sum=personTodaySummary(p),b=nextBirthdayInfo(p),w=birthdayWishStats(p),personTasks=(state.tasks||[]).filter(t=>!t.done&&String(t.child||"")===String(p.name||"")).sort((a,b)=>a.date.localeCompare(b.date));
   const upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,8);
   const colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],foods=p.favoriteFoods||[],ints=p.interests||[],checkin=p.recurringCheckin||{};
   const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   modal(p.name,`<div class="stack person-hub">
-    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button><button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    <div class="person-hub-context"><span class="tag">${esc(relationshipLabel(p))}</span><span class="tag">${livesWithUser(p)?"household":"extended family / other"}</span>${p.relatedTo?`<span class="muted small">${esc(p.relatedTo)}</span>`:""}</div>
     ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
     ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
     ${p.routineNotes?`<div class="notice"><b>Things to remember</b><div class="muted small">${esc(p.routineNotes).replace(/\n/g,"<br>")}</div></div>`:""}
