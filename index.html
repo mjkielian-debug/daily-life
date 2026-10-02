@@ -1530,7 +1530,12 @@ function payrollReconcile(p){
   if(!official)return {logged,official,diff,status:"unknown",rows,needsEnd,incomplete};
   const status=needsEnd.length||incomplete.length?"review":Math.abs(diff)<=0.10?"match":Math.abs(diff)<=0.50?"close":"review";
   return {logged,official,diff,status,rows,needsEnd,incomplete};
+}function payrollReconcileDetail(p){
+  const r=payrollReconcile(p);if(!p?.periodStart||!p?.periodEnd)return"";
+  const issueDates=[...r.needsEnd,...r.incomplete].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i),gap=Math.abs(r.diff);
+  return `<div class="payroll-audit ${r.status}"><div class="row"><span><b>${r.status==="match"?"Daily work log matches official hours":r.status==="close"?"Small hours difference":"Work log needs review"}</b><div class="muted small">Official ${r.official.toFixed(2)} h · daily log ${r.logged.toFixed(2)} h · difference ${r.diff>=0?"+":""}${r.diff.toFixed(2)} h</div></span><span class="tag">${r.status}</span></div>${issueDates.length?`<div class="work-issue-dates"><div class="muted small"><b>Punch-out / end time still needed:</b></div>${issueDates.map(w=>`<button class="btn small" onclick="event.stopPropagation();openWork(\'${w.date}\')">${esc(dl(w.date))} · ${esc(fmtClock(w.start||w.scheduled||""))}</button>`).join("")}</div>`:""}${!issueDates.length&&r.status==="review"&&gap>.10?`<div class="notice">${r.diff>0?"Official payroll contains "+gap.toFixed(2)+" more hours than the completed daily log. Check for a missing shift or incomplete punch times.":"The daily log contains "+gap.toFixed(2)+" more hours than official payroll. Review entered start/end times."}</div>`:""}</div>`;
 }
+
 function upsEmploymentProfile(){
   return (state.employmentProfiles||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
 }
