@@ -1075,9 +1075,10 @@ function petWeightCard(){
   return `<div class="card pet-health-card"><div class="eyebrow">Weight history</div><h2>Recorded weights</h2>${rows.map(({p,weights})=>{const recent=weights.slice(-6),latest=recent[recent.length-1],first=recent[0],change=recent.length>1?Number(latest.value)-Number(first.value):0;return `<div class="pet-weight-block"><div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${recent.length} recent weight log${recent.length===1?"":"s"}</div></span><b>${esc(latest.value)} lb</b></div><div class="pet-weight-strip">${recent.map(x=>`<span><b>${esc(x.value)}</b><small>${esc(dl(x.date))}</small></span>`).join("")}</div>${recent.length>1?`<div class="muted small">Change across these logs: ${change>0?"+":""}${Math.round(change*100)/100} lb</div>`:""}</div>`}).join("")}</div>`;
 }
 function petRecordsCard(){
-  const today=ymd(),records=[...(state.petRecords||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))),
-        upcoming=records.filter(x=>x.nextDate&&x.nextDate>=today).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)));
-  return `<div class="card pet-health-card"><div class="section-title"><div><div class="eyebrow">Health + care records</div><h2>Vet, vaccines + preventive care</h2><div class="muted small">A factual record only. Planned dates stay inside Daily Life and do not create notifications.</div></div><button class="btn primary" onclick="openPetRecord()">+ Record</button></div>
+  const today=ymd(),year=today.slice(0,4),records=[...(state.petRecords||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))),
+        upcoming=records.filter(x=>x.nextDate&&x.nextDate>=today).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate))),
+        ytd=records.filter(x=>String(x.date||"").startsWith(year)).reduce((sum,x)=>sum+Number(x.cost||0),0);
+  return `<div class="card pet-health-card"><div class="section-title"><div><div class="eyebrow">Health + care records</div><h2>Vet, vaccines + preventive care</h2><div class="muted small">A factual record only. Planned dates stay inside Daily Life and do not create notifications.</div></div><button class="btn primary" onclick="openPetRecord()">+ Record</button></div>${ytd>0?`<div class="row"><span>Recorded pet-care costs · ${year}</span><b>${money(ytd)}</b></div>`:""}
   ${upcoming.length?`<div class="pet-upcoming-care"><div class="mini-heading">Planned / next dates</div>${upcoming.slice(0,8).map(x=>{const p=petById(x.petId);return`<button onclick="openPetRecord('${x.id}')"><span><b>${p?esc(p.name)+" · ":""}${esc(x.type)}</b><small>${esc(x.provider||x.notes||"")}</small></span><b>${esc(dl(x.nextDate))}</b></button>`}).join("")}</div>`:""}
   <div class="mini-heading" style="margin-top:10px">Recent records</div>${records.slice(0,12).map(x=>{const p=petById(x.petId);return`<div class="row pet-record-row" onclick="openPetRecord('${x.id}')"><span><b>${p?esc(p.name)+" · ":""}${esc(x.type)}</b><div class="muted small">${esc(dl(x.date))}${x.provider?" · "+esc(x.provider):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.cost?money(x.cost):""}</b></div>`}).join("")||"<div class='notice'>No pet health/care records yet.</div>"}</div>`;
 }
@@ -1097,10 +1098,24 @@ function petHistoryCard(){
   const logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||"")));
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>${logs.slice(0,30).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
 }
+async function copyPetHandoff(){
+  const x=petCareSettings(),pets=(state.pets||[]).map(p=>p.name).filter(Boolean);
+  const lines=[
+    pets.length?"Pets: "+pets.join(", "):"",
+    x.feedingRoutine?"Feeding: "+x.feedingRoutine:"",
+    x.carrierLocation?"Carrier / supplies: "+x.carrierLocation:"",
+    x.emergencyVet?"Emergency vet / contact: "+x.emergencyVet:"",
+    x.sitterNotes?"Handoff notes: "+x.sitterNotes:"",
+    x.notes?"Other care notes: "+x.notes:""
+  ].filter(Boolean);
+  if(!lines.length)return;
+  try{await navigator.clipboard.writeText(lines.join("\n"));alert("Pet-care handoff copied.");}
+  catch(e){modal("Pet-care handoff",`<textarea rows="12" readonly>${esc(lines.join("\n"))}</textarea>`,"Close",closeModal)}
+}
 function petHandoffCard(){
   const x=petCareSettings(),has=x.feedingRoutine||x.carrierLocation||x.emergencyVet||x.sitterNotes;
   if(!has)return"";
-  return `<div class="card pet-handoff-card"><div class="section-title"><div><div class="eyebrow">Care handoff</div><h2>If someone else is helping</h2></div><button class="btn" onclick="openPetCareSettings()">Edit</button></div>${x.feedingRoutine?`<div class="row"><span>Feeding routine</span><b>${esc(x.feedingRoutine)}</b></div>`:""}${x.carrierLocation?`<div class="row"><span>Carrier / supplies</span><b>${esc(x.carrierLocation)}</b></div>`:""}${x.emergencyVet?`<div class="row"><span>Emergency vet / contact</span><b>${esc(x.emergencyVet)}</b></div>`:""}${x.sitterNotes?`<div class="notice">${esc(x.sitterNotes)}</div>`:""}</div>`;
+  return `<div class="card pet-handoff-card"><div class="section-title"><div><div class="eyebrow">Care handoff</div><h2>If someone else is helping</h2></div><div class="actions"><button class="btn" onclick="copyPetHandoff()">Copy</button><button class="btn" onclick="openPetCareSettings()">Edit</button></div></div>${x.feedingRoutine?`<div class="row"><span>Feeding routine</span><b>${esc(x.feedingRoutine)}</b></div>`:""}${x.carrierLocation?`<div class="row"><span>Carrier / supplies</span><b>${esc(x.carrierLocation)}</b></div>`:""}${x.emergencyVet?`<div class="row"><span>Emergency vet / contact</span><b>${esc(x.emergencyVet)}</b></div>`:""}${x.sitterNotes?`<div class="notice">${esc(x.sitterNotes)}</div>`:""}</div>`;
 }
 function petsView(){
   const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
