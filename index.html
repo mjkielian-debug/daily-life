@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1955">
+<link rel="stylesheet" href="styles.css?v=20261001-2015">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -513,7 +513,7 @@ function todayMealCard(){
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>${esc(meal.dish||"Dinner")}</h2><div class="muted small">${meal.method?esc(meal.method)+" · ":""}${meal.serveTime?"Serve "+esc(fmtClock(meal.serveTime)):""}${meal.startBy?" · start by "+esc(fmtClock(meal.startBy)):""}${meal.assigned?" · "+esc(meal.assigned):""}</div></div><button class="btn" onclick="openMeal('${ymd()}')">Edit</button></div>
   ${recipeStatus!=="ready"?`<div class="notice">✨ ${recipeStatus==="waiting"?"Recipe request is waiting for your Daily Life cloud connection.":"Building your recipe, prep steps, and grocery list automatically."}</div>`:""}
   ${prep.length?`<div class="mini-heading">Do ahead</div><div class="priority-list">${prep.map((p,i)=>`<label class="priority-item"><input type="checkbox" ${done.has(i)?"checked":""} onchange="toggleMealPrep('${meal.id}',${i},this.checked)"><span class="grow ${done.has(i)?"done":""}">${esc(p)}</span></label>`).join("")}</div>`:""}
-  ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="priority-list">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="priority-item ingredient-row"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${meal.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${meal.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div>`:""}
+  ${ingredients.length?`<details class="meal-ingredients-collapse"><summary>Ingredients · ${ingredients.length} item${ingredients.length===1?"":"s"}</summary><div class="priority-list">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="priority-item ingredient-row"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${meal.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${meal.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div></details>`:""}
   ${recipeNeedSummary(meal)}
   <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="setMealStatus('${meal.id}','made')">${meal.status==="made"?"✓ Made":"Mark made"}</button><button class="btn" onclick="openMeal('${ymd()}')">Recipe / details</button></div>
   ${meal.status==="made"?mealFeedbackControls(meal):""}
@@ -543,7 +543,8 @@ function todayTimelineItems(){
   if(w?.scheduled)items.push({time:w.scheduled,end:"",sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
   if(w?.start){const confirmed=workEndConfirmed(w),live=liveWorkHours(w);items.push({time:w.start,end:confirmed?w.end:"",sort:w.start,icon:"📦",title:"UPS punch-in",detail:confirmed?`Worked until ${fmtClock(w.end)}`:live>0?`In progress · ${live.toFixed(2)} h so far`:"Work · end time needed"});}
   for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){
-    items.push({time:e.startTime||"",end:e.endTime||"",sort:e.startTime||"99:99",icon:e.type==="birthday"||e.type==="birthday-party"?"🎂":e.type==="relationship"?"💬":e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
+    const displayTime=e.startTime||e.endTime||"",timeLabel=e.startTime?fmtClock(e.startTime):e.endTime?`Ends ${fmtClock(e.endTime)}`:"";
+    items.push({time:displayTime,timeLabel,end:e.endTime||"",sort:displayTime||"99:99",icon:e.type==="birthday"||e.type==="birthday-party"?"🎂":e.type==="relationship"?"💬":e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.startTime&&e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
   }
   const meal=todayMeal();
   if(meal?.dish&&meal.status!=="made"){
@@ -565,7 +566,7 @@ function tonightPrepCard(){
 function todayTimelineCard(){
   const items=todayTimelineItems();
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">⏱ Today’s timeline</div><h2>What happens when</h2></div><button class="btn" onclick="openEvent()">+ Event</button></div>
-    ${items.length?items.map(i=>`<div class="timeline-item" ${i.eventId?`onclick="openEvent('${ymd()}','${i.eventId}')"`:""}><div class="timeline-time">${i.time?esc(fmtClock(i.time)):"Anytime"}</div><div class="timeline-dot">${i.icon}</div><div class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</div></div>`).join(""):`<div class="notice">No timed items yet today.</div>`}</div>`;
+    ${items.length?items.map(i=>`<div class="timeline-item" ${i.eventId?`onclick="openEvent('${ymd()}','${i.eventId}')"`:""}><div class="timeline-time">${i.timeLabel?esc(i.timeLabel):i.time?esc(fmtClock(i.time)):"Anytime"}</div><div class="timeline-dot">${i.icon}</div><div class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</div></div>`).join(""):`<div class="notice">No timed items yet today.</div>`}</div>`;
 }
 function isSchoolEvent(e){
   const source=String(e?.source||"").toLowerCase(),type=String(e?.type||"").toLowerCase();
@@ -1602,7 +1603,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1955").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2015").catch(()=>{});
 
 </script>
 </body>
