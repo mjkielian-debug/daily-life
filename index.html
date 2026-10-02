@@ -476,6 +476,12 @@ function workEndConfirmed(w,now=new Date()){
   const end=clockMinutes(w.end),nowM=now.getHours()*60+now.getMinutes();
   return end!==null&&end<=nowM+5;
 }
+function workNeedsPunchOut(w,now=new Date()){
+  if(!w?.start||w.end)return false;
+  if(w.endedUnknown||String(w.status||"")==="completed-needs-end")return true;
+  const date=String(w.date||""),today=ymd(now);
+  return !!date&&date<today;
+}
 function liveWorkHours(w,now=new Date()){
   if(!w?.start||String(w.date||"")!==ymd(now))return 0;
   const start=clockMinutes(w.start),nowM=now.getHours()*60+now.getMinutes();if(start===null||nowM<start)return 0;
