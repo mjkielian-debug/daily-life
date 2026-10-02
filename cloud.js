@@ -665,7 +665,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","schoolGrades","schoolAssignments","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -1063,6 +1063,29 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.mealFeedback))state.mealFeedback=[];
       if(state.mealFeedback.some(x=>x.cloudEntryId===row.id))return true;
       state.mealFeedback.push({id:uid(),cloudEntryId:row.id,dish,score,label:String(p.label||""),date:String(p.date||date),createdAt:String(row.created_at||new Date().toISOString()),source:"chatgpt"});
+      return true;
+    }
+    case "school_grade":
+    case "school_grade_snapshot":{
+      if(!Array.isArray(state.schoolGrades))state.schoolGrades=[];
+      const childRaw=String(p.child||p.person||p.student||"").trim(),course=String(p.course||p.subject||p.className||"").trim();
+      if(!childRaw||!course)return false;
+      const child=typeof canonicalPersonName==="function"?canonicalPersonName(childRaw):childRaw,
+            asOf=String(p.asOf||p.date||date),percent=p.percent===undefined||p.percent===null||p.percent===""?null:Number(p.percent);
+      let x=state.schoolGrades.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.schoolGrades.push(x)}
+      Object.assign(x,{child,course,grade:String(p.grade||""),percent:Number.isFinite(percent)?percent:null,term:String(p.term||p.period||""),asOf,source:String(p.source||"ChatGPT / ParentVUE snapshot"),notes:String(p.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
+      return true;
+    }
+    case "school_assignment":{
+      if(!Array.isArray(state.schoolAssignments))state.schoolAssignments=[];
+      const childRaw=String(p.child||p.person||p.student||"").trim(),title=String(p.title||p.assignment||"").trim();
+      if(!childRaw||!title)return false;
+      const child=typeof canonicalPersonName==="function"?canonicalPersonName(childRaw):childRaw,
+            due=String(p.due||p.dueDate||""),status=String(p.status||"due").toLowerCase();
+      let x=state.schoolAssignments.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.schoolAssignments.push(x)}
+      Object.assign(x,{child,title,course:String(p.course||p.subject||p.className||""),due,status,source:String(p.source||"ChatGPT / ParentVUE snapshot"),notes:String(p.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
       return true;
     }
     case "school_contact":{
