@@ -209,14 +209,14 @@ function openVaultItem(id=""){
     <div class="warning">This form is visible only while the vault is unlocked. Saving encrypts it again before local storage.</div>
     <label>Type<select id="vtype">${["login","birth","ssn","medical","immunization","insurance","school","other"].map(v=>`<option value="${v}" ${x.type===v?"selected":""}>${esc(vaultTypeLabel(v))}</option>`).join("")}</select></label>
     <label>Title<input id="vtitle" value="${esc(x.title||"")}" placeholder="Example: Leo birth certificate"></label>
-    <label>Owner<input id="vowner" list="vaultOwners" value="${esc(x.owner||"")}" placeholder="You or a child"><datalist id="vaultOwners">${owners.map(v=>`<option value="${esc(v)}">`).join("")}</datalist></label>
+    <label>Owner<select id="vowner"><option value="">Choose Michelle or a child</option>${owners.map(v=>`<option value="${esc(v)}" ${String(x.owner||"")===String(v)?"selected":""}>${esc(v)}</option>`).join("")}</select></label>
     <div class="grid2"><label>Username / account<input id="vuser" value="${esc(x.username||"")}" autocomplete="off"><button type="button" class="btn small" onclick="vaultCopyInput('vuser')">Copy username</button></label><label>Password / sensitive number<input id="vsecret" type="password" value="${esc(x.secret||"")}" autocomplete="off"><div class="actions"><button id="vreveal" type="button" class="btn small" onclick="vaultToggleSecret()">Reveal</button><button type="button" class="btn small" onclick="vaultCopyInput('vsecret')">Copy</button></div></label></div>
     <label>Notes<textarea id="vnotes" rows="4">${esc(x.notes||"")}</textarea></label>
     <label>Attach photo or PDF<input id="vfile" type="file" accept="image/*,application/pdf"></label>
     ${x.attachment?`<div class="row"><span><b>Encrypted attachment</b><div class="muted small">${esc(x.attachment.name||"Document")}</div></span><button type="button" class="btn small" onclick="vaultOpenAttachment('${x.id}')">Save a copy</button></div>`:""}
     ${x.id?`<button type="button" class="btn danger" onclick="vaultDeleteItem('${x.id}')">Delete record</button>`:""}
   </div>`,"Encrypt + save",async()=>{
-    const title=$("#vtitle").value.trim();if(!title){alert("Add a title so you can find this record later.");return}
+    const title=$("#vtitle").value.trim(),owner=$("#vowner").value.trim();if(!title){alert("Add a title so you can find this record later.");return}if(!owner){alert("Choose Michelle or one of the children for this record.");return}
     let row=(vaultData.items||[]).find(v=>v.id===id);
     if(!row){row={id:uid(),createdAt:new Date().toISOString(),attachment:null};vaultData.items.push(row)}
     const file=$("#vfile").files?.[0];
@@ -224,7 +224,7 @@ function openVaultItem(id=""){
       if(file.size>8*1024*1024){alert("For now, keep each vault attachment under 8 MB.");return}
       row.attachment={name:file.name,type:file.type||"application/octet-stream",data:vaultBytesToB64(new Uint8Array(await file.arrayBuffer()))};
     }
-    Object.assign(row,{type:$("#vtype").value,title,owner:$("#vowner").value.trim(),username:$("#vuser").value.trim(),secret:$("#vsecret").value,notes:$("#vnotes").value.trim(),updatedAt:new Date().toISOString()});
+    Object.assign(row,{type:$("#vtype").value,title,owner,username:$("#vuser").value.trim(),secret:$("#vsecret").value,notes:$("#vnotes").value.trim(),updatedAt:new Date().toISOString()});
     await vaultEncryptCurrent();closeModal();render();
   });
 }
