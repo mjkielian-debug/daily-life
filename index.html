@@ -1105,6 +1105,42 @@ function openPetRecord(id=""){
     await save();closeModal();render();
   });
 }
+
+function petRoutineById(id){return (state.petCareRoutines||[]).find(x=>x.id===id)}
+function petRoutineDueState(r){
+  if(r.active===false)return{due:false,label:"Paused",days:null};
+  const today=ymd(),date=String(r.nextDate||"");
+  if(!date)return{due:false,label:r.lastDone?"Last done "+dl(r.lastDone):"No next date",days:null};
+  const days=Math.ceil((new Date(date+"T12:00:00")-new Date(today+"T12:00:00"))/86400000);
+  if(days<0)return{due:true,label:Math.abs(days)+"d overdue",days};
+  if(days===0)return{due:true,label:"Due today",days};
+  return{due:false,label:"Due "+dl(date),days};
+}
+function duePetRoutines(){return (state.petCareRoutines||[]).filter(r=>petRoutineDueState(r).due).sort((a,b)=>String(a.nextDate||"").localeCompare(String(b.nextDate||"")))}
+function petRoutinesCard(){
+  const rows=[...(state.petCareRoutines||[])].filter(r=>r.active!==false).sort((a,b)=>String(a.nextDate||"9999").localeCompare(String(b.nextDate||"9999")));
+  let body="";
+  for(const r of rows){
+    const p=petById(r.petId),s=petRoutineDueState(r);
+    body+=`<div class="pet-routine-row ${s.due?"is-due":""}"><button class="grow routine-edit" onclick="openPetRoutine('${r.id}')"><b>${esc(r.title)}</b><small>${p?esc(p.name)+" · ":"Shared care · "}${esc(s.label)}${r.everyDays?" · every "+r.everyDays+"d":""}</small></button><button class="btn small ${s.due?"primary":""}" onclick="completePetRoutine('${r.id}')">Done</button></div>`;
+  }
+  return `<div class="card pet-routines-card"><div class="section-title"><div><div class="eyebrow">Recurring care</div><h2>${duePetRoutines().length?duePetRoutines().length+" due":"Care routines"}</h2><div class="muted small">Tracks repeating care inside Daily Life only. No notifications are created.</div></div><button class="btn" onclick="openPetRoutine()">+ Routine</button></div>${body||"<div class='notice'>No recurring pet-care routines yet.</div>"}</div>`;
+}
+function openPetRoutine(id=""){
+  const r=petRoutineById(id)||{id:"",petId:"",title:"",type:"Grooming",everyDays:30,nextDate:ymd(),lastDone:"",notes:"",active:true};
+  const petOptions=(state.pets||[]).filter(p=>p.status!=="Archived").map(p=>`<option value="${p.id}" ${p.id===r.petId?"selected":""}>${esc(p.name)}</option>`).join("");
+  const types=["Grooming","Nail trim","Preventive care","Medication","Litter deep clean","Wash bedding","Weight check","Other"];
+  modal(r.id?"Pet care routine":"Add recurring pet care",`<div class="stack"><label>Pet<select id="ptrpet"><option value="">Shared / all pets</option>${petOptions}</select></label><label>Routine<input id="ptrtitle" value="${esc(r.title||"")}" placeholder="Trim nails, deep-clean litter box…"></label><div class="grid2"><label>Care type<select id="ptrtype">${types.map(v=>`<option ${v===r.type?"selected":""}>${v}</option>`).join("")}</select></label><label>Repeat every N days<input id="ptrevery" type="number" min="0" value="${Number(r.everyDays||0)}"></label></div><div class="grid2"><label>Next date<input id="ptrnext" type="date" value="${esc(r.nextDate||"")}"></label><label>Status<select id="ptractive"><option value="1" ${r.active!==false?"selected":""}>Active</option><option value="0" ${r.active===false?"selected":""}>Paused</option></select></label></div><label>Notes<textarea id="ptrnotes" rows="3">${esc(r.notes||"")}</textarea></label><div class="muted small">This schedule appears only inside Daily Life. It does not create a reminder or notification.</div></div>`,"Save",async()=>{
+    const title=$("#ptrtitle").value.trim();if(!title)return;let x=petRoutineById(id);if(!x){x={id:uid(),lastDone:""};state.petCareRoutines.push(x)}
+    Object.assign(x,{petId:$("#ptrpet").value,title,type:$("#ptrtype").value,everyDays:Math.max(0,Number($("#ptrevery").value||0)),nextDate:$("#ptrnext").value,notes:$("#ptrnotes").value.trim(),active:$("#ptractive").value==="1"});await save();closeModal();render();
+  });
+}
+async function completePetRoutine(id){
+  const r=petRoutineById(id);if(!r)return;const date=ymd();r.lastDone=date;
+  if(Number(r.everyDays)>0){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+Number(r.everyDays));r.nextDate=ymd(d)}else r.nextDate="";
+  state.petLogs.push({id:uid(),petId:r.petId||"",type:r.type||"Care",date,time:new Date().toTimeString().slice(0,5),value:"",notes:r.title+(r.notes?" · "+r.notes:""),routineId:r.id});
+  await save();render();
+}
 function setPetsTab(tab){if(!["overview","health","history"].includes(tab))tab="overview";petsTab=tab;localStorage.setItem("dailyLifePetsTab",tab);render()}
 function petsTabs(){return `<div class="living-tabs"><button class="${petsTab==="overview"?"active":""}" onclick="setPetsTab('overview')">Overview</button><button class="${petsTab==="health"?"active":""}" onclick="setPetsTab('health')">Health</button><button class="${petsTab==="history"?"active":""}" onclick="setPetsTab('history')">History</button></div>`}
 function petHistoryCard(){
@@ -1135,6 +1171,7 @@ function petsView(){
         litter=logs.find(x=>x.type==="Litter");
   const overview=`<div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
     ${petCareSummaryCard()}
+    ${petRoutinesCard()}
     ${petHandoffCard()}
     ${livingSuppliesCard("pet")}
     <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><div class="actions"><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button><button class="btn" onclick="openPetCareSettings()">Setup</button></div></div>
