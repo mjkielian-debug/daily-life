@@ -458,3 +458,8 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:560px){
   .pet-grid,.plant-grid,.living-launch-grid{grid-template-columns:1fr}
 }
+
+.pet-care-summary{border-color:color-mix(in srgb,var(--secondary) 24%,var(--border))}
+.pet-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.pet-summary-grid .metric{margin:0;min-width:0}
+@media(max-width:460px){.pet-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
