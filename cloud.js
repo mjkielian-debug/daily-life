@@ -1137,8 +1137,13 @@ function cloudApplyLifeEntry(row){
     }
     case "vehicle_service":{
       if(!Array.isArray(state.vehicleServices))state.vehicleServices=[];
-      if(state.vehicleServices.some(x=>x.cloudEntryId===row.id))return true;
-      state.vehicleServices.push({id:uid(),cloudEntryId:row.id,vehicleId:String(p.vehicleId||""),type:String(p.type||"Service"),date:String(p.date||date),mileage:Number(p.mileage||0)||null,cost:Number(p.cost||0),notes:String(p.notes||"")});
+      const serviceDate=String(p.date||date),type=String(p.type||"Service"),mileage=Number(p.mileage||0)||null;
+      let x=state.vehicleServices.find(x=>x.cloudEntryId===row.id)||state.vehicleServices.find(x=>String(x.date||"")===serviceDate&&String(x.type||"").trim().toLowerCase()===type.trim().toLowerCase()&&Number(x.mileage||0)===Number(mileage||0));
+      if(!x){x={id:uid()};state.vehicleServices.push(x)}
+      Object.assign(x,{cloudEntryId:row.id,vehicleId:String(p.vehicleId||x.vehicleId||""),type,date:serviceDate,mileage,cost:Number(p.cost??x.cost??0),notes:String(p.notes??x.notes??"")});
+      if(p.gallons!==undefined)x.gallons=Number(p.gallons||0)||null;
+      if(p.tripMeter!==undefined)x.tripMeter=Number(p.tripMeter||0)||null;
+      if(p.fullTank!==undefined)x.fullTank=p.fullTank===true;
       return true;
     }
     case "person_rename":{
