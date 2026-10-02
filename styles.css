@@ -514,3 +514,16 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   .pet-weight-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
   .garden-season-meta,.seed-grid{grid-template-columns:1fr}
 }
+
+/* Pets / Garden inner navigation */
+.living-tabs{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;margin-top:12px;
+  border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025)
+}
+.living-tabs button{
+  border:0;border-radius:12px;min-height:38px;background:transparent;color:var(--muted);font-weight:800
+}
+.living-tabs button.active{
+  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
+  box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)
+}
