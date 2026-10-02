@@ -598,3 +598,11 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 }
 
 .plant-routines-card{border-color:color-mix(in srgb,var(--primary) 28%,var(--border))}
+
+.self-care-supplies{
+  margin:10px 0 4px;padding:11px 12px;border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 6%,transparent),rgba(255,255,255,.018))
+}
+.self-care-supplies .section-title{margin:0 0 5px}
+.finished-plants summary{cursor:pointer;font-weight:800;color:color-mix(in srgb,var(--text) 90%,var(--primary) 10%)}
