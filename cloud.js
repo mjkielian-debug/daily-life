@@ -157,6 +157,16 @@ async function cloudPullPetProfiles(){
       p.cloudPetId=row.id;p.name=name;p.species=String(row.species||meta.species||"pet");
       if(row.birthday)p.birthday=row.birthday;else if(!p.birthday&&meta.birthdayText)p.birthday=String(meta.birthdayText);
       for(const key of ["diet","vet","medications","microchip","notes"])if(meta[key]!==undefined)p[key]=String(meta[key]||"");
+      if(meta.householdCare&&typeof meta.householdCare==="object"&&!(state.settings?.petCare?.configured)){
+        state.settings=state.settings||{};
+        state.settings.petCare={
+          robotLitterBoxes:Math.max(0,Number(meta.householdCare.robotLitterBoxes||0)),
+          standardLitterBoxes:Math.max(0,Number(meta.householdCare.standardLitterBoxes||0)),
+          notes:String(meta.householdCare.notes||""),
+          configured:true
+        };
+        changed++;
+      }
       if(JSON.stringify(p)!==before)changed++;
     }
     if(changed)await dbSet("state",state);
