@@ -569,7 +569,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","plants","plantLogs","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -627,6 +627,54 @@ function cloudApplyLifeEntry(row){
     case "chore":{
       const child=String(p.child||"").trim(),chore=String(p.chore||"").trim();if(!child||!chore)return false;
       state.chores.push({...common,child,chore,done:!!p.done});return true;
+    }
+    case "pet_care":{
+      if(!Array.isArray(state.petLogs))state.petLogs=[];
+      const petName=String(p.petName||p.pet||"").trim(),type=String(p.type||p.careType||"Note").trim()||"Note";
+      let pet=null;
+      if(petName)pet=(state.pets||[]).find(x=>String(x.name||"").trim().toLowerCase()===petName.toLowerCase())||null;
+      state.petLogs.push({...common,petId:pet?.id||"",type,time:String(p.time||""),value:String(p.value||p.amount||""),notes:String(p.notes||""),source:"chatgpt"});
+      return true;
+    }
+    case "pet_record":{
+      if(!Array.isArray(state.petRecords))state.petRecords=[];
+      const petName=String(p.petName||p.pet||"").trim();if(!petName)return false;
+      const pet=(state.pets||[]).find(x=>String(x.name||"").trim().toLowerCase()===petName.toLowerCase());if(!pet)return false;
+      state.petRecords.push({...common,petId:pet.id,type:String(p.type||"Vet visit"),nextDate:String(p.nextDate||""),provider:String(p.provider||""),cost:Number(p.cost||0),notes:String(p.notes||""),source:"chatgpt"});
+      return true;
+    }
+    case "plant_care":{
+      if(!Array.isArray(state.plants))state.plants=[];
+      if(!Array.isArray(state.plantLogs))state.plantLogs=[];
+      const plantName=String(p.plantName||p.plant||"").trim();if(!plantName)return false;
+      let plant=state.plants.find(x=>String(x.name||"").trim().toLowerCase()===plantName.toLowerCase());
+      if(!plant){
+        plant={id:uid(),name:plantName,type:String(p.plantType||"Plant"),status:"Active",location:String(p.location||""),light:"",waterEveryDays:0,plantedDate:"",source:"ChatGPT",notes:""};
+        state.plants.push(plant);
+      }
+      state.plantLogs.push({...common,plantId:plant.id,type:String(p.type||p.careType||"Checked"),value:String(p.value||p.amount||""),notes:String(p.notes||""),source:"chatgpt"});
+      return true;
+    }
+    case "garden_task":{
+      if(!Array.isArray(state.gardenTasks))state.gardenTasks=[];
+      const title=String(p.title||"").trim();if(!title)return false;
+      state.gardenTasks.push({...common,title,due:String(p.due||date||""),area:String(p.area||""),notes:String(p.notes||""),done:!!p.done,source:"chatgpt"});
+      return true;
+    }
+    case "garden_journal":{
+      if(!Array.isArray(state.gardenJournal))state.gardenJournal=[];
+      const title=String(p.title||"").trim(),note=String(p.note||p.notes||"").trim();if(!title&&!note)return false;
+      state.gardenJournal.push({...common,title,note,updatedAt:String(row.created_at||new Date().toISOString()),source:"chatgpt"});
+      return true;
+    }
+    case "garden_seed":{
+      if(!Array.isArray(state.gardenSeeds))state.gardenSeeds=[];
+      const name=String(p.name||p.plant||"").trim();if(!name)return false;
+      const variety=String(p.variety||"").trim();
+      let x=state.gardenSeeds.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase()&&String(x.variety||"").trim().toLowerCase()===variety.toLowerCase());
+      if(!x){x={id:uid(),cloudEntryId:row.id};state.gardenSeeds.push(x)}
+      Object.assign(x,{name,variety,kind:String(p.kind||x.kind||"Seed packet"),status:String(p.status||x.status||"Have"),year:String(p.year||x.year||""),quantity:String(p.quantity||x.quantity||""),startIndoors:String(p.startIndoors||x.startIndoors||""),directSow:String(p.directSow||x.directSow||""),startIndoorsDate:String(p.startIndoorsDate||x.startIndoorsDate||""),directSowDate:String(p.directSowDate||x.directSowDate||""),transplantDate:String(p.transplantDate||x.transplantDate||""),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
+      return true;
     }
     case "shopping":{
       const item=String(p.item||"").trim();if(!item)return false;
