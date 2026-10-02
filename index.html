@@ -714,6 +714,17 @@ function shiftItineraryDate(days){setItineraryDate(shiftDateString(itineraryDate
 function workForDate(date){return (state.workShifts||[]).find(x=>x.date===date)||null}
 function mealForDate(date){return (state.meals||[]).find(x=>x.date===date&&x.type==="dinner")||null}
 function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x=>x.date===date)}
+function itineraryEstimatedEventMinutes(e){
+  const saved=Number(e?.durationMinutes||e?.estimatedMinutes||0);
+  if(Number.isFinite(saved)&&saved>=10)return Math.min(240,Math.round(saved/5)*5);
+  const text=[e?.title,e?.type,e?.notes].filter(Boolean).join(" ").toLowerCase();
+  if(/dad|other parent|custody|drop.?off|pick.?up|handoff/.test(text))return 30;
+  if(/dance|rehearsal|practice|club|dungeons|herpetology|girl scouts?|activity/.test(text))return 60;
+  if(/appointment|doctor|dentist|therapy|conference/.test(text))return 60;
+  if(/party|birthday/.test(text))return 120;
+  if(/school|class|lesson/.test(text))return 45;
+  return 30;
+}
 function itineraryFixedItems(date){
   const items=[],w=workForDate(date);
   if(w){
@@ -726,7 +737,10 @@ function itineraryFixedItems(date){
   }
   for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){
     if(!e.startTime)continue;
-    items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId});
+    const startM=hmMinutes(e.startTime),estimatedMinutes=!e.endTime?itineraryEstimatedEventMinutes(e):0,
+          estimatedEnd=!e.endTime&&startM!==null?minutesHm(startM+estimatedMinutes):"",
+          detail=[e.child,e.location,e.status==="tentative"?"tentative":"",!e.endTime?"end time estimated until you set it":""].filter(Boolean).join(" · ");
+    items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||estimatedEnd,title:e.title,detail,fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
   }
   for(const x of itineraryCustomBlocks(date))if(x.start)items.push({
     id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",
@@ -977,6 +991,7 @@ function itineraryDurationLabel(x){
 }
 function itineraryTypeLabel(x){
   if(x.endUnknown)return"TIME TBD";
+  if(x.estimatedEnd)return"ANCHOR · EST.";
   if(x.fixed)return"ANCHOR";
   if(x.source==="task")return x.autoPlanned?"TASK · AUTO":"TASK";
   if(x.source==="suggested")return"ROUTINE";
@@ -997,7 +1012,7 @@ function itineraryFlowCard(date){
       <div class="planner-time"><b>${esc(fmtClock(x.start))}</b><span>${x.end?esc(fmtClock(x.end)):x.endUnknown?"End TBD":""}</span>${duration?`<small>${esc(duration)}</small>`:""}</div>
       <div class="planner-content">
         <div class="planner-topline"><span class="planner-icon">${x.icon||"•"}</span><b class="planner-title">${esc(x.title)}</b><span class="planner-kind">${esc(type)}</span></div>
-        ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}${x.movedByPlanner?`<div class="planner-moved">Moved around a fixed commitment · originally ${esc(fmtClock(x.originalStart))}${x.originalEnd?"–"+esc(fmtClock(x.originalEnd)):""}</div>`:""}
+        ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}${x.estimatedEnd?`<div class="planner-estimate">Estimated ${esc(itineraryDurationLabel(x))} · tap the event to set the real end time</div>`:""}${x.movedByPlanner?`<div class="planner-moved">Moved around a fixed commitment · originally ${esc(fmtClock(x.originalStart))}${x.originalEnd?"–"+esc(fmtClock(x.originalEnd)):""}</div>`:""}
         ${x.endUnknown?`<div class="planner-caution">Daily Life will not auto-schedule tasks inside this unknown work span.</div>`:""}
         ${x.source==="task"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryTask('${x.sourceId}')">Edit timing</button></div>`:""}
         ${x.source==="custom"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryBlock('${date}','${x.sourceId}')">Edit</button></div>`:""}
