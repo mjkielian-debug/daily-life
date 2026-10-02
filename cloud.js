@@ -741,7 +741,7 @@ function cloudApplyLifeEntry(row){
     case "work_shift":{
       let x=state.workShifts.find(x=>x.date===date);
       if(!x){x=common;state.workShifts.push(x)}
-      Object.assign(x,{scheduled:String(p.scheduled||x.scheduled||""),start:String(p.start||x.start||""),end:String(p.end||x.end||""),rate:Number(p.rate??x.rate??0),cloudEntryId:row.id});
+      Object.assign(x,{scheduled:String(p.scheduled||x.scheduled||""),start:String(p.start||x.start||""),end:String(p.end||x.end||""),rate:Number(p.rate??x.rate??0),status:String(p.status||x.status||""),endedUnknown:p.endedUnknown!==undefined?!!p.endedUnknown:!!x.endedUnknown,notes:String(p.notes??x.notes??""),cloudEntryId:row.id});if(x.end){x.endedUnknown=false;if(!x.status||x.status==="completed-needs-end")x.status="completed"}
       return true;
     }
     case "tire":
