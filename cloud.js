@@ -37,6 +37,7 @@ async function cloudInit(){
       await cloudPrepareAutoSync();
       await cloudPullLifeEntries(false);
       await cloudPullHouseholdMembers();
+      await cloudPullPetProfiles();
     }
     cloudClient.auth.onAuthStateChange((_event,session)=>{
       cloudSession=session||null;
@@ -48,6 +49,7 @@ async function cloudInit(){
           await cloudPrepareAutoSync();
           await cloudPullLifeEntries(false);
           await cloudPullHouseholdMembers();
+      await cloudPullPetProfiles();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
         }else cloudRemoteUpdatedAt=null;
         if(typeof render==="function")render();
@@ -133,6 +135,65 @@ function cloudMergeWishlist(...lists){
     }
   }
   return out;
+}
+
+async function cloudPullPetProfiles(){
+  const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return 0;
+  try{
+    const {data,error}=await cloudClient.from("pet_profiles")
+      .select("id,display_name,species,birthday,metadata,updated_at")
+      .eq("owner_user_id",user.id)
+      .order("created_at",{ascending:true});
+    if(error)throw error;
+    if(!Array.isArray(state.pets))state.pets=[];
+    let changed=0;
+    for(const row of data||[]){
+      const name=String(row.display_name||"").trim();if(!name)continue;
+      const meta=row.metadata&&typeof row.metadata==="object"?row.metadata:{};
+      let p=state.pets.find(x=>x.cloudPetId===row.id);
+      if(!p)p=state.pets.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(!p){p={id:uid(),name};state.pets.push(p);changed++}
+      const before=JSON.stringify(p);
+      p.cloudPetId=row.id;p.name=name;p.species=String(row.species||meta.species||"pet");
+      if(row.birthday)p.birthday=row.birthday;else if(!p.birthday&&meta.birthdayText)p.birthday=String(meta.birthdayText);
+      for(const key of ["diet","vet","medications","microchip","notes"])if(meta[key]!==undefined)p[key]=String(meta[key]||"");
+      if(JSON.stringify(p)!==before)changed++;
+    }
+    if(changed)await dbSet("state",state);
+    return changed;
+  }catch(error){
+    cloudError=error?.message||"Could not sync private pet profiles.";
+    return 0;
+  }
+}
+async function cloudUpsertPetProfile(p){
+  const user=cloudUser();if(!user||!cloudClient||!p?.name)return false;
+  const birthdayText=String(p.birthday||"").trim(),birthday=/^\d{4}-\d{2}-\d{2}$/.test(birthdayText)?birthdayText:null;
+  const payload={
+    owner_user_id:user.id,
+    display_name:String(p.name).trim(),
+    species:String(p.species||"pet").trim()||"pet",
+    birthday,
+    metadata:{
+      birthdayText:birthday?null:birthdayText||null,
+      diet:String(p.diet||""),
+      vet:String(p.vet||""),
+      medications:String(p.medications||""),
+      microchip:String(p.microchip||""),
+      notes:String(p.notes||"")
+    },
+    updated_at:new Date().toISOString()
+  };
+  let result;
+  if(p.cloudPetId){
+    result=await cloudClient.from("pet_profiles").update(payload).eq("id",p.cloudPetId).eq("owner_user_id",user.id).select("id").maybeSingle();
+  }else{
+    result=await cloudClient.from("pet_profiles").upsert(payload,{onConflict:"owner_user_id,display_name"}).select("id").single();
+  }
+  if(result.error)throw result.error;
+  if(result.data?.id)p.cloudPetId=result.data.id;
+  await dbSet("state",state);
+  return true;
 }
 
 async function cloudPullHouseholdMembers(){
@@ -249,6 +310,7 @@ async function cloudSignInFromForm(){
     await cloudPrepareAutoSync();
     await cloudPullLifeEntries(false);
     await cloudPullHouseholdMembers();
+      await cloudPullPetProfiles();
     if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
     closeModal();render();
   }catch(error){
@@ -394,6 +456,8 @@ async function cloudRestoreSnapshot(){
     cloudSetLastSignature(cloudStateSignature());
     cloudNeedsReview=false;cloudAutoCanPush=cloudAutoEnabled();
     await cloudPullLifeEntries(false);
+    await cloudPullHouseholdMembers();
+    await cloudPullPetProfiles();
     render();alert("Cloud copy restored to this device.");
   }catch(error){
     cloudError=error?.message||"Cloud restore failed.";render();
@@ -989,6 +1053,7 @@ document.addEventListener("visibilitychange",()=>{
     if(typeof queueMissingMealRecipes==="function")await queueMissingMealRecipes();
     if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
     if(typeof cloudPullHouseholdMembers==="function")await cloudPullHouseholdMembers();
+      await cloudPullPetProfiles();
     if(typeof render==="function")render();
   }).catch(()=>{});
 });
