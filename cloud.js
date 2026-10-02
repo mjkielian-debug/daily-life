@@ -600,7 +600,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -822,6 +822,61 @@ function cloudApplyLifeEntry(row){
       let x=state.gardenSeeds.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase()&&String(x.variety||"").trim().toLowerCase()===variety.toLowerCase());
       if(!x){x={id:uid(),cloudEntryId:row.id};state.gardenSeeds.push(x)}
       Object.assign(x,{name,variety,kind:String(p.kind||x.kind||"Seed packet"),status:String(p.status||x.status||"Have"),year:String(p.year||x.year||""),quantity:String(p.quantity||x.quantity||""),startIndoors:String(p.startIndoors||x.startIndoors||""),directSow:String(p.directSow||x.directSow||""),startIndoorsDate:String(p.startIndoorsDate||x.startIndoorsDate||""),directSowDate:String(p.directSowDate||x.directSowDate||""),transplantDate:String(p.transplantDate||x.transplantDate||""),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
+      return true;
+    }
+    case "kids_money_adjustment":{
+      if(!Array.isArray(state.kidsMoneyAccounts))state.kidsMoneyAccounts=[];
+      if(!Array.isArray(state.kidsMoneyTransactions))state.kidsMoneyTransactions=[];
+      const child=String(p.child||p.name||p.person||"").trim(),amount=Number(p.amount);
+      if(!child||!Number.isFinite(amount)||amount===0)return false;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      if(!person)return false;
+      let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
+      if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
+      const status=["pending","funded","ledger"].includes(String(p.status||""))?String(p.status):"pending";
+      state.kidsMoneyTransactions.push({
+        ...common,personId:person.id,amount,
+        label:String(p.label||p.type||"Adjustment"),
+        type:amount<0?"subtract":"add",
+        status,date:String(p.date||date),
+        notes:String(p.notes||""),
+        createdAt:String(row.created_at||new Date().toISOString()),
+        cloudEntryId:row.id
+      });
+      account.pendingToFund=0;
+      if(status==="funded"&&account.actualBalance!==null&&account.actualBalance!==""){
+        account.actualBalance=Number(account.actualBalance||0)+amount;
+        account.actualAsOf=String(p.date||date);
+      }
+      return true;
+    }
+    case "kids_money_reconcile":{
+      if(!Array.isArray(state.kidsMoneyAccounts))state.kidsMoneyAccounts=[];
+      const child=String(p.child||p.name||p.person||"").trim(),actual=Number(p.actualBalance??p.balance);
+      if(!child||!Number.isFinite(actual))return false;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      if(!person)return false;
+      let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
+      if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
+      account.actualBalance=Math.round(actual*100)/100;
+      account.actualAsOf=String(p.asOf||p.date||date);
+      account.pendingToFund=0;
+      if(p.notes!==undefined)account.notes=String(p.notes||"");
+      account.lastCloudEntryId=row.id;
+      return true;
+    }
+    case "kids_money_goal":{
+      if(!Array.isArray(state.kidsMoneyAccounts))state.kidsMoneyAccounts=[];
+      const child=String(p.child||p.name||p.person||"").trim();
+      if(!child)return false;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      if(!person)return false;
+      let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
+      if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
+      if(p.goalName!==undefined)account.goalName=String(p.goalName||"");
+      if(p.savingsGoal!==undefined&&Number.isFinite(Number(p.savingsGoal)))account.savingsGoal=Math.max(0,Number(p.savingsGoal));
+      if(p.notes!==undefined)account.notes=String(p.notes||"");
+      account.lastCloudEntryId=row.id;
       return true;
     }
     case "account_strategy":{
