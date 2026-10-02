@@ -1191,8 +1191,21 @@ function cloudApplyLifeEntry(row){
     }
     case "vehicle_service":{
       if(!Array.isArray(state.vehicleServices))state.vehicleServices=[];
-      const serviceDate=String(p.date||date),type=String(p.type||"Service"),mileage=Number(p.mileage||0)||null;
-      let x=state.vehicleServices.find(x=>x.cloudEntryId===row.id)||state.vehicleServices.find(x=>String(x.date||"")===serviceDate&&String(x.type||"").trim().toLowerCase()===type.trim().toLowerCase()&&Number(x.mileage||0)===Number(mileage||0));
+      const serviceDate=String(p.date||date),type=String(p.type||"Service"),mileage=Number(p.mileage||0)||null,
+            cost=Number(p.cost||0),gallons=Number(p.gallons||0),
+            incomingFuel=/fuel|gas/i.test(type)||gallons>0;
+      const duplicateFuel=x=>{
+        if(!incomingFuel||!(/fuel|gas/i.test(String(x?.type||""))||Number(x?.gallons||0)>0))return false;
+        if(String(x.date||"")!==serviceDate)return false;
+        const xm=Number(x.mileage||0),xc=Number(x.cost||0),xg=Number(x.gallons||0);
+        if(mileage&&xm&&mileage!==xm)return false;
+        if(cost&&xc&&Math.abs(cost-xc)>.01)return false;
+        if(gallons&&xg&&Math.abs(gallons-xg)>.005)return false;
+        return !!((mileage&&xm)||(cost&&xc)||(gallons&&xg));
+      };
+      let x=state.vehicleServices.find(x=>x.cloudEntryId===row.id)||
+            state.vehicleServices.find(x=>String(x.date||"")===serviceDate&&String(x.type||"").trim().toLowerCase()===type.trim().toLowerCase()&&Number(x.mileage||0)===Number(mileage||0))||
+            state.vehicleServices.find(duplicateFuel);
       if(!x){x={id:uid()};state.vehicleServices.push(x)}
       Object.assign(x,{cloudEntryId:row.id,vehicleId:String(p.vehicleId||x.vehicleId||""),type,date:serviceDate,mileage,cost:Number(p.cost??x.cost??0),notes:String(p.notes??x.notes??"")});
       if(p.gallons!==undefined)x.gallons=Number(p.gallons||0)||null;
