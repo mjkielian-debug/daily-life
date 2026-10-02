@@ -3997,7 +3997,7 @@ function syncBillRepeatFrequency(){
   else if(frequency.value!=="Trial / decision pending")frequency.value="One-time";
 }
 function billRowView(r){
-  const b=r.bill,paid=b.status==="paid",pendingPayment=paid&&b.paymentPending===true,tone=["Covered now","Covered by due date"].includes(r.status)?"covered":r.status==="Projected short"?"short":r.status==="Transfer needed"?"transfer":"unknown";
+  const b=r.bill,paid=b.status==="paid",pendingPayment=paid&&b.paymentPending===true,bankMatched=paid&&b.paidSource==="bank",tone=["Covered now","Covered by due date"].includes(r.status)?"covered":r.status==="Projected short"?"short":r.status==="Transfer needed"?"transfer":"unknown";
   let note="";
   if(r.currentAfter!==undefined){
     if(r.status==="Covered now")note=`${money(r.currentBefore/100)} available now before this bill · ${money(r.currentAfter/100)} left after reserving it now.`;
@@ -4006,8 +4006,9 @@ function billRowView(r){
     else note=`${r.projectedIncome>0?"+"+money(r.projectedIncome/100)+" expected into this account before the due date · ":""}${money(-r.projectedAfter/100)} projected short by ${dl(b.due)} after earlier bills.`;
   }else if(r.status==="Balance unavailable")note="Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.";
   else if(r.status==="Check bill")note="Correct the amount or due date before relying on this projection.";
-  else if(pendingPayment)note=`Payment pending${b.paidDate?" since "+dl(b.paidDate):""}${b.paidMerchant?" · "+b.paidMerchant:""} · already reflected in available cash, so Daily Life is not reserving this bill again.`;
-  else if(paid)note="Paid · not reserved.";
+  else if(pendingPayment)note=`Bank payment pending${b.paidDate?" since "+dl(b.paidDate):""}${b.paidMerchant?" · "+b.paidMerchant:""}${Number.isFinite(Number(b.paidAmount))?" · "+money(b.paidAmount):""} · already reflected in available cash, so Daily Life is not reserving this bill again.`;
+  else if(bankMatched)note=`Bank matched${b.paidDate?" "+dl(b.paidDate):""}${b.paidMerchant?" · "+b.paidMerchant:""}${Number.isFinite(Number(b.paidAmount))?" · "+money(b.paidAmount):""} · not reserved again.`;
+  else if(paid)note="Paid manually · not reserved.";
   else note=b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
   const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1],desired=state.accounts.find(a=>a.key===b.desiredAccountKey),amountType=recordedBillAmountType(b),frequency=recordedBillFrequency(b);
   return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid&&!pendingPayment?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
@@ -4015,8 +4016,8 @@ function billRowView(r){
   ${desired&&desired.key!==b.paymentAccountKey?`<div class="small muted">Desired payment account: ${esc(desired.name)}</div>`:""}
   <div class="small muted">${esc(amountType)} · ${esc(frequency)}</div>
   ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
-  <div class="actions">${pendingPayment?`<span class="bill-status unknown">Payment pending</span>`:paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
-  <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${pendingPayment?"Edit pending payment":paid?"Edit paid bill":"Edit"}</button>
+  <div class="actions">${pendingPayment?`<span class="bill-status unknown">Bank payment pending</span>`:bankMatched?`<span class="bill-status covered">Bank matched</span>`:paid?`<span class="tag">Paid manually</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
+  <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${pendingPayment?"View bank payment":bankMatched?"View bank match":paid?"Edit paid bill":"Edit"}</button>
   ${paid&&!pendingPayment?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
 }
 function upcomingBillsView(){
