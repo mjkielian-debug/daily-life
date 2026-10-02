@@ -508,7 +508,7 @@ function cloudApplyLifeEntry(row){
         const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.accountCloudId||""));
         if(matches.length===1)accountKey=matches[0].key;
       }
-      Object.assign(x,{name,amount:Math.round(amount*100)/100,date:incomeDate,frequency,accountKey,transferable:p.transferable!==false,enabled:p.enabled!==false,confidence:String(p.confidence||"confirmed"),notes:String(p.notes||"")});
+      Object.assign(x,{name,amount:Math.round(amount*100)/100,date:incomeDate,frequency,accountKey,accountCloudId:String(p.accountCloudId||x.accountCloudId||""),transferable:p.transferable!==false,enabled:p.enabled!==false,confidence:String(p.confidence||"confirmed"),notes:String(p.notes||"")});
       return true;
     }
     case "employment_profile":{
