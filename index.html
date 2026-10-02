@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people8">
+<link rel="stylesheet" href="styles.css?v=20261002-people9">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1188,13 +1188,20 @@ function elfsterStatusCard(){
 function birthdayGiftBoard(){
   const rows=[];
   for(const p of state.peopleProfiles||[])for(const w of p.wishlist||[])rows.push({p,w});
-  const open=rows.filter(x=>!["bought","wrapped","done"].includes(String(x.w.status))).slice(0,12),
-        bought=rows.filter(x=>["bought","wrapped"].includes(String(x.w.status))).length;
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🎁 Birthday gifts</div><h2>Wish list + shopping</h2><div class="muted small">${open.length} open idea${open.length===1?"":"s"} · ${bought} bought / wrapped</div></div></div>
-    ${open.length?open.map(({p,w})=>`<button class="gift-board-row" onclick="closeModal();openBirthdayWish('${p.id}','${w.id}')"><span><b>${esc(w.item)}</b><div class="muted small">${esc(p.name)}${w.source?" · "+esc(w.source):""}${w.store?" · "+esc(w.store):""}${w.notes?" · "+esc(w.notes):""}</div></span><span style="text-align:right"><span class="tag">${esc(w.status||"want")}</span>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small" style="margin-top:4px">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`).join(""):`<div class="notice">No open birthday gift ideas right now.</div>`}
+  const open=rows.filter(x=>!["bought","wrapped","done"].includes(String(x.w.status||"").toLowerCase())),
+        purchased=rows.filter(x=>["bought","wrapped"].includes(String(x.w.status||"").toLowerCase())),
+        elfster=rows.filter(x=>String(x.w.source||"").toLowerCase()==="elfster"),
+        mine=rows.filter(x=>String(x.w.source||"my idea").toLowerCase()==="my idea"),
+        spent=purchased.reduce((sum,x)=>sum+Number(x.w.actualCost||x.w.estimatedCost||0),0);
+  const giftRow=({p,w})=>`<button class="gift-board-row" onclick="openBirthdayWish('${p.id}','${w.id}')"><span><b>${esc(w.item)}</b><div class="muted small">${esc(p.name)}${w.source?" · "+esc(w.source):""}${w.store?" · "+esc(w.store):""}${w.notes?" · "+esc(w.notes):""}</div></span><span style="text-align:right"><span class="tag">${esc(w.status||"want")}</span>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small" style="margin-top:4px">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`;
+  return `<div class="card gift-center-card"><div class="section-title"><div><div class="eyebrow">Birthday gifts</div><h2>Gift center</h2><div class="muted small">Elfster wishes and your own ideas stay together, but their source stays visible.</div></div></div>
+    <div class="gift-center-stats"><span><b>${open.length}</b><small>open ideas</small></span><span><b>${elfster.length}</b><small>Elfster items</small></span><span><b>${mine.length}</b><small>my ideas</small></span><span><b>${money(spent)}</b><small>bought / wrapped</small></span></div>
+    <div class="mini-heading">Open ideas</div>
+    ${open.length?open.slice(0,20).map(giftRow).join(""):`<div class="notice">No open gift ideas right now. Open a person to add an idea or use their Elfster link.</div>`}
+    ${purchased.length?`<details class="gift-purchased"><summary>Purchased / wrapped · ${purchased.length}</summary>${purchased.slice(0,20).map(giftRow).join("")}</details>`:""}
   </div>`;
 }
-function setPeopleFilter(value){
+function setPeopleFilterfunction setPeopleFilter(value){
   peopleFilter=value||"all";localStorage.setItem("dailyLifePeopleFilter",peopleFilter);render();
 }
 function setPeopleSearch(value){
