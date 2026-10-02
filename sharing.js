@@ -77,38 +77,29 @@ async function sharingPullEntries(shouldRender=true){
     const {data,error}=await cloudClient.from("shared_entries")
       .select("id,household_id,owner_user_id,category,local_date,payload,editable_by_household,created_at,updated_at")
       .eq("household_id",sharingHousehold.id)
-      .eq("category","event")
+      .in("category",["event","itinerary_block"])
       .order("local_date",{ascending:true});
     if(error)throw error;
-    const rows=data||[],ids=new Set(rows.map(r=>r.id));
-    state.events=(state.events||[]).filter(e=>!(e.sharedHouseholdId===sharingHousehold.id&&e.sharedEntryId&&!ids.has(e.sharedEntryId)));
+    const rows=data||[],eventRows=rows.filter(r=>r.category==="event"),blockRows=rows.filter(r=>r.category==="itinerary_block"),
+          eventIds=new Set(eventRows.map(r=>r.id)),blockIds=new Set(blockRows.map(r=>r.id));
+    state.events=(state.events||[]).filter(e=>!(e.sharedHouseholdId===sharingHousehold.id&&e.sharedEntryId&&!eventIds.has(e.sharedEntryId)));
+    state.itineraryBlocks=(state.itineraryBlocks||[]).filter(b=>!(b.sharedHouseholdId===sharingHousehold.id&&b.sharedEntryId&&!blockIds.has(b.sharedEntryId)));
     let changed=0;
-    for(const row of rows){
+    for(const row of eventRows){
       const p=row.payload&&typeof row.payload==="object"?row.payload:{};
       let e=(state.events||[]).find(x=>x.sharedEntryId===row.id);
-      if(!e){
-        e={id:uid(),sharedEntryId:row.id,sharedHouseholdId:row.household_id,source:"Shared household"};
-        state.events.push(e);changed++;
-      }
+      if(!e){e={id:uid(),sharedEntryId:row.id,sharedHouseholdId:row.household_id,source:"Shared household"};state.events.push(e);changed++}
       const before=JSON.stringify(e);
-      Object.assign(e,{
-        shared:true,
-        sharedEntryId:row.id,
-        sharedHouseholdId:row.household_id,
-        sharedOwnerUserId:row.owner_user_id,
-        sharedEditable:row.editable_by_household!==false,
-        title:String(p.title||"Shared event"),
-        child:String(p.child||""),
-        type:String(p.type||"other"),
-        date:String(p.date||row.local_date||ymd()),
-        startTime:String(p.startTime||""),
-        endTime:String(p.endTime||""),
-        location:String(p.location||""),
-        notes:String(p.notes||""),
-        status:String(p.status||"confirmed"),
-        source:"Shared household"
-      });
+      Object.assign(e,{shared:true,sharedEntryId:row.id,sharedHouseholdId:row.household_id,sharedOwnerUserId:row.owner_user_id,sharedEditable:row.editable_by_household!==false,title:String(p.title||"Shared event"),child:String(p.child||""),type:String(p.type||"other"),date:String(p.date||row.local_date||ymd()),startTime:String(p.startTime||""),endTime:String(p.endTime||""),location:String(p.location||""),notes:String(p.notes||""),status:String(p.status||"confirmed"),source:"Shared household"});
       if(JSON.stringify(e)!==before)changed++;
+    }
+    for(const row of blockRows){
+      const p=row.payload&&typeof row.payload==="object"?row.payload:{};
+      let b=(state.itineraryBlocks||[]).find(x=>x.sharedEntryId===row.id);
+      if(!b){b={id:uid(),sharedEntryId:row.id,sharedHouseholdId:row.household_id};state.itineraryBlocks.push(b);changed++}
+      const before=JSON.stringify(b);
+      Object.assign(b,{shared:true,sharedEntryId:row.id,sharedHouseholdId:row.household_id,sharedOwnerUserId:row.owner_user_id,sharedEditable:row.editable_by_household!==false,date:String(p.date||row.local_date||ymd()),start:String(p.start||""),end:String(p.end||""),title:String(p.title||"Shared block"),kind:String(p.kind||"flexible"),notes:String(p.notes||""),done:!!p.done,source:"Shared household"});
+      if(JSON.stringify(b)!==before)changed++;
     }
     sharingLastPulledAt=new Date().toISOString();
     if(changed)await dbSet("state",state);
@@ -177,6 +168,38 @@ async function sharingMakeEventPrivate(e){
     alert("Could not remove that item from the shared itinerary: "+(error?.message||"Unknown error"));
     return false;
   }
+}
+function sharingItineraryPayload(b){
+  return {date:String(b?.date||ymd()),start:String(b?.start||""),end:String(b?.end||""),title:String(b?.title||""),kind:String(b?.kind||"flexible"),notes:String(b?.notes||""),done:!!b?.done};
+}
+async function sharingUpsertItineraryBlock(b){
+  const user=cloudUser?.();if(!b||!user||!cloudClient||!sharingHousehold?.id)return false;
+  const payload=sharingItineraryPayload(b);
+  try{
+    let result;
+    if(b.sharedEntryId){
+      result=await cloudClient.from("shared_entries").update({local_date:payload.date,payload,editable_by_household:true,updated_at:new Date().toISOString()}).eq("id",b.sharedEntryId).eq("household_id",sharingHousehold.id).select("id,owner_user_id").maybeSingle();
+    }else{
+      result=await cloudClient.from("shared_entries").insert({household_id:sharingHousehold.id,owner_user_id:user.id,category:"itinerary_block",local_date:payload.date,payload,editable_by_household:true,updated_at:new Date().toISOString()}).select("id,owner_user_id").single();
+    }
+    if(result.error)throw result.error;
+    b.shared=true;b.sharedEntryId=result.data?.id||b.sharedEntryId;b.sharedHouseholdId=sharingHousehold.id;b.sharedOwnerUserId=result.data?.owner_user_id||b.sharedOwnerUserId||user.id;b.sharedEditable=true;b.source="Shared household";
+    await dbSet("state",state);return true;
+  }catch(error){alert("Could not share that time block: "+(error?.message||"Unknown error"));return false}
+}
+async function sharingMakeItineraryPrivate(b){
+  if(!b)return true;
+  if(!b.sharedEntryId){b.shared=false;return true}
+  try{
+    const {error}=await cloudClient.from("shared_entries").delete().eq("id",b.sharedEntryId).eq("household_id",sharingHousehold.id);
+    if(error)throw error;
+    delete b.sharedEntryId;delete b.sharedHouseholdId;delete b.sharedOwnerUserId;delete b.sharedEditable;b.shared=false;delete b.source;
+    await dbSet("state",state);return true;
+  }catch(error){alert("Could not remove that block from the shared itinerary: "+(error?.message||"Unknown error"));return false}
+}
+function sharingItineraryControl(x={}){
+  if(!sharingCanShare())return "";
+  return `<label class="task"><input id="ibshared" type="checkbox" ${x.shared||x.sharedEntryId?"checked":""}><span><b>Share this time block</b><div class="muted small">Only this block appears on the other household account.</div></span></label>`;
 }
 function sharingEventControl(x={}){
   if(!sharingCanShare())return "";
