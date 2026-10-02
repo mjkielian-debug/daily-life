@@ -225,7 +225,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
@@ -366,7 +366,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -1395,6 +1395,80 @@ function schoolContactsCard(){
   </div>`;
 }
 
+function schoolGradeRows(child=""){
+  return (state.schoolGrades||[]).filter(x=>!child||String(x.child||"")===String(child)).sort((a,b)=>String(b.asOf||b.date||"").localeCompare(String(a.asOf||a.date||""))||String(a.course||"").localeCompare(String(b.course||"")));
+}
+function latestSchoolGrades(child){
+  const rows=schoolGradeRows(child),seen=new Set(),out=[];
+  for(const x of rows){const key=String(x.course||"").trim().toLowerCase();if(!key||seen.has(key))continue;seen.add(key);out.push(x)}
+  return out;
+}
+function schoolAssignmentRows(child=""){
+  return (state.schoolAssignments||[]).filter(x=>!child||String(x.child||"")===String(child)).sort((a,b)=>{
+    const aOpen=["missing","due","late"].includes(String(a.status||"").toLowerCase())?0:1,bOpen=["missing","due","late"].includes(String(b.status||"").toLowerCase())?0:1;
+    return aOpen-bOpen||String(a.due||"9999-12-31").localeCompare(String(b.due||"9999-12-31"))||String(a.title||"").localeCompare(String(b.title||""));
+  });
+}
+function schoolGradeDisplay(x){
+  const grade=String(x?.grade||"").trim(),pct=Number(x?.percent);
+  return grade||(Number.isFinite(pct)?Math.round(pct*10)/10+"%":"—");
+}
+function schoolGradeFreshness(x){
+  const d=String(x?.asOf||x?.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return"date unknown";
+  const days=Math.max(0,Math.floor((new Date(ymd()+"T12:00:00")-new Date(d+"T12:00:00"))/86400000));
+  return days===0?"updated today":days===1?"updated yesterday":"updated "+days+" days ago";
+}
+function schoolGradeTone(x){
+  const pct=Number(x?.percent),g=String(x?.grade||"").trim().toUpperCase();
+  if(Number.isFinite(pct))return pct<70?"needs-attention":pct<80?"watch":"ok";
+  if(/^F|^D/.test(g))return"needs-attention";if(/^C/.test(g))return"watch";return"ok";
+}
+function openSchoolGrade(id="",child=""){
+  const x=(state.schoolGrades||[]).find(v=>v.id===id)||{id:"",child,course:"",grade:"",percent:"",term:"",asOf:ymd(),source:"Manual",notes:""};
+  modal(x.id?"Edit grade snapshot":"Add grade snapshot",`<div class="stack">
+    <label>Child<input id="sgchild" list="schoolKidOptions" value="${esc(x.child||child)}"><datalist id="schoolKidOptions">${childProfiles().map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label>
+    <label>Class / subject<input id="sgcourse" value="${esc(x.course||"")}" placeholder="Math, English, Science…"></label>
+    <div class="grid2"><label>Grade<input id="sggrade" value="${esc(x.grade||"")}" placeholder="A, B+, 3…"></label><label>Percent (optional)<input id="sgpercent" type="number" step=".1" min="0" max="200" value="${x.percent??""}"></label></div>
+    <div class="grid2"><label>Term<input id="sgterm" value="${esc(x.term||"")}" placeholder="Quarter 1"></label><label>As of<input id="sgdate" type="date" value="${esc(x.asOf||ymd())}"></label></div>
+    <label>Notes<input id="sgnotes" value="${esc(x.notes||"")}"></label>
+    ${x.id?`<button type="button" class="btn danger" onclick="removeSchoolGrade('${x.id}')">Remove snapshot</button>`:""}
+  </div>`,"Save",async()=>{
+    const kid=canonicalPersonName($("#sgchild").value.trim()),course=$("#sgcourse").value.trim();if(!kid||!course)return;
+    let row=(state.schoolGrades||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.schoolGrades.push(row)}
+    Object.assign(row,{child:kid,course,grade:$("#sggrade").value.trim(),percent:$("#sgpercent").value===""?null:Number($("#sgpercent").value),term:$("#sgterm").value.trim(),asOf:$("#sgdate").value||ymd(),source:x.source||"Manual",notes:$("#sgnotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeSchoolGrade(id){if(!confirm("Remove this grade snapshot?"))return;state.schoolGrades=(state.schoolGrades||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function openSchoolAssignment(id="",child=""){
+  const x=(state.schoolAssignments||[]).find(v=>v.id===id)||{id:"",child,course:"",title:"",due:ymd(),status:"due",source:"Manual",notes:""};
+  modal(x.id?"Edit assignment":"Add assignment",`<div class="stack">
+    <label>Child<input id="sachild" list="schoolKidOptions2" value="${esc(x.child||child)}"><datalist id="schoolKidOptions2">${childProfiles().map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label>
+    <label>Assignment<input id="satitle" value="${esc(x.title||"")}"></label>
+    <div class="grid2"><label>Class / subject<input id="sacourse" value="${esc(x.course||"")}"></label><label>Due date<input id="sadue" type="date" value="${esc(x.due||ymd())}"></label></div>
+    <label>Status<select id="sastatus">${[["due","Due / open"],["missing","Missing"],["late","Late"],["submitted","Submitted"],["graded","Graded"],["excused","Excused"]].map(([v,l])=>`<option value="${v}" ${String(x.status||"due")===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label>Notes<textarea id="sanotes" rows="2">${esc(x.notes||"")}</textarea></label>
+    ${x.id?`<button type="button" class="btn danger" onclick="removeSchoolAssignment('${x.id}')">Remove assignment</button>`:""}
+  </div>`,"Save",async()=>{
+    const kid=canonicalPersonName($("#sachild").value.trim()),title=$("#satitle").value.trim();if(!kid||!title)return;
+    let row=(state.schoolAssignments||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.schoolAssignments.push(row)}
+    Object.assign(row,{child:kid,title,course:$("#sacourse").value.trim(),due:$("#sadue").value||"",status:$("#sastatus").value,source:x.source||"Manual",notes:$("#sanotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeSchoolAssignment(id){if(!confirm("Remove this assignment from the school snapshot?"))return;state.schoolAssignments=(state.schoolAssignments||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function schoolGradeSnapshotCard(){
+  const kids=childProfiles(),hasAny=kids.some(p=>latestSchoolGrades(p.name).length||schoolAssignmentRows(p.name).length);
+  return `<div class="card school-snapshot-card"><div class="section-title"><div><div class="eyebrow">ParentVUE snapshot</div><h2>Grades + assignments</h2><div class="muted small">Saved snapshots only — each item shows its age. ParentVUE remains the live source until a supported direct sync exists.</div></div><div class="actions"><button class="btn small" onclick="openSchoolGrade()">+ Grade</button><button class="btn small" onclick="openSchoolAssignment()">+ Assignment</button></div></div>
+    ${kids.map(p=>{const grades=latestSchoolGrades(p.name),assignments=schoolAssignmentRows(p.name).filter(x=>!["graded","excused"].includes(String(x.status||"").toLowerCase())).slice(0,5);if(!grades.length&&!assignments.length)return"";
+      return `<div class="school-snapshot-child"><div class="school-snapshot-head"><b>${esc(p.name)}</b><span>${grades.length} class${grades.length===1?"":"es"} · ${assignments.length} open/missing</span></div>
+        ${grades.length?`<div class="school-grade-grid">${grades.slice(0,8).map(g=>`<button class="school-grade-chip ${schoolGradeTone(g)}" onclick="openSchoolGrade('${g.id}')"><span>${esc(g.course)}</span><b>${esc(schoolGradeDisplay(g))}</b><small>${esc(schoolGradeFreshness(g))}</small></button>`).join("")}</div>`:""}
+        ${assignments.length?`<div class="school-assignment-list">${assignments.map(a=>`<button onclick="openSchoolAssignment('${a.id}')"><span><b>${esc(a.title)}</b><small>${esc(a.course||"")}${a.due?" · due "+esc(dl(a.due)):""}${a.notes?" · "+esc(a.notes):""}</small></span><span class="school-assignment-status ${esc(String(a.status||"due").toLowerCase())}">${esc(a.status||"due")}</span></button>`).join("")}</div>`:""}
+      </div>`;
+    }).join("")||`<div class="notice">No grade or assignment snapshots saved yet. Open ParentVUE for live information, then add a snapshot here—or give the information to ChatGPT and it can flow into this private section.</div>`}
+  </div>`;
+}
+
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
   const events=dedupeEventList((state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
@@ -1403,6 +1477,7 @@ function schoolDashboard(){
   const kids=(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"")).filter(Boolean);
   return `<div class="card priority-card school-card"><div class="section-title"><div><div class="eyebrow">🎒 School</div><h2>Grades, assignments + upcoming</h2></div><a class="btn primary" href="https://synergyvue.lps.org/PXP2_Login_Parent.aspx?regenerateSessionId=true" target="_blank" rel="noopener">Open ParentVUE</a></div>
     <div class="notice">School emails can feed dates, deadlines, and concrete action items into Daily Life automatically. ParentVUE remains the live source for grades and assignment details.</div>
+    ${schoolGradeSnapshotCard()}
     ${schoolTasks.length?`<div class="school-actions"><div class="mini-heading">Homework Hub + action needed</div>${schoolTasks.slice(0,8).map(t=>`<label class="school-action task"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.child?esc(t.child)+" · ":""}${esc(dl(t.date))}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")}</div>`:""}
     ${recentSchool.length?`<details class="school-notes"><summary>Recent attendance / teacher notes (${recentSchool.length})</summary>${recentSchool.map(e=>`<div class="row"><span><b>${esc(e.title)}</b><div class="muted small">${e.child?esc(e.child)+" · ":""}${esc(e.notes||"")}</div></span><b>${esc(dl(e.date))}</b></div>`).join("")}</details>`:""}
     ${kids.length?`<div class="school-kids">${kids.map(k=>{const mine=events.filter(e=>String(e.child||"")===k).slice(0,4);return `<div class="school-kid"><b>${esc(k)}</b>${mine.length?mine.map(e=>`<div class="school-item" onclick="openEvent('${e.date}','${e.id}')"><span>${esc(dl(e.date))}</span><span class="grow">${esc(e.title)}${e.startTime?` · ${esc(fmtClock(e.startTime))}`:""}</span></div>`).join(""):`<div class="muted small">No upcoming school items captured.</div>`}</div>`}).join("")}</div>`:""}
