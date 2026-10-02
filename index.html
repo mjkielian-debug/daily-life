@@ -1540,7 +1540,10 @@ function incomeBefore(date,accountKey){
 function transferableIncomeBefore(date){
   return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
 }
-function paycheckEstimatePreset(){
+function transferableIncomeBeforeAccount(date,accountKey){
+  return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey===accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function paycheckEstimatePreset(){function paycheckEstimatePreset(){
   const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8),
         seasonal=upsSeasonality();
   let interval=7,avgNet=0,next="";
@@ -1593,14 +1596,14 @@ function dueDateOutlookCard(){
   const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
         short=rows.filter(r=>r.status==="Projected short").length;
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Due-date outlook</div><h2>${covered} of ${rows.length} upcoming bills currently covered</h2></div>${short?`<span class="bill-status short">${short} short</span>`:`<span class="bill-status covered">on track</span>`}</div>
-    <p class="muted small">This combines recorded account balances, earlier unpaid bills, and every enabled expected-income occurrence arriving on or before each due date. Income from another spendable account is shown as a transfer need rather than pretending it is already in the bill account.</p>
-    ${rows.map(r=>{const b=r.bill,totalIncome=expectedIncomeTotalBefore(b.due),cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown";
+    <p class="muted small">This combines recorded account balances, earlier unpaid bills, and every enabled expected-income occurrence arriving on or before each due date. When another spending account can cover a shortage, Daily Life now shows the exact transfer plan and reserves those dollars so they are not recommended twice.</p>
+    ${rows.map(r=>{const b=r.bill,totalIncome=expectedIncomeTotalBefore(b.due),cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown",instruction=transferInstruction(r);
       const after=Number.isFinite(r.projectedAfter)?(r.projectedAfter/100):null;
-      return `<div class="row"><span><b>${esc(b.name)}</b><div class="muted small">Due ${esc(dl(b.due))} · ${money(Number(b.amount||0))} · expected income by then ${money(totalIncome)}</div>${after!==null?`<div class="muted small">Assigned account after this bill: ${budgetMoney(Math.round(after*100))}</div>`:""}</span><span class="bill-status ${cls}">${esc(r.status)}</span></div>`;
+      return `<div class="row"><span><b>${esc(b.name)}</b><div class="muted small">Due ${esc(dl(b.due))} · ${money(Number(b.amount||0))} · expected income by then ${money(totalIncome)}</div>${after!==null?`<div class="muted small">Assigned account before any new transfer: ${budgetMoney(Math.round(after*100))} after this bill</div>`:""}${instruction?`<div class="small"><b>${esc(instruction)}</b> by ${esc(dl(b.due))}.</div>`:""}</span><span class="bill-status ${cls}">${esc(r.status)}</span></div>`;
     }).join("")}
   </div>`;
 }
-function expectedIncomeCard(){
+function expectedIncomeCard(){function expectedIncomeCard(){
   const end=new Date();end.setDate(end.getDate()+45);
   const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset(),
         bankSuggestions=typeof cloudRecurringIncomeSuggestions==="function"?cloudRecurringIncomeSuggestions():[];
@@ -1611,10 +1614,22 @@ function expectedIncomeCard(){
   </div>`;
 }
 function billReadiness(){
-  const spentByAccount=new Map(),sorted=state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
+  const spentByAccount=new Map(),transferOutByAccount=new Map(),transferInByAccount=new Map(),
+        sorted=state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
   const spendableAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&!a.protectFromSpending&&a.key!=="house_fund"&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance)));
-  const spendableStarting=spendableAccounts.reduce((sum,a)=>sum+Math.round(Number(a.balance)*100),0);
-  let spentGlobal=0;
+  const billsDueThrough=(accountKey,date)=>state.bills.filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=date&&b.amount!==null&&b.amount!==""&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0).reduce((sum,b)=>sum+Math.round(Number(b.amount)*100),0);
+  const transferCapacity=(source,date)=>{
+    const starting=Math.round(Number(source.balance||0)*100),
+          allIncome=incomeBefore(date,source.key),
+          transferableIncome=transferableIncomeBeforeAccount(date,source.key),
+          restrictedIncome=Math.max(0,allIncome-transferableIncome),
+          localBills=billsDueThrough(source.key,date),
+          plannedOut=transferOutByAccount.get(source.key)||0,
+          plannedIn=transferInByAccount.get(source.key)||0,
+          unrestricted=starting+transferableIncome+plannedIn-plannedOut,
+          localNeedFromUnrestricted=Math.max(0,localBills-restrictedIncome);
+    return Math.max(0,unrestricted-localNeedFromUnrestricted);
+  };
   return sorted.map(row=>{
     const b=row.bill,setup=recordedBillSetup(b),matches=state.accounts.filter(a=>a.key&&a.key===b.paymentAccountKey),account=matches.length===1?matches[0]:null,result={...row,setup,account};
     if(b.status==="paid")return {...result,status:"Paid"};
@@ -1623,24 +1638,42 @@ function billReadiness(){
     if(!["checking","savings"].includes(account.type)||account.balance===null||account.balance===""||!Number.isFinite(balance))return {...result,status:"Balance unavailable"};
     const amount=Number(b.amount),due=String(b.due||"");
     if(b.amount===null||b.amount===""||!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(due))return {...result,status:"Check bill"};
-    const amountC=Math.round(amount*100),prior=spentByAccount.get(account.key)||0,currentBefore=Math.round(balance*100)-prior,currentAfter=currentBefore-amountC,
-          projectedIncome=incomeBefore(due,account.key),projectedBefore=currentBefore+projectedIncome,projectedAfter=projectedBefore-amountC;
+    const amountC=Math.round(amount*100),prior=spentByAccount.get(account.key)||0,
+          plannedOut=transferOutByAccount.get(account.key)||0,plannedIn=transferInByAccount.get(account.key)||0,
+          currentBefore=Math.round(balance*100)-prior-plannedOut,currentAfter=currentBefore-amountC,
+          projectedIncome=incomeBefore(due,account.key),projectedBefore=currentBefore+plannedIn+projectedIncome,projectedAfter=projectedBefore-amountC;
     spentByAccount.set(account.key,prior+amountC);
     const accountSpendable=!account.protectFromSpending&&account.key!=="house_fund";
-    let globalProjectedAfter=null;
-    if(accountSpendable){
-      const globalBefore=spendableStarting+transferableIncomeBefore(due)-spentGlobal;
-      globalProjectedAfter=globalBefore-amountC;
-      spentGlobal+=amountC;
-    }
-    let status="Projected short";
+    let status="Projected short",globalProjectedAfter=null,transfers=[];
     if(currentAfter>=0)status="Covered now";
     else if(projectedAfter>=0)status="Covered by due date";
-    else if(accountSpendable&&globalProjectedAfter!==null&&globalProjectedAfter>=0)status="Transfer needed";
-    return {...result,currentBefore,currentAfter,projectedIncome,projectedBefore,projectedAfter,globalProjectedAfter,status};
+    else if(accountSpendable){
+      const needed=-projectedAfter,
+            sources=spendableAccounts.filter(source=>source.key!==account.key).map(source=>({source,available:transferCapacity(source,due)})).filter(x=>x.available>0).sort((a,b)=>b.available-a.available||String(a.source.name||"").localeCompare(String(b.source.name||""))),
+            totalCapacity=sources.reduce((sum,x)=>sum+x.available,0);
+      globalProjectedAfter=totalCapacity-needed;
+      if(totalCapacity>=needed){
+        let remaining=needed;
+        for(const x of sources){
+          if(remaining<=0)break;
+          const amount=Math.min(remaining,x.available);
+          if(amount<=0)continue;
+          transfers.push({fromKey:x.source.key,fromName:String(x.source.name||"Source account"),toKey:account.key,toName:String(account.name||"Payment account"),amount});
+          transferOutByAccount.set(x.source.key,(transferOutByAccount.get(x.source.key)||0)+amount);
+          transferInByAccount.set(account.key,(transferInByAccount.get(account.key)||0)+amount);
+          remaining-=amount;
+        }
+        status="Transfer needed";
+      }
+    }
+    return {...result,currentBefore,currentAfter,projectedIncome,projectedBefore,projectedAfter,globalProjectedAfter,transfers,status};
   });
 }
-// Each occurrence remains a separate bill; paid history is never recycled.
+function transferInstruction(r){
+  if(r?.status!=="Transfer needed"||!Array.isArray(r.transfers)||!r.transfers.length)return"";
+  return r.transfers.map(t=>`Transfer ${money(t.amount/100)} from ${t.fromName} → ${t.toName}`).join("; ");
+}
+// Each occurrence remains a separate bill; paid history is never recycled.// Each occurrence remains a separate bill; paid history is never recycled.
 const BILL_REPEATS=[[0,"Does not repeat"],[1,"Monthly"],[3,"Every 3 months"],[12,"Yearly"]];
 function billRepeat(b){return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
 function validBillDate(value){
@@ -1697,7 +1730,7 @@ function billRowView(r){
   if(r.currentAfter!==undefined){
     if(r.status==="Covered now")note=`${money(r.currentBefore/100)} available now before this bill · ${money(r.currentAfter/100)} left after reserving it now.`;
     else if(r.status==="Covered by due date")note=`${money(r.currentBefore/100)} available now · +${money(r.projectedIncome/100)} expected into ${r.account?.name||"this account"} by ${dl(b.due)} · ${money(r.projectedAfter/100)} projected left after the bill.`;
-    else if(r.status==="Transfer needed")note=`${money(-r.projectedAfter/100)} still needs to be moved into ${r.account?.name||"the payment account"} by ${dl(b.due)}. Across transferable spending cash and expected income, ${money(r.globalProjectedAfter/100)} is projected to remain after this bill.`;
+    else if(r.status==="Transfer needed")note=`${transferInstruction(r)} by ${dl(b.due)}. After reserving that transfer and bills due through this date, ${money(Math.max(0,r.globalProjectedAfter)/100)} of additional transferable capacity is projected to remain.`;
     else note=`${r.projectedIncome>0?"+"+money(r.projectedIncome/100)+" expected into this account before the due date · ":""}${money(-r.projectedAfter/100)} projected short by ${dl(b.due)} after earlier bills.`;
   }else if(r.status==="Balance unavailable")note="Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.";
   else if(r.status==="Check bill")note="Correct the amount or due date before relying on this projection.";
