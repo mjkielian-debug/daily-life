@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-people6">
+<link rel="stylesheet" href="styles.css?v=20261002-people7">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1039,12 +1039,13 @@ function ensurePeopleProfiles(){
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
   for(const name of names){
     if(!state.peopleProfiles.some(p=>String(p.name||"").toLowerCase()===name.toLowerCase())){
-      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",livesWithUser:true,profileScope:"household",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],personNotes:[],sharedPlans:[],importantDates:[],birthdayPlan:{tasks:[]}});
+      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",livesWithUser:true,profileScope:"household",familyLinks:[],favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],personNotes:[],sharedPlans:[],importantDates:[],birthdayPlan:{tasks:[]}});
     }
   }
   for(const p of state.peopleProfiles){
     if(!p.id)p.id=uid();
     if(!Array.isArray(p.personNotes))p.personNotes=[];
+    if(!Array.isArray(p.familyLinks))p.familyLinks=[];
     if(!Array.isArray(p.sharedPlans))p.sharedPlans=[];
     if(!Array.isArray(p.importantDates))p.importantDates=[];
     if(!Array.isArray(p.wishlist))p.wishlist=[];
@@ -1160,6 +1161,7 @@ function openPersonHub(id){
     <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openPersonPlan('${p.id}')">+ Plan</button><button class="btn" onclick="closeModal();openPersonNote('${p.id}')">+ Note</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
     ${p.elfsterUrl?`<div class="elfster-sync-line">Elfster linked${p.elfsterLastSyncedAt?` · last update ${new Date(p.elfsterLastSyncedAt).toLocaleString()}`:" · waiting for first sync"}</div>`:""}
     <div class="person-hub-context"><span class="tag">${esc(relationshipLabel(p))}</span><span class="tag">${livesWithUser(p)?"household":"extended family / other"}</span>${p.relatedTo?`<span class="muted small">${esc(p.relatedTo)}</span>`:""}</div>
+    ${(p.familyLinks||[]).length?`<div class="person-family-connections"><div class="mini-heading">Family connections</div><div class="person-chips">${p.familyLinks.map(link=>{const match=(state.peopleProfiles||[]).find(x=>String(x.name||"").toLowerCase()===String(link.name||"").toLowerCase());return match?`<button class="person-chip person-chip-button" onclick="closeModal();openPersonHub(\'${match.id}\')">${esc(link.name)} · ${esc(link.label||"family")}</button>`:`<span class="person-chip">${esc(link.name)} · ${esc(link.label||"family")}</span>`}).join("")}</div></div>`:""}
     ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
     ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
     ${p.routineNotes?`<div class="notice"><b>Things to remember</b><div class="muted small">${esc(p.routineNotes).replace(/\n/g,"<br>")}</div></div>`:""}
@@ -1202,7 +1204,7 @@ function setPeopleSearch(value){
 function peopleMatchesFilter(p){
   const q=peopleSearch.trim().toLowerCase();
   if(q){
-    const hay=[p.name,p.relationship,p.relatedTo,...(p.interests||[]),...(p.favoriteFoods||[])].filter(Boolean).join(" ").toLowerCase();
+    const hay=[p.name,p.relationship,p.relatedTo,...(p.familyLinks||[]).flatMap(x=>[x.name,x.label]),...(p.interests||[]),...(p.favoriteFoods||[]),...(p.personNotes||[]).map(x=>x.text),...(p.sharedPlans||[]).map(x=>typeof x==="string"?x:x.title)].filter(Boolean).join(" ").toLowerCase();
     if(!hay.includes(q))return false;
   }
   if(peopleFilter==="household"&&!livesWithUser(p))return false;
@@ -1235,15 +1237,16 @@ function personCardCompact(p){
     ${p.elfsterUrl?`<div class="person-detail-line"><span>Gifts</span><b>Elfster linked${p.elfsterLastSyncedAt?` · ${new Date(p.elfsterLastSyncedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"})}`:""}</b></div>`:""}
     ${ints.length?`<div class="person-chips">${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:""}
     ${foods.length?`<div class="muted small">Likes: ${foods.slice(0,3).map(esc).join(", ")}</div>`:""}
-    ${plans.length||dates.length?`<div class="person-mini-meta">${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
+    ${plans.length||dates.length||(p.familyLinks||[]).length?`<div class="person-mini-meta">${(p.familyLinks||[]).length?`${p.familyLinks.length} family link${p.familyLinks.length===1?"":"s"}`:""}${(p.familyLinks||[]).length&&(plans.length||dates.length)?" · ":""}${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
   </div>`;
 }
 function openPersonProfile(id=""){
-  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
     <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
     <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="sister's daughter, partner's brother, their child…"></label>
+    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label>
     <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
@@ -1263,7 +1266,8 @@ function openPersonProfile(id=""){
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
