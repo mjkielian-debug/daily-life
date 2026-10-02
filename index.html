@@ -2489,25 +2489,68 @@ function accountBillsDueSoon(accountKey,days=30){
   const end=new Date(ymd()+"T12:00:00");end.setDate(end.getDate()+days);const until=ymd(end);
   return (state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=until&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0);
 }
+function accountSweepPlan(a,days=45){
+  const today=ymd(),endDate=new Date(today+"T12:00:00");endDate.setDate(endDate.getDate()+Math.max(1,Number(days)||45));const until=ymd(endDate),
+        floor=Math.max(0,Number(a.minimumOperatingBalance||0)),balance=Number(a.balance||0),events=[];
+  for(const x of expectedIncomeOccurrences(until)){
+    if(x.accountKey===a.key)events.push({date:x.date,kind:"income",amount:Number(x.amount||0),name:x.name});
+  }
+  for(const b of state.bills||[]){
+    if(b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due<today||b.due>until)continue;
+    const amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0)continue;
+    events.push({date:b.due,kind:"bill",amount:-amount,name:b.name});
+  }
+  events.sort((x,y)=>x.date.localeCompare(y.date)||(x.kind==="bill"?-1:1));
+  let running=0,minRunning=0;
+  for(const e of events){running+=e.amount;minRunning=Math.min(minRunning,running)}
+  const requiredNow=Math.max(floor,floor-Math.min(0,minRunning)),
+        excess=Math.max(0,balance-requiredNow),short=Math.max(0,requiredNow-balance);
+  return{today,until,floor,balance,events,requiredNow,excess,short,
+    billCount:events.filter(x=>x.kind==="bill").length,incomeCount:events.filter(x=>x.kind==="income").length};
+}
+function accountSortForBills(a){
+  const s=accountStrategy(a);
+  if(s==="Interest-first savings")return 0;
+  if(s==="Standard"&&a.type==="savings")return 1;
+  if(s==="Standard")return 2;
+  if(s==="Deposit landing checking")return 3;
+  if(s==="Protected reserve")return 4;
+  return 9;
+}
 function accountStrategyCard(){
   const accounts=state.accounts||[],interest=accounts.filter(a=>accountStrategy(a)==="Interest-first savings"),
         landings=accounts.filter(a=>accountStrategy(a)==="Deposit landing checking"),
-        exiting=accounts.filter(a=>accountStrategy(a)==="Transition / close");
+        exiting=accounts.filter(a=>accountStrategy(a)==="Transition / close"),
+        home=interest.find(a=>a.preferredCashHome)||interest[0]||null;
   if(!interest.length&&!landings.length&&!exiting.length)return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Tell Daily Life where money should live</h2><div class="muted small">Mark an account as interest-first savings, deposit-landing checking, or transition/close. Daily Life will keep those goals separate from bill payment rules.</div></div></div><div class="notice">Edit an account to set its strategy. This does not move money.</div></div>`;
+  const savingsBills=home?(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===home.key).length:0;
   const landingRows=landings.map(a=>{
-    const bills=accountBillsDueSoon(a.key,30),reserve=bills.reduce((n,b)=>n+Number(b.amount||0),0),floor=Math.max(0,Number(a.minimumOperatingBalance||0)),needed=reserve+floor,balance=Number(a.balance||0),excess=Math.max(0,balance-needed);
-    const home=interest[0];
-    return `<div class="money-strategy-row"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Deposit landing · ${bills.length} bill${bills.length===1?"":"s"} due in 30d · buffer ${money(floor)}</div></div><div class="strategy-amount"><b>${money(needed)}</b><small>keep for bills + buffer</small>${excess>0&&home?`<span>${money(excess)} currently above that amount</span>`:""}</div></div>`;
+    const plan=accountSweepPlan(a,45);
+    const suggestion=home&&plan.excess>=1
+      ?`<div class="sweep-suggestion"><span>Suggested sweep to ${esc(home.name)}</span><b>${money(plan.excess)}</b><small>Leaves ${money(plan.requiredNow)} for known 45-day checking bills + your buffer.</small></div>`
+      :plan.short>0
+        ?`<div class="sweep-suggestion short"><span>Known checking need above current balance</span><b>${money(plan.short)}</b><small>Based on entered bills, expected income timing, and your buffer.</small></div>`
+        :`<div class="sweep-suggestion settled"><span>Checking is near the calculated operating amount</span><b>${money(plan.requiredNow)}</b><small>Known 45-day bills + your buffer.</small></div>`;
+    return `<div class="money-strategy-row landing"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Deposit landing · ${plan.billCount} checking bill${plan.billCount===1?"":"s"} · ${plan.incomeCount} expected deposit${plan.incomeCount===1?"":"s"} through ${esc(dl(plan.until))}</div></div><div class="strategy-amount"><b>${money(plan.balance)}</b><small>current recorded balance</small></div></div>${suggestion}`;
   }).join("");
   const exitRows=exiting.map(a=>{
-    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key),income=(state.expectedIncome||[]).filter(x=>x.enabled!==false&&x.accountKey===a.key),balance=Number(a.balance||0),
-          clean=bills.length===0&&income.length===0&&Math.abs(balance)<1;
-    return `<div class="money-strategy-row exit"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">${clean?"No active bill/income links recorded. Verify pending transactions before closing.":`${bills.length} unpaid bill link${bills.length===1?"":"s"} · ${income.length} expected-income link${income.length===1?"":"s"} · balance ${money(balance)}`}</div></div><span class="tag">${clean?"structurally clear":"transitioning"}</span></div>`;
+    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key),
+          income=(state.expectedIncome||[]).filter(x=>x.enabled!==false&&x.accountKey===a.key),
+          balance=Number(a.balance||0),clean=bills.length===0&&income.length===0&&Math.abs(balance)<1;
+    return `<div class="money-strategy-row exit"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">${clean?"No active bill/income links recorded. Check for any pending or straggler activity before closing.":`${bills.length} unpaid bill link${bills.length===1?"":"s"} · ${income.length} expected-income link${income.length===1?"":"s"} · balance ${money(balance)}`}</div></div><span class="tag">${clean?"ready for final check":"transitioning"}</span></div>`;
   }).join("");
-  const interestRows=interest.map(a=>`<div class="money-strategy-row home"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Interest-first home base${a.billPayAllowed===true?" · can pay bills directly":a.billPayAllowed===false?" · not used for direct bill pay":""}</div></div><b>${money(a.balance)}</b></div>`).join("");
-  return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Keep cash where it works hardest</h2><div class="muted small">This planning layer respects each bill's actual payment account. It never assumes a bill can pull from savings unless you recorded it that way.</div></div></div>${interestRows}${landingRows}${exitRows}</div>`;
+  const interestRows=interest.map(a=>{
+    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key).length;
+    return `<div class="money-strategy-row home"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Interest-first home base · ${bills} bill${bills===1?"":"s"} currently pay here${a.billPayAllowed===true?" · direct bill pay allowed":a.billPayAllowed===false?" · direct bill pay unavailable":""}</div></div><b>${money(a.balance)}</b></div>`;
+  }).join("");
+  return `<div class="card money-strategy-card botanical-money"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Keep more cash earning interest</h2><div class="muted small">Savings is the preferred home for money that does not need to remain elsewhere. Checking keeps only the amount needed for checking-only bills and your chosen operating buffer.</div></div></div>
+    ${home?`<div class="strategy-home-summary"><span><b>Preferred cash home</b><small>${esc(home.name)} · ${savingsBills} active bill${savingsBills===1?"":"s"} already assigned there</small></span><b>${money(home.balance)}</b></div>`:""}
+    ${interestRows}${landingRows}
+    ${exiting.length?`<div class="mini-heading strategy-exit-title">Accounts to exit</div>${exitRows}`:""}
+    <div class="muted small strategy-disclaimer">Sweep guidance uses only recorded balances, entered bills, enabled expected income, and your operating buffer. It does not predict unlogged spending or actually move money.</div>
+  </div>`;
 }
-function openAccount(key=""){
+function openAccount(key=""){function openAccount(key=""){
   const x=state.accounts.find(a=>a.key===key)||{};
   modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label>
   <div class="account-strategy-editor"><div class="mini-heading">Cash strategy</div><label>Role<select id="astrategy">${ACCOUNT_STRATEGIES.map(v=>`<option ${accountStrategy(x)===v?"selected":""}>${v}</option>`).join("")}</select></label><div class="grid2"><label>Minimum operating buffer<input id="amin" type="number" min="0" step=".01" value="${Number(x.minimumOperatingBalance||0)}"></label><label>Can bills pull directly?<select id="abillpay"><option value="" ${x.billPayAllowed==null?"selected":""}>Unknown</option><option value="1" ${x.billPayAllowed===true?"selected":""}>Yes</option><option value="0" ${x.billPayAllowed===false?"selected":""}>No</option></select></label></div><label class="task"><input id="addlanding" type="checkbox" ${x.directDepositRequired?"checked":""}><span><b>Direct deposit / income needs to land here</b><div class="muted small">Use when an account must receive deposits even though you may prefer to move excess elsewhere.</div></span></label><div class="muted small">${esc(accountStrategyNote(x))}</div></div>
