@@ -657,6 +657,51 @@ function itineraryFlowCard(date){
     </div>`).join("")||`<div class="notice">No time blocks yet.</div>`}</div>
   </div>`;
 }
+
+function itineraryPrintSection(date){
+  const items=itineraryDayItems(date),meal=mealForDate(date),
+    tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),
+    chores=(state.chores||[]).filter(x=>x.date===date&&!x.done),
+    note=String(state.itineraryNotes?.[date]||"").trim();
+  const heading=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  return `<section class="print-day"><h2>${esc(heading)}</h2>
+    <div class="print-flow">${items.map(x=>`<div class="print-row ${x.kind==="gap"?"gap":x.fixed?"fixed":"flex"}"><div class="time">${esc(fmtClock(x.start))}${x.end?"–"+esc(fmtClock(x.end)):""}</div><div><b>${esc(x.title)}</b>${x.detail?`<div class="detail">${esc(x.detail)}</div>`:""}${x.done?`<div class="done">✓ Done</div>`:""}</div></div>`).join("")||"<p>No timed items.</p>"}</div>
+    <div class="print-grid">
+      <div><h3>Dinner</h3><p>${meal?.dish?esc(meal.dish):"Not planned"}${meal?.startBy?" · start "+esc(fmtClock(meal.startBy)):""}${meal?.serveTime?" · serve "+esc(fmtClock(meal.serveTime)):""}</p>${meal?.tomorrowPrep?`<p class="detail">Prep: ${esc(meal.tomorrowPrep)}</p>`:""}</div>
+      <div><h3>Open tasks</h3>${tasks.length?`<ul>${tasks.map(x=>`<li>${esc(x.title)}${x.child?" · "+esc(x.child):""}</li>`).join("")}</ul>`:"<p>None</p>"}</div>
+      <div><h3>Family chores</h3>${chores.length?`<ul>${chores.map(x=>`<li>${esc(x.child||"")} — ${esc(x.chore||"")}</li>`).join("")}</ul>`:"<p>None</p>"}</div>
+    </div>
+    ${note?`<div class="print-note"><h3>Notes</h3><p>${esc(note)}</p></div>`:""}
+  </section>`;
+}
+function itineraryPrintableDocument(dates,title){
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1e2822;margin:0;background:#fff}
+    main{max-width:850px;margin:auto;padding:24px}h1{font-family:Georgia,serif;margin:0 0 18px;color:#274234}
+    h2{font-family:Georgia,serif;margin:0 0 10px;color:#315642}h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 5px;color:#6c4c59}
+    .print-day{padding:0 0 22px;margin:0 0 22px;border-bottom:2px solid #d9e5dc;break-inside:avoid-page}
+    .print-row{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:7px 9px;border-top:1px solid #e1e8e3}
+    .print-row.fixed{border-left:4px solid #6aa57a}.print-row.flex{border-left:4px solid #d99ab0}.print-row.gap{color:#68766d;border-left:4px solid #ddd}
+    .time{font-weight:700}.detail{font-size:12px;color:#68766d;margin-top:2px}.done{font-size:11px;color:#547b61;margin-top:2px}
+    .print-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.print-grid>div,.print-note{border:1px solid #dce5de;border-radius:10px;padding:9px}
+    p{margin:4px 0;line-height:1.4}ul{margin:4px 0;padding-left:18px}li{margin:3px 0}
+    @media print{main{padding:0}.print-day{page-break-inside:avoid}button{display:none}}
+    @media(max-width:600px){.print-grid{grid-template-columns:1fr}.print-row{grid-template-columns:95px 1fr}}
+  </style></head><body><main><h1>${esc(title)}</h1>${dates.map(itineraryPrintSection).join("")}</main><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
+}
+function openItineraryPrint(dates,title){
+  const win=window.open("","_blank");if(!win){alert("Your browser blocked the print window. Allow pop-ups for Daily Life and try again.");return}
+  win.document.open();win.document.write(itineraryPrintableDocument(dates,title));win.document.close();
+}
+function printItineraryDay(date=itineraryDate){
+  openItineraryPrint([date],`Daily Life · ${new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}`);
+}
+function printItineraryWeek(date=itineraryDate){
+  const d=new Date(date+"T12:00:00");d.setDate(d.getDate()-d.getDay());
+  const dates=Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return ymd(x)});
+  openItineraryPrint(dates,`Daily Life · Week of ${new Date(d).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}`);
+}
+
 function itineraryView(){
   const date=itineraryDate||ymd(),meal=mealForDate(date),tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
   return `<div class="card glow itinerary-hero">
