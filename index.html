@@ -273,6 +273,10 @@ function migrateState(s){
     if(income.notes===undefined)income.notes="";
   }
   for(const p of s.peopleProfiles){
+    if(p.livesWithUser===undefined)p.livesWithUser=isChildProfile(p);
+    if(p.profileScope===undefined)p.profileScope=p.livesWithUser?"household":"extended";
+    if(p.relatedTo===undefined)p.relatedTo="";
+    if(p.elfsterUrl===undefined)p.elfsterUrl="";
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
     if(!Array.isArray(p.favoriteCharacters))p.favoriteCharacters=[];
     if(!Array.isArray(p.interests))p.interests=[];
@@ -1032,11 +1036,16 @@ function personById(id){return (state.peopleProfiles||[]).find(p=>p.id===id)}
 function normalizedRelationship(p){return String(p?.relationship||"person").trim().toLowerCase()}
 function isChildProfile(p){return ["child","son","daughter"].includes(normalizedRelationship(p))}
 function isSiblingProfile(p){return ["sister","brother","sibling"].includes(normalizedRelationship(p))}
-function isAdultFamilyProfile(p){return ["sister","brother","sibling","mother","father","mom","dad","parent","aunt","uncle","cousin","grandparent","grandmother","grandfather"].includes(normalizedRelationship(p))}
+function isAdultFamilyProfile(p){
+  const r=normalizedRelationship(p);
+  return ["sister","brother","sibling","mother","father","mom","dad","parent","aunt","uncle","cousin","grandparent","grandmother","grandfather","niece","nephew","family"].includes(r)
+    ||/(sister|brother|sibling|mother|father|parent|aunt|uncle|cousin|grand|niece|nephew|in-law)/.test(r);
+}
+function livesWithUser(p){return p?.livesWithUser===true||p?.profileScope==="household"}
 function relationshipGroup(p){
-  if(isChildProfile(p))return"Children";
+  if(isChildProfile(p)&&livesWithUser(p))return"Children";
   if(isPartnerProfile(p))return"Partner";
-  if(isAdultFamilyProfile(p))return"Family";
+  if(isAdultFamilyProfile(p)||isChildProfile(p))return"Family";
   if(["friend","best friend"].includes(normalizedRelationship(p)))return"Friends";
   return"Other people";
 }
@@ -1166,19 +1175,25 @@ function personCards(){
 function personCardCompact(p){
   const b=nextBirthdayInfo(p),ints=p.interests||[],foods=p.favoriteFoods||[],plans=p.sharedPlans||[],dates=p.importantDates||[];
   return `<div class="card person-card compact-person-card" onclick="openPersonHub('${p.id}')">
-    <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
+    <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))} · ${livesWithUser(p)?"household":"extended"}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
+    ${p.relatedTo?`<div class="muted small person-family-link">${esc(p.relatedTo)}</div>`:""}
     ${b?`<div class="person-detail-line"><span>Birthday</span><b>${esc(b.label)}${b.days<=30?" · "+b.days+"d":""}</b></div>`:""}
+    ${p.elfsterUrl?`<div class="person-detail-line"><span>Gifts</span><b>Elfster linked</b></div>`:""}
     ${ints.length?`<div class="person-chips">${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:""}
     ${foods.length?`<div class="muted small">Likes: ${foods.slice(0,3).map(esc).join(", ")}</div>`:""}
     ${plans.length||dates.length?`<div class="person-mini-meta">${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
   </div>`;
 }
 function openPersonProfile(id=""){
-  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
-    <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, partner, friend…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
+    <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
+    <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="Robin's daughter, Tanner's brother, Ted + Linsay's son…"></label>
+    <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
+    <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
+    ${p.elfsterUrl?`<button type="button" class="btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Open Elfster wishlist</button>`:""} 
     <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
     <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
     <label>Favorite foods / treats<input id="pfoods" value="${esc((p.favoriteFoods||[]).join(", "))}" placeholder="Chocolate cake, pizza, strawberries…"></label>
@@ -1194,7 +1209,7 @@ function openPersonProfile(id=""){
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),birthday:$("#pbday").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
@@ -1266,10 +1281,10 @@ function openBirthdayPlanner(personId){
 async function toggleBirthdayPlanTask(personId,index,done){const p=personById(personId);if(!p?.birthdayPlan?.tasks?.[index])return;p.birthdayPlan.tasks[index].done=done;await save();render()}
 
 function peopleOverviewCard(){
-  const profiles=state.peopleProfiles||[],children=profiles.filter(isChildProfile).length,family=profiles.filter(p=>isAdultFamilyProfile(p)||isPartnerProfile(p)).length,
+  const profiles=state.peopleProfiles||[],household=profiles.filter(livesWithUser).length,extended=profiles.filter(p=>!livesWithUser(p)).length,
         upcoming=profiles.map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b&&x.b.days<=45).sort((a,b)=>a.b.days-b.b.days);
   return `<div class="card glow people-hero"><div class="section-title"><div><div class="eyebrow">People</div><h2>The people in your life</h2><div class="muted small">Profiles, birthdays, preferences, plans, and things you want to remember about each person.</div></div><div class="actions"><button class="btn primary" onclick="openPersonProfile()">+ Person</button><button class="btn" onclick="setView('reading')">Reading</button></div></div>
-    <div class="people-hero-stats"><span><b>${profiles.length}</b><small>profiles</small></span><span><b>${children}</b><small>children</small></span><span><b>${family}</b><small>family / partner</small></span></div>
+    <div class="people-hero-stats"><span><b>${profiles.length}</b><small>profiles</small></span><span><b>${household}</b><small>household</small></span><span><b>${extended}</b><small>extended / other</small></span></div>
     ${upcoming.length?`<div class="people-upcoming"><div class="mini-heading">Coming up</div>${upcoming.slice(0,4).map(({p,b})=>`<button onclick="openPersonHub('${p.id}')"><span>${esc(p.name)}</span><b>${esc(b.label)} · ${b.days===0?"today":b.days+"d"}</b></button>`).join("")}</div>`:""}
   </div>`;
 }
