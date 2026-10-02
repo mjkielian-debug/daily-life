@@ -2534,3 +2534,123 @@ body::before{
     max-width:86px;
   }
 }
+
+
+/* Private ParentVUE snapshot */
+.school-snapshot-card{
+  margin:12px 0 6px;
+  border-color:color-mix(in srgb,var(--primary) 28%,var(--border));
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--primary) 8%,transparent),transparent 34%),
+    rgba(255,255,255,.018);
+}
+.school-snapshot-child{
+  padding:11px 0 4px;
+  border-top:1px solid var(--border);
+}
+.school-snapshot-child:first-of-type{border-top:0}
+.school-snapshot-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.school-snapshot-head b{
+  font-family:Georgia,serif;
+  color:var(--cream);
+}
+.school-snapshot-head span{
+  color:var(--muted);
+  font-size:.67rem;
+}
+.school-grade-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.school-grade-chip{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:3px 8px;
+  align-items:center;
+  text-align:left;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:rgba(255,255,255,.02);
+  color:var(--text);
+  padding:8px 9px;
+  font:inherit;
+}
+.school-grade-chip>span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:.72rem;
+  font-weight:750;
+}
+.school-grade-chip>b{
+  font-family:Georgia,serif;
+  font-size:.95rem;
+}
+.school-grade-chip>small{
+  grid-column:1/-1;
+  color:var(--muted);
+  font-size:.6rem;
+}
+.school-grade-chip.ok{border-color:color-mix(in srgb,var(--primary) 30%,var(--border))}
+.school-grade-chip.watch{border-color:color-mix(in srgb,var(--accent) 42%,var(--border))}
+.school-grade-chip.needs-attention{border-color:color-mix(in srgb,var(--secondary) 54%,var(--border))}
+.school-assignment-list{
+  display:grid;
+  gap:6px;
+  margin-top:8px;
+}
+.school-assignment-list>button{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  text-align:left;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:rgba(255,255,255,.016);
+  color:var(--text);
+  padding:8px 9px;
+  font:inherit;
+}
+.school-assignment-list>button>span:first-child{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.school-assignment-list b{font-size:.75rem}
+.school-assignment-list small{
+  color:var(--muted);
+  font-size:.64rem;
+  overflow-wrap:anywhere;
+}
+.school-assignment-status{
+  border-radius:999px;
+  padding:3px 6px;
+  border:1px solid var(--border);
+  font-size:.55rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.school-assignment-status.missing,
+.school-assignment-status.late{
+  border-color:color-mix(in srgb,var(--secondary) 55%,var(--border));
+  color:color-mix(in srgb,var(--secondary) 80%,white 20%);
+}
+.school-assignment-status.due{
+  border-color:color-mix(in srgb,var(--accent) 42%,var(--border));
+  color:color-mix(in srgb,var(--accent) 82%,white 18%);
+}
+@media(max-width:520px){
+  .school-grade-grid{grid-template-columns:1fr}
+  .school-snapshot-head{align-items:flex-start}
+  .school-snapshot-card .section-title{align-items:flex-start}
+}
