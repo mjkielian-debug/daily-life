@@ -362,3 +362,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .agenda-date{width:50px;min-height:50px;border:1px solid var(--border);border-radius:14px;display:grid;place-items:center;align-content:center;background:rgba(255,255,255,.025)}
 .agenda-date b{font-family:Georgia,serif;font-size:.86rem}.agenda-date span{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 @media(max-width:460px){.people-tabs{grid-template-columns:1fr}.people-agenda-row{grid-template-columns:50px minmax(0,1fr) auto}}
+
+.person-note-row{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left}.person-note-row .muted{margin-top:3px}.person-note-row>b{white-space:nowrap;color:var(--muted);font-size:.72rem;font-weight:700}.person-hub-actions{display:flex;flex-wrap:wrap;gap:7px}
