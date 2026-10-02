@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,21);
+  s.version=Math.max(Number(s.version)||0,22);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -254,6 +254,14 @@ function migrateState(s){
     if(bill.desiredAccountKey===undefined)bill.desiredAccountKey="";
     if(bill.amountType===undefined)bill.amountType="Fixed amount";
     if(bill.frequency===undefined)bill.frequency=Number(bill.repeatMonths)===1?"Monthly":Number(bill.repeatMonths)===12?"Annual":Number(bill.repeatMonths)>0?"Irregular":"One-time";
+  }
+  for(const income of s.expectedIncome){
+    if(income.frequency===undefined||!["One-time","Weekly","Every 2 weeks","Monthly"].includes(income.frequency))income.frequency="One-time";
+    if(income.accountKey===undefined)income.accountKey="";
+    if(income.transferable===undefined)income.transferable=true;
+    if(income.enabled===undefined)income.enabled=true;
+    if(income.confidence===undefined)income.confidence="confirmed";
+    if(income.notes===undefined)income.notes="";
   }
   for(const p of s.peopleProfiles){
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
@@ -682,9 +690,9 @@ function todayProgress(value,target,label){const max=Number(target);return Numbe
         month=ymd().slice(0,7),bt=typeof budgetTotals==="function"?budgetTotals(month):null,
         horizon=new Date();horizon.setDate(horizon.getDate()+7);const end=ymd(horizon),
         bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.due>=ymd()&&b.due<=end).sort((a,b)=>a.due.localeCompare(b.due)),
-        futurePays=(state.paychecks||[]).filter(p=>p.payDate>=ymd()).sort((a,b)=>a.payDate.localeCompare(b.payDate)),pay=futurePays[0]||null,
+        upcomingIncome=expectedIncomeOccurrences(end),pay=upcomingIncome[0]||null,
         hasBudget=bt&&Number(bt.income)>0;
-  return `<div class="card today-money"><div class="section-title"><div><div class="eyebrow">💚 Money snapshot</div><h2>${money(checking)} checking</h2></div><button class="btn" onclick="setView('more')">Open Money</button></div><div class="grid3"><div class="metric"><div class="muted small">Budget remaining</div><div class="big">${hasBudget?budgetMoney(bt.remaining):"—"}</div></div><div class="metric"><div class="muted small">Bills next 7 days</div><div class="big">${bills.length}</div><div class="muted small">${bills.length?money(bills.reduce((sum,b)=>sum+Number(b.amount||0),0)):"none logged"}</div></div><div class="metric"><div class="muted small">Next known pay</div><div class="big">${pay?money(pay.netPay):"—"}</div><div class="muted small">${pay?.payDate?dl(pay.payDate):"No future statement yet"}</div></div></div></div>`;
+  return `<div class="card today-money"><div class="section-title"><div><div class="eyebrow">💚 Money snapshot</div><h2>${money(checking)} checking</h2></div><button class="btn" onclick="setView('more')">Open Money</button></div><div class="grid3"><div class="metric"><div class="muted small">Budget remaining</div><div class="big">${hasBudget?budgetMoney(bt.remaining):"—"}</div></div><div class="metric"><div class="muted small">Bills next 7 days</div><div class="big">${bills.length}</div><div class="muted small">${bills.length?money(bills.reduce((sum,b)=>sum+Number(b.amount||0),0)):"none logged"}</div></div><div class="metric"><div class="muted small">Next expected income</div><div class="big">${pay?money(pay.amount):"—"}</div><div class="muted small">${pay?`${esc(pay.name)} · ${esc(dl(pay.date))}`:"Nothing scheduled yet"}</div></div></div></div>`;
 }
 function nextLifeAdminAction(){
   const rows=[...(state.projects||[])].filter(p=>!["done","closed"].includes(String(p.status||""))&&p.nextAction).sort((a,b)=>projectUrgency(a)-projectUrgency(b)||String(a.due||"9999").localeCompare(String(b.due||"9999")));
@@ -1172,6 +1180,7 @@ function moreView(){
         ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0);
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
   ${safeToSpendCard()}
+  ${dueDateOutlookCard()}
   ${incomePatternCard()}
   ${seasonalIncomeCard()}
   ${netWorthCard()}
@@ -1253,6 +1262,7 @@ function budgetView(){
   ${t.plan.income===null?`<p class="notice">Enter expected cash income to begin. EBT does not increase cash available.</p>`:""}
   ${t.remaining<0?`<p class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</p>`:""}
   <p class="muted small">Planning estimates, not your bank balance. Only bills entered for this month and spending logged here are included.</p></div>
+  ${budgetExpectedIncomeCard()}
   ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported into this budget</span><b>${money(actual.imported)}</b></div><p class="muted small">Actuals come from connected posted transactions. “Bank-identified income” only counts transactions the provider classifies as income, so refunds and transfers are not silently treated as earnings.</p></div>`:""}
   <div class="card"><div class="section-title"><h2>EBT / grocery benefit</h2><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
   <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
@@ -1562,10 +1572,38 @@ function openExpectedIncome(id="",preset=null){
   </div>`,"Save",async()=>{const name=$("#einame").value.trim(),amount=Number($("#eiamount").value||0),date=$("#eidate").value,frequency=$("#eifreq").value,accountKey=$("#eiaccount").value;if(!name||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!INCOME_FREQUENCIES.includes(frequency))return;let e=(state.expectedIncome||[]).find(v=>v.id===id);if(!e){e={id:uid()};state.expectedIncome.push(e)}Object.assign(e,{name,amount:Math.round(amount*100)/100,date,frequency,accountKey,transferable:$("#eitransfer").checked,enabled:$("#eienabled").checked,confidence:x.confidence||"confirmed",notes:$("#einotes").value.trim()});await save();closeModal();render()});
 }
 async function removeExpectedIncome(id){if(!confirm("Remove this expected income?"))return;state.expectedIncome=(state.expectedIncome||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function expectedIncomeWindow(startDate,endDate){
+  return expectedIncomeOccurrences(endDate).filter(x=>x.date>=startDate&&x.date<=endDate);
+}
+function expectedIncomeTotalBefore(date){
+  return expectedIncomeOccurrences(date).filter(x=>x.accountKey).reduce((sum,x)=>sum+Number(x.amount||0),0);
+}
+function budgetExpectedIncomeCard(month=budgetMonth){
+  const today=ymd(),start=month+"-01",[year,mo]=month.split("-").map(Number),end=ymd(new Date(year,mo,0,12)),
+        from=month===today.slice(0,7)?today:start,rows=month<today.slice(0,7)?[]:expectedIncomeWindow(from,end),
+        total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0),current=month===today.slice(0,7);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">${current?"Remaining expected income":"Scheduled expected income"}</div><h2>${money(total)}</h2></div><button class="btn" onclick="setView('more')">Manage income</button></div>
+    <p class="muted small">${current?"Income still expected from today through month-end.":"Enabled expected-income entries scheduled in this month."} This is shown separately from the manual monthly budget amount so it is never silently double-counted.</p>
+    ${rows.length?rows.slice(0,10).map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No enabled expected income is scheduled for the rest of this month.</div>`}
+  </div>`;
+}
+function dueDateOutlookCard(){
+  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)).slice(0,8);
+  if(!rows.length)return"";
+  const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
+        short=rows.filter(r=>r.status==="Projected short").length;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Due-date outlook</div><h2>${covered} of ${rows.length} upcoming bills currently covered</h2></div>${short?`<span class="bill-status short">${short} short</span>`:`<span class="bill-status covered">on track</span>`}</div>
+    <p class="muted small">This combines recorded account balances, earlier unpaid bills, and every enabled expected-income occurrence arriving on or before each due date. Income from another spendable account is shown as a transfer need rather than pretending it is already in the bill account.</p>
+    ${rows.map(r=>{const b=r.bill,totalIncome=expectedIncomeTotalBefore(b.due),cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown";
+      const after=Number.isFinite(r.projectedAfter)?(r.projectedAfter/100):null;
+      return `<div class="row"><span><b>${esc(b.name)}</b><div class="muted small">Due ${esc(dl(b.due))} · ${money(Number(b.amount||0))} · expected income by then ${money(totalIncome)}</div>${after!==null?`<div class="muted small">Assigned account after this bill: ${budgetMoney(Math.round(after*100))}</div>`:""}</span><span class="bill-status ${cls}">${esc(r.status)}</span></div>`;
+    }).join("")}
+  </div>`;
+}
 function expectedIncomeCard(){
   const end=new Date();end.setDate(end.getDate()+45);const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset();
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Expected income</div><h2>Money arriving before bills</h2></div><div class="actions"><button class="btn primary" onclick="openExpectedIncome()">+ Income</button>${estimate?`<button class="btn" onclick="openPaycheckEstimate()">Use pay estimate</button>`:""}</div></div>
-    <p class="muted small">Only income you include here is used in bill projections. The deposit account matters; transferable income can also support a bill from another spending account.</p>
+    <p class="muted small">All enabled sources here — paychecks, child support, reimbursements, or other recurring income — are used in bill projections when they are scheduled on or before a bill’s due date. The deposit account matters; transferable income can also support a bill from another spending account.</p>
     ${occurrences.length?occurrences.map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No expected income is being counted yet.</div>`}
   </div>`;
 }
