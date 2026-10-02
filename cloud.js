@@ -322,7 +322,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks"];
+  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -495,6 +495,36 @@ function cloudApplyLifeEntry(row){
       const fingerprint=String(p.fingerprint||[p.periodStart||"",p.periodEnd||"",payDate,netPay.toFixed(2)].join("|"));
       if(state.paychecks.some(x=>x.fingerprint===fingerprint))return true;
       state.paychecks.push({id:uid(),cloudEntryId:row.id,source:String(p.source||"ChatGPT"),periodStart:String(p.periodStart||""),periodEnd:String(p.periodEnd||""),payDate,regularHours:Number(p.regularHours||0),overtimeHours:Number(p.overtimeHours||0),regularRate:Number(p.regularRate||0),overtimeRate:Number(p.overtimeRate||0),totalHours:Number(p.totalHours||0),grossPay:Number(p.grossPay||0),taxes:Number(p.taxes||0),deductions:Number(p.deductions||0),reimbursements:Number(p.reimbursements||0),netPay,directDeposits:Array.isArray(p.directDeposits)?p.directDeposits.map(Number).filter(Number.isFinite):[],vacationHours:Number(p.vacationHours||0),pstHours:Number(p.pstHours||0),optionWeekHours:Number(p.optionWeekHours||0),fingerprint});
+      return true;
+    }
+    case "expected_income":{
+      if(!Array.isArray(state.expectedIncome))state.expectedIncome=[];
+      const name=String(p.name||"Expected income").trim(),amount=Number(p.amount||0),incomeDate=String(p.date||date),frequency=String(p.frequency||"One-time");
+      if(!name||!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(incomeDate))return false;
+      let x=state.expectedIncome.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.expectedIncome.push(x)}
+      let accountKey=String(p.accountKey||x.accountKey||"");
+      if(p.accountCloudId!==undefined){
+        const matches=(state.accounts||[]).filter(a=>a.cloudAccountId===String(p.accountCloudId||""));
+        if(matches.length===1)accountKey=matches[0].key;
+      }
+      Object.assign(x,{name,amount:Math.round(amount*100)/100,date:incomeDate,frequency,accountKey,transferable:p.transferable!==false,enabled:p.enabled!==false,confidence:String(p.confidence||"confirmed"),notes:String(p.notes||"")});
+      return true;
+    }
+    case "employment_profile":{
+      if(!Array.isArray(state.employmentProfiles))state.employmentProfiles=[];
+      const employer=String(p.employer||"").trim();if(!employer)return false;
+      let x=state.employmentProfiles.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||"")||String(x.employer||"").toLowerCase()===employer.toLowerCase());
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.employmentProfiles.push(x)}
+      Object.assign(x,{employer,role:String(p.role||x.role||""),jobCode:String(p.jobCode||x.jobCode||""),location:String(p.location||x.location||""),union:String(p.union||x.union||""),unionLocal:String(p.unionLocal||x.unionLocal||""),contract:String(p.contract||x.contract||""),supplement:String(p.supplement||x.supplement||""),scheduledStartDate:String(p.scheduledStartDate||x.scheduledStartDate||""),seniorityDate:String(p.seniorityDate||x.seniorityDate||""),currentRate:Number(p.currentRate||x.currentRate||0),progression:Array.isArray(p.progression)?p.progression:(x.progression||[]),ssd:p.ssd&&typeof p.ssd==="object"?{...(x.ssd||{}),...p.ssd}:(x.ssd||{}),notes:String(p.notes||x.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
+      return true;
+    }
+    case "income_seasonality":{
+      if(!Array.isArray(state.incomeSeasonality))state.incomeSeasonality=[];
+      const employer=String(p.employer||"").trim();if(!employer)return false;
+      let x=state.incomeSeasonality.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||"")||String(x.employer||"").toLowerCase()===employer.toLowerCase());
+      if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.incomeSeasonality.push(x)}
+      Object.assign(x,{employer,metric:String(p.metric||x.metric||"net_bank_deposits"),years:p.years&&typeof p.years==="object"?p.years:(x.years||{}),recentWeeklyAverageNet:Number(p.recentWeeklyAverageNet||x.recentWeeklyAverageNet||0),nextOfficialPayDate:String(p.nextOfficialPayDate||x.nextOfficialPayDate||""),methodology:String(p.methodology||x.methodology||""),notes:String(p.notes||x.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
       return true;
     }
     case "birthday_plan_suggestion":{
