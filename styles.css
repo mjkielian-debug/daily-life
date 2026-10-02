@@ -547,3 +547,10 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   .pet-handoff-card .row{align-items:flex-start;flex-direction:column}
   .pet-handoff-card .row b{max-width:100%;text-align:left}
 }
+
+.pet-personality{
+  margin:9px 0 5px;padding:8px 10px;border-radius:13px;
+  border:1px solid color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 6%,transparent);
+  color:color-mix(in srgb,var(--text) 92%,var(--secondary) 8%);font-size:.78rem
+}
