@@ -2231,13 +2231,15 @@ function foodTotalsForDate(date){
   return{rows,cal:sum("calories"),protein:sum("protein"),carbs:sum("carbs"),fat:sum("fat"),fiber:sum("fiber"),caffeineMg:sum("caffeineMg"),knownCaffeine:rows.some(x=>Number(x.caffeineMg)>0),monsters:rows.filter(x=>x.category==="monster").reduce((n,x)=>n+foodQuantity(x),0)};
 }
 function todayNutritionCard(){
-  const f=foodTotalsForDate(ymd()),waterNow=water(),calTarget=Number(state.settings.calTarget||0),proteinTarget=Number(state.settings.proteinTarget||0);
-  return `<div class="card food-intake-card"><div class="section-title"><div><div class="eyebrow">My intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2><div class="muted small">What you have actually logged so far today.</div></div><button class="btn primary" onclick="openFood()">+ Food / drink</button></div>
+  const f=foodTotalsForDate(ymd()),waterNow=water(),calTarget=Number(state.settings.calTarget||0),proteinTarget=Number(state.settings.proteinTarget||0),
+    incomplete=f.rows.some(x=>/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
+  return `<div class="card food-intake-card"><div class="section-title"><div><div class="eyebrow">My intake today</div><h2>${Math.round(f.cal)} known calories · ${Math.round(f.protein)}g known protein</h2><div class="muted small">What you have actually logged so far today.</div></div><button class="btn primary" onclick="openFood()">+ Food / drink</button></div>
+    ${incomplete?`<div class="notice"><b>Some nutrition is intentionally unknown.</b> Totals show only values we actually know, so they may be lower than what you consumed.</div>`:""}
     <div class="intake-progress-grid">
-      <div><span>Calories</span><b>${Math.round(f.cal)}${calTarget?" / "+calTarget:""}</b>${calTarget?todayProgress(f.cal,calTarget,"Calories logged"):""}</div>
-      <div><span>Protein</span><b>${Math.round(f.protein)}g${proteinTarget?" / "+proteinTarget+"g":""}</b>${proteinTarget?todayProgress(f.protein,proteinTarget,"Protein logged"):""}</div>
+      <div><span>Known calories</span><b>${Math.round(f.cal)}${calTarget?" / "+calTarget:""}</b>${calTarget?todayProgress(f.cal,calTarget,"Known calories logged"):""}</div>
+      <div><span>Known protein</span><b>${Math.round(f.protein)}g${proteinTarget?" / "+proteinTarget+"g":""}</b>${proteinTarget?todayProgress(f.protein,proteinTarget,"Known protein logged"):""}</div>
     </div>
-    <div class="intake-macro-grid"><span><b>${Math.round(f.carbs)}g</b><small>carbs</small></span><span><b>${Math.round(f.fat)}g</b><small>fat</small></span><span><b>${Math.round(f.fiber)}g</b><small>fiber</small></span><span><b>${Math.round(waterNow)} oz</b><small>water</small></span><span><b>${f.knownCaffeine?Math.round(f.caffeineMg)+" mg":"—"}</b><small>${f.knownCaffeine?"known caffeine":"caffeine not fully known"}</small></span><span><b>${f.monsters?Number(f.monsters.toFixed(1)):"0"}</b><small>Monster cans logged</small></span></div>
+    <div class="intake-macro-grid"><span><b>${Math.round(f.carbs)}g</b><small>known carbs</small></span><span><b>${Math.round(f.fat)}g</b><small>known fat</small></span><span><b>${Math.round(f.fiber)}g</b><small>known fiber</small></span><span><b>${Math.round(waterNow)} oz</b><small>water</small></span><span><b>${f.knownCaffeine?Math.round(f.caffeineMg)+" mg":"—"}</b><small>${f.knownCaffeine?"known caffeine":"caffeine not fully known"}</small></span><span><b>${f.monsters?Number(f.monsters.toFixed(1)):"0"}</b><small>Monster cans logged</small></span></div>
     ${f.rows.length?`<div class="mini-heading">Logged today</div>${f.rows.slice().reverse().slice(0,8).map(x=>`<div class="row compact-row"><span><b>${esc(x.name||"Food / drink")}</b><div class="muted small">${foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":""}${Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":""}${Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":""}${x.notes?" · "+esc(x.notes):""}</div></span></div>`).join("")}`:`<div class="notice">Nothing has been logged yet today.</div>`}
     ${micronutrientSummary()}
     <div class="actions"><button class="btn" onclick="customWater()">+ Water</button><button class="btn" onclick="setView('log');careTab='patterns';render()">Open 7-day patterns</button></div>
@@ -2248,7 +2250,7 @@ function foodIntakeTrends(){
     vals=key=>dates.map(d=>{const t=foodTotalsForDate(d);return Number(t[key]||0)}),
     calories=vals("cal"),protein=vals("protein"),waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
     row=(title,arr,fmt)=>{const max=Math.max(1,...arr);return `<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${arr.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`};
-  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Bars reflect logged amounts only; blank or low days can simply mean nothing was entered.</div>${row("Calories",calories,v=>Math.round(v)+"")}${row("Protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}</div>`;
+  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition bars use known values only; blank or low days can simply mean nutrition was not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}</div>`;
 }
 
 function homeView(){
