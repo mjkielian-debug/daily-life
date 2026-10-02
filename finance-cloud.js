@@ -360,7 +360,7 @@ async function cloudImportBankSpending(showAlert=false){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-93);
   const cutoffDate=cutoff.toISOString().slice(0,10);
   const {data,error}=await cloudClient.from("financial_transactions")
-    .select("provider_transaction_id,pending_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
+    .select("provider_transaction_id,pending_transaction_id:metadata->>pending_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
     .gte("posted_date",cutoffDate)
     .eq("is_transfer",false)
     .order("posted_date",{ascending:true})
