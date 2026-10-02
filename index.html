@@ -1693,4 +1693,1571 @@ function openPlantRoutine(id=""){
 }
 async function completePlantRoutine(id){
   const r=plantRoutineById(id);if(!r)return;const date=ymd();r.lastDone=date;
-  if(Number(r.everyDays)>0){const d=new Date(d[Truncated]
+  if(Number(r.everyDays)>0){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+Number(r.everyDays));r.nextDate=ymd(d)}else r.nextDate="";
+  if(r.plantId)state.plantLogs.push({id:uid(),plantId:r.plantId,type:r.type||"Checked",date,value:"",notes:r.title+(r.notes?" · "+r.notes:""),routineId:r.id});
+  await save();render();
+}
+function gardenView(){
+  const plants=(state.plants||[]).filter(p=>p.status!=="Finished"),finished=(state.plants||[]).filter(p=>p.status==="Finished"),due=plants.filter(p=>plantCareState(p).due),
+        tasks=(state.gardenTasks||[]).filter(t=>!t.done);
+  const plantBody=`${gardenSeasonCard()}
+    ${plantRoutinesCard()}
+    ${due.length?`<div class="card garden-due"><div class="section-title"><div><div class="eyebrow">Needs attention</div><h2>Water / check</h2></div>${due.length>1?'<button class="btn primary" onclick="waterAllDuePlants()">Water all</button>':""}</div>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
+    <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
+    ${finished.length?`<details class="card finished-plants"><summary>${finished.length} finished plant${finished.length===1?"":"s"} · history kept</summary>${finished.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(p.type||"Plant")}${p.location?" · "+esc(p.location):""}</div></span><button class="btn small" onclick="openPlant('${p.id}')">Open</button></div>`).join("")}</details>`:""}
+    ${livingSuppliesCard("garden")}`;
+  const seedBody=`${seedInventoryCard()}${livingSuppliesCard("garden")}`;
+  const journalBody=`${gardenHarvestCard()}${gardenJournalCard()}${gardenTasksCard()}${gardenHistoryCard()}`;
+  const body=gardenTab==="seeds"?seedBody:gardenTab==="journal"?journalBody:plantBody;
+  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, seeds, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="openLivingSupply('garden')">+ Supply</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
+    <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div>${gardenTabs()}</div>
+  ${body}`;
+}
+function openPlant(id=""){
+  const p=plantById(id)||{id:"",name:"",type:"Houseplant",status:"Active",location:"",light:"",waterEveryDays:"",plantedDate:"",source:"",notes:""};
+  modal(p.id?`Plant · ${p.name}`:"Add plant",`<div class="stack"><div class="grid2"><label>Name<input id="gname" value="${esc(p.name||"")}" placeholder="Basil, pothos, tomato bed…"></label><label>Type<select id="gtype">${["Houseplant","Herb","Vegetable","Fruit","Flower","Tree / shrub","Garden bed","Other"].map(v=>`<option ${p.type===v?"selected":""}>${v}</option>`).join("")}</select></label></div><label>Status<select id="gstatus">${["Active","Watch","Dormant","Finished"].map(v=>`<option ${(p.status||"Active")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Photo<input id="gphoto" type="file" accept="image/*"></label>${p.photo?`<img class="living-photo-preview" src="${p.photo}" alt="">`:""}<div class="grid2"><label>Location<input id="gloc" value="${esc(p.location||"")}" placeholder="Kitchen window, front bed…"></label><label>Light<input id="glight" value="${esc(p.light||"")}" placeholder="Full sun, bright indirect…"></label></div><div class="grid2"><label>Water every N days<input id="gwater" type="number" min="0" value="${esc(p.waterEveryDays||"")}"></label><label>Planted / acquired<input id="gdate" type="date" value="${esc(p.plantedDate||"")}"></label></div><label>Source / variety<input id="gsource" value="${esc(p.source||"")}"></label><label>Care notes<textarea id="gnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const name=$("#gname").value.trim();if(!name)return;let x=plantById(id);if(!x){x={id:uid()};state.plants.push(x)}
+    const photoFile=$("#gphoto")?.files?.[0];if(photoFile)x.photo=await compressImage(photoFile,700,.76);
+    Object.assign(x,{name,type:$("#gtype").value,status:$("#gstatus").value,location:$("#gloc").value.trim(),light:$("#glight").value.trim(),waterEveryDays:Number($("#gwater").value||0),plantedDate:$("#gdate").value,source:$("#gsource").value.trim(),notes:$("#gnotes").value.trim()});
+    await save();closeModal();render();
+  });
+}
+function logPlantCare(plantId,preset="Checked"){
+  const p=plantById(plantId);if(!p)return;
+  const types=["Watered","Fertilized","Repotted","Pruned","Harvested","Planted","Pest treatment","Checked"];
+  modal(`Plant care · ${p.name}`,`<div class="stack"><div class="grid2"><label>Care<select id="gctype">${types.map(v=>`<option ${v===preset?"selected":""}>${v}</option>`).join("")}</select></label><label>Date<input id="gcdate" type="date" value="${ymd()}"></label></div><label>Amount / detail<input id="gcvalue" placeholder="Optional — 3 tomatoes, 2 cups, 1 pot…"></label><label>Notes<textarea id="gcnotes" rows="3"></textarea></label></div>`,"Save",async()=>{
+    state.plantLogs.push({id:uid(),plantId,type:$("#gctype").value,date:$("#gcdate").value||ymd(),value:$("#gcvalue").value.trim(),notes:$("#gcnotes").value.trim()});await save();closeModal();render();
+  });
+}
+function openGardenTask(id=""){
+  const t=(state.gardenTasks||[]).find(x=>x.id===id)||{id:"",title:"",due:"",area:"",notes:"",done:false};
+  modal(t.id?"Garden task":"Add garden task",`<div class="stack"><label>Task<input id="gttitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>Due date<input id="gtdue" type="date" value="${esc(t.due||"")}"></label><label>Area<input id="gtarea" value="${esc(t.area||"")}" placeholder="Front bed, indoor plants…"></label></div><label>Notes<textarea id="gtnotes" rows="3">${esc(t.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const title=$("#gttitle").value.trim();if(!title)return;let x=(state.gardenTasks||[]).find(x=>x.id===id);if(!x){x={id:uid(),done:false};state.gardenTasks.push(x)}
+    Object.assign(x,{title,due:$("#gtdue").value,area:$("#gtarea").value.trim(),notes:$("#gtnotes").value.trim()});await save();closeModal();render();
+  });
+}
+async function toggleGardenTask(id,done){const t=(state.gardenTasks||[]).find(x=>x.id===id);if(t)t.done=done;await save();render()}
+async function waterAllDuePlants(){
+  const due=(state.plants||[]).filter(p=>plantCareState(p).due);
+  if(!due.length)return;
+  const date=ymd();
+  for(const p of due)state.plantLogs.push({id:uid(),plantId:p.id,type:"Watered",date,notes:"Water all due plants"});
+  await save();render();
+}
+function openLivingSupply(kind="pet"){
+  const title=kind==="garden"?"Add garden supply":"Add pet supply";
+  modal(title,`<div class="stack"><label>Item<input id="lsitem" placeholder="${kind==="garden"?"Potting soil, seeds, fertilizer…":"Cat food, litter, treats…"}"></label><div class="grid2"><label>Quantity<input id="lsqty"></label><label>Store<input id="lsstore"></label></div></div>`,"Add to shopping list",async()=>{
+    const item=$("#lsitem").value.trim();if(!item)return;
+    state.shopping.push({id:uid(),item,qty:$("#lsqty").value.trim(),store:$("#lsstore").value.trim(),status:"needed",source:kind});
+    await save();closeModal();render();
+  });
+}
+function livingThingsLaunchCard(){
+  const pets=(state.pets||[]).filter(p=>p.status!=="Archived").length,plants=(state.plants||[]).length,due=(state.plants||[]).filter(p=>plantCareState(p).due).length,petDue=duePetRoutines().length,plantRoutineDue=duePlantRoutines().length,today=ymd(),soonDate=new Date(today+"T12:00:00");soonDate.setDate(soonDate.getDate()+7);const soon=ymd(soonDate),gardenDue=(state.gardenTasks||[]).filter(t=>!t.done&&t.due&&t.due<=soon).length;
+  return `<div class="living-launch-grid"><button class="living-launch pet-launch" onclick="setView('pets')"><span class="living-icon">♢</span><span><b>Pets</b><small>${petDue?petDue+" care item"+(petDue===1?"":"s")+" due":pets?pets+" profile"+(pets===1?"":"s"):"Care + profiles"}</small></span><span>›</span></button><button class="living-launch garden-launch" onclick="setView('garden')"><span class="living-icon">⌁</span><span><b>Garden + plants</b><small>${due+gardenDue+plantRoutineDue?(due+gardenDue+plantRoutineDue)+" need attention":plants?plants+" tracked":"Plants + projects"}</small></span><span>›</span></button></div>`;
+}
+function todayLivingThingsCard(){
+  const today=ymd(),horizonDate=new Date(today+"T12:00:00");horizonDate.setDate(horizonDate.getDate()+14);const horizon=ymd(horizonDate),
+        plantsDue=(state.plants||[]).filter(p=>plantCareState(p).due),lastLitter=lastPetLog("","Litter"),pets=(state.pets||[]).filter(p=>p.status!=="Archived"),petRoutinesDue=duePetRoutines(),plantRoutinesDue=duePlantRoutines(),gardenTasksDue=(state.gardenTasks||[]).filter(t=>!t.done&&t.due&&t.due<=horizon),
+        nextPetCare=[...(state.petRecords||[])].filter(x=>x.nextDate&&x.nextDate>=today&&x.nextDate<=horizon).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)))[0],
+        planting=[];
+  for(const x of state.gardenSeeds||[]){
+    for(const [kind,date] of [["Start indoors",x.startIndoorsDate],["Direct sow",x.directSowDate],["Transplant",x.transplantDate]])if(date&&date>=today&&date<=horizon)planting.push({x,kind,date});
+  }
+  planting.sort((a,b)=>String(a.date).localeCompare(String(b.date)));const nextPlanting=planting[0],petForCare=nextPetCare?petById(nextPetCare.petId):null;
+  if(!pets.length&&!state.plants?.length&&!(state.gardenSeeds||[]).length)return"";
+  return `<div class="card today-living"><div class="section-title"><div><div class="eyebrow">Pets + plants</div><h2>Living things</h2></div><div class="actions">${pets.length?'<button class="btn" onclick="setView(\'pets\')">Pets</button>':""}${(state.plants?.length||state.gardenSeeds?.length)?'<button class="btn" onclick="setView(\'garden\')">Garden</button>':""}</div></div>
+    ${plantsDue.length?`<div class="row"><span>Plants needing water/check</span><b>${plantsDue.length}</b></div>`:""}
+    ${petRoutinesDue.length?`<div class="row"><span>Pet care routines due</span><b>${petRoutinesDue.length}</b></div>`:""}
+    ${plantRoutinesDue.length?`<div class="row"><span>Plant-care routines due</span><b>${plantRoutinesDue.length}</b></div>`:""}
+    ${gardenTasksDue.length?`<div class="row"><span>Garden tasks due soon</span><b>${gardenTasksDue.length}</b></div>`:""}
+    ${nextPetCare?`<div class="row"><span><b>Next pet care</b><div class="muted small">${petForCare?esc(petForCare.name)+" · ":""}${esc(nextPetCare.type)}</div></span><b>${esc(dl(nextPetCare.nextDate))}</b></div>`:""}
+    ${nextPlanting?`<div class="row"><span><b>Next planting step</b><div class="muted small">${esc(nextPlanting.x.name)} · ${esc(nextPlanting.kind)}</div></span><b>${esc(dl(nextPlanting.date))}</b></div>`:""}
+    ${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
+}
+function setCareTab(tab){
+  if(!["me","work","home","life","patterns"].includes(tab))tab="me";
+  careTab=tab;localStorage.setItem("dailyLifeCareTab",tab);render();
+}
+function careTabs(){
+  const tabs=[["me","Me"],["work","Work"],["home","Home"],["life","Life"],["patterns","Patterns"]];
+  return `<div class="care-page-tabs">${tabs.map(([id,label])=>`<button class="${careTab===id?"active":""}" onclick="setCareTab('${id}')">${label}</button>`).join("")}</div>`;
+}
+function careOutfitCard(){
+  const outfit=(state.outfits||[]).find(x=>x.date===ymd());
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Style</div><h2>Outfit</h2></div><button class="btn" onclick="openOutfit()">Log / edit</button></div>${outfit?.photo?`<img class="photo" src="${outfit.photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`;
+}
+function careWorkTodayCard(w){
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Work today</div><h2>${esc(workStatusText(w))}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>`;
+}
+function careSectionIntro(title,detail){
+  return `<div class="care-section-intro"><b>${esc(title)}</b><span>${esc(detail)}</span></div>`;
+}
+function logView(f,w,tr){
+  let body="";
+  if(careTab==="work"){
+    body=`${careSectionIntro("Work","UPS schedule, hours, pay progression and today’s shift.")}${currentWeekWorkCard()}${upsContractPayCard()}${careWorkTodayCard(w)}`;
+  }else if(careTab==="home"){
+    body=`${careSectionIntro("Home","Household cadence, pets, plants and the care that keeps home running.")}${livingThingsLaunchCard()}${householdRoutineCard()}${homeCareCard()}`;
+  }else if(careTab==="life"){
+    body=`${careSectionIntro("Life","Paperwork, car care, tires, mail and the practical loose ends.")}${lifeAdminCard()}${vehicleCard()}${tireHistoryCard(tr)}${mailDeliveryCard()}`;
+  }else if(careTab==="patterns"){
+    body=`${careSectionIntro("Patterns","A quieter place for weekly and monthly trends—nothing here is a score.")}${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
+  }else{
+    body=`${careSectionIntro("Me","Self care, movement and personal tracking. Food stays in the Food tab so this page stays manageable.")}${spiritualityLaunchCard()}${selfCareCard()}${fitnessCard()}${careOutfitCard()}`;
+  }
+  return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
+}
+function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
+function ensurePeopleProfiles(){
+  if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
+  const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
+  for(const name of names){
+    if(!state.peopleProfiles.some(p=>String(p.name||"").toLowerCase()===name.toLowerCase())){
+      state.peopleProfiles.push({id:uid(),name,relationship:"child",birthday:"",livesWithUser:true,profileScope:"household",familyLinks:[],favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],personNotes:[],sharedPlans:[],importantDates:[],birthdayPlan:{tasks:[]}});
+    }
+  }
+  for(const p of state.peopleProfiles){
+    if(!p.id)p.id=uid();
+    if(!Array.isArray(p.personNotes))p.personNotes=[];
+    if(!Array.isArray(p.familyLinks))p.familyLinks=[];
+    if(!Array.isArray(p.aliases))p.aliases=[];
+    if(!Array.isArray(p.sharedPlans))p.sharedPlans=[];
+    if(!Array.isArray(p.importantDates))p.importantDates=[];
+    if(!Array.isArray(p.wishlist))p.wishlist=[];
+    if(!p.sizes||typeof p.sizes!=="object")p.sizes={};
+  }
+}
+function personById(id){return (state.peopleProfiles||[]).find(p=>p.id===id)}
+function canonicalPersonName(value){
+  const raw=String(value||"").trim();if(!raw)return"";
+  const needle=raw.toLowerCase();
+  const p=(state.peopleProfiles||[]).find(p=>{
+    if(String(p.name||"").trim().toLowerCase()===needle)return true;
+    if(String(p.schoolName||"").trim().toLowerCase()===needle)return true;
+    return (p.aliases||[]).some(a=>String(a||"").trim().toLowerCase()===needle);
+  });
+  return p?.name||raw;
+}
+function normalizedRelationship(p){return String(p?.relationship||"person").trim().toLowerCase()}
+function isChildProfile(p){return ["child","son","daughter"].includes(normalizedRelationship(p))}
+function isSiblingProfile(p){return ["sister","brother","sibling"].includes(normalizedRelationship(p))}
+function isAdultFamilyProfile(p){
+  const r=normalizedRelationship(p);
+  return ["sister","brother","sibling","mother","father","mom","dad","parent","aunt","uncle","cousin","grandparent","grandmother","grandfather","niece","nephew","family"].includes(r)
+    ||/(sister|brother|sibling|mother|father|parent|aunt|uncle|cousin|grand|niece|nephew|in-law)/.test(r);
+}
+function livesWithUser(p){return p?.livesWithUser===true||p?.profileScope==="household"}
+function relationshipGroup(p){
+  if(isChildProfile(p)&&livesWithUser(p))return"Children";
+  if(isPartnerProfile(p))return"Partner";
+  if(isAdultFamilyProfile(p)||isChildProfile(p))return"Family";
+  if(["friend","best friend"].includes(normalizedRelationship(p)))return"Friends";
+  return"Other people";
+}
+function relationshipLabel(p){
+  const r=String(p?.relationship||"Person").trim();
+  return r?r.charAt(0).toUpperCase()+r.slice(1):"Person";
+}
+function isPartnerProfile(p){return ["partner","boyfriend","girlfriend","spouse"].includes(String(p?.relationship||"").toLowerCase())}
+function nextWeekdayDate(weekday,from=new Date()){
+  const d=new Date(from.getFullYear(),from.getMonth(),from.getDate()),diff=(Number(weekday)-d.getDay()+7)%7;d.setDate(d.getDate()+diff);return d;
+}
+function ensureRelationshipCheckinEvents(){
+  ensurePeopleProfiles();
+  const today=new Date();
+  for(const p of state.peopleProfiles||[]){
+    const c=p.recurringCheckin||{};if(!isPartnerProfile(p)||!c.enabled||!Number.isInteger(Number(c.weekday))||!c.startTime)continue;
+    const first=nextWeekdayDate(Number(c.weekday),today),duration=Math.max(15,Number(c.durationMinutes||30));
+    for(let i=0;i<8;i++){
+      const d=new Date(first);d.setDate(first.getDate()+i*7);const date=ymd(d),[hh,mm]=String(c.startTime).split(":").map(Number),endM=(hh*60+(mm||0)+duration)%1440,endTime=String(Math.floor(endM/60)).padStart(2,"0")+":"+String(endM%60).padStart(2,"0");
+      const title=String(c.title||"Relationship check-in"),exists=(state.events||[]).some(e=>e.date===date&&e.type==="relationship"&&String(e.child||"")===String(p.name||""));
+      if(!exists)state.events.push({id:uid(),date,title,child:p.name,type:"relationship",startTime:String(c.startTime),endTime,location:"",status:"confirmed",source:"People profile",notes:String(c.notes||""),generated:"relationship-checkin"});
+    }
+  }
+}
+const commaList=v=>String(v||"").split(",").map(x=>x.trim()).filter(Boolean);
+function birthdayParts(value){
+  const v=String(value||"").trim(),m=v.match(/^(?:(\d{4})-)?(\d{1,2})-(\d{1,2})$/);
+  return m?{year:m[1]?Number(m[1]):0,month:Number(m[2]),day:Number(m[3])}:null;
+}
+function nextBirthdayInfo(p){
+  const b=birthdayParts(p?.birthday);if(!b)return null;
+  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),year=now.getFullYear();
+  let next=new Date(year,b.month-1,b.day);if(next<today)next=new Date(year+1,b.month-1,b.day);
+  const days=Math.round((next-today)/86400000),turning=b.year?next.getFullYear()-b.year:null;
+  return{date:next,days,turning,label:next.toLocaleDateString("en-US",{month:"long",day:"numeric"}),iso:ymd(next)};
+}
+function birthdaySpend(p){
+  const gifts=(p?.wishlist||[]).reduce((sum,w)=>sum+Number(w.actualCost||0),0),plan=p?.birthdayPlan||{},extras=(plan.expenses||[]).reduce((sum,x)=>sum+Number(x.amount||0),0);
+  return{gifts,extras,total:gifts+extras,budget:Number(plan.budget||0)};
+}
+function birthdayWishStats(p){
+  const list=Array.isArray(p?.wishlist)?p.wishlist:[],bought=list.filter(x=>["bought","wrapped","done"].includes(String(x.status))).length,wrapped=list.filter(x=>String(x.status)==="wrapped").length;
+  return{total:list.length,bought,wrapped};
+}
+function birthdayReadiness(p){
+  const plan=p?.birthdayPlan||{},tasks=Array.isArray(plan.tasks)?plan.tasks:[],stats=birthdayWishStats(p),points=[];
+  if(plan.theme)points.push(1);if(plan.cake)points.push(1);if(plan.activity)points.push(1);if(plan.location)points.push(1);
+  if(stats.total)points.push(stats.bought>=Math.min(1,stats.total)?1:0);
+  for(const t of tasks)points.push(t.done?1:0);
+  const done=points.reduce((a,b)=>a+b,0),total=points.length;
+  return{done,total,percent:total?Math.round(done*100/total):0};
+}
+function birthdayDashboard(){
+  ensurePeopleProfiles();
+  const rows=(state.peopleProfiles||[]).map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b).sort((a,b)=>a.b.days-b.b.days),
+        missing=(state.peopleProfiles||[]).filter(p=>!nextBirthdayInfo(p));
+  return `<div class="card priority-card birthday-dashboard"><div class="section-title"><div><div class="eyebrow">🎂 Birthdays</div><h2>Birthday planning</h2><div class="muted small">Wishes, favorites, gifts, themes, and planning live with each person.</div></div><button class="btn" onclick="openPersonProfile()">+ Person</button></div>
+    ${rows.length?rows.map(({p,b})=>{const r=birthdayReadiness(p),w=birthdayWishStats(p);return `<div class="birthday-row" onclick="openBirthdayPlanner('${p.id}')"><div class="birthday-date"><b>${esc(b.label)}</b><span>${b.days===0?"Today":b.days===1?"Tomorrow":b.days+" days"}</span></div><div class="grow"><b>${esc(p.name)}</b>${b.turning?`<div class="muted small">Turning ${b.turning}</div>`:""}<div class="muted small">${w.total} wish${w.total===1?"":"es"} · ${w.bought} bought${r.total?` · ${r.percent}% planned`:""}</div></div><span class="birthday-chevron">›</span></div>`}).join(""):`<div class="notice">Add birthdays to individual profiles and they’ll sort here by what’s coming next.</div>`}
+    ${missing.length?`<div class="missing-birthdays"><span class="muted small">Birthday still needed:</span> ${missing.map(p=>`<button class="linkish" onclick="openPersonProfile('${p.id}')">${esc(p.name)}</button>`).join(" · ")}</div>`:""}
+  </div>`;
+}
+function personTodaySummary(p){
+  const chores=(state.chores||[]).filter(x=>x.date===ymd()&&String(x.child||"")===String(p.name||"")),
+        pages=(state.readingLogs||[]).filter(x=>x.date===ymd()&&String(x.reader||"")===String(p.name||"")).reduce((sum,x)=>sum+Number(x.pages||0),0),
+        schoolTasks=(state.tasks||[]).filter(x=>!x.done&&x.category==="school"&&String(x.child||"")===String(p.name||"")),
+        upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")))[0];
+  return{chores,done:chores.filter(x=>x.done).length,pages,schoolTasks,upcoming};
+}
+function personProgressHistory(p){
+  if(!isChildProfile(p))return"";
+  const now=new Date(),d7=new Date(now),d30=new Date(now);d7.setDate(now.getDate()-6);d30.setDate(now.getDate()-29);const s7=ymd(d7),s30=ymd(d30),
+        chores7=(state.chores||[]).filter(x=>x.child===p.name&&x.date>=s7&&x.done).length,
+        chores30=(state.chores||[]).filter(x=>x.child===p.name&&x.date>=s30&&x.done).length,
+        read7=new Set((state.readingLogs||[]).filter(x=>x.reader===p.name&&x.date>=s7&&Number(x.pages||0)>0).map(x=>x.date)).size,
+        read30=new Set((state.readingLogs||[]).filter(x=>x.reader===p.name&&x.date>=s30&&Number(x.pages||0)>0).map(x=>x.date)).size;
+  return `<div><div class="mini-heading">Recent consistency</div><div class="grid2"><div class="metric"><div class="eyebrow">Last 7 days</div><div class="big">${chores7} chores</div><div class="muted small">${read7} reading days</div></div><div class="metric"><div class="eyebrow">Last 30 days</div><div class="big">${chores30} chores</div><div class="muted small">${read30} reading days</div></div></div></div>`;
+}
+function partnerCheckinHistory(p){
+  if(!isPartnerProfile(p))return"";
+  const rows=[...(state.relationshipCheckins||[])].filter(x=>String(x.personName||"")===String(p.name||"")).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
+  return `<div class="relationship-history"><div class="section-title"><div><div class="mini-heading">Relationship check-ins</div><div class="muted small">${rows.length?rows.length+" recent check-in"+(rows.length===1?"":"s"):"No check-ins logged yet"}</div></div><button class="btn small primary" onclick="closeModal();openRelationshipCheckin('${p.id}')">+ Log</button></div>${rows.map(x=>`<div class="relationship-history-row" onclick="closeModal();openRelationshipCheckin('${p.id}','${x.id}')"><div class="grow"><b>${esc(dl(x.date||ymd()))}</b>${x.summary?`<div class="muted small">${esc(x.summary)}</div>`:""}${x.nextStep?`<div class="small">Next: ${esc(x.nextStep)}</div>`:""}</div><span class="birthday-chevron">›</span></div>`).join("")}</div>`;
+}
+function openRelationshipCheckin(personId,id=""){
+  const p=personById(personId);if(!p)return;const x=(state.relationshipCheckins||[]).find(x=>x.id===id)||{id:"",personName:p.name,date:ymd(),summary:"",wentWell:"",needsAttention:"",agreements:"",nextStep:""};
+  modal(`Check-in · ${p.name}`,`<div class="stack"><label>Date<input id="rcdate" type="date" value="${esc(x.date||ymd())}"></label><label>Overall summary<textarea id="rcsummary" rows="2" placeholder="How did the check-in feel?">${esc(x.summary||"")}</textarea></label><label>What went well<textarea id="rcwell" rows="2">${esc(x.wentWell||"")}</textarea></label><label>What needs attention<textarea id="rcattention" rows="2">${esc(x.needsAttention||"")}</textarea></label><label>Agreements / concrete actions<textarea id="rcagreements" rows="3">${esc(x.agreements||"")}</textarea></label><label>Next step<input id="rcnext" value="${esc(x.nextStep||"")}"></label></div>`,"Save",async()=>{let r=(state.relationshipCheckins||[]).find(x=>x.id===id);if(!r){r={id:uid(),personName:p.name};state.relationshipCheckins.push(r)}Object.assign(r,{personName:p.name,date:$("#rcdate").value||ymd(),summary:$("#rcsummary").value.trim(),wentWell:$("#rcwell").value.trim(),needsAttention:$("#rcattention").value.trim(),agreements:$("#rcagreements").value.trim(),nextStep:$("#rcnext").value.trim(),updatedAt:new Date().toISOString()});await save();closeModal();render()});
+}
+function openPersonHub(id){
+  const p=personById(id);if(!p)return;const child=isChildProfile(p)&&livesWithUser(p),partner=isPartnerProfile(p),sum=personTodaySummary(p),b=nextBirthdayInfo(p),w=birthdayWishStats(p),personTasks=(state.tasks||[]).filter(t=>!t.done&&String(t.child||"")===String(p.name||"")).sort((a,b)=>a.date.localeCompare(b.date));
+  const upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,8);
+  const colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],foods=p.favoriteFoods||[],ints=p.interests||[],checkin=p.recurringCheckin||{};
+  const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  modal(p.name,`<div class="stack person-hub">
+    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openPersonPlan('${p.id}')">+ Plan</button><button class="btn" onclick="closeModal();openPersonNote('${p.id}')">+ Note</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button>${p.elfsterUrl?`<button class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Elfster wishlist ↗</button>`:""}<button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    ${p.elfsterUrl?`<div class="elfster-sync-line">Elfster linked${p.elfsterLastSyncedAt?` · last update ${new Date(p.elfsterLastSyncedAt).toLocaleString()}`:" · waiting for first sync"}</div>`:""}
+    <div class="person-hub-context"><span class="tag">${esc(relationshipLabel(p))}</span><span class="tag">${livesWithUser(p)?"household":"extended family / other"}</span>${p.relatedTo?`<span class="muted small">${esc(p.relatedTo)}</span>`:""}</div>
+    ${(p.familyLinks||[]).length?`<div class="person-family-connections"><div class="mini-heading">Family connections</div><div class="person-chips">${p.familyLinks.map(link=>{const match=(state.peopleProfiles||[]).find(x=>String(x.name||"").toLowerCase()===String(link.name||"").toLowerCase());return match?`<button class="person-chip person-chip-button" onclick="closeModal();openPersonHub(\'${match.id}\')">${esc(link.name)} · ${esc(link.label||"family")}</button>`:`<span class="person-chip">${esc(link.name)} · ${esc(link.label||"family")}</span>`}).join("")}</div></div>`:""}
+    ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
+    ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
+    ${p.routineNotes?`<div class="notice"><b>Things to remember</b><div class="muted small">${esc(p.routineNotes).replace(/\n/g,"<br>")}</div></div>`:""}
+    ${partner&&checkin.enabled?`<div class="relationship-card"><div class="eyebrow">💬 Weekly check-in</div><h3>${esc(dayNames[Number(checkin.weekday)]||"")} · ${esc(fmtClock(checkin.startTime||""))}</h3><div class="muted small">${Number(checkin.durationMinutes||30)} minutes${checkin.notes?" · "+esc(checkin.notes):""}</div></div>`:""}
+    ${partnerCheckinHistory(p)}
+    ${child?`<div class="grid2"><div class="metric"><div class="eyebrow">Chores today</div><div class="big">${sum.done}/${sum.chores.length}</div></div><div class="metric"><div class="eyebrow">Reading today</div><div class="big">${sum.pages} pages</div></div></div>`:""}
+    ${personTasks.length?`<div><div class="mini-heading">Needs attention</div>${personTasks.slice(0,8).map(t=>`<label class="row task"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${esc(dl(t.date))}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")}</div>`:""}
+    ${(p.importantDates||[]).length?`<div><div class="mini-heading">Important dates</div>${p.importantDates.map(x=>`<div class="row"><span>${esc(x.label||x.title||"Date")}</span><b>${esc(x.date||"")}</b></div>`).join("")}</div>`:""}
+    ${(p.sharedPlans||[]).length?`<div><div class="mini-heading">${partner?"Shared plans":"Plans"}</div>${p.sharedPlans.map(x=>`<div class="row"><span>${esc(typeof x==="string"?x:x.title||"Plan")}</span><b>${esc(typeof x==="string"?"":x.date||"")}</b></div>`).join("")}</div>`:""}
+    ${(p.personNotes||[]).length?`<div><div class="mini-heading">Notes + memories</div>${[...(p.personNotes||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6).map(n=>`<button class="person-note-row" onclick="closeModal();openPersonNote('${p.id}','${n.id}')"><span><b>${esc(n.category||"Note")}</b><div class="muted small">${esc(n.text||"")}</div></span><b>${esc(n.date?dl(n.date):"")}</b></button>`).join("")}</div>`:""}
+    <div><div class="mini-heading">Upcoming</div>${upcoming.length?upcoming.map(e=>`<div class="row"><span>${esc(e.title)}<div class="muted small">${e.startTime?esc(fmtClock(e.startTime)):""}${e.location?" · "+esc(e.location):""}</div></span><b>${esc(dl(e.date))}</b></div>`).join(""):`<div class="muted small">Nothing upcoming captured.</div>`}</div>
+    ${(p.wishlist||[]).length?`<div><div class="mini-heading">Gift / birthday wishes</div>${(p.wishlist||[]).slice(0,8).map(x=>`<div class="row"><span>${esc(x.item)}${x.source?`<div class="muted small">${esc(x.source)}</div>`:""}</span><b>${esc(x.status||"want")}</b></div>`).join("")}</div>`:""}
+  </div>`,"Edit profile",()=>{closeModal();openPersonProfile(id)});
+}
+function elfsterStatusCard(){
+  const profiles=state.peopleProfiles||[],linked=profiles.filter(p=>p.elfsterUrl),
+        recent=[...linked].sort((a,b)=>String(b.elfsterLastSyncedAt||"").localeCompare(String(a.elfsterLastSyncedAt||""))),
+        latest=recent.find(p=>p.elfsterLastSyncedAt);
+  return `<div class="card elfster-status-card"><div class="section-title"><div><div class="eyebrow">Elfster</div><h2>${linked.length} wishlist${linked.length===1?"":"s"} linked</h2><div class="muted small">Daily Life stores the wishlist link and recent Elfster activity. Elfster emails often do not include the item name, so unknown items are never invented.</div></div></div>
+    ${latest?`<div class="row"><span>Latest Elfster activity</span><b>${esc(latest.name)} · ${new Date(latest.elfsterLastSyncedAt).toLocaleDateString()}</b></div>`:""}
+    ${linked.length?`<div class="elfster-person-list">${linked.map(p=>`<button onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')"><span><b>${esc(p.name)}</b><small>${p.elfsterLastSyncedAt?"activity "+new Date(p.elfsterLastSyncedAt).toLocaleDateString():"wishlist linked"}</small></span><span>Open ↗</span></button>`).join("")}</div>`:"<div class='notice'>No Elfster wishlists linked yet.</div>"}
+  </div>`;
+}
+function birthdayGiftBoard(){
+  const rows=[];
+  for(const p of state.peopleProfiles||[])for(const w of p.wishlist||[])rows.push({p,w});
+  const open=rows.filter(x=>!["bought","wrapped","done"].includes(String(x.w.status||"").toLowerCase())),
+        purchased=rows.filter(x=>["bought","wrapped"].includes(String(x.w.status||"").toLowerCase())),
+        elfster=rows.filter(x=>String(x.w.source||"").toLowerCase()==="elfster"),
+        mine=rows.filter(x=>String(x.w.source||"my idea").toLowerCase()==="my idea"),
+        spent=purchased.reduce((sum,x)=>sum+Number(x.w.actualCost||x.w.estimatedCost||0),0);
+  const giftRow=({p,w})=>`<button class="gift-board-row" onclick="openBirthdayWish('${p.id}','${w.id}')"><span><b>${esc(w.item)}</b><div class="muted small">${esc(p.name)}${w.source?" · "+esc(w.source):""}${w.store?" · "+esc(w.store):""}${w.notes?" · "+esc(w.notes):""}</div></span><span style="text-align:right"><span class="tag">${esc(w.status||"want")}</span>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small" style="margin-top:4px">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`;
+  return `<div class="card gift-center-card"><div class="section-title"><div><div class="eyebrow">Birthday gifts</div><h2>Gift center</h2><div class="muted small">Elfster wishes and your own ideas stay together, but their source stays visible.</div></div></div>
+    <div class="gift-center-stats"><span><b>${open.length}</b><small>open ideas</small></span><span><b>${elfster.length}</b><small>Elfster items</small></span><span><b>${mine.length}</b><small>my ideas</small></span><span><b>${money(spent)}</b><small>bought / wrapped</small></span></div>
+    <div class="mini-heading">Open ideas</div>
+    ${open.length?open.slice(0,20).map(giftRow).join(""):`<div class="notice">No open gift ideas right now. Open a person to add an idea or use their Elfster link.</div>`}
+    ${purchased.length?`<details class="gift-purchased"><summary>Purchased / wrapped · ${purchased.length}</summary>${purchased.slice(0,20).map(giftRow).join("")}</details>`:""}
+  </div>`;
+}
+function setPeopleFilter(value){
+  peopleFilter=value||"all";localStorage.setItem("dailyLifePeopleFilter",peopleFilter);render();
+}
+function setPeopleSearch(value){
+  peopleSearch=String(value||"");render();
+  requestAnimationFrame(()=>{const el=document.querySelector("#peopleSearch");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}});
+}
+function peopleMatchesFilter(p){
+  const q=peopleSearch.trim().toLowerCase();
+  if(q){
+    const hay=[p.name,p.relationship,p.relatedTo,...(p.familyLinks||[]).flatMap(x=>[x.name,x.label]),...(p.interests||[]),...(p.favoriteFoods||[]),...(p.personNotes||[]).map(x=>x.text),...(p.sharedPlans||[]).map(x=>typeof x==="string"?x:x.title)].filter(Boolean).join(" ").toLowerCase();
+    if(!hay.includes(q))return false;
+  }
+  if(peopleFilter==="household"&&!livesWithUser(p))return false;
+  if(peopleFilter==="extended"&&livesWithUser(p))return false;
+  if(peopleFilter==="birthday"&&!nextBirthdayInfo(p))return false;
+  if(peopleFilter==="elfster"&&!p.elfsterUrl)return false;
+  return true;
+}
+function peopleFilterBar(){
+  const options=[["all","All"],["household","Household"],["extended","Extended"],["birthday","Birthday set"],["elfster","Elfster"]];
+  return `<div class="card people-filter-card"><label class="people-search-label">Search people<input id="peopleSearch" value="${esc(peopleSearch)}" oninput="setPeopleSearch(this.value)" placeholder="Name, relationship, interest…"></label><div class="people-filter-chips">${options.map(([k,label])=>`<button class="${peopleFilter===k?"active":""}" onclick="setPeopleFilter('${k}')">${label}</button>`).join("")}</div></div>`;
+}
+function personCards(){
+  ensurePeopleProfiles();
+  const groups=["Children","Partner","Family","Friends","Other people"];
+  const profiles=(state.peopleProfiles||[]).filter(peopleMatchesFilter);
+  if(!profiles.length)return `<div class="card"><div class="notice">No people match this view.</div></div>`;
+  return groups.map(group=>{
+    const rows=profiles.filter(p=>relationshipGroup(p)===group);
+    if(!rows.length)return"";
+    return `<section class="people-section"><div class="people-section-title"><div><div class="eyebrow">${esc(group)}</div><h2>${rows.length} ${rows.length===1?"person":"people"}</h2></div></div><div class="people-grid">${rows.map(p=>personCardCompact(p)).join("")}</div></section>`;
+  }).join("");
+}
+function personCardCompact(p){
+  const b=nextBirthdayInfo(p),ints=p.interests||[],foods=p.favoriteFoods||[],plans=p.sharedPlans||[],dates=p.importantDates||[];
+  return `<div class="card person-card compact-person-card" onclick="openPersonHub('${p.id}')">
+    <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))} · ${livesWithUser(p)?"household":"extended"}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
+    ${p.relatedTo?`<div class="muted small person-family-link">${esc(p.relatedTo)}</div>`:""}
+    ${b?`<div class="person-detail-line"><span>Birthday</span><b>${esc(b.label)}${b.days<=30?" · "+b.days+"d":""}</b></div>`:""}
+    ${p.elfsterUrl?`<div class="person-detail-line"><span>Gifts</span><b>Elfster linked${p.elfsterLastSyncedAt?` · ${new Date(p.elfsterLastSyncedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"})}`:""}</b></div>`:""}
+    ${ints.length?`<div class="person-chips">${ints.slice(0,3).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div>`:""}
+    ${foods.length?`<div class="muted small">Likes: ${foods.slice(0,3).map(esc).join(", ")}</div>`:""}
+    ${plans.length||dates.length||(p.familyLinks||[]).length?`<div class="person-mini-meta">${(p.familyLinks||[]).length?`${p.familyLinks.length} family link${p.familyLinks.length===1?"":"s"}`:""}${(p.familyLinks||[]).length&&(plans.length||dates.length)?" · ":""}${plans.length?`${plans.length} plan${plans.length===1?"":"s"}`:""}${plans.length&&dates.length?" · ":""}${dates.length?`${dates.length} important date${dates.length===1?"":"s"}`:""}</div>`:""}
+  </div>`;
+}
+function openPersonProfile(id=""){
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],school:"",grade:"",schoolName:"",aliases:[],schoolContacts:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+  modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
+    <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
+    <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
+    <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="sister's daughter, partner's brother, their child…"></label>
+    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label>
+    <div class="grid2"><label>School<input id="pschool" value="${esc(p.school||"")}" placeholder="Everett Elementary"></label><label>Grade<input id="pgrade" value="${esc(p.grade||"")}" placeholder="3rd"></label></div>
+    <div class="grid2"><label>School / legal name<input id="pschoolname" value="${esc(p.schoolName||"")}" placeholder="Only if school uses a different name"></label><label>Other names / aliases<input id="paliases" value="${esc((p.aliases||[]).join(", "))}" placeholder="Nickname, school name…"></label></div>
+    <label>School / teacher contacts<textarea id="pschoolcontacts" rows="5" placeholder="Teacher name | role/class | email | notes">${esc((p.schoolContacts||[]).map(x=>[x.name||"",x.role||"",x.email||"",x.notes||""].join(" | ")).join("\n"))}</textarea></label>
+    <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
+    <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
+    <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
+    ${p.elfsterUrl?`<button type="button" class="btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Open Elfster wishlist</button>`:""} 
+    <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
+    <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
+    <label>Favorite foods / treats<input id="pfoods" value="${esc((p.favoriteFoods||[]).join(", "))}" placeholder="Chocolate cake, pizza, strawberries…"></label>
+    <label>Interests<input id="pints" value="${esc((p.interests||[]).join(", "))}" placeholder="music, cooking, reptiles…"></label>
+    <div class="grid2"><label>Clothing size<input id="pclothes" value="${esc(p.sizes?.clothing||"")}"></label><label>Shoe size<input id="pshoes" value="${esc(p.sizes?.shoes||"")}"></label></div>
+    <label>Gift / size notes<textarea id="pnotes" rows="3" placeholder="Clothing sizes, things they collect, gift notes…">${esc(p.giftNotes||"")}</textarea></label>
+    <label>Important dates<textarea id="pdates" rows="2" placeholder="Anniversary | 2026-05-10&#10;Tradition | 12-24">${esc((p.importantDates||[]).map(x=>`${x.label||x.title||""} | ${x.date||""}`).join("\n"))}</textarea></label>
+    <label>Plans / things to remember<textarea id="pplans" rows="3" placeholder="Dinner together | 2026-10-18&#10;Call about holiday plans">${esc((p.sharedPlans||[]).map(x=>typeof x==="string"?x:[x.title||"Plan",x.date||""].filter(Boolean).join(" | ")).join("\n"))}</textarea></label>
+    <label>Routine / preference notes<textarea id="proutine" rows="2" placeholder="Morning shower preference, pickup notes, routines…">${esc(p.routineNotes||"")}</textarea></label>
+    <div class="relationship-settings"><div class="mini-heading">Recurring check-in (optional)</div><label class="task"><input id="pcheckenabled" type="checkbox" ${p.recurringCheckin?.enabled?"checked":""}><span>Use a recurring check-in for this person</span></label><div class="grid3"><label>Weekday<select id="pcheckday">${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<option value="${i}" ${Number(p.recurringCheckin?.weekday)===i?"selected":""}>${d}</option>`).join("")}</select></label><label>Time<input id="pchecktime" type="time" value="${esc(p.recurringCheckin?.startTime||"")}"></label><label>Minutes<input id="pcheckmins" type="number" min="15" step="5" value="${p.recurringCheckin?.durationMinutes||30}"></label></div></div>
+  </div>`,"Save",async()=>{
+    const name=$("#pname").value.trim();if(!name)return;let x=personById(id);
+    if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
+    const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
+    const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
+    const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
+    const schoolContacts=$("#pschoolcontacts").value.split(/\r?\n/).map(line=>{const parts=line.split("|").map(x=>String(x||"").trim());return{name:parts[0]||"",role:parts[1]||"",email:parts[2]||"",notes:parts.slice(3).join(" | ")}}).filter(x=>x.name||x.email);
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolName:$("#pschoolname").value.trim(),aliases:commaList($("#paliases").value),schoolContacts,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
+  });
+}
+function latestBirthdaySuggestion(personId){
+  return [...(state.birthdaySuggestions||[])].filter(x=>x.personId===personId&&x.status==="proposed").sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
+}
+async function requestBirthdaySuggestion(personId,exclude=[]){
+  const p=personById(personId);if(!p)return;
+  if(typeof cloudQueueBirthdayPlan==="function"){
+    p.birthdayPlan=p.birthdayPlan||{};p.birthdayPlan.suggestionState="queued";await save();render();
+    const ok=await cloudQueueBirthdayPlan(p,exclude);
+    if(!ok){p.birthdayPlan.suggestionState="waiting_for_cloud";await save();render()}
+  }
+}
+async function acceptBirthdaySuggestion(id){
+  const sug=(state.birthdaySuggestions||[]).find(x=>x.id===id);if(!sug)return;const p=personById(sug.personId);if(!p)return;
+  const plan=p.birthdayPlan||{tasks:[]};for(const k of ["theme","cake","activity","location","food","decorations","notes"])if(sug[k]&&!plan[k])plan[k]=sug[k];
+  if(Number(sug.budget)>0&&!Number(plan.budget))plan.budget=Number(sug.budget);
+  if(Array.isArray(sug.tasks)){if(!Array.isArray(plan.tasks))plan.tasks=[];for(const text of sug.tasks){const t=typeof text==="string"?text:String(text?.text||"").trim();if(t&&!plan.tasks.some(x=>String(x.text||"").toLowerCase()===t.toLowerCase()))plan.tasks.push({text:t,done:false})}}
+  plan.suggestionState="accepted";p.birthdayPlan=plan;sug.status="accepted";await save();render();
+}
+async function rejectBirthdaySuggestion(id){
+  const sug=(state.birthdaySuggestions||[]).find(x=>x.id===id);if(!sug)return;sug.status="rejected";await save();await requestBirthdaySuggestion(sug.personId,[sug.theme,sug.activity].filter(Boolean));render();
+}
+function birthdaySuggestionHTML(p){
+  const sug=latestBirthdaySuggestion(p.id),stateLabel=p.birthdayPlan?.suggestionState;
+  if(!sug)return stateLabel==="queued"?`<div class="notice">✨ Building a birthday idea from ${esc(p.name)}’s favorites…</div>`:`<button class="btn primary" onclick="closeModal();requestBirthdaySuggestion('${p.id}')">✨ Suggest a birthday plan</button>`;
+  return `<div class="birthday-suggestion"><div class="eyebrow">✨ Suggested birthday plan</div><h3>${esc(sug.theme||"Birthday idea")}</h3>${sug.reason?`<div class="muted small">${esc(sug.reason)}</div>`:""}<div class="grid2"><div><div class="mini-heading">Activity</div><div>${esc(sug.activity||"—")}</div></div><div><div class="mini-heading">Cake</div><div>${esc(sug.cake||"—")}</div></div></div>${sug.food?`<div class="muted small"><b>Food:</b> ${esc(sug.food)}</div>`:""}${sug.decorations?`<div class="muted small"><b>Decor:</b> ${esc(sug.decorations)}</div>`:""}<div class="actions" style="margin-top:9px"><button class="btn primary" onclick="acceptBirthdaySuggestion('${sug.id}');closeModal()">Use this plan</button><button class="btn" onclick="rejectBirthdaySuggestion('${sug.id}');closeModal()">Another idea</button></div></div>`;
+}
+
+function openBirthdayWish(personId,wishId=""){
+  const p=personById(personId);if(!p)return;const w=(p.wishlist||[]).find(x=>x.id===wishId)||{};
+  modal(`Gift idea · ${p.name}`,`<div class="stack">${p.elfsterUrl?`<button type="button" class="btn elfster-btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Open ${esc(p.name)}'s Elfster wishlist ↗</button>`:""}<label>Item / idea<input id="wi" value="${esc(w.item||"")}"></label><div class="grid2"><label>Source<select id="wsource">${["My idea","Elfster","Other"].map(v=>`<option ${(w.source||"My idea")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Status<select id="ws">${["want","maybe","bought","wrapped"].map(v=>`<option ${(w.status||"want")===v?"selected":""}>${v}</option>`).join("")}</select></label></div><div class="grid2"><label>Estimated cost<input id="west" type="number" min="0" step=".01" value="${w.estimatedCost??""}"></label><label>Actual cost<input id="wact" type="number" min="0" step=".01" value="${w.actualCost??""}"></label></div><label>Store / where to get it<input id="wstore" value="${esc(w.store||"")}"></label><label>Item link<input id="wurl" type="url" value="${esc(w.url||"")}" placeholder="Optional product or Elfster link"></label><label>Notes<input id="wn" value="${esc(w.notes||"")}"></label></div>`,"Save",async()=>{
+    const item=$("#wi").value.trim();if(!item)return;if(!Array.isArray(p.wishlist))p.wishlist=[];
+    let x=p.wishlist.find(x=>x.id===wishId);if(!x){x={id:uid()};p.wishlist.push(x)}
+    Object.assign(x,{item,source:$("#wsource").value,status:$("#ws").value,estimatedCost:Number($("#west").value||0),actualCost:Number($("#wact").value||0),store:$("#wstore").value.trim(),url:$("#wurl").value.trim(),notes:$("#wn").value.trim(),updatedAt:new Date().toISOString()});await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+  });
+}
+function openBirthdayPlanner(personId){
+  const p=personById(personId);if(!p)return;const plan=p.birthdayPlan&&typeof p.birthdayPlan==="object"?p.birthdayPlan:{tasks:[]};if(!Array.isArray(plan.tasks))plan.tasks=[];
+  const wishes=(p.wishlist||[]);
+  modal(`Birthday plan · ${p.name}`,`<div class="stack birthday-editor">
+    <div class="birthday-planner-head">${nextBirthdayInfo(p)?`<b>🎂 ${esc(nextBirthdayInfo(p).label)}</b><span class="muted small">${nextBirthdayInfo(p).days} days away${nextBirthdayInfo(p).turning?` · turning ${nextBirthdayInfo(p).turning}`:""}</span>`:`<b>Birthday date not set</b>`}</div>
+    ${(p.favoriteColors||[]).length||(p.favoriteCharacters||[]).length||(p.favoriteFoods||[]).length||(p.interests||[]).length?`<div class="birthday-inspo"><div class="mini-heading">Planning inspiration</div><div class="person-chips">${(p.favoriteColors||[]).map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${(p.favoriteCharacters||[]).map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${(p.favoriteFoods||[]).map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${(p.interests||[]).map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
+    ${birthdaySuggestionHTML(p)}
+    <label>Theme / vibe<input id="btheme" value="${esc(plan.theme||"")}" placeholder="Favorite character, colors, theme…"></label>
+    <label>Cake / dessert<input id="bcake" value="${esc(plan.cake||"")}"></label>
+    <label>Party / activity idea<input id="bactivity" value="${esc(plan.activity||"")}"></label>
+    <div class="grid2"><label>Party date<input id="bpartydate" type="date" value="${esc(plan.partyDate||"")}"></label><label>Party time<input id="bpartytime" type="time" value="${esc(plan.partyTime||"")}"></label></div>
+    <label>Location<input id="blocation" value="${esc(plan.location||"")}"></label>
+    <label>Guest list / people to invite<textarea id="bguests" rows="2" placeholder="Names or groups">${esc(plan.guests||"")}</textarea></label>
+    <label>Food besides cake<textarea id="bfood" rows="2" placeholder="Pizza, snacks, drinks…">${esc(plan.food||"")}</textarea></label>
+    <label>Decorations / supplies<textarea id="bdecor" rows="2" placeholder="Balloons, plates, party favors…">${esc(plan.decorations||"")}</textarea></label>
+    <label>Budget<input id="bbudget" type="number" min="0" step="1" value="${plan.budget??""}"></label>
+    <label>Planning notes<textarea id="bnotes" rows="3">${esc(plan.notes||"")}</textarea></label>
+    ${(()=>{const spend=birthdaySpend(p);return spend.budget||spend.total?`<div class="birthday-budget"><div><span class="muted small">Budget</span><b>${money(spend.budget)}</b></div><div><span class="muted small">Spent</span><b>${money(spend.total)}</b></div><div><span class="muted small">Remaining</span><b>${money(Math.max(0,spend.budget-spend.total))}</b></div></div>`:""})()}
+    <div class="mini-heading">Gift / wish list</div>
+    ${wishes.length?wishes.map(w=>`<button class="birthday-wish ${esc(w.status||"want")}" onclick="openBirthdayWish('${p.id}','${w.id}')"><span>${esc(w.item)}${w.store?`<div class="muted small">${esc(w.store)}</div>`:""}</span><span style="text-align:right"><b>${esc(w.status||"want")}</b>${Number(w.actualCost||w.estimatedCost)>0?`<div class="muted small">${money(w.actualCost||w.estimatedCost)}</div>`:""}</span></button>`).join(""):`<div class="muted small">No birthday wishes logged yet.</div>`}
+    <button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Add wish</button>
+    <div class="mini-heading">Planning checklist</div>
+    <div id="birthdayTasks">${plan.tasks.map((t,i)=>`<label class="task birthday-task"><input type="checkbox" ${t.done?"checked":""} onchange="toggleBirthdayPlanTask('${p.id}',${i},this.checked)"><span class="${t.done?"done":""}">${esc(t.text)}</span></label>`).join("")||`<div class="muted small">Add things like invitations, cake order, gifts, decorations, wrapping, or party supplies.</div>`}</div>
+    <label>Add checklist item<input id="btask" placeholder="Order cake"></label>
+  </div>`,"Save plan",async()=>{
+    p.birthdayPlan={...plan,theme:$("#btheme").value.trim(),cake:$("#bcake").value.trim(),activity:$("#bactivity").value.trim(),partyDate:$("#bpartydate").value,partyTime:$("#bpartytime").value,location:$("#blocation").value.trim(),guests:$("#bguests").value.trim(),food:$("#bfood").value.trim(),decorations:$("#bdecor").value.trim(),budget:Number($("#bbudget").value||0),notes:$("#bnotes").value.trim(),tasks:plan.tasks};
+    const task=$("#btask").value.trim();if(task)p.birthdayPlan.tasks.push({text:task,done:false});
+    await save();closeModal();render();
+  });
+}
+async function toggleBirthdayPlanTask(personId,index,done){const p=personById(personId);if(!p?.birthdayPlan?.tasks?.[index])return;p.birthdayPlan.tasks[index].done=done;await save();render()}
+
+function setPeopleTab(tab){
+  if(!["people","birthdays","household"].includes(tab))tab="people";
+  peopleTab=tab;localStorage.setItem("dailyLifePeopleTab",tab);render();
+}
+function peopleTabs(){
+  return `<div class="people-tabs" role="tablist" aria-label="People sections">
+    <button class="${peopleTab==="people"?"active":""}" onclick="setPeopleTab('people')">People</button>
+    <button class="${peopleTab==="birthdays"?"active":""}" onclick="setPeopleTab('birthdays')">Birthdays + gifts</button>
+    <button class="${peopleTab==="household"?"active":""}" onclick="setPeopleTab('household')">Household</button>
+  </div>`;
+}
+function familyConnectionClusters(){
+  const profiles=state.peopleProfiles||[],byName=new Map(profiles.map(p=>[String(p.name||"").trim().toLowerCase(),p])),
+        visited=new Set(),clusters=[];
+  for(const p of profiles){
+    if(visited.has(p.id)||!(p.familyLinks||[]).length)continue;
+    const stack=[p],members=[];
+    while(stack.length){
+      const cur=stack.pop();if(!cur||visited.has(cur.id))continue;
+      visited.add(cur.id);members.push(cur);
+      for(const link of cur.familyLinks||[]){
+        const match=byName.get(String(link.name||"").trim().toLowerCase());
+        if(match&&!visited.has(match.id))stack.push(match);
+      }
+    }
+    if(members.length>1)clusters.push(members);
+  }
+  return clusters.sort((a,b)=>b.length-a.length||String(a[0]?.name||"").localeCompare(String(b[0]?.name||"")));
+}
+function familyConnectionsCard(){
+  const clusters=familyConnectionClusters();
+  if(!clusters.length)return"";
+  return `<div class="card family-connections-card"><div class="section-title"><div><div class="eyebrow">Family connections</div><h2>${clusters.length} linked family group${clusters.length===1?"":"s"}</h2><div class="muted small">These connections come from private People profiles, not household membership.</div></div></div>
+    <div class="family-cluster-grid">${clusters.map(group=>`<div class="family-cluster">${group.map(p=>`<button onclick="openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(p.name)}</b><small>${esc(relationshipLabel(p))}</small></span></button>`).join("")}</div>`).join("")}</div>
+  </div>`;
+}
+function peopleAgendaItems(){
+  const profileByName=new Map((state.peopleProfiles||[]).map(p=>[String(p.name||"").trim().toLowerCase(),p])),rows=[];
+  for(const e of state.events||[]){
+    if(!e.date||e.date<ymd()||e.status==="cancelled")continue;
+    const p=profileByName.get(String(e.child||"").trim().toLowerCase());if(!p)continue;
+    rows.push({kind:"event",person:p,date:e.date,title:e.title||"Event",time:e.startTime||"",location:e.location||"",id:e.id});
+  }
+  for(const p of state.peopleProfiles||[])for(const plan of p.sharedPlans||[]){
+    if(!plan||typeof plan==="string"||!plan.date||plan.date<ymd())continue;
+    rows.push({kind:"plan",person:p,date:plan.date,title:plan.title||"Plan",time:plan.time||"",location:plan.location||"",id:plan.id||""});
+  }
+  return rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+}
+function peopleMissingInfoCard(){
+  const missing=(state.peopleProfiles||[]).filter(p=>!nextBirthdayInfo(p));
+  if(!missing.length)return"";
+  return `<div class="card people-missing"><div class="section-title"><div><div class="eyebrow">Fill in over time</div><h2>${missing.length} birthday${missing.length===1?"":"s"} still unknown</h2><div class="muted small">No need to know everything now. Add details whenever you learn them.</div></div></div><div class="person-chips">${missing.map(p=>`<button class="person-chip person-chip-button" onclick="openPersonProfile('${p.id}')">${esc(p.name)} · add birthday</button>`).join("")}</div></div>`;
+}
+function peopleAgendaCard(){
+  const rows=peopleAgendaItems().slice(0,10);
+  return `<div class="card people-agenda"><div class="section-title"><div><div class="eyebrow">Coming up together</div><h2>Plans + visits</h2><div class="muted small">Anything tied to a person can live here—dinner, visits, parties, outings, appointments, or things you want to remember.</div></div></div>
+  ${rows.length?rows.map(x=>`<button class="people-agenda-row" onclick="${x.kind==="event"?`openEvent('${x.date}','${x.id}','${esc(x.person.name)}')`:`openPersonPlan('${x.person.id}','${x.id}')`}"><div class="agenda-date"><b>${new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</b><span>${new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})}</span></div><div class="grow"><b>${esc(x.title)}</b><div class="muted small">${esc(x.person.name)}${x.time?" · "+esc(fmtClock(x.time)):""}${x.location?" · "+esc(x.location):""}</div></div><span class="person-open">›</span></button>`).join(""):`<div class="notice">No upcoming people plans captured yet. Open a person and tap <b>+ Plan</b> when something comes up.</div>`}
+  </div>`;
+}
+function openPersonNote(personId,noteId=""){
+  const p=personById(personId);if(!p)return;
+  if(!Array.isArray(p.personNotes))p.personNotes=[];
+  const existing=p.personNotes.find(n=>n.id===noteId);
+  const note=existing||{id:"",date:ymd(),category:"General",text:""};
+  modal(`Note · ${p.name}`,`<div class="stack"><div class="grid2"><label>Date<input id="pndate" type="date" value="${esc(note.date||ymd())}"></label><label>Type<select id="pncat">${["General","Preference","Life update","Gift clue","Memory","Follow-up"].map(v=>`<option ${(note.category||"General")===v?"selected":""}>${v}</option>`).join("")}</select></label></div><label>Note<textarea id="pntext" rows="5" placeholder="Something they mentioned, a preference, family update, gift clue, memory…">${esc(note.text||"")}</textarea></label></div>`,"Save",async()=>{
+    const textValue=$("#pntext").value.trim();if(!textValue)return;
+    let n=existing;if(!n){n={id:uid()};p.personNotes.push(n)}
+    Object.assign(n,{date:$("#pndate").value||ymd(),category:$("#pncat").value,text:textValue,updatedAt:new Date().toISOString()});
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+  });
+}
+function openPersonPlan(personId,planId=""){
+  const p=personById(personId);if(!p)return;
+  if(!Array.isArray(p.sharedPlans))p.sharedPlans=[];
+  const existing=p.sharedPlans.find(x=>x&&typeof x==="object"&&x.id===planId);
+  const plan=existing||{id:"",title:"",date:ymd(),time:"",location:"",notes:""};
+  modal(`Plan · ${p.name}`,`<div class="stack"><label>Plan<input id="pptitle" value="${esc(plan.title||"")}" placeholder="Dinner, visit, birthday outing…"></label><div class="grid2"><label>Date<input id="ppdate" type="date" value="${esc(plan.date||ymd())}"></label><label>Time<input id="pptime" type="time" value="${esc(plan.time||"")}"></label></div><label>Location<input id="pploc" value="${esc(plan.location||"")}"></label><label>Notes<textarea id="ppnotes" rows="3">${esc(plan.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const title=$("#pptitle").value.trim(),date=$("#ppdate").value;if(!title)return;
+    let x=existing;if(!x){x={id:uid()};p.sharedPlans.push(x)}
+    Object.assign(x,{title,date,time:$("#pptime").value,location:$("#pploc").value.trim(),notes:$("#ppnotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(p);closeModal();render();
+  });
+}
+function peopleOverviewCard(){
+  const profiles=state.peopleProfiles||[],household=profiles.filter(livesWithUser).length,extended=profiles.filter(p=>!livesWithUser(p)).length,
+        upcoming=profiles.map(p=>({p,b:nextBirthdayInfo(p)})).filter(x=>x.b&&x.b.days<=45).sort((a,b)=>a.b.days-b.b.days);
+  return `<div class="card glow people-hero"><div class="section-title"><div><div class="eyebrow">People</div><h2>The people in your life</h2><div class="muted small">Profiles, birthdays, preferences, plans, and things you want to remember about each person.</div></div><div class="actions"><button class="btn primary" onclick="openPersonProfile()">+ Person</button><button class="btn" onclick="setView('reading')">Reading</button></div></div>
+    <div class="people-hero-stats"><span><b>${profiles.length}</b><small>profiles</small></span><span><b>${household}</b><small>household</small></span><span><b>${extended}</b><small>extended / other</small></span></div>
+    ${upcoming.length?`<div class="people-upcoming"><div class="mini-heading">Coming up</div>${upcoming.slice(0,4).map(({p,b})=>`<button onclick="openPersonHub('${p.id}')"><span>${esc(p.name)}</span><b>${esc(b.label)} · ${b.days===0?"today":b.days+"d"}</b></button>`).join("")}</div>`:""}
+  </div>`;
+}
+function familyRoutinesCard(){
+  const rows=state.chores.filter(x=>x.date===ymd());
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">This stays separate from adult people profiles.</div></div><button class="btn" onclick="openChore()">+ Chore</button></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label></div>`).join("")||`<div class="notice">No family routines logged today.</div>`}</div>`;
+}
+function familyView(){
+  ensurePeopleProfiles();
+  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${schoolContactsCard()}${kidsMoneyCard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${familyConnectionsCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
+  return `${peopleTabs()}${body}`;
+}
+function readingView(){
+  const ticketRows=monthlyReaderTickets(),todayReads=reads(),totalPages=todayReads.reduce((sum,x)=>sum+Number(x.pages||0),0),
+        month=ymd().slice(0,7),monthLogs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
+        monthPages=monthLogs.reduce((sum,x)=>sum+Number(x.pages||0),0),monthDays=new Set(monthLogs.map(x=>x.date)).size;
+  return `<div class="card glow reading-hero"><div class="section-title"><div><div class="eyebrow">Reading</div><h2>Reading lives here now</h2><div class="muted small">Pages, reading days, tickets, and the reader wheel are separate from People profiles.</div></div><button class="btn" onclick="setView('family')">Back to People</button></div>
+    <div class="people-hero-stats"><span><b>${totalPages}</b><small>pages today</small></span><span><b>${monthPages}</b><small>pages this month</small></span><span><b>${monthDays}</b><small>reading days</small></span></div>
+  </div>
+  <div class="card"><div class="section-title"><div><h2>Readers</h2><div class="muted small">5+ pages = 1 ticket · 20+ = 2 · 40+ = 3 per day.</div></div><button class="btn" onclick="openPeople()">Edit readers</button></div>
+  <div class="reader-grid">${(state.settings.readers||[]).map(n=>{const p=todayReads.filter(x=>x.reader===n).reduce((sum,x)=>sum+Number(x.pages||0),0),t=p>=40?3:p>=20?2:p>=5?1:0;return`<div class="reader-card"><div><div class="eyebrow">${esc(n)}</div><div class="big">${p} pages</div><div class="muted small">${t} ticket${t===1?"":"s"} today</div></div><button class="btn primary" onclick="openReading('${esc(n)}')">Log pages</button></div>`}).join("")}</div></div>
+  <div class="card"><div class="section-title"><div><h2>Reader Wheel · this month</h2><div class="muted small">Tickets reflect reading logged during the current month.</div></div><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${ticketRows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading day${r.days===1?"":"s"}</span><b>${r.tickets} tickets</b></div>`).join("")}</div>
+  <div class="card"><div class="eyebrow">Recent reading</div><h2>Latest logs</h2>${[...(state.readingLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,12).map(x=>`<div class="row"><span><b>${esc(x.reader)}</b><div class="muted small">${esc(dl(x.date))}${x.book?" · "+esc(x.book):""}</div></span><b>${Number(x.pages||0)} pages</b></div>`).join("")||`<div class="notice">No reading logged yet.</div>`}</div>`;
+}
+function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function activeOrders(){
+  return [...(state.orders||[])].filter(o=>!["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
+}
+function groceryOrdersCard(){
+  const rows=activeOrders(),recent=[...(state.orders||[])].filter(o=>["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||""))).slice(0,3);
+  let html='<div class="card"><div class="section-title"><div><div class="eyebrow">🛍 Grocery orders</div><h2>'+(rows.length?rows.length+' active':'No active order')+'</h2></div><button class="btn" onclick="openOrder()">+ Order</button></div>';
+  if(rows.length){for(const o of rows){const unavailable=(o.items||[]).filter(i=>i.status==='unavailable').length,sub=(o.items||[]).filter(i=>i.status==='substituted').length;html+='<div class="order-row" onclick="openOrder(\''+o.id+'\')"><div class="grow"><b>'+esc(o.store||'Grocery order')+'</b><div class="muted small">'+esc(o.status||'ordered')+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.total?' · '+money(o.total):'')+'</div><div class="muted small">'+(o.items||[]).length+' items'+(unavailable?' · '+unavailable+' unavailable':'')+(sub?' · '+sub+' substituted':'')+(o.perishablesAway?' · perishables put away':'')+'</div></div><span class="tag">'+esc(o.status||'ordered')+'</span></div>';}}
+  else if(recent.length){html+='<details><summary>Recent orders</summary>';for(const o of recent)html+='<div class="row" onclick="openOrder(\''+o.id+'\')"><span>'+esc(o.store||'Order')+' · '+esc(dl(o.orderDate||ymd()))+'</span><b>'+(o.total?money(o.total):'')+'</b></div>';html+='</details>';}
+  else html+='<div class="notice">Track Walmart/Sam’s grocery orders, unavailable items, substitutions, refunds, and putting perishables away.</div>';
+  return html+'</div>';
+}
+function openOrder(id=''){
+  const o=(state.orders||[]).find(x=>x.id===id)||{id:'',store:'',orderDate:ymd(),status:'ordered',deliveryTime:'',total:0,items:[],perishablesAway:false,refundStatus:'',rating:'',notes:''};
+  const itemText=(o.items||[]).map(i=>String(i.item||'')+' | '+String(i.status||'received')).join('\n');
+  const body='<div class="stack"><label>Store<input id="ostore" value="'+esc(o.store||'')+'"></label><div class="grid2"><label>Order date<input id="odate" type="date" value="'+esc(o.orderDate||ymd())+'"></label><label>Status<select id="ostatus">'+["ordered","shopping","on the way","delivered","complete","cancelled"].map(v=>'<option '+((o.status||'ordered')===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div><label>Delivery window / time<input id="otime" value="'+esc(o.deliveryTime||'')+'" placeholder="6–7 PM"></label><label>Total<input id="ototal" type="number" step=".01" value="'+(o.total||'')+'"></label><label>Items<textarea id="oitems" rows="6" placeholder="milk | received&#10;bread | unavailable&#10;cheese | substituted">'+esc(itemText)+'</textarea></label><label class="task"><input id="operish" type="checkbox" '+(o.perishablesAway?'checked':'')+'><span>Perishables put away</span></label><label>Refund / return status<input id="orefund" value="'+esc(o.refundStatus||'')+'"></label><label>Delivery rating<input id="orating" value="'+esc(o.rating||'')+'" placeholder="Optional"></label><label>Notes<textarea id="onotes" rows="2">'+esc(o.notes||'')+'</textarea></label></div>';
+  modal(o.id?'Order · '+(o.store||'Groceries'):'Add grocery order',body,'Save',async()=>{const store=$("#ostore").value.trim();if(!store)return;let x=(state.orders||[]).find(x=>x.id===id);if(!x){x={id:uid()};state.orders.push(x)}const items=$("#oitems").value.split(/\r?\n/).map(line=>{const parts=line.split('|');return{item:String(parts.shift()||'').trim(),status:parts.join('|').trim()||'received'}}).filter(i=>i.item);Object.assign(x,{store,orderDate:$("#odate").value,status:$("#ostatus").value,deliveryTime:$("#otime").value.trim(),total:Number($("#ototal").value||0),items,perishablesAway:$("#operish").checked,refundStatus:$("#orefund").value.trim(),rating:$("#orating").value.trim(),notes:$("#onotes").value.trim()});await save();closeModal();render()});
+}
+function foodTotalsForDate(date){
+  const rows=(state.foodLogs||[]).filter(x=>x.date===date),sum=k=>rows.reduce((n,x)=>n+Number(x?.[k]||0)*foodQuantity(x),0);
+  return{rows,cal:sum("calories"),protein:sum("protein"),carbs:sum("carbs"),fat:sum("fat"),fiber:sum("fiber"),caffeineMg:sum("caffeineMg"),knownCaffeine:rows.some(x=>Number(x.caffeineMg)>0),monsters:rows.filter(x=>x.category==="monster").reduce((n,x)=>n+foodQuantity(x),0)};
+}
+function todayNutritionCard(){
+  const f=foodTotalsForDate(ymd()),waterNow=water(),calTarget=Number(state.settings.calTarget||0),proteinTarget=Number(state.settings.proteinTarget||0),
+    incomplete=f.rows.some(x=>/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
+  return `<div class="card food-intake-card"><div class="section-title"><div><div class="eyebrow">My intake today</div><h2>${Math.round(f.cal)} known calories · ${Math.round(f.protein)}g known protein</h2><div class="muted small">What you have actually logged so far today.</div></div><button class="btn primary" onclick="openFood()">+ Food / drink</button></div>
+    ${incomplete?`<div class="notice"><b>Some nutrition is intentionally unknown.</b> Totals show only values we actually know, so they may be lower than what you consumed.</div>`:""}
+    <div class="intake-progress-grid">
+      <div><span>Known calories</span><b>${Math.round(f.cal)}${calTarget?" / "+calTarget:""}</b>${calTarget?todayProgress(f.cal,calTarget,"Known calories logged"):""}</div>
+      <div><span>Known protein</span><b>${Math.round(f.protein)}g${proteinTarget?" / "+proteinTarget+"g":""}</b>${proteinTarget?todayProgress(f.protein,proteinTarget,"Known protein logged"):""}</div>
+    </div>
+    <div class="intake-macro-grid"><span><b>${Math.round(f.carbs)}g</b><small>known carbs</small></span><span><b>${Math.round(f.fat)}g</b><small>known fat</small></span><span><b>${Math.round(f.fiber)}g</b><small>known fiber</small></span><span><b>${Math.round(waterNow)} oz</b><small>water</small></span><span><b>${f.knownCaffeine?Math.round(f.caffeineMg)+" mg":"—"}</b><small>${f.knownCaffeine?"known caffeine":"caffeine not fully known"}</small></span><span><b>${f.monsters?Number(f.monsters.toFixed(1)):"0"}</b><small>Monster cans logged</small></span></div>
+    ${f.rows.length?`<div class="mini-heading">Logged today</div>${f.rows.slice().reverse().slice(0,8).map(x=>`<div class="row compact-row"><span><b>${esc(x.name||"Food / drink")}</b><div class="muted small">${foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":""}${Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":""}${Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":""}${x.notes?" · "+esc(x.notes):""}</div></span></div>`).join("")}`:`<div class="notice">Nothing has been logged yet today.</div>`}
+    ${micronutrientSummary()}
+    <div class="actions"><button class="btn" onclick="customWater()">+ Water</button><button class="btn" onclick="setView('log');careTab='patterns';render()">Open 7-day patterns</button></div>
+  </div>`;
+}
+function foodIntakeTrends(){
+  const dates=trendDates(7),labels=dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"})),
+    vals=key=>dates.map(d=>{const t=foodTotalsForDate(d);return Number(t[key]||0)}),
+    calories=vals("cal"),protein=vals("protein"),waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
+    row=(title,arr,fmt)=>{const max=Math.max(1,...arr);return `<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${arr.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`};
+  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition bars use known values only; blank or low days can simply mean nutrition was not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}</div>`;
+}
+
+function homeView(){
+  const last=[...state.homeLogs].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
+        days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null,
+        shop=neededShoppingGroups(),dates=week(),today=ymd(),remainingDates=dates.filter(d=>d>=today),
+        remainingMeals=remainingDates.map(d=>state.meals.find(x=>x.date===d&&x.type==="dinner")).filter(Boolean),
+        planned=remainingMeals.filter(m=>m.dish).length,ready=remainingMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,choosing=remainingMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
+  return `${todayNutritionCard()}${foodIntakeTrends()}${pantryCard()}${groceryOrdersCard()}<div class="card"><div class="section-title"><div><h2>Meals this week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
+    ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),sg=latestMealSuggestion(d),past=d<today;return `<div class="row ${past?"past-row":""}"><span onclick="openMeal('${d}')" style="flex:1"><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):past?"Past":""}</div></span>${m?.dish?`<span onclick="openMeal('${d}')" style="text-align:right">${esc(m.dish)}<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div></span>`:past?`<span class="muted small">No meal logged</span>`:sg?suggestionCard(sg,true):m?.recipeState==="suggestion-queued"?`<span class="muted small">✨ choosing from your kitchen…</span>`:`<div class="actions"><button class="btn small primary" onclick="requestMealSuggestion('${d}')">Suggest</button><button class="btn small" onclick="openMeal('${d}')">Choose</button></div>`}</div>`}).join("")}</div>
+    <div class="card"><div class="section-title"><div><h2>Grocery list</h2><div class="muted small">${shop.length} item${shop.length===1?"":"s"} needed · recipe ingredients appear automatically.</div></div><button class="btn primary" onclick="openShopping()">+ Add</button></div>
+      ${shop.map(g=>`<div class="row grocery-row"><label class="task grow"><input type="checkbox" onchange='buyShoppingGroup(${JSON.stringify(g.ids)})'><span><b>${esc(g.item)}</b>${g.qty.length?` · ${esc([...new Set(g.qty)].join(" + "))}`:""}${g.meals.size?`<div class="muted small">For ${[...g.meals].map(esc).join(", ")}</div>`:""}${g.stores.size?`<div class="muted small">${[...g.stores].map(esc).join(" · ")}</div>`:""}${g.sources.size?`<div class="muted small">From: ${[...g.sources].map(s=>esc(s==="pet"?"Pets":s==="garden"?"Garden":s==="selfcare"?"Self care":s==="recipe"?"Meal plan":s)).join(" · ")}</div>`:""}</span></label><button class="btn small good" onclick='alreadyHaveShoppingGroup(${JSON.stringify(g.ids)})'>Already have</button></div>`).join("")||`<div class="notice">Shopping list is clear.</div>`}</div>
+    <div class="card"><div class="eyebrow">♡ Meal memory</div><h2>What your family likes</h2>${[...new Set((state.mealFeedback||[]).filter(x=>Number(x.score)>0).sort((a,b)=>Number(b.score)-Number(a.score)).map(x=>x.dish))].slice(0,8).map(d=>`<div class="row"><span>${esc(d)}</span><b>${feedbackScoreLabel(dishFeedbackScore(d))}</b></div>`).join("")||`<div class="notice">Rate meals after dinner and Daily Life will learn what to repeat more often.</div>`}</div>
+`;
+}
+
+function inventorySetTab(tab){inventoryTab=tab==="map"?"map":"items";localStorage.setItem("dailyLifeInventoryTab",inventoryTab);render()}
+function inventorySetCategory(category){inventoryCategory=category||"All";localStorage.setItem("dailyLifeInventoryCategory",inventoryCategory);render()}
+function inventorySetSearch(value){inventorySearch=String(value||"");render()}
+function inventoryRoomById(id){return (state.houseRooms||[]).find(x=>x.id===id)||null}
+function inventoryLocationById(id){return (state.inventoryLocations||[]).find(x=>x.id===id)||null}
+function inventoryRoomLabel(id){return inventoryRoomById(id)?.name||""}
+function inventoryLocationLabel(item){
+  const loc=inventoryLocationById(item?.locationId),room=inventoryRoomById(item?.roomId||loc?.roomId);
+  return [room?.name,loc?.name].filter(Boolean).join(" · ");
+}
+function inventoryCategories(){
+  const defaults=["Household","Cleaning","Bathroom","Clothing","Kids","School","Electronics","Tools","Seasonal","Other"];
+  return [...new Set([...defaults,...(state.inventoryItems||[]).map(x=>String(x.category||"").trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+}
+function inventoryEnsureRoom(name){
+  name=String(name||"").trim();if(!name)return"";
+  let room=(state.houseRooms||[]).find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(!room){room={id:uid(),name,notes:""};state.houseRooms.push(room)}
+  return room.id;
+}
+function inventoryEnsureLocation(roomId,name){
+  name=String(name||"").trim();if(!name)return"";
+  let loc=(state.inventoryLocations||[]).find(x=>x.roomId===roomId&&String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(!loc){loc={id:uid(),roomId,name,notes:""};state.inventoryLocations.push(loc)}
+  return loc.id;
+}
+function inventoryVisibleItems(){
+  const q=String(inventorySearch||"").trim().toLowerCase(),cat=inventoryCategory||"All";
+  return [...(state.inventoryItems||[])].filter(x=>{
+    if(cat!=="All"&&String(x.category||"Other")!==cat)return false;
+    if(!q)return true;
+    const hay=[x.name,x.category,x.status,x.notes,inventoryLocationLabel(x)].join(" ").toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+}
+function inventoryView(){
+  const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
+  const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
+  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button></div>`;
+  if(inventoryTab==="map"){
+    return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
+    <div class="card"><div class="section-title"><div><h2>House map</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
+    ${rooms.length?rooms.map(room=>{
+      const locs=locations.filter(x=>x.roomId===room.id),roomItems=all.filter(x=>x.roomId===room.id||locs.some(l=>l.id===x.locationId));
+      return `<details class="inventory-room" open><summary><span><b>${esc(room.name)}</b><small>${roomItems.length} item${roomItems.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span><button class="btn small" onclick="event.preventDefault();event.stopPropagation();openInventoryRoom('${room.id}')">Edit</button></summary>
+      <div class="inventory-room-body">
+      ${locs.length?locs.map(loc=>{const li=all.filter(x=>x.locationId===loc.id);return `<div class="inventory-location"><div class="row"><span><b>${esc(loc.name)}</b><div class="muted small">${li.length} item${li.length===1?"":"s"}${loc.notes?" · "+esc(loc.notes):""}</div></span><button class="btn small" onclick="openInventoryLocation('${loc.id}')">Edit</button></div>${li.slice(0,8).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></button>`).join("")}${li.length>8?`<div class="muted small">+${li.length-8} more</div>`:""}</div>`}).join(""):`<div class="notice">No shelves, bins, closets, or other locations added in this room yet.</div>`}
+      ${roomItems.filter(x=>!x.locationId).length?`<div class="inventory-location"><div class="mini-heading">Room-level items</div>${roomItems.filter(x=>!x.locationId).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span></button>`).join("")}</div>`:""}
+      </div></details>`;
+    }).join(""):`<div class="notice">Add your first room, then add shelves, closets, bins, drawers, or other storage spots inside it.</div>`}
+    </div>`;
+  }
+  return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
+  <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
+  <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
+  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.</div>`}
+  </div>`;
+}
+function openInventoryItem(id=""){
+  const x=(state.inventoryItems||[]).find(v=>v.id===id)||{id:"",name:"",category:"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:""};
+  const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
+  modal(x.id?"Inventory item":"Add inventory item",`<div class="stack">
+    <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
+    <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
+    <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
+    <label>Status<select id="invstatus">${["Have","Low","Need","Stored","Lent out","Donate / sell","Gone"].map(v=>`<option ${String(x.status||"Have")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Notes<textarea id="invnotes" rows="3">${esc(x.notes||"")}</textarea></label>
+    ${x.id?`<button type="button" class="btn danger" onclick="removeInventoryItem('${x.id}')">Remove item</button>`:""}
+  </div>`,"Save",async()=>{
+    const name=$("#invname").value.trim();if(!name)return;
+    const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
+    let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeInventoryItem(id){
+  const x=(state.inventoryItems||[]).find(v=>v.id===id);if(!x||!confirm(`Remove "${x.name||"this item"}" from inventory?`))return;
+  state.inventoryItems=(state.inventoryItems||[]).filter(v=>v.id!==id);await save();closeModal();render();
+}
+function openInventoryRoom(id=""){
+  const x=(state.houseRooms||[]).find(v=>v.id===id)||{id:"",name:"",notes:""};
+  modal(x.id?"Edit room":"Add room",`<div class="stack"><label>Room name<input id="irname" value="${esc(x.name||"")}" placeholder="Kitchen, bedroom, basement…"></label><label>Notes<textarea id="irnotes" rows="3">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const name=$("#irname").value.trim();if(!name)return;
+    let row=(state.houseRooms||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.houseRooms.push(row)}
+    Object.assign(row,{name,notes:$("#irnotes").value.trim()});await save();closeModal();render();
+  });
+}
+function openInventoryLocation(id="",roomId=""){
+  const x=(state.inventoryLocations||[]).find(v=>v.id===id)||{id:"",roomId:roomId||"",name:"",notes:""};
+  modal(x.id?"Edit storage location":"Add storage location",`<div class="stack"><label>Room<select id="ilroom"><option value="">Choose a room</option>${(state.houseRooms||[]).map(r=>`<option value="${r.id}" ${x.roomId===r.id?"selected":""}>${esc(r.name)}</option>`).join("")}</select></label><label>Location name<input id="ilname" value="${esc(x.name||"")}" placeholder="Pantry shelf, linen closet, garage bin…"></label><label>Notes<textarea id="ilnotes" rows="3">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{
+    const rid=$("#ilroom").value,name=$("#ilname").value.trim();if(!rid||!name)return;
+    let row=(state.inventoryLocations||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryLocations.push(row)}
+    Object.assign(row,{roomId:rid,name,notes:$("#ilnotes").value.trim()});await save();closeModal();render();
+  });
+}
+function monthSummary(){const prefix=ymd().slice(0,7),ws=state.workShifts.filter(x=>x.date.startsWith(prefix)),wat=state.waterLogs.filter(x=>x.date.startsWith(prefix)),st=state.stretchLogs.filter(x=>x.date.startsWith(prefix)),rd=state.readingLogs.filter(x=>x.date.startsWith(prefix));return{work:ws.reduce((s,x)=>s+wh(x),0),water:wat.reduce((s,x)=>s+Number(x.oz||0),0),waterDays:new Set(wat.map(x=>x.date)).size,stretch:st.reduce((s,x)=>s+Number(x.minutes||0),0),stretchDays:new Set(st.map(x=>x.date)).size,pages:rd.reduce((s,x)=>s+Number(x.pages||0),0),readingDays:new Set(rd.map(x=>x.date)).size}}
+function safeToSpendSnapshot(){
+  const allCash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
+        protectedCash=allCash.filter(a=>a.protectFromSpending||a.key==="house_fund"),
+        cash=allCash.filter(a=>!a.protectFromSpending&&a.key!=="house_fund"),
+        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),protectedTotal=protectedCash.reduce((sum,a)=>sum+Number(a.balance||0),0),rows=billReadiness().filter(r=>r.bill.status!=="paid"),reservedBy=new Map();
+  for(const r of rows){if(!r.account||!["checking","savings"].includes(r.account.type))continue;const amount=Number(r.bill.amount);if(!Number.isFinite(amount)||amount<0)continue;reservedBy.set(r.account.key,(reservedBy.get(r.account.key)||0)+amount)}
+  const reserved=[...reservedBy.values()].reduce((a,b)=>a+b,0),cushion=budgetCents(budgetPlan().limits?.cushion)/100,safe=total-reserved-cushion,
+        incomplete=rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status));
+  return{total,protectedTotal,reserved,cushion,safe,incomplete};
+}
+function safeToSpendCard(){
+  const x=safeToSpendSnapshot();
+  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"after reserves"}</span></div><div class="row"><span>Spendable cash accounts</span><b>${money(x.total)}</b></div>${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}<div class="row"><span>Unpaid bills reserved</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div><p class="muted small">Estimate only. It excludes accounts marked protected, then uses recorded checking/savings balances, unpaid bills assigned to those accounts, and your monthly Cushion category. Future deposits and unlogged spending are not predicted.${x.incomplete?" Some bills/accounts still need setup.":""}</p></div>`;
+}
+function trackedNetWorth(){
+  const assets=(state.accounts||[]).filter(a=>["checking","savings","investment"].includes(a.type)).reduce((n,a)=>n+Number(a.balance||0),0),
+        liabilities=(state.accounts||[]).filter(a=>["credit","loan"].includes(a.type)).reduce((n,a)=>n+Math.abs(Number(a.balance||0)),0),
+        retirement=(state.retirement||[]).reduce((n,x)=>n+Number(x.balance||0),0),
+        vehicle=(state.vehicles||[]).reduce((n,x)=>n+Number(x.estimatedValue||0),0);
+  return{assets,liabilities,retirement,vehicle,total:assets+retirement+vehicle-liabilities};
+}
+function netWorthCard(){
+  const n=trackedNetWorth();
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Long-term picture</div><h2>Tracked net worth · ${money(n.total)}</h2></div></div><div class="row"><span>Cash + investments</span><b>${money(n.assets)}</b></div><div class="row"><span>Retirement</span><b>${money(n.retirement)}</b></div><div class="row"><span>Vehicle value tracked</span><b>${money(n.vehicle)}</b></div><div class="row"><span>Credit + loans</span><b>− ${money(n.liabilities)}</b></div><p class="muted small">Only items entered in Daily Life are included. This is a tracking snapshot, not an appraisal or complete financial statement.</p></div>`;
+}
+function incomePatternCard(){
+  const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8);
+  if(rows.length<2)return `<div class="card"><div class="eyebrow">Income pattern</div><h2>Need more pay history</h2><div class="muted small">Import at least two pay statements to estimate your recent pay cadence.</div></div>`;
+  const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(Math.max(1,Math.round((new Date(rows[i].payDate+"T12:00:00")-new Date(rows[i-1].payDate+"T12:00:00"))/86400000)));gaps.sort((a,b)=>a-b);const interval=gaps[Math.floor(gaps.length/2)]||7,
+        avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length,avgGross=rows.reduce((n,p)=>n+Number(p.grossPay||0),0)/rows.length,avgHours=rows.reduce((n,p)=>n+Number(p.totalHours||0),0)/rows.length,mult=30.44/interval,monthly=avgNet*mult;
+  return `<div class="card"><div class="eyebrow">Income pattern</div><h2>${money(avgNet)} average recent net</h2><div class="grid3"><div class="metric"><div class="muted small">Pay cadence</div><div class="big">~${interval}d</div></div><div class="metric"><div class="muted small">Avg gross</div><div class="big">${money(avgGross)}</div></div><div class="metric"><div class="muted small">Avg hours</div><div class="big">${avgHours.toFixed(1)}</div></div></div><div class="row"><span>Approx. monthly net at recent cadence</span><b>${money(monthly)}</b></div><p class="muted small">Pattern estimate from the most recent ${rows.length} imported paychecks. It is not a prediction or guarantee of future hours or income.</p></div>`;
+}
+function moneyNextStepsCard(){
+  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)).slice(0,12),actions=[];
+  for(const r of rows){
+    const b=r.bill,due=dl(b.due);
+    if(r.status==="Transfer needed"){
+      actions.push({kind:"transfer",title:transferInstruction(r),detail:`${b.name} · due ${due}`,index:r.index});
+    }else if(r.status==="Projected short"){
+      const short=Math.max(0,-Number(r.projectedAfter||0))/100;
+      actions.push({kind:"short",title:`Still short ${money(short)} for ${b.name}`,detail:`Projected shortage by ${due} after earlier bills and expected income.`,index:r.index});
+    }else if(r.status==="Needs account"){
+      actions.push({kind:"setup",title:`Choose a payment account for ${b.name}`,detail:`Due ${due} · Daily Life cannot project this bill until an account is assigned.`,index:r.index});
+    }else if(r.status==="Balance unavailable"){
+      actions.push({kind:"setup",title:`Update the balance used for ${b.name}`,detail:`Due ${due} · readiness needs a checking or savings balance.`,index:r.index});
+    }else if(r.status==="Check bill"){
+      actions.push({kind:"setup",title:`Check ${b.name} amount or due date`,detail:"The bill needs valid details before Daily Life can rely on the projection.",index:r.index});
+    }
+  }
+  const covered=rows.filter(r=>["Covered now","Covered by due date"].includes(r.status)).length;
+  return `<div class="card money-actions-card"><div class="section-title"><div><div class="eyebrow">Next steps</div><h2>${actions.length?actions.length+" money action"+(actions.length===1?"":"s"):"Nothing urgent to move"}</h2></div><span class="tag">${covered} covered</span></div>
+    <div class="muted small">Transfer suggestions reserve the same dollars across later bills, so one account balance is not recommended twice.</div>
+    ${actions.length?actions.slice(0,7).map(a=>`<div class="money-action ${a.kind}" onclick="openBill(${a.index})"><div class="money-action-mark">${a.kind==="transfer"?"↔":a.kind==="short"?"!":"·"}</div><div class="grow"><b>${esc(a.title)}</b><div class="muted small">${esc(a.detail)}</div></div><span class="money-action-chevron">›</span></div>`).join(""):`<div class="money-all-clear">✦ Current upcoming bills do not need a transfer or setup fix based on the information entered.</div>`}
+  </div>`;
+}
+function moreView(){
+  const checking=state.accounts.filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
+        savings=state.accounts.filter(x=>x.type==="savings").reduce((sum,x)=>sum+Number(x.balance||0),0),
+        house=state.accounts.find(x=>x.key==="house_fund")?.balance||0,
+        debt=state.accounts.filter(x=>x.type==="credit").reduce((sum,x)=>sum+Number(x.balance||0),0),
+        ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0);
+  return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
+  ${accountStrategyCard()}
+  ${moneyNextStepsCard()}
+  ${safeToSpendCard()}
+  ${dueDateOutlookCard()}
+  ${incomePatternCard()}
+  ${seasonalIncomeCard()}
+  ${netWorthCard()}
+  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
+  ${cloudFinancePanel()}
+  ${expectedIncomeCard()}
+  ${upcomingBillsView()}
+  ${upsPayrollCard()}
+  <div class="card"><div class="row"><span>House fund</span><b>${money(house)}</b></div><div class="row"><span>Known card debt</span><b>${money(debt)}</b></div><div class="row"><span>Retirement tracked</span><b>${money(ret)}</b></div></div>`;
+}
+function connectionsCard(){
+  const signed=!!cloudUser?.();
+  return `<div class="card"><div class="eyebrow">🔗 Connections</div><h2>What is automated</h2>
+    <div class="connection-row"><span><b>Daily Life cloud</b><div class="muted small">Private cross-device life entries and snapshots</div></span><span class="tag">${signed?"signed in":"local only"}</span></div>
+    <div class="connection-row"><span><b>Gmail → schedule</b><div class="muted small">School dates, appointments, deadlines and action items are handled by the ChatGPT background sync.</div></span><span class="tag">email-assisted</span></div>
+    <div class="connection-row"><span><b>ParentVUE</b><div class="muted small">School email can flow in automatically; live grades and assignments are not directly connected.</div></span><span class="tag">partial</span></div>
+    <div class="connection-row"><span><b>UPS / Dayforce</b><div class="muted small">Daily punches are logged/reconciled in Daily Life; official earnings statements can be imported. Direct punch sync is not connected.</div></span><span class="tag">partial</span></div>
+    <div class="connection-row"><span><b>Kitchen photos</b><div class="muted small">Private food photos can become pantry inventory and meal suggestions.</div></span><span class="tag">${signed?"ready to test":"cloud needed"}</span></div>
+    <div class="connection-row"><span><b>ChatGPT → Pets + Garden</b><div class="muted small">Pet care, vet records, plant care, garden tasks, journal notes, and seeds can flow into the matching Daily Life sections through private cloud entries.</div></span><span class="tag">${signed?"connected":"cloud needed"}</span></div>
+    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Separate accounts with an opt-in shared itinerary. Money, Vault, self-care, and private People data stay private.</div></span><span class="tag">${typeof sharingConnected==="function"&&sharingConnected()?"connected":"optional"}</span></div>
+  </div>`;
+}
+function systemHealthChecks(){
+  const issues=[],info=[];
+  const people=state.peopleProfiles||[],personIds=new Set(people.map(p=>p.id));
+  const duplicateNames=[...new Set(people.map(p=>String(p.name||"").trim().toLowerCase()).filter((n,i,a)=>n&&a.indexOf(n)!==i))];
+  if(duplicateNames.length)issues.push(`${duplicateNames.length} duplicate People name${duplicateNames.length===1?"":"s"} need review`);
+  const orphanKids=(state.kidsMoneyAccounts||[]).filter(a=>a.personId&&!personIds.has(a.personId)).length;
+  if(orphanKids)issues.push(`${orphanKids} Kids Money account${orphanKids===1?"":"s"} no longer match a People profile`);
+  const oldSpelling=JSON.stringify({
+    people:state.peopleProfiles,
+    tasks:state.tasks,
+    chores:state.chores,
+    events:state.events,
+    readers:state.settings?.readers,
+    familyMembers:state.settings?.familyMembers,
+    routines:state.settings?.recurringFamilyEvents
+  }).match(/Dimitri/gi)?.length||0;
+  if(oldSpelling)issues.push(`Found ${oldSpelling} old “Dimitri” spelling reference${oldSpelling===1?"":"s"}; use Demitri`);
+  const badBills=(state.bills||[]).filter(b=>Number(b.amount)<0||!String(b.name||"").trim()).length;
+  if(badBills)issues.push(`${badBills} bill record${badBills===1?"":"s"} need review`);
+  const unfinishedUps=(state.workShifts||[]).filter(w=>w.date<ymd()&&w.start&&!w.end).length;
+  if(unfinishedUps)issues.push(`${unfinishedUps} past UPS shift${unfinishedUps===1?"":"s"} still need a punch-out`);
+  if(typeof cloudUser==="function"&&cloudUser()){
+    if(!cloudRemoteUpdatedAt)issues.push("No full private cloud snapshot has been created yet");
+    if(typeof cloudError==="string"&&cloudError)issues.push("Cloud reported an error: "+cloudError);
+    else info.push("Cloud account signed in");
+  }else info.push("Cloud account not signed in on this device");
+  if(typeof sharingConnected==="function"&&sharingConnected())info.push("Household sharing connected");
+  else info.push("Household sharing not connected");
+  if(typeof vaultEnvelope!=="undefined"&&vaultEnvelope)info.push("Encrypted Private Vault exists on this device");
+  else info.push("Private Vault not created on this device");
+  info.push(`${people.length} People profiles · ${(state.events||[]).length} events · ${(state.tasks||[]).length} tasks`);
+  return{issues,info};
+}
+function systemHealthCard(){
+  const h=systemHealthChecks();
+  return `<div class="card"><div class="section-title"><div><h2>System health</h2><div class="muted small">A quick check for broken links, unfinished setup, and common data problems.</div></div><span class="tag">${h.issues.length?h.issues.length+" to review":"looks good"}</span></div>
+    ${h.issues.length?`<div class="warning"><b>${h.issues.length} item${h.issues.length===1?"":"s"} to review</b><br><span class="muted small">${esc(h.issues[0])}${h.issues.length>1?" · +"+(h.issues.length-1)+" more":""}</span></div>`:`<div class="notice"><b>No obvious structural problems found.</b></div>`}
+    <div class="actions"><button class="btn primary" onclick="openDiagnostics()">Run full self-check</button></div>
+  </div>`;
+}
+function openDiagnostics(){
+  const h=systemHealthChecks();
+  const rows=h.issues.length?h.issues.map(x=>`<div class="row"><span>⚠ ${esc(x)}</span></div>`).join(""):`<div class="notice">No obvious structural problems found.</div>`;
+  modal("Daily Life self-check",`<div class="stack"><div class="mini-heading">Needs review</div>${rows}<div class="mini-heading">Status</div>${h.info.map(x=>`<div class="row"><span>${esc(x)}</span><b>✓</b></div>`).join("")}<div class="notice"><b>Safe check only.</b><br><span class="muted small">This does not erase, merge, or rewrite your records. It only reports what it can verify from the data currently loaded on this device.</span></div></div>`,"Done",()=>closeModal());
+}
+
+function settingsView(){
+  return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h2>Settings + routines</h2></div><button class="btn" onclick="setView('today')">Done</button></div><div class="notice">The bottom bar is for the parts of Daily Life you use all the time. Setup, recurring rules, cloud, and backup live here.</div></div>
+  <div class="card"><div class="section-title"><div><h2>Private Vault</h2><div class="muted small">Encrypted logins, identity documents, medical records, insurance and school paperwork.</div></div><button class="btn primary" onclick="setView('vault')">Open Vault</button></div><div class="muted small">Vault data is stored separately from ordinary Daily Life state and normal cloud snapshots.</div></div> <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div></div>
+  <div class="card"><div class="section-title"><h2>Recurring routines</h2><button class="btn" onclick="openRoutine()">+ Routine</button></div>${(state.settings.recurringTasks||[]).map((x,i)=>`<div class="row"><span>${esc(x.title)}<div class="muted small">${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}</div></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join("")||`<div class="notice">No recurring tasks.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>Weekly meal patterns</h2><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>${(state.settings.mealPatterns||[]).map((p,i)=>`<div class="row"><span>${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.weekday]} · ${esc(p.dish)}</span><button class="btn small" onclick="removeMealPattern(${i})">Remove</button></div>`).join("")||`<div class="notice">No automatic meal patterns.</div>`}</div>
+  ${connectionsCard()}
+  ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
+  ${cloudPanel()}
+  ${systemHealthCard()}
+  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="warning"><b>Private Vault is separate.</b><br><span class="muted small">The regular Daily Life backup does not contain Vault passwords, sensitive documents, or Vault attachments. Use the Vault’s encrypted export or encrypted cloud backup for those records.</span></div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export app backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore app backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
+}
+
+// Budget values live only in the existing local state/backup, never in source defaults.
+const BUDGET_CATEGORIES=[
+  {id:"transport",name:"Transportation/Gas"},
+  {id:"dining",name:"Dining/Convenience"},
+  {id:"household",name:"Household/Shopping"},
+  {id:"personal",name:"Personal/Health"},
+  {id:"grocery",name:"Cash Grocery Overflow"},
+  {id:"fun",name:"Entertainment/Fun"},
+  {id:"cushion",name:"Cushion"}
+];
+let budgetMonth=localStorage.getItem("dailyLifeBudgetMonth")||ymd().slice(0,7);
+const budgetCents=value=>Number.isFinite(Number(value))?Math.round(Math.max(0,Number(value))*100):0;
+const budgetMoney=cents=>money(cents/100);
+function budgetPlan(month=budgetMonth){
+  const saved=state.budget.months[month]||{};
+  return {...saved,income:saved.income??null,ebt:saved.ebt??null,ebtStart:saved.ebtStart??null,limits:{...(saved.limits||{})}};
+}
+function budgetTotals(month=budgetMonth){
+  const plan=budgetPlan(month),bills=state.bills.filter(b=>String(b.due||"").slice(0,7)===month);
+  const logs=state.budget.spending.filter(x=>String(x.date||"").slice(0,7)===month);
+  const billTotal=bills.reduce((sum,b)=>sum+budgetCents(b.amount),0);
+  const income=budgetCents(plan.income),ebt=budgetCents(plan.ebt),ebtStart=budgetCents(plan.ebtStart);
+  const assigned=BUDGET_CATEGORIES.reduce((sum,c)=>sum+budgetCents(plan.limits[c.id]),0);
+  const spent=logs.filter(x=>x.category!=="ebt").reduce((sum,x)=>sum+budgetCents(x.amount),0);
+  const ebtSpent=logs.filter(x=>x.category==="ebt").reduce((sum,x)=>sum+budgetCents(x.amount),0);
+  const [year,mo]=month.split("-").map(Number),days=new Date(year,mo,0).getDate(),today=ymd();
+  const daysLeft=month<today.slice(0,7)?0:month===today.slice(0,7)?days-Number(today.slice(8))+1:days;
+  const flexible=income-billTotal,remaining=flexible-spent;
+  const ebtAvailable=ebtStart+ebt-ebtSpent;
+  return {plan,bills,logs,billTotal,income,ebt,ebtStart,ebtAvailable,assigned,spent,ebtSpent,flexible,remaining,
+    left:income-billTotal-assigned,daysLeft,weekly:daysLeft?Math.max(0,remaining)*7/daysLeft:0};
+}
+function budgetProgress(spent,limit,label){
+  const percent=limit>0?Math.min(100,Math.round(spent*100/limit)):spent>0?100:0;
+  return `<progress class="budget-progress ${spent>limit?"over":""}" max="100" value="${percent}" aria-label="${esc(label)}" aria-valuetext="${esc(budgetMoney(spent))} spent of ${esc(budgetMoney(limit))}">${percent}%</progress>`;
+}
+function budgetView(){
+  const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
+        actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0};
+  return `<div class="card glow"><div class="section-title"><h2>Budget</h2><button class="btn" onclick="setView('more')">Back to Money</button></div>
+  <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
+  <p class="muted small">Monthly cash plan · stored on this device. New months start blank.</p>
+  <div class="actions"><button class="btn primary" onclick="openBudgetIncome()">Edit income & benefits</button><button class="btn" onclick="openBudgetSpending()">+ Log spending</button></div>
+  <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected monthly cash income</div><div class="big">${budgetMoney(t.income)}</div></div>
+  <div class="metric"><div class="eyebrow">Known bills this month</div><div class="big">${budgetMoney(t.billTotal)}</div></div>
+  <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${budgetMoney(t.left)}</div><div class="muted small">Cash income − bills − category limits${t.left<0?" · overassigned":""}</div></div>
+  <div class="metric"><div class="eyebrow">Estimated flexible / week</div><div class="big">${t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`Cash after bills and logged cash spending, spread over ${t.daysLeft} remaining days (including today in the current month).`:"View another month to plan ahead."}</div></div></div>
+  ${t.plan.income===null?`<p class="notice">Enter expected cash income to begin. EBT does not increase cash available.</p>`:""}
+  ${t.remaining<0?`<p class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</p>`:""}
+  <p class="muted small">Planning estimates, not your bank balance. Only bills entered for this month and spending logged here are included.</p></div>
+  ${budgetExpectedIncomeCard()}
+  ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported into this budget</span><b>${money(actual.imported)}</b></div><p class="muted small">Actuals come from connected posted transactions. “Bank-identified income” only counts transactions the provider classifies as income, so refunds and transfers are not silently treated as earnings.</p></div>`:""}
+  <div class="card"><div class="section-title"><h2>EBT / grocery benefit</h2><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
+  <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
+  ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
+  <div class="row"><span>${t.ebtAvailable<0?"Over available EBT":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
+  <p class="muted small">EBT available = starting carryover + this month’s benefit − EBT spending. Keep EBT separate from cash; log any cash portion of a grocery purchase under Cash Grocery Overflow.</p></div>
+  <div class="card"><div class="section-title"><h2>Known bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
+  <p class="muted small">From your existing Bills list, by due date. Paid bills remain in the monthly plan. Repeating bills add their next occurrence when marked paid; bills are never duplicated as spending.</p>
+  ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>{const current=state.accounts.find(a=>a.key===b.paymentAccountKey),desired=state.accounts.find(a=>a.key===b.desiredAccountKey);return`<div class="row budget-row"><span>${esc(b.name)}<div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"} · ${esc(recordedBillAmountType(b))} · ${esc(recordedBillFrequency(b))}</div><div class="muted small">Current: ${esc(current?.name||"Unassigned")}${desired&&desired.key!==b.paymentAccountKey?` · Desired: ${esc(desired.name)}`:""}</div></span><div><b>${budgetMoney(budgetCents(b.amount))}</b><button class="btn small" onclick="openBill(${state.bills.indexOf(b)})">Edit</button></div></div>`}).join("")||`<div class="notice">No bills due this month. Add known bills before allocating money.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>Flexible categories</h2><button class="btn" onclick="autoSplitBudget()">Auto-split</button></div>
+  <div class="row"><span>Cash after bills</span><b>${budgetMoney(t.flexible)}</b></div><div class="row"><span>Assigned limits</span><b>${budgetMoney(t.assigned)}</b></div><div class="row"><span>Cash spending logged</span><b>${budgetMoney(t.spent)}</b></div>
+  <p class="muted small">Auto-split optionally replaces the seven limits with an equal share of expected cash income minus all this month’s bills. EBT and account balances are excluded.</p></div>
+  <div class="budget-categories">${BUDGET_CATEGORIES.map(c=>{
+    const limit=budgetCents(t.plan.limits[c.id]),spent=t.logs.filter(x=>x.category===c.id).reduce((sum,x)=>sum+budgetCents(x.amount),0),left=limit-spent;
+    return `<div class="card"><div class="section-title"><h3>${c.name}</h3><button class="btn small" aria-label="Edit ${c.name} limit" onclick="openBudgetLimit('${c.id}')">Edit limit</button></div>
+    <div class="row"><span class="muted small">Monthly limit</span><b>${budgetMoney(limit)}</b></div><div class="row"><span class="muted small">Spent</span><b>${budgetMoney(spent)}</b></div>
+    ${budgetProgress(spent,limit,c.name)}<div class="row"><span>${left<0?"Over limit":"Remaining"}</span><b class="${left<0?"budget-negative":""}">${budgetMoney(Math.abs(left))}</b></div>
+    <button class="btn" onclick="openBudgetSpending('${c.id}')">+ Log spending</button></div>`;
+  }).join("")}</div>
+  <div class="card"><div class="section-title"><h2>Spending log</h2><button class="btn" onclick="openBudgetSpending()">+ Add</button></div>
+  <p class="muted small">Flexible spending can be logged here or auto-imported from connected bank transactions. Bills stay separate to avoid double-counting. Daily Life only auto-categorizes transactions it can place conservatively; unclear transactions are left for review.</p>
+  ${t.logs.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{const index=state.budget.spending.indexOf(x);return `<div class="row budget-row"><span>${esc(x.note||"Purchase")}<div class="muted small">${dl(x.date)} · ${esc(x.category==="ebt"?"EBT / grocery benefit":BUDGET_CATEGORIES.find(c=>c.id===x.category)?.name||"Other cash")}${x.source==="bank"?` · bank-synced${x.userEdited?" · reviewed":""}`:""}</div></span><div><b>${budgetMoney(budgetCents(x.amount))}</b><div class="actions"><button class="btn small" onclick="openBudgetSpending('',${index})">Edit</button><button class="btn small" onclick="removeBudgetSpending(${index})">Remove</button></div></div></div>`}).join("")||`<div class="notice">No spending logged this month.</div>`}</div>`;
+}
+function changeBudgetMonth(offset){
+  const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
+}
+function budgetAmountInput(id,label,value){return `<label>${label}<input id="${id}" type="number" inputmode="decimal" min="0" max="999999999" step="0.01" placeholder="0.00" value="${value===null||value===undefined?"":esc(value)}"></label>`}
+function readBudgetAmount(id){
+  const input=$("#"+id),value=input.value.trim();
+  if(!input.checkValidity()||!Number.isFinite(Number(value))||Number(value)<0){input.reportValidity();throw new Error("Invalid amount")}
+  return value===""?null:budgetCents(value)/100;
+}
+async function persistBudgetEdit(before){
+  try{await save();closeModal();render();return true}
+  catch(error){state.budget=before;alert("Could not save budget changes on this device. Please try again.");return false}
+}
+function openBudgetIncome(){
+  const month=budgetMonth,p=budgetPlan(month);
+  modal("Monthly income & benefits",`<p class="muted small">${month} · Enter expected take-home cash income. Keep grocery benefits separate.</p><div class="stack">${budgetAmountInput("budgetIncome","Expected monthly cash income",p.income)}${budgetAmountInput("budgetEBTStart","Starting EBT balance / carryover",p.ebtStart)}${budgetAmountInput("budgetEBT","Monthly EBT / grocery benefit",p.ebt)}</div>`,"Save",async()=>{
+    let income,ebtStart,ebt;try{income=readBudgetAmount("budgetIncome");ebtStart=readBudgetAmount("budgetEBTStart");ebt=readBudgetAmount("budgetEBT")}catch{return}
+    const before=structuredClone(state.budget);state.budget.months[month]={...budgetPlan(month),income,ebtStart,ebt};await persistBudgetEdit(before);
+  });
+}
+function openBudgetLimit(id){
+  const month=budgetMonth,c=BUDGET_CATEGORIES.find(c=>c.id===id);if(!c)return;
+  modal(c.name,`<p class="muted small">Monthly limit · ${month}</p>${budgetAmountInput("budgetLimit","Cash limit",budgetPlan(month).limits[id])}`,"Save",async()=>{
+    let value;try{value=readBudgetAmount("budgetLimit")}catch{return}
+    const before=structuredClone(state.budget),p=budgetPlan(month);p.limits[id]=value??0;state.budget.months[month]=p;await persistBudgetEdit(before);
+  });
+}
+async function autoSplitBudget(){
+  const t=budgetTotals();if(t.flexible<=0){alert("There is no positive cash income remaining after this month’s bills to split.");return}
+  if(!confirm(`Replace all seven limits for ${budgetMonth} with equal shares of ${budgetMoney(t.flexible)}? Existing spending stays unchanged. You can edit each limit afterward.`))return;
+  const before=structuredClone(state.budget),p=budgetPlan(),base=Math.floor(t.flexible/BUDGET_CATEGORIES.length),remainder=t.flexible% BUDGET_CATEGORIES.length;
+  BUDGET_CATEGORIES.forEach((c,i)=>p.limits[c.id]=(base+(i<remainder?1:0))/100);
+  state.budget.months[budgetMonth]=p;await persistBudgetEdit(before);
+}
+function openBudgetSpending(category="transport",index=-1){
+  const existing=index>=0?state.budget.spending[index]:null;if(index>=0&&!existing)return;
+  const x=existing||{category:category||"transport",date:budgetMonth===ymd().slice(0,7)?ymd():budgetMonth+"-01",amount:null,note:""};
+  modal(existing?"Edit spending":"Log spending",`<div class="stack"><label>Date<input id="budgetDate" type="date" required value="${esc(x.date)}"></label><label>Category / payment source<select id="budgetCategory">${[...BUDGET_CATEGORIES,{id:"ebt",name:"EBT / grocery benefit (not cash)"}].map(c=>`<option value="${c.id}" ${x.category===c.id?"selected":""}>${c.name}</option>`).join("")}</select></label>${budgetAmountInput("budgetSpent","Amount",x.amount)}<label>Note (optional)<input id="budgetNote" maxlength="200" value="${esc(x.note||"")}" placeholder="Purchase or store"></label></div><p class="muted small">For mixed EBT/cash grocery payments, log the two amounts separately. Do not log a bill again here.</p>`,"Save spending",async()=>{
+    const date=$("#budgetDate").value;if(!date||!$("#budgetDate").checkValidity()){$("#budgetDate").reportValidity();return}
+    let amount;try{amount=readBudgetAmount("budgetSpent")}catch{return}if(!amount){alert("Enter an amount greater than zero.");return}
+    const before=structuredClone(state.budget),entry={...existing,id:existing?.id||uid(),date,amount,category:$("#budgetCategory").value,note:$("#budgetNote").value.trim(),userEdited:existing?.source==="bank"?true:existing?.userEdited};
+    if(existing)state.budget.spending[index]=entry;else state.budget.spending.push(entry);
+    const oldMonth=budgetMonth;budgetMonth=date.slice(0,7);if(!await persistBudgetEdit(before))budgetMonth=oldMonth;
+  });
+}
+async function removeBudgetSpending(index){
+  if(!state.budget.spending[index]||!confirm("Remove this spending entry from the local budget?"))return;
+  const before=structuredClone(state.budget);state.budget.spending.splice(index,1);await persistBudgetEdit(before);
+}
+
+function setView(v){view=v;if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();render()}
+function modal(title,body,label,fn){const d=document.createElement("div");d.className="modal-backdrop";d.id="modal";d.innerHTML=`<div class="modal"><div class="section-title"><h2>${title}</h2><button class="btn" onclick="closeModal()">Close</button></div>${body}<div class="actions" style="margin-top:12px"><button class="btn primary" id="saveModal">${label||"Save"}</button></div></div>`;document.body.appendChild(d);document.querySelector("#saveModal").onclick=fn}
+function closeModal(){document.querySelector("#modal")?.remove()}
+function manualSetup(){modal("Start blank",`<div class="stack"><label>Your name<input id="name"></label><label>Reader names, comma-separated<input id="readers" placeholder="Me, Child 1, Child 2"></label></div>`,"Start",async()=>{const name=$("#name").value.trim();if(!name)return;state=blankState();state.profile.name=name;state.settings.readers=$("#readers").value.split(",").map(x=>x.trim()).filter(Boolean);if(!state.settings.readers.length)state.settings.readers=[name];await save();closeModal();render()})}
+function openAstrologySettings(){
+  const current=ZODIAC_SIGNS.includes(state.profile?.sunSign)?state.profile.sunSign:"";
+  const options=['<option value="">No personalized sign lens</option>'].concat(ZODIAC_SIGNS.map(sign=>`<option ${sign===current?"selected":""}>${sign}</option>`)).join("");
+  modal("Moon & astrology",`<div class="stack"><label>Sun sign<select id="sunSign">${options}</select></label></div><p class="muted small">The moon phase shown in Daily Life is astronomical. A sun-sign lens is an optional astrology/spiritual reflection tool and is not a scientific prediction.</p>`,"Save",async()=>{state.profile.sunSign=$("#sunSign").value;await save();closeModal();render()});
+}
+async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
+function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
+async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
+async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.key===key);if(!x)state.selfCare.push({id:uid(),date:ymd(),key,done:true});else x.done=!x.done;await save();render()}
+async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
+function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100});await save();closeModal();render()})}
+function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
+function openWork(){const x=work()||{};modal("UPS shift",`<div class="stack"><div class="notice"><b>Actual punch-out should be the real time.</b><br><span class="muted small">If the shift is already over but you have not checked the punch-out yet, mark that below instead of guessing.</span></div><label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label class="task"><input id="wended" type="checkbox" ${workNeedsPunchOut(x)?"checked":""}><span><b>Shift is over; punch-out time still needs confirmation</b></span></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label></div>`,"Save",async()=>{let w=work();if(!w){w={id:uid(),date:ymd()};state.workShifts.push(w)}w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||0);w.endedUnknown=!w.end&&$("#wended").checked;w.status=w.end?"completed":w.endedUnknown?"completed-needs-end":"in-progress";const task=state.tasks.find(x=>x.date===ymd()&&x.title==="UPS shift");if(task&&(workEndConfirmed(w)||workNeedsPunchOut(w)))task.done=true;await save();closeModal();render()})}
+function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp" type="number" step=".1"></label><label>Event<select id="te"><option>reading</option><option>fill</option><option>repair</option></select></label><label>Notes<input id="tn"></label></div>`,"Save",async()=>{const psi=Number($("#tp").value);if(!psi)return;state.tireLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),psi,event:$("#te").value,notes:$("#tn").value});await save();closeModal();render()})}
+function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
+function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
+async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+async function requestMealSuggestion(date){
+  let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+  if(!m){m={id:uid(),date,type:"dinner",dish:"",status:"planned",recipeState:"suggestion-queued",prepDone:[]};state.meals.push(m)}
+  else{m.recipeState="suggestion-queued"}
+  await save();
+  if(typeof cloudQueueMealSuggestion==="function"){
+    const ok=await cloudQueueMealSuggestion(date);
+    if(!ok)m.recipeState="waiting_for_cloud";
+    await save();
+  }
+  render();
+}
+async function requestWeekSuggestions(){
+  const today=ymd(),dates=week(),targets=dates.filter(date=>{
+    if(date<today)return false;
+    const m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+    return !m?.dish&&m?.recipeState!=="suggestion-queued";
+  });
+  if(!targets.length){await queueMissingMealRecipes();render();return}
+  for(const date of targets){
+    let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+    if(!m){m={id:uid(),date,type:"dinner",dish:"",status:"planned",recipeState:"suggestion-queued",prepDone:[]};state.meals.push(m)}
+    else m.recipeState="suggestion-queued";
+    if(typeof cloudQueueMealSuggestion==="function"){
+      const ok=await cloudQueueMealSuggestion(date);
+      if(!ok)m.recipeState="waiting_for_cloud";
+    }
+  }
+  await save();render();
+}
+function openMeal(date){
+  const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
+  modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor">
+    <div class="notice"><b>You choose the meal. I build the rest.</b><br><span class="muted small">After you save, Daily Life automatically requests the recipe, ingredients, prep steps, and grocery list. You do not need to type those.</span></div>
+    <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Pot roast, chili, tacos…"></label>
+    <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Optional — crock-pot, oven, stovetop…"></label>
+    <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
+    <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
+    <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
+    ${generatedMealDetails(x)}
+  </div>`,"Save meal",async()=>{
+    const newDish=$("#md").value.trim();if(!newDish)return;
+    let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+    if(!m){m={id:uid(),date,type:"dinner",prepDone:[]};state.meals.push(m)}
+    const changed=String(m.dish||"").trim().toLowerCase()!==newDish.toLowerCase();
+    if(changed){
+      const key=mealKey(date,"dinner");
+      state.shopping=(state.shopping||[]).filter(item=>!(item.source==="recipe"&&item.mealKey===key));
+      m.ingredients="";m.prepSteps="";m.tomorrowPrep="";m.notes="";m.prepDone=[];m.recipeState="queued";
+    }
+    Object.assign(m,{dish:newDish,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,status:$("#mst").value});
+    if(!Array.isArray(m.prepDone))m.prepDone=[];
+    if(!m.ingredients&&!m.prepSteps)m.recipeState="queued";
+    await save();
+    if(typeof cloudQueueRecipeRequest==="function"&&(changed||m.recipeState!=="ready")){
+      const queued=await cloudQueueRecipeRequest(m);
+      if(!queued&&m.recipeState==="queued")m.recipeState="waiting_for_cloud";
+      await save();
+    }
+    closeModal();render();
+  });
+}
+async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
+async function setMealStatus(id,status){const m=state.meals.find(x=>x.id===id);if(!m)return;m.status=status;await save();render()}
+function openEvent(date=ymd(),id="",person=""){
+  const x=state.events.find(e=>e.id===id)||{};
+  modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
+    <label>Title<input id="etitle" value="${esc(x.title||"")}"></label>
+    <label>Child / person<input id="echild" value="${esc(x.child||person||"")}"></label>
+    <label>Type<select id="etype">${["school","appointment","deadline","activity","family","birthday","birthday-party","relationship","attendance","teacher-message","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Date<input id="edate" type="date" value="${esc(x.date||date)}"></label>
+    <div class="grid2"><label>Start<input id="estart" type="time" value="${esc(x.startTime||"")}"></label><label>End<input id="eend" type="time" value="${esc(x.endTime||"")}"></label></div>
+    <label>Location<input id="eloc" value="${esc(x.location||"")}"></label>
+    <label>Notes<textarea id="enotes">${esc(x.notes||"")}</textarea></label>
+    ${typeof sharingEventControl==="function"?sharingEventControl(x):""}
+    <label>Status<select id="estatus"><option ${(x.status||"confirmed")==="confirmed"?"selected":""}>confirmed</option><option ${x.status==="tentative"?"selected":""}>tentative</option><option ${x.status==="cancelled"?"selected":""}>cancelled</option></select></label>
+    ${x.id&&(!x.source||x.source==="Manual"||x.source==="Shared household")?`<button type="button" class="btn danger" onclick="removeEvent('${x.id}')">Delete event</button>`:""}
+  </div>`,"Save",async()=>{
+    const title=$("#etitle").value.trim(),eventDate=$("#edate").value;if(!title||!eventDate)return;
+    const shareRequested=$("#eshared")?$("#eshared").checked:!!x.shared;
+    let e=state.events.find(e=>e.id===id);if(!e){e={id:uid(),source:"Manual"};state.events.push(e)}
+    Object.assign(e,{title,child:canonicalPersonName($("#echild").value),type:$("#etype").value,date:eventDate,startTime:$("#estart").value,endTime:$("#eend").value,location:$("#eloc").value,notes:$("#enotes").value,status:$("#estatus").value});
+    if(typeof sharingCanShare==="function"&&sharingCanShare()){
+      if(shareRequested){const ok=await sharingUpsertEvent(e);if(!ok)return}
+      else if(e.sharedEntryId){const ok=await sharingMakeEventPrivate(e);if(!ok)return}
+    }
+    await save();closeModal();render();
+  });
+}
+async function removeEvent(id){
+  const e=(state.events||[]).find(x=>x.id===id);if(!e)return;
+  if(!confirm(`Delete "${e.title||"this event"}"?`))return;
+  if(e.sharedEntryId&&typeof sharingMakeEventPrivate==="function"){const ok=await sharingMakeEventPrivate(e);if(!ok)return}
+  state.events=(state.events||[]).filter(x=>x.id!==id);
+  await save();closeModal();render();
+}
+function openPaycheck(id=""){
+  const x=state.paychecks.find(p=>p.id===id)||{};
+  modal(x.id?"Edit UPS paycheck":"Add UPS paycheck",`<div class="stack">
+    <div class="grid2"><label>Period start<input id="pps" type="date" value="${esc(x.periodStart||"")}"></label><label>Period end<input id="ppe" type="date" value="${esc(x.periodEnd||"")}"></label></div>
+    <label>Pay date<input id="ppd" type="date" value="${esc(x.payDate||"")}"></label>
+    <div class="grid2"><label>Regular hours<input id="prh" type="number" step=".0001" value="${x.regularHours??""}"></label><label>OT hours<input id="poh" type="number" step=".0001" value="${x.overtimeHours??""}"></label></div>
+    <div class="grid2"><label>Regular rate<input id="prr" type="number" step=".01" value="${x.regularRate??""}"></label><label>OT rate<input id="por" type="number" step=".01" value="${x.overtimeRate??""}"></label></div>
+    <div class="grid2"><label>Gross pay<input id="pg" type="number" step=".01" value="${x.grossPay??""}"></label><label>Net pay<input id="pn" type="number" step=".01" value="${x.netPay??""}"></label></div>
+    <div class="grid2"><label>Taxes<input id="pt" type="number" step=".01" value="${x.taxes??""}"></label><label>Deductions<input id="pde" type="number" step=".01" value="${x.deductions??""}"></label></div>
+    <label>Reimbursements<input id="pre" type="number" step=".01" value="${x.reimbursements??""}"></label>
+    <label>Direct-deposit amounts (comma separated)<input id="pdd" value="${esc((x.directDeposits||[]).join(", "))}"></label>
+    <label>Notes<textarea id="pnotes">${esc(x.notes||"")}</textarea></label>
+  </div>`,"Save",async()=>{
+    const periodStart=$("#pps").value,periodEnd=$("#ppe").value,payDate=$("#ppd").value;if(!payDate)return;
+    let p=state.paychecks.find(p=>p.id===id);if(!p){p={id:uid(),source:"manual"};state.paychecks.push(p)}
+    const directDeposits=$("#pdd").value.split(",").map(v=>Number(v.trim())).filter(Number.isFinite);
+    Object.assign(p,{periodStart,periodEnd,payDate,regularHours:Number($("#prh").value||0),overtimeHours:Number($("#poh").value||0),regularRate:Number($("#prr").value||0),overtimeRate:Number($("#por").value||0),grossPay:Number($("#pg").value||0),netPay:Number($("#pn").value||0),taxes:Number($("#pt").value||0),deductions:Number($("#pde").value||0),reimbursements:Number($("#pre").value||0),directDeposits,notes:$("#pnotes").value});
+    p.totalHours=Number(p.regularHours||0)+Number(p.overtimeHours||0);p.fingerprint=[p.periodStart,p.periodEnd,p.payDate,p.netPay.toFixed(2)].join("|");
+    await save();closeModal();render();
+  });
+}
+const moneyNum=v=>Number(String(v||"").replace(/[$,]/g,""))||0;
+function payrollDate(v){const m=String(v||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?`${m[3]}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`:""}
+function rx1(text,re){const m=text.match(re);return m?m[1]:""}
+async function importPayrollStatement(file){
+  if(!file)return;
+  try{
+    if(!window.pdfjsLib)throw new Error("PDF reader did not load.");
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let text="";
+    for(let n=1;n<=pdf.numPages;n++){const page=await pdf.getPage(n),content=await page.getTextContent();text+=" "+content.items.map(i=>i.str).join(" ")}
+    const payDate=payrollDate(rx1(text,/Pay Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i));
+    const pm=text.match(/Pay Period:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})/i),periodStart=pm?payrollDate(pm[1]):"",periodEnd=pm?payrollDate(pm[2]):"";
+    const reg=text.match(/REGULAR\s+([\d.]+)\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i),ot=text.match(/OVERTIME\s+([\d.]+)\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i);
+    const earn=text.match(/Earnings\s+([\d.]+)\s+\$?([\d,]+\.\d{2})/i);
+    const p={id:uid(),source:"Dayforce PDF",periodStart,periodEnd,payDate,regularHours:reg?Number(reg[1]):0,regularRate:reg?Number(reg[2]):moneyNum(rx1(text,/Pay Rate:\s*([\d.]+)/i)),regularPay:reg?moneyNum(reg[3]):0,overtimeHours:ot?Number(ot[1]):0,overtimeRate:ot?Number(ot[2]):0,overtimePay:ot?moneyNum(ot[3]):0,totalHours:earn?Number(earn[1]):moneyNum(rx1(text,/TOTAL HOURS\s+([\d.]+)/i)),grossPay:earn?moneyNum(earn[2]):0,taxes:moneyNum(rx1(text,/Taxes\s+\$?([\d,]+\.\d{2})/i)),deductions:moneyNum(rx1(text,/Deductions\s+\$?([\d,]+\.\d{2})/i)),reimbursements:moneyNum(rx1(text,/Reimbursements\s+\$?([\d,]+\.\d{2})/i)),netPay:moneyNum(rx1(text,/Net Pay\s+\$?([\d,]+\.\d{2})/i)),directDeposits:[...text.matchAll(/Direct Deposit\s+\d+\s+X+\d+\s+\$?([\d,]+\.\d{2})/gi)].map(m=>moneyNum(m[1])),vacationHours:moneyNum(rx1(text,/Vacation Hours Balance:\s*([\d.]+)/i)),pstHours:moneyNum(rx1(text,/PST Bank Hrly Balance:\s*([\d.]+)/i)),optionWeekHours:moneyNum(rx1(text,/Option Week Hours Balance:\s*([\d.]+)/i)),importedAt:new Date().toISOString()};
+    if(!p.payDate||!p.netPay)throw new Error("I could not confidently recognize this Dayforce earnings statement.");
+    p.fingerprint=[p.periodStart,p.periodEnd,p.payDate,p.netPay.toFixed(2)].join("|");
+    if(state.paychecks.some(x=>x.fingerprint===p.fingerprint)){alert("That earnings statement is already in Daily Life.");return}
+    state.paychecks.push(p);await save();render();alert(`Imported UPS paycheck: ${p.totalHours.toFixed(2)} hours · ${money(p.netPay)} net.`);
+  }catch(error){alert("Could not import that payroll PDF: "+(error?.message||"Unknown error"))}
+  finally{document.querySelector("#payrollFile").value=""}
+}
+
+function openShopping(){modal("Add shopping item",`<div class="stack"><label>Item<input id="si"></label><label>Quantity<input id="sq"></label><label>Store<input id="ss"></label></div>`,"Add",async()=>{const item=$("#si").value.trim();if(!item)return;state.shopping.push({id:uid(),item,qty:$("#sq").value,store:$("#ss").value,status:"needed"});await save();closeModal();render()})}
+async function buy(id){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought";await save();render()}
+function openHome(){modal("Log home care",`<div class="stack"><label>Area<input id="ha" value="Home"></label><label>Task<input id="ht"></label><label>Notes<input id="hn"></label></div>`,"Save",async()=>{const task=$("#ht").value.trim();if(!task)return;state.homeLogs.push({id:uid(),date:ymd(),area:$("#ha").value||"Home",task,status:"done",notes:$("#hn").value});await save();closeModal();render()})}
+function compressImage(file,max=1100,quality=.78){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>max){const scale=max/Math.max(w,h);w=Math.round(w*scale);h=Math.round(h*scale)}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
+function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("Today’s outfit",`<div class="stack"><label>Mirror photo<input id="op" type="file" accept="image/*"></label>${x.photo?`<img class="photo" src="${x.photo}">`:""}<label>Top<input id="ot" value="${esc(x.top||"")}"></label><label>Bottom<input id="ob" value="${esc(x.bottom||"")}"></label><label>Shoes<input id="os" value="${esc(x.shoes||"")}"></label><label>Outerwear<input id="oo" value="${esc(x.outerwear||"")}"></label><label>Accessories<input id="oa" value="${esc(x.accessories||"")}"></label><label>Occasion<input id="oc" value="${esc(x.occasion||"")}"></label><label>Comfort 1–5<input id="ocomf" type="number" min="1" max="5" value="${x.comfort||""}"></label><label>Confidence 1–5<input id="oconf" type="number" min="1" max="5" value="${x.confidence||""}"></label><label>Notes<textarea id="on">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let o=state.outfits.find(x=>x.date===ymd());if(!o){o={id:uid(),date:ymd()};state.outfits.push(o)}const file=$("#op").files[0];if(file)o.photo=await compressImage(file);Object.assign(o,{top:$("#ot").value,bottom:$("#ob").value,shoes:$("#os").value,outerwear:$("#oo").value,accessories:$("#oa").value,occasion:$("#oc").value,comfort:Number($("#ocomf").value||0)||null,confidence:Number($("#oconf").value||0)||null,notes:$("#on").value});await save();closeModal();render()})}
+
+const ACCOUNT_STRATEGIES=["Standard","Interest-first savings","Deposit landing checking","Transition / close","Protected reserve"];
+function accountStrategy(a){return ACCOUNT_STRATEGIES.includes(a?.strategy)?a.strategy:"Standard"}
+function accountStrategyNote(a){
+  const s=accountStrategy(a);
+  if(s==="Interest-first savings")return"Preferred place for cash that does not need to stay elsewhere.";
+  if(s==="Deposit landing checking")return"Income can land here, then excess can move after upcoming bills and your chosen buffer.";
+  if(s==="Transition / close")return"Use this as an exit checklist: move straggler bills/income and work toward a zero operational balance.";
+  if(s==="Protected reserve")return"Keep this money outside ordinary safe-to-spend calculations.";
+  return"Normal account with no special cash-placement goal.";
+}
+function accountBillsDueSoon(accountKey,days=30){
+  const end=new Date(ymd()+"T12:00:00");end.setDate(end.getDate()+days);const until=ymd(end);
+  return (state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=until&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0);
+}
+function accountSweepPlan(a,days=45){
+  const today=ymd(),endDate=new Date(today+"T12:00:00");endDate.setDate(endDate.getDate()+Math.max(1,Number(days)||45));const until=ymd(endDate),
+        floor=Math.max(0,Number(a.minimumOperatingBalance||0)),balance=Number(a.balance||0),events=[];
+  for(const x of expectedIncomeOccurrences(until)){
+    if(x.accountKey===a.key)events.push({date:x.date,kind:"income",amount:Number(x.amount||0),name:x.name});
+  }
+  for(const b of state.bills||[]){
+    if(b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due<today||b.due>until)continue;
+    const amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0)continue;
+    events.push({date:b.due,kind:"bill",amount:-amount,name:b.name});
+  }
+  events.sort((x,y)=>x.date.localeCompare(y.date)||(x.kind==="bill"?-1:1));
+  let running=0,minRunning=0;
+  for(const e of events){running+=e.amount;minRunning=Math.min(minRunning,running)}
+  const requiredNow=Math.max(floor,floor-Math.min(0,minRunning)),
+        excess=Math.max(0,balance-requiredNow),short=Math.max(0,requiredNow-balance);
+  return{today,until,floor,balance,events,requiredNow,excess,short,
+    billCount:events.filter(x=>x.kind==="bill").length,incomeCount:events.filter(x=>x.kind==="income").length};
+}
+function accountSortForBills(a){
+  const s=accountStrategy(a);
+  if(s==="Interest-first savings")return 0;
+  if(s==="Standard"&&a.type==="savings")return 1;
+  if(s==="Standard")return 2;
+  if(s==="Deposit landing checking")return 3;
+  if(s==="Protected reserve")return 4;
+  return 9;
+}
+function accountStrategyCard(){
+  const accounts=state.accounts||[],interest=accounts.filter(a=>accountStrategy(a)==="Interest-first savings"),
+        landings=accounts.filter(a=>accountStrategy(a)==="Deposit landing checking"),
+        exiting=accounts.filter(a=>accountStrategy(a)==="Transition / close"),
+        home=interest.find(a=>a.preferredCashHome)||interest[0]||null;
+  if(!interest.length&&!landings.length&&!exiting.length)return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Tell Daily Life where money should live</h2><div class="muted small">Mark an account as interest-first savings, deposit-landing checking, or transition/close. Daily Life will keep those goals separate from bill payment rules.</div></div></div><div class="notice">Edit an account to set its strategy. This does not move money.</div></div>`;
+  const savingsBills=home?(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===home.key).length:0;
+  const landingRows=landings.map(a=>{
+    const plan=accountSweepPlan(a,45);
+    const suggestion=home&&plan.excess>=1
+      ?`<div class="sweep-suggestion"><span>Suggested sweep to ${esc(home.name)}</span><b>${money(plan.excess)}</b><small>Leaves ${money(plan.requiredNow)} for known 45-day checking bills + your buffer.</small></div>`
+      :plan.short>0
+        ?`<div class="sweep-suggestion short"><span>Known checking need above current balance</span><b>${money(plan.short)}</b><small>Based on entered bills, expected income timing, and your buffer.</small></div>`
+        :`<div class="sweep-suggestion settled"><span>Checking is near the calculated operating amount</span><b>${money(plan.requiredNow)}</b><small>Known 45-day bills + your buffer.</small></div>`;
+    return `<div class="money-strategy-row landing"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Deposit landing · ${plan.billCount} checking bill${plan.billCount===1?"":"s"} · ${plan.incomeCount} expected deposit${plan.incomeCount===1?"":"s"} through ${esc(dl(plan.until))}</div></div><div class="strategy-amount"><b>${money(plan.balance)}</b><small>current recorded balance</small></div></div>${suggestion}`;
+  }).join("");
+  const exitRows=exiting.map(a=>{
+    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key),
+          income=(state.expectedIncome||[]).filter(x=>x.enabled!==false&&x.accountKey===a.key),
+          balance=Number(a.balance||0),clean=bills.length===0&&income.length===0&&Math.abs(balance)<1;
+    return `<div class="money-strategy-row exit"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">${clean?"No active bill/income links recorded. Check for any pending or straggler activity before closing.":`${bills.length} unpaid bill link${bills.length===1?"":"s"} · ${income.length} expected-income link${income.length===1?"":"s"} · balance ${money(balance)}`}</div></div><span class="tag">${clean?"ready for final check":"transitioning"}</span></div>`;
+  }).join("");
+  const interestRows=interest.map(a=>{
+    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key).length;
+    return `<div class="money-strategy-row home"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Interest-first home base · ${bills} bill${bills===1?"":"s"} currently pay here${a.billPayAllowed===true?" · direct bill pay allowed":a.billPayAllowed===false?" · direct bill pay unavailable":""}</div></div><b>${money(a.balance)}</b></div>`;
+  }).join("");
+  return `<div class="card money-strategy-card botanical-money"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Keep more cash earning interest</h2><div class="muted small">Savings is the preferred home for money that does not need to remain elsewhere. Checking keeps only the amount needed for checking-only bills and your chosen operating buffer.</div></div></div>
+    ${home?`<div class="strategy-home-summary"><span><b>Preferred cash home</b><small>${esc(home.name)} · ${savingsBills} active bill${savingsBills===1?"":"s"} already assigned there</small></span><b>${money(home.balance)}</b></div>`:""}
+    ${interestRows}${landingRows}
+    ${exiting.length?`<div class="mini-heading strategy-exit-title">Accounts to exit</div>${exitRows}`:""}
+    <div class="muted small strategy-disclaimer">Sweep guidance uses only recorded balances, entered bills, enabled expected income, and your operating buffer. It does not predict unlogged spending or actually move money.</div>
+  </div>`;
+}
+function openAccount(key=""){
+  const x=state.accounts.find(a=>a.key===key)||{};
+  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label>
+  <div class="account-strategy-editor"><div class="mini-heading">Cash strategy</div><label>Role<select id="astrategy">${ACCOUNT_STRATEGIES.map(v=>`<option ${accountStrategy(x)===v?"selected":""}>${v}</option>`).join("")}</select></label><div class="grid2"><label>Minimum operating buffer<input id="amin" type="number" min="0" step=".01" value="${Number(x.minimumOperatingBalance||0)}"></label><label>Can bills pull directly?<select id="abillpay"><option value="" ${x.billPayAllowed==null?"selected":""}>Unknown</option><option value="1" ${x.billPayAllowed===true?"selected":""}>Yes</option><option value="0" ${x.billPayAllowed===false?"selected":""}>No</option></select></label></div><label class="task"><input id="addlanding" type="checkbox" ${x.directDepositRequired?"checked":""}><span><b>Direct deposit / income needs to land here</b><div class="muted small">Use when an account must receive deposits even though you may prefer to move excess elsewhere.</div></span></label><div class="muted small">${esc(accountStrategyNote(x))}</div></div>
+  <label class="task"><input id="aprotect" type="checkbox" ${x.protectFromSpending||x.key==="house_fund"?"checked":""}><span><b>Keep out of safe-to-spend</b><div class="muted small">Use for house fund or other earmarked savings you do not want treated as available.</div></span></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
+    const oldKey=x.key,newKey=$("#ak").value.trim()||oldKey||uid();
+    if(state.accounts.some(a=>a!==x&&a.key===newKey)){alert("That account key is already in use. Choose a unique key.");return}
+    const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
+    const a=oldKey?x:{key:newKey};if(!oldKey)state.accounts.push(a);
+    const billPayRaw=$("#abillpay").value;
+    const strategy=$("#astrategy").value;Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),strategy,minimumOperatingBalance:Math.max(0,Number($("#amin").value||0)),billPayAllowed:billPayRaw===""?null:billPayRaw==="1",directDepositRequired:$("#addlanding").checked,preferredCashHome:strategy==="Interest-first savings",exitAccount:strategy==="Transition / close",avoidNewBills:strategy==="Transition / close",protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
+    if(oldKey&&oldKey!==newKey)for(const b of state.bills){if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;if(b.desiredAccountKey===oldKey)b.desiredAccountKey=newKey}
+    try{await save();if(typeof cloudSaveFinanceStrategy==="function"&&a.cloudAccountId){try{await cloudSaveFinanceStrategy(a)}catch(e){}}closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
+}
+// Readiness is a local balance estimate, never a bank/autopay verification.
+const BILL_SETUPS=["Autopay","Scheduled","Manual","Unknown"];
+const BILL_AMOUNT_TYPES=["Fixed amount","Full/current bill","Statement balance","Variable/estimate"];
+const BILL_FREQUENCIES=["Monthly","Annual","Irregular","One-time","Trial / decision pending"];
+function recordedBillSetup(bill){return BILL_SETUPS.includes(bill.paymentSetup)?bill.paymentSetup:"Unknown"}
+function recordedBillAmountType(bill){return BILL_AMOUNT_TYPES.includes(bill.amountType)?bill.amountType:"Fixed amount"}
+function recordedBillFrequency(bill){return BILL_FREQUENCIES.includes(bill.frequency)?bill.frequency:(billRepeat(bill)===1?"Monthly":billRepeat(bill)===12?"Annual":billRepeat(bill)>0?"Irregular":"One-time")}
+const INCOME_FREQUENCIES=["One-time","Weekly","Every 2 weeks","Monthly"];
+function addIncomeDate(date,frequency){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return"";
+  const d=new Date(date+"T12:00:00");
+  if(frequency==="Weekly")d.setDate(d.getDate()+7);
+  else if(frequency==="Every 2 weeks")d.setDate(d.getDate()+14);
+  else if(frequency==="Monthly"){const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate()));}
+  else return"";
+  return ymd(d);
+}
+function expectedIncomeOccurrences(untilDate){
+  const today=ymd(),out=[];
+  for(const src of state.expectedIncome||[]){
+    if(src.enabled===false)continue;
+    const amount=Number(src.amount||0),start=String(src.date||"");
+    if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(start))continue;
+    const frequency=INCOME_FREQUENCIES.includes(src.frequency)?src.frequency:"One-time";
+    let date=start,guard=0;
+    while(date&&date<=untilDate&&guard++<100){
+      if(date>=today)out.push({sourceId:src.id,date,amount,accountKey:String(src.accountKey||""),transferable:src.transferable!==false,name:String(src.name||"Expected income"),confidence:String(src.confidence||"confirmed"),frequency,notes:String(src.notes||"")});
+      if(frequency==="One-time")break;
+      date=addIncomeDate(date,frequency);
+    }
+  }
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));
+}
+function incomeBefore(date,accountKey){
+  return expectedIncomeOccurrences(date).filter(x=>x.accountKey===accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function transferableIncomeBefore(date){
+  return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function transferableIncomeBeforeAccount(date,accountKey){
+  return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey===accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
+}
+function paycheckEstimatePreset(){
+  const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8),
+        seasonal=upsSeasonality();
+  let interval=7,avgNet=0,next="";
+  if(rows.length>=2){
+    const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(Math.max(1,Math.round((new Date(rows[i].payDate+"T12:00:00")-new Date(rows[i-1].payDate+"T12:00:00"))/86400000)));
+    gaps.sort((a,b)=>a-b);interval=gaps[Math.floor(gaps.length/2)]||7;avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length;next=rows[rows.length-1].payDate;
+  }else if(Number(seasonal?.recentWeeklyAverageNet)>0){
+    interval=7;avgNet=Number(seasonal.recentWeeklyAverageNet);next=String(seasonal.nextOfficialPayDate||"");
+  }else return null;
+  if(!next)next=ymd();
+  if(next<ymd()){do{const d=new Date(next+"T12:00:00");d.setDate(d.getDate()+interval);next=ymd(d)}while(next<ymd())}
+  return{name:"UPS weekly net estimate",amount:Math.round(avgNet*100)/100,date:next,frequency:interval<=9?"Weekly":interval<=17?"Every 2 weeks":"One-time",confidence:"estimate",transferable:true,notes:rows.length>=2?`Estimated from ${rows.length} recent imported paychecks; review amount/date and deposit account.`:"Conservative recent UPS net-pay baseline from linked payroll deposits. Peak-season upside is shown separately and is not automatically counted."};
+}
+
+function openPaycheckEstimate(){const p=paycheckEstimatePreset();if(!p){alert("Import at least two pay statements first.");return}openExpectedIncome("",p)}
+function openExpectedIncome(id="",preset=null){
+  const x=(state.expectedIncome||[]).find(v=>v.id===id)||preset||{id:"",name:"",amount:"",date:ymd(),frequency:"One-time",accountKey:"",transferable:true,enabled:true,confidence:"confirmed",notes:""};
+  const accounts=(state.accounts||[]).filter(a=>a.key&&["checking","savings"].includes(a.type)&&(!a.avoidNewBills||a.key===x.accountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||"")));
+  modal(x.id?"Expected income":"Add expected income",`<div class="stack">
+    <label>Income name<input id="einame" value="${esc(x.name||"")}" placeholder="Paycheck, support, reimbursement…"></label>
+    <div class="grid2"><label>Expected amount<input id="eiamount" type="number" min="0" step=".01" value="${x.amount??""}"></label><label>Next expected date<input id="eidate" type="date" value="${esc(x.date||ymd())}"></label></div>
+    <label>Repeats<select id="eifreq">${INCOME_FREQUENCIES.map(v=>`<option ${String(x.frequency||"One-time")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Deposit account<select id="eiaccount"><option value="">Choose account</option>${accounts.map(a=>`<option value="${esc(a.key)}" ${a.key===x.accountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
+    <label class="task"><input id="eitransfer" type="checkbox" ${x.transferable!==false?"checked":""}><span>Can be transferred to another spending account if a bill needs it</span></label>
+    <label class="task"><input id="eienabled" type="checkbox" ${x.enabled!==false?"checked":""}><span>Include this income in bill projections</span></label>
+    <label>Notes<input id="einotes" value="${esc(x.notes||"")}"></label>
+    ${x.confidence==="estimate"?`<div class="notice"><b>Estimate</b><div class="muted small">This came from recent pay history. Confirm the amount/date when you know them.</div></div>`:""}
+    ${x.id?`<button class="btn danger" type="button" onclick="removeExpectedIncome('${x.id}')">Remove expected income</button>`:""}
+  </div>`,"Save",async()=>{const name=$("#einame").value.trim(),amount=Number($("#eiamount").value||0),date=$("#eidate").value,frequency=$("#eifreq").value,accountKey=$("#eiaccount").value;if(!name||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!INCOME_FREQUENCIES.includes(frequency))return;let e=(state.expectedIncome||[]).find(v=>v.id===id);if(!e){e={id:uid()};state.expectedIncome.push(e)}Object.assign(e,{name,amount:Math.round(amount*100)/100,date,frequency,accountKey,transferable:$("#eitransfer").checked,enabled:$("#eienabled").checked,confidence:x.confidence||"confirmed",notes:$("#einotes").value.trim()});await save();closeModal();render()});
+}
+async function removeExpectedIncome(id){if(!confirm("Remove this expected income?"))return;state.expectedIncome=(state.expectedIncome||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function expectedIncomeWindow(startDate,endDate){
+  return expectedIncomeOccurrences(endDate).filter(x=>x.date>=startDate&&x.date<=endDate);
+}
+function expectedIncomeTotalBefore(date){
+  return expectedIncomeOccurrences(date).filter(x=>x.accountKey).reduce((sum,x)=>sum+Number(x.amount||0),0);
+}
+function budgetExpectedIncomeCard(month=budgetMonth){
+  const today=ymd(),start=month+"-01",[year,mo]=month.split("-").map(Number),end=ymd(new Date(year,mo,0,12)),
+        from=month===today.slice(0,7)?today:start,rows=month<today.slice(0,7)?[]:expectedIncomeWindow(from,end),
+        total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0),current=month===today.slice(0,7);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">${current?"Remaining expected income":"Scheduled expected income"}</div><h2>${money(total)}</h2></div><button class="btn" onclick="setView('more')">Manage income</button></div>
+    <p class="muted small">${current?"Income still expected from today through month-end.":"Enabled expected-income entries scheduled in this month."} This is shown separately from the manual monthly budget amount so it is never silently double-counted.</p>
+    ${rows.length?rows.slice(0,10).map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No enabled expected income is scheduled for the rest of this month.</div>`}
+  </div>`;
+}
+function dueDateOutlookCard(){
+  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)).slice(0,8);
+  if(!rows.length)return"";
+  const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
+        short=rows.filter(r=>r.status==="Projected short").length;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Due-date outlook</div><h2>${covered} of ${rows.length} upcoming bills currently covered</h2></div>${short?`<span class="bill-status short">${short} short</span>`:`<span class="bill-status covered">on track</span>`}</div>
+    <p class="muted small">This combines recorded account balances, earlier unpaid bills, and every enabled expected-income occurrence arriving on or before each due date. When another spending account can cover a shortage, Daily Life now shows the exact transfer plan and reserves those dollars so they are not recommended twice.</p>
+    ${rows.map(r=>{const b=r.bill,totalIncome=expectedIncomeTotalBefore(b.due),cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown",instruction=transferInstruction(r);
+      const after=Number.isFinite(r.projectedAfter)?(r.projectedAfter/100):null;
+      return `<div class="row"><span><b>${esc(b.name)}</b><div class="muted small">Due ${esc(dl(b.due))} · ${money(Number(b.amount||0))} · expected income by then ${money(totalIncome)}</div>${after!==null?`<div class="muted small">Assigned account before any new transfer: ${budgetMoney(Math.round(after*100))} after this bill</div>`:""}${instruction?`<div class="small"><b>${esc(instruction)}</b> by ${esc(dl(b.due))}.</div>`:""}</span><span class="bill-status ${cls}">${esc(r.status)}</span></div>`;
+    }).join("")}
+  </div>`;
+}
+function expectedIncomeCard(){
+  const end=new Date();end.setDate(end.getDate()+45);
+  const occurrences=expectedIncomeOccurrences(ymd(end)).slice(0,12),estimate=paycheckEstimatePreset(),
+        bankSuggestions=typeof cloudRecurringIncomeSuggestions==="function"?cloudRecurringIncomeSuggestions():[];
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Expected income</div><h2>Money arriving before bills</h2></div><div class="actions"><button class="btn primary" onclick="openExpectedIncome()">+ Income</button>${estimate?`<button class="btn" onclick="openPaycheckEstimate()">Use pay estimate</button>`:""}</div></div>
+    <p class="muted small">All enabled sources here — paychecks, child support, reimbursements, or other recurring income — are used in bill projections when they are scheduled on or before a bill’s due date. The deposit account matters; transferable income can also support a bill from another spending account.</p>
+    ${bankSuggestions.length?`<div class="notice"><b>Recurring bank income found</b><div class="muted small">Daily Life found ${bankSuggestions.length} stable non-payroll deposit pattern${bankSuggestions.length===1?"":"s"} in your private synced history. It will not count one until you save it as expected income.</div><button class="btn small" onclick="openCloudRecurringIncomeSuggestion(0)">Review suggestion</button></div>`:""}
+    ${occurrences.length?occurrences.map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No expected income is being counted yet.</div>`}
+  </div>`;
+}
+function billReadiness(){
+  const spentByAccount=new Map(),transferOutByAccount=new Map(),transferInByAccount=new Map(),
+        sorted=state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
+  const spendableAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&!a.protectFromSpending&&a.key!=="house_fund"&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance)));
+  const billsDueThrough=(accountKey,date)=>state.bills.filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=date&&b.amount!==null&&b.amount!==""&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0).reduce((sum,b)=>sum+Math.round(Number(b.amount)*100),0);
+  const transferCapacity=(source,date)=>{
+    const starting=Math.round(Number(source.balance||0)*100),
+          allIncome=incomeBefore(date,source.key),
+          transferableIncome=transferableIncomeBeforeAccount(date,source.key),
+          restrictedIncome=Math.max(0,allIncome-transferableIncome),
+          localBills=billsDueThrough(source.key,date),
+          plannedOut=transferOutByAccount.get(source.key)||0,
+          plannedIn=transferInByAccount.get(source.key)||0,
+          unrestricted=starting+transferableIncome+plannedIn-plannedOut,
+          localNeedFromUnrestricted=Math.max(0,localBills-restrictedIncome);
+    return Math.max(0,unrestricted-localNeedFromUnrestricted);
+  };
+  return sorted.map(row=>{
+    const b=row.bill,setup=recordedBillSetup(b),matches=state.accounts.filter(a=>a.key&&a.key===b.paymentAccountKey),account=matches.length===1?matches[0]:null,result={...row,setup,account};
+    if(b.status==="paid")return {...result,status:b.paymentPending?"Payment pending":"Paid"};
+    if(!account)return {...result,status:"Needs account"};
+    const balance=Number(account.balance);
+    if(!["checking","savings"].includes(account.type)||account.balance===null||account.balance===""||!Number.isFinite(balance))return {...result,status:"Balance unavailable"};
+    const amount=Number(b.amount),due=String(b.due||"");
+    if(b.amount===null||b.amount===""||!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(due))return {...result,status:"Check bill"};
+    const amountC=Math.round(amount*100),prior=spentByAccount.get(account.key)||0,
+          plannedOut=transferOutByAccount.get(account.key)||0,plannedIn=transferInByAccount.get(account.key)||0,
+          currentBefore=Math.round(balance*100)-prior-plannedOut,currentAfter=currentBefore-amountC,
+          projectedIncome=incomeBefore(due,account.key),projectedBefore=currentBefore+plannedIn+projectedIncome,projectedAfter=projectedBefore-amountC;
+    spentByAccount.set(account.key,prior+amountC);
+    const accountSpendable=!account.protectFromSpending&&account.key!=="house_fund";
+    let status="Projected short",globalProjectedAfter=null,transfers=[];
+    if(currentAfter>=0)status="Covered now";
+    else if(projectedAfter>=0)status="Covered by due date";
+    else if(accountSpendable){
+      const needed=-projectedAfter,
+            sources=spendableAccounts.filter(source=>source.key!==account.key).map(source=>({source,available:transferCapacity(source,due)})).filter(x=>x.available>0).sort((a,b)=>b.available-a.available||String(a.source.name||"").localeCompare(String(b.source.name||""))),
+            totalCapacity=sources.reduce((sum,x)=>sum+x.available,0);
+      globalProjectedAfter=totalCapacity-needed;
+      if(totalCapacity>=needed){
+        let remaining=needed;
+        for(const x of sources){
+          if(remaining<=0)break;
+          const amount=Math.min(remaining,x.available);
+          if(amount<=0)continue;
+          transfers.push({fromKey:x.source.key,fromName:String(x.source.name||"Source account"),toKey:account.key,toName:String(account.name||"Payment account"),amount});
+          transferOutByAccount.set(x.source.key,(transferOutByAccount.get(x.source.key)||0)+amount);
+          transferInByAccount.set(account.key,(transferInByAccount.get(account.key)||0)+amount);
+          remaining-=amount;
+        }
+        status="Transfer needed";
+      }
+    }
+    return {...result,currentBefore,currentAfter,projectedIncome,projectedBefore,projectedAfter,globalProjectedAfter,transfers,status};
+  });
+}
+function transferInstruction(r){
+  if(r?.status!=="Transfer needed"||!Array.isArray(r.transfers)||!r.transfers.length)return"";
+  return r.transfers.map(t=>`Transfer ${money(t.amount/100)} from ${t.fromName} → ${t.toName}`).join("; ");
+}
+// Each occurrence remains a separate bill; paid history is never recycled.
+const BILL_REPEATS=[[0,"Does not repeat"],[1,"Monthly"],[3,"Every 3 months"],[12,"Yearly"]];
+function billRepeat(b){return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
+function validBillDate(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return false;
+  const d=new Date(value+"T12:00:00");return !isNaN(d)&&ymd(d)===value;
+}
+function nextBillDate(b){
+  if(!validBillDate(b.due))return "";
+  const [year,month,day]=b.due.split("-").map(Number),anchor=Number(b.repeatDay)||day;
+  const d=new Date(year,month-1+(billRepeat(b)||1),1,12);
+  d.setDate(Math.min(anchor,new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate()));
+  return ymd(d);
+}
+function nextBillIndex(b){
+  const linked=state.bills.findIndex(x=>x.previousBillId===b.id&&b.id);
+  if(linked>=0)return linked;
+  const due=nextBillDate(b),name=String(b.name||"").trim().toLowerCase();
+  return due?state.bills.findIndex(x=>x!==b&&x.due===due&&String(x.name||"").trim().toLowerCase()===name):-1;
+}
+function nextBillDraft(b){return {name:b.name,amount:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",desiredAccountKey:b.desiredAccountKey||"",paymentSetup:recordedBillSetup(b),amountType:recordedBillAmountType(b),frequency:recordedBillFrequency(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
+function appendNextBill(b){
+  if(nextBillIndex(b)>=0||!validBillDate(b.due))return;
+  state.bills.push({...nextBillDraft(b),id:uid(),status:"upcoming"});
+}
+function openNextBill(index){
+  const b=state.bills[index];if(!b)return;
+  const next=nextBillIndex(b);if(next>=0){openBill(next);return}
+  openBill(-1,index);
+}
+function pickBillDate(){
+  const input=$("#bd");
+  try{if(input.showPicker){input.showPicker();return}}catch(error){}
+  input.focus();input.click();
+}
+function syncBillFrequencyRepeat(){
+  const frequency=$("#billFrequency"),repeat=$("#billRepeat");
+  if(!frequency||!repeat)return;
+  if(frequency.value==="Monthly")repeat.value="1";
+  else if(frequency.value==="Annual")repeat.value="12";
+  else if(frequency.value==="One-time")repeat.value="0";
+}
+function syncBillRepeatFrequency(){
+  const frequency=$("#billFrequency"),repeat=$("#billRepeat");
+  if(!frequency||!repeat)return;
+  const months=Number(repeat.value);
+  if(months===1)frequency.value="Monthly";
+  else if(months===12)frequency.value="Annual";
+  else if(months>0)frequency.value="Irregular";
+  else if(frequency.value!=="Trial / decision pending")frequency.value="One-time";
+}
+function billRowView(r){
+  const b=r.bill,paid=b.status==="paid",pendingPayment=paid&&b.paymentPending===true,tone=["Covered now","Covered by due date"].includes(r.status)?"covered":r.status==="Projected short"?"short":r.status==="Transfer needed"?"transfer":"unknown";
+  let note="";
+  if(r.currentAfter!==undefined){
+    if(r.status==="Covered now")note=`${money(r.currentBefore/100)} available now before this bill · ${money(r.currentAfter/100)} left after reserving it now.`;
+    else if(r.status==="Covered by due date")note=`${money(r.currentBefore/100)} available now · +${money(r.projectedIncome/100)} expected into ${r.account?.name||"this account"} by ${dl(b.due)} · ${money(r.projectedAfter/100)} projected left after the bill.`;
+    else if(r.status==="Transfer needed")note=`${transferInstruction(r)} by ${dl(b.due)}. After reserving that transfer and bills due through this date, ${money(Math.max(0,r.globalProjectedAfter)/100)} of additional transferable capacity is projected to remain.`;
+    else note=`${r.projectedIncome>0?"+"+money(r.projectedIncome/100)+" expected into this account before the due date · ":""}${money(-r.projectedAfter/100)} projected short by ${dl(b.due)} after earlier bills.`;
+  }else if(r.status==="Balance unavailable")note="Readiness needs a recorded checking or savings balance. Credit balances track debt, not available cash.";
+  else if(r.status==="Check bill")note="Correct the amount or due date before relying on this projection.";
+  else if(pendingPayment)note=`Payment pending${b.paidDate?" since "+dl(b.paidDate):""}${b.paidMerchant?" · "+b.paidMerchant:""} · already reflected in available cash, so Daily Life is not reserving this bill again.`;
+  else if(paid)note="Paid · not reserved.";
+  else note=b.paymentAccountKey?"The recorded account is missing or its key is not unique. Edit to choose an account.":"Choose the account that will pay this bill.";
+  const repeat=BILL_REPEATS.find(([n])=>n===billRepeat(b))[1],desired=state.accounts.find(a=>a.key===b.desiredAccountKey),amountType=recordedBillAmountType(b),frequency=recordedBillFrequency(b);
+  return `<div class="row bill-row"><div class="bill-info"><label class="task"><input type="checkbox" aria-label="Mark ${esc(b.name)} paid" ${paid?"checked":""} onchange="toggleBill(state.bills[${r.index}].id,this.checked)"><span class="${paid&&!pendingPayment?"done":""}">${b.due?dl(b.due):"No due date"} · ${esc(b.name)}</span></label>
+  <div class="bill-details"><div class="small muted">Current payment: ${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
+  ${desired&&desired.key!==b.paymentAccountKey?`<div class="small muted">Desired payment account: ${esc(desired.name)}</div>`:""}
+  <div class="small muted">${esc(amountType)} · ${esc(frequency)}</div>
+  ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
+  <div class="actions">${pendingPayment?`<span class="bill-status unknown">Payment pending</span>`:paid?`<span class="tag">Paid</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></div></div>
+  <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${pendingPayment?"Edit pending payment":paid?"Edit paid bill":"Edit"}</button>
+  ${paid&&!pendingPayment?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
+}
+function upcomingBillsView(){
+  const rows=billReadiness(),unpaid=rows.filter(r=>r.bill.status!=="paid"||r.bill.paymentPending),paid=rows.filter(r=>r.bill.status==="paid"&&!r.bill.paymentPending);
+  return `<div class="card"><div class="section-title"><h2>Upcoming bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
+  <p class="muted small">Projection starts with recorded account balances, reserves unpaid bills in due-date order, and adds expected income that arrives on or before each due date. Income assigned to a different spending account can produce a <b>Transfer needed</b> result instead of a false “Short.”</p>
+  <p class="muted small">Expected income is still an estimate until it arrives. Other spending is not predicted. Payment setup is what you recorded, not independently verified autopay.</p>
+  ${unpaid.map(billRowView).join("")||`<div class="notice">No unpaid bills. Add a bill or create the next occurrence from paid history.</div>`}
+  ${paid.length?`<details class="bill-history"><summary>Paid history (${paid.length})</summary><p class="muted small">Paid bills stay here. Use Create next bill to keep a past payment intact.</p>${paid.slice().reverse().map(billRowView).join("")}</details>`:""}</div>`;
+}
+function openBill(index=-1,sourceIndex=-1){
+  const existing=index>=0?state.bills[index]:null;if(index>=0&&!existing)return;
+  const source=sourceIndex>=0?state.bills[sourceIndex]:null;
+  const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",desiredAccountKey:"",paymentSetup:"Unknown",amountType:"Fixed amount",frequency:"One-time",repeatMonths:0});
+  const paid=existing?.status==="paid",pendingPayment=paid&&existing?.paymentPending===true;
+  const accountOptions=state.accounts.filter(a=>a.key&&(!a.avoidNewBills||a.key===b.paymentAccountKey||a.key===b.desiredAccountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||""))),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
+  modal(pendingPayment?"Edit payment pending":paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
+  ${pendingPayment?`<p class="notice">This payment is still pending at the bank. It is not being reserved again because it is already reflected in available cash.</p>`:paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
+  <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
+  <div><label for="bd">Due date</label><div class="bill-date-control"><input id="bd" type="date" required value="${esc(b.due)}"><button class="btn" type="button" onclick="pickBillDate()" aria-label="Choose bill due date">Choose date</button></div></div>
+  <label>Current payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
+  <label>Desired payment account (optional)<select id="billDesiredAccount"><option value="">No change planned</option>${desiredMissing?`<option value="${esc(b.desiredAccountKey)}" selected>Previously desired account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.desiredAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
+  <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
+  <label>Amount type<select id="billAmountType">${BILL_AMOUNT_TYPES.map(type=>`<option ${recordedBillAmountType(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
+  <label>Bill frequency / status<select id="billFrequency" onchange="syncBillFrequencyRepeat()">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
+  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat" onchange="syncBillRepeatFrequency()">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
+  <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
+    for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
+    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
+    if(!name||!validBillDate(due)||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup)||!BILL_AMOUNT_TYPES.includes(amountType)||!BILL_FREQUENCIES.includes(frequency)||!BILL_REPEATS.some(([n])=>n===repeatMonths))return;
+    if(paymentAccountKey&&paymentAccountKey!==b.paymentAccountKey&&!state.accounts.some(a=>a.key===paymentAccountKey)){alert("That account is no longer available. Reopen the bill and choose an account.");return}
+    if(desiredAccountKey&&desiredAccountKey!==b.desiredAccountKey&&!state.accounts.some(a=>a.key===desiredAccountKey)){alert("That desired account is no longer available. Reopen the bill and choose an account.");return}
+    const liveIndex=existing?state.bills.indexOf(existing):-1;if(existing&&liveIndex<0){alert("This bill changed. Close and reopen it before saving.");return}
+    if(source&&nextBillIndex(source)>=0){alert("A next bill already exists. Close this window and use View next bill.");return}
+    if(!existing&&state.bills.some(x=>x.due===due&&String(x.name||"").trim().toLowerCase()===name.toLowerCase())){alert("A bill with this name and due date already exists. Edit that bill, or use a distinct name for a separate bill.");return}
+    const button=$("#saveModal");button.disabled=true;
+    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,desiredAccountKey,paymentSetup,amountType,frequency,repeatMonths,
+      repeatDay:due===b.due&&b.repeatDay?b.repeatDay:Number(due.slice(8,10))};
+    if(source)entry.previousBillId=source.id;
+    if(existing)state.bills[liveIndex]=entry;else state.bills.push(entry);
+    try{await save();closeModal();render()}
+    catch(error){if(existing)state.bills[liveIndex]=existing;else state.bills.splice(state.bills.indexOf(entry),1);button.disabled=false;alert("Could not save this bill on this device. Please try again.")}
+  });
+}
+async function toggleBill(id,paid){
+  const x=state.bills.find(b=>b.id===id);if(!x)return;
+  const before=structuredClone(state.bills);x.status=paid?"paid":"upcoming";
+  if(paid&&billRepeat(x))appendNextBill(x);
+  try{await save();render()}catch(error){state.bills=before;render();alert("Could not save this payment on this device. Please try again.")}
+}
+function openPeople(){
+  modal("Reading list",`<div class="stack"><label>Names, comma-separated<input id="people" value="${esc((state.settings.readers||[]).join(", "))}"></label></div>`,"Save",async()=>{const names=$("#people").value.split(",").map(x=>x.trim()).filter(Boolean);if(names.length)state.settings.readers=names;await save();closeModal();render()})
+}
+function openRoutine(){
+  modal("Add recurring task",`<div class="stack"><label>Task<input id="rt"></label><label>Category<input id="rc" value="life"></label><label>Days<select id="rd" multiple size="7"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Notes<input id="rn"></label></div>`,"Add",async()=>{const title=$("#rt").value.trim();if(!title)return;const days=[...$("#rd").selectedOptions].map(o=>Number(o.value));state.settings.recurringTasks.push({title,category:$("#rc").value||"life",days:days.length?days:[0,1,2,3,4,5,6],order:100,notes:$("#rn").value});await save();closeModal();render()})
+}
+async function removeRoutine(i){if(confirm("Remove this recurring task?")){state.settings.recurringTasks.splice(i,1);await save();render()}}
+function openMealPattern(){
+  modal("Add weekly meal pattern",`<div class="stack"><label>Weekday<select id="mpd"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Dinner / rule<input id="mpn"></label><label>Method<input id="mpm" placeholder="crock-pot, pickup, away…"></label><label>Notes<input id="mpnotes"></label></div>`,"Add pattern",async()=>{const dish=$("#mpn").value.trim();if(!dish)return;state.settings.mealPatterns.push({weekday:Number($("#mpd").value),dish,method:$("#mpm").value,notes:$("#mpnotes").value});ensureMealPatterns();await save();closeModal();render()})
+}
+async function removeMealPattern(i){if(confirm("Remove this weekly meal pattern?")){state.settings.mealPatterns.splice(i,1);await save();render()}}
+async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(j);await save();render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function erase(){
+  const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
+  const warning=hasVault
+    ?"Erase ALL Daily Life data stored on this device, including the encrypted Private Vault? This does not delete any separate cloud backups."
+    :"Erase ALL Daily Life data stored on this device? This does not delete separate cloud backups.";
+  if(!confirm(warning))return;
+  if(hasVault&&!confirm("The encrypted Vault on this device will be removed too. Continue?"))return;
+  if(typeof vaultLock==="function")vaultLock();
+  await dbClear();
+  if(typeof vaultEnvelope!=="undefined")vaultEnvelope=null;
+  state=blankState();
+  render();
+}
+async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
+document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
+async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
+init();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261002-offline1").catch(()=>{});
+
+</script>
+</body>
+</html>
