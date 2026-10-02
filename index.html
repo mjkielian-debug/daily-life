@@ -1038,11 +1038,19 @@ function petCard(p){
     ${vet?`<div class="person-detail-line"><span>Last vet log</span><b>${esc(dl(vet.date))}</b></div>`:""}
   </div>`;
 }
+function petCareSummaryCard(){
+  const start=new Date();start.setDate(start.getDate()-6);const startDate=ymd(start),
+        logs=(state.petLogs||[]).filter(x=>String(x.date||"")>=startDate&&String(x.date||"")<=ymd()),
+        types=["Food","Water","Litter","Medication","Grooming","Vet"],
+        counts=types.map(type=>[type,logs.filter(x=>x.type===type).length]).filter(([,n])=>n>0);
+  return `<div class="card pet-care-summary"><div class="eyebrow">Last 7 days</div><h2>Pet care at a glance</h2><div class="pet-summary-grid">${counts.length?counts.map(([type,n])=>`<div class="metric"><div class="big">${n}</div><div class="muted small">${esc(type)} log${n===1?"":"s"}</div></div>`).join(""):"<div class='muted small'>No pet care has been logged in the last 7 days.</div>"}</div></div>`;
+}
 function petsView(){
   const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
         litter=logs.find(x=>x.type==="Litter");
   return `<div class="card glow pet-hero"><div class="section-title"><div><div class="eyebrow">Pets</div><h2>${pets.length?pets.length+" pet"+(pets.length===1?"":"s"):"Your pets"}</h2><div class="muted small">Profiles, care, vet notes, medications, weight, and shared household pet care.</div></div><div class="actions"><button class="btn primary" onclick="openPetProfile()">+ Pet</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div></div>
   <div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
+  ${petCareSummaryCard()}
   <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button></div>
     <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}</div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openPetLog('','Supplies')">Supplies</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
@@ -1073,6 +1081,7 @@ function lastPlantLog(plantId,type=""){
 function plantById(id){return (state.plants||[]).find(p=>p.id===id)}
 function plantCareState(p){
   const last=lastPlantLog(p.id,"Watered"),days=last?daysSinceDate(last.date):null,every=Math.max(0,Number(p.waterEveryDays||0));
+  if(p.status==="Finished"||p.status==="Dormant")return{label:p.status,due:false,days};
   if(!every)return{label:last?"Last watered "+days+"d ago":"No water schedule",due:false,days};
   if(days===null)return{label:"Watering not logged yet",due:true,days:null};
   const left=every-days;
@@ -1080,7 +1089,7 @@ function plantCareState(p){
 }
 function plantCard(p){
   const care=plantCareState(p),last=lastPlantLog(p.id);
-  return `<div class="card plant-card ${care.due?"plant-due":""}"><div class="plant-card-head"><div class="plant-leaf">⌁</div><div class="grow"><div class="eyebrow">${esc(p.type||"Plant")}</div><h2>${esc(p.name||"Plant")}</h2><div class="muted small">${esc(p.location||"Location not set")}${p.light?" · "+esc(p.light):""}</div></div><button class="btn" onclick="openPlant('${p.id}')">Edit</button></div><div class="plant-status">${esc(care.label)}</div><div class="actions"><button class="btn primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button><button class="btn" onclick="logPlantCare('${p.id}')">Care log</button></div>${last?`<div class="muted small">Latest: ${esc(last.type)} · ${esc(dl(last.date))}</div>`:""}</div>`;
+  return `<div class="card plant-card ${care.due?"plant-due":""}"><div class="plant-card-head"><div class="plant-leaf">⌁</div><div class="grow"><div class="eyebrow">${esc(p.type||"Plant")}</div><h2>${esc(p.name||"Plant")}</h2><div class="muted small">${esc(p.location||"Location not set")}${p.light?" · "+esc(p.light):""}</div></div><span class="tag">${esc(p.status||"Active")}</span><button class="btn" onclick="openPlant('${p.id}')">Edit</button></div><div class="plant-status">${esc(care.label)}</div><div class="actions"><button class="btn primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button><button class="btn" onclick="logPlantCare('${p.id}')">Care log</button></div>${last?`<div class="muted small">Latest: ${esc(last.type)} · ${esc(dl(last.date))}</div>`:""}</div>`;
 }
 function gardenView(){
   const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999"))),
@@ -1093,10 +1102,10 @@ function gardenView(){
   <div class="card"><div class="eyebrow">Plant history</div><h2>Recent care</h2>${logs.slice(0,15).map(x=>{const p=plantById(x.plantId);return`<div class="row"><span><b>${esc(x.type)}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span></div>`}).join("")||"<div class='notice'>No plant care logged yet.</div>"}</div>`;
 }
 function openPlant(id=""){
-  const p=plantById(id)||{id:"",name:"",type:"Houseplant",location:"",light:"",waterEveryDays:"",plantedDate:"",source:"",notes:""};
-  modal(p.id?`Plant · ${p.name}`:"Add plant",`<div class="stack"><div class="grid2"><label>Name<input id="gname" value="${esc(p.name||"")}" placeholder="Basil, pothos, tomato bed…"></label><label>Type<select id="gtype">${["Houseplant","Herb","Vegetable","Fruit","Flower","Tree / shrub","Garden bed","Other"].map(v=>`<option ${p.type===v?"selected":""}>${v}</option>`).join("")}</select></label></div><div class="grid2"><label>Location<input id="gloc" value="${esc(p.location||"")}" placeholder="Kitchen window, front bed…"></label><label>Light<input id="glight" value="${esc(p.light||"")}" placeholder="Full sun, bright indirect…"></label></div><div class="grid2"><label>Water every N days<input id="gwater" type="number" min="0" value="${esc(p.waterEveryDays||"")}"></label><label>Planted / acquired<input id="gdate" type="date" value="${esc(p.plantedDate||"")}"></label></div><label>Source / variety<input id="gsource" value="${esc(p.source||"")}"></label><label>Care notes<textarea id="gnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
+  const p=plantById(id)||{id:"",name:"",type:"Houseplant",status:"Active",location:"",light:"",waterEveryDays:"",plantedDate:"",source:"",notes:""};
+  modal(p.id?`Plant · ${p.name}`:"Add plant",`<div class="stack"><div class="grid2"><label>Name<input id="gname" value="${esc(p.name||"")}" placeholder="Basil, pothos, tomato bed…"></label><label>Type<select id="gtype">${["Houseplant","Herb","Vegetable","Fruit","Flower","Tree / shrub","Garden bed","Other"].map(v=>`<option ${p.type===v?"selected":""}>${v}</option>`).join("")}</select></label></div><label>Status<select id="gstatus">${["Active","Watch","Dormant","Finished"].map(v=>`<option ${(p.status||"Active")===v?"selected":""}>${v}</option>`).join("")}</select></label><div class="grid2"><label>Location<input id="gloc" value="${esc(p.location||"")}" placeholder="Kitchen window, front bed…"></label><label>Light<input id="glight" value="${esc(p.light||"")}" placeholder="Full sun, bright indirect…"></label></div><div class="grid2"><label>Water every N days<input id="gwater" type="number" min="0" value="${esc(p.waterEveryDays||"")}"></label><label>Planted / acquired<input id="gdate" type="date" value="${esc(p.plantedDate||"")}"></label></div><label>Source / variety<input id="gsource" value="${esc(p.source||"")}"></label><label>Care notes<textarea id="gnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
     const name=$("#gname").value.trim();if(!name)return;let x=plantById(id);if(!x){x={id:uid()};state.plants.push(x)}
-    Object.assign(x,{name,type:$("#gtype").value,location:$("#gloc").value.trim(),light:$("#glight").value.trim(),waterEveryDays:Number($("#gwater").value||0),plantedDate:$("#gdate").value,source:$("#gsource").value.trim(),notes:$("#gnotes").value.trim()});
+    Object.assign(x,{name,type:$("#gtype").value,status:$("#gstatus").value,location:$("#gloc").value.trim(),light:$("#glight").value.trim(),waterEveryDays:Number($("#gwater").value||0),plantedDate:$("#gdate").value,source:$("#gsource").value.trim(),notes:$("#gnotes").value.trim()});
     await save();closeModal();render();
   });
 }
