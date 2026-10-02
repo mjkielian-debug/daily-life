@@ -366,3 +366,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .person-note-row{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left}.person-note-row .muted{margin-top:3px}.person-note-row>b{white-space:nowrap;color:var(--muted);font-size:.72rem;font-weight:700}.person-hub-actions{display:flex;flex-wrap:wrap;gap:7px}
 
 .people-missing{border-style:dashed}.person-chip-button{appearance:none;color:var(--text);cursor:pointer}.person-chip-button:hover{border-color:color-mix(in srgb,var(--primary) 42%,var(--border))}
+
+.today-people{border-color:color-mix(in srgb,var(--primary) 24%,var(--border))}.today-people-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border)}.today-people-row:first-of-type{margin-top:5px}.today-people-row>span{min-width:0}.today-people-row>b{text-align:right;white-space:nowrap;font-size:.78rem}
