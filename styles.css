@@ -428,3 +428,33 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .gift-purchased{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
 .gift-purchased summary{cursor:pointer;font-weight:800;color:var(--muted)}
 @media(max-width:520px){.gift-center-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Pets + Garden */
+.living-launch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.living-launch{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;min-height:78px;padding:13px 14px;
+  border:1px solid var(--border);border-radius:20px;background:linear-gradient(145deg,var(--panel2),var(--panel));color:var(--text);text-align:left
+}
+.living-launch b{display:block;font-family:Georgia,serif;font-size:1.02rem}.living-launch small{display:block;color:var(--muted);margin-top:3px}
+.living-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:1.25rem;background:color-mix(in srgb,var(--primary) 13%,transparent);color:var(--primary)}
+.pet-launch{border-color:color-mix(in srgb,var(--secondary) 26%,var(--border))}
+.garden-launch{border-color:color-mix(in srgb,var(--primary) 30%,var(--border))}
+.pet-grid,.plant-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pet-card,.plant-card{min-width:0}
+.pet-card-head,.plant-card-head{display:flex;align-items:center;gap:10px}
+.pet-avatar,.plant-leaf{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;font-size:1.15rem;background:color-mix(in srgb,var(--secondary) 12%,transparent);border:1px solid color-mix(in srgb,var(--secondary) 25%,var(--border))}
+.plant-leaf{background:color-mix(in srgb,var(--primary) 12%,transparent);border-color:color-mix(in srgb,var(--primary) 30%,var(--border));color:var(--primary)}
+.pet-card h2,.plant-card h2{margin:2px 0 0;font-size:1.05rem}
+.pet-quick-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}
+.pet-quick-actions button{border:1px solid var(--border);border-radius:12px;padding:8px 5px;background:rgba(255,255,255,.025);color:var(--text);font-size:.72rem;font-weight:800}
+.shared-pet-care{border-color:color-mix(in srgb,var(--secondary) 28%,var(--border))}
+.plant-card.plant-due{border-color:color-mix(in srgb,var(--primary) 44%,var(--border));box-shadow:0 0 24px color-mix(in srgb,var(--primary) 8%,transparent)}
+.plant-status{margin:10px 0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--primary) 7%,transparent);color:color-mix(in srgb,var(--text) 90%,var(--primary) 10%);font-size:.78rem;font-weight:800}
+.garden-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.garden-stats span{display:grid;gap:2px;padding:10px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025)}
+.garden-stats b{font-family:Georgia,serif;font-size:1.1rem}.garden-stats small{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+.garden-due{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 38%),linear-gradient(180deg,var(--panel2),var(--panel))}
+.today-living{border-color:color-mix(in srgb,var(--primary) 24%,var(--border))}
+@media(max-width:560px){
+  .pet-grid,.plant-grid,.living-launch-grid{grid-template-columns:1fr}
+}
