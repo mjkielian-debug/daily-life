@@ -111,6 +111,30 @@ async function cloudEnsureProfile(){
   if(error)throw error;
 }
 
+function cloudWishlistKey(w){
+  const url=String(w?.url||w?.elfsterUrl||"").trim().toLowerCase();
+  if(url)return"url:"+url;
+  const item=String(w?.item||"").trim().toLowerCase(),source=String(w?.source||"").trim().toLowerCase();
+  return"item:"+source+"|"+item;
+}
+function cloudMergeWishlist(...lists){
+  const out=[],seen=new Set();
+  for(const list of lists){
+    for(const raw of Array.isArray(list)?list:[]){
+      if(!raw||typeof raw!=="object")continue;
+      const w={...raw};
+      if(!w.item&&w.title)w.item=String(w.title);
+      if(!w.item&&!w.url)continue;
+      if(!w.id)w.id=uid();
+      if(!w.source)w.source="Elfster";
+      const key=cloudWishlistKey(w);
+      if(!key||seen.has(key))continue;
+      seen.add(key);out.push(w);
+    }
+  }
+  return out;
+}
+
 async function cloudPullHouseholdMembers(){
   const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return 0;
   try{
@@ -141,6 +165,8 @@ async function cloudPullHouseholdMembers(){
       if(meta.profileScope)p.profileScope=String(meta.profileScope);
       if(meta.relatedTo!==undefined)p.relatedTo=String(meta.relatedTo||"");
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
+      if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
+      p.wishlist=cloudMergeWishlist(p.wishlist,meta.wishlist,meta.elfsterWishes);
       for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests","importantDates","sharedPlans"]){
         if(Array.isArray(meta[key])&&(!Array.isArray(p[key])||!p[key].length))p[key]=meta[key];
       }
@@ -159,17 +185,26 @@ async function cloudPullHouseholdMembers(){
 async function cloudUpsertPersonProfile(p){
   const user=cloudUser();if(!user||!cloudClient||!p?.name)return false;
   const birthdayText=String(p.birthday||"").trim(),birthday=/^\d{4}-\d{2}-\d{2}$/.test(birthdayText)?birthdayText:null;
+  let existingMeta={};
+  if(p.cloudMemberId){
+    const current=await cloudClient.from("household_members").select("metadata").eq("id",p.cloudMemberId).eq("owner_user_id",user.id).maybeSingle();
+    if(current.error)throw current.error;
+    if(current.data?.metadata&&typeof current.data.metadata==="object")existingMeta=current.data.metadata;
+  }
   const payload={
     owner_user_id:user.id,
     display_name:String(p.name).trim(),
     relationship:String(p.relationship||"").trim()||null,
     birthday,
     metadata:{
+      ...existingMeta,
       birthdayText:birthday?null:birthdayText||null,
       livesWithUser:p.livesWithUser===true,
       profileScope:String(p.profileScope||(p.livesWithUser?"household":"extended")),
       relatedTo:String(p.relatedTo||""),
       elfsterUrl:String(p.elfsterUrl||""),
+      elfsterLastSyncedAt:String(p.elfsterLastSyncedAt||existingMeta.elfsterLastSyncedAt||""),
+      wishlist:Array.isArray(p.wishlist)?p.wishlist:[],
       favoriteColors:Array.isArray(p.favoriteColors)?p.favoriteColors:[],
       favoriteCharacters:Array.isArray(p.favoriteCharacters)?p.favoriteCharacters:[],
       favoriteFoods:Array.isArray(p.favoriteFoods)?p.favoriteFoods:[],
