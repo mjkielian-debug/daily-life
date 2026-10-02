@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-2050">
+<link rel="stylesheet" href="styles.css?v=20261001-2130">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261001-2050"></script>
+<script src="cloud.js?v=20261001-2130"></script>
 <script src="finance-cloud.js?v=20261001-5"></script>
 <script>
 
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:20,createdAt:new Date().toISOString(),
+  version:21,createdAt:new Date().toISOString(),
   profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
@@ -235,7 +235,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,20);
+  s.version=Math.max(Number(s.version)||0,21);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -244,7 +244,7 @@ function migrateState(s){
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -600,6 +600,43 @@ function payrollReconcile(p){
   if(!official)return {logged,official,diff,status:"unknown"};
   return {logged,official,diff,status:Math.abs(diff)<=0.10?"match":Math.abs(diff)<=0.50?"close":"review"};
 }
+function upsEmploymentProfile(){
+  return (state.employmentProfiles||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
+}
+function upsSeasonality(){
+  return (state.incomeSeasonality||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
+}
+function employmentRateForDate(profile,date=ymd()){
+  const rows=Array.isArray(profile?.progression)?profile.progression.filter(x=>x.date&&Number(x.rate)>0).sort((a,b)=>a.date.localeCompare(b.date)):[];
+  let active=null;for(const row of rows)if(row.date<=date)active=row;
+  return active;
+}
+function nextEmploymentRaise(profile,date=ymd()){
+  return (profile?.progression||[]).filter(x=>x.date>date&&Number(x.rate)>0).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
+}
+function upsContractPayCard(){
+  const p=upsEmploymentProfile();if(!p)return"";
+  const current=employmentRateForDate(p)||{},next=nextEmploymentRaise(p),verified=Number(p.currentRate||0),shown=verified||Number(current.rate||0),
+        currentLabel=verified?`${money(verified)}/hr verified on latest paystub`:`${money(current.rate||0)}/hr contract progression`;
+  return `<div class="card ups-contract"><div class="section-title"><div><div class="eyebrow">📦 UPS contract + pay</div><h2>${shown?money(shown)+"/hr":"Rate not set"}</h2><div class="muted small">${esc(p.role||"UPS employee")} · ${esc(p.unionLocal||"Teamsters")}</div></div><span class="tag">2023–2028 contract</span></div>
+    <div class="notice"><b>${esc(currentLabel)}</b>${next?`<br><span class="muted small">Next contract progression: ${money(next.rate)}/hr around ${esc(dl(next.date))}${next.confidence==="estimated-seniority-date"?" · exact date depends on your official seniority date":""}.</span>`:""}</div>
+    <div class="pay-progression">${(p.progression||[]).map(x=>`<div class="pay-step ${x.date<=ymd()?"past":""}"><span>${esc(x.label||dl(x.date))}</span><b>${money(x.rate)}/hr</b><small>${esc(x.date?dl(x.date):"")}</small></div>`).join("")}</div>
+    ${p.ssd?.rateFloor?`<div class="row"><span><b>Seasonal Support Driver</b><div class="muted small">Higher of inside rate or RPCD start rate${p.ssd.dailyGuaranteeHours?` · ${p.ssd.dailyGuaranteeHours}h daily guarantee when doing inside + personal-vehicle delivery`:""}</div></span><b>≥ ${money(p.ssd.rateFloor)}/hr</b></div>`:""}
+    ${p.ssd?.mileageRate?`<div class="row"><span>Personal-vehicle mileage rate tracked</span><b>${Math.round(Number(p.ssd.mileageRate)*100)}¢/mi</b></div>`:""}
+    <p class="muted small">Contract rates are tracked separately from actual paystubs. Your paystub wins if UPS is paying a higher rate. The projected anniversary date is based on your scheduled UPS start date until an official seniority date is entered.</p>
+  </div>`;
+}
+function monthNameFromKey(key){const n=Number(key);return n>=1&&n<=12?new Date(2026,n-1,1).toLocaleDateString("en-US",{month:"short"}):String(key)}
+function seasonalIncomeCard(){
+  const x=upsSeasonality();if(!x)return"";
+  const y25=x.years?.["2025"]||{},y26=x.years?.["2026"]||{},months=["09","10","11","12"],recent=Number(x.recentWeeklyAverageNet||0);
+  return `<div class="card seasonal-income"><div class="section-title"><div><div class="eyebrow">Peak-season income pattern</div><h2>UPS income changes a lot by season</h2></div><span class="tag">historical net deposits</span></div>
+    <div class="season-grid">${months.map(m=>`<div class="metric"><div class="muted small">${monthNameFromKey(m)} 2025</div><div class="big">${money(Number(y25[m]||0))}</div><div class="muted small">net payroll deposited</div></div>`).join("")}</div>
+    <div class="row"><span><b>Sep 2026 actual deposits</b><div class="muted small">5 combined UPS paydays</div></span><b>${money(Number(y26["09"]||0))}</b></div>
+    ${recent?`<div class="row"><span>Recent weekly net baseline</span><b>${money(recent)}</b></div>`:""}
+    <div class="notice"><b>How Daily Life uses this:</b><br><span class="muted small">Last year's November/December peak is shown as seasonal context, but it is not automatically promised to future bills. Bill coverage uses the conservative expected-income entries below until actual 2026 peak checks confirm the ramp.</span></div>
+  </div>`;
+}
 function currentWeekWorkCard(){
   const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} logged hours</h2></div><button class="btn" onclick="openWork()">Edit today</button></div>
@@ -812,6 +849,7 @@ function logView(f,w,tr){
   <div class="grid2"><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div><div class="card"><div class="eyebrow">Self-care · last 7 days</div><div class="row"><span>Brush teeth</span><b>${selfCareCount("brush")}/7</b></div><div class="row"><span>Mouthwash</span><b>${selfCareCount("mouthwash")}/7</b></div><div class="row"><span>Shower</span><b>${selfCareCount("shower")}/7</b></div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div></div>
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
+  ${upsContractPayCard()}
   ${fitnessCard()}
   ${lifeAdminCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${esc(workStatusText(w))}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
@@ -1130,6 +1168,7 @@ function moreView(){
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
   ${safeToSpendCard()}
   ${incomePatternCard()}
+  ${seasonalIncomeCard()}
   ${netWorthCard()}
   <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
@@ -1487,13 +1526,20 @@ function transferableIncomeBefore(date){
   return expectedIncomeOccurrences(date).filter(x=>x.transferable&&x.accountKey).reduce((n,x)=>n+Math.round(x.amount*100),0);
 }
 function paycheckEstimatePreset(){
-  const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8);
-  if(rows.length<2)return null;
-  const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(Math.max(1,Math.round((new Date(rows[i].payDate+"T12:00:00")-new Date(rows[i-1].payDate+"T12:00:00"))/86400000)));
-  gaps.sort((a,b)=>a-b);const interval=gaps[Math.floor(gaps.length/2)]||7,avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length;
-  let next=rows[rows.length-1].payDate;do{const d=new Date(next+"T12:00:00");d.setDate(d.getDate()+interval);next=ymd(d)}while(next<ymd());
-  return{name:"Paycheck estimate",amount:Math.round(avgNet*100)/100,date:next,frequency:interval<=9?"Weekly":interval<=17?"Every 2 weeks":"One-time",confidence:"estimate",transferable:true,notes:`Estimated from ${rows.length} recent imported paychecks; review the amount and deposit account.`};
+  const rows=[...(state.paychecks||[])].filter(p=>p.payDate&&Number(p.netPay)>0).sort((a,b)=>a.payDate.localeCompare(b.payDate)).slice(-8),
+        seasonal=upsSeasonality();
+  let interval=7,avgNet=0,next="";
+  if(rows.length>=2){
+    const gaps=[];for(let i=1;i<rows.length;i++)gaps.push(Math.max(1,Math.round((new Date(rows[i].payDate+"T12:00:00")-new Date(rows[i-1].payDate+"T12:00:00"))/86400000)));
+    gaps.sort((a,b)=>a-b);interval=gaps[Math.floor(gaps.length/2)]||7;avgNet=rows.reduce((n,p)=>n+Number(p.netPay||0),0)/rows.length;next=rows[rows.length-1].payDate;
+  }else if(Number(seasonal?.recentWeeklyAverageNet)>0){
+    interval=7;avgNet=Number(seasonal.recentWeeklyAverageNet);next=String(seasonal.nextOfficialPayDate||"");
+  }else return null;
+  if(!next)next=ymd();
+  if(next<ymd()){do{const d=new Date(next+"T12:00:00");d.setDate(d.getDate()+interval);next=ymd(d)}while(next<ymd())}
+  return{name:"UPS weekly net estimate",amount:Math.round(avgNet*100)/100,date:next,frequency:interval<=9?"Weekly":interval<=17?"Every 2 weeks":"One-time",confidence:"estimate",transferable:true,notes:rows.length>=2?`Estimated from ${rows.length} recent imported paychecks; review amount/date and deposit account.`:"Conservative recent UPS net-pay baseline from linked payroll deposits. Peak-season upside is shown separately and is not automatically counted."};
 }
+
 function openPaycheckEstimate(){const p=paycheckEstimatePreset();if(!p){alert("Import at least two pay statements first.");return}openExpectedIncome("",p)}
 function openExpectedIncome(id="",preset=null){
   const x=(state.expectedIncome||[]).find(v=>v.id===id)||preset||{id:"",name:"",amount:"",date:ymd(),frequency:"One-time",accountKey:"",transferable:true,enabled:true,confidence:"confirmed",notes:""};
@@ -1688,7 +1734,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2050").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-2130").catch(()=>{});
 
 </script>
 </body>
