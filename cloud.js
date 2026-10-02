@@ -540,17 +540,26 @@ async function cloudCreateFirstBackup(){
 async function cloudUploadSnapshot(){
   const user=cloudUser();
   if(!user||!cloudClient){openCloudAuth();return}
-  if(!confirm("Upload this device's current Daily Life data to your private cloud copy? This replaces the previous cloud snapshot but does not erase local data."))return;
   cloudBusy=true;cloudError="";
   try{
-    await cloudPushSnapshotInternal(true);
-    render();alert("Private cloud copy uploaded.");
+    await cloudRefreshMetadata();
+    const last=cloudLastPushed();
+    if(cloudRemoteUpdatedAt&&(!last||new Date(cloudRemoteUpdatedAt).getTime()>new Date(last).getTime()+2000)){
+      cloudNeedsReview=true;cloudAutoCanPush=false;render();
+      alert("A cloud copy already exists or changed on another device. Choose Use cloud copy, or Keep this device if you intentionally want to replace it.");
+      return;
+    }
+    const hadRemote=!!cloudRemoteUpdatedAt;
+    const message=hadRemote?"Upload the current Daily Life data on this device to your private cloud copy now?":"Create a one-time private cloud backup from this device?";
+    if(!confirm(message))return;
+    const ok=await cloudPushSnapshotInternal(false);
+    if(ok===false&&cloudNeedsReview){render();return}
+    render();alert(hadRemote?"Private cloud copy uploaded.":"Private cloud backup created.");
   }catch(error){
     cloudError=error?.message||"Cloud upload failed.";render();
     alert("Could not upload the cloud copy. Your local data was not changed.");
   }finally{cloudBusy=false}
 }
-
 async function cloudRestoreSnapshot(){
   const user=cloudUser();
   if(!user||!cloudClient){openCloudAuth();return}
