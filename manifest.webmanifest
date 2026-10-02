@@ -9,20 +9,10 @@
   "description": "A calm, private personal and family command center for daily life.",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "icon.svg?v=20261002-1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512-1.png",
-      "sizes": "512x512",
-      "type": "image/png"
     }
   ]
 }
