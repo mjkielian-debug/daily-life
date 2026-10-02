@@ -1226,7 +1226,7 @@ function personCards(){
     return `<section class="people-section"><div class="people-section-title"><div><div class="eyebrow">${esc(group)}</div><h2>${rows.length} ${rows.length===1?"person":"people"}</h2></div></div><div class="people-grid">${rows.map(p=>personCardCompact(p)).join("")}</div></section>`;
   }).join("");
 }
-function personCardCompactfunction personCardCompact(p){
+function personCardCompact(p){
   const b=nextBirthdayInfo(p),ints=p.interests||[],foods=p.favoriteFoods||[],plans=p.sharedPlans||[],dates=p.importantDates||[];
   return `<div class="card person-card compact-person-card" onclick="openPersonHub('${p.id}')">
     <div class="person-card-top"><div class="person-avatar">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="grow"><div class="eyebrow">${esc(relationshipLabel(p))} · ${livesWithUser(p)?"household":"extended"}</div><h2>${esc(p.name)}</h2></div><span class="person-open">›</span></div>
