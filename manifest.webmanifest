@@ -4,8 +4,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f0b18",
-  "theme_color": "#17101d",
+  "background_color": "#08130e",
+  "theme_color": "#11221a",
   "description": "Private local-first personal and family command center.",
   "icons": [
     {
