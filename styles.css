@@ -136,3 +136,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .meal-ingredients-collapse{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
 .meal-ingredients-collapse summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:850;color:var(--muted)}
 .meal-ingredients-collapse[open] summary{color:var(--text)}
+
+.bill-status.transfer{border-color:color-mix(in srgb,var(--accent) 70%,var(--border));color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
