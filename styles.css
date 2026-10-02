@@ -1971,3 +1971,66 @@ input[readonly],textarea[readonly]{border-style:dashed}
 .notice{border-radius:18px;line-height:1.5}
 .big,.strategy-amount,.budget-row b,.bill-row b{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){input,select,textarea{transition:none}}
+
+
+/* Floral line-art finishing pass */
+body{
+  position:relative;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background-image:url("botanical-corners.svg?v=20261002-floral1");
+  background-repeat:no-repeat;
+  background-position:top center;
+  background-size:min(760px,100vw) auto;
+  opacity:.26;
+}
+.app{
+  position:relative;
+  z-index:1;
+}
+.title,
+.section-title h2,
+.card h2,
+.card h3,
+.modal h2{
+  color:#fffaf7;
+  text-shadow:0 2px 12px rgba(0,0,0,.42);
+}
+.eyebrow{
+  color:#f7ccd9;
+  text-shadow:0 1px 8px rgba(0,0,0,.35);
+}
+.section-title h2::before{
+  content:"";
+  display:inline-block;
+  width:18px;
+  height:18px;
+  margin-right:7px;
+  vertical-align:-3px;
+  background:
+    radial-gradient(circle at 50% 50%,var(--accent) 0 13%,transparent 15%),
+    radial-gradient(ellipse at 50% 18%,var(--secondary) 0 20%,transparent 22%),
+    radial-gradient(ellipse at 82% 50%,var(--secondary) 0 20%,transparent 22%),
+    radial-gradient(ellipse at 50% 82%,color-mix(in srgb,var(--secondary) 72%,var(--primary) 28%) 0 20%,transparent 22%),
+    radial-gradient(ellipse at 18% 50%,color-mix(in srgb,var(--secondary) 72%,var(--primary) 28%) 0 20%,transparent 22%);
+  opacity:.82;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.25));
+}
+@media(max-width:520px){
+  body::before{
+    background-size:100vw auto;
+    opacity:.22;
+  }
+  .section-title h2::before{
+    width:15px;
+    height:15px;
+    margin-right:6px;
+    vertical-align:-2px;
+  }
+}
