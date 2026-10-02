@@ -623,3 +623,257 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .kids-money-summary b{font-family:Georgia,serif;font-size:1.05rem}
 .kids-money-summary small{color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.06em}
 @media(max-width:520px){.kids-money-grid{grid-template-columns:1fr}.kids-money-summary{grid-template-columns:1fr}.school-contact-row .btn{max-width:100%}}
+
+/* Botanical blush visual refresh */
+:root{
+  --bg:#0b1813;
+  --panel:#14261e;
+  --panel2:#1d3328;
+  --text:#fffaf6;
+  --muted:#c9d1cb;
+  --border:rgba(255,237,241,.16);
+  --secondary:#e7adbf;
+  --accent:#ead5a7;
+  --rose-deep:#c97896;
+  --rose-soft:#f3d6df;
+  --cream:#fff5ec;
+  --sage-soft:#b8dbc3;
+  --shadow:0 18px 46px rgba(2,8,5,.30),0 4px 20px color-mix(in srgb,var(--secondary) 5%,transparent)
+}
+body{
+  background:
+    radial-gradient(circle at 90% -8%,color-mix(in srgb,var(--secondary) 22%,transparent),transparent 30%),
+    radial-gradient(circle at -5% 20%,color-mix(in srgb,var(--primary) 18%,transparent),transparent 34%),
+    linear-gradient(180deg,#0b1913 0%,#09140f 100%);
+}
+.app{
+  position:relative;
+  background:
+    radial-gradient(circle at 94% 5%,color-mix(in srgb,var(--secondary) 18%,transparent),transparent 24%),
+    radial-gradient(circle at 7% 20%,color-mix(in srgb,var(--primary) 18%,transparent),transparent 30%),
+    radial-gradient(circle at 78% 44%,color-mix(in srgb,var(--accent) 8%,transparent),transparent 20%),
+    radial-gradient(circle at 12% 72%,color-mix(in srgb,var(--secondary) 9%,transparent),transparent 24%),
+    var(--bg);
+}
+header{
+  position:relative;
+  padding:8px 4px 10px;
+}
+header:after{
+  content:"✦";
+  position:absolute;
+  right:54px;
+  top:38px;
+  color:var(--secondary);
+  opacity:.58;
+  font-size:.72rem;
+  text-shadow:18px -17px 0 color-mix(in srgb,var(--accent) 82%,transparent);
+}
+.title{
+  color:var(--cream);
+  letter-spacing:-.025em;
+  text-shadow:0 0 24px color-mix(in srgb,var(--secondary) 16%,transparent);
+}
+.eyebrow{
+  color:color-mix(in srgb,var(--secondary) 72%,var(--muted) 28%);
+  letter-spacing:.14em;
+}
+.card{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--secondary) 7%,transparent),transparent 34%),
+    radial-gradient(circle at 0 100%,color-mix(in srgb,var(--primary) 6%,transparent),transparent 30%),
+    linear-gradient(165deg,color-mix(in srgb,var(--panel2) 96%,var(--secondary) 4%),var(--panel));
+  border-color:color-mix(in srgb,var(--secondary) 18%,var(--border));
+  box-shadow:var(--shadow);
+}
+.card:before{
+  content:"";
+  position:absolute;
+  inset:0 auto auto 0;
+  width:100%;
+  height:1px;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--secondary) 45%,transparent),color-mix(in srgb,var(--accent) 42%,transparent),transparent);
+  opacity:.7;
+}
+.glow{
+  box-shadow:
+    var(--shadow),
+    0 0 34px color-mix(in srgb,var(--primary) 12%,transparent),
+    0 0 26px color-mix(in srgb,var(--secondary) 7%,transparent);
+}
+.section-title h2,.card>h2,.people-section-title h2{
+  font-family:Georgia,serif;
+  font-weight:700;
+  letter-spacing:-.015em;
+  color:var(--cream);
+}
+.metric,
+.people-hero-stats span,
+.garden-stats span,
+.pet-setup-stats span,
+.garden-season-meta span,
+.today-care-inline span,
+.kids-money-summary span{
+  background:
+    linear-gradient(145deg,color-mix(in srgb,var(--secondary) 5%,rgba(255,255,255,.025)),rgba(255,255,255,.018));
+  border-color:color-mix(in srgb,var(--secondary) 17%,var(--border));
+}
+.big{
+  font-family:Georgia,serif;
+  font-weight:700;
+  color:var(--cream);
+}
+.pill,.tag{
+  border-color:color-mix(in srgb,var(--secondary) 34%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 7%,transparent);
+  color:color-mix(in srgb,var(--cream) 85%,var(--secondary) 15%);
+}
+.btn{
+  border-color:color-mix(in srgb,var(--secondary) 22%,var(--border));
+  background:
+    linear-gradient(145deg,color-mix(in srgb,var(--secondary) 7%,rgba(255,255,255,.035)),rgba(255,255,255,.025));
+}
+.btn:hover{
+  border-color:color-mix(in srgb,var(--secondary) 42%,var(--border));
+}
+.btn.primary{
+  border-color:color-mix(in srgb,var(--primary) 58%,var(--accent) 22%);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb,var(--primary) 88%,white 12%),
+      color-mix(in srgb,var(--primary) 64%,var(--accent) 20%),
+      color-mix(in srgb,var(--secondary) 20%,var(--primary) 80%));
+  color:#0b1812;
+  box-shadow:
+    0 9px 22px color-mix(in srgb,var(--primary) 16%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.2);
+}
+.btn.good{
+  border-color:color-mix(in srgb,var(--secondary) 28%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 10%,transparent);
+  color:var(--rose-soft);
+}
+input,select,textarea{
+  background:
+    linear-gradient(180deg,color-mix(in srgb,#101b17 95%,var(--secondary) 5%),#0d1714);
+  border-color:color-mix(in srgb,var(--secondary) 20%,var(--border));
+}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid color-mix(in srgb,var(--secondary) 35%,transparent);
+  border-color:color-mix(in srgb,var(--secondary) 50%,var(--border));
+}
+.notice{
+  background:color-mix(in srgb,var(--secondary) 5%,rgba(255,255,255,.025));
+  border-color:color-mix(in srgb,var(--secondary) 18%,var(--border));
+}
+.bottom-nav{
+  background:
+    linear-gradient(180deg,rgba(11,28,21,.96),rgba(7,17,12,.98));
+  border-top-color:color-mix(in srgb,var(--secondary) 22%,var(--border));
+  box-shadow:0 -12px 32px rgba(0,0,0,.23);
+}
+.navbtn{
+  transition:background .15s ease,color .15s ease,transform .15s ease;
+}
+.navbtn.active{
+  color:var(--cream);
+  background:
+    linear-gradient(145deg,color-mix(in srgb,var(--secondary) 12%,transparent),color-mix(in srgb,var(--primary) 10%,transparent));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--secondary) 30%,transparent);
+}
+.navbtn.active>div{
+  color:var(--secondary);
+  text-shadow:0 0 14px color-mix(in srgb,var(--secondary) 35%,transparent);
+}
+.modal{
+  background:
+    radial-gradient(circle at 95% 0,color-mix(in srgb,var(--secondary) 10%,transparent),transparent 26%),
+    linear-gradient(180deg,color-mix(in srgb,var(--panel2) 94%,var(--secondary) 6%),var(--panel));
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+}
+.person-card,
+.birthday-dashboard,
+.pet-health-card,
+.pet-handoff-card,
+.self-care-card,
+.today-care-snapshot,
+.kids-money-card,
+.garden-journal,
+.garden-harvest-card{
+  border-color:color-mix(in srgb,var(--secondary) 30%,var(--border));
+}
+.person-card:before{
+  height:2px;
+  background:linear-gradient(90deg,var(--primary),var(--secondary),var(--accent));
+}
+.person-chip,.pantry-chip{
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 7%,transparent);
+}
+.self-care-tabs,
+.living-tabs,
+.people-tabs{
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 6%,transparent),rgba(255,255,255,.018));
+}
+.self-care-tabs button.active,
+.living-tabs button.active,
+.people-tabs button.active{
+  background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--secondary) 24%,var(--primary) 76%));
+  color:#0b1812;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--secondary) 10%,transparent);
+}
+.personal-care-item{
+  border-color:color-mix(in srgb,var(--secondary) 25%,var(--border));
+  background:
+    linear-gradient(145deg,color-mix(in srgb,var(--secondary) 9%,transparent),rgba(255,255,255,.018));
+}
+.self-care-progress>span{
+  background:linear-gradient(90deg,var(--primary),var(--secondary),var(--accent));
+}
+.money-actions-card,
+.budget-summary,
+.due-date-outlook,
+.safe-to-spend-card{
+  border-color:color-mix(in srgb,var(--secondary) 20%,var(--border));
+}
+.money-action-mark,
+.person-avatar,
+.living-icon,
+.section-launch-icon{
+  box-shadow:0 6px 18px color-mix(in srgb,var(--secondary) 8%,transparent);
+}
+.section-launcher>button{
+  border-color:color-mix(in srgb,var(--secondary) 20%,var(--border));
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--secondary) 8%,transparent),transparent 38%),
+    linear-gradient(145deg,var(--panel2),var(--panel));
+}
+.section-launcher>button:nth-child(2n) .section-launch-icon{
+  border-color:color-mix(in srgb,var(--secondary) 42%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 10%,transparent);
+  color:var(--secondary);
+}
+.pet-personality{
+  border-color:color-mix(in srgb,var(--secondary) 34%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 11%,transparent),transparent);
+}
+.garden-season-card{
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--secondary) 8%,transparent),transparent 28%),
+    radial-gradient(circle at 0 100%,color-mix(in srgb,var(--primary) 8%,transparent),transparent 30%),
+    linear-gradient(180deg,var(--panel2),var(--panel));
+}
+.today-moon .orb,.orb{
+  background:
+    radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--rose-soft) 24%,transparent),transparent 42%),
+    color-mix(in srgb,var(--secondary) 10%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--secondary) 25%,var(--border));
+}
+hr,.hr{background:color-mix(in srgb,var(--secondary) 16%,var(--border))}
+@media(max-width:520px){
+  .card{border-radius:24px}
+}
