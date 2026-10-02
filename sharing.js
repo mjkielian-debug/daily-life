@@ -13,6 +13,11 @@ function sharingReset(){
   sharingHousehold=null;sharingMembership=null;sharingMembers=[];sharingLastPulledAt="";sharingInviteCode="";
   if(sharingPollTimer){clearInterval(sharingPollTimer);sharingPollTimer=null}
 }
+function sharingRemoveLocalCopies(householdId){
+  if(!householdId||typeof state==="undefined")return;
+  state.events=(state.events||[]).filter(x=>x.sharedHouseholdId!==householdId);
+  state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.sharedHouseholdId!==householdId);
+}
 function sharingConnected(){return !!(sharingHousehold?.id&&sharingMembership?.household_id)}
 function sharingCanShare(){return sharingConnected()&&!!cloudUser?.()}
 function sharingRole(){return String(sharingMembership?.role||"member")}
@@ -230,8 +235,9 @@ function sharingSettingsCard(){
     return `<div class="card"><div class="section-title"><div><h2>Household sharing</h2><div class="muted small">You and another adult can use separate Daily Life accounts. Only items you mark shared appear on both accounts.</div></div><span class="tag">not set up</span></div><div class="actions"><button class="btn primary" onclick="sharingOpenCreate()">Create shared household</button><button class="btn" onclick="sharingOpenJoin()">Join with invite code</button></div><div class="muted small">Money, Vault, health/self-care, private People notes, and other personal sections are not shared by this feature.</div></div>`;
   }
   return `<div class="card glow"><div class="section-title"><div><h2>Household sharing</h2><div class="muted small">${esc(sharingHousehold.name||"Shared household")} · ${sharingMembers.length} member${sharingMembers.length===1?"":"s"}</div></div><span class="tag">${esc(sharingRole())}</span></div>
-    ${sharingMembers.map(m=>`<div class="row"><span>${esc(sharingMemberName(m))}</span><b>${esc(m.role||"member")}</b></div>`).join("")}
+    ${sharingMembers.map(m=>`<div class="row"><span>${esc(sharingMemberName(m))}<div class="muted small">${esc(m.role||"member")}</div></span>${sharingIsOwner()&&m.user_id!==cloudUser?.()?.id?`<button class="btn small danger" onclick="sharingRemoveMember('${m.user_id}')">Remove</button>`:`<b>${m.user_id===cloudUser?.()?.id?"you":esc(m.role||"member")}</b>`}</div>`).join("")}
     <div class="actions">${sharingIsOwner()?`<button class="btn primary" onclick="sharingCreateInvite()">Invite another adult</button>`:""}<button class="btn" onclick="sharingPullEntries()">Refresh shared itinerary</button></div>
+    <div class="actions">${sharingIsOwner()?`<button class="btn danger" onclick="sharingDeleteHousehold()">Delete shared household</button>`:`<button class="btn danger" onclick="sharingLeaveHousehold()">Leave shared household</button>`}</div>
     ${sharingLastPulledAt?`<div class="muted small">Shared itinerary checked ${esc(new Date(sharingLastPulledAt).toLocaleString())}</div>`:""}
     <div class="notice"><b>Privacy rule:</b> itinerary items stay private unless you explicitly turn on “Share with household” for that item.</div>
   </div>`;
@@ -275,6 +281,43 @@ async function sharingCopyInvite(){
   if(!sharingInviteCode)return;
   try{await navigator.clipboard.writeText(sharingInviteCode);alert("Invite code copied.");}
   catch{alert("Clipboard access was unavailable. Press and hold the code to copy it.")}
+}
+async function sharingRemoveMember(userId){
+  if(!sharingIsOwner()||!sharingHousehold?.id||!userId||sharingBusy)return;
+  const member=sharingMembers.find(x=>x.user_id===userId),name=sharingMemberName(member||{});
+  if(!confirm(`Remove ${name} from this shared household? Their shared itinerary items will also be removed. Their private Daily Life account and data will not be touched.`))return;
+  sharingBusy=true;
+  try{
+    const {error}=await cloudClient.rpc("remove_household_member",{p_household_id:sharingHousehold.id,p_user_id:userId});
+    if(error)throw error;
+    await sharingInit();render();
+  }catch(error){alert("Could not remove that household member: "+(error?.message||"Unknown error"))}
+  finally{sharingBusy=false}
+}
+async function sharingLeaveHousehold(){
+  if(sharingIsOwner()||!sharingHousehold?.id||sharingBusy)return;
+  const id=sharingHousehold.id,name=sharingHousehold.name||"this household";
+  if(!confirm(`Leave ${name}? Shared itinerary items you created will be removed. Your private Daily Life data stays in your own account.`))return;
+  sharingBusy=true;
+  try{
+    const {error}=await cloudClient.rpc("leave_household",{p_household_id:id});
+    if(error)throw error;
+    sharingRemoveLocalCopies(id);sharingReset();await dbSet("state",state);render();
+  }catch(error){alert("Could not leave the shared household: "+(error?.message||"Unknown error"))}
+  finally{sharingBusy=false}
+}
+async function sharingDeleteHousehold(){
+  if(!sharingIsOwner()||!sharingHousehold?.id||sharingBusy)return;
+  const id=sharingHousehold.id,name=sharingHousehold.name||"this shared household";
+  if(!confirm(`Delete ${name} for everyone? This removes the shared itinerary and memberships, but does not delete anyone's private Daily Life account or private data.`))return;
+  if(!confirm("This cannot be undone. Delete the shared household?"))return;
+  sharingBusy=true;
+  try{
+    const {error}=await cloudClient.rpc("delete_household",{p_household_id:id});
+    if(error)throw error;
+    sharingRemoveLocalCopies(id);sharingReset();await dbSet("state",state);render();
+  }catch(error){alert("Could not delete the shared household: "+(error?.message||"Unknown error"))}
+  finally{sharingBusy=false}
 }
 
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sharingConnected())sharingPullEntries(true)});
