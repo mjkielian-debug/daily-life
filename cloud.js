@@ -304,6 +304,8 @@ async function cloudPullHouseholdMembers(){
       if(meta.relatedTo!==undefined)p.relatedTo=String(meta.relatedTo||"");
       if(meta.school!==undefined)p.school=String(meta.school||"");
       if(meta.grade!==undefined)p.grade=String(meta.grade||"");
+      if(meta.schoolName!==undefined)p.schoolName=String(meta.schoolName||"");
+      if(Array.isArray(meta.aliases))p.aliases=meta.aliases.map(x=>String(x||"").trim()).filter(Boolean);
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
       if(Array.isArray(meta.familyLinks))p.familyLinks=meta.familyLinks.filter(x=>x&&x.name).map(x=>({name:String(x.name),label:String(x.label||"")}));
@@ -350,6 +352,8 @@ async function cloudUpsertPersonProfile(p){
       relatedTo:String(p.relatedTo||""),
       school:String(p.school||""),
       grade:String(p.grade||""),
+      schoolName:String(p.schoolName||""),
+      aliases:Array.isArray(p.aliases)?p.aliases:[],
       elfsterUrl:String(p.elfsterUrl||""),
       elfsterLastSyncedAt:String(p.elfsterLastSyncedAt||existingMeta.elfsterLastSyncedAt||""),
       wishlist:Array.isArray(p.wishlist)?p.wishlist:[],
@@ -729,7 +733,8 @@ function cloudApplyLifeEntry(row){
       return true;
     }
     case "chore":{
-      const child=String(p.child||"").trim(),chore=String(p.chore||"").trim();if(!child||!chore)return false;
+      const childRaw=String(p.child||"").trim(),chore=String(p.chore||"").trim();if(!childRaw||!chore)return false;
+      const child=typeof canonicalPersonName==="function"?canonicalPersonName(childRaw):childRaw;
       state.chores.push({...common,child,chore,done:!!p.done});return true;
     }
     case "pet_profile":{
@@ -866,7 +871,8 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.kidsMoneyTransactions))state.kidsMoneyTransactions=[];
       const child=String(p.child||p.name||p.person||"").trim(),amount=Number(p.amount);
       if(!child||!Number.isFinite(amount)||amount===0)return false;
-      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      const canonical=typeof canonicalPersonName==="function"?canonicalPersonName(child):child;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===String(canonical||"").toLowerCase());
       if(!person)return false;
       let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
       if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
@@ -891,7 +897,8 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.kidsMoneyAccounts))state.kidsMoneyAccounts=[];
       const child=String(p.child||p.name||p.person||"").trim(),actual=Number(p.actualBalance??p.balance);
       if(!child||!Number.isFinite(actual))return false;
-      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      const canonical=typeof canonicalPersonName==="function"?canonicalPersonName(child):child;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===String(canonical||"").toLowerCase());
       if(!person)return false;
       let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
       if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
@@ -906,7 +913,8 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.kidsMoneyAccounts))state.kidsMoneyAccounts=[];
       const child=String(p.child||p.name||p.person||"").trim();
       if(!child)return false;
-      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===child.toLowerCase());
+      const canonical=typeof canonicalPersonName==="function"?canonicalPersonName(child):child;
+      const person=(state.peopleProfiles||[]).find(x=>String(x.name||"").trim().toLowerCase()===String(canonical||"").toLowerCase());
       if(!person)return false;
       let account=state.kidsMoneyAccounts.find(x=>x.personId===person.id);
       if(!account){account={id:uid(),personId:person.id,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(account)}
@@ -946,7 +954,7 @@ function cloudApplyLifeEntry(row){
     }
     case "task":{
       const title=String(p.title||"").trim();if(!title)return false;
-      state.tasks.push({...common,title,category:String(p.category||"life"),child:String(p.child||""),notes:String(p.notes||""),done:!!p.done,order:Number(p.order||100)});return true;
+      state.tasks.push({...common,title,category:String(p.category||"life"),child:typeof canonicalPersonName==="function"?canonicalPersonName(p.child):String(p.child||""),notes:String(p.notes||""),done:!!p.done,order:Number(p.order||100)});return true;
     }
     case "meal":{
       const dish=String(p.dish||"").trim();if(!dish)return false;
@@ -1040,7 +1048,7 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.events))state.events=[];
       let x=state.events.find(e=>e.cloudEntryId===row.id)||state.events.find(e=>e.date===eventDate&&String(e.title||"").trim().toLowerCase()===title.toLowerCase()&&String(e.startTime||"")===String(p.startTime||""));
       if(!x){x={id:uid(),cloudEntryId:row.id};state.events.push(x)}
-      Object.assign(x,{date:eventDate,title,child:String(p.child||x.child||""),type:String(p.type||x.type||(row.category==="school_event"?"school":"other")),startTime:String(p.startTime||x.startTime||""),endTime:String(p.endTime||x.endTime||""),location:String(p.location||x.location||""),status:String(p.status||x.status||"confirmed"),source:String(p.source||x.source||"ChatGPT"),notes:String(p.notes||x.notes||""),sourceRef:String(p.sourceRef||x.sourceRef||row.external_id||""),cloudEntryId:row.id});
+      Object.assign(x,{date:eventDate,title,child:typeof canonicalPersonName==="function"?canonicalPersonName(p.child||x.child||""):String(p.child||x.child||""),type:String(p.type||x.type||(row.category==="school_event"?"school":"other")),startTime:String(p.startTime||x.startTime||""),endTime:String(p.endTime||x.endTime||""),location:String(p.location||x.location||""),status:String(p.status||x.status||"confirmed"),source:String(p.source||x.source||"ChatGPT"),notes:String(p.notes||x.notes||""),sourceRef:String(p.sourceRef||x.sourceRef||row.external_id||""),cloudEntryId:row.id});
       return true;
     }
     case "paycheck":{
