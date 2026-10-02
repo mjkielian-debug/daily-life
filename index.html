@@ -217,7 +217,7 @@ const blankState=()=>({
   version:34,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -716,25 +716,156 @@ function mealForDate(date){return (state.meals||[]).find(x=>x.date===date&&x.typ
 function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x=>x.date===date)}
 function itineraryFixedItems(date){
   const items=[],w=workForDate(date);
-  if(w){const start=w.start||w.scheduled||"",confirmed=!!(w.start&&workEndConfirmed(w));if(start)items.push({id:"work:"+date,start,end:confirmed?w.end:"",title:w.start?"UPS work":"UPS scheduled start",detail:confirmed?("Worked until "+fmtClock(w.end)):"Work",fixed:true,kind:"work",icon:"📦",source:"work"})}
-  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){if(!e.startTime)continue;items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId})}
-  const meal=mealForDate(date);if(meal?.dish&&meal.status!=="made"){if(meal.startBy)items.push({id:"meal-start:"+date,start:meal.startBy,end:"",title:"Start "+meal.dish,detail:"Dinner prep",fixed:false,kind:"meal",icon:"🍳",source:"meal"});if(meal.serveTime)items.push({id:"meal-serve:"+date,start:meal.serveTime,end:"",title:"Serve "+meal.dish,detail:"Dinner",fixed:false,kind:"meal",icon:"🍽️",source:"meal"})}
-  for(const x of itineraryCustomBlocks(date))if(x.start)items.push({id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",kind:x.kind||"flexible",icon:"◷",source:"custom",sourceId:x.id,done:!!x.done,shared:!!x.sharedEntryId});
+  if(w){
+    const start=w.start||w.scheduled||"",confirmed=!!(w.start&&workEndConfirmed(w));
+    if(start)items.push({
+      id:"work:"+date,start,end:confirmed?w.end:"",title:w.start?"UPS work":"UPS scheduled start",
+      detail:confirmed?("Worked until "+fmtClock(w.end)):(w.endedUnknown?"Shift ended · punch-out time still needs confirmation":"End time not confirmed yet"),
+      fixed:true,kind:"work",icon:"📦",source:"work",endUnknown:!confirmed
+    });
+  }
+  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){
+    if(!e.startTime)continue;
+    items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||"",title:e.title,detail:[e.child,e.location,e.status==="tentative"?"tentative":""].filter(Boolean).join(" · "),fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId});
+  }
+  const meal=mealForDate(date);
+  if(meal?.dish&&meal.status!=="made"){
+    if(meal.startBy)items.push({id:"meal-start:"+date,start:meal.startBy,end:"",title:"Start "+meal.dish,detail:"Dinner prep",fixed:false,kind:"meal",icon:"🍳",source:"meal"});
+    if(meal.serveTime)items.push({id:"meal-serve:"+date,start:meal.serveTime,end:"",title:"Serve "+meal.dish,detail:"Dinner",fixed:false,kind:"meal",icon:"🍽️",source:"meal"});
+  }
+  for(const x of itineraryCustomBlocks(date))if(x.start)items.push({
+    id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",
+    kind:x.kind||"flexible",icon:x.icon||"◷",source:"custom",sourceId:x.id,done:!!x.done,shared:!!x.sharedEntryId,
+    templateKey:x.templateKey||""
+  });
   return items.sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+}
+function itineraryRoutineDetail(date,key,fallback=""){
+  if(key==="homework"){
+    const school=(state.tasks||[]).filter(t=>t.date===date&&!t.done&&(String(t.category||"").toLowerCase()==="school"||/homework|reading|practice|school|audition|band/i.test(String(t.title||"")))).slice(0,4);
+    return school.length?school.map(t=>(t.child?t.child+": ":"")+t.title).join(" · "):fallback;
+  }
+  if(key==="chores"){
+    const chores=(state.chores||[]).filter(x=>x.date===date&&!x.done).slice(0,6);
+    return chores.length?chores.map(x=>(x.child?x.child+": ":"")+x.chore).join(" · "):fallback;
+  }
+  if(key==="dinner"){
+    const meal=mealForDate(date);return meal?.dish?meal.dish+" · eat + reset kitchen":fallback;
+  }
+  return fallback;
 }
 function itinerarySuggestedBlocks(date){
   if(state.settings?.itinerary?.showFlexible===false)return[];
-  const out=[],w=workForDate(date),meal=mealForDate(date),weekday=new Date(date+"T12:00:00").getDay(),kids=childProfiles();
-  if(w?.end){const m=hmMinutes(w.end);if(m!==null)out.push({start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat, drink water + reset",detail:"After work reset",icon:"♡"})}
-  if(kids.length&&weekday!==0&&weekday!==6){out.push({start:"15:30",end:"16:15",title:"Snack + homework launch",detail:"Flexible after-school transition",icon:"🎒"});out.push({start:"16:15",end:"17:15",title:"Homework + reading",detail:"Schoolwork + 20-minute reading rhythm",icon:"📚"})}
-  out.push({start:meal?.serveTime||"17:30",end:meal?.serveTime?minutesHm((hmMinutes(meal.serveTime)||1050)+60):"18:30",title:"Dinner + kitchen reset",detail:meal?.dish||"Flexible dinner block",icon:"🍽️"});
-  if(kids.length){out.push({start:"18:45",end:"19:45",title:"Chores + showers / baths",detail:"Flexible family evening reset",icon:"🧺"});out.push({start:"20:00",end:"20:45",title:"Bedtime wind-down",detail:"Reading, pajamas + settle the house",icon:"🌙"})}
+  const out=[],w=workForDate(date),meal=mealForDate(date),weekday=new Date(date+"T12:00:00").getDay(),kids=childProfiles(),
+        overrides=new Set(itineraryCustomBlocks(date).map(x=>x.templateKey).filter(Boolean));
+  const add=x=>{if(!overrides.has(x.templateKey))out.push(x)};
+  if(w?.end){
+    const m=hmMinutes(w.end);
+    if(m!==null)add({templateKey:"after-work",start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat + reset after work",detail:"Food, water, sit down, then decide what comes next",icon:"♡"});
+  }
+  if(kids.length&&weekday!==0&&weekday!==6){
+    add({templateKey:"after-school-launch",start:"15:30",end:"16:15",title:"Snack + after-school reset",detail:"Snack · unpack bags · check papers · get settled",icon:"🎒"});
+    add({templateKey:"homework",start:"16:15",end:"17:15",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
+  }
+  add({templateKey:"dinner",start:meal?.serveTime||"17:30",end:meal?.serveTime?minutesHm((hmMinutes(meal.serveTime)||1050)+60):"18:30",title:"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||"Eat dinner + quick kitchen reset"),icon:"🍽️"});
+  if(kids.length){
+    add({templateKey:"chores",start:"18:45",end:"19:45",title:"Chores + showers / baths",detail:itineraryRoutineDetail(date,"chores","Family evening reset"),icon:"🧺"});
+    add({templateKey:"wind-down",start:"20:00",end:"20:45",title:"Bedtime wind-down",detail:"Reading · pajamas · backpacks / clothes · settle the house",icon:"🌙"});
+  }
   const tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00");
-  if(tm?.tomorrowPrep||early.length)out.push({start:"20:45",end:"21:15",title:"Set tomorrow up",detail:[tm?.tomorrowPrep,early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
-  return out.map((x,i)=>({...x,id:"suggest:"+date+":"+i,fixed:false,kind:"flexible",source:"suggested"}));
+  if(tm?.tomorrowPrep||early.length)add({templateKey:"tomorrow-prep",start:"20:45",end:"21:15",title:"Set tomorrow up",detail:[tm?.tomorrowPrep,early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
+  return out.map((x,i)=>({...x,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested"}));
 }
-function itineraryOpenGaps(items){const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=hmMinutes(prefs.dayEnd||"21:30")??1290,intervals=[];for(const x of items){const s=hmMinutes(x.start);if(s===null)continue;let e=hmMinutes(x.end);if(e===null||e<=s)e=s+15;intervals.push({start:Math.max(dayStart,s),end:Math.min(dayEnd,e)})}intervals.sort((a,b)=>a.start-b.start);const merged=[];for(const x of intervals){const last=merged[merged.length-1];if(!last||x.start>last.end)merged.push({...x});else last.end=Math.max(last.end,x.end)}const gaps=[];let cursor=dayStart;for(const x of merged){if(x.start-cursor>=30)gaps.push({id:"gap:"+cursor,start:minutesHm(cursor),end:minutesHm(x.start),title:"Open / flexible time",detail:(x.start-cursor)+" minutes available",fixed:false,kind:"gap",icon:"",source:"gap"});cursor=Math.max(cursor,x.end)}if(dayEnd-cursor>=30)gaps.push({id:"gap:"+cursor,start:minutesHm(cursor),end:minutesHm(dayEnd),title:"Open / flexible time",detail:(dayEnd-cursor)+" minutes available",fixed:false,kind:"gap",icon:"",source:"gap"});return gaps}
-function itineraryDayItems(date){const all=[...itineraryFixedItems(date),...itinerarySuggestedBlocks(date)];return [...all,...itineraryOpenGaps(all)].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1))}
+function itineraryTaskMinutes(task){
+  const saved=Number(task?.itineraryMinutes||task?.durationMinutes||0);
+  if(Number.isFinite(saved)&&saved>=5)return Math.min(180,Math.round(saved/5)*5);
+  const text=(String(task?.title||"")+" "+String(task?.notes||"")+" "+String(task?.category||"")).toLowerCase();
+  if(/phone|call|email|text|check|order|account|grade|form|pay|schedule|appointment/.test(text))return 15;
+  if(/laundry|dishes|vacuum|clean|litter|bathroom|pickup|pick up|tidy/.test(text))return 25;
+  if(/shop|store|walmart|sam.?s|errand|tire|grocery/.test(text))return 45;
+  if(/homework|reading|practice|audition|school/.test(text))return 30;
+  if(/meal|prep|cook|dinner/.test(text))return 30;
+  return 20;
+}
+function itineraryTaskCandidates(date){
+  return (state.tasks||[]).filter(t=>t.date===date&&!t.done&&!/^(ups shift|everyone reading)$/i.test(String(t.title||""))).sort((a,b)=>(Number(a.order||100)-Number(b.order||100))||String(a.title||"").localeCompare(String(b.title||"")));
+}
+function itineraryTaskPreferredRange(task,date){
+  const pref=String(task?.itineraryPreference||"any"),w=workForDate(date);
+  if(task?.itineraryStart){const s=hmMinutes(task.itineraryStart);return s===null?null:{start:s,end:s+itineraryTaskMinutes(task)}}
+  if(pref==="morning")return{start:8*60,end:12*60};
+  if(pref==="afternoon")return{start:12*60,end:17*60};
+  if(pref==="after-school")return{start:15*60,end:18*60+30};
+  if(pref==="evening")return{start:18*60,end:21*60+30};
+  const workEnd=hmMinutes(w?.end);
+  return{start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:9*60),end:21*60+30};
+}
+function itineraryEffectiveIntervals(items,date){
+  const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=hmMinutes(prefs.dayEnd||"21:30")??1290,
+        sorted=items.filter(x=>hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
+  for(let i=0;i<sorted.length;i++){
+    const x=sorted[i],s=hmMinutes(x.start);let e=hmMinutes(x.end);
+    if(x.endUnknown){
+      const next=sorted.slice(i+1).map(y=>hmMinutes(y.start)).find(v=>v!==null&&v>s);
+      e=next!==undefined?next:dayEnd;
+    }else if(e===null||e<=s)e=s+Math.max(15,Number(x.durationMinutes||15));
+    intervals.push({start:Math.max(dayStart,s),end:Math.min(dayEnd,e),source:x});
+  }
+  intervals.sort((a,b)=>a.start-b.start);
+  const merged=[];
+  for(const x of intervals){const last=merged[merged.length-1];if(!last||x.start>last.end)merged.push({start:x.start,end:x.end});else last.end=Math.max(last.end,x.end)}
+  return{dayStart,dayEnd,merged};
+}
+function itineraryOpenGaps(items,date){
+  const {dayStart,dayEnd,merged}=itineraryEffectiveIntervals(items,date),gaps=[];let cursor=dayStart;
+  for(const x of merged){if(x.start-cursor>=15)gaps.push({start:cursor,end:x.start});cursor=Math.max(cursor,x.end)}
+  if(dayEnd-cursor>=15)gaps.push({start:cursor,end:dayEnd});
+  return gaps;
+}
+function itineraryAutoTaskBlocks(date,baseItems){
+  if(state.settings?.itinerary?.autoScheduleTasks===false)return[];
+  const tasks=itineraryTaskCandidates(date),explicit=[],waiting=[];
+  for(const t of tasks){
+    if(t.itineraryStart){
+      const s=hmMinutes(t.itineraryStart),mins=itineraryTaskMinutes(t);
+      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false});
+      else waiting.push(t);
+    }else waiting.push(t);
+  }
+  const occupied=[...baseItems,...explicit],gaps=itineraryOpenGaps(occupied,date).map(g=>({...g})),planned=[...explicit];
+  for(const t of waiting.slice(0,8)){
+    const mins=itineraryTaskMinutes(t),pref=itineraryTaskPreferredRange(t,date);if(!pref)continue;
+    let chosen=-1,startAt=null;
+    for(let i=0;i<gaps.length;i++){
+      const g=gaps[i],s=Math.max(g.start,pref.start),e=Math.min(g.end,pref.end);
+      if(e-s>=mins){chosen=i;startAt=s;break}
+    }
+    if(chosen<0)continue;
+    const g=gaps[chosen],endAt=startAt+mins;
+    planned.push({id:"task:"+t.id,start:minutesHm(startAt),end:minutesHm(endAt),title:t.title,detail:[t.child,t.notes,"Suggested from your task list"].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:true});
+    const parts=[];if(g.start<startAt)parts.push({start:g.start,end:startAt});if(endAt<g.end)parts.push({start:endAt,end:g.end});gaps.splice(chosen,1,...parts);
+  }
+  return planned;
+}
+function itineraryRestBlocks(items,date){
+  const gaps=itineraryOpenGaps(items,date),out=[];
+  for(const g of gaps){
+    let cursor=g.start;
+    while(g.end-cursor>=15){
+      const remaining=g.end-cursor,chunk=Math.min(90,remaining),end=cursor+chunk;
+      out.push({id:"gap:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:chunk>=60?"Open choice / recovery":"Transition / open time",detail:chunk+" minutes intentionally unassigned",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+      cursor=end;
+    }
+  }
+  return out;
+}
+function itineraryDayItems(date){
+  const base=[...itineraryFixedItems(date),...itinerarySuggestedBlocks(date)],
+        tasks=itineraryAutoTaskBlocks(date,base),
+        used=[...base,...tasks],
+        open=itineraryRestBlocks(used,date);
+  return [...used,...open].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
+}
 
 function itineraryStatusForDate(date,items){
   if(date!==ymd())return null;
@@ -749,18 +880,58 @@ function itineraryBlockOpenAction(x,date){
   if(x.source==="custom")return `onclick="openItineraryBlock('${date}','${x.sourceId}')"`;
   if(x.source==="event")return `onclick="openEvent('${date}','${x.sourceId}')"`;
   if(x.source==="meal")return `onclick="openMeal('${date}')"`;
+  if(x.source==="suggested")return `onclick="openSuggestedItineraryBlock('${date}','${x.templateKey}')"`;
+  if(x.source==="task")return `onclick="openItineraryTask('${x.sourceId}')"`;
   return"";
 }
+function itineraryPhase(item){
+  const m=hmMinutes(item.start)||0;
+  if(m<360)return["Before sunrise","☾"];
+  if(m<720)return["Morning","☀"];
+  if(m<930)return["Midday","◷"];
+  if(m<1110)return["After school / afternoon","✎"];
+  return["Evening","⌂"];
+}
+function itineraryDurationLabel(x){
+  const s=hmMinutes(x.start),e=hmMinutes(x.end);if(s===null||e===null||e<=s)return x.endUnknown?"end TBD":"";
+  const n=e-s;return n>=60?(n%60?Math.floor(n/60)+"h "+(n%60)+"m":Math.floor(n/60)+"h"):n+"m";
+}
+function itineraryTypeLabel(x){
+  if(x.endUnknown)return"TIME TBD";
+  if(x.fixed)return"ANCHOR";
+  if(x.source==="task")return x.autoPlanned?"TASK · AUTO":"TASK";
+  if(x.source==="suggested")return"ROUTINE";
+  if(x.source==="custom")return"YOUR BLOCK";
+  if(x.kind==="gap")return"OPEN";
+  if(x.source==="meal")return"MEAL";
+  return"PLAN";
+}
 function itineraryFlowCard(date){
-  const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items);
-  return `<div class="card day-flow-card">
-    <div class="section-title"><div><div class="eyebrow">How the day flows</div><h2>${esc(dl(date))}</h2><div class="muted small">Fixed commitments anchor the day. Flexible rhythm fills around them.</div></div><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Time block</button></div>
-    ${status?`<div class="day-flow-now"><b>${esc(status.title)}</b><div class="muted small">${esc(status.detail)}</div></div>`:""}
-    <div class="day-flow-list">${items.map(x=>`<div class="day-flow-row ${x.fixed?"is-fixed":"is-flex"} ${x.done?"is-done":""}" ${itineraryBlockOpenAction(x,date)}>
-      <div class="day-flow-time"><b>${esc(fmtClock(x.start))}</b>${x.end?`<small>${esc(fmtClock(x.end))}</small>`:""}</div>
-      <div class="day-flow-line"><span></span></div>
-      <div class="day-flow-content"><div class="day-flow-title"><span>${x.icon||""}</span><b>${esc(x.title)}</b><span class="tag">${x.fixed?"fixed":x.source==="suggested"?"flexible":"planned"}</span>${x.shared?`<span class="tag">shared</span>`:""}</div>${x.detail?`<div class="muted small">${esc(x.detail)}</div>`:""}${x.source==="custom"?`<label class="task" onclick="event.stopPropagation()"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label>`:""}</div>
-    </div>`).join("")||`<div class="notice">No time blocks yet.</div>`}</div>
+  const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items),
+        fixed=items.filter(x=>x.fixed).length,tasks=items.filter(x=>x.source==="task").length,
+        open=items.filter(x=>x.kind==="gap").reduce((sum,x)=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return sum+(s!==null&&e!==null?Math.max(0,e-s):0)},0);
+  let lastPhase="";
+  const rows=items.map(x=>{
+    const [phase,phaseIcon]=itineraryPhase(x),phaseHead=phase!==lastPhase?(lastPhase=phase,`<div class="planner-phase"><span>${phaseIcon}</span><b>${esc(phase)}</b></div>`):"",
+          duration=itineraryDurationLabel(x),type=itineraryTypeLabel(x),action=itineraryBlockOpenAction(x,date);
+    return phaseHead+`<div class="planner-row planner-${esc(x.kind||"plan")} ${x.fixed?"is-fixed":""} ${x.done?"is-done":""}" ${action}>
+      <div class="planner-time"><b>${esc(fmtClock(x.start))}</b><span>${x.end?esc(fmtClock(x.end)):x.endUnknown?"End TBD":""}</span>${duration?`<small>${esc(duration)}</small>`:""}</div>
+      <div class="planner-content">
+        <div class="planner-topline"><span class="planner-icon">${x.icon||"•"}</span><b class="planner-title">${esc(x.title)}</b><span class="planner-kind">${esc(type)}</span></div>
+        ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}
+        ${x.endUnknown?`<div class="planner-caution">Daily Life will not auto-schedule tasks inside this unknown work span.</div>`:""}
+        ${x.source==="task"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryTask('${x.sourceId}')">Edit timing</button></div>`:""}
+        ${x.source==="custom"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryBlock('${date}','${x.sourceId}')">Edit</button></div>`:""}
+        ${x.source==="suggested"?`<button class="planner-edit" onclick="event.stopPropagation();openSuggestedItineraryBlock('${date}','${x.templateKey}')">Adjust this routine</button>`:""}
+        ${x.kind==="gap"?`<button class="planner-edit" onclick="event.stopPropagation();openItineraryBlockAt('${date}','${x.start}','${x.end}')">Put something here</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  return `<div class="card day-flow-card teacher-planner">
+    <div class="planner-heading"><div><div class="eyebrow">Today’s agenda</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2><div class="muted small">Anchors stay fixed. Daily Life fits routines and your task list into the usable spaces around them.</div></div><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button></div>
+    ${status?`<div class="planner-now"><span>NOW</span><div><b>${esc(status.title.replace(/^Right now · /,""))}</b><small>${esc(status.detail)}</small></div></div>`:""}
+    <div class="planner-summary"><span><b>${fixed}</b><small>anchors</small></span><span><b>${tasks}</b><small>tasks placed</small></span><span><b>${open}</b><small>open minutes</small></span></div>
+    <div class="planner-list">${rows||`<div class="notice">No time blocks yet.</div>`}</div>
   </div>`;
 }
 
@@ -811,7 +982,7 @@ function printItineraryWeek(date=itineraryDate){
 function itineraryView(){
   const date=itineraryDate||ymd(),meal=mealForDate(date),tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
   return `<div class="card glow itinerary-hero">
-    <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Block out the day</h2><div class="muted small">One day at a time · fixed commitments first · flexible home-life rhythm around them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
+    <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Your daily lesson plan</h2><div class="muted small">A realistic agenda built from work, school, family commitments, routines, and the tasks you give Daily Life.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
     <div class="itinerary-date-nav"><button class="btn" onclick="shiftItineraryDate(-1)">←</button><input type="date" value="${esc(date)}" onchange="setItineraryDate(this.value)"><button class="btn" onclick="shiftItineraryDate(1)">→</button><button class="btn" onclick="setItineraryDate(ymd())">Today</button></div>
     <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openItinerarySettings()">Day settings</button></div>
   </div>
@@ -822,13 +993,13 @@ function itineraryView(){
     <div class="card"><div class="eyebrow">Family chores</div><h2>${chores.length}</h2><div class="muted small">${chores.slice(0,4).map(x=>esc((x.child?x.child+" · ":"")+x.chore)).join(" · ")||"No open chores for this day"}</div></div>
   </div>`;
 }
-function openItineraryBlock(date=itineraryDate,id=""){
-  const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:"",end:"",title:"",kind:"flexible",notes:"",done:false};
-  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>Title<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
+function openItineraryBlock(date=itineraryDate,id="",prefill=null){
+  const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
+  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
     const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
     const shareRequested=$("#ibshared")?$("#ibshared").checked:!!x.shared;
     let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
-    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked});
+    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked,templateKey:x.templateKey||"",icon:x.icon||"◷"});
     if(typeof sharingCanShare==="function"&&sharingCanShare()){
       if(shareRequested){const ok=await sharingUpsertItineraryBlock(row);if(!ok)return}
       else if(row.sharedEntryId){const ok=await sharingMakeItineraryPrivate(row);if(!ok)return}
@@ -836,14 +1007,33 @@ function openItineraryBlock(date=itineraryDate,id=""){
     await save();closeModal();render();
   });
 }
+function openItineraryBlockAt(date,start,end){openItineraryBlock(date,"",{start,end,title:"",kind:"flexible",notes:""})}
+function openSuggestedItineraryBlock(date,templateKey){
+  const x=itinerarySuggestedBlocks(date).find(v=>v.templateKey===templateKey);
+  if(!x){
+    const existing=itineraryCustomBlocks(date).find(v=>v.templateKey===templateKey);
+    if(existing){openItineraryBlock(date,existing.id);return}
+    return;
+  }
+  openItineraryBlock(date,"",{start:x.start,end:x.end,title:x.title,kind:"flexible",notes:x.detail,templateKey:x.templateKey,icon:x.icon});
+}
+function openItineraryTask(id){
+  const t=(state.tasks||[]).find(x=>x.id===id);if(!t)return;
+  const mins=itineraryTaskMinutes(t);
+  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Your duration and preferred part of day will be remembered for this task.</div></div>`,"Save",async()=>{
+    t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;await save();closeModal();render();
+  });
+}
+
 async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!x)return;x.done=done;if(x.sharedEntryId&&typeof sharingUpsertItineraryBlock==="function")await sharingUpsertItineraryBlock(x);await save();render()}
 async function removeItineraryBlock(id){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x?.sharedEntryId&&typeof sharingMakeItineraryPrivate==="function"){const ok=await sharingMakeItineraryPrivate(x);if(!ok)return}state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
 function openItinerarySettings(){
   const x=state.settings.itinerary||{};
-  modal("Day Flow settings",`<div class="stack"><div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Day ends<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div><label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Suggest flexible home-life blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep. These are planning suggestions, not appointments or reminders.</div></span></label></div>`,"Save",async()=>{
-    state.settings.itinerary={dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",showFlexible:$("#idflex").checked};await save();closeModal();render();
+  modal("Day Flow settings",`<div class="stack"><div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Day ends<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div><label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Use family routine blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep.</div></span></label><label class="task"><input id="idauto" type="checkbox" ${x.autoScheduleTasks!==false?"checked":""}><span><b>Fit my open tasks into free time</b><div class="muted small">Daily Life uses the duration and preferred time you give a task. If you have not given a duration yet, it uses a small editable estimate instead of leaving a giant empty gap.</div></span></label></div>`,"Save",async()=>{
+    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
   });
 }
+
 function todayTimelineItems(){
   const date=ymd(),items=[];
   const w=work();
@@ -2798,7 +2988,7 @@ function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWate
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
 async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.key===key);if(!x)state.selfCare.push({id:uid(),date:ymd(),key,done:true});else x.done=!x.done;await save();render()}
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
-function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100});await save();closeModal();render()})}
+function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90].map(n=>`<option value="${n}">${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="any">Fit it where it works</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="after-school">After school</option><option value="evening">Evening</option></select></label></div><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"any"});await save();closeModal();render()})}
 function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
 function openWork(){const x=work()||{};modal("UPS shift",`<div class="stack"><div class="notice"><b>Actual punch-out should be the real time.</b><br><span class="muted small">If the shift is already over but you have not checked the punch-out yet, mark that below instead of guessing.</span></div><label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label class="task"><input id="wended" type="checkbox" ${workNeedsPunchOut(x)?"checked":""}><span><b>Shift is over; punch-out time still needs confirmation</b></span></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label></div>`,"Save",async()=>{let w=work();if(!w){w={id:uid(),date:ymd()};state.workShifts.push(w)}w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||0);w.endedUnknown=!w.end&&$("#wended").checked;w.status=w.end?"completed":w.endedUnknown?"completed-needs-end":"in-progress";const task=state.tasks.find(x=>x.date===ymd()&&x.title==="UPS shift");if(task&&(workEndConfirmed(w)||workNeedsPunchOut(w)))task.done=true;await save();closeModal();render()})}
 function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp" type="number" step=".1"></label><label>Event<select id="te"><option>reading</option><option>fill</option><option>repair</option></select></label><label>Notes<input id="tn"></label></div>`,"Save",async()=>{const psi=Number($("#tp").value);if(!psi)return;state.tireLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),psi,event:$("#te").value,notes:$("#tn").value});await save();closeModal();render()})}
