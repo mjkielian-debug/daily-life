@@ -25,6 +25,7 @@ function cloudFinanceBalance(row){
 async function cloudFinanceInit(){
   if(!cloudUser?.()||!cloudClient)return;
   await cloudRefreshFinancialAccounts(true);
+  await cloudRefreshExpectedIncomeAccountLinks();
   await cloudLoadBankReviewRules();
   await cloudImportBankSpending(false);
   const params=new URLSearchParams(location.search);
@@ -57,6 +58,32 @@ async function cloudRefreshFinancialAccounts(updateMapped=true){
     if(changed)await save();
   }
 }
+
+async function cloudRefreshExpectedIncomeAccountLinks(){
+  if(!cloudUser?.()||!cloudClient||typeof state==="undefined")return 0;
+  const {data,error}=await cloudClient.from("life_entries")
+    .select("id,external_id,payload")
+    .eq("source","chatgpt")
+    .eq("category","expected_income")
+    .limit(100);
+  if(error){cloudFinanceMessage=error.message;return 0}
+  let changed=0;
+  for(const row of data||[]){
+    const cloudId=String(row.payload?.accountCloudId||"");
+    if(!cloudId)continue;
+    const income=(state.expectedIncome||[]).find(x=>
+      x.cloudEntryId===row.id||
+      (row.external_id&&String(x.externalId||"")===String(row.external_id))
+    );
+    if(!income)continue;
+    if(income.accountCloudId!==cloudId){income.accountCloudId=cloudId;changed++}
+    const local=(state.accounts||[]).find(a=>String(a.cloudAccountId||"")===cloudId);
+    if(local?.key&&income.accountKey!==local.key){income.accountKey=local.key;changed++}
+  }
+  if(changed)await save();
+  return changed;
+}
+
 
 function cloudFinancePanel(){
   const user=cloudUser?.();
@@ -143,6 +170,7 @@ async function cloudSyncBanks(showAlert=false){
     }
     if(data?.error==="plaid_not_configured")throw new Error("Plaid credentials still need to be added to the private backend.");
     await cloudRefreshFinancialAccounts(true);
+    await cloudRefreshExpectedIncomeAccountLinks();
     await cloudLoadBankReviewRules();
     await cloudImportBankSpending(false);
     if(showAlert){
