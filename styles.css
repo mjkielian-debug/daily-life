@@ -199,3 +199,81 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   .self-care-btn{font-size:.78rem;padding:9px;min-height:46px}
   .self-care-window{grid-template-columns:auto auto;gap:2px 6px}
 }
+
+/* Self care v2 — polished, feminine, botanical */
+.self-care-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;margin:12px 0 14px;
+  border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025)
+}
+.self-care-tabs button{
+  border:0;border-radius:12px;min-height:38px;background:transparent;color:var(--muted);font-weight:800
+}
+.self-care-tabs button.active{
+  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 74%,var(--accent) 26%));
+  box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)
+}
+.self-care-tab-panel{min-width:0}
+.self-care-progress-label{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted)}
+.wellness-checkin{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;margin-bottom:10px;
+  border:1px solid color-mix(in srgb,var(--secondary) 24%,var(--border));border-radius:16px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--secondary) 9%,transparent),rgba(255,255,255,.018))
+}
+.care-balance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.care-balance{
+  border:1px solid var(--border);border-radius:17px;background:rgba(255,255,255,.025);color:var(--text);
+  padding:12px;text-align:left;display:grid;gap:3px;min-width:0
+}
+.care-balance span{font-size:.69rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800}
+.care-balance b{font-family:Georgia,serif;font-size:1.05rem;font-weight:700}
+.care-balance small{color:var(--muted);font-size:.71rem;overflow-wrap:anywhere}
+.routine-intro{
+  padding:12px 13px;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border));
+  border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 7%,transparent),transparent);margin-bottom:8px
+}
+.routine-panel{padding:12px 0;border-top:1px solid var(--border)}
+.routine-panel:first-of-type{border-top:0}
+.care-track-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.care-track-summary .metric{min-width:0}
+.care-week-strip{
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:10px 0 18px
+}
+.care-day{display:grid;justify-items:center;gap:5px;color:var(--muted);font-size:.7rem;font-weight:800}
+.care-day-ring{
+  --pct:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;position:relative;
+  background:conic-gradient(var(--primary) calc(var(--pct)*1%),rgba(255,255,255,.055) 0)
+}
+.care-day-ring:after{
+  content:"";position:absolute;inset:4px;border-radius:50%;background:var(--panel)
+}
+.care-day-ring b{position:relative;z-index:1;color:var(--text);font-size:.72rem}
+.habit-setting-row{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(108px,145px) auto;gap:8px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--border)
+}
+.habit-setting-row:last-child{border-bottom:0}
+.habit-setting-row select{min-width:0;padding:8px 9px}
+.today-care-snapshot{
+  border-color:color-mix(in srgb,var(--primary) 28%,var(--border));
+  background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 42%),linear-gradient(180deg,var(--panel2),var(--panel))
+}
+.today-care-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}
+.today-care-inline span{
+  min-width:0;padding:9px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.022);
+  display:grid;gap:2px
+}
+.today-care-inline b{font-size:.88rem;overflow-wrap:anywhere}
+.today-care-inline small{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em}
+.bottom-nav .navbtn.active{
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 22%,transparent)
+}
+@media(max-width:520px){
+  .care-balance-grid,.care-track-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .care-week-strip{gap:3px}
+  .care-day-ring{width:30px;height:30px}
+  .habit-setting-row{grid-template-columns:1fr}
+  .habit-setting-row .btn{justify-self:start}
+}
+@media(max-width:360px){
+  .today-care-inline{grid-template-columns:1fr}
+}
