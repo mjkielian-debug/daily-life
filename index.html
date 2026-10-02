@@ -1001,7 +1001,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   <div class="today-metrics">
     <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
     <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":w?.start&&liveWorkHours(w)>0?liveWorkHours(w).toFixed(2)+" h so far":"No completed hours"}</div><div class="muted small">${esc(workStatusText(w))}${actual&&Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
-    <div class="metric"><div class="eyebrow">Food logged</div><div class="big">${Math.round(f.cal)} cal</div>${todayProgress(f.cal,state.settings.calTarget,"Calories logged")}<div class="muted small">${Math.round(f.protein)} g protein</div>${todayProgress(f.protein,state.settings.proteinTarget,"Protein logged")}</div>
+    <div class="metric"><div class="eyebrow">Food logged</div><div class="big">${Math.round(f.cal)} known cal</div>${todayProgress(f.cal,state.settings.calTarget,"Known calories logged")}<div class="muted small">${Math.round(f.protein)} g known protein</div>${todayProgress(f.protein,state.settings.proteinTarget,"Known protein logged")}</div>
     <div class="metric"><div class="eyebrow">Water</div><div class="big">${oz} oz</div>${todayProgress(oz,state.settings.waterTarget,"Water logged")}<div class="actions"><button class="btn primary small" onclick="addWater(26)">+26 oz</button><button class="btn small" onclick="setWaterGoal()">${state.settings.waterTarget?"Edit goal":"Set goal"}</button></div></div>
   </div>
   ${todayMoneySnapshot()}
@@ -1074,7 +1074,7 @@ function selfCareBalanceCards(){
     <button class="care-balance" onclick="openSleep()"><span>Sleep</span><b>${sleep?sleep.toFixed(1)+" h":"Log"}</b><small>${sleepForDate()?.energy?"Energy "+sleepForDate().energy+"/5":"Bed + wake time"}</small></button>
     <button class="care-balance" onclick="customWater()"><span>Hydration</span><b>${Math.round(waterNow)} oz</b><small>${waterGoal?Math.round(waterNow*100/waterGoal)+"% of goal":"Tap to add water"}</small></button>
     <button class="care-balance" onclick="addStretch(5)"><span>Movement</span><b>${stretchNow} min</b><small>Tap to add 5 min</small></button>
-    <button class="care-balance" onclick="openFood()"><span>Nourishment</span><b>${Math.round(f.protein)}g protein</b><small>${Math.round(f.cal)} calories logged</small></button>
+    <button class="care-balance" onclick="openFood()"><span>Nourishment</span><b>${Math.round(f.protein)}g known protein</b><small>${Math.round(f.cal)} known calories logged</small></button>
   </div>`;
 }
 function wellnessCheckinCard(){
