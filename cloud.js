@@ -303,6 +303,7 @@ async function cloudPullHouseholdMembers(){
       if(meta.profileScope)p.profileScope=String(meta.profileScope);
       if(meta.relatedTo!==undefined)p.relatedTo=String(meta.relatedTo||"");
       if(meta.school!==undefined)p.school=String(meta.school||"");
+      if(meta.grade!==undefined)p.grade=String(meta.grade||"");
       if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       if(meta.elfsterLastSyncedAt!==undefined)p.elfsterLastSyncedAt=String(meta.elfsterLastSyncedAt||"");
       if(Array.isArray(meta.familyLinks))p.familyLinks=meta.familyLinks.filter(x=>x&&x.name).map(x=>({name:String(x.name),label:String(x.label||"")}));
@@ -348,6 +349,7 @@ async function cloudUpsertPersonProfile(p){
       profileScope:String(p.profileScope||(p.livesWithUser?"household":"extended")),
       relatedTo:String(p.relatedTo||""),
       school:String(p.school||""),
+      grade:String(p.grade||""),
       elfsterUrl:String(p.elfsterUrl||""),
       elfsterLastSyncedAt:String(p.elfsterLastSyncedAt||existingMeta.elfsterLastSyncedAt||""),
       wishlist:Array.isArray(p.wishlist)?p.wishlist:[],
