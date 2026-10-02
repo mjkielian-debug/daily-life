@@ -609,6 +609,64 @@ function itinerarySuggestedBlocks(date){
   return out.map((x,i)=>({...x,id:"suggest:"+date+":"+i,fixed:false,kind:"flexible",source:"suggested"}));
 }
 function itineraryDayItems(date){return [...itineraryFixedItems(date),...itinerarySuggestedBlocks(date)].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.fixed?-1:1))}
+
+function itineraryStatusForDate(date,items){
+  if(date!==ymd())return null;
+  const now=new Date(),hm=now.getHours()*60+now.getMinutes();
+  const timed=items.filter(x=>hmMinutes(x.start)!==null);
+  const active=timed.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return e!==null&&s<=hm&&e>hm});
+  const next=timed.find(x=>hmMinutes(x.start)>=hm);
+  return active?{title:"Right now · "+active.title,detail:active.end?"Until "+fmtClock(active.end):(active.detail||"")}:
+    next?{title:"Next · "+fmtClock(next.start)+" · "+next.title,detail:next.detail||""}:{title:"The timed day is clear",detail:"Use the open time however you need."};
+}
+function itineraryBlockOpenAction(x,date){
+  if(x.source==="custom")return `onclick="openItineraryBlock('${date}','${x.sourceId}')"`;
+  if(x.source==="event")return `onclick="openEvent('${date}','${x.sourceId}')"`;
+  if(x.source==="meal")return `onclick="openMeal('${date}')"`;
+  return"";
+}
+function itineraryFlowCard(date){
+  const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items);
+  return `<div class="card day-flow-card">
+    <div class="section-title"><div><div class="eyebrow">How the day flows</div><h2>${esc(dl(date))}</h2><div class="muted small">Fixed commitments anchor the day. Flexible rhythm fills around them.</div></div><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Time block</button></div>
+    ${status?`<div class="day-flow-now"><b>${esc(status.title)}</b><div class="muted small">${esc(status.detail)}</div></div>`:""}
+    <div class="day-flow-list">${items.map(x=>`<div class="day-flow-row ${x.fixed?"is-fixed":"is-flex"} ${x.done?"is-done":""}" ${itineraryBlockOpenAction(x,date)}>
+      <div class="day-flow-time"><b>${esc(fmtClock(x.start))}</b>${x.end?`<small>${esc(fmtClock(x.end))}</small>`:""}</div>
+      <div class="day-flow-line"><span></span></div>
+      <div class="day-flow-content"><div class="day-flow-title"><span>${x.icon||""}</span><b>${esc(x.title)}</b><span class="tag">${x.fixed?"fixed":x.source==="suggested"?"flexible":"planned"}</span></div>${x.detail?`<div class="muted small">${esc(x.detail)}</div>`:""}${x.source==="custom"?`<label class="task" onclick="event.stopPropagation()"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label>`:""}</div>
+    </div>`).join("")||`<div class="notice">No time blocks yet.</div>`}</div>
+  </div>`;
+}
+function itineraryView(){
+  const date=itineraryDate||ymd(),meal=mealForDate(date),tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
+  return `<div class="card glow itinerary-hero">
+    <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Block out the day</h2><div class="muted small">One day at a time · fixed commitments first · flexible home-life rhythm around them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
+    <div class="itinerary-date-nav"><button class="btn" onclick="shiftItineraryDate(-1)">←</button><input type="date" value="${esc(date)}" onchange="setItineraryDate(this.value)"><button class="btn" onclick="shiftItineraryDate(1)">→</button><button class="btn" onclick="setItineraryDate(ymd())">Today</button></div>
+    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openItinerarySettings()">Day settings</button></div>
+  </div>
+  ${itineraryFlowCard(date)}
+  <div class="today-section-grid">
+    <div class="card"><div class="eyebrow">Dinner</div><h2>${meal?.dish?esc(meal.dish):"Not planned"}</h2><div class="muted small">${meal?.startBy?"Start "+esc(fmtClock(meal.startBy)):""}${meal?.serveTime?(meal?.startBy?" · ":"")+"Serve "+esc(fmtClock(meal.serveTime)):""}</div><button class="btn small" onclick="openMeal('${date}')">${meal?"Open dinner":"Plan dinner"}</button></div>
+    <div class="card"><div class="eyebrow">Open tasks</div><h2>${tasks.length}</h2><div class="muted small">${tasks.slice(0,4).map(x=>esc(x.title)).join(" · ")||"No open tasks for this day"}</div></div>
+    <div class="card"><div class="eyebrow">Family chores</div><h2>${chores.length}</h2><div class="muted small">${chores.slice(0,4).map(x=>esc((x.child?x.child+" · ":"")+x.chore)).join(" · ")||"No open chores for this day"}</div></div>
+  </div>`;
+}
+function openItineraryBlock(date=itineraryDate,id=""){
+  const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:"",end:"",title:"",kind:"flexible",notes:"",done:false};
+  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>Title<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label><label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
+    const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
+    let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
+    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked});await save();closeModal();render();
+  });
+}
+async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x)x.done=done;await save();render()}
+async function removeItineraryBlock(id){state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function openItinerarySettings(){
+  const x=state.settings.itinerary||{};
+  modal("Day Flow settings",`<div class="stack"><div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Day ends<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div><label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Suggest flexible home-life blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep. These are planning suggestions, not appointments or reminders.</div></span></label></div>`,"Save",async()=>{
+    state.settings.itinerary={dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",showFlexible:$("#idflex").checked};await save();closeModal();render();
+  });
+}
 function todayTimelineItems(){
   const date=ymd(),items=[];
   const w=work();
