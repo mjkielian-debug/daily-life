@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Life botanical icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d9274"/>
+      <stop offset=".55" stop-color="#365d43"/>
+      <stop offset="1" stop-color="#203f2c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".28" cy=".18" r=".8">
+      <stop offset="0" stop-color="#b8d6b8" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#b8d6b8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="18" y="18" width="476" height="476" rx="116" fill="url(#bg)"/>
+  <rect x="18" y="18" width="476" height="476" rx="116" fill="url(#glow)"/>
+  <path d="M168 357c31-80 77-146 158-203" fill="none" stroke="#f4eadb" stroke-width="12" stroke-linecap="round"/>
+  <path d="M222 278c-39 5-69-9-84-42 39-9 73 4 91 31" fill="none" stroke="#f4eadb" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M274 222c-4-39 12-70 46-86 7 39-7 73-35 91" fill="none" stroke="#f4eadb" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M188 329c-34 9-64 1-84-26 33-13 65-5 87 16" fill="none" stroke="#f4eadb" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M322 181c15-34 41-54 77-57-11 37-36 61-70 66" fill="none" stroke="#f4eadb" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M359 311l8 19 19 8-19 8-8 19-8-19-19-8 19-8z" fill="#ead6a2"/>
+  <path d="M136 150l5 12 12 5-12 5-5 12-5-12-12-5 12-5z" fill="#ead6a2"/>
+  <circle cx="389" cy="174" r="5" fill="#e7c4cb"/>
+</svg>
