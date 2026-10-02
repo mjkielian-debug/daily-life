@@ -217,7 +217,7 @@ const blankState=()=>({
   version:34,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -803,7 +803,11 @@ function itinerarySuggestedBlocks(date){
   }
   const tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00");
   if(tm?.tomorrowPrep||early.length)add({templateKey:"tomorrow-prep",start:"20:45",end:"21:15",title:"Set tomorrow up",detail:[tm?.tomorrowPrep,early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
-  return out.map((x,i)=>({...x,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested"}));
+  const prefs=state.settings?.itinerary?.routinePreferences||{};
+  return out.map((x,i)=>{
+    const saved=prefs[weekday+":"+x.templateKey]||null;
+    return {...x,start:saved?.start||x.start,end:saved?.end||x.end,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested",learnedRoutine:!!saved};
+  });
 }
 
 function itineraryRoutineWindow(x,date){
@@ -850,9 +854,30 @@ function itineraryFitRoutines(date,blockingItems,routines){
   return placed;
 }
 
+function itineraryTaskPatternKey(value){
+  return String(typeof value==="string"?value:value?.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+function itineraryTaskPattern(task){
+  const key=itineraryTaskPatternKey(task);
+  return key?state.settings?.itinerary?.taskPatterns?.[key]||null:null;
+}
+function itineraryRememberTaskPattern(task){
+  const key=itineraryTaskPatternKey(task);if(!key)return;
+  if(!state.settings.itinerary.taskPatterns||typeof state.settings.itinerary.taskPatterns!=="object")state.settings.itinerary.taskPatterns={};
+  state.settings.itinerary.taskPatterns[key]={
+    minutes:itineraryTaskMinutes({...task,itineraryMinutes:Number(task.itineraryMinutes||0),_skipPattern:true}),
+    preference:String(task.itineraryPreference||"any"),
+    updatedAt:new Date().toISOString()
+  };
+}
+
 function itineraryTaskMinutes(task){
   const saved=Number(task?.itineraryMinutes||task?.durationMinutes||0);
   if(Number.isFinite(saved)&&saved>=5)return Math.min(180,Math.round(saved/5)*5);
+  if(!task?._skipPattern){
+    const learned=Number(itineraryTaskPattern(task)?.minutes||0);
+    if(Number.isFinite(learned)&&learned>=5)return Math.min(180,Math.round(learned/5)*5);
+  }
   const text=(String(task?.title||"")+" "+String(task?.notes||"")+" "+String(task?.category||"")).toLowerCase();
   if(/phone|call|email|text|check|order|account|grade|form|pay|schedule|appointment/.test(text))return 15;
   if(/laundry|dishes|vacuum|clean|litter|bathroom|pickup|pick up|tidy/.test(text))return 25;
@@ -865,7 +890,7 @@ function itineraryTaskCandidates(date){
   return (state.tasks||[]).filter(t=>t.date===date&&!t.done&&!/^(ups shift|everyone reading)$/i.test(String(t.title||""))).sort((a,b)=>(Number(a.order||100)-Number(b.order||100))||String(a.title||"").localeCompare(String(b.title||"")));
 }
 function itineraryTaskPreferredRange(task,date){
-  const pref=String(task?.itineraryPreference||"any"),w=workForDate(date),
+  const learned=itineraryTaskPattern(task),pref=String(task?.itineraryPreference||learned?.preference||"any"),w=workForDate(date),
         now=date===ymd()?new Date():null,
         currentFloor=now?Math.min(21*60+30,Math.ceil((now.getHours()*60+now.getMinutes()+5)/5)*5):0,
         clamp=r=>({start:Math.max(r.start,currentFloor),end:r.end});
@@ -1094,11 +1119,16 @@ function itineraryView(){
 
 function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
-  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
+  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${x.templateKey?`<label class="task"><input id="ibremember" type="checkbox"><span><b>Use this timing on future ${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}))}s</b><div class="muted small">Daily Life will remember this routine's start and end time for this weekday.</div></span></label>`:""}${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
     const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
     const shareRequested=$("#ibshared")?$("#ibshared").checked:!!x.shared;
     let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
     Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked,templateKey:x.templateKey||"",icon:x.icon||"◷"});
+    if(x.templateKey&&$("#ibremember")?.checked){
+      if(!state.settings.itinerary.routinePreferences||typeof state.settings.itinerary.routinePreferences!=="object")state.settings.itinerary.routinePreferences={};
+      const weekday=new Date(date+"T12:00:00").getDay();
+      state.settings.itinerary.routinePreferences[weekday+":"+x.templateKey]={start,end,updatedAt:new Date().toISOString()};
+    }
     if(typeof sharingCanShare==="function"&&sharingCanShare()){
       if(shareRequested){const ok=await sharingUpsertItineraryBlock(row);if(!ok)return}
       else if(row.sharedEntryId){const ok=await sharingMakeItineraryPrivate(row);if(!ok)return}
@@ -1119,8 +1149,8 @@ function openSuggestedItineraryBlock(date,templateKey){
 function openItineraryTask(id){
   const t=(state.tasks||[]).find(x=>x.id===id);if(!t)return;
   const mins=itineraryTaskMinutes(t);
-  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Your duration and preferred part of day will be remembered for this task.</div></div>`,"Save",async()=>{
-    t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;await save();closeModal();render();
+  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><label class="task"><input id="iptRemember" type="checkbox" checked><span><b>Remember this timing for tasks named “${esc(t.title||"this task")}”</b><div class="muted small">Future matching tasks can reuse the duration and preferred part of day.</div></span></label><div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Exact starts stay specific to this task.</div></div>`,"Save",async()=>{
+    t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;if($("#iptRemember")?.checked)itineraryRememberTaskPattern(t);await save();closeModal();render();
   });
 }
 
