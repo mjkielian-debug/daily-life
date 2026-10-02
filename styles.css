@@ -2432,3 +2432,105 @@ body::before{
 @media(max-width:360px){
   .kids-money-summary{grid-template-columns:1fr}
 }
+
+
+/* Structured school + support contacts */
+.school-contacts-card{
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--primary) 9%,transparent),transparent 32%),
+    linear-gradient(165deg,color-mix(in srgb,var(--panel2) 97%,var(--primary) 3%),var(--panel));
+}
+.school-contact-child-card{
+  padding:12px 0 4px;
+  border-top:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));
+}
+.school-contact-child-card:first-of-type{border-top:0}
+.school-contact-child-card .section-title{
+  margin-bottom:7px;
+}
+.school-contact-child-card h3{
+  margin:0;
+  font-family:Georgia,serif;
+  color:var(--cream);
+}
+.school-contact-person{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:8px 0;
+  border-top:1px solid var(--border);
+}
+.school-contact-main{
+  min-width:0;
+  display:grid;
+  gap:3px;
+  text-align:left;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  padding:0;
+}
+.school-contact-main b{
+  font-size:.82rem;
+  line-height:1.3;
+}
+.school-contact-main small{
+  color:var(--muted);
+  font-size:.68rem;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.school-contact-main .tag{
+  display:inline-block;
+  vertical-align:1px;
+  margin-left:4px;
+  font-size:.52rem;
+  padding:2px 5px;
+}
+.school-contact-history{
+  padding:8px 0 2px;
+  border-top:1px dashed var(--border);
+}
+.school-contact-history summary{
+  cursor:pointer;
+  color:var(--muted);
+  font-size:.69rem;
+  font-weight:800;
+}
+.school-contact-history>div{
+  padding:5px 0 0 8px;
+}
+.school-contact-edit{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  text-align:left;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(255,255,255,.02);
+  color:var(--text);
+  padding:9px 10px;
+  font:inherit;
+}
+.school-contact-edit span:first-child{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.school-contact-edit b{font-size:.78rem}
+.school-contact-edit small{
+  color:var(--muted);
+  font-size:.66rem;
+  overflow-wrap:anywhere;
+}
+@media(max-width:520px){
+  .school-contact-person{
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  .school-contact-person>.btn{
+    max-width:86px;
+  }
+}
