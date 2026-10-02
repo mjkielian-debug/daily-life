@@ -175,11 +175,11 @@ function vaultView(){
   }
   vaultTouch();
   const items=[...(vaultData?.items||[])].sort((a,b)=>String(a.title||"").localeCompare(String(b.title||"")));
-  return `<div class="card glow vault-hero"><div class="section-title"><div><div class="eyebrow">▣ Private Vault</div><h2>${items.length} encrypted record${items.length===1?"":"s"}</h2><div class="muted small">Michelle + children only · encrypted local storage</div>${vaultCloudSignedIn()?`<div class="muted small vault-cloud-status">Encrypted cloud backup: ${esc(vaultCloudTimeLabel())}</div>`:""}</div><button class="btn" onclick="vaultLock()">Lock</button></div><div class="actions"><button class="btn primary" onclick="openVaultItem()">+ Add record</button><button class="btn" onclick="vaultExportEncrypted()">Export encrypted backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultUploadCloudBackup()">Back up encrypted vault to cloud</button>':""}<button class="btn" onclick="vaultChangePasscode()">Change passcode</button><button class="btn" onclick="vaultEnableDeviceUnlock()">Enable device verification</button></div></div>
+  return `<div class="card glow vault-hero"><div class="section-title"><div><div class="eyebrow">▣ Private Vault</div><h2>${items.length} encrypted record${items.length===1?"":"s"}</h2><div class="muted small">Michelle + children only · encrypted local storage</div>${vaultCloudSignedIn()?`<div class="muted small vault-cloud-status">Encrypted cloud backup: ${esc(vaultCloudTimeLabel())}</div>`:""}</div><button class="btn" onclick="vaultLock()">Lock</button></div><div class="actions"><button class="btn primary" onclick="openVaultItem()">+ Add record</button><button class="btn" onclick="vaultExportEncrypted()">Export encrypted backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultUploadCloudBackup()">Back up encrypted vault to cloud</button>':""}<button class="btn" onclick="vaultChangePasscode()">Change passcode</button>${localStorage.getItem("dailyLifeVaultCredential")?`<button class="btn primary" onclick="vaultTestDeviceUnlock()">Test device verification</button><button class="btn" onclick="vaultEnableDeviceUnlock()">Reconfigure device verification</button>`:`<button class="btn" onclick="vaultEnableDeviceUnlock()">Enable device verification</button>`}</div></div>
   <div class="card"><div class="section-title"><div><h2>Records</h2><div class="muted small">Passwords and document contents are never shown on this list.</div></div></div>
   ${items.length?items.map(x=>`<button class="vault-row" onclick="openVaultItem('${x.id}')"><span class="vault-icon">${x.attachment?"▤":"▣"}</span><span class="grow"><b>${esc(x.title||vaultTypeLabel(x.type))}</b><small>${esc(vaultTypeLabel(x.type))}${x.owner?" · "+esc(x.owner):""}${x.attachment?" · attachment":""}</small></span><span>›</span></button>`).join(""):`<div class="notice">No private records stored yet.</div>`}
   </div>
-  <div class="card"><div class="mini-heading">Security</div><p class="muted small">AES-256-GCM encryption with a PBKDF2-derived key. Normal app snapshots do not contain vault records. Encrypted file exports and the optional private cloud vault backup contain ciphertext only; the vault passcode is never uploaded.</p></div>`;
+  <div class="card"><div class="mini-heading">Security</div><p class="muted small">AES-256-GCM encryption with a PBKDF2-derived key. Normal app snapshots do not contain vault records. Encrypted file exports and the optional private cloud vault backup contain ciphertext only; the vault passcode is never uploaded.</p>${localStorage.getItem("dailyLifeVaultCredential")?`<div class="notice"><b>Device verification configured.</b><br><span class="muted small">Use Test device verification above to confirm your phone actually shows its fingerprint, face, or screen-lock prompt. After a full app reload, the Vault still requires the passcode once before device re-unlock can work during that session.</span></div>`:""}</div>`;
 }
 function vaultCreate(){
   if(!crypto?.subtle){alert("Encrypted vault storage is not available in this browser.");return}
@@ -245,6 +245,17 @@ async function vaultBiometricUnlock(){
     const data=await vaultDecryptWithKey(vaultWarmKey);
     vaultKey=vaultWarmKey;vaultData=data;vaultUnlocked=true;vaultTouch();render();
   }catch(error){alert("Device verification did not unlock the vault. Use the passcode instead.")}
+}
+async function vaultTestDeviceUnlock(){
+  const stored=localStorage.getItem("dailyLifeVaultCredential");
+  if(!stored){alert("Enable device verification first.");return}
+  if(!vaultUnlocked||!vaultKey){vaultPromptUnlock();return}
+  vaultWarmKey=vaultKey;vaultWarmUntil=Date.now()+30*60*1000;
+  vaultUnlocked=false;vaultData=null;vaultKey=null;
+  if(vaultLockTimer){clearTimeout(vaultLockTimer);vaultLockTimer=null}
+  if(typeof closeModal==="function")closeModal();
+  if(typeof render==="function")render();
+  setTimeout(()=>vaultBiometricUnlock(),80);
 }
 async function vaultCopyInput(id){
   const el=document.querySelector("#"+id);if(!el)return;
