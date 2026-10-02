@@ -1208,10 +1208,13 @@ function tonightPrepCard(){
   if(!items.length)return"";
   return `<div class="card priority-card evening-prep"><div class="eyebrow">🌙 Before bed</div><h2>A little love for tomorrow</h2>${items.map(i=>`<div class="priority-item"><span class="prep-icon">${i.icon}</span><span class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</span></div>`).join("")}</div>`;
 }
+function todayAgendaPreviewItems(){
+  const now=new Date(),hm=now.getHours()*60+now.getMinutes();
+  return itineraryDayItems(ymd()).filter(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&((e!==null&&e>hm)||s>=hm)}).slice(0,6);
+}
 function todayTimelineCard(){
-  const items=todayTimelineItems();
-  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">⏱ Today’s timeline</div><h2>What happens when</h2></div><button class="btn" onclick="openEvent()">+ Event</button></div>
-    ${items.length?items.map(i=>`<div class="timeline-item" ${i.eventId?`onclick="openEvent('${ymd()}','${i.eventId}')"`:""}><div class="timeline-time">${i.timeLabel?esc(i.timeLabel):i.time?esc(fmtClock(i.time)):"Anytime"}</div><div class="timeline-dot">${i.icon}</div><div class="grow"><b>${esc(i.title)}</b>${i.detail?`<div class="muted small">${esc(i.detail)}</div>`:""}</div></div>`).join(""):`<div class="notice">No timed items yet today.</div>`}</div>`;
+  const items=todayAgendaPreviewItems();
+  return `<div class="card priority-card today-agenda-preview"><div class="section-title"><div><div class="eyebrow">⏱ Day Flow</div><h2>What happens next</h2><div class="muted small">This is the same smart agenda used in Day Flow—not a separate timeline.</div></div><button class="btn" onclick="setView(\'itinerary\')">Open full day</button></div>${items.length?items.map(x=>{const action=x.kind==="gap"?`onclick="openItineraryBlockAt(\'${ymd()}\',\'${x.start}\',\'${x.end}\')"`:itineraryBlockOpenAction(x,ymd());return `<div class="today-agenda-row ${x.kind==="gap"?"is-gap":x.fixed?"is-fixed":""}" ${action}><div class="today-agenda-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):x.endUnknown?"End TBD":""}</small></div><div class="grow"><b>${x.icon||""} ${esc(x.title)}</b><div class="muted small">${esc(x.detail||itineraryTypeLabel(x))}</div></div><span class="tag">${esc(itineraryTypeLabel(x))}</span></div>`}).join(""):`<div class="notice">The rest of today is clear.</div>`}</div>`;
 }
 function isSchoolEvent(e){
   const source=String(e?.source||"").toLowerCase(),type=String(e?.type||"").toLowerCase();
@@ -1664,13 +1667,13 @@ function nextLifeAdminAction(){
 }
 function todayView(m,f,w,h,tk,done,nt,tr){
   const ml=moonLens(m),actual=!!(w?.start&&workEndConfirmed(w)),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
-  const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),timeline=todayTimelineItems();
-  const activeTimed=timeline.find(i=>i.time&&i.end&&i.time<=nowHm&&i.end>nowHm);
-  const nextTimed=timeline.find(i=>i.time&&i.time>=nowHm);
+  const now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes(),agenda=itineraryDayItems(ymd());
+  const activeTimed=agenda.find(i=>{const s=hmMinutes(i.start),e=hmMinutes(i.end);return s!==null&&e!==null&&s<=nowMinutes&&e>nowMinutes});
+  const nextTimed=agenda.find(i=>{const s=hmMinutes(i.start);return s!==null&&s>=nowMinutes});
   const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"",
         adminNow=nextLifeAdminAction();
-  const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.time)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
-  const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||"Next timed item today"):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
+  const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
+  const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todayCareSnapshotCard()}${todaySpiritualityCard()}${todayPeopleSnapshotCard()}${todayLivingThingsCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
