@@ -980,19 +980,23 @@ function printItineraryWeek(date=itineraryDate){
 }
 
 function itineraryView(){
-  const date=itineraryDate||ymd(),meal=mealForDate(date),tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
+  const date=itineraryDate||ymd(),meal=mealForDate(date),items=itineraryDayItems(date),
+        placedTaskIds=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
+        tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done&&!placedTaskIds.has(x.id)),
+        chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
   return `<div class="card glow itinerary-hero">
     <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Your daily lesson plan</h2><div class="muted small">A realistic agenda built from work, school, family commitments, routines, and the tasks you give Daily Life.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
     <div class="itinerary-date-nav"><button class="btn" onclick="shiftItineraryDate(-1)">←</button><input type="date" value="${esc(date)}" onchange="setItineraryDate(this.value)"><button class="btn" onclick="shiftItineraryDate(1)">→</button><button class="btn" onclick="setItineraryDate(ymd())">Today</button></div>
-    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openItinerarySettings()">Day settings</button></div>
+    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button></div>
   </div>
   ${itineraryFlowCard(date)}
   <div class="today-section-grid">
     <div class="card"><div class="eyebrow">Dinner</div><h2>${meal?.dish?esc(meal.dish):"Not planned"}</h2><div class="muted small">${meal?.startBy?"Start "+esc(fmtClock(meal.startBy)):""}${meal?.serveTime?(meal?.startBy?" · ":"")+"Serve "+esc(fmtClock(meal.serveTime)):""}</div><button class="btn small" onclick="openMeal('${date}')">${meal?"Open dinner":"Plan dinner"}</button></div>
-    <div class="card"><div class="eyebrow">Open tasks</div><h2>${tasks.length}</h2><div class="muted small">${tasks.slice(0,4).map(x=>esc(x.title)).join(" · ")||"No open tasks for this day"}</div></div>
-    <div class="card"><div class="eyebrow">Family chores</div><h2>${chores.length}</h2><div class="muted small">${chores.slice(0,4).map(x=>esc((x.child?x.child+" · ":"")+x.chore)).join(" · ")||"No open chores for this day"}</div></div>
+    <div class="card"><div class="eyebrow">Still unscheduled</div><h2>${tasks.length}</h2><div class="muted small">${tasks.slice(0,4).map(x=>esc(x.title)).join(" · ")||"Every open task that fits has a spot in the agenda"}</div>${tasks.length?`<div class="muted small" style="margin-top:8px">These may not fit the available openings or their preferred time window. Tap a task in Today to adjust it, or add a custom block.</div>`:""}</div>
+    <div class="card"><div class="eyebrow">Family chores inside the routine</div><h2>${chores.length}</h2><div class="muted small">${chores.slice(0,6).map(x=>esc((x.child?x.child+" · ":"")+x.chore)).join(" · ")||"No open chores for this day"}</div></div>
   </div>`;
 }
+
 function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
   modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
