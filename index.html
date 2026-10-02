@@ -673,14 +673,20 @@ function itineraryView(){
 }
 function openItineraryBlock(date=itineraryDate,id=""){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:"",end:"",title:"",kind:"flexible",notes:"",done:false};
-  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>Title<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label><label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
+  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>Title<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
     const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
+    const shareRequested=$("#ibshared")?$("#ibshared").checked:!!x.shared;
     let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
-    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked});await save();closeModal();render();
+    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked});
+    if(typeof sharingCanShare==="function"&&sharingCanShare()){
+      if(shareRequested){const ok=await sharingUpsertItineraryBlock(row);if(!ok)return}
+      else if(row.sharedEntryId){const ok=await sharingMakeItineraryPrivate(row);if(!ok)return}
+    }
+    await save();closeModal();render();
   });
 }
-async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x)x.done=done;await save();render()}
-async function removeItineraryBlock(id){state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!x)return;x.done=done;if(x.sharedEntryId&&typeof sharingUpsertItineraryBlock==="function")await sharingUpsertItineraryBlock(x);await save();render()}
+async function removeItineraryBlock(id){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x?.sharedEntryId&&typeof sharingMakeItineraryPrivate==="function"){const ok=await sharingMakeItineraryPrivate(x);if(!ok)return}state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
 function openItinerarySettings(){
   const x=state.settings.itinerary||{};
   modal("Day Flow settings",`<div class="stack"><div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Day ends<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div><label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Suggest flexible home-life blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep. These are planning suggestions, not appointments or reminders.</div></span></label></div>`,"Save",async()=>{
