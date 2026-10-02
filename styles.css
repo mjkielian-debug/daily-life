@@ -1074,3 +1074,94 @@ input,select,textarea{
 @media(max-width:520px){
   .card{box-shadow:0 13px 34px rgba(2,8,5,.27),0 3px 14px rgba(240,181,200,.035)}
 }
+
+
+/* Money page — botanical blush treatment */
+.safe-spend{
+  border-color:color-mix(in srgb,var(--secondary) 40%,var(--border));
+  background:
+    radial-gradient(circle at 96% 4%,rgba(240,181,200,.16),transparent 31%),
+    radial-gradient(circle at 4% 96%,rgba(158,205,170,.08),transparent 31%),
+    linear-gradient(160deg,color-mix(in srgb,var(--panel2) 89%,var(--secondary) 11%),var(--panel));
+}
+.safe-spend .eyebrow{
+  color:var(--rose-soft);
+}
+.safe-spend .tag{
+  border-color:color-mix(in srgb,var(--secondary) 46%,var(--border));
+  background:rgba(240,181,200,.10);
+}
+.safe-spend .row{
+  border-bottom-color:color-mix(in srgb,var(--secondary) 16%,var(--border));
+}
+.safe-spend .row b{
+  color:var(--cream);
+}
+.money-actions-card{
+  border-color:color-mix(in srgb,var(--secondary) 34%,var(--border));
+}
+.money-action{
+  border-top-color:color-mix(in srgb,var(--secondary) 15%,var(--border));
+}
+.money-action.transfer .money-action-mark{
+  color:#193024;
+  border-color:color-mix(in srgb,var(--primary) 50%,var(--secondary) 24%);
+  background:linear-gradient(145deg,#b7ddc1,#e7bdcb);
+}
+.money-action.short .money-action-mark{
+  color:#6e2943;
+  border-color:color-mix(in srgb,var(--secondary) 58%,var(--border));
+  background:linear-gradient(145deg,#f5c8d5,#e7a9bd);
+}
+.bill-status{
+  background:rgba(255,255,255,.018);
+}
+.bill-status.covered{
+  color:#b8dfc1;
+  border-color:color-mix(in srgb,var(--primary) 54%,var(--border));
+  background:rgba(158,205,170,.08);
+}
+.bill-status.short{
+  color:#f2aec2;
+  border-color:color-mix(in srgb,var(--secondary) 58%,var(--border));
+  background:rgba(240,181,200,.09);
+}
+.bill-status.unknown{
+  color:#ead4a7;
+  border-color:color-mix(in srgb,var(--accent) 48%,var(--border));
+  background:rgba(234,212,167,.07);
+}
+.budget-summary .metric{
+  border-color:color-mix(in srgb,var(--secondary) 26%,var(--border));
+}
+.budget-summary .metric:nth-child(2n){
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.10),transparent 46%),
+    linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.012));
+}
+.budget-categories .card{
+  border-color:color-mix(in srgb,var(--secondary) 23%,var(--border));
+}
+.budget-categories .card:nth-child(odd){
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.09),transparent 34%),
+    linear-gradient(160deg,color-mix(in srgb,var(--panel2) 94%,var(--secondary) 6%),var(--panel));
+}
+.budget-categories .card:nth-child(even){
+  background:
+    radial-gradient(circle at 0 0,rgba(158,205,170,.08),transparent 33%),
+    linear-gradient(160deg,var(--panel2),var(--panel));
+}
+.budget-progress{
+  accent-color:var(--secondary);
+}
+.budget-progress:not(.over){
+  accent-color:var(--primary);
+}
+.bill-row,.budget-row{
+  border-bottom-color:color-mix(in srgb,var(--secondary) 14%,var(--border));
+}
+.money-all-clear{
+  border-color:color-mix(in srgb,var(--primary) 28%,var(--secondary) 20%);
+  background:linear-gradient(145deg,rgba(158,205,170,.09),rgba(240,181,200,.045));
+}
