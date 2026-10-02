@@ -786,7 +786,9 @@ function cloudApplyLifeEntry(row){
     }
     case "account_strategy":{
       const accountName=String(p.accountName||p.name||"").trim();if(!accountName)return false;
-      const account=(state.accounts||[]).find(a=>String(a.name||"").trim().toLowerCase()===accountName.toLowerCase());if(!account)return false;
+      const wanted=accountName.toLowerCase().split(/\s+/).filter(Boolean);
+      const candidates=(state.accounts||[]).filter(a=>{const name=String(a.name||"").trim().toLowerCase();return name===accountName.toLowerCase()||wanted.every(t=>name.includes(t))});
+      const account=candidates.length===1?candidates[0]:null;if(!account)return false;
       if(p.strategy!==undefined)account.strategy=String(p.strategy||"Standard");
       if(p.minimumOperatingBalance!==undefined)account.minimumOperatingBalance=Math.max(0,Number(p.minimumOperatingBalance||0));
       if(p.billPayAllowed!==undefined)account.billPayAllowed=p.billPayAllowed===null?null:!!p.billPayAllowed;
