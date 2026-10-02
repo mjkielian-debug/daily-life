@@ -33,6 +33,7 @@ async function cloudInit(){
     if(error)throw error;
     cloudSession=data.session||null;
     if(cloudSession){
+      await cloudPullProfile();
       await cloudRefreshMetadata();
       await cloudPrepareAutoSync();
       await cloudPullLifeEntries(false);
@@ -45,6 +46,7 @@ async function cloudInit(){
       if(cloudPushTimer){clearTimeout(cloudPushTimer);cloudPushTimer=null}
       setTimeout(async()=>{
         if(cloudSession){
+          await cloudPullProfile();
           await cloudRefreshMetadata();
           await cloudPrepareAutoSync();
           await cloudPullLifeEntries(false);
@@ -101,15 +103,38 @@ function cloudCredentials(){
   return {email,password};
 }
 
+async function cloudPullProfile(){
+  const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return false;
+  try{
+    const {data,error}=await cloudClient.from("profiles")
+      .select("display_name,timezone,updated_at")
+      .eq("user_id",user.id)
+      .maybeSingle();
+    if(error)throw error;
+    const displayName=String(data?.display_name||"").trim();
+    if(displayName&&!String(state?.profile?.name||"").trim()){
+      state.profile=state.profile||{};
+      state.profile.name=displayName;
+      await dbSet("state",state);
+      return true;
+    }
+    return false;
+  }catch(error){
+    cloudError=error?.message||"Could not load your private profile.";
+    return false;
+  }
+}
+
 async function cloudEnsureProfile(){
   const user=cloudUser();if(!user||!cloudClient)return;
   const displayName=typeof state!=="undefined"?String(state?.profile?.name||"").trim():"";
-  const {error}=await cloudClient.from("profiles").upsert({
+  const payload={
     user_id:user.id,
-    display_name:displayName||null,
     timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"America/Chicago",
     updated_at:new Date().toISOString()
-  },{onConflict:"user_id"});
+  };
+  if(displayName)payload.display_name=displayName;
+  const {error}=await cloudClient.from("profiles").upsert(payload,{onConflict:"user_id"});
   if(error)throw error;
 }
 
@@ -359,6 +384,7 @@ async function cloudSignInFromForm(){
     const {data,error}=await cloudClient.auth.signInWithPassword(creds);
     if(error)throw error;
     cloudSession=data.session||null;
+    await cloudPullProfile();
     await cloudEnsureProfile();
     await cloudRefreshMetadata();
     await cloudPrepareAutoSync();
