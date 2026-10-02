@@ -39,6 +39,7 @@ async function cloudInit(){
       await cloudPullHouseholdMembers();
       await cloudPullLifeEntries(false);
       await cloudPullPetProfiles();
+      if(typeof vaultRefreshCloudMetadata==="function")await vaultRefreshCloudMetadata();
     }
     cloudClient.auth.onAuthStateChange((_event,session)=>{
       cloudSession=session||null;
@@ -52,6 +53,7 @@ async function cloudInit(){
           await cloudPullHouseholdMembers();
           await cloudPullLifeEntries(false);
           await cloudPullPetProfiles();
+          if(typeof vaultRefreshCloudMetadata==="function")await vaultRefreshCloudMetadata();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
           if(typeof sharingInit==="function")await sharingInit();
         }else{cloudRemoteUpdatedAt=null;if(typeof sharingReset==="function")sharingReset()}
@@ -457,7 +459,7 @@ async function cloudSignOut(){
   if(!confirm("Sign out of the Daily Life cloud account? Local records on this device will remain here."))return;
   const {error}=await cloudClient.auth.signOut();
   if(error){alert("Could not sign out: "+error.message);return}
-  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;if(typeof sharingReset==="function")sharingReset();render();
+  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;if(typeof vaultCloudUpdatedAt!=="undefined")vaultCloudUpdatedAt="";if(typeof sharingReset==="function")sharingReset();render();
 }
 
 function cloudStateForUpload(){
