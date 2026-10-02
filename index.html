@@ -95,7 +95,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261002-cloud4"></script>
+<script src="cloud.js?v=20261002-cloud5"></script>
 <script src="sharing.js?v=20261002-share4"></script>
 <script src="finance-cloud.js?v=20261002-moneystrategy1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
@@ -1914,12 +1914,14 @@ function personCardCompact(p){
   </div>`;
 }
 function openPersonProfile(id=""){
-  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],schoolContacts:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],school:"",grade:"",schoolContacts:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
     <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
     <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="sister's daughter, partner's brother, their child…"></label>
-    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label><label>School / teacher contacts<textarea id="pschoolcontacts" rows="5" placeholder="Teacher name | role/class | email | notes">${esc((p.schoolContacts||[]).map(x=>[x.name||"",x.role||"",x.email||"",x.notes||""].join(" | ")).join("\n"))}</textarea></label>
+    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label>
+    <div class="grid2"><label>School<input id="pschool" value="${esc(p.school||"")}" placeholder="Everett Elementary"></label><label>Grade<input id="pgrade" value="${esc(p.grade||"")}" placeholder="3rd"></label></div>
+    <label>School / teacher contacts<textarea id="pschoolcontacts" rows="5" placeholder="Teacher name | role/class | email | notes">${esc((p.schoolContacts||[]).map(x=>[x.name||"",x.role||"",x.email||"",x.notes||""].join(" | ")).join("\n"))}</textarea></label>
     <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
@@ -1941,7 +1943,7 @@ function openPersonProfile(id=""){
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
     const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
     const schoolContacts=$("#pschoolcontacts").value.split(/\r?\n/).map(line=>{const parts=line.split("|").map(x=>String(x||"").trim());return{name:parts[0]||"",role:parts[1]||"",email:parts[2]||"",notes:parts.slice(3).join(" | ")}}).filter(x=>x.name||x.email);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,schoolContacts,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolContacts,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
