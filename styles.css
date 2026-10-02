@@ -368,3 +368,28 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .people-missing{border-style:dashed}.person-chip-button{appearance:none;color:var(--text);cursor:pointer}.person-chip-button:hover{border-color:color-mix(in srgb,var(--primary) 42%,var(--border))}
 
 .today-people{border-color:color-mix(in srgb,var(--primary) 24%,var(--border))}.today-people-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border)}.today-people-row:first-of-type{margin-top:5px}.today-people-row>span{min-width:0}.today-people-row>b{text-align:right;white-space:nowrap;font-size:.78rem}
+
+/* People filters + Elfster status */
+.people-filter-card{display:grid;gap:10px}
+.people-search-label{display:grid;gap:6px;font-size:.75rem;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.people-search-label input{font-size:.95rem;text-transform:none;letter-spacing:0}
+.people-filter-chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.people-filter-chips::-webkit-scrollbar{display:none}
+.people-filter-chips button{
+  white-space:nowrap;border:1px solid var(--border);border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.025);color:var(--muted);font-weight:800
+}
+.people-filter-chips button.active{
+  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
+  border-color:color-mix(in srgb,var(--primary) 55%,white 8%)
+}
+.elfster-status-card{
+  border-color:color-mix(in srgb,var(--secondary) 28%,var(--border));
+  background:linear-gradient(155deg,color-mix(in srgb,var(--secondary) 7%,transparent),transparent 40%),linear-gradient(180deg,var(--panel2),var(--panel))
+}
+.elfster-person-list{display:grid;gap:0;margin-top:8px;border-top:1px solid var(--border)}
+.elfster-person-list button{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;
+  border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:11px 0
+}
+.elfster-person-list button span:first-child{display:grid;gap:2px}
+.elfster-person-list small{color:var(--muted)}
