@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-living7">
+<link rel="stylesheet" href="styles.css?v=20261002-living8">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -119,7 +119,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],pets:[],petLogs:[],petRecords:[],plants:[],plantLogs:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="";
+let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
   ["Emerald Blush","#69c58e","#e8b8c7","#e7d3a0"],
@@ -1091,24 +1091,28 @@ function openPetRecord(id=""){
     await save();closeModal();render();
   });
 }
+function setPetsTab(tab){if(!["overview","health","history"].includes(tab))tab="overview";petsTab=tab;localStorage.setItem("dailyLifePetsTab",tab);render()}
+function petsTabs(){return `<div class="living-tabs"><button class="${petsTab==="overview"?"active":""}" onclick="setPetsTab('overview')">Overview</button><button class="${petsTab==="health"?"active":""}" onclick="setPetsTab('health')">Health</button><button class="${petsTab==="history"?"active":""}" onclick="setPetsTab('history')">History</button></div>`}
+function petHistoryCard(){
+  const logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||"")));
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>${logs.slice(0,30).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
+}
 function petsView(){
   const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
         litter=logs.find(x=>x.type==="Litter");
-  return `<div class="card glow pet-hero"><div class="section-title"><div><div class="eyebrow">Pets</div><h2>${pets.length?pets.length+" pet"+(pets.length===1?"":"s"):"Your pets"}</h2><div class="muted small">Profiles, care, vet notes, medications, weight, and shared household pet care.</div></div><div class="actions"><button class="btn primary" onclick="openPetProfile()">+ Pet</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div></div>
-  <div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
-  ${petCareSummaryCard()}
-  ${petRecordsCard()}
-  ${petWeightCard()}
-  ${livingSuppliesCard("pet")}
-  <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><div class="actions"><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button><button class="btn" onclick="openPetCareSettings()">Setup</button></div></div>
-    ${petCareSettings().configured?`<div class="pet-setup-stats"><span><b>${Number(petCareSettings().robotLitterBoxes||0)}</b><small>robot boxes</small></span><span><b>${Number(petCareSettings().standardLitterBoxes||0)}</b><small>standard boxes</small></span><span><b>${Number(petCareSettings().robotLitterBoxes||0)+Number(petCareSettings().standardLitterBoxes||0)}</b><small>total boxes</small></span></div>`:""}
-    <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}${petCareSettings().notes?" · "+esc(petCareSettings().notes):""}</div>
-    <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openLivingSupply('pet')">Add supply</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
-  </div>
-  <div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>
-  ${logs.slice(0,15).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
+  const overview=`<div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
+    ${petCareSummaryCard()}
+    ${livingSuppliesCard("pet")}
+    <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><div class="actions"><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button><button class="btn" onclick="openPetCareSettings()">Setup</button></div></div>
+      ${petCareSettings().configured?`<div class="pet-setup-stats"><span><b>${Number(petCareSettings().robotLitterBoxes||0)}</b><small>robot boxes</small></span><span><b>${Number(petCareSettings().standardLitterBoxes||0)}</b><small>standard boxes</small></span><span><b>${Number(petCareSettings().robotLitterBoxes||0)+Number(petCareSettings().standardLitterBoxes||0)}</b><small>total boxes</small></span></div>`:""}
+      <div class="muted small">${litter?"Last litter care "+esc(dl(litter.date))+(litter.notes?" · "+esc(litter.notes):""):"No litter care logged yet."}${petCareSettings().notes?" · "+esc(petCareSettings().notes):""}</div>
+      <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPetLog('','Food')">Shared food note</button><button class="btn" onclick="openLivingSupply('pet')">Add supply</button><button class="btn" onclick="openPetLog('','Other')">Other care</button></div>
+    </div>`;
+  const body=petsTab==="health"?`${petRecordsCard()}${petWeightCard()}`:petsTab==="history"?petHistoryCard():overview;
+  return `<div class="card glow pet-hero"><div class="section-title"><div><div class="eyebrow">Pets</div><h2>${pets.length?pets.length+" pet"+(pets.length===1?"":"s"):"Your pets"}</h2><div class="muted small">Profiles, everyday care, health records, weight history, and shared household pet care.</div></div><div class="actions"><button class="btn primary" onclick="openPetProfile()">+ Pet</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>${petsTabs()}</div>
+  ${body}`;
 }
-function openPetProfile(id=""){
+function openPetProfilefunction openPetProfile(id=""){
   const p=petById(id)||{id:"",name:"",species:"cat",birthday:"",diet:"",vet:"",medications:"",microchip:"",notes:""};
   modal(p.id?`Pet · ${p.name}`:"Add pet",`<div class="stack"><div class="grid2"><label>Name<input id="petname" value="${esc(p.name||"")}"></label><label>Species<input id="petspecies" value="${esc(p.species||"")}" placeholder="cat, dog…"></label></div><label>Photo<input id="petphoto" type="file" accept="image/*"></label>${p.photo?`<img class="living-photo-preview" src="${p.photo}" alt="">`:""}<label>Birthday / gotcha date<input id="petbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label><label>Food / diet notes<input id="petdiet" value="${esc(p.diet||"")}"></label><label>Vet<input id="petvet" value="${esc(p.vet||"")}"></label><label>Medications / recurring care<textarea id="petmeds" rows="2">${esc(p.medications||"")}</textarea></label><label>Microchip / ID note<input id="petchip" value="${esc(p.microchip||"")}"></label><label>Notes<textarea id="petnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
     const name=$("#petname").value.trim();if(!name)return;let x=petById(id);
@@ -1187,21 +1191,31 @@ function openGardenSeed(id=""){
     Object.assign(row,{name,kind:$("#sdkind").value,variety:$("#sdvar").value.trim(),year:$("#sdyear").value.trim(),quantity:$("#sdqty").value.trim(),startIndoors:$("#sdindoors").value.trim(),directSow:$("#sdsow").value.trim(),notes:$("#sdnotes").value.trim()});await save();closeModal();render();
   });
 }
-function gardenView(){
-  const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999"))),
-        logs=[...(state.plantLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
-  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, watering, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="openLivingSupply('garden')">+ Supply</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
-    <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div></div>
-  ${gardenSeasonCard()}
-  ${due.length?`<div class="card garden-due"><div class="section-title"><div><div class="eyebrow">Needs attention</div><h2>Water / check</h2></div>${due.length>1?'<button class="btn primary" onclick="waterAllDuePlants()">Water all</button>':""}</div>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
-  <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
-  ${livingSuppliesCard("garden")}
-  ${seedInventoryCard()}
-  ${gardenJournalCard()}
-  <div class="card"><div class="section-title"><div><div class="eyebrow">Garden tasks</div><h2>Projects + seasonal jobs</h2></div><button class="btn" onclick="openGardenTask()">+ Task</button></div>${tasks.map(t=>`<label class="row task"><input type="checkbox" onchange="toggleGardenTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.due?esc(dl(t.due)):"No due date"}${t.area?" · "+esc(t.area):""}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")||"<div class='notice'>No open garden tasks.</div>"}</div>
-  <div class="card"><div class="eyebrow">Plant history</div><h2>Recent care</h2>${logs.slice(0,15).map(x=>{const p=plantById(x.plantId);return`<div class="row"><span><b>${esc(x.type)}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No plant care logged yet.</div>"}</div>`;
+function setGardenTab(tab){if(!["plants","seeds","journal"].includes(tab))tab="plants";gardenTab=tab;localStorage.setItem("dailyLifeGardenTab",tab);render()}
+function gardenTabs(){return `<div class="living-tabs"><button class="${gardenTab==="plants"?"active":""}" onclick="setGardenTab('plants')">Plants</button><button class="${gardenTab==="seeds"?"active":""}" onclick="setGardenTab('seeds')">Seeds</button><button class="${gardenTab==="journal"?"active":""}" onclick="setGardenTab('journal')">Journal</button></div>`}
+function gardenHistoryCard(){
+  const logs=[...(state.plantLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  return `<div class="card"><div class="eyebrow">Plant history</div><h2>Recent care</h2>${logs.slice(0,30).map(x=>{const p=plantById(x.plantId);return`<div class="row"><span><b>${esc(x.type)}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No plant care logged yet.</div>"}</div>`;
 }
-function openPlant(id=""){
+function gardenTasksCard(){
+  const tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999")));
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Garden tasks</div><h2>Projects + seasonal jobs</h2></div><button class="btn" onclick="openGardenTask()">+ Task</button></div>${tasks.map(t=>`<label class="row task"><input type="checkbox" onchange="toggleGardenTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.due?esc(dl(t.due)):"No due date"}${t.area?" · "+esc(t.area):""}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")||"<div class='notice'>No open garden tasks.</div>"}</div>`;
+}
+function gardenView(){
+  const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),
+        tasks=(state.gardenTasks||[]).filter(t=>!t.done);
+  const plantBody=`${gardenSeasonCard()}
+    ${due.length?`<div class="card garden-due"><div class="section-title"><div><div class="eyebrow">Needs attention</div><h2>Water / check</h2></div>${due.length>1?'<button class="btn primary" onclick="waterAllDuePlants()">Water all</button>':""}</div>${due.map(p=>`<div class="row"><span><b>${esc(p.name)}</b><div class="muted small">${esc(plantCareState(p).label)}</div></span><button class="btn small primary" onclick="logPlantCare('${p.id}','Watered')">Watered</button></div>`).join("")}</div>`:""}
+    <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
+    ${livingSuppliesCard("garden")}`;
+  const seedBody=`${seedInventoryCard()}${livingSuppliesCard("garden")}`;
+  const journalBody=`${gardenJournalCard()}${gardenTasksCard()}${gardenHistoryCard()}`;
+  const body=gardenTab==="seeds"?seedBody:gardenTab==="journal"?journalBody:plantBody;
+  return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, seeds, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="openLivingSupply('garden')">+ Supply</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
+    <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div>${gardenTabs()}</div>
+  ${body}`;
+}
+function openPlantfunction openPlant(id=""){
   const p=plantById(id)||{id:"",name:"",type:"Houseplant",status:"Active",location:"",light:"",waterEveryDays:"",plantedDate:"",source:"",notes:""};
   modal(p.id?`Plant · ${p.name}`:"Add plant",`<div class="stack"><div class="grid2"><label>Name<input id="gname" value="${esc(p.name||"")}" placeholder="Basil, pothos, tomato bed…"></label><label>Type<select id="gtype">${["Houseplant","Herb","Vegetable","Fruit","Flower","Tree / shrub","Garden bed","Other"].map(v=>`<option ${p.type===v?"selected":""}>${v}</option>`).join("")}</select></label></div><label>Status<select id="gstatus">${["Active","Watch","Dormant","Finished"].map(v=>`<option ${(p.status||"Active")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Photo<input id="gphoto" type="file" accept="image/*"></label>${p.photo?`<img class="living-photo-preview" src="${p.photo}" alt="">`:""}<div class="grid2"><label>Location<input id="gloc" value="${esc(p.location||"")}" placeholder="Kitchen window, front bed…"></label><label>Light<input id="glight" value="${esc(p.light||"")}" placeholder="Full sun, bright indirect…"></label></div><div class="grid2"><label>Water every N days<input id="gwater" type="number" min="0" value="${esc(p.waterEveryDays||"")}"></label><label>Planted / acquired<input id="gdate" type="date" value="${esc(p.plantedDate||"")}"></label></div><label>Source / variety<input id="gsource" value="${esc(p.source||"")}"></label><label>Care notes<textarea id="gnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
     const name=$("#gname").value.trim();if(!name)return;let x=plantById(id);if(!x){x={id:uid()};state.plants.push(x)}
