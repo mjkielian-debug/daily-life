@@ -574,3 +574,25 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .routine-edit{display:grid;gap:2px;text-align:left;border:0;background:transparent;color:var(--text);padding:3px 0}
 .routine-edit small{color:var(--muted)}
 @media(max-width:520px){.section-launcher{grid-template-columns:1fr}}
+
+/* Self care — personal-care frequency tracking */
+.self-care-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.personal-care-group{padding:12px 0;border-top:1px solid var(--border)}
+.personal-care-group:first-of-type{border-top:0}
+.personal-care-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.personal-care-item{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;
+  padding:9px 10px;border:1px solid var(--border);border-radius:16px;
+  background:linear-gradient(145deg,rgba(255,255,255,.026),color-mix(in srgb,var(--secondary) 4%,transparent))
+}
+.personal-care-main{
+  display:grid;gap:3px;min-width:0;text-align:left;border:0;background:transparent;color:var(--text);padding:0
+}
+.personal-care-main b{font-size:.82rem}
+.personal-care-main small{color:var(--muted);font-size:.68rem;overflow-wrap:anywhere}
+@media(max-width:620px){
+  .self-care-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  .personal-care-grid{grid-template-columns:1fr}
+}
