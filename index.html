@@ -2161,13 +2161,14 @@ function moreView(){
         debt=state.accounts.filter(x=>x.type==="credit").reduce((sum,x)=>sum+Number(x.balance||0),0),
         ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0);
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">💚 Money</div><h2>Your money picture</h2></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div><div class="grid2"><div><div class="muted small">Checking</div><div class="big">${money(checking)}</div></div><div><div class="muted small">Savings</div><div class="big">${money(savings)}</div></div></div><div class="notice">Deposit cash is not automatically safe-to-spend.</div></div>
+  ${accountStrategyCard()}
   ${moneyNextStepsCard()}
   ${safeToSpendCard()}
   ${dueDateOutlookCard()}
   ${incomePatternCard()}
   ${seasonalIncomeCard()}
   ${netWorthCard()}
-  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
+  <div class="card">${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>
   ${cloudFinancePanel()}
   ${expectedIncomeCard()}
   ${upcomingBillsView()}
@@ -2474,14 +2475,49 @@ function openHome(){modal("Log home care",`<div class="stack"><label>Area<input 
 function compressImage(file,max=1100,quality=.78){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>max){const scale=max/Math.max(w,h);w=Math.round(w*scale);h=Math.round(h*scale)}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
 function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("Today’s outfit",`<div class="stack"><label>Mirror photo<input id="op" type="file" accept="image/*"></label>${x.photo?`<img class="photo" src="${x.photo}">`:""}<label>Top<input id="ot" value="${esc(x.top||"")}"></label><label>Bottom<input id="ob" value="${esc(x.bottom||"")}"></label><label>Shoes<input id="os" value="${esc(x.shoes||"")}"></label><label>Outerwear<input id="oo" value="${esc(x.outerwear||"")}"></label><label>Accessories<input id="oa" value="${esc(x.accessories||"")}"></label><label>Occasion<input id="oc" value="${esc(x.occasion||"")}"></label><label>Comfort 1–5<input id="ocomf" type="number" min="1" max="5" value="${x.comfort||""}"></label><label>Confidence 1–5<input id="oconf" type="number" min="1" max="5" value="${x.confidence||""}"></label><label>Notes<textarea id="on">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let o=state.outfits.find(x=>x.date===ymd());if(!o){o={id:uid(),date:ymd()};state.outfits.push(o)}const file=$("#op").files[0];if(file)o.photo=await compressImage(file);Object.assign(o,{top:$("#ot").value,bottom:$("#ob").value,shoes:$("#os").value,outerwear:$("#oo").value,accessories:$("#oa").value,occasion:$("#oc").value,comfort:Number($("#ocomf").value||0)||null,confidence:Number($("#oconf").value||0)||null,notes:$("#on").value});await save();closeModal();render()})}
 
+const ACCOUNT_STRATEGIES=["Standard","Interest-first savings","Deposit landing checking","Transition / close","Protected reserve"];
+function accountStrategy(a){return ACCOUNT_STRATEGIES.includes(a?.strategy)?a.strategy:"Standard"}
+function accountStrategyNote(a){
+  const s=accountStrategy(a);
+  if(s==="Interest-first savings")return"Preferred place for cash that does not need to stay elsewhere.";
+  if(s==="Deposit landing checking")return"Income can land here, then excess can move after upcoming bills and your chosen buffer.";
+  if(s==="Transition / close")return"Use this as an exit checklist: move straggler bills/income and work toward a zero operational balance.";
+  if(s==="Protected reserve")return"Keep this money outside ordinary safe-to-spend calculations.";
+  return"Normal account with no special cash-placement goal.";
+}
+function accountBillsDueSoon(accountKey,days=30){
+  const end=new Date(ymd()+"T12:00:00");end.setDate(end.getDate()+days);const until=ymd(end);
+  return (state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=until&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0);
+}
+function accountStrategyCard(){
+  const accounts=state.accounts||[],interest=accounts.filter(a=>accountStrategy(a)==="Interest-first savings"),
+        landings=accounts.filter(a=>accountStrategy(a)==="Deposit landing checking"),
+        exiting=accounts.filter(a=>accountStrategy(a)==="Transition / close");
+  if(!interest.length&&!landings.length&&!exiting.length)return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Tell Daily Life where money should live</h2><div class="muted small">Mark an account as interest-first savings, deposit-landing checking, or transition/close. Daily Life will keep those goals separate from bill payment rules.</div></div></div><div class="notice">Edit an account to set its strategy. This does not move money.</div></div>`;
+  const landingRows=landings.map(a=>{
+    const bills=accountBillsDueSoon(a.key,30),reserve=bills.reduce((n,b)=>n+Number(b.amount||0),0),floor=Math.max(0,Number(a.minimumOperatingBalance||0)),needed=reserve+floor,balance=Number(a.balance||0),excess=Math.max(0,balance-needed);
+    const home=interest[0];
+    return `<div class="money-strategy-row"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Deposit landing · ${bills.length} bill${bills.length===1?"":"s"} due in 30d · buffer ${money(floor)}</div></div><div class="strategy-amount"><b>${money(needed)}</b><small>keep for bills + buffer</small>${excess>0&&home?`<span>${money(excess)} currently above that amount</span>`:""}</div></div>`;
+  }).join("");
+  const exitRows=exiting.map(a=>{
+    const bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===a.key),income=(state.expectedIncome||[]).filter(x=>x.enabled!==false&&x.accountKey===a.key),balance=Number(a.balance||0),
+          clean=bills.length===0&&income.length===0&&Math.abs(balance)<1;
+    return `<div class="money-strategy-row exit"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">${clean?"No active bill/income links recorded. Verify pending transactions before closing.":`${bills.length} unpaid bill link${bills.length===1?"":"s"} · ${income.length} expected-income link${income.length===1?"":"s"} · balance ${money(balance)}`}</div></div><span class="tag">${clean?"structurally clear":"transitioning"}</span></div>`;
+  }).join("");
+  const interestRows=interest.map(a=>`<div class="money-strategy-row home"><div class="grow"><b>${esc(a.name)}</b><div class="muted small">Interest-first home base${a.billPayAllowed===true?" · can pay bills directly":a.billPayAllowed===false?" · not used for direct bill pay":""}</div></div><b>${money(a.balance)}</b></div>`).join("");
+  return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Keep cash where it works hardest</h2><div class="muted small">This planning layer respects each bill's actual payment account. It never assumes a bill can pull from savings unless you recorded it that way.</div></div></div>${interestRows}${landingRows}${exitRows}</div>`;
+}
 function openAccount(key=""){
   const x=state.accounts.find(a=>a.key===key)||{};
-  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label><label class="task"><input id="aprotect" type="checkbox" ${x.protectFromSpending||x.key==="house_fund"?"checked":""}><span><b>Keep out of safe-to-spend</b><div class="muted small">Use for house fund or other earmarked savings you do not want treated as available.</div></span></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
+  modal(x.key?"Edit account":"Add account",`<div class="stack"><label>Name<input id="an" value="${esc(x.name||"")}"></label><label>Type<select id="at"><option ${x.type==="checking"?"selected":""}>checking</option><option ${x.type==="savings"?"selected":""}>savings</option><option ${x.type==="credit"?"selected":""}>credit</option><option ${x.type==="investment"?"selected":""}>investment</option><option ${x.type==="loan"?"selected":""}>loan</option><option ${x.type==="other"?"selected":""}>other</option></select></label><label>Balance<input id="ab" type="number" step=".01" value="${x.balance??""}"></label>
+  <div class="account-strategy-editor"><div class="mini-heading">Cash strategy</div><label>Role<select id="astrategy">${ACCOUNT_STRATEGIES.map(v=>`<option ${accountStrategy(x)===v?"selected":""}>${v}</option>`).join("")}</select></label><div class="grid2"><label>Minimum operating buffer<input id="amin" type="number" min="0" step=".01" value="${Number(x.minimumOperatingBalance||0)}"></label><label>Can bills pull directly?<select id="abillpay"><option value="" ${x.billPayAllowed==null?"selected":""}>Unknown</option><option value="1" ${x.billPayAllowed===true?"selected":""}>Yes</option><option value="0" ${x.billPayAllowed===false?"selected":""}>No</option></select></label></div><label class="task"><input id="addlanding" type="checkbox" ${x.directDepositRequired?"checked":""}><span><b>Direct deposit / income needs to land here</b><div class="muted small">Use when an account must receive deposits even though you may prefer to move excess elsewhere.</div></span></label><div class="muted small">${esc(accountStrategyNote(x))}</div></div>
+  <label class="task"><input id="aprotect" type="checkbox" ${x.protectFromSpending||x.key==="house_fund"?"checked":""}><span><b>Keep out of safe-to-spend</b><div class="muted small">Use for house fund or other earmarked savings you do not want treated as available.</div></span></label><label>Special key (optional)<input id="ak" value="${esc(x.key||"")}" placeholder="house_fund"></label></div>`,"Save",async()=>{const name=$("#an").value.trim();if(!name)return;
     const oldKey=x.key,newKey=$("#ak").value.trim()||oldKey||uid();
     if(state.accounts.some(a=>a!==x&&a.key===newKey)){alert("That account key is already in use. Choose a unique key.");return}
     const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
     const a=oldKey?x:{key:newKey};if(!oldKey)state.accounts.push(a);
-    Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
+    const billPayRaw=$("#abillpay").value;
+    Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),strategy:$("#astrategy").value,minimumOperatingBalance:Math.max(0,Number($("#amin").value||0)),billPayAllowed:billPayRaw===""?null:billPayRaw==="1",directDepositRequired:$("#addlanding").checked,protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
     if(oldKey&&oldKey!==newKey)for(const b of state.bills){if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;if(b.desiredAccountKey===oldKey)b.desiredAccountKey=newKey}
     try{await save();closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
 }
