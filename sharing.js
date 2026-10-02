@@ -7,9 +7,11 @@ let sharingMembers=[];
 let sharingBusy=false;
 let sharingLastPulledAt="";
 let sharingInviteCode="";
+let sharingPollTimer=null;
 
 function sharingReset(){
   sharingHousehold=null;sharingMembership=null;sharingMembers=[];sharingLastPulledAt="";sharingInviteCode="";
+  if(sharingPollTimer){clearInterval(sharingPollTimer);sharingPollTimer=null}
 }
 function sharingConnected(){return !!(sharingHousehold?.id&&sharingMembership?.household_id)}
 function sharingCanShare(){return sharingConnected()&&!!cloudUser?.()}
@@ -65,11 +67,21 @@ async function sharingInit(){
     if(membersErr)throw membersErr;
     sharingMembers=memberRows||[];
     await sharingPullEntries(false);
+    sharingStartPolling();
     return true;
   }catch(error){
     console.warn("Household sharing init failed",error);
     return false;
   }
+}
+function sharingStartPolling(){
+  if(sharingPollTimer)clearInterval(sharingPollTimer);
+  if(!sharingConnected())return;
+  sharingPollTimer=setInterval(async()=>{
+    if(document.hidden||!sharingConnected())return;
+    const changed=await sharingPullEntries(false);
+    if(changed&&typeof render==="function")render();
+  },60000);
 }
 async function sharingPullEntries(shouldRender=true){
   const user=cloudUser?.();if(!user||!cloudClient||!sharingHousehold?.id)return 0;
@@ -264,3 +276,5 @@ async function sharingCopyInvite(){
   try{await navigator.clipboard.writeText(sharingInviteCode);alert("Invite code copied.");}
   catch{alert("Clipboard access was unavailable. Press and hold the code to copy it.")}
 }
+
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sharingConnected())sharingPullEntries(true)});
