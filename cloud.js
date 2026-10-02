@@ -162,6 +162,10 @@ async function cloudPullPetProfiles(){
         state.settings.petCare={
           robotLitterBoxes:Math.max(0,Number(meta.householdCare.robotLitterBoxes||0)),
           standardLitterBoxes:Math.max(0,Number(meta.householdCare.standardLitterBoxes||0)),
+          feedingRoutine:String(meta.householdCare.feedingRoutine||""),
+          carrierLocation:String(meta.householdCare.carrierLocation||""),
+          emergencyVet:String(meta.householdCare.emergencyVet||""),
+          sitterNotes:String(meta.householdCare.sitterNotes||""),
           notes:String(meta.householdCare.notes||""),
           configured:true
         };
@@ -179,12 +183,19 @@ async function cloudPullPetProfiles(){
 async function cloudUpsertPetProfile(p){
   const user=cloudUser();if(!user||!cloudClient||!p?.name)return false;
   const birthdayText=String(p.birthday||"").trim(),birthday=/^\d{4}-\d{2}-\d{2}$/.test(birthdayText)?birthdayText:null;
+  let existingMeta={};
+  if(p.cloudPetId){
+    const current=await cloudClient.from("pet_profiles").select("metadata").eq("id",p.cloudPetId).eq("owner_user_id",user.id).maybeSingle();
+    if(current.error)throw current.error;
+    if(current.data?.metadata&&typeof current.data.metadata==="object")existingMeta=current.data.metadata;
+  }
   const payload={
     owner_user_id:user.id,
     display_name:String(p.name).trim(),
     species:String(p.species||"pet").trim()||"pet",
     birthday,
     metadata:{
+      ...existingMeta,
       birthdayText:birthday?null:birthdayText||null,
       diet:String(p.diet||""),
       vet:String(p.vet||""),
@@ -203,6 +214,31 @@ async function cloudUpsertPetProfile(p){
   if(result.error)throw result.error;
   if(result.data?.id)p.cloudPetId=result.data.id;
   await dbSet("state",state);
+  return true;
+}
+
+async function cloudUpsertPetHouseholdCare(){
+  const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return false;
+  const care=state.settings?.petCare||{};
+  const {data,error}=await cloudClient.from("pet_profiles").select("id,metadata").eq("owner_user_id",user.id);
+  if(error)throw error;
+  for(const row of data||[]){
+    const metadata=row.metadata&&typeof row.metadata==="object"?row.metadata:{};
+    const next={
+      ...metadata,
+      householdCare:{
+        robotLitterBoxes:Math.max(0,Number(care.robotLitterBoxes||0)),
+        standardLitterBoxes:Math.max(0,Number(care.standardLitterBoxes||0)),
+        feedingRoutine:String(care.feedingRoutine||""),
+        carrierLocation:String(care.carrierLocation||""),
+        emergencyVet:String(care.emergencyVet||""),
+        sitterNotes:String(care.sitterNotes||""),
+        notes:String(care.notes||"")
+      }
+    };
+    const result=await cloudClient.from("pet_profiles").update({metadata:next,updated_at:new Date().toISOString()}).eq("id",row.id).eq("owner_user_id",user.id);
+    if(result.error)throw result.error;
+  }
   return true;
 }
 
