@@ -877,3 +877,200 @@ hr,.hr{background:color-mix(in srgb,var(--secondary) 16%,var(--border))}
 @media(max-width:520px){
   .card{border-radius:24px}
 }
+
+
+/* Botanical blush v2 — stronger sage + pink feminine system */
+:root{
+  --bg:#0c1814;
+  --panel:#15251f;
+  --panel2:#20352b;
+  --text:#fffaf7;
+  --muted:#d2ccc9;
+  --border:rgba(255,228,236,.19);
+  --primary:#9ecdaa;
+  --secondary:#f0b5c8;
+  --accent:#ead4a7;
+  --rose-deep:#cf7d9d;
+  --rose-soft:#f8dce6;
+  --cream:#fff4ed;
+  --sage-soft:#c4dfca;
+}
+body{
+  background:
+    radial-gradient(circle at 86% 2%,rgba(240,181,200,.23),transparent 28%),
+    radial-gradient(circle at 8% 17%,rgba(158,205,170,.17),transparent 32%),
+    radial-gradient(circle at 72% 60%,rgba(234,212,167,.07),transparent 25%),
+    linear-gradient(180deg,#102019 0%,#0b1712 48%,#09130f 100%);
+}
+.app{
+  background:
+    radial-gradient(circle at 94% 3%,rgba(240,181,200,.20),transparent 23%),
+    radial-gradient(circle at 10% 24%,rgba(158,205,170,.17),transparent 29%),
+    radial-gradient(circle at 83% 47%,rgba(240,181,200,.09),transparent 23%),
+    radial-gradient(circle at 14% 72%,rgba(234,212,167,.07),transparent 23%),
+    transparent;
+}
+header{
+  border-bottom:1px solid color-mix(in srgb,var(--secondary) 18%,transparent);
+  margin-bottom:4px;
+}
+header:before{
+  content:"";
+  position:absolute;
+  left:6px;
+  right:6px;
+  bottom:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--secondary),var(--accent),transparent);
+  opacity:.38;
+}
+.title{
+  font-family:Georgia,"Times New Roman",serif;
+  color:var(--cream);
+}
+.eyebrow{
+  color:color-mix(in srgb,var(--secondary) 83%,var(--cream) 17%);
+}
+.card{
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.095),transparent 33%),
+    radial-gradient(circle at 0 100%,rgba(158,205,170,.07),transparent 31%),
+    linear-gradient(160deg,color-mix(in srgb,var(--panel2) 92%,var(--secondary) 8%),var(--panel));
+  border-color:color-mix(in srgb,var(--secondary) 25%,var(--border));
+}
+.card:nth-of-type(even){
+  background:
+    radial-gradient(circle at 0 0,rgba(240,181,200,.075),transparent 30%),
+    radial-gradient(circle at 100% 100%,rgba(234,212,167,.055),transparent 28%),
+    linear-gradient(160deg,color-mix(in srgb,var(--panel2) 95%,var(--secondary) 5%),var(--panel));
+}
+.card:after{
+  content:"";
+  position:absolute;
+  width:88px;
+  height:88px;
+  right:-36px;
+  bottom:-40px;
+  border:1px solid color-mix(in srgb,var(--secondary) 12%,transparent);
+  border-radius:50%;
+  pointer-events:none;
+  opacity:.65;
+}
+.glow:after,.sparkle-card:after,.people-hero:after,.reading-hero:after,.garden-hero:after,.pet-hero:after{
+  content:"✧";
+  position:absolute;
+  width:auto;height:auto;
+  right:16px;bottom:14px;
+  border:0;
+  color:color-mix(in srgb,var(--secondary) 70%,var(--accent) 30%);
+  opacity:.42;
+  font-size:.78rem;
+}
+.section-title{
+  position:relative;
+}
+.section-title h2{
+  color:var(--cream);
+}
+.section-title:after{
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:-7px;
+  width:52px;
+  height:1px;
+  background:linear-gradient(90deg,var(--secondary),var(--accent),transparent);
+  opacity:.55;
+}
+.btn{
+  border-color:color-mix(in srgb,var(--secondary) 28%,var(--border));
+  background:
+    linear-gradient(145deg,rgba(240,181,200,.075),rgba(255,255,255,.025));
+}
+.btn.primary{
+  background:
+    linear-gradient(135deg,#b7ddc1 0%,#a8d4b4 44%,#eac1cf 100%);
+  border-color:color-mix(in srgb,var(--secondary) 34%,var(--primary) 66%);
+  color:#112019;
+}
+.btn.good{
+  color:var(--rose-soft);
+  border-color:color-mix(in srgb,var(--secondary) 38%,var(--border));
+  background:linear-gradient(145deg,rgba(240,181,200,.14),rgba(255,255,255,.02));
+}
+.pill,.tag{
+  background:linear-gradient(145deg,rgba(240,181,200,.10),rgba(255,255,255,.018));
+  border-color:color-mix(in srgb,var(--secondary) 38%,var(--border));
+}
+.metric,.people-hero-stats span,.garden-stats span,.pet-setup-stats span,.garden-season-meta span,.today-care-inline span,.kids-money-summary span{
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.08),transparent 45%),
+    linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.012));
+}
+.bottom-nav{
+  background:
+    radial-gradient(circle at 50% -80%,rgba(240,181,200,.16),transparent 45%),
+    linear-gradient(180deg,rgba(15,31,24,.965),rgba(8,18,13,.985));
+  border-top:1px solid color-mix(in srgb,var(--secondary) 28%,var(--border));
+}
+.navbtn.active{
+  background:
+    linear-gradient(145deg,rgba(240,181,200,.16),rgba(158,205,170,.13));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--secondary) 39%,transparent),
+    0 5px 18px rgba(0,0,0,.15);
+}
+.navbtn.active>div{
+  color:var(--secondary);
+}
+.self-care-tabs,.living-tabs,.people-tabs{
+  background:
+    linear-gradient(145deg,rgba(240,181,200,.085),rgba(255,255,255,.015));
+}
+.self-care-tabs button.active,.living-tabs button.active,.people-tabs button.active{
+  background:linear-gradient(135deg,#b7ddc1 0%,#a9d2b4 58%,#e9bdcc 100%);
+}
+.person-avatar{
+  background:linear-gradient(145deg,#b8ddc2,#eabacb 72%,#ecd9af);
+  color:#173022;
+}
+.person-chip,.pantry-chip{
+  background:rgba(240,181,200,.08);
+  border-color:color-mix(in srgb,var(--secondary) 30%,var(--border));
+}
+.money-actions-card,.safe-to-spend-card,.due-date-outlook,.budget-summary,.kids-money-card{
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.10),transparent 32%),
+    radial-gradient(circle at 0 100%,rgba(158,205,170,.06),transparent 28%),
+    linear-gradient(160deg,color-mix(in srgb,var(--panel2) 93%,var(--secondary) 7%),var(--panel));
+}
+.safe-to-spend-card .big,.budget-negative,.bill-status.short{
+  color:#f2a9bf;
+}
+.money-action-mark,.living-icon,.section-launch-icon,.pet-avatar,.plant-leaf{
+  border-color:color-mix(in srgb,var(--secondary) 32%,var(--border));
+  background:linear-gradient(145deg,rgba(240,181,200,.10),rgba(158,205,170,.07));
+}
+.notice,.self-care-supplies,.personal-care-item,.routine-intro{
+  background:
+    linear-gradient(145deg,rgba(240,181,200,.075),rgba(255,255,255,.018));
+  border-color:color-mix(in srgb,var(--secondary) 26%,var(--border));
+}
+input,select,textarea{
+  background:
+    linear-gradient(180deg,color-mix(in srgb,#111c18 93%,var(--secondary) 7%),#0e1714);
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+}
+.modal{
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.14),transparent 26%),
+    linear-gradient(170deg,color-mix(in srgb,var(--panel2) 91%,var(--secondary) 9%),var(--panel));
+}
+.section-launcher>button{
+  background:
+    radial-gradient(circle at 100% 0,rgba(240,181,200,.105),transparent 39%),
+    linear-gradient(145deg,var(--panel2),var(--panel));
+}
+@media(max-width:520px){
+  .card{box-shadow:0 13px 34px rgba(2,8,5,.27),0 3px 14px rgba(240,181,200,.035)}
+}
