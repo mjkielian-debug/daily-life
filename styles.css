@@ -473,3 +473,9 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);padding:11px 0
 }
 .garden-journal-row:first-of-type{margin-top:8px}
+
+.pet-setup-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.pet-setup-stats span{display:grid;gap:2px;padding:9px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.025)}
+.pet-setup-stats b{font-family:Georgia,serif;font-size:1.05rem}
+.pet-setup-stats small{color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.06em}
+@media(max-width:420px){.pet-setup-stats{grid-template-columns:1fr}}
