@@ -384,6 +384,27 @@ async function cloudUpsertPersonProfile(p){
   return true;
 }
 
+async function cloudBootstrapThisDevice(){
+  const user=cloudUser();if(!user||!cloudClient){openCloudAuth();return false}
+  cloudBusy=true;cloudError="";
+  try{
+    await cloudPullProfile();
+    await cloudPullLifeEntries(false);
+    await cloudPullHouseholdMembers();
+    await cloudPullPetProfiles();
+    if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
+    if(typeof sharingInit==="function")await sharingInit();
+    await dbSet("state",state);
+    render();
+    if(typeof needsSetup==="function"&&needsSetup())alert("Your private account data loaded, but this account does not have a profile name yet. Use Start blank only if this is a brand-new Daily Life account.");
+    return true;
+  }catch(error){
+    cloudError=error?.message||"Could not load private account data.";
+    render();alert("Could not load the private account data onto this device.");
+    return false;
+  }finally{cloudBusy=false}
+}
+
 async function cloudSignInFromForm(){
   if(cloudBusy)return;
   const creds=cloudCredentials();if(!creds)return;
