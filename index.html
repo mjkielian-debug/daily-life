@@ -715,24 +715,36 @@ function kidsMoneyAccount(personId){
   return a;
 }
 function kidsMoneyTransactionsFor(personId){return (state.kidsMoneyTransactions||[]).filter(x=>x.personId===personId).sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||"")))}
+function kidsMoneyPending(personId){
+  const rows=kidsMoneyTransactionsFor(personId),pending=rows.filter(x=>String(x.status||"")==="pending").reduce((sum,x)=>sum+Math.max(0,Number(x.amount||0)),0);
+  if(pending>0)return pending;
+  const a=kidsMoneyAccount(personId);
+  return Math.max(0,Number(a.pendingToFund||0));
+}
+function kidsMoneyOpenDelta(personId){
+  return kidsMoneyTransactionsFor(personId).filter(x=>["pending","ledger"].includes(String(x.status||""))).reduce((sum,x)=>sum+Number(x.amount||0),0);
+}
 function kidsMoneyLedger(personId){return kidsMoneyTransactionsFor(personId).reduce((sum,x)=>sum+Number(x.amount||0),0)}
-function kidsMoneyExpected(personId){const a=kidsMoneyAccount(personId);return Number(a.actualBalance||0)+Number(a.pendingToFund||0)+kidsMoneyLedger(personId)}
+function kidsMoneyExpected(personId){
+  const a=kidsMoneyAccount(personId),base=a.actualBalance===null||a.actualBalance===""?0:Number(a.actualBalance||0);
+  return base+kidsMoneyOpenDelta(personId);
+}
 function kidsMoneyCard(){
   const kids=childProfiles();
   return `<div class="card kids-money-card"><div class="section-title"><div><div class="eyebrow">Kids Money</div><h2>Modak + app-side ledger</h2><div class="muted small">Track what each child should have, including amounts not actually funded yet. Daily Life does not claim money moved unless you record it as funded or reconcile an actual balance.</div></div></div>
-  ${kids.length?`<div class="kids-money-grid">${kids.map(p=>{const a=kidsMoneyAccount(p.id),ledger=kidsMoneyLedger(p.id),expected=kidsMoneyExpected(p.id);return`<button class="kid-money-tile" onclick="openKidsMoney('${p.id}')"><span><b>${esc(p.name)}</b><small>${a.actualBalance===null||a.actualBalance===""?"Actual balance not synced":"Actual "+money(a.actualBalance)+(a.actualAsOf?" · "+dl(a.actualAsOf):"")}</small></span><span><b>${money(expected)}</b><small>expected / ledger</small>${Number(a.pendingToFund)?`<small class="pending-money">${money(a.pendingToFund)} pending to fund</small>`:""}</span></button>`}).join("")}</div>`:"<div class='notice'>No household child profiles are available yet.</div>"}
+  ${kids.length?`<div class="kids-money-grid">${kids.map(p=>{const a=kidsMoneyAccount(p.id),pending=kidsMoneyPending(p.id),expected=kidsMoneyExpected(p.id);return`<button class="kid-money-tile" onclick="openKidsMoney('${p.id}')"><span><b>${esc(p.name)}</b><small>${a.actualBalance===null||a.actualBalance===""?"Actual balance not synced":"Actual "+money(a.actualBalance)+(a.actualAsOf?" · "+dl(a.actualAsOf):"")}</small></span><span><b>${money(expected)}</b><small>${a.actualBalance===null||a.actualBalance===""?"open app ledger":"expected balance"}</small>${pending?`<small class="pending-money">${money(pending)} pending to fund</small>`:""}</span></button>`}).join("")}</div>`:"<div class='notice'>No household child profiles are available yet.</div>"}
   <div class="notice" style="margin-top:10px"><b>Modak connection:</b> not connected. Actual balances and transfers require a supported secure integration; this tracker is the app-side record in the meantime.</div></div>`;
 }
 function openKidsMoney(personId){
-  const p=personById(personId);if(!p)return;const a=kidsMoneyAccount(personId),rows=kidsMoneyTransactionsFor(personId),expected=kidsMoneyExpected(personId);
-  modal(`Kids Money · ${p.name}`,`<div class="stack"><div class="kids-money-summary"><span><b>${a.actualBalance===null||a.actualBalance===""?"—":money(a.actualBalance)}</b><small>actual / reconciled</small></span><span><b>${money(a.pendingToFund||0)}</b><small>pending to fund</small></span><span><b>${money(expected)}</b><small>expected</small></span></div>
+  const p=personById(personId);if(!p)return;const a=kidsMoneyAccount(personId),rows=kidsMoneyTransactionsFor(personId),expected=kidsMoneyExpected(personId),pending=kidsMoneyPending(personId);
+  modal(`Kids Money · ${p.name}`,`<div class="stack"><div class="kids-money-summary"><span><b>${a.actualBalance===null||a.actualBalance===""?"—":money(a.actualBalance)}</b><small>actual / reconciled</small></span><span><b>${money(pending)}</b><small>pending to fund</small></span><span><b>${money(expected)}</b><small>${a.actualBalance===null||a.actualBalance===""?"open ledger":"expected"}</small></span></div>
   <div class="grid2"><button type="button" class="btn primary" onclick="openKidsMoneyEntry('${personId}','add')">+ Add money</button><button type="button" class="btn" onclick="openKidsMoneyEntry('${personId}','subtract')">− Spending / subtract</button></div>
+  <div class="notice"><b>How this works:</b> Pending and ledger-only entries change what the balance should be. Funded entries are treated as real money movement and are folded into the actual balance when an actual balance is known.</div>
   <div class="mini-heading">Reconcile actual Modak balance</div><div class="grid2"><label>Actual balance<input id="kmactual" type="number" step=".01" value="${a.actualBalance??""}"></label><label>As of<input id="kmasof" type="date" value="${esc(a.actualAsOf||"")}"></label></div>
-  <label>Pending to fund<input id="kmpending" type="number" step=".01" value="${Number(a.pendingToFund||0)}"></label>
   <div class="grid2"><label>Savings goal name<input id="kmgoalname" value="${esc(a.goalName||"")}"></label><label>Goal amount<input id="kmgoal" type="number" min="0" step=".01" value="${Number(a.savingsGoal||0)||""}"></label></div>
   <label>Notes<textarea id="kmnotes" rows="2">${esc(a.notes||"")}</textarea></label>
-  <div><div class="mini-heading">Recent activity</div>${rows.slice(0,12).map(x=>`<div class="row compact-row"><span><b>${esc(x.label||x.type||"Money")}</b><div class="muted small">${esc(dl(x.date))}${x.status?" · "+esc(x.status):""}${x.notes?" · "+esc(x.notes):""}</div></span><b class="${Number(x.amount)<0?"budget-negative":""}">${money(x.amount)}</b></div>`).join("")||"<div class='muted small'>No app-side money activity yet.</div>"}</div></div>`,"Save",async()=>{
-    a.actualBalance=$("#kmactual").value===""?null:Number($("#kmactual").value);a.actualAsOf=$("#kmasof").value;a.pendingToFund=Number($("#kmpending").value||0);a.goalName=$("#kmgoalname").value.trim();a.savingsGoal=Number($("#kmgoal").value||0);a.notes=$("#kmnotes").value.trim();await save();closeModal();render();
+  <div><div class="mini-heading">Recent activity</div>${rows.slice(0,12).map(x=>`<div class="row compact-row"><span><b>${esc(x.label||x.type||"Money")}</b><div class="muted small">${esc(dl(x.date))}${x.status?" · "+esc(x.status):""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="kids-money-entry-actions"><b class="${Number(x.amount)<0?"budget-negative":""}">${money(x.amount)}</b>${String(x.status||"")==="pending"?`<button type="button" class="btn small" onclick="fundKidsMoneyTransaction('${x.id}')">Mark funded</button>`:""}</span></div>`).join("")||"<div class='muted small'>No app-side money activity yet.</div>"}</div></div>`,"Save",async()=>{
+    a.actualBalance=$("#kmactual").value===""?null:Number($("#kmactual").value);a.actualAsOf=$("#kmasof").value;a.pendingToFund=0;a.goalName=$("#kmgoalname").value.trim();a.savingsGoal=Number($("#kmgoal").value||0);a.notes=$("#kmnotes").value.trim();await save();closeModal();render();
   });
 }
 function openKidsMoneyEntry(personId,mode="add"){
@@ -740,10 +752,19 @@ function openKidsMoneyEntry(personId,mode="add"){
   modal((mode==="subtract"?"Subtract":"Add")+" · "+p.name,`<div class="stack"><label>Amount<input id="kmeamount" type="number" min="0" step=".01"></label><label>Type<select id="kmetype">${["Allowance / chore","Gift","Purchase / spending","Savings","Adjustment","Other"].map(v=>`<option>${v}</option>`).join("")}</select></label><label>Status<select id="kmestatus"><option value="pending">Pending / not funded yet</option><option value="funded">Funded / reflected in actual money</option><option value="ledger">Ledger only</option></select></label><label>Date<input id="kmedate" type="date" value="${ymd()}"></label><label>Notes<textarea id="kmenotes" rows="2"></textarea></label></div>`,"Save",async()=>{
     let amount=Math.abs(Number($("#kmeamount").value||0));if(!amount)return;if(mode==="subtract")amount=-amount;const status=$("#kmestatus").value;
     state.kidsMoneyTransactions.push({id:uid(),personId,amount,label:$("#kmetype").value,type:mode,status,date:$("#kmedate").value||ymd(),notes:$("#kmenotes").value.trim(),createdAt:new Date().toISOString()});
-    const a=kidsMoneyAccount(personId);
-    if(status==="pending"&&amount>0)a.pendingToFund=Number(a.pendingToFund||0)+amount;
+    const a=kidsMoneyAccount(personId);a.pendingToFund=0;
+    if(status==="funded"&&a.actualBalance!==null&&a.actualBalance!==""){a.actualBalance=Number(a.actualBalance||0)+amount;a.actualAsOf=$("#kmedate").value||ymd()}
     await save();closeModal();openKidsMoney(personId);
   });
+}
+async function fundKidsMoneyTransaction(id){
+  const x=(state.kidsMoneyTransactions||[]).find(v=>v.id===id);if(!x||String(x.status||"")!=="pending")return;
+  const p=personById(x.personId),a=kidsMoneyAccount(x.personId);
+  if(!confirm(`Mark ${money(Math.abs(Number(x.amount||0)))} for ${p?.name||"this child"} as actually funded?`))return;
+  x.status="funded";x.fundedAt=new Date().toISOString();
+  if(a.actualBalance!==null&&a.actualBalance!==""){a.actualBalance=Number(a.actualBalance||0)+Number(x.amount||0);a.actualAsOf=ymd()}
+  a.pendingToFund=0;
+  await save();closeModal();openKidsMoney(x.personId);
 }
 function schoolContactsCard(){
   const kids=childProfiles(),withContacts=kids.filter(p=>(p.schoolContacts||[]).length);
