@@ -119,7 +119,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
+let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
   ["Emerald Blush","#69c58e","#e8b8c7","#e7d3a0"],
@@ -1621,27 +1621,40 @@ function todayLivingThingsCard(){
     ${nextPlanting?`<div class="row"><span><b>Next planting step</b><div class="muted small">${esc(nextPlanting.x.name)} · ${esc(nextPlanting.kind)}</div></span><b>${esc(dl(nextPlanting.date))}</b></div>`:""}
     ${lastLitter?`<div class="muted small">Litter care last logged ${esc(dl(lastLitter.date))}.</div>`:""}</div>`;
 }
-function logView(f,w,tr){
-  return `<div class="card glow life-intro"><div class="eyebrow">✧ Care + Life</div><h2>Take care of yourself, then keep life moving</h2><div class="muted small">Self care comes first here; work, car, home, and longer-term patterns stay underneath it.</div></div>
-  ${selfCareCard()}
-  ${livingThingsLaunchCard()}
-  <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
-  ${currentWeekWorkCard()}
-  ${upsContractPayCard()}
-  ${fitnessCard()}
-  ${lifeAdminCard()}
-  <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${esc(workStatusText(w))}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
-  ${vehicleCard()}
-  ${tireHistoryCard(tr)}
-  ${mailDeliveryCard()}
-  ${weeklyWinsCard()}
-  ${monthOverviewCard()}
-  ${sevenDayTrends()}
-  ${householdRoutineCard()}
-  ${homeCareCard()}
-  <div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`;
+function setCareTab(tab){
+  if(!["me","work","home","life","patterns"].includes(tab))tab="me";
+  careTab=tab;localStorage.setItem("dailyLifeCareTab",tab);render();
 }
-function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
+function careTabs(){
+  const tabs=[["me","Me"],["work","Work"],["home","Home"],["life","Life"],["patterns","Patterns"]];
+  return `<div class="care-page-tabs">${tabs.map(([id,label])=>`<button class="${careTab===id?"active":""}" onclick="setCareTab('${id}')">${label}</button>`).join("")}</div>`;
+}
+function careOutfitCard(){
+  const outfit=(state.outfits||[]).find(x=>x.date===ymd());
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Style</div><h2>Outfit</h2></div><button class="btn" onclick="openOutfit()">Log / edit</button></div>${outfit?.photo?`<img class="photo" src="${outfit.photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`;
+}
+function careWorkTodayCard(w){
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Work today</div><h2>${esc(workStatusText(w))}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>`;
+}
+function careSectionIntro(title,detail){
+  return `<div class="care-section-intro"><b>${esc(title)}</b><span>${esc(detail)}</span></div>`;
+}
+function logView(f,w,tr){
+  let body="";
+  if(careTab==="work"){
+    body=`${careSectionIntro("Work","UPS schedule, hours, pay progression and today’s shift.")}${currentWeekWorkCard()}${upsContractPayCard()}${careWorkTodayCard(w)}`;
+  }else if(careTab==="home"){
+    body=`${careSectionIntro("Home","Household cadence, pets, plants and the care that keeps home running.")}${livingThingsLaunchCard()}${householdRoutineCard()}${homeCareCard()}`;
+  }else if(careTab==="life"){
+    body=`${careSectionIntro("Life","Paperwork, car care, tires, mail and the practical loose ends.")}${lifeAdminCard()}${vehicleCard()}${tireHistoryCard(tr)}${mailDeliveryCard()}`;
+  }else if(careTab==="patterns"){
+    body=`${careSectionIntro("Patterns","A quieter place for weekly and monthly trends—nothing here is a score.")}${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
+  }else{
+    body=`${careSectionIntro("Me","Self care, movement and personal tracking. Food stays in the Food tab so this page stays manageable.")}${selfCareCard()}${fitnessCard()}${careOutfitCard()}`;
+  }
+  return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
+}
+function care(key,label)function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
 function ensurePeopleProfiles(){
   if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
