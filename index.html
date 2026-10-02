@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-selfcare6">
+<link rel="stylesheet" href="styles.css?v=20261002-schoolmoney1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -106,7 +106,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:28,createdAt:new Date().toISOString(),
+  version:29,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},
@@ -117,7 +117,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants";
 const themes=[
@@ -233,7 +233,7 @@ function ensureToday(){
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,28);
+  s.version=Math.max(Number(s.version)||0,29);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -256,7 +256,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const bill of s.bills){
@@ -294,6 +294,7 @@ function migrateState(s){
     if(p.livesWithUser===undefined)p.livesWithUser=isChildProfile(p);
     if(p.profileScope===undefined)p.profileScope=p.livesWithUser?"household":"extended";
     if(p.relatedTo===undefined)p.relatedTo="";
+    if(!Array.isArray(p.schoolContacts))p.schoolContacts=[];
     if(p.elfsterUrl===undefined)p.elfsterUrl="";
     if(p.elfsterLastSyncedAt===undefined)p.elfsterLastSyncedAt="";
     if(!Array.isArray(p.favoriteColors))p.favoriteColors=[];
@@ -612,6 +613,48 @@ function todayTimelineCard(){
 function isSchoolEvent(e){
   const source=String(e?.source||"").toLowerCase(),type=String(e?.type||"").toLowerCase();
   return type==="school"||type==="deadline"||source.includes("school")||source.includes("lps")||((state.settings.familyMembers||[]).some(m=>String(m?.name||m)===String(e?.child||""))&&type==="activity");
+}
+
+function childProfiles(){return (state.peopleProfiles||[]).filter(p=>isChildProfile(p)&&livesWithUser(p))}
+function kidsMoneyAccount(personId){
+  let a=(state.kidsMoneyAccounts||[]).find(x=>x.personId===personId);
+  if(!a){a={id:uid(),personId,actualBalance:null,actualAsOf:"",pendingToFund:0,savingsGoal:0,goalName:"",notes:"",provider:"Modak"};state.kidsMoneyAccounts.push(a)}
+  return a;
+}
+function kidsMoneyTransactionsFor(personId){return (state.kidsMoneyTransactions||[]).filter(x=>x.personId===personId).sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||"")))}
+function kidsMoneyLedger(personId){return kidsMoneyTransactionsFor(personId).reduce((sum,x)=>sum+Number(x.amount||0),0)}
+function kidsMoneyExpected(personId){const a=kidsMoneyAccount(personId);return Number(a.actualBalance||0)+Number(a.pendingToFund||0)+kidsMoneyLedger(personId)}
+function kidsMoneyCard(){
+  const kids=childProfiles();
+  return `<div class="card kids-money-card"><div class="section-title"><div><div class="eyebrow">Kids Money</div><h2>Modak + app-side ledger</h2><div class="muted small">Track what each child should have, including amounts not actually funded yet. Daily Life does not claim money moved unless you record it as funded or reconcile an actual balance.</div></div></div>
+  ${kids.length?`<div class="kids-money-grid">${kids.map(p=>{const a=kidsMoneyAccount(p.id),ledger=kidsMoneyLedger(p.id),expected=kidsMoneyExpected(p.id);return`<button class="kid-money-tile" onclick="openKidsMoney('${p.id}')"><span><b>${esc(p.name)}</b><small>${a.actualBalance===null||a.actualBalance===""?"Actual balance not synced":"Actual "+money(a.actualBalance)+(a.actualAsOf?" · "+dl(a.actualAsOf):"")}</small></span><span><b>${money(expected)}</b><small>expected / ledger</small>${Number(a.pendingToFund)?`<small class="pending-money">${money(a.pendingToFund)} pending to fund</small>`:""}</span></button>`}).join("")}</div>`:"<div class='notice'>No household child profiles are available yet.</div>"}
+  <div class="notice" style="margin-top:10px"><b>Modak connection:</b> not connected. Actual balances and transfers require a supported secure integration; this tracker is the app-side record in the meantime.</div></div>`;
+}
+function openKidsMoney(personId){
+  const p=personById(personId);if(!p)return;const a=kidsMoneyAccount(personId),rows=kidsMoneyTransactionsFor(personId),expected=kidsMoneyExpected(personId);
+  modal(`Kids Money · ${p.name}`,`<div class="stack"><div class="kids-money-summary"><span><b>${a.actualBalance===null||a.actualBalance===""?"—":money(a.actualBalance)}</b><small>actual / reconciled</small></span><span><b>${money(a.pendingToFund||0)}</b><small>pending to fund</small></span><span><b>${money(expected)}</b><small>expected</small></span></div>
+  <div class="grid2"><button type="button" class="btn primary" onclick="openKidsMoneyEntry('${personId}','add')">+ Add money</button><button type="button" class="btn" onclick="openKidsMoneyEntry('${personId}','subtract')">− Spending / subtract</button></div>
+  <div class="mini-heading">Reconcile actual Modak balance</div><div class="grid2"><label>Actual balance<input id="kmactual" type="number" step=".01" value="${a.actualBalance??""}"></label><label>As of<input id="kmasof" type="date" value="${esc(a.actualAsOf||"")}"></label></div>
+  <label>Pending to fund<input id="kmpending" type="number" step=".01" value="${Number(a.pendingToFund||0)}"></label>
+  <div class="grid2"><label>Savings goal name<input id="kmgoalname" value="${esc(a.goalName||"")}"></label><label>Goal amount<input id="kmgoal" type="number" min="0" step=".01" value="${Number(a.savingsGoal||0)||""}"></label></div>
+  <label>Notes<textarea id="kmnotes" rows="2">${esc(a.notes||"")}</textarea></label>
+  <div><div class="mini-heading">Recent activity</div>${rows.slice(0,12).map(x=>`<div class="row compact-row"><span><b>${esc(x.label||x.type||"Money")}</b><div class="muted small">${esc(dl(x.date))}${x.status?" · "+esc(x.status):""}${x.notes?" · "+esc(x.notes):""}</div></span><b class="${Number(x.amount)<0?"budget-negative":""}">${money(x.amount)}</b></div>`).join("")||"<div class='muted small'>No app-side money activity yet.</div>"}</div></div>`,"Save",async()=>{
+    a.actualBalance=$("#kmactual").value===""?null:Number($("#kmactual").value);a.actualAsOf=$("#kmasof").value;a.pendingToFund=Number($("#kmpending").value||0);a.goalName=$("#kmgoalname").value.trim();a.savingsGoal=Number($("#kmgoal").value||0);a.notes=$("#kmnotes").value.trim();await save();closeModal();render();
+  });
+}
+function openKidsMoneyEntry(personId,mode="add"){
+  const p=personById(personId);if(!p)return;
+  modal((mode==="subtract"?"Subtract":"Add")+" · "+p.name,`<div class="stack"><label>Amount<input id="kmeamount" type="number" min="0" step=".01"></label><label>Type<select id="kmetype">${["Allowance / chore","Gift","Purchase / spending","Savings","Adjustment","Other"].map(v=>`<option>${v}</option>`).join("")}</select></label><label>Status<select id="kmestatus"><option value="pending">Pending / not funded yet</option><option value="funded">Funded / reflected in actual money</option><option value="ledger">Ledger only</option></select></label><label>Date<input id="kmedate" type="date" value="${ymd()}"></label><label>Notes<textarea id="kmenotes" rows="2"></textarea></label></div>`,"Save",async()=>{
+    let amount=Math.abs(Number($("#kmeamount").value||0));if(!amount)return;if(mode==="subtract")amount=-amount;const status=$("#kmestatus").value;
+    state.kidsMoneyTransactions.push({id:uid(),personId,amount,label:$("#kmetype").value,type:mode,status,date:$("#kmedate").value||ymd(),notes:$("#kmenotes").value.trim(),createdAt:new Date().toISOString()});
+    const a=kidsMoneyAccount(personId);
+    if(status==="pending"&&amount>0)a.pendingToFund=Number(a.pendingToFund||0)+amount;
+    await save();closeModal();openKidsMoney(personId);
+  });
+}
+function schoolContactsCard(){
+  const kids=childProfiles(),withContacts=kids.filter(p=>(p.schoolContacts||[]).length);
+  return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School contacts</div><h2>Teachers + support staff</h2><div class="muted small">Stored on each child's private People profile.</div></div></div>${withContacts.length?withContacts.map(p=>`<details class="school-contact-child"><summary>${esc(p.name)} · ${p.schoolContacts.length} contact${p.schoolContacts.length===1?"":"s"}</summary>${p.schoolContacts.map(x=>`<div class="row school-contact-row"><span><b>${esc(x.name||"Contact")}</b><div class="muted small">${esc(x.role||"")}${x.notes?" · "+esc(x.notes):""}</div></span>${x.email?`<a class="btn small" href="mailto:${esc(x.email)}">${esc(x.email)}</a>`:""}</div>`).join("")}<button class="btn small" onclick="openPersonProfile('${p.id}')">Edit contacts</button></details>`).join(""):"<div class='notice'>Teacher contacts will appear here as they are added to child profiles.</div>"}</div>`;
 }
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
@@ -1723,12 +1766,12 @@ function personCardCompact(p){
   </div>`;
 }
 function openPersonProfile(id=""){
-  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+  ensurePeopleProfiles();const p=personById(id)||{id:"",name:"",relationship:"",birthday:"",livesWithUser:false,profileScope:"extended",relatedTo:"",familyLinks:[],schoolContacts:[],elfsterUrl:"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
   modal(p.id?`Profile · ${p.name}`:"Add person",`<div class="stack person-editor">
     <label>Name<input id="pname" value="${esc(p.name||"")}"></label>
     <label>Relationship<input id="prel" list="relationshipOptions" value="${esc(p.relationship||"")}" placeholder="child, sister, niece, nephew, partner…"><datalist id="relationshipOptions"><option value="child"><option value="partner"><option value="sister"><option value="brother"><option value="niece"><option value="nephew"><option value="parent"><option value="friend"><option value="coworker"><option value="family"></datalist></label>
     <label>Family connection / context<input id="prelated" value="${esc(p.relatedTo||"")}" placeholder="sister's daughter, partner's brother, their child…"></label>
-    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label>
+    <label>Linked family members<textarea id="pfamilylinks" rows="3" placeholder="Person name | relationship">${esc((p.familyLinks||[]).map(x=>`${x.name||""} | ${x.label||""}`).join("\n"))}</textarea></label><label>School / teacher contacts<textarea id="pschoolcontacts" rows="5" placeholder="Teacher name | role/class | email | notes">${esc((p.schoolContacts||[]).map(x=>[x.name||"",x.role||"",x.email||"",x.notes||""].join(" | ")).join("\n"))}</textarea></label>
     <label class="task"><input id="plives" type="checkbox" ${livesWithUser(p)?"checked":""}><span>Lives with me / part of my household routines</span></label>
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
@@ -1748,8 +1791,8 @@ function openPersonProfile(id=""){
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
-    const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);\n    const schoolContacts=$("#pschoolcontacts").value.split(/\r?\n/).map(line=>{const parts=line.split("|").map(x=>String(x||"").trim());return{name:parts[0]||"",role:parts[1]||"",email:parts[2]||"",notes:parts.slice(3).join(" | ")}}).filter(x=>x.name||x.email);
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,schoolContacts,livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
@@ -1918,7 +1961,7 @@ function familyRoutinesCard(){
 }
 function familyView(){
   ensurePeopleProfiles();
-  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${familyConnectionsCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
+  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${schoolContactsCard()}${kidsMoneyCard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${familyConnectionsCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
   return `${peopleTabs()}${body}`;
 }
 function readingView(){
