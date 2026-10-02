@@ -596,3 +596,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:480px){
   .personal-care-grid{grid-template-columns:1fr}
 }
+
+.plant-routines-card{border-color:color-mix(in srgb,var(--primary) 28%,var(--border))}
