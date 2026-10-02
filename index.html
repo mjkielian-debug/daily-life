@@ -2560,9 +2560,9 @@ function openAccount(key=""){
     const accountsBefore=structuredClone(state.accounts),billsBefore=structuredClone(state.bills);
     const a=oldKey?x:{key:newKey};if(!oldKey)state.accounts.push(a);
     const billPayRaw=$("#abillpay").value;
-    Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),strategy:$("#astrategy").value,minimumOperatingBalance:Math.max(0,Number($("#amin").value||0)),billPayAllowed:billPayRaw===""?null:billPayRaw==="1",directDepositRequired:$("#addlanding").checked,protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
+    const strategy=$("#astrategy").value;Object.assign(a,{key:newKey,name,type:$("#at").value,balance:Number($("#ab").value||0),strategy,minimumOperatingBalance:Math.max(0,Number($("#amin").value||0)),billPayAllowed:billPayRaw===""?null:billPayRaw==="1",directDepositRequired:$("#addlanding").checked,preferredCashHome:strategy==="Interest-first savings",exitAccount:strategy==="Transition / close",avoidNewBills:strategy==="Transition / close",protectFromSpending:$("#aprotect").checked||newKey==="house_fund"});
     if(oldKey&&oldKey!==newKey)for(const b of state.bills){if(b.paymentAccountKey===oldKey)b.paymentAccountKey=newKey;if(b.desiredAccountKey===oldKey)b.desiredAccountKey=newKey}
-    try{await save();closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
+    try{await save();if(typeof cloudSaveFinanceStrategy==="function"&&a.cloudAccountId){try{await cloudSaveFinanceStrategy(a)}catch(e){}}closeModal();render()}catch(error){state.accounts=accountsBefore;state.bills=billsBefore;alert("Could not save the account on this device. Please try again.")}})
 }
 // Readiness is a local balance estimate, never a bank/autopay verification.
 const BILL_SETUPS=["Autopay","Scheduled","Manual","Unknown"];
@@ -2624,7 +2624,7 @@ function paycheckEstimatePreset(){
 function openPaycheckEstimate(){const p=paycheckEstimatePreset();if(!p){alert("Import at least two pay statements first.");return}openExpectedIncome("",p)}
 function openExpectedIncome(id="",preset=null){
   const x=(state.expectedIncome||[]).find(v=>v.id===id)||preset||{id:"",name:"",amount:"",date:ymd(),frequency:"One-time",accountKey:"",transferable:true,enabled:true,confidence:"confirmed",notes:""};
-  const accounts=(state.accounts||[]).filter(a=>a.key&&["checking","savings"].includes(a.type));
+  const accounts=(state.accounts||[]).filter(a=>a.key&&["checking","savings"].includes(a.type)&&(!a.avoidNewBills||a.key===x.accountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||"")));
   modal(x.id?"Expected income":"Add expected income",`<div class="stack">
     <label>Income name<input id="einame" value="${esc(x.name||"")}" placeholder="Paycheck, support, reimbursement…"></label>
     <div class="grid2"><label>Expected amount<input id="eiamount" type="number" min="0" step=".01" value="${x.amount??""}"></label><label>Next expected date<input id="eidate" type="date" value="${esc(x.date||ymd())}"></label></div>
@@ -2822,7 +2822,7 @@ function openBill(index=-1,sourceIndex=-1){
   const source=sourceIndex>=0?state.bills[sourceIndex]:null;
   const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",desiredAccountKey:"",paymentSetup:"Unknown",amountType:"Fixed amount",frequency:"One-time",repeatMonths:0});
   const paid=existing?.status==="paid";
-  const accountOptions=state.accounts.filter(a=>a.key),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
+  const accountOptions=state.accounts.filter(a=>a.key&&(!a.avoidNewBills||a.key===b.paymentAccountKey||a.key===b.desiredAccountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||""))),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
   modal(paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
   ${paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
   <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
