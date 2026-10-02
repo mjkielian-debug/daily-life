@@ -413,3 +413,18 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .family-cluster button span:last-child{display:grid;gap:1px}
 .family-cluster small{color:var(--muted);font-size:.7rem}
 .person-family-connections{padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+
+/* Gift center */
+.gift-center-card{
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:linear-gradient(155deg,color-mix(in srgb,var(--secondary) 6%,transparent),transparent 38%),linear-gradient(180deg,var(--panel2),var(--panel))
+}
+.gift-center-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.gift-center-stats span{
+  border:1px solid var(--border);border-radius:15px;padding:10px;background:rgba(255,255,255,.022);display:grid;gap:2px
+}
+.gift-center-stats b{font-family:Georgia,serif;font-size:1rem}
+.gift-center-stats small{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gift-purchased{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.gift-purchased summary{cursor:pointer;font-weight:800;color:var(--muted)}
+@media(max-width:520px){.gift-center-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
