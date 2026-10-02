@@ -132,3 +132,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   .priority-card .priority-item{gap:10px;align-items:flex-start}
   .priority-card .priority-item .grow{font-size:.88rem;line-height:1.35}
 }
+
+.meal-ingredients-collapse{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.meal-ingredients-collapse summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:850;color:var(--muted)}
+.meal-ingredients-collapse[open] summary{color:var(--text)}
