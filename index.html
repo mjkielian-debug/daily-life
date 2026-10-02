@@ -1601,7 +1601,7 @@ function seasonalIncomeCard(){
 }
 function currentWeekWorkCard(){
   const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0),needs=rows.filter(w=>workNeedsPunchOut(w));
-  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} confirmed hours</h2><div class="muted small">${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times only"}</div></div><button class="btn" onclick="openWork()">Edit today</button></div>${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
+  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} confirmed hours</h2><div class="muted small">${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times only"}</div></div><div class="actions"><button class="btn" onclick="openWork()">Edit today</button><button class="btn" onclick="openPunchImport()">Paste punches</button></div></div>${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
 }
 function upsPayrollCard(){
   const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
@@ -3353,6 +3353,41 @@ async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.ke
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
 function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90].map(n=>`<option value="${n}">${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="">Use remembered preference / fit where it works</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="after-school">After school</option><option value="evening">Evening</option><option value="any">Anywhere</option></select></label></div><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||""});await save();closeModal();render()})}
 function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
+function parsePunchDate(text){
+  const iso=String(text||"").match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);if(iso)return iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
+  const us=String(text||"").match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);return us?us[3]+"-"+String(us[1]).padStart(2,"0")+"-"+String(us[2]).padStart(2,"0"):"";
+}
+function parsePunchClock(value,ampm=""){
+  const m=String(value||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return"";let h=Number(m[1]),min=Number(m[2]);if(min>59)return"";
+  const ap=String(ampm||"").toUpperCase();if(ap){if(h<1||h>12)return"";if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0}else if(h>23)return"";
+  return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0");
+}
+function parsePunchHistory(text){
+  const out=[];
+  for(const raw of String(text||"").split(/\r?\n/)){
+    const line=raw.trim(),date=parsePunchDate(line);if(!line||!date)continue;
+    const times=[...line.matchAll(/\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi)].map(m=>parsePunchClock(m[1],m[2]||"")).filter(Boolean);
+    if(!times.length)continue;
+    out.push({date,start:times[0],end:times[1]||"",raw:line});
+  }
+  const byDate=new Map();for(const x of out){const prev=byDate.get(x.date);if(!prev)byDate.set(x.date,x);else{if(!prev.start&&x.start)prev.start=x.start;if(!prev.end&&x.end)prev.end=x.end}}
+  return [...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+}
+function openPunchImport(){
+  modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Paste copied timesheet text.</b><br><span class="muted small">Daily Life looks for a date plus one or two clock times on each line. One time becomes punch-in; two become punch-in + punch-out. Review the confirmation before anything is saved.</span></div><label>Workforce / Dayforce text<textarea id="punchText" rows="10" placeholder="10/01/2026  4:31 AM  8:42 AM&#10;10/02/2026  4:28 AM  8:36 AM"></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times.</div></span></label></div>`,"Import",async()=>{
+    const rows=parsePunchHistory($("#punchText").value);if(!rows.length){alert("No dated punch rows were recognized. Try pasting lines that include the date and punch time(s).");return}
+    const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")).join("\n");
+    if(!confirm("Import "+rows.length+" punch row"+(rows.length===1?"":"s")+"?\n\n"+preview+(rows.length>10?"\n…":"")))return;
+    const overwrite=$("#punchOverwrite").checked;
+    for(const x of rows){
+      let w=(state.workShifts||[]).find(v=>v.date===x.date);if(!w){w={id:uid(),date:x.date};state.workShifts.push(w)}
+      if(x.start&&(overwrite||!w.start))w.start=x.start;if(x.end&&(overwrite||!w.end))w.end=x.end;
+      if(w.end){w.endedUnknown=false;w.status="completed"}else if(w.start){w.endedUnknown=x.date<ymd();w.status=w.endedUnknown?"completed-needs-end":"in-progress"}
+      w.source=w.source||"Workforce / Dayforce text import";w.importedAt=new Date().toISOString();
+    }
+    await save();closeModal();render();
+  });
+}
 function openWork(date=ymd()){
   const x=(state.workShifts||[]).find(w=>w.date===date)||{};
   modal("UPS shift · "+dl(date),`<div class="stack"><div class="notice"><b>Use actual punch times when known.</b><br><span class="muted small">If the shift is over but the real punch-out is not confirmed yet, mark that instead of estimating. Payroll reconciliation will keep this date flagged until you enter the actual end.</span></div><label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label class="task"><input id="wended" type="checkbox" ${workNeedsPunchOut(x)?"checked":""}><span><b>Shift is over; punch-out time still needs confirmation</b></span></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label><label>Notes<input id="wnotes" value="${esc(x.notes||"")}"></label></div>`,"Save",async()=>{
