@@ -364,3 +364,5 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 @media(max-width:460px){.people-tabs{grid-template-columns:1fr}.people-agenda-row{grid-template-columns:50px minmax(0,1fr) auto}}
 
 .person-note-row{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left}.person-note-row .muted{margin-top:3px}.person-note-row>b{white-space:nowrap;color:var(--muted);font-size:.72rem;font-weight:700}.person-hub-actions{display:flex;flex-wrap:wrap;gap:7px}
+
+.people-missing{border-style:dashed}.person-chip-button{appearance:none;color:var(--text);cursor:pointer}.person-chip-button:hover{border-color:color-mix(in srgb,var(--primary) 42%,var(--border))}
