@@ -71,6 +71,7 @@ async function cloudFinanceInit(){
   await cloudRefreshExpectedIncomeAccountLinks();
   await cloudLoadBankReviewRules();
   await cloudImportBankSpending(false);
+  setTimeout(()=>cloudSyncBanks(false),0);
   const params=new URLSearchParams(location.search);
   const savedToken=sessionStorage.getItem("dailyLifePlaidLinkToken");
   const savedMode=sessionStorage.getItem("dailyLifePlaidMode")||"bank";
@@ -295,10 +296,11 @@ function normalizeBillWords(value){
 
 function bankBillMatch(t){
   const amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
-  if(!Number.isFinite(amount)||amount<=0||isNaN(posted)||t.pending||t.is_transfer)return null;
+  if(!Number.isFinite(amount)||amount<=0||isNaN(posted)||t.is_transfer)return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
   const candidates=(state.bills||[]).filter(b=>{
-    if(b.status==="paid"||!b.due)return false;
+    const awaitingPost=b.status==="paid"&&b.paymentPending===true;
+    if((b.status==="paid"&&!awaitingPost)||!b.due)return false;
     const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
     if(!Number.isFinite(billAmount)||isNaN(due)||Math.abs(billAmount-amount)>.01)return false;
     const signedDays=(posted-due)/86400000;
@@ -325,18 +327,32 @@ function bankBillMatch(t){
 function bankLooksLikeKnownBill(t){return !!bankBillMatch(t)}
 
 function bankApplyBillPayment(t){
-  const transactionId=String(t.provider_transaction_id||"");
-  const linked=(state.bills||[]).find(b=>transactionId&&String(b.paidByBankTransactionId||"")===transactionId);
-  if(linked)return linked;
+  const transactionId=String(t.provider_transaction_id||""),
+        pendingId=String(t.pending_transaction_id||"");
+  let linked=(state.bills||[]).find(b=>transactionId&&String(b.paidByBankTransactionId||"")===transactionId);
+  if(!linked&&pendingId)linked=(state.bills||[]).find(b=>String(b.paidByBankTransactionId||"")===pendingId);
+  if(linked){
+    let changed=false;
+    if(linked.paidByBankTransactionId!==transactionId&&transactionId){linked.paidByBankTransactionId=transactionId;changed=true}
+    if(linked.paymentPending!==!!t.pending){linked.paymentPending=!!t.pending;changed=true}
+    if(linked.paidDate!==String(t.posted_date||"")){linked.paidDate=String(t.posted_date||"");changed=true}
+    const paidAmount=Math.round(Number(t.provider_amount||0)*100)/100;
+    if(Number(linked.paidAmount)!==paidAmount){linked.paidAmount=paidAmount;changed=true}
+    if(!t.pending&&typeof billRepeat==="function"&&billRepeat(linked)&&typeof appendNextBill==="function"&&typeof nextBillIndex==="function"&&nextBillIndex(linked)<0){
+      appendNextBill(linked);changed=true;
+    }
+    return {bill:linked,changed};
+  }
   const bill=bankBillMatch(t);if(!bill)return null;
   bill.status="paid";
+  bill.paymentPending=!!t.pending;
   bill.paidDate=String(t.posted_date||"");
   bill.paidAmount=Math.round(Number(t.provider_amount||0)*100)/100;
   bill.paidSource="bank";
   bill.paidByBankTransactionId=transactionId;
   bill.paidMerchant=String(t.merchant_name||t.name||"").trim();
-  if(typeof billRepeat==="function"&&billRepeat(bill)&&typeof appendNextBill==="function")appendNextBill(bill);
-  return bill;
+  if(!t.pending&&typeof billRepeat==="function"&&billRepeat(bill)&&typeof appendNextBill==="function")appendNextBill(bill);
+  return {bill,changed:true};
 }
 
 async function cloudImportBankSpending(showAlert=false){
@@ -344,9 +360,8 @@ async function cloudImportBankSpending(showAlert=false){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-93);
   const cutoffDate=cutoff.toISOString().slice(0,10);
   const {data,error}=await cloudClient.from("financial_transactions")
-    .select("provider_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
+    .select("provider_transaction_id,pending_transaction_id,account_id,posted_date,merchant_name,name,provider_amount,pending,is_transfer,category_primary,category_detailed")
     .gte("posted_date",cutoffDate)
-    .eq("pending",false)
     .eq("is_transfer",false)
     .order("posted_date",{ascending:true})
     .limit(2000);
@@ -354,8 +369,16 @@ async function cloudImportBankSpending(showAlert=false){
 
   cloudRecentTransactions=data||[];
   const remoteIds=new Set((data||[]).map(t=>t.provider_transaction_id));
+  const postedFromPendingIds=new Set((data||[]).map(t=>String(t.pending_transaction_id||"")).filter(Boolean));
   cloudUnreviewedTransactions=[];
   let changed=0;
+  for(const bill of state.bills||[]){
+    if(!bill.paymentPending||!bill.paidByBankTransactionId)continue;
+    if(remoteIds.has(bill.paidByBankTransactionId)||postedFromPendingIds.has(bill.paidByBankTransactionId))continue;
+    if(String(bill.paidDate||"")>=cutoffDate){
+      bill.status="upcoming";bill.paymentPending=false;delete bill.paidByBankTransactionId;delete bill.paidSource;changed++;
+    }
+  }
   // Remove disappeared provider transactions only when Daily Life auto-created
   // the entry and the user has not edited it.
   const before=state.budget.spending.length;
@@ -370,16 +393,17 @@ async function cloudImportBankSpending(showAlert=false){
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
     const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
     const privateRule=cloudBankRuleFor(t);
-    const alreadyLinked=(state.bills||[]).some(b=>String(b.paidByBankTransactionId||"")===String(t.provider_transaction_id||""));
-    const matchedBill=bankApplyBillPayment(t);
+    const matchResult=bankApplyBillPayment(t);
+    const matchedBill=matchResult?.bill||null;
     const knownBill=!!matchedBill;
-    if(matchedBill&&!alreadyLinked)changed++;
+    if(matchResult?.changed)changed++;
     if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
       continue;
     }
+    if(t.pending)continue;
     const resolvedCategory=privateRule?.action==="category"?privateRule.budget_category:category;
     if(!resolvedCategory){
       if(existing?.autoImported&&!existing.userEdited){
@@ -541,7 +565,7 @@ function startFinanceAutoRefresh(){
 
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible"&&cloudUser?.()){
-    cloudRefreshFinancialAccounts(true).then(()=>{if(typeof render==="function")render()}).catch(()=>{});
+    cloudSyncBanks(false).catch(()=>{});
   }
 });
 startFinanceAutoRefresh();
