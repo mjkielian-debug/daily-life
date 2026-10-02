@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-1">
 <link rel="icon" href="icon.svg?v=20261002-1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-1">
-<link rel="stylesheet" href="styles.css?v=20261002-living8">
+<link rel="stylesheet" href="styles.css?v=20261002-living9">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -109,7 +109,7 @@ const blankState=()=>({
   version:25,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -1055,11 +1055,11 @@ function livingSuppliesCard(kind){
   const label=kind==="garden"?"Garden supplies":"Pet supplies";
   return `<div class="card living-supplies"><div class="section-title"><div><div class="eyebrow">Shopping</div><h2>${label}</h2></div><button class="btn" onclick="setView('home')">Open full list</button></div>${rows.slice(0,8).map(x=>`<div class="row"><span><b>${esc(x.item)}</b><div class="muted small">${esc(x.qty||"")}${x.store?" · "+esc(x.store):""}</div></span></div>`).join("")}</div>`;
 }
-function petCareSettings(){return state.settings?.petCare||{robotLitterBoxes:0,standardLitterBoxes:0,notes:"",configured:false}}
+function petCareSettings(){return state.settings?.petCare||{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false}}
 function openPetCareSettings(){
   const x=petCareSettings();
-  modal("Shared pet setup",`<div class="stack"><div class="grid2"><label>Robot litter boxes<input id="pcrobot" type="number" min="0" value="${Number(x.robotLitterBoxes||0)}"></label><label>Standard litter boxes<input id="pcstandard" type="number" min="0" value="${Number(x.standardLitterBoxes||0)}"></label></div><label>Shared care notes<textarea id="pcnotes" rows="3" placeholder="Feeding setup, litter details, supplies…">${esc(x.notes||"")}</textarea></label><div class="muted small">This is a tracking setup only. It does not create reminders.</div></div>`,"Save",async()=>{
-    state.settings.petCare={robotLitterBoxes:Math.max(0,Number($("#pcrobot").value||0)),standardLitterBoxes:Math.max(0,Number($("#pcstandard").value||0)),notes:$("#pcnotes").value.trim(),configured:true};
+  modal("Shared pet setup",`<div class="stack"><div class="grid2"><label>Robot litter boxes<input id="pcrobot" type="number" min="0" value="${Number(x.robotLitterBoxes||0)}"></label><label>Standard litter boxes<input id="pcstandard" type="number" min="0" value="${Number(x.standardLitterBoxes||0)}"></label></div><label>Feeding routine<textarea id="pcfeeding" rows="2" placeholder="What, how much, when…">${esc(x.feedingRoutine||"")}</textarea></label><div class="grid2"><label>Carrier / supplies location<input id="pccarrier" value="${esc(x.carrierLocation||"")}"></label><label>Emergency vet / contact<input id="pcvet" value="${esc(x.emergencyVet||"")}"></label></div><label>Pet-sitter handoff notes<textarea id="pcsitter" rows="3" placeholder="What someone else needs to know">${esc(x.sitterNotes||"")}</textarea></label><label>Shared care notes<textarea id="pcnotes" rows="3" placeholder="Litter details, quirks, supplies…">${esc(x.notes||"")}</textarea></label><div class="muted small">This is a tracking/setup area only. It does not create reminders.</div></div>`,"Save",async()=>{
+    state.settings.petCare={robotLitterBoxes:Math.max(0,Number($("#pcrobot").value||0)),standardLitterBoxes:Math.max(0,Number($("#pcstandard").value||0)),feedingRoutine:$("#pcfeeding").value.trim(),carrierLocation:$("#pccarrier").value.trim(),emergencyVet:$("#pcvet").value.trim(),sitterNotes:$("#pcsitter").value.trim(),notes:$("#pcnotes").value.trim(),configured:true};
     await save();closeModal();render();
   });
 }
@@ -1097,11 +1097,17 @@ function petHistoryCard(){
   const logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||"")));
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Care history</div><h2>Recent pet logs</h2></div><button class="btn" onclick="openPetLog()">+ Log</button></div>${logs.slice(0,30).map(x=>{const p=petById(x.petId);return`<div class="row"><span><b>${esc(x.type||"Care")}</b><div class="muted small">${p?esc(p.name)+" · ":""}${esc(dl(x.date))}${x.time?" · "+esc(fmtClock(x.time)):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.value||"")}</b></div>`}).join("")||"<div class='notice'>No pet care logged yet.</div>"}</div>`;
 }
+function petHandoffCard(){
+  const x=petCareSettings(),has=x.feedingRoutine||x.carrierLocation||x.emergencyVet||x.sitterNotes;
+  if(!has)return"";
+  return `<div class="card pet-handoff-card"><div class="section-title"><div><div class="eyebrow">Care handoff</div><h2>If someone else is helping</h2></div><button class="btn" onclick="openPetCareSettings()">Edit</button></div>${x.feedingRoutine?`<div class="row"><span>Feeding routine</span><b>${esc(x.feedingRoutine)}</b></div>`:""}${x.carrierLocation?`<div class="row"><span>Carrier / supplies</span><b>${esc(x.carrierLocation)}</b></div>`:""}${x.emergencyVet?`<div class="row"><span>Emergency vet / contact</span><b>${esc(x.emergencyVet)}</b></div>`:""}${x.sitterNotes?`<div class="notice">${esc(x.sitterNotes)}</div>`:""}</div>`;
+}
 function petsView(){
   const pets=state.pets||[],logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
         litter=logs.find(x=>x.type==="Litter");
   const overview=`<div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
     ${petCareSummaryCard()}
+    ${petHandoffCard()}
     ${livingSuppliesCard("pet")}
     <div class="card shared-pet-care"><div class="section-title"><div><div class="eyebrow">Shared pet care</div><h2>Litter + household care</h2></div><div class="actions"><button class="btn primary" onclick="openPetLog('','Litter')">Log litter</button><button class="btn" onclick="openPetCareSettings()">Setup</button></div></div>
       ${petCareSettings().configured?`<div class="pet-setup-stats"><span><b>${Number(petCareSettings().robotLitterBoxes||0)}</b><small>robot boxes</small></span><span><b>${Number(petCareSettings().standardLitterBoxes||0)}</b><small>standard boxes</small></span><span><b>${Number(petCareSettings().robotLitterBoxes||0)+Number(petCareSettings().standardLitterBoxes||0)}</b><small>total boxes</small></span></div>`:""}
@@ -1171,7 +1177,7 @@ function gardenSeasonInfo(){
 }
 function gardenSeasonCard(){
   const x=gardenSettings(),s=gardenSeasonInfo(),active=(state.plants||[]).filter(p=>p.status!=="Finished").length;
-  return `<div class="card garden-season-card"><div class="section-title"><div><div class="eyebrow">Season</div><h2>${esc(s.season)}</h2><div class="muted small">${esc(s.focus)}</div></div><button class="btn" onclick="openGardenSettings()">Garden setup</button></div><div class="garden-season-meta"><span><b>${active}</b><small>active / dormant plants</small></span><span><b>${esc(x.hardinessZone||"—")}</b><small>hardiness zone</small></span><span><b>${esc(x.location||state.profile?.location||"—")}</b><small>garden location</small></span></div>${x.notes?`<div class="muted small" style="margin-top:8px">${esc(x.notes)}</div>`:""}</div>`;
+  return `<div class="card garden-season-card"><div class="section-title"><div><div class="eyebrow">Season</div><h2>${esc(s.season)}</h2><div class="muted small">${esc(s.focus)}</div></div><button class="btn" onclick="openGardenSettings()">Garden setup</button></div><div class="garden-season-meta"><span><b>${active}</b><small>active / dormant plants</small></span><span><b>${esc(x.hardinessZone||"—")}</b><small>hardiness zone</small></span><span><b>${esc(x.location||state.profile?.location||"—")}</b><small>garden location</small></span></div>${weather?`<div class="garden-weather"><span><b>${weather.temp}°</b><small>${esc(weatherText(weather.code))}</small></span><span><b>${weather.high}° / ${weather.low}°</b><small>high / low</small></span><span><b>${weather.rain}%</b><small>rain chance</small></span></div>`:""}${x.notes?`<div class="muted small" style="margin-top:8px">${esc(x.notes)}</div>`:""}</div>`;
 }
 function openGardenSettings(){
   const x=gardenSettings();
@@ -1210,6 +1216,13 @@ function gardenTasksCard(){
   const tasks=[...(state.gardenTasks||[])].filter(t=>!t.done).sort((a,b)=>String(a.due||"9999").localeCompare(String(b.due||"9999")));
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Garden tasks</div><h2>Projects + seasonal jobs</h2></div><button class="btn" onclick="openGardenTask()">+ Task</button></div>${tasks.map(t=>`<label class="row task"><input type="checkbox" onchange="toggleGardenTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.due?esc(dl(t.due)):"No due date"}${t.area?" · "+esc(t.area):""}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")||"<div class='notice'>No open garden tasks.</div>"}</div>`;
 }
+function gardenHarvestCard(){
+  const year=String(new Date().getFullYear()),rows=(state.plantLogs||[]).filter(x=>x.type==="Harvested"&&String(x.date||"").startsWith(year));
+  if(!rows.length)return"";
+  const byPlant=new Map();
+  for(const x of rows){const p=plantById(x.plantId),name=p?.name||"Unknown plant";if(!byPlant.has(name))byPlant.set(name,[]);byPlant.get(name).push(x)}
+  return `<div class="card garden-harvest-card"><div class="section-title"><div><div class="eyebrow">${year} harvest</div><h2>${rows.length} harvest log${rows.length===1?"":"s"}</h2></div></div>${[...byPlant.entries()].map(([name,logs])=>`<div class="row"><span><b>${esc(name)}</b><div class="muted small">${logs.slice(-3).map(x=>esc(x.value||dl(x.date))).join(" · ")}</div></span><b>${logs.length}</b></div>`).join("")}</div>`;
+}
 function gardenView(){
   const plants=state.plants||[],due=plants.filter(p=>plantCareState(p).due),
         tasks=(state.gardenTasks||[]).filter(t=>!t.done);
@@ -1218,7 +1231,7 @@ function gardenView(){
     <div class="plant-grid">${plants.map(plantCard).join("")||"<div class='card'><div class='notice'>Add houseplants, garden beds, herbs, vegetables, or flowers here.</div></div>"}</div>
     ${livingSuppliesCard("garden")}`;
   const seedBody=`${seedInventoryCard()}${livingSuppliesCard("garden")}`;
-  const journalBody=`${gardenJournalCard()}${gardenTasksCard()}${gardenHistoryCard()}`;
+  const journalBody=`${gardenHarvestCard()}${gardenJournalCard()}${gardenTasksCard()}${gardenHistoryCard()}`;
   const body=gardenTab==="seeds"?seedBody:gardenTab==="journal"?journalBody:plantBody;
   return `<div class="card glow garden-hero"><div class="section-title"><div><div class="eyebrow">Garden + plants</div><h2>${plants.length?plants.length+" plant"+(plants.length===1?"":"s")+" tracked":"Grow something"}</h2><div class="muted small">Houseplants, outdoor beds, vegetables, herbs, flowers, seeds, harvests, and seasonal projects.</div></div><div class="actions"><button class="btn primary" onclick="openPlant()">+ Plant</button><button class="btn" onclick="openLivingSupply('garden')">+ Supply</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>
     <div class="garden-stats"><span><b>${plants.length}</b><small>plants</small></span><span><b>${due.length}</b><small>need water</small></span><span><b>${tasks.length}</b><small>open tasks</small></span></div>${gardenTabs()}</div>
