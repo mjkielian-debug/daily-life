@@ -2474,15 +2474,37 @@ function safeToSpendSnapshot(){
   const allCash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))),
         protectedCash=allCash.filter(a=>a.protectFromSpending||a.key==="house_fund"),
         cash=allCash.filter(a=>!a.protectFromSpending&&a.key!=="house_fund"),
-        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),protectedTotal=protectedCash.reduce((sum,a)=>sum+Number(a.balance||0),0),rows=billReadiness().filter(r=>r.bill.status!=="paid"),reservedBy=new Map();
-  for(const r of rows){if(!r.account||!["checking","savings"].includes(r.account.type))continue;const amount=Number(r.bill.amount);if(!Number.isFinite(amount)||amount<0)continue;reservedBy.set(r.account.key,(reservedBy.get(r.account.key)||0)+amount)}
-  const reserved=[...reservedBy.values()].reduce((a,b)=>a+b,0),cushion=budgetCents(budgetPlan().limits?.cushion)/100,safe=total-reserved-cushion,
-        incomplete=rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status));
-  return{total,protectedTotal,reserved,cushion,safe,incomplete};
+        cashKeys=new Set(cash.map(a=>a.key)),
+        total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0),
+        protectedTotal=protectedCash.reduce((sum,a)=>sum+Number(a.balance||0),0),
+        readiness=billReadiness().filter(r=>r.bill.status!=="paid"),
+        validBills=readiness.filter(r=>r.account&&cashKeys.has(r.account.key)&&validBillDate(r.bill.due)&&r.bill.amount!==null&&r.bill.amount!==""&&Number.isFinite(Number(r.bill.amount))&&Number(r.bill.amount)>=0),
+        dates=[...new Set(validBills.map(r=>r.bill.due))].sort(),
+        horizon=dates[dates.length-1]||"",
+        income=horizon?expectedIncomeOccurrences(horizon).filter(x=>cashKeys.has(x.accountKey)):[];
+
+  let reserveCents=0;
+  for(const date of dates){
+    let billNeedAfterRestricted=0,transferableIncome=0;
+    for(const account of cash){
+      const billsThrough=validBills.filter(r=>r.account.key===account.key&&r.bill.due<=date).reduce((sum,r)=>sum+Math.round(Number(r.bill.amount)*100),0),
+            restrictedIncome=income.filter(x=>x.accountKey===account.key&&x.date<=date&&!x.transferable).reduce((sum,x)=>sum+Math.round(Number(x.amount)*100),0);
+      billNeedAfterRestricted+=Math.max(0,billsThrough-restrictedIncome);
+    }
+    transferableIncome=income.filter(x=>x.date<=date&&x.transferable).reduce((sum,x)=>sum+Math.round(Number(x.amount)*100),0);
+    reserveCents=Math.max(reserveCents,Math.max(0,billNeedAfterRestricted-transferableIncome));
+  }
+
+  const reserved=reserveCents/100,
+        cushion=budgetCents(budgetPlan().limits?.cushion)/100,
+        safe=total-reserved-cushion,
+        incomplete=readiness.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status)),
+        expectedThroughHorizon=horizon?income.reduce((sum,x)=>sum+Number(x.amount||0),0):0;
+  return{total,protectedTotal,reserved,cushion,safe,incomplete,horizon,expectedThroughHorizon};
 }
 function safeToSpendCard(){
-  const x=safeToSpendSnapshot();
-  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"after reserves"}</span></div><div class="row"><span>Spendable cash accounts</span><b>${money(x.total)}</b></div>${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}<div class="row"><span>Unpaid bills reserved</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div><p class="muted small">Estimate only. It excludes accounts marked protected, then uses recorded checking/savings balances, unpaid bills assigned to those accounts, and your monthly Cushion category. Future deposits and unlogged spending are not predicted.${x.incomplete?" Some bills/accounts still need setup.":""}</p></div>`;
+  const x=safeToSpendSnapshot(),horizonLabel=x.horizon?dl(x.horizon):"the last entered bill";
+  return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Safe-to-spend estimate</div><h2 class="${x.safe<0?"budget-negative":""}">${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"income-aware"}</span></div><div class="row"><span>Spendable cash accounts</span><b>${money(x.total)}</b></div>${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}<div class="row"><span>Current cash needed for entered bills</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div>${x.horizon?`<div class="row"><span>Expected income considered through ${esc(horizonLabel)}</span><b>+${money(x.expectedThroughHorizon)}</b></div>`:""}<p class="muted small">This is a current-cash estimate, not a promise. Instead of reserving every unpaid bill immediately, Daily Life now looks across bill due dates and reduces the cash that must be held today when enabled expected income is scheduled to arrive in time. Transferable expected income can support another spendable checking/savings account; income marked non-transferable only offsets bills in its own account. Protected accounts stay outside safe-to-spend.${x.incomplete?" Some bills/accounts still need setup, so treat this number as provisional.":""}</p></div>`;
 }
 function trackedNetWorth(){
   const assets=(state.accounts||[]).filter(a=>["checking","savings","investment"].includes(a.type)).reduce((n,a)=>n+Number(a.balance||0),0),
