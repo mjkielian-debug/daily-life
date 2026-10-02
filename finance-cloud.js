@@ -293,16 +293,48 @@ function normalizeBillWords(value){
     .filter(x=>x.length>=4&&!["payment","monthly","bill","autopay","subscription"].includes(x));
 }
 
-function bankLooksLikeKnownBill(t){
+function bankBillMatch(t){
   const amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
-  if(!Number.isFinite(amount)||isNaN(posted))return false;
+  if(!Number.isFinite(amount)||amount<=0||isNaN(posted)||t.pending||t.is_transfer)return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
-  return (state.bills||[]).some(b=>{
+  const candidates=(state.bills||[]).filter(b=>{
+    if(b.status==="paid"||!b.due)return false;
     const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
-    if(!Number.isFinite(billAmount)||isNaN(due)||Math.abs(billAmount-amount)>.05)return false;
-    const days=Math.abs((posted-due)/86400000);if(days>5)return false;
-    return normalizeBillWords(b.name).some(w=>words.has(w));
+    if(!Number.isFinite(billAmount)||isNaN(due)||Math.abs(billAmount-amount)>.01)return false;
+    const signedDays=(posted-due)/86400000;
+    if(signedDays < -10 || signedDays > 7)return false;
+    const local=(state.accounts||[]).find(a=>a.key&&a.key===b.paymentAccountKey);
+    if(local?.cloudAccountId&&String(local.cloudAccountId)!==String(t.account_id||""))return false;
+    return true;
   });
+  if(!candidates.length)return null;
+  const scored=candidates.map(b=>{
+    const due=new Date(String(b.due||"")+"T12:00:00"),days=Math.abs((posted-due)/86400000);
+    const local=(state.accounts||[]).find(a=>a.key&&a.key===b.paymentAccountKey);
+    const accountMatch=!!(local?.cloudAccountId&&String(local.cloudAccountId)===String(t.account_id||""));
+    const nameMatch=normalizeBillWords(b.name).some(w=>words.has(w));
+    return {bill:b,days,accountMatch,nameMatch,score:(accountMatch?8:0)+(nameMatch?5:0)+Math.max(0,4-days/2)};
+  }).sort((a,b)=>b.score-a.score||a.days-b.days);
+  const best=scored[0],second=scored[1];
+  if(best.accountMatch)return best.bill;
+  if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
+  if(candidates.length===1&&best.days<=3)return best.bill;
+  return null;
+}
+
+function bankLooksLikeKnownBill(t){return !!bankBillMatch(t)}
+
+function bankApplyBillPayment(t){
+  const bill=bankBillMatch(t);if(!bill)return null;
+  if(bill.paidByBankTransactionId===t.provider_transaction_id)return bill;
+  bill.status="paid";
+  bill.paidDate=String(t.posted_date||"");
+  bill.paidAmount=Math.round(Number(t.provider_amount||0)*100)/100;
+  bill.paidSource="bank";
+  bill.paidByBankTransactionId=String(t.provider_transaction_id||"");
+  bill.paidMerchant=String(t.merchant_name||t.name||"").trim();
+  if(typeof billRepeat==="function"&&billRepeat(bill)&&typeof appendNextBill==="function")appendNextBill(bill);
+  return bill;
 }
 
 async function cloudImportBankSpending(showAlert=false){
@@ -336,7 +368,9 @@ async function cloudImportBankSpending(showAlert=false){
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
     const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
     const privateRule=cloudBankRuleFor(t);
-    const knownBill=bankLooksLikeKnownBill(t);
+    const matchedBill=bankApplyBillPayment(t);
+    const knownBill=!!matchedBill;
+    if(matchedBill)changed++;
     if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
