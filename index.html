@@ -788,8 +788,14 @@ async function fundKidsMoneyTransaction(id){
   await save();closeModal();openKidsMoney(x.personId);
 }
 function schoolContactsCard(){
-  const kids=childProfiles(),withContacts=kids.filter(p=>(p.schoolContacts||[]).length);
-  return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School contacts</div><h2>Teachers + support staff</h2><div class="muted small">Stored on each child's private People profile.</div></div></div>${withContacts.length?withContacts.map(p=>`<details class="school-contact-child"><summary>${esc(p.name)} · ${p.schoolContacts.length} contact${p.schoolContacts.length===1?"":"s"}</summary>${p.schoolContacts.map(x=>`<div class="row school-contact-row"><span><b>${esc(x.name||"Contact")}</b><div class="muted small">${esc(x.role||"")}${x.notes?" · "+esc(x.notes):""}</div></span>${x.email?`<a class="btn small" href="mailto:${esc(x.email)}">${esc(x.email)}</a>`:""}</div>`).join("")}<button class="btn small" onclick="openPersonProfile('${p.id}')">Edit contacts</button></details>`).join(""):"<div class='notice'>Teacher contacts will appear here as they are added to child profiles.</div>"}</div>`;
+  const kids=childProfiles(),withSchool=kids.filter(p=>p.school||p.grade||(p.schoolContacts||[]).length);
+  return `<div class="card school-contacts-card"><div class="section-title"><div><div class="eyebrow">School contacts</div><h2>Teachers + support staff</h2><div class="muted small">School, grade, teachers, specialists, and support contacts live on each child's private People profile.</div></div></div>${withSchool.length?withSchool.map(p=>{
+    const contacts=p.schoolContacts||[],where=[p.school,p.grade?String(p.grade)+" grade":""].filter(Boolean).join(" · ");
+    return `<details class="school-contact-child" ${contacts.length?"":"open"}><summary><span><b>${esc(p.name)}</b><small>${esc(where||"School details not set")}${contacts.length?" · "+contacts.length+" contact"+(contacts.length===1?"":"s"):""}</small></span></summary>
+      ${contacts.length?contacts.map(x=>{const current=/current\s+2026-27/i.test(String(x.notes||"")),historical=/historical|2025|not yet confirmed/i.test(String(x.notes||""));return `<div class="row school-contact-row"><span><b>${esc(x.name||"Contact")} ${current?'<span class="tag">current</span>':historical?'<span class="tag">history / verify</span>':""}</b><div class="muted small">${esc(x.role||"")}${x.notes?" · "+esc(x.notes):""}</div></span>${x.email?`<a class="btn small" href="mailto:${esc(x.email)}">${esc(x.email)}</a>`:""}</div>`}).join(""):`<div class="notice">No teacher contacts saved yet.</div>`}
+      <button class="btn small" onclick="openPersonProfile('${p.id}')">Edit school profile</button>
+    </details>`;
+  }).join(""):"<div class='notice'>School details will appear here as they are added to child profiles.</div>"}</div>`;
 }
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
