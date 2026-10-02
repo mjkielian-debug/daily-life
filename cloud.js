@@ -128,7 +128,7 @@ async function cloudPullHouseholdMembers(){
       if(!p)p=state.peopleProfiles.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase()&&(!relationship||String(x.relationship||"").trim().toLowerCase()===relationship.toLowerCase()));
       const meta=row.metadata&&typeof row.metadata==="object"?row.metadata:{};
       if(!p){
-        p={id:uid(),name,relationship,birthday:row.birthday||meta.birthdayText||"",favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
+        p={id:uid(),name,relationship,birthday:row.birthday||meta.birthdayText||"",livesWithUser:meta.livesWithUser===true,profileScope:String(meta.profileScope||"extended"),relatedTo:String(meta.relatedTo||""),elfsterUrl:String(meta.elfsterUrl||""),favoriteColors:[],favoriteCharacters:[],interests:[],favoriteFoods:[],sizes:{},wishlist:[],birthdayPlan:{tasks:[]}};
         state.peopleProfiles.push(p);changed++;
       }
       const before=JSON.stringify(p);
@@ -137,6 +137,10 @@ async function cloudPullHouseholdMembers(){
       if(relationship)p.relationship=relationship;
       if(row.birthday)p.birthday=row.birthday;
       else if(!p.birthday&&meta.birthdayText)p.birthday=String(meta.birthdayText);
+      if(meta.livesWithUser!==undefined)p.livesWithUser=meta.livesWithUser===true;
+      if(meta.profileScope)p.profileScope=String(meta.profileScope);
+      if(meta.relatedTo!==undefined)p.relatedTo=String(meta.relatedTo||"");
+      if(meta.elfsterUrl!==undefined)p.elfsterUrl=String(meta.elfsterUrl||"");
       for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests","importantDates","sharedPlans"]){
         if(Array.isArray(meta[key])&&(!Array.isArray(p[key])||!p[key].length))p[key]=meta[key];
       }
@@ -162,6 +166,10 @@ async function cloudUpsertPersonProfile(p){
     birthday,
     metadata:{
       birthdayText:birthday?null:birthdayText||null,
+      livesWithUser:p.livesWithUser===true,
+      profileScope:String(p.profileScope||(p.livesWithUser?"household":"extended")),
+      relatedTo:String(p.relatedTo||""),
+      elfsterUrl:String(p.elfsterUrl||""),
       favoriteColors:Array.isArray(p.favoriteColors)?p.favoriteColors:[],
       favoriteCharacters:Array.isArray(p.favoriteCharacters)?p.favoriteCharacters:[],
       favoriteFoods:Array.isArray(p.favoriteFoods)?p.favoriteFoods:[],
