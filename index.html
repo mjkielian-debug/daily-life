@@ -330,7 +330,7 @@ function ensureBirthdayEvents(){
 }
 function ensureToday(){
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
-  ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();
+  ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();ensureSchoolAssignmentTasks(date);
   for(const t of state.settings.recurringTasks||[]){
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
@@ -1162,7 +1162,7 @@ function openSuggestedItineraryBlock(date,templateKey){
 function openItineraryTask(id){
   const t=(state.tasks||[]).find(x=>x.id===id);if(!t)return;
   const mins=itineraryTaskMinutes(t);
-  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><label class="task"><input id="iptRemember" type="checkbox" checked><span><b>Remember this timing for tasks named “${esc(t.title||"this task")}”</b><div class="muted small">Future matching tasks can reuse the duration and preferred part of day.</div></span></label><div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Exact starts stay specific to this task.</div></div>`,"Save",async()=>{
+  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><label class="task"><input id="iptRemember" type="checkbox" checked><span><b>Remember this timing for tasks named “${esc(t.title||"this task")}”</b><div class="muted small">Future matching tasks can reuse the duration and preferred part of day.</div></span></label>${t.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b> Completing this Daily Life task means the planned work block is done; it does not claim the assignment was submitted in ParentVUE.</div>`:""}<div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Exact starts stay specific to this task.</div></div>`,"Save",async()=>{
     t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;if($("#iptRemember")?.checked)itineraryRememberTaskPattern(t);await save();closeModal();render();
   });
 }
@@ -1457,6 +1457,29 @@ function openSchoolAssignment(id="",child=""){
   });
 }
 async function removeSchoolAssignment(id){if(!confirm("Remove this assignment from the school snapshot?"))return;state.schoolAssignments=(state.schoolAssignments||[]).filter(x=>x.id!==id);await save();closeModal();render()}
+function schoolAssignmentNeedsAction(a,date=ymd()){
+  const status=String(a?.status||"due").toLowerCase(),due=String(a?.due||"");
+  if(["missing","late"].includes(status))return true;
+  if(status==="due")return !due||due<=date;
+  return false;
+}
+function ensureSchoolAssignmentTasks(date=ymd()){
+  if(!Array.isArray(state.tasks))state.tasks=[];
+  for(const a of state.schoolAssignments||[]){
+    let task=state.tasks.find(t=>String(t.sourceAssignmentId||"")===String(a.id||""));
+    const needs=schoolAssignmentNeedsAction(a,date);
+    if(needs&&!task){
+      task={id:uid(),date,title:a.title||"School assignment",child:a.child||"",category:"school",notes:[a.course,a.due?"Due "+a.due:"",String(a.status||"").toLowerCase()==="missing"?"Missing in school snapshot":""].filter(Boolean).join(" · "),done:false,order:String(a.status||"").toLowerCase()==="missing"?20:45,sourceAssignmentId:a.id,itineraryMinutes:30,itineraryPreference:"after-school"};
+      state.tasks.push(task);
+    }else if(needs&&task&&!task.done){
+      task.title=a.title||task.title;task.child=a.child||task.child;task.category="school";task.notes=[a.course,a.due?"Due "+a.due:"",String(a.status||"").toLowerCase()==="missing"?"Missing in school snapshot":""].filter(Boolean).join(" · ");
+      if(task.date<date)task.date=date;
+    }else if(!needs&&task&&!task.done){
+      task.done=true;task.notes=[task.notes,"School snapshot now: "+String(a.status||"updated")].filter(Boolean).join(" · ");
+    }
+  }
+}
+
 function schoolGradeSnapshotCard(){
   const kids=childProfiles(),hasAny=kids.some(p=>latestSchoolGrades(p.name).length||schoolAssignmentRows(p.name).length);
   return `<div class="card school-snapshot-card"><div class="section-title"><div><div class="eyebrow">ParentVUE snapshot</div><h2>Grades + assignments</h2><div class="muted small">Saved snapshots only — each item shows its age. ParentVUE remains the live source until a supported direct sync exists.</div></div><div class="actions"><button class="btn small" onclick="openSchoolGrade()">+ Grade</button><button class="btn small" onclick="openSchoolAssignment()">+ Assignment</button></div></div>
