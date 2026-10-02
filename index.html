@@ -1316,6 +1316,11 @@ function peopleAgendaItems(){
   }
   return rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
 }
+function peopleMissingInfoCard(){
+  const missing=(state.peopleProfiles||[]).filter(p=>!nextBirthdayInfo(p));
+  if(!missing.length)return"";
+  return `<div class="card people-missing"><div class="section-title"><div><div class="eyebrow">Fill in over time</div><h2>${missing.length} birthday${missing.length===1?"":"s"} still unknown</h2><div class="muted small">No need to know everything now. Add details whenever you learn them.</div></div></div><div class="person-chips">${missing.map(p=>`<button class="person-chip person-chip-button" onclick="openPersonProfile('${p.id}')">${esc(p.name)} · add birthday</button>`).join("")}</div></div>`;
+}
 function peopleAgendaCard(){
   const rows=peopleAgendaItems().slice(0,10);
   return `<div class="card people-agenda"><div class="section-title"><div><div class="eyebrow">Coming up together</div><h2>Plans + visits</h2><div class="muted small">Anything tied to a person can live here—dinner, visits, parties, outings, appointments, or things you want to remember.</div></div></div>
@@ -1360,7 +1365,7 @@ function familyRoutinesCard(){
 }
 function familyView(){
   ensurePeopleProfiles();
-  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleAgendaCard()}${personCards()}`;
+  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
   return `${peopleTabs()}${body}`;
 }
 function readingView(){
