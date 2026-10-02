@@ -784,6 +784,18 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{name,variety,kind:String(p.kind||x.kind||"Seed packet"),status:String(p.status||x.status||"Have"),year:String(p.year||x.year||""),quantity:String(p.quantity||x.quantity||""),startIndoors:String(p.startIndoors||x.startIndoors||""),directSow:String(p.directSow||x.directSow||""),startIndoorsDate:String(p.startIndoorsDate||x.startIndoorsDate||""),directSowDate:String(p.directSowDate||x.directSowDate||""),transplantDate:String(p.transplantDate||x.transplantDate||""),notes:String(p.notes||x.notes||""),cloudEntryId:row.id});
       return true;
     }
+    case "account_strategy":{
+      const accountName=String(p.accountName||p.name||"").trim();if(!accountName)return false;
+      const account=(state.accounts||[]).find(a=>String(a.name||"").trim().toLowerCase()===accountName.toLowerCase());if(!account)return false;
+      if(p.strategy!==undefined)account.strategy=String(p.strategy||"Standard");
+      if(p.minimumOperatingBalance!==undefined)account.minimumOperatingBalance=Math.max(0,Number(p.minimumOperatingBalance||0));
+      if(p.billPayAllowed!==undefined)account.billPayAllowed=p.billPayAllowed===null?null:!!p.billPayAllowed;
+      if(p.directDepositRequired!==undefined)account.directDepositRequired=!!p.directDepositRequired;
+      if(p.protectFromSpending!==undefined)account.protectFromSpending=!!p.protectFromSpending;
+      if(p.strategyNotes!==undefined)account.strategyNotes=String(p.strategyNotes||"");
+      account.strategyCloudEntryId=row.id;
+      return true;
+    }
     case "shopping":{
       const item=String(p.item||"").trim();if(!item)return false;
       state.shopping.push({id:common.id,cloudEntryId:row.id,item,qty:String(p.qty||""),store:String(p.store||""),status:String(p.status||"needed"),source:String(p.source||"manual")});return true;
