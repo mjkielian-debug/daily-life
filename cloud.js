@@ -1284,3 +1284,12 @@ document.addEventListener("visibilitychange",()=>{
     if(typeof render==="function")render();
   }).catch(()=>{});
 });
+
+
+// Load small runtime UI fixes that should stay isolated from the main state schema.
+if(!document.querySelector('script[data-daily-life-money-fix]')){
+  const s=document.createElement("script");
+  s.src="money-fix.js?v=20261002-1";
+  s.dataset.dailyLifeMoneyFix="1";
+  document.head.appendChild(s);
+}
