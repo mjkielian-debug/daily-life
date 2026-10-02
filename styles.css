@@ -1752,3 +1752,26 @@ header>*{position:relative;z-index:1}
   .tarot-card-shell.compact{grid-template-columns:1fr}
   .tarot-card-shell.compact .tarot-card-face{width:min(190px,70vw)}
 }
+
+/* Inventory */
+.inventory-hero .segmented{margin-top:14px}
+.inventory-tools{display:grid;gap:12px}
+.inventory-category-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px}
+.inventory-category-row .chip{white-space:nowrap}
+.inventory-item-row,.inventory-mini-item{width:100%;border:0;background:transparent;color:inherit;text-align:left}
+.inventory-item-row{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid color-mix(in srgb,var(--line) 78%,transparent);cursor:pointer}
+.inventory-item-row:last-child{border-bottom:0}
+.inventory-item-row span:first-child{display:flex;flex-direction:column;gap:3px}
+.inventory-item-row small{display:block;color:var(--muted)}
+.inventory-item-meta{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:3px;min-width:58px}
+.inventory-item-meta small{font-size:.78rem}
+.inventory-low{font-weight:750;color:#9b5a4b!important}
+.inventory-room{border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:18px;margin:10px 0;background:color-mix(in srgb,var(--card) 94%,transparent);overflow:hidden}
+.inventory-room>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;cursor:pointer}
+.inventory-room>summary::-webkit-details-marker{display:none}
+.inventory-room>summary span{display:flex;flex-direction:column;gap:3px}
+.inventory-room>summary small{color:var(--muted)}
+.inventory-room-body{padding:0 12px 12px;display:grid;gap:10px}
+.inventory-location{border-radius:15px;padding:10px 12px;background:color-mix(in srgb,var(--accent-soft) 52%,var(--card));border:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.inventory-mini-item{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent);cursor:pointer}
+.inventory-mini-item:first-of-type{margin-top:6px}
