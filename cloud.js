@@ -1419,18 +1419,26 @@ async function cloudPullLifeEntries(showAlert=false){
   if(cloudEntryPullBusy||!cloudUser()||!cloudClient)return 0;
   cloudEntryPullBusy=true;
   try{
-    const {data,error}=await cloudClient.from("life_entries")
-      .select("id,category,occurred_at,local_date,payload,source,external_id,created_at")
-      .eq("source","chatgpt")
-      .order("created_at",{ascending:true})
-      .limit(500);
-    if(error)throw error;
-    let applied=0;const petProfileEntryIds=new Set();
-    for(const row of data||[]){
-      if(cloudApplyLifeEntry(row)){
-        cloudMarkEntryApplied(row.id);applied++;
-        if(row.category==="pet_profile")petProfileEntryIds.add(row.id);
+    const batchSize=500,maxRows=10000;
+    let offset=0,applied=0,totalRows=0;
+    const petProfileEntryIds=new Set();
+    while(offset<maxRows){
+      const {data,error}=await cloudClient.from("life_entries")
+        .select("id,category,occurred_at,local_date,payload,source,external_id,created_at,updated_at")
+        .eq("source","chatgpt")
+        .order("created_at",{ascending:true})
+        .range(offset,offset+batchSize-1);
+      if(error)throw error;
+      const rows=data||[];
+      totalRows+=rows.length;
+      for(const row of rows){
+        if(cloudApplyLifeEntry(row)){
+          cloudMarkEntryApplied(row.id);applied++;
+          if(row.category==="pet_profile")petProfileEntryIds.add(row.id);
+        }
       }
+      if(rows.length<batchSize)break;
+      offset+=batchSize;
     }
     if(applied){
       await dbSet("state",state);
@@ -1444,7 +1452,11 @@ async function cloudPullLifeEntries(showAlert=false){
       cloudSchedulePush();
       if(typeof render==="function")render();
     }
-    if(showAlert)alert(applied?`Added ${applied} new ChatGPT log entr${applied===1?"y":"ies"} to this device.`:"No new ChatGPT logs to add.");
+    if(showAlert){
+      const capNote=totalRows>=maxRows?" The sync reached its safety limit; older entries remain safe in cloud but were not scanned in this pass.":"";
+      const message=applied?("Added "+applied+" new ChatGPT log entr"+(applied===1?"y":"ies")+" to this device."):"No new ChatGPT logs to add.";
+      alert(message+capNote);
+    }
     return applied;
   }catch(error){
     cloudError=error?.message||"Could not pull conversational logs.";
