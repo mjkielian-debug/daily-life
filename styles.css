@@ -138,3 +138,12 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .meal-ingredients-collapse[open] summary{color:var(--text)}
 
 .bill-status.transfer{border-color:color-mix(in srgb,var(--accent) 70%,var(--border));color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+
+.ups-contract{border-color:color-mix(in srgb,var(--primary) 32%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--primary) 7%,var(--panel2)),var(--panel))}
+.pay-progression{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0}
+.pay-step{display:grid;gap:3px;padding:8px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.025);min-width:0}
+.pay-step span{font-size:.68rem;color:var(--muted)}.pay-step b{font-size:.88rem}.pay-step small{font-size:.6rem;color:var(--muted)}
+.pay-step.past{border-color:color-mix(in srgb,var(--primary) 32%,var(--border))}
+.seasonal-income{border-color:color-mix(in srgb,var(--accent) 28%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 5%,var(--panel2)),var(--panel))}
+.season-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:10px 0}.season-grid .metric{min-height:92px}
+@media(max-width:600px){.pay-progression{grid-template-columns:repeat(2,minmax(0,1fr))}.season-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
