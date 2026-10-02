@@ -1008,14 +1008,35 @@ function upsContractPayCard(){
   </div>`;
 }
 function monthNameFromKey(key){const n=Number(key);return n>=1&&n<=12?new Date(2026,n-1,1).toLocaleDateString("en-US",{month:"short"}):String(key)}
+function peakSeasonPlanningRows(){
+  const x=upsSeasonality(),p=upsEmploymentProfile();if(!x)return[];
+  const year=Number(ymd().slice(0,4)),previous=String(year-1),current=String(year),
+        lastYear=x.years?.[previous]||{},thisYear=x.years?.[current]||{},
+        recent=Number(x.recentWeeklyAverageNet||0),
+        latestInside=[...(p?.verifiedRates||[])].filter(v=>v.job==="inside"&&Number(v.rate)>0).sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).slice(-1)[0],
+        currentRate=Number(p?.currentRate||latestInside?.rate||employmentRateForDate(p,ymd())?.rate||0),
+        months=["10","11","12"];
+  return months.map(month=>{
+    const targetDate=`${year}-${month}-15`,effective=employmentRateForDate(p,targetDate),targetRate=Number(effective?.rate||currentRate||0),
+          rateFactor=currentRate>0&&targetRate>0?targetRate/currentRate:1,
+          recentMonthly=recent>0?recent*4.345*rateFactor:0,
+          prior=Number(lastYear[month]||0),actual=Number(thisYear[month]||0),
+          candidates=[prior,recentMonthly].filter(n=>Number.isFinite(n)&&n>0),
+          low=candidates.length?Math.min(...candidates):0,high=candidates.length?Math.max(...candidates):0;
+    return{month,targetDate,prior,recentMonthly,actual,low,high,targetRate,rateAdjusted:Math.abs(rateFactor-1)>.001};
+  });
+}
 function seasonalIncomeCard(){
   const x=upsSeasonality();if(!x)return"";
-  const y25=x.years?.["2025"]||{},y26=x.years?.["2026"]||{},months=["09","10","11","12"],recent=Number(x.recentWeeklyAverageNet||0);
-  return `<div class="card seasonal-income"><div class="section-title"><div><div class="eyebrow">Peak-season income pattern</div><h2>UPS income changes a lot by season</h2></div><span class="tag">historical net deposits</span></div>
-    <div class="season-grid">${months.map(m=>`<div class="metric"><div class="muted small">${monthNameFromKey(m)} 2025</div><div class="big">${money(Number(y25[m]||0))}</div><div class="muted small">net payroll deposited</div></div>`).join("")}</div>
-    <div class="row"><span><b>Sep 2026 actual deposits</b><div class="muted small">5 combined UPS paydays</div></span><b>${money(Number(y26["09"]||0))}</b></div>
+  const year=Number(ymd().slice(0,4)),previous=String(year-1),current=String(year),
+        prev=x.years?.[previous]||{},cur=x.years?.[current]||{},months=["09","10","11","12"],
+        recent=Number(x.recentWeeklyAverageNet||0),planning=peakSeasonPlanningRows();
+  return `<div class="card seasonal-income"><div class="section-title"><div><div class="eyebrow">Peak-season income pattern</div><h2>UPS income changes a lot by season</h2></div><span class="tag">history + planning range</span></div>
+    <div class="season-grid">${months.map(m=>`<div class="metric"><div class="muted small">${monthNameFromKey(m)} ${previous}</div><div class="big">${money(Number(prev[m]||0))}</div><div class="muted small">net payroll deposited</div></div>`).join("")}</div>
+    ${Number(cur["09"]||0)?`<div class="row"><span><b>Sep ${current} actual deposits</b><div class="muted small">Recorded UPS payroll deposits</div></span><b>${money(Number(cur["09"]||0))}</b></div>`:""}
     ${recent?`<div class="row"><span>Recent weekly net baseline</span><b>${money(recent)}</b></div>`:""}
-    <div class="notice"><b>How Daily Life uses this:</b><br><span class="muted small">Last year's November/December peak is shown as seasonal context, but it is not automatically promised to future bills. Bill coverage uses the conservative expected-income entries below until actual 2026 peak checks confirm the ramp.</span></div>
+    ${planning.some(r=>r.low>0)?`<div class="mini-heading">Upcoming peak planning range</div><div class="season-grid">${planning.map(r=>`<div class="metric"><div class="muted small">${monthNameFromKey(r.month)} ${current}</div><div class="big">${r.low>0&&r.high>0?(r.low===r.high?money(r.low):money(r.low)+"–"+money(r.high)):"—"}</div><div class="muted small">${r.rateAdjusted&&r.targetRate?"recent baseline adjusted for "+money(r.targetRate)+"/hr rate · ":""}same-month history ↔ recent weekly pace</div>${r.actual>0?`<div class="muted small">Actual posted so far: ${money(r.actual)}</div>`:""}</div>`).join("")}</div>`:""}
+    <div class="notice"><b>How Daily Life uses this:</b><br><span class="muted small">The range is planning context from last year’s same-month net deposits and your recent weekly net pace. When a dated UPS rate change is known, the recent-pay side of the range is adjusted proportionally for that rate. Hours, overtime, mileage, taxes, and peak staffing can still change the actual result. These ranges are <b>not</b> automatically promised to bills; bill coverage only counts enabled expected-income entries until real paychecks arrive.</span></div>
   </div>`;
 }
 function currentWeekWorkCard(){
