@@ -941,9 +941,9 @@ function itineraryAutoTaskBlocks(date,baseItems){
   if(state.settings?.itinerary?.autoScheduleTasks===false)return[];
   const tasks=itineraryTaskCandidates(date),explicit=[],waiting=[];
   for(const t of tasks){
-    if(t.itineraryStart){
+    if(t.itineraryStart&&t.date===date){
       const s=hmMinutes(t.itineraryStart),mins=itineraryTaskMinutes(t);
-      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.date<date?"Carried forward from "+dl(t.date):"",t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:t.date<date});
+      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:false});
       else waiting.push(t);
     }else waiting.push(t);
   }
@@ -1065,7 +1065,7 @@ function itineraryFlowCard(date){
 
 function itineraryPrintSection(date){
   const items=itineraryDayItems(date),meal=mealForDate(date),
-    tasks=(state.tasks||[]).filter(x=>x.date===date&&!x.done),
+    tasks=itineraryTaskCandidates(date),
     chores=(state.chores||[]).filter(x=>x.date===date&&!x.done),
     note=String(state.itineraryNotes?.[date]||"").trim();
   const heading=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
