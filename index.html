@@ -2508,7 +2508,7 @@ function settingsView(){
   ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
   ${cloudPanel()}
   ${systemHealthCard()}
-  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
+  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="warning"><b>Private Vault is separate.</b><br><span class="muted small">The regular Daily Life backup does not contain Vault passwords, sensitive documents, or Vault attachments. Use the Vault’s encrypted export or encrypted cloud backup for those records.</span></div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export app backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore app backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
 }
 
 // Budget values live only in the existing local state/backup, never in source defaults.
@@ -3198,7 +3198,19 @@ function openMealPattern(){
 async function removeMealPattern(i){if(confirm("Remove this weekly meal pattern?")){state.settings.mealPatterns.splice(i,1);await save();render()}}
 async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(j);await save();render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
-async function erase(){if(confirm("Erase ALL Daily Life data stored on this device?")){await dbClear();state=blankState();render()}}
+async function erase(){
+  const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
+  const warning=hasVault
+    ?"Erase ALL Daily Life data stored on this device, including the encrypted Private Vault? This does not delete any separate cloud backups."
+    :"Erase ALL Daily Life data stored on this device? This does not delete separate cloud backups.";
+  if(!confirm(warning))return;
+  if(hasVault&&!confirm("The encrypted Vault on this device will be removed too. Continue?"))return;
+  if(typeof vaultLock==="function")vaultLock();
+  await dbClear();
+  if(typeof vaultEnvelope!=="undefined")vaultEnvelope=null;
+  state=blankState();
+  render();
+}
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;render()}}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;render()});window.addEventListener("appinstalled",()=>{installPrompt=null;render()});
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
