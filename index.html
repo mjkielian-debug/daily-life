@@ -107,7 +107,7 @@ const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocal
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
   version:21,createdAt:new Date().toISOString(),
-  profile:{name:"",location:"Lincoln, Nebraska",sunSign:""},
+  profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
@@ -1199,7 +1199,7 @@ function connectionsCard(){
     <div class="connection-row"><span><b>ParentVUE</b><div class="muted small">School email can flow in automatically; live grades and assignments are not directly connected.</div></span><span class="tag">partial</span></div>
     <div class="connection-row"><span><b>UPS / Dayforce</b><div class="muted small">Daily punches are logged/reconciled in Daily Life; official earnings statements can be imported. Direct punch sync is not connected.</div></span><span class="tag">partial</span></div>
     <div class="connection-row"><span><b>Kitchen photos</b><div class="muted small">Private food photos can become pantry inventory and meal suggestions.</div></span><span class="tag">${signed?"ready to test":"cloud needed"}</span></div>
-    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Your People data is private to your account. Tanner is included as a person, but account sharing/invites are not enabled yet.</div></span><span class="tag">private</span></div>
+    <div class="connection-row"><span><b>Household sharing</b><div class="muted small">Your People data is private to your account. Household sharing and account invites are not enabled yet.</div></span><span class="tag">private</span></div>
   </div>`;
 }
 function settingsView(){
