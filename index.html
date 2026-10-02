@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-1938">
+<link rel="stylesheet" href="styles.css?v=20261001-1955">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -296,7 +296,27 @@ const food=()=>state.foodLogs.filter(x=>x.date===ymd());
 const reads=()=>state.readingLogs.filter(x=>x.date===ymd());
 const tire=()=>[...state.tireLogs].sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")))[0]||null;
 const work=()=>state.workShifts.find(x=>x.date===ymd())||null;
-function wh(w){if(!w?.start||!w?.end)return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
+const clockMinutes=v=>{const [h,m]=String(v||"").split(":").map(Number);return Number.isFinite(h)?h*60+(Number.isFinite(m)?m:0):null};
+function workEndConfirmed(w,now=new Date()){
+  if(!w?.end)return false;
+  const date=String(w.date||""),today=ymd(now);
+  if(date&&date<today)return true;
+  if(date&&date>today)return false;
+  const end=clockMinutes(w.end),nowM=now.getHours()*60+now.getMinutes();
+  return end!==null&&end<=nowM+5;
+}
+function liveWorkHours(w,now=new Date()){
+  if(!w?.start||String(w.date||"")!==ymd(now))return 0;
+  const start=clockMinutes(w.start),nowM=now.getHours()*60+now.getMinutes();if(start===null||nowM<start)return 0;
+  return Math.max(0,(nowM-start)/60);
+}
+function wh(w){if(!w?.start||!w?.end||!workEndConfirmed(w))return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
+function workStatusText(w){
+  if(!w)return"No shift logged";
+  if(w.start&&workEndConfirmed(w))return `${fmtClock(w.start)}–${fmtClock(w.end)}`;
+  if(w.start){const h=liveWorkHours(w);return `Started ${fmtClock(w.start)}${h>0?` · ${h.toFixed(2)} h so far`:""} · end time ${w.end?"needs confirmation":"needed"}`;}
+  return w.scheduled?`Scheduled ${fmtClock(w.scheduled)}`:"No shift logged";
+}
 function totals(){const f=food();return{cal:f.reduce((sum,x)=>sum+Number(x.calories||0),0),protein:f.reduce((sum,x)=>sum+Number(x.protein||0),0),carbs:f.reduce((sum,x)=>sum+Number(x.carbs||0),0),fat:f.reduce((sum,x)=>sum+Number(x.fat||0),0),fiber:f.reduce((sum,x)=>sum+Number(x.fiber||0),0),caffeineMg:f.reduce((sum,x)=>sum+Number(x.caffeineMg||0),0),monsters:f.filter(x=>x.category==="monster").length}}
 function micronutrientTotals(){
   const out={};
@@ -401,10 +421,27 @@ function recipeNeedSummary(m){
 }
 const todayChores=()=>state.chores.filter(x=>x.date===ymd());
 function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"check",text:line}}
+function eventDisplayKey(e){
+  const child=String(e?.child||"").trim().toLowerCase();
+  let title=String(e?.title||"").trim().toLowerCase();
+  if(child)title=title.split(child).join(" ");
+  title=title.replace(/parent\s*[-–—]?\s*teacher\s+conference.*/,"parent teacher conference")
+             .replace(/[^a-z0-9]+/g," ").trim();
+  return [String(e?.date||""),child,String(e?.startTime||""),title].join("|");
+}
+function eventDetailScore(e){return [e?.endTime,e?.location,e?.notes,e?.source,e?.sourceRef].filter(Boolean).length}
+function dedupeEventList(rows){
+  const map=new Map();
+  for(const e of rows||[]){
+    const key=eventDisplayKey(e),prev=map.get(key);
+    if(!prev||eventDetailScore(e)>eventDetailScore(prev))map.set(key,e);
+  }
+  return [...map.values()];
+}
 function upcomingEvents(days=14){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+days);
   const end=ymd(endDate);
-  return (state.events||[]).filter(x=>x.date>=start&&x.date<=end&&x.status!=="cancelled").sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+  return dedupeEventList((state.events||[]).filter(x=>x.date>=start&&x.date<=end&&x.status!=="cancelled")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
 }
 function eventDayParts(date){const d=new Date(date+"T12:00:00");return{mon:d.toLocaleDateString("en-US",{month:"short"}),day:d.getDate(),weekday:d.toLocaleDateString("en-US",{weekday:"short"})}}
 function latestMealSuggestion(date){
@@ -504,8 +541,8 @@ function todayTimelineItems(){
   const date=ymd(),items=[];
   const w=work();
   if(w?.scheduled)items.push({time:w.scheduled,end:"",sort:w.scheduled,icon:"📦",title:"UPS scheduled start",detail:"Work"});
-  if(w?.start)items.push({time:w.start,end:w.end||"",sort:w.start,icon:"📦",title:"UPS punch-in",detail:w.end?`Worked until ${fmtClock(w.end)}`:"Work"});
-  for(const e of (state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled")){
+  if(w?.start){const confirmed=workEndConfirmed(w),live=liveWorkHours(w);items.push({time:w.start,end:confirmed?w.end:"",sort:w.start,icon:"📦",title:"UPS punch-in",detail:confirmed?`Worked until ${fmtClock(w.end)}`:live>0?`In progress · ${live.toFixed(2)} h so far`:"Work · end time needed"});}
+  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){
     items.push({time:e.startTime||"",end:e.endTime||"",sort:e.startTime||"99:99",icon:e.type==="birthday"||e.type==="birthday-party"?"🎂":e.type==="relationship"?"💬":e.type==="school"||String(e.source||"").toLowerCase().includes("school")?"🎒":e.type==="appointment"?"📅":"✦",title:e.title,detail:[e.child,e.endTime?`until ${fmtClock(e.endTime)}`:"",e.location].filter(Boolean).join(" · "),eventId:e.id});
   }
   const meal=todayMeal();
@@ -536,7 +573,7 @@ function isSchoolEvent(e){
 }
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
-  const events=(state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e)).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+  const events=dedupeEventList((state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
   const schoolTasks=(state.tasks||[]).filter(t=>!t.done&&t.category==="school"&&t.date>=start&&t.date<=end).sort((a,b)=>(a.date+(a.order||100)).localeCompare(b.date+(b.order||100))),
         recentSchool=(state.events||[]).filter(e=>e.date>=(()=>{const d=new Date();d.setDate(d.getDate()-30);return ymd(d)})()&&["attendance","teacher-message","school-note"].includes(String(e.type||""))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
   const kids=(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"")).filter(Boolean);
@@ -565,7 +602,7 @@ function payrollReconcile(p){
 function currentWeekWorkCard(){
   const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),total=rows.reduce((sum,w)=>sum+wh(w),0);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} logged hours</h2></div><button class="btn" onclick="openWork()">Edit today</button></div>
-    ${rows.length?rows.map(w=>`<div class="row"><span><b>${esc(dl(w.date))}</b><div class="muted small">${w.start&&w.end?`${esc(fmtClock(w.start))}–${esc(fmtClock(w.end))}`:w.scheduled?`Scheduled ${esc(fmtClock(w.scheduled))}`:"Incomplete"}</div></span><b>${wh(w).toFixed(2)} h</b></div>`).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
+    ${rows.length?rows.map(w=>{const hrs=wh(w),live=liveWorkHours(w);return `<div class="row"><span><b>${esc(dl(w.date))}</b><div class="muted small">${esc(workStatusText(w))}</div></span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":"—"}</b></div>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
 }
 function upsPayrollCard(){
   const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
@@ -614,7 +651,7 @@ function nextLifeAdminAction(){
   return{title:p.nextAction,notes:[p.title,p.due?("due "+dl(p.due)):""].filter(Boolean).join(" · "),projectId:p.id};
 }
 function todayView(m,f,w,h,tk,done,nt,tr){
-  const ml=moonLens(m),actual=!!(w?.start&&w?.end),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
+  const ml=moonLens(m),actual=!!(w?.start&&workEndConfirmed(w)),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
   const now=new Date(),nowHm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),timeline=todayTimelineItems();
   const activeTimed=timeline.find(i=>i.time&&i.end&&i.time<=nowHm&&i.end>nowHm);
   const nextTimed=timeline.find(i=>i.time&&i.time>=nowHm);
@@ -632,7 +669,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
   <div class="today-metrics">
     <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
-    <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":"No hours logged"}</div><div class="muted small">${actual?`${esc(w.start)}–${esc(w.end)}${Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}`:w?.start?`Started ${esc(w.start)} · end time needed`:w?.scheduled?`Scheduled ${esc(w.scheduled)}`:"No shift logged"}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
+    <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":w?.start&&liveWorkHours(w)>0?liveWorkHours(w).toFixed(2)+" h so far":"No completed hours"}</div><div class="muted small">${esc(workStatusText(w))}${actual&&Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
     <div class="metric"><div class="eyebrow">Food logged</div><div class="big">${Math.round(f.cal)} cal</div>${todayProgress(f.cal,state.settings.calTarget,"Calories logged")}<div class="muted small">${Math.round(f.protein)} g protein</div>${todayProgress(f.protein,state.settings.proteinTarget,"Protein logged")}</div>
     <div class="metric"><div class="eyebrow">Water</div><div class="big">${oz} oz</div>${todayProgress(oz,state.settings.waterTarget,"Water logged")}<div class="actions"><button class="btn primary small" onclick="addWater(26)">+26 oz</button><button class="btn small" onclick="setWaterGoal()">${state.settings.waterTarget?"Edit goal":"Set goal"}</button></div></div>
   </div>
@@ -776,7 +813,7 @@ function logView(f,w,tr){
   ${currentWeekWorkCard()}
   ${fitnessCard()}
   ${lifeAdminCard()}
-  <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${w?.start&&w?.end?`${esc(fmtClock(w.start))}–${esc(fmtClock(w.end))}`:w?.scheduled?`Scheduled ${esc(fmtClock(w.scheduled))}`:"No shift logged"}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
+  <div class="card"><div class="section-title"><div><div class="eyebrow">📦 Work today</div><h2>${esc(workStatusText(w))}</h2></div><button class="btn" onclick="openWork()">Edit</button></div></div>
   ${vehicleCard()}
   ${tireHistoryCard(tr)}
   ${mailDeliveryCard()}
@@ -884,7 +921,7 @@ function openPersonHub(id){
   const colors=p.favoriteColors||[],chars=p.favoriteCharacters||[],foods=p.favoriteFoods||[],ints=p.interests||[],checkin=p.recurringCheckin||{};
   const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   modal(p.name,`<div class="stack person-hub">
-    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button><button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
+    <div class="person-hub-actions"><button class="btn primary" onclick="closeModal();openBirthdayPlanner('${p.id}')">🎂 Birthday</button><button class="btn" onclick="closeModal();openTask('${esc(p.name)}')">+ Task</button><button class="btn" onclick="closeModal();openEvent(ymd(),'','${esc(p.name)}')">+ Event</button><button class="btn" onclick="closeModal();openBirthdayWish('${p.id}')">+ Gift idea</button><button class="btn" onclick="closeModal();openPersonProfile('${p.id}')">Edit profile</button></div>
     ${b?`<div class="birthday-planner-head"><b>🎂 ${esc(b.label)}</b><span class="muted small">${b.days===0?"Today":b.days+" days away"}${b.turning?` · turning ${b.turning}`:""} · ${w.total} wishes</span></div>`:""}
     ${colors.length||chars.length||foods.length||ints.length?`<div><div class="mini-heading">Favorites + interests</div><div class="person-chips">${colors.map(x=>`<span class="person-chip">🎨 ${esc(x)}</span>`).join("")}${chars.map(x=>`<span class="person-chip">★ ${esc(x)}</span>`).join("")}${foods.map(x=>`<span class="person-chip">🍰 ${esc(x)}</span>`).join("")}${ints.map(x=>`<span class="person-chip">♡ ${esc(x)}</span>`).join("")}</div></div>`:""}
     ${p.routineNotes?`<div class="notice"><b>Things to remember</b><div class="muted small">${esc(p.routineNotes).replace(/\n/g,"<br>")}</div></div>`:""}
@@ -1258,9 +1295,9 @@ function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWate
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
 async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.key===key);if(!x)state.selfCare.push({id:uid(),date:ymd(),key,done:true});else x.done=!x.done;await save();render()}
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",calories:10,protein:0});await save();render()}
-function openTask(){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100});await save();closeModal();render()})}
+function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100});await save();closeModal();render()})}
 function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid2"><label>Calories<input id="fc" type="number"></label><label>Protein g<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g<input id="fcarb" type="number"></label><label>Fat g<input id="ffat" type="number"></label><label>Fiber g<input id="ffiber" type="number"></label></div><label>Known caffeine mg<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
-function openWork(){const x=work()||{};modal("UPS shift",`<div class="stack"><label>Scheduled<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual start<input id="wa" type="time" value="${x.start||""}"></label><label>Actual end<input id="we" type="time" value="${x.end||""}"></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label></div>`,"Save",async()=>{let w=work();if(!w){w={id:uid(),date:ymd()};state.workShifts.push(w)}w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||0);const task=state.tasks.find(x=>x.date===ymd()&&x.title==="UPS shift");if(task&&w.end)task.done=true;await save();closeModal();render()})}
+function openWork(){const x=work()||{};modal("UPS shift",`<div class="stack"><div class="notice"><b>Actual end means you have already punched out.</b><br><span class="muted small">A future end time is treated as unconfirmed so Daily Life will not count it as completed hours.</span></div><label>Scheduled start<input id="ws" type="time" value="${x.scheduled||""}"></label><label>Actual punch-in<input id="wa" type="time" value="${x.start||""}"></label><label>Actual punch-out<input id="we" type="time" value="${x.end||""}"></label><label>Hourly rate<input id="wr" type="number" step=".01" value="${x.rate??""}"></label></div>`,"Save",async()=>{let w=work();if(!w){w={id:uid(),date:ymd()};state.workShifts.push(w)}w.scheduled=$("#ws").value;w.start=$("#wa").value;w.end=$("#we").value;w.rate=Number($("#wr").value||0);const task=state.tasks.find(x=>x.date===ymd()&&x.title==="UPS shift");if(task&&workEndConfirmed(w))task.done=true;await save();closeModal();render()})}
 function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp" type="number" step=".1"></label><label>Event<select id="te"><option>reading</option><option>fill</option><option>repair</option></select></label><label>Notes<input id="tn"></label></div>`,"Save",async()=>{const psi=Number($("#tp").value);if(!psi)return;state.tireLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),psi,event:$("#te").value,notes:$("#tn").value});await save();closeModal();render()})}
 function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
@@ -1329,11 +1366,11 @@ function openMeal(date){
 }
 async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
 async function setMealStatus(id,status){const m=state.meals.find(x=>x.id===id);if(!m)return;m.status=status;await save();render()}
-function openEvent(date=ymd(),id=""){
+function openEvent(date=ymd(),id="",person=""){
   const x=state.events.find(e=>e.id===id)||{};
   modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
     <label>Title<input id="etitle" value="${esc(x.title||"")}"></label>
-    <label>Child / person<input id="echild" value="${esc(x.child||"")}"></label>
+    <label>Child / person<input id="echild" value="${esc(x.child||person||"")}"></label>
     <label>Type<select id="etype">${["school","appointment","deadline","activity","family","birthday","birthday-party","relationship","attendance","teacher-message","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
     <label>Date<input id="edate" type="date" value="${esc(x.date||date)}"></label>
     <div class="grid2"><label>Start<input id="estart" type="time" value="${esc(x.startTime||"")}"></label><label>End<input id="eend" type="time" value="${esc(x.endTime||"")}"></label></div>
@@ -1565,7 +1602,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installProm
 document.addEventListener("change",e=>{if(e.target?.id==="restoreFile"&&e.target.files[0])restore(e.target.files[0]);if(e.target?.id==="payrollFile"&&e.target.files[0])importPayrollStatement(e.target.files[0])});
 async function init(){state=migrateState(await dbGet("state")||blankState());ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();await save();render();if(!needsSetup())getWeather();}
 init();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1938").catch(()=>{});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=20261001-1955").catch(()=>{});
 
 </script>
 </body>
