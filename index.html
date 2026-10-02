@@ -109,7 +109,7 @@ const blankState=()=>({
   version:21,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -121,16 +121,14 @@ const blankState=()=>({
 });
 let state=blankState(),view="today",installPrompt=null,weather=null;
 const themes=[
-  ["Moonlit Sage","#9fdeb2","#d7b8ff","#a9e8f3"],
-  ["Emerald Stardust","#72d59a","#f2b4d0","#cab8ff"],
-  ["Fairy Garden","#a9e8c2","#f2c8df","#d3b8ff"],
-  ["Celestial Moss","#83c9a1","#d8a8cf","#9fdcff"],
-  ["Aurora Meadow","#82dfbe","#cab5ff","#8ed9ea"],
-  ["Cosmic Clover","#70cf91","#f3b6cf","#f3d59b"],
-  ["Enchanted Forest","#69bd8c","#c5a4da","#94c9ef"],
-  ["Mint Moon","#9ce5ca","#f0b8d6","#c7b7ff"],
-  ["Venus Garden","#78cea6","#efb2c8","#f2dfb0"],
-  ["Lucky Stardust","#87d89d","#ffc7a8","#cbb7ff"]
+  ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
+  ["Emerald Blush","#69c58e","#e8b8c7","#e7d3a0"],
+  ["Botanical Champagne","#7fca9b","#dfc2c9","#efd9a7"],
+  ["Moss Rose","#79bb8d","#e6bbc7","#e2c98f"],
+  ["Garden Glass","#83d0aa","#e7c7cf","#e9d8aa"],
+  ["Eucalyptus Silk","#86caa2","#e5bec9","#dbc68f"],
+  ["Fern & Petal","#72bf8e","#eabfca","#ebd6a0"],
+  ["Olive Pearl","#91c399","#e3c5cb","#e5d19a"]
 ];
 async function save(){await dbSet("state",state);if(typeof cloudSchedulePush==="function")cloudSchedulePush()}
 function theme(){const t=themes[Math.abs(Math.floor(Date.now()/86400000))%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);return t[0]}
@@ -242,6 +240,8 @@ function migrateState(s){
   s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
   s.settings.mealPatterns=Array.isArray(s.settings.mealPatterns)?s.settings.mealPatterns:[];
+  s.settings.selfCareHabits=Array.isArray(s.settings.selfCareHabits)?s.settings.selfCareHabits:[];
+  if(!s.settings.selfCareHabits.length)s.settings.selfCareHabits=DEFAULT_SELF_CARE_HABITS.map(x=>({...x}));
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
   for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
@@ -734,6 +734,63 @@ function sleepForDate(date=ymd()){return (state.sleepLogs||[]).find(x=>x.date===
 function sleepHours(log){
   if(!log?.bedtime||!log?.wakeTime)return 0;const [bh,bm]=log.bedtime.split(":").map(Number),[wh,wm]=log.wakeTime.split(":").map(Number);let mins=wh*60+(wm||0)-(bh*60+(bm||0));if(mins<0)mins+=1440;return mins/60;
 }
+const DEFAULT_SELF_CARE_HABITS=[
+  {key:"brush",label:"Brush teeth",group:"Essentials",builtin:true},
+  {key:"floss",label:"Floss",group:"Essentials",builtin:true},
+  {key:"mouthwash",label:"Mouthwash",group:"Essentials",builtin:true},
+  {key:"shower",label:"Shower",group:"Essentials",builtin:true},
+  {key:"wash_face",label:"Wash face",group:"Skin + body",builtin:true},
+  {key:"skincare",label:"Skincare",group:"Skin + body",builtin:true},
+  {key:"body_lotion",label:"Body lotion",group:"Skin + body",builtin:true},
+  {key:"hair_care",label:"Hair care",group:"Skin + body",builtin:true},
+  {key:"fresh_clothes",label:"Fresh clothes",group:"Skin + body",builtin:true},
+  {key:"outside",label:"Fresh air / outside",group:"Reset + restore",builtin:true},
+  {key:"quiet_time",label:"Quiet time",group:"Reset + restore",builtin:true},
+  {key:"journal",label:"Journal",group:"Reset + restore",builtin:true},
+  {key:"meditate",label:"Meditation",group:"Reset + restore",builtin:true},
+  {key:"wind_down",label:"Bedtime wind-down",group:"Reset + restore",builtin:true}
+];
+function selfCareHabits(){
+  const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[];
+  return list.length?list:DEFAULT_SELF_CARE_HABITS;
+}
+function selfCareDone(key,date=ymd()){
+  return !!(state.selfCare||[]).find(x=>x.date===date&&x.key===key&&x.done);
+}
+function selfCareTodayStats(){
+  const habits=selfCareHabits(),done=habits.filter(h=>selfCareDone(h.key)).length;
+  return{done,total:habits.length,percent:habits.length?Math.round(done*100/habits.length):0};
+}
+function selfCareGroupCard(group,habits){
+  const done=habits.filter(h=>selfCareDone(h.key)).length;
+  return `<div class="self-care-group"><div class="self-care-group-head"><div><div class="mini-heading">${esc(group)}</div><div class="muted small">${done} of ${habits.length} logged today</div></div><span class="self-care-count">${done}/${habits.length}</span></div><div class="self-care-grid">${habits.map(h=>care(h.key,h.label)).join("")}</div></div>`;
+}
+function selfCareHistory(){
+  const habits=selfCareHabits();
+  return `<details class="self-care-history"><summary>Patterns over time</summary><div class="muted small" style="margin:8px 0 4px">Days logged, not a score or requirement.</div>${habits.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><span class="self-care-window"><b>${selfCareCount(h.key,7)}/7</b><span class="muted small">7d</span><b>${selfCareCount(h.key,30)}/30</b><span class="muted small">30d</span></span></div>`).join("")}</details>`;
+}
+function selfCareCard(){
+  const habits=selfCareHabits(),stats=selfCareTodayStats(),groups=["Essentials","Skin + body","Reset + restore"],
+        customs=[...new Set(habits.map(h=>h.group).filter(g=>!groups.includes(g)))];
+  return `<div class="card self-care-card sparkle-card"><div class="section-title"><div><div class="eyebrow">Self care</div><h2>${stats.done} of ${stats.total} logged today</h2><div class="muted small">A fuller record of what actually happened — hygiene, grooming, and restoration. No reminders are created.</div></div><button class="btn" onclick="openSelfCareSettings()">Customize</button></div>
+  <div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>
+  ${[...groups,...customs].map(group=>{const rows=habits.filter(h=>h.group===group);return rows.length?selfCareGroupCard(group,rows):""}).join("")}
+  ${selfCareHistory()}</div>`;
+}
+function openSelfCareSettings(){
+  const customs=selfCareHabits().filter(h=>!h.builtin);
+  modal("Customize self care",`<div class="stack"><p class="muted small">Add anything you want to track. This stays a frequency log; adding an item does not create a reminder.</p><label>Habit name<input id="schlabel" placeholder="Nails, hair mask, reading, face mask…"></label><label>Section<select id="schgroup"><option>Essentials</option><option>Skin + body</option><option>Reset + restore</option><option>Other</option></select></label>${customs.length?`<div><div class="mini-heading">Custom habits</div>${customs.map(h=>`<div class="row"><span>${esc(h.label)}<div class="muted small">${esc(h.group)}</div></span><button type="button" class="btn small danger" onclick="removeSelfCareHabit('${h.key}')">Remove</button></div>`).join("")}</div>`:""}</div>`,"Add habit",async()=>{
+    const label=$("#schlabel").value.trim(),group=$("#schgroup").value;if(!label)return;
+    const key="custom_"+uid().replace(/[^a-z0-9]/gi,"").slice(0,12);
+    state.settings.selfCareHabits.push({key,label,group,builtin:false});
+    await save();closeModal();render();
+  });
+}
+async function removeSelfCareHabit(key){
+  const habit=selfCareHabits().find(h=>h.key===key);if(!habit||habit.builtin)return;
+  state.settings.selfCareHabits=state.settings.selfCareHabits.filter(h=>h.key!==key);
+  await save();closeModal();render();
+}
 function selfCareCount(key,days=7){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-(days-1));const start=ymd(cutoff);
   return new Set((state.selfCare||[]).filter(x=>x.key===key&&x.done&&x.date>=start&&x.date<=ymd()).map(x=>x.date)).size;
@@ -859,7 +916,8 @@ function homeCareCard(){
 function logView(f,w,tr){
   return `<div class="card glow life-intro"><div class="eyebrow">＋ Life</div><h2>Health, work, car + home</h2><div class="muted small">The things you want to notice over time without turning Today into a wall of trackers.</div></div>
   <div class="grid2">${sleepCard()}<div class="card"><div class="eyebrow">💧 Water</div><div class="big">${water()} oz</div><div class="actions"><button class="btn primary" onclick="addWater(26)">+26</button><button class="btn" onclick="customWater()">Custom</button></div></div></div>
-  <div class="grid2"><div class="card"><div class="eyebrow">Stretch</div><div class="big">${stretch()} min</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5</button><button class="btn" onclick="addStretch(10)">+10</button></div></div><div class="card"><div class="eyebrow">Self-care · last 7 days</div><div class="row"><span>Brush teeth</span><b>${selfCareCount("brush")}/7</b></div><div class="row"><span>Mouthwash</span><b>${selfCareCount("mouthwash")}/7</b></div><div class="row"><span>Shower</span><b>${selfCareCount("shower")}/7</b></div><div class="grid3">${care("mouthwash","Mouthwash")}${care("brush","Brush teeth")}${care("shower","Shower")}</div></div></div>
+  <div class="grid2"><div class="card"><div class="eyebrow">Movement reset</div><div class="big">${stretch()} min</div><div class="muted small">Stretching logged today</div><div class="actions"><button class="btn primary" onclick="addStretch(5)">+5 min</button><button class="btn" onclick="addStretch(10)">+10 min</button></div></div><div class="card self-care-mini"><div class="eyebrow">Care snapshot</div><div class="big">${selfCareTodayStats().done}/${selfCareTodayStats().total}</div><div class="muted small">self-care habits logged today</div><div class="actions"><button class="btn" onclick="document.querySelector('.self-care-card')?.scrollIntoView({behavior:'smooth'})">Open self care</button></div></div></div>
+  ${selfCareCard()}
   <div class="card"><div class="section-title"><div><div class="eyebrow">🍎 Intake today</div><h2>${Math.round(f.cal)} calories · ${Math.round(f.protein)}g protein</h2></div><button class="btn primary" onclick="openFood()">+ Food</button></div><div class="nutrition-grid"><div class="metric"><div class="eyebrow">Carbs</div><div class="big">${Math.round(f.carbs)}g</div></div><div class="metric"><div class="eyebrow">Fat</div><div class="big">${Math.round(f.fat)}g</div></div><div class="metric"><div class="eyebrow">Fiber</div><div class="big">${Math.round(f.fiber)}g</div></div><div class="metric"><div class="eyebrow">Known caffeine</div><div class="big">${Math.round(f.caffeineMg)} mg</div><div class="muted small">${f.monsters} Monster${f.monsters===1?"":"s"} logged</div></div></div>${micronutrientSummary()}${food().slice().reverse().slice(0,8).map(x=>`<div class="row"><span>${esc(x.name)}</span><b>${Math.round(x.calories||0)} cal · ${Math.round(x.protein||0)}g P</b></div>`).join("")}</div>
   ${currentWeekWorkCard()}
   ${upsContractPayCard()}
@@ -876,7 +934,7 @@ function logView(f,w,tr){
   ${homeCareCard()}
   <div class="card"><div class="section-title"><h2>Outfit</h2><button class="btn" onclick="openOutfit()">Log / edit</button></div>${state.outfits.find(x=>x.date===ymd())?.photo?`<img class="photo" src="${state.outfits.find(x=>x.date===ymd()).photo}">`:`<div class="muted">No outfit photo logged today.</div>`}</div>`;
 }
-function care(key,label){const on=state.selfCare.some(x=>x.date===ymd()&&x.key===key&&x.done);return`<button class="btn ${on?"good":""}" onclick="toggleCare('${key}')">${on?"✓ ":""}${label}</button>`}
+function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
 function ensurePeopleProfiles(){
   if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
