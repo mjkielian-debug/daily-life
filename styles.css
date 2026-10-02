@@ -527,3 +527,10 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
   box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)
 }
+
+.seed-plan{margin:10px 0;border-top:1px solid var(--border)}
+.seed-plan button{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;
+  border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);padding:10px 0
+}
+.seed-plan button span{display:grid;gap:2px}.seed-plan small{color:var(--muted)}
