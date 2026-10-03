@@ -201,6 +201,27 @@
     const t=(state.tasks||[]).find(x=>x.id===id);lifeOpenSource(t);
   };
 
+  window.lifeStartTaskNow=async function(id){
+    const t=(state.tasks||[]).find(x=>x.id===id);if(!t||t.done)return;
+    const today=ymd(),now=new Date(),nowM=Math.ceil((now.getHours()*60+now.getMinutes())/5)*5,
+      mins=typeof itineraryTaskMinutes==="function"?itineraryTaskMinutes(t):20,
+      dayEnd=typeof itineraryDayEnd==="function"?itineraryDayEnd(today):21*60+30,
+      items=itineraryDayItems(today),
+      gaps=items.filter(x=>x.kind==="gap").map(x=>({start:hmMinutes(x.start),end:hmMinutes(x.end)})).filter(x=>x.start!==null&&x.end!==null);
+    let start=null;
+    const active=gaps.find(g=>g.start<=nowM&&g.end-nowM>=mins);
+    if(active)start=nowM;
+    if(start===null){
+      const next=gaps.find(g=>g.start>=nowM&&g.end-g.start>=mins);
+      if(next)start=next.start;
+    }
+    if(start===null){
+      start=Math.min(Math.max(nowM,itineraryDayStart(today)),Math.max(itineraryDayStart(today),dayEnd-mins));
+    }
+    t.date=today;t.itineraryStart=minutesHm(start);t.itineraryMinutes=mins;
+    await save();render();
+  };
+
   function lifeQueue(){
     const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
       todayRows=tasks.filter(t=>lifeTaskDate(t)<=today).sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
@@ -297,7 +318,7 @@
     return '<div class="card life-command">'+
       '<div class="life-command-head"><div><div class="eyebrow">Daily Life command center</div><h2>What needs you next</h2></div><div class="actions"><button class="btn primary" onclick="openLifeCapture()">＋ Capture</button><button class="btn" onclick="setView(\'itinerary\')">Day Flow</button></div></div>'+
       '<div class="life-next-orb"><div class="life-next-label">DO NEXT</div><b>'+esc(guide.title)+'</b><small>'+esc(guide.detail)+'</small>'+
-        (guide.task?'<div class="actions"><button class="btn primary small" onclick="openItineraryTask(\''+guide.task.id+'\')">Put it on my clock</button><button class="btn small" onclick="lifeOpenSource(\''+guide.task.id+'\')">Open</button></div>':'')+
+        (guide.task?'<div class="actions"><button class="btn primary small" onclick="lifeStartTaskNow(\''+guide.task.id+'\')">Start next</button><button class="btn small" onclick="openItineraryTask(\''+guide.task.id+'\')">Choose time</button><button class="btn small" onclick="lifeOpenSource(\''+guide.task.id+'\')">Open</button></div>':'')+
       '</div>'+
       '<div class="life-radar">'+
         '<button onclick="setView(\'itinerary\')"><b>'+q.todayRows.length+'</b><span>Today</span></button>'+
