@@ -49,6 +49,13 @@ function budgetCoachRepeatDetail(r){
   return bits.join(" · ");
 }
 
+function budgetCoachBalanceAgeDays(account){
+  if(!account?.balanceAsOf)return null;
+  const t=new Date(account.balanceAsOf).getTime();
+  if(!Number.isFinite(t))return null;
+  return Math.max(0,(Date.now()-t)/86400000);
+}
+
 function budgetCoachSnapshot(){
   const safe=typeof safeToSpendSnapshot==="function"
     ? safeToSpendSnapshot()
@@ -70,8 +77,13 @@ function budgetCoachSnapshot(){
   const sourceRows=cash
     .filter(a=>a.type==="checking"&&a.key!==target?.key&&accountStrategy(a)!=="Protected reserve")
     .map(a=>{
-      const plan=typeof accountSweepPlan==="function"?accountSweepPlan(a,45):null;
-      return {account:a,plan,amount:Math.max(0,Number(plan?.excess||0))};
+      const plan=typeof accountSweepPlan==="function"?accountSweepPlan(a,45):null,
+            balanceAgeDays=budgetCoachBalanceAgeDays(a),
+            synced=!!a.syncSource,
+            staleSynced= synced&&balanceAgeDays!==null&&balanceAgeDays>3,
+            missingSyncDate=synced&&balanceAgeDays===null,
+            needsFloor=accountStrategy(a)==="Deposit landing checking"&&Math.max(0,Number(a.minimumOperatingBalance||0))<=0;
+      return {account:a,plan,amount:Math.max(0,Number(plan?.excess||0)),balanceAgeDays,synced,staleSynced,missingSyncDate,needsFloor};
     })
     .filter(x=>x.amount>=0)
     .sort((a,b)=>b.amount-a.amount);
@@ -100,9 +112,17 @@ function budgetCoachSnapshot(){
         unassignedPlanCash=totals?Math.max(0,Number(totals.left||0)/100):0,
         over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left),
         nearLimit=categoryStatus.filter(x=>x.cat.id!=="cushion"&&x.limit>0&&x.left>=0&&x.used>=80).sort((a,b)=>b.used-a.used||a.left-b.left),
-        repeats=budgetCoachRepeatPurchases();
+        repeats=budgetCoachRepeatPurchases(),
+        transferIssues=[];
+  if(safe.incomplete)transferIssues.push("Some bill/account setup is incomplete, so the bill reserve may change.");
+  const movableSources=sourceRows.filter(r=>r.amount>0);
+  if(movableSources.some(r=>r.needsFloor))transferIssues.push("A deposit-landing checking account has no minimum operating balance set.");
+  if(movableSources.some(r=>r.staleSynced))transferIssues.push("At least one synced checking balance is more than 3 days old.");
+  if(movableSources.some(r=>r.missingSyncDate))transferIssues.push("At least one synced checking balance has no last-updated time.");
+  if(target&&accountStrategy(target)!=="Interest-first savings")transferIssues.push("The destination savings account is not marked as the preferred Interest-first savings account.");
+  const transferConfidence=transferIssues.length?"review":"ready";
 
-  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats};
+  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats,transferIssues,transferConfidence};
 }
 
 function budgetCoachGoalPlan(x){
@@ -149,7 +169,8 @@ function budgetCoachActionList(x,goalPlan){
     actions.push({mark:String(actions.length+1),title:`Stretch the rest of ${r.cat.name}`,detail:`${money(Math.max(0,r.left)/100)} remains for this month — about ${money(weekly)}/week across the remaining plan.`});
   }
   if(x.target&&x.movable>0){
-    actions.push({mark:String(actions.length+1),title:`Move extra checking cash to ${x.target.name||"savings"}`,detail:`Up to ${money(x.movable)} is above the 45-day bill/floor needs currently entered for checking.`});
+    const ready=x.transferConfidence==="ready";
+    actions.push({mark:String(actions.length+1),title:ready?`Move extra checking cash to ${x.target.name||"savings"}`:`Review before moving ${money(x.movable)} to savings`,detail:ready?`Up to ${money(x.movable)} is above the 45-day bill/floor needs currently entered for checking.`:`The math found excess checking cash, but ${x.transferIssues.length} setup/freshness check${x.transferIssues.length===1?"":"s"} should be resolved first.`});
   }
   if(goalPlan.allocations.length){
     const first=goalPlan.allocations[0];
@@ -185,7 +206,18 @@ function budgetCoachNextDollars(x,goalPlan){
 function budgetCoachTransferRows(x){
   const rows=x.sourceRows.filter(r=>r.amount>0).slice(0,4);
   if(!rows.length)return `<div class="muted small">No checking balance is currently above its 45-day bill needs and minimum operating floor.</div>`;
-  return rows.map(r=>`<div class="row"><span><b>${esc(r.account.name||"Checking")}</b><div class="muted small">Keep ${money(r.plan?.requiredNow||0)} there for its entered bills/floor through ${esc(dl(r.plan?.until||ymd()))}.</div></span><b>move up to ${money(r.amount)}</b></div>`).join("");
+  return rows.map(r=>{
+    const flags=[];
+    if(r.needsFloor)flags.push("set a checking floor");
+    if(r.staleSynced)flags.push("synced balance is "+Math.floor(r.balanceAgeDays)+"d old");
+    if(r.missingSyncDate)flags.push("sync age unknown");
+    return `<div class="row"><span><b>${esc(r.account.name||"Checking")}</b><div class="muted small">Keep ${money(r.plan?.requiredNow||0)} there for its entered bills/floor through ${esc(dl(r.plan?.until||ymd()))}.${flags.length?" Review: "+esc(flags.join(" · "))+"." : ""}</div></span><b>${x.transferConfidence==="ready"?"move up to":"review"} ${money(r.amount)}</b></div>`;
+  }).join("");
+}
+
+function budgetCoachTransferIssues(x){
+  if(!x.transferIssues?.length)return"";
+  return `<div class="coach-transfer-review"><b>Check before transferring</b>${x.transferIssues.map(issue=>`<div class="muted small">• ${esc(issue)}</div>`).join("")}<button class="btn small" type="button" onclick="setView('more');setMoneyTab('accounts')">Review accounts</button></div>`;
 }
 
 function budgetCoachCard(){
@@ -194,15 +226,18 @@ function budgetCoachCard(){
   const setupWarning=x.safe.incomplete
     ? `<div class="notice"><b>Some bill setup is incomplete.</b><div class="muted small">Treat these recommendations as provisional until missing accounts, balances, amounts, or due dates are fixed.</div></div>`
     :"";
+  const transferReady=x.transferConfidence==="ready";
   const transferHeadline=!x.target
     ?"Choose a preferred savings account"
     :x.movable>0
-      ?`${money(x.movable)} can stay working harder`
+      ?transferReady?`${money(x.movable)} can stay working harder`:`Review before moving ${money(x.movable)}`
       :"No transfer needed right now";
   const transferBody=!x.target
     ?`Mark one savings account as <b>Interest-first savings</b> so Daily Life knows where extra cash should live.`
     :x.movable>0
-      ?`Based on the balances, entered bills, expected income assigned to each account, and each checking account's operating floor, up to <b>${money(x.movable)}</b> appears movable to <b>${targetName}</b> without draining the checking accounts that need to pay upcoming bills.`
+      ?transferReady
+        ?`Based on the balances, entered bills, expected income assigned to each account, and each checking account's operating floor, up to <b>${money(x.movable)}</b> appears movable to <b>${targetName}</b> without draining the checking accounts that need to pay upcoming bills.`
+        :`Daily Life found up to <b>${money(x.movable)}</b> above the entered 45-day checking needs, but it is treating that as a review amount—not a ready-to-transfer amount—until the checks below are resolved.`
       :`Your checking accounts do not currently show extra cash above their near-term bill needs and operating floors.`;
 
   const guardrailNote=x.guardrailUsesCategories
@@ -228,6 +263,7 @@ function budgetCoachCard(){
     <div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Move to savings</div><h3>${transferHeadline}</h3></div>${x.target?`<span class="tag">${targetName}</span>`:""}</div>
       <p class="small">${transferBody}</p>
       ${x.target?budgetCoachTransferRows(x):`<button class="btn" type="button" onclick="setView('more');setMoneyTab('accounts')">Set account strategy</button>`}
+      ${budgetCoachTransferIssues(x)}
       ${x.target&&x.movable>0?`<div class="notice"><b>Transfer suggestion, not spendable money.</b><div class="muted small">Moving cash between your own checking and savings does not increase what is safe to spend. Re-check after large purchases, bill payments, or balance updates.</div></div>`:""}
     </div>
     ${trim}
@@ -245,7 +281,7 @@ function budgetCoachCard(){
     .coach-guardrails{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
     .coach-guardrails span{padding:10px 0;border-top:1px solid var(--border)}
     .coach-guardrails small,.coach-guardrails b{display:block}
-    .coach-guardrails b{margin-top:4px;font-size:1.05rem}\n    .coach-guardrail-note{margin-top:-4px}\n    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+    .coach-guardrails b{margin-top:4px;font-size:1.05rem}\n    .coach-guardrail-note{margin-top:-4px}\n    .coach-transfer-review{display:grid;gap:5px;border-left:3px solid color-mix(in srgb,var(--accent) 58%,var(--border));padding:8px 0 8px 11px}\n    .coach-transfer-review .btn{justify-self:start;margin-top:3px}\n    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
     .coach-subsection h3{margin:.15rem 0 0;font-size:1.05rem}
     .coach-action-list,.coach-plan-list{display:grid;gap:0}
     .coach-action-row{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--border);align-items:start}
