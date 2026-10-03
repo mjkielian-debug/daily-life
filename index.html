@@ -217,7 +217,7 @@ const blankState=()=>({
   version:34,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,taskPatterns:{},routinePreferences:{}},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -783,6 +783,39 @@ function todayChoresCard(){
 
 function hmMinutes(v){const m=String(v||"").match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
 function minutesHm(n){n=Math.max(0,Math.min(1439,Math.round(Number(n)||0)));return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
+function itinerarySleepPlan(date){
+  const prefs=state.settings?.itinerary||{},target=Math.max(4,Math.min(12,Number(prefs.sleepTargetHours||8))),
+        lead=Math.max(15,Math.min(180,Number(prefs.morningLeadMinutes||60))),
+        preferredStart=hmMinutes(prefs.preferredBedtimeStart||"20:00")??1200,
+        preferredEnd=hmMinutes(prefs.preferredBedtimeEnd||"20:30")??1230,
+        tomorrow=shiftDateString(date,1),candidates=[];
+  const work=workForDate(tomorrow),workStart=hmMinutes(work?.start||work?.scheduled);
+  if(workStart!==null)candidates.push({wake:Math.max(0,workStart-lead),reason:"UPS "+fmtClock(work.start||work.scheduled),kind:"work"});
+  const earlyEvents=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime).map(e=>({...e,_m:hmMinutes(e.startTime)})).filter(e=>e._m!==null&&e._m<10*60);
+  for(const e of earlyEvents)candidates.push({wake:Math.max(0,e._m-lead),reason:e.title||"early commitment",kind:"event"});
+  const earlyBlocks=(state.itineraryBlocks||[]).filter(x=>x.date===tomorrow&&x.kind==="fixed"&&x.start).map(x=>({...x,_m:hmMinutes(x.start)})).filter(x=>x._m!==null&&x._m<10*60);
+  for(const x of earlyBlocks)candidates.push({wake:Math.max(0,x._m-lead),reason:x.title||"early fixed block",kind:"block"});
+  candidates.sort((a,b)=>a.wake-b.wake);
+  const next=candidates[0]||null,sleepMinutes=Math.round(target*60);
+  let requiredBedtime=null;
+  if(next){
+    const raw=(next.wake-sleepMinutes+1440)%1440;
+    requiredBedtime=raw<12*60?raw+1440:raw;
+  }
+  const configuredEnd=hmMinutes(prefs.dayEnd||"21:30")??1290;
+  const usualLatest=Math.max(preferredStart,preferredEnd);
+  let bedtime=usualLatest;
+  if(next&&requiredBedtime!==null)bedtime=Math.min(bedtime,requiredBedtime);
+  bedtime=Math.min(bedtime,configuredEnd);
+  bedtime=Math.max(17*60,Math.min(1439,Math.round(bedtime)));
+  const wake=next?.wake??null,protectedHours=wake===null?target:Math.max(0,(wake+1440-bedtime)/60);
+  return{date,tomorrow,targetHours:target,morningLeadMinutes:lead,preferredStart,preferredEnd,bedtimeMinutes:bedtime,bedtime:minutesHm(bedtime),wakeMinutes:wake,wake:wake===null?"":minutesHm(wake),reason:next?.reason||"",reasonKind:next?.kind||"",protectedHours};
+}
+function itineraryDayEnd(date){
+  const prefs=state.settings?.itinerary||{},configured=hmMinutes(prefs.dayEnd||"21:30")??1290;
+  if(prefs.protectSleep===false)return configured;
+  return Math.min(configured,itinerarySleepPlan(date).bedtimeMinutes);
+}
 function shiftDateString(date,days){const d=new Date(String(date||ymd())+"T12:00:00");d.setDate(d.getDate()+Number(days||0));return ymd(d)}
 function setItineraryDate(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return;itineraryDate=date;localStorage.setItem("dailyLifeItineraryDate",date);render()}
 function shiftItineraryDate(days){setItineraryDate(shiftDateString(itineraryDate,days))}
