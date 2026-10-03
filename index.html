@@ -316,18 +316,36 @@ function ensureFamilyDay(date=ymd()){
   }
 }
 function ensureRecurringFamilyEvents(){
-  const defs=state.settings?.recurringFamilyEvents||[],today=new Date();
-  for(let offset=-1;offset<=21;offset++){
+  const defs=state.settings?.recurringFamilyEvents||[],today=new Date(),desired=new Map();
+  for(const r of defs)if(!r.id)r.id=uid();
+  for(let offset=-1;offset<=35;offset++){
     const d=new Date(today);d.setDate(today.getDate()+offset);const date=ymd(d),wd=d.getDay();
     for(const r of defs){
       if(Number(r.weekday)!==wd)continue;
       const title=String(r.title||"").trim();if(!title)continue;
-      const child=String(r.child||""),startTime=String(r.startTime||"");
-      const exists=(state.events||[]).some(e=>e.date===date&&String(e.title||"").toLowerCase()===title.toLowerCase()&&String(e.child||"")===child&&String(e.startTime||"")===startTime);
-      if(exists)continue;
-      state.events.push({id:uid(),date,title,child,type:String(r.type||"family"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),status:"confirmed",source:"Family routine",notes:String(r.notes||""),generated:"recurring"});
+      desired.set(String(r.id)+"|"+date,{rule:r,date});
     }
   }
+  const generated=(state.events||[]).filter(e=>e.generated==="recurring"&&e.date>=ymd(new Date(today.getTime()-86400000)));
+  const used=new Set();
+  for(const [key,item] of desired){
+    const {rule:r,date}=item,child=String(r.child||""),startTime=String(r.startTime||"");
+    let e=generated.find(x=>!used.has(x.id)&&String(x.recurringRuleId||"")===String(r.id)&&String(x.recurringOccurrenceDate||x.date||"")===date);
+    if(!e)e=generated.find(x=>!used.has(x.id)&&!x.recurringRuleId&&x.date===date&&String(x.title||"").toLowerCase()===String(r.title||"").toLowerCase()&&String(x.child||"")===child&&String(x.startTime||"")===startTime);
+    const exception=(state.events||[]).find(x=>x.recurringException===true&&String(x.recurringRuleId||"")===String(r.id)&&String(x.recurringOccurrenceDate||"")===date);
+    if(exception){used.add(exception.id);continue}
+    if(!e){
+      e={id:uid(),date};state.events.push(e);
+    }
+    Object.assign(e,{date,title:String(r.title||"").trim(),child,type:String(r.type||"family"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),status:String(r.status||"confirmed"),source:"Family routine",notes:String(r.notes||""),generated:"recurring",recurringRuleId:r.id,recurringOccurrenceDate:date});
+    used.add(e.id);
+  }
+  state.events=(state.events||[]).filter(e=>{
+    if(e.generated!=="recurring")return true;
+    if(e.date<ymd(new Date(today.getTime()-86400000)))return true;
+    if(used.has(e.id))return true;
+    return false;
+  });
 }
 function ensureBirthdayEvents(){
   ensurePeopleProfiles();
