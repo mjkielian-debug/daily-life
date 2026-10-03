@@ -3752,8 +3752,19 @@ function parseUpsTimecardSummary(text){
   };
 }
 
+async function pastePunchClipboard(){
+  const box=document.querySelector("#punchText");if(!box)return;
+  if(!navigator.clipboard?.readText){alert("Clipboard reading is not available in this browser. Tap the text box and use your phone's Paste command instead.");return}
+  try{
+    const text=await navigator.clipboard.readText();
+    if(!text.trim()){alert("Your clipboard is empty.");return}
+    box.value=text;box.dispatchEvent(new Event("input",{bubbles:true}));
+  }catch(error){
+    alert("Daily Life could not read the clipboard. Your phone may require you to allow clipboard access; you can still paste into the box manually.");
+  }
+}
 function openPunchImport(){
-  modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Paste the copied UPS timecard text.</b><br><span class="muted small">Daily Life understands both normal clock times and UPS decimal punches such as 4.80 → 8.48. If the weekly header is included, it also keeps UPS's official Total Hours, Gross Pay, and Last Updated value.</span></div><label>UPS / Dayforce / Workforce text<textarea id="punchText" rows="12" placeholder="LAST UPDATED: ...&#10;This Weeks Gross Pay: ...&#10;Total Hours: ...&#10;Date    Pay Code    Start Time    End Time ..."></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times. Official UPS credited hours are still saved separately.</div></span></label></div>`,"Import",async()=>{
+  modal("Import UPS punch history",`<div class="stack"><div class="notice"><b>Copy the UPS timecard table, then bring it here.</b><br><span class="muted small">Daily Life understands both normal clock times and UPS decimal punches such as 4.80 → 8.48. If the weekly header is included, it also keeps UPS's official Total Hours, Gross Pay, and Last Updated value.</span></div><div class="actions"><button class="btn primary" type="button" onclick="pastePunchClipboard()">Paste from clipboard</button><span class="muted small">Or paste manually below.</span></div><label>UPS / Dayforce / Workforce text<textarea id="punchText" rows="12" placeholder="LAST UPDATED: ...&#10;This Weeks Gross Pay: ...&#10;Total Hours: ...&#10;Date    Pay Code    Start Time    End Time ..."></textarea></label><label class="task"><input id="punchOverwrite" type="checkbox"><span><b>Replace existing entered punch times when the pasted row has a value</b><div class="muted small">Leave off to fill only missing times. Official UPS credited hours are still saved separately.</div></span></label></div>`,"Import",async()=>{
     const raw=$("#punchText").value,rows=parsePunchHistory(raw),summary=parseUpsTimecardSummary(raw);if(!rows.length){alert("No dated punch rows were recognized. Paste the table rows that contain the work date and punch values.");return}
     const preview=rows.slice(0,10).map(x=>dl(x.date)+": "+fmtClock(x.start)+(x.end?"–"+fmtClock(x.end):" · punch-out missing")+(Number.isFinite(Number(x.officialHours))?" · "+Number(x.officialHours).toFixed(2)+" h":"")+(Number(x.officialGrossPay)>0?" · "+money(x.officialGrossPay):"")).join("\n"),
           header=[Number.isFinite(summary.totalHours)?"UPS weekly total "+summary.totalHours.toFixed(2)+" h":"",Number.isFinite(summary.grossPay)?"UPS weekly gross "+money(summary.grossPay):"",summary.lastUpdatedRaw?"Updated "+summary.lastUpdatedRaw:""].filter(Boolean).join(" · ");
@@ -4412,7 +4423,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-sleep1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-clipboard1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
