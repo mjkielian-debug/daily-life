@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-carecount1">
+<link rel="stylesheet" href="styles.css?v=20261002-sleep1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1277,8 +1277,18 @@ async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[])
 async function removeItineraryBlock(id){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x?.sharedEntryId&&typeof sharingMakeItineraryPrivate==="function"){const ok=await sharingMakeItineraryPrivate(x);if(!ok)return}state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
 function openItinerarySettings(){
   const x=state.settings.itinerary||{};
-  modal("Day Flow settings",`<div class="stack"><div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Day ends<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div><label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Use family routine blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep.</div></span></label><label class="task"><input id="idauto" type="checkbox" ${x.autoScheduleTasks!==false?"checked":""}><span><b>Fit my open tasks into free time</b><div class="muted small">Daily Life uses the duration and preferred time you give a task. If you have not given a duration yet, it uses a small editable estimate instead of leaving a giant empty gap.</div></span></label></div>`,"Save",async()=>{
-    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
+  modal("Day Flow settings",`<div class="stack">
+    <div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Absolute latest day end<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div>
+    <div class="sleep-settings-box"><div class="mini-heading">Sleep protection</div><label class="task"><input id="idsleep" type="checkbox" ${x.protectSleep!==false?"checked":""}><span><b>Protect my sleep window when Day Flow schedules things</b><div class="muted small">Daily Life moves or leaves out flexible items rather than scheduling them after the bedtime needed for your sleep target.</div></span></label>
+      <div class="grid3"><label>Sleep target<input id="idsleephours" type="number" min="4" max="12" step=".25" value="${esc(x.sleepTargetHours||8)}"></label><label>Usual bedtime from<input id="idbedstart" type="time" value="${esc(x.preferredBedtimeStart||"20:00")}"></label><label>Latest usual bedtime<input id="idbedend" type="time" value="${esc(x.preferredBedtimeEnd||"20:30")}"></label></div>
+      <label>Wake-up lead time before work / early commitments (minutes)<input id="idmorning" type="number" min="15" max="180" step="5" value="${esc(x.morningLeadMinutes||60)}"></label>
+      <div class="muted small">Example: a 4:30 AM UPS start with 60 minutes to wake/get ready means a 3:30 AM wake. With an 8-hour target, Day Flow stops scheduling at 7:30 PM.</div>
+    </div>
+    <label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Use family routine blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep.</div></span></label>
+    <label class="task"><input id="idauto" type="checkbox" ${x.autoScheduleTasks!==false?"checked":""}><span><b>Fit my open tasks into free time</b><div class="muted small">Daily Life uses the duration and preferred time you give a task. If you have not given a duration yet, it uses a small editable estimate instead of leaving a giant empty gap.</div></span></label>
+  </div>`,"Save",async()=>{
+    const hours=Math.max(4,Math.min(12,Number($("#idsleephours").value||8))),lead=Math.max(15,Math.min(180,Number($("#idmorning").value||60)));
+    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",protectSleep:$("#idsleep").checked,sleepTargetHours:hours,preferredBedtimeStart:$("#idbedstart").value||"20:00",preferredBedtimeEnd:$("#idbedend").value||"20:30",morningLeadMinutes:lead,showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
   });
 }
 
@@ -4395,7 +4405,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-intaketrends1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-sleep1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
