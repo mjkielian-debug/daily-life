@@ -1015,8 +1015,8 @@ function itineraryTaskPreferredRange(task,date){
         clamp=r=>({start:Math.max(r.start,currentFloor),end:Math.min(r.end,dayEnd)});
   if(task?.itineraryStart){
     const s=hmMinutes(task.itineraryStart),mins=itineraryTaskMinutes(task);
-    if(s===null)return null;
-    return date===ymd()&&s<currentFloor?clamp({start:currentFloor,end:Math.max(currentFloor+mins,s+mins)}):{start:s,end:s+mins};
+    if(s===null||s>=dayEnd||s+mins>dayEnd)return null;
+    return date===ymd()&&s<currentFloor?clamp({start:currentFloor,end:Math.min(dayEnd,Math.max(currentFloor+mins,s+mins))}):{start:s,end:s+mins};
   }
   if(pref==="morning")return clamp({start:8*60,end:12*60});
   if(pref==="afternoon")return clamp({start:12*60,end:17*60});
@@ -1100,8 +1100,12 @@ function itineraryDayItems(date){
 function itineraryPlanningDiagnostics(date){
   const anchors=itineraryFixedItems(date),raw=itinerarySuggestedBlocks(date),fitted=itineraryFitRoutines(date,anchors,raw),
         skipped=fitted.filter(x=>x.skippedByConflict),
-        moved=fitted.filter(x=>x.movedByPlanner&&!x.skippedByConflict);
-  return{skipped,moved};
+        moved=fitted.filter(x=>x.movedByPlanner&&!x.skippedByConflict),
+        sleepPlan=itinerarySleepPlan(date),cutoff=itineraryDayEnd(date),
+        sleepConflicts=state.settings?.itinerary?.protectSleep===false?[]:anchors.filter(x=>{
+          const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&(s>=cutoff||(e!==null&&e>cutoff));
+        });
+  return{skipped,moved,sleepConflicts,sleepPlan};
 }
 
 function itineraryStatusForDate(date,items){
@@ -1146,6 +1150,7 @@ function itineraryTypeLabel(x){
 }
 function itineraryFlowCard(date){
   const items=itineraryDayItems(date),status=itineraryStatusForDate(date,items),diagnostics=itineraryPlanningDiagnostics(date),
+        sleep=diagnostics.sleepPlan,sleepProtected=state.settings?.itinerary?.protectSleep!==false,
         fixed=items.filter(x=>x.fixed).length,tasks=items.filter(x=>x.source==="task").length,
         open=items.filter(x=>x.kind==="gap").reduce((sum,x)=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return sum+(s!==null&&e!==null?Math.max(0,e-s):0)},0);
   let lastPhase="";
@@ -1167,6 +1172,8 @@ function itineraryFlowCard(date){
   }).join("");
   return `<div class="card day-flow-card teacher-planner">
     <div class="planner-heading"><div><div class="eyebrow">Today’s agenda</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2><div class="muted small">Anchors stay fixed. Daily Life fits routines and your task list into the usable spaces around them.</div></div><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button></div>
+    ${sleepProtected?`<div class="sleep-protection-banner"><span class="sleep-icon">☾</span><div class="grow"><b>Sleep protected · stop scheduling at ${esc(fmtClock(sleep.bedtime))}</b><small>${sleep.wake?`${sleep.targetHours} h target · wake about ${esc(fmtClock(sleep.wake))}${sleep.reason?" for "+esc(sleep.reason):""}`:`Usual bedtime window ${esc(fmtClock(minutesHm(sleep.preferredStart)))}–${esc(fmtClock(minutesHm(sleep.preferredEnd)))} · ${sleep.targetHours} h target`}</small></div></div>`:""}
+    ${diagnostics.sleepConflicts.length?`<div class="sleep-conflict-box"><div><b>Fixed commitment overlaps the sleep window</b><small>Daily Life will not move a fixed event automatically, but it also will not schedule flexible tasks after your sleep cutoff.</small></div>${diagnostics.sleepConflicts.map(x=>`<button onclick="${itineraryBlockOpenAction(x,date).replace(/^onclick="/,"").replace(/"$/,"")}"><b>${esc(x.title)}</b><small>${esc(fmtClock(x.start))}${x.end?"–"+esc(fmtClock(x.end)):""} · sleep cutoff ${esc(fmtClock(sleep.bedtime))}</small></button>`).join("")}</div>`:""}
     ${status?`<div class="planner-now"><span>NOW</span><div><b>${esc(status.title.replace(/^Right now · /,""))}</b><small>${esc(status.detail)}</small></div></div>`:""}
     <div class="planner-summary"><span><b>${fixed}</b><small>anchors</small></span><span><b>${tasks}</b><small>tasks placed</small></span><span><b>${open}</b><small>open minutes</small></span></div>
     ${diagnostics.skipped.length?('<div class="planner-needs-time"><div><b>Needs a time</b><small>These routines could not fit around today’s fixed commitments.</small></div>'+diagnostics.skipped.map(x=>'<button onclick="openSuggestedItineraryBlock(\''+date+'\',\''+x.templateKey+'\')"><span>'+(x.icon||'◷')+'</span><b>'+esc(x.title)+'</b><small>was '+esc(fmtClock(x.originalStart||x.start))+(x.originalEnd?'–'+esc(fmtClock(x.originalEnd)):'')+' · tap to adjust</small></button>').join('')+'</div>'):""}
