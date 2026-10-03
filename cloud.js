@@ -471,7 +471,12 @@ async function cloudSignOut(){
 function cloudStateForUpload(){
   const copy=structuredClone(state);
   // Shared household entries live in shared_entries, not inside either person's private snapshot.
-  if(Array.isArray(copy.events))copy.events=copy.events.filter(x=>!x.sharedEntryId);
+  // Filter every shared surface so leaving a household or restoring a personal
+  // snapshot cannot resurrect another member's shared data.
+  const privateOnly=x=>!x?.sharedEntryId&&!x?.sharedHouseholdId;
+  if(Array.isArray(copy.events))copy.events=copy.events.filter(privateOnly);
+  if(Array.isArray(copy.itineraryBlocks))copy.itineraryBlocks=copy.itineraryBlocks.filter(privateOnly);
+  if(Array.isArray(copy.tasks))copy.tasks=copy.tasks.filter(privateOnly);
   // Large base64 photos remain local for now. A private Storage bucket will be
   // added separately so snapshots stay small and reliable.
   if(Array.isArray(copy.outfits)){
