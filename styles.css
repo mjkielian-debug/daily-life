@@ -3169,3 +3169,26 @@ textarea{resize:vertical}
 @media(max-width:620px){
   .backup-health-grid{grid-template-columns:1fr}
 }
+
+
+/* Daily Life advice */
+.daily-advice-card{
+  border-color:color-mix(in srgb,var(--primary) 30%,var(--secondary) 20%);
+  background:
+    radial-gradient(circle at 94% 8%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 30%),
+    linear-gradient(145deg,color-mix(in srgb,var(--panel2) 96%,var(--primary) 4%),var(--panel));
+}
+.daily-advice-row{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-top:1px solid color-mix(in srgb,var(--secondary) 13%,var(--border))
+}
+.daily-advice-row.is-primary{
+  margin-top:4px;padding:11px 10px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--secondary) 14%);
+  border-radius:15px;background:color-mix(in srgb,var(--primary) 6%,transparent)
+}
+.daily-advice-row+.daily-advice-row{margin-top:2px}
+.daily-advice-row>span.grow{display:grid;gap:3px;min-width:0}
+.daily-advice-row b{font-family:var(--font-heading);color:var(--cream)}
+.daily-advice-row small{color:var(--muted);font-size:.7rem;line-height:1.42}
+.daily-advice-icon{width:28px;flex:0 0 28px;text-align:center;font-size:1.05rem;line-height:1.3}
+.daily-advice-note{margin-top:7px;line-height:1.4}
