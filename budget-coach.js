@@ -144,7 +144,8 @@ function budgetCoachActionList(x,goalPlan){
     actions.push({mark:String(actions.length+1),title:"Give unassigned money a purpose",detail:`${money(goalPlan.planUnassigned)} of the monthly plan is not assigned to a category or savings goal yet.`});
   }
   if(x.repeats.length){
-    const r=x.repeats[0],cadence=r.cadenceStable&&r.avgGapDays?` about every ${Math.max(1,Math.round(r.avgGapDays))} days`:"";\n    actions.push({mark:String(actions.length+1),title:`Price-check ${r.name}`,detail:`This spending label repeats${cadence}. Compare unit price, bulk, store brand, and subscription price before buying it again.`});
+    const r=x.repeats[0],cadence=r.cadenceStable&&r.avgGapDays?` about every ${Math.max(1,Math.round(r.avgGapDays))} days`:"";
+    actions.push({mark:String(actions.length+1),title:`Price-check ${r.name}`,detail:`This spending label repeats${cadence}. Compare unit price, bulk, store brand, and subscription price before buying it again.`});
   }
   if(!actions.length){
     actions.push({mark:"✓",title:"Stay with the current plan",detail:"No urgent shortfall, transfer, overspent category, or unassigned-goal action is showing from the information entered."});
