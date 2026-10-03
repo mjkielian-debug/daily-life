@@ -3192,3 +3192,20 @@ textarea{resize:vertical}
 .daily-advice-row small{color:var(--muted);font-size:.7rem;line-height:1.42}
 .daily-advice-icon{width:28px;flex:0 0 28px;text-align:center;font-size:1.05rem;line-height:1.3}
 .daily-advice-note{margin-top:7px;line-height:1.4}
+
+
+/* Multi-day weather strip */
+.weather-forecast-strip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px
+}
+.weather-forecast-day{
+  display:grid;gap:3px;min-width:0;padding:9px 10px;border-radius:14px;
+  border:1px solid color-mix(in srgb,var(--secondary) 16%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 5%,transparent),rgba(255,255,255,.015))
+}
+.weather-forecast-day b{font-family:var(--font-heading);color:var(--cream)}
+.weather-forecast-day span,.weather-forecast-day small{color:var(--muted);font-size:.67rem;line-height:1.25;overflow-wrap:anywhere}
+.weather-forecast-day strong{color:var(--text);font-size:.82rem}
+@media(max-width:620px){
+  .weather-forecast-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
