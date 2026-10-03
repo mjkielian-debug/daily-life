@@ -196,9 +196,27 @@ function spreadTarotCard(index,reversed){
  const suit=TAROT_SUITS[Math.floor((index-22)/14)],rank=TAROT_RANKS[(index-22)%14];
  return{index,name:rank[0]+" of "+suit.name,reversed:!!reversed,meaning:(reversed?rank[2]:rank[1])+" in "+suit.theme+".",prompt:suit.prompt,theme:suit.theme,suit};
 }
+function tarotMinorPips(count,symbol){
+ const spots=[[100,80],[68,52],[132,108],[132,52],[68,108],[68,80],[132,80],[100,48],[100,112],[100,80]];
+ return spots.slice(0,Math.max(1,Math.min(10,count))).map(([x,y],i)=>'<g transform="translate('+x+' '+y+') scale('+(count===1?.55:.22)+') translate(-100 -80)" opacity="'+(i===0?1:.9)+'">'+symbol+'</g>').join('');
+}
+function tarotCourtMotif(rank,symbol){
+ const crown='<path d="M72 49L82 30L100 47L118 30L128 49L121 58H79Z"/>';
+ const body='<circle cx="100" cy="70" r="16"/><path d="M67 127Q72 91 100 91Q128 91 133 127"/>';
+ const extras={
+  Page:'<path d="M63 105Q48 82 61 62Q78 70 78 91M137 105Q152 82 139 62Q122 70 122 91"/>',
+  Knight:'<path d="M47 118Q64 90 88 103Q112 81 141 108M58 119H145M119 48Q146 56 142 84"/>',
+  Queen:'<path d="M58 123Q72 96 100 96Q128 96 142 123M57 69Q46 52 59 39M143 69Q154 52 141 39"/>',
+  King:'<path d="M58 126V102H142V126M69 102V83M131 102V83M52 126H148"/>'
+ };
+ return '<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+(rank==="Queen"||rank==="King"?crown:"")+body+(extras[rank]||"")+'</g><g transform="translate(100 116) scale(.24) translate(-100 -80)" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+symbol+'</g>';
+}
 function spreadCardArtwork(t){
  if(t.index<22)return tarotArtwork(t);
- return '<svg viewBox="0 0 200 160" role="img" aria-label="'+esc(t.name)+' symbolic illustration" style="width:100%;max-width:180px;color:var(--secondary)"><rect x="10" y="8" width="180" height="144" rx="22" fill="currentColor" opacity=".08"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'+(t.reversed?' transform="rotate(180 100 80)"':'')+'>'+t.suit.symbol+'</g></svg>';
+ const rankIndex=(t.index-22)%14,rank=TAROT_RANKS[rankIndex][0],isCourt=rankIndex>=10;
+ const art=isCourt?tarotCourtMotif(rank,t.suit.symbol):tarotMinorPips(rankIndex+1,t.suit.symbol);
+ const stars='<g fill="currentColor" opacity=".3"><circle cx="30" cy="31" r="2"/><circle cx="169" cy="126" r="2"/><path d="M164 27L167 34L174 37L167 40L164 47L161 40L154 37L161 34Z"/><path d="M37 121L39 126L44 128L39 130L37 135L35 130L30 128L35 126Z"/></g>';
+ return '<svg viewBox="0 0 200 160" role="img" aria-label="'+esc(t.name)+' symbolic illustration" style="display:block;width:100%;max-width:190px;margin:auto;color:var(--secondary)"><rect x="8" y="8" width="184" height="144" rx="24" fill="currentColor" opacity=".07"/><path d="M27 133Q60 117 100 128T173 126" fill="none" stroke="currentColor" opacity=".18"/>'+stars+'<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'+(t.reversed?' transform="rotate(180 100 80)"':'')+'>'+art+'</g><text x="100" y="146" text-anchor="middle" fill="currentColor" opacity=".72" font-size="10" font-weight="700">'+esc(rank)+' · '+esc(t.suit.name)+'</text></svg>';
 }
 function tarotRandomIndex(max){
  const values=new Uint32Array(1),limit=Math.floor(4294967296/max)*max;
