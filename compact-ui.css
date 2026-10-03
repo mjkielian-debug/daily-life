@@ -230,3 +230,41 @@
   box-shadow:none;
   border-color:color-mix(in srgb,var(--secondary) 16%,var(--border));
 }
+
+
+/* Today summary-first phone layout */
+.today-drawer-body>.compact-drawer-card{
+  padding-top:6px;
+}
+.today-drawer-body .compact-metrics{
+  margin:6px 0 0;
+  gap:7px;
+}
+.today-drawer-body .compact-metrics .metric{
+  padding:9px 10px;
+  min-width:0;
+}
+.today-drawer-body .compact-metrics .big{
+  font-size:1.08rem;
+}
+.today-drawer-body .task-list-row{
+  padding:8px 0;
+  gap:7px;
+}
+.today-drawer-body .task-row-actions{
+  gap:5px;
+}
+@media(max-width:520px){
+  .today-drawer{
+    margin:7px 0;
+  }
+  .today-drawer>summary{
+    min-height:52px;
+  }
+  .today-drawer-body .compact-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .today-drawer-body .compact-metrics .metric{
+    min-height:0;
+  }
+}
