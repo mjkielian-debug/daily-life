@@ -1,77 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Life botanical flower icon">
-  <defs>
-    <linearGradient id="bg" x1="72" y1="40" x2="438" y2="476" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8eb59a"/>
-      <stop offset=".34" stop-color="#52765d"/>
-      <stop offset=".72" stop-color="#355742"/>
-      <stop offset="1" stop-color="#263f32"/>
-    </linearGradient>
-    <radialGradient id="glow" cx=".28" cy=".18" r=".9">
-      <stop offset="0" stop-color="#fff7ef" stop-opacity=".24"/>
-      <stop offset=".58" stop-color="#f8e6d8" stop-opacity=".05"/>
-      <stop offset="1" stop-color="#f8e6d8" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="petal" x1="188" y1="186" x2="326" y2="334" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#f5dbe3"/>
-      <stop offset=".48" stop-color="#e8b7c7"/>
-      <stop offset="1" stop-color="#c9849d"/>
-    </linearGradient>
-    <linearGradient id="cream" x1="155" y1="140" x2="365" y2="386" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff9f2"/>
-      <stop offset="1" stop-color="#f2dfcf"/>
-    </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f6e8b8"/>
-      <stop offset="1" stop-color="#d7b975"/>
-    </linearGradient>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#13291e" flood-opacity=".34"/>
-    </filter>
-  </defs>
-
-  <rect x="18" y="18" width="476" height="476" rx="122" fill="url(#bg)"/>
-  <rect x="18" y="18" width="476" height="476" rx="122" fill="url(#glow)"/>
-  <rect x="27" y="27" width="458" height="458" rx="114" fill="none" stroke="#fff7ef" stroke-opacity=".18" stroke-width="3"/>
-
-  <!-- graceful botanical arch -->
-  <g fill="none" stroke="url(#cream)" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M150 353C126 276 148 203 205 156" stroke-width="10"/>
-    <path d="M362 354C387 276 364 202 307 155" stroke-width="10"/>
-    <path d="M171 286C132 280 112 257 106 223C145 220 174 236 188 266" stroke-width="8"/>
-    <path d="M156 238C126 222 114 194 121 164C154 175 176 198 177 226" stroke-width="8"/>
-    <path d="M198 181C170 162 166 133 178 105C207 123 222 149 215 173" stroke-width="8"/>
-    <path d="M341 286C380 280 400 257 406 223C367 220 338 236 324 266" stroke-width="8"/>
-    <path d="M356 238C386 222 398 194 391 164C358 175 336 198 335 226" stroke-width="8"/>
-    <path d="M314 181C342 162 346 133 334 105C305 123 290 149 297 173" stroke-width="8"/>
-  </g>
-
-  <!-- soft flower / peony -->
-  <g filter="url(#soft)">
-    <path d="M256 316C219 315 190 290 188 258C186 229 206 210 230 205C229 177 244 158 256 151C268 158 283 177 282 205C306 210 326 229 324 258C322 290 293 315 256 316Z" fill="url(#petal)"/>
-    <path d="M256 299C233 297 215 282 214 260C213 241 226 228 242 224C241 204 249 190 256 185C263 190 271 204 270 224C286 228 299 241 298 260C297 282 279 297 256 299Z" fill="#f8e7eb" fill-opacity=".9"/>
-    <path d="M256 282C242 281 232 271 232 258C232 246 240 238 249 236C248 224 253 216 256 213C259 216 264 224 263 236C272 238 280 246 280 258C280 271 270 281 256 282Z" fill="#c9879d"/>
-    <circle cx="256" cy="258" r="10" fill="url(#gold)"/>
-    <circle cx="249" cy="255" r="3.2" fill="#fff3d4"/>
-    <circle cx="263" cy="255" r="3.2" fill="#fff3d4"/>
-    <circle cx="256" cy="265" r="3.2" fill="#fff3d4"/>
-  </g>
-
-  <!-- lower leaves -->
-  <g fill="none" stroke="url(#cream)" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M214 325C193 347 183 374 186 401" stroke-width="8"/>
-    <path d="M298 325C319 347 329 374 326 401" stroke-width="8"/>
-    <path d="M190 363C166 354 145 361 132 381C158 389 180 382 196 367" stroke-width="7"/>
-    <path d="M322 363C346 354 367 361 380 381C354 389 332 382 316 367" stroke-width="7"/>
-  </g>
-
-  <!-- champagne sparkles -->
-  <g fill="url(#gold)">
-    <path d="M393 124l7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/>
-    <path d="M116 137l4.5 11 11 4.5-11 4.5-4.5 11-4.5-11-11-4.5 11-4.5z"/>
-    <path d="M397 337l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
-  </g>
-
-  <!-- quiet blush accents -->
-  <circle cx="109" cy="313" r="7" fill="#e9b9c8" fill-opacity=".78"/>
-  <circle cx="407" cy="306" r="5" fill="#f3d7df" fill-opacity=".78"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title"><title id="title">Daily Life — rose and leaves</title>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#294d3e"/><stop offset="1" stop-color="#10291f"/></linearGradient><linearGradient id="rose" x2=".8" y2="1"><stop stop-color="#ffe7ea"/><stop offset="1" stop-color="#d696aa"/></linearGradient></defs>
+<rect width="512" height="512" fill="url(#bg)"/>
+<circle cx="256" cy="256" r="172" fill="none" stroke="#ead7ae" stroke-width="2" opacity=".65"/>
+<path d="M256 375V290M256 353C208 345 179 316 171 286C214 285 246 314 256 353M257 331C294 314 314 284 316 261C281 266 259 293 257 331" fill="#8ba995" stroke="#d7dfbf" stroke-width="3" stroke-linejoin="round"/>
+<g fill="url(#rose)" stroke="#efbfca" stroke-width="2.5" stroke-linejoin="round">
+<path d="M257 300C191 301 153 266 161 220C135 190 153 158 187 162C199 124 233 113 256 143C285 114 318 127 326 162C363 157 379 194 351 220C357 266 317 298 257 300Z"/>
+<path d="M257 288C216 280 184 254 181 219C207 206 236 209 257 239C278 207 307 205 334 220C328 257 299 282 257 288Z" fill="#e6aebe"/>
+<path d="M257 256C223 242 202 208 214 174C243 171 261 190 268 218C278 190 300 180 319 187C318 221 290 245 257 256Z" fill="#ffe5e9"/>
+<path d="M256 242C235 228 231 208 242 192C267 191 280 208 273 225C269 234 263 239 256 242Z" fill="#c5869e"/>
+<path d="M253 224C247 216 250 207 258 207C267 209 267 219 260 225" fill="none" stroke="#ffe8eb" stroke-width="4"/>
+</g>
+<g fill="#ead7ae"><path d="M352 123l3 12 12 3-12 3-3 12-3-12-12-3 12-3Z"/><circle cx="151" cy="339" r="3"/><circle cx="356" cy="345" r="3"/></g>
 </svg>
