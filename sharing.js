@@ -19,6 +19,16 @@ function sharingRemoveLocalCopies(householdId){
   state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.sharedHouseholdId!==householdId);
   state.tasks=(state.tasks||[]).filter(x=>x.sharedHouseholdId!==householdId);
 }
+function sharingRemoveAllLocalCopies(exceptHouseholdId=""){
+  if(typeof state==="undefined")return 0;
+  const shouldRemove=x=>!!x.sharedHouseholdId&&(!exceptHouseholdId||x.sharedHouseholdId!==exceptHouseholdId);
+  const before=(state.events||[]).length+(state.itineraryBlocks||[]).length+(state.tasks||[]).length;
+  state.events=(state.events||[]).filter(x=>!shouldRemove(x));
+  state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>!shouldRemove(x));
+  state.tasks=(state.tasks||[]).filter(x=>!shouldRemove(x));
+  const after=(state.events||[]).length+(state.itineraryBlocks||[]).length+(state.tasks||[]).length;
+  return Math.max(0,before-after);
+}
 function sharingConnected(){return !!(sharingHousehold?.id&&sharingMembership?.household_id)}
 function sharingCanShare(){return sharingConnected()&&!!cloudUser?.()}
 function sharingRole(){return String(sharingMembership?.role||"member")}
@@ -46,8 +56,15 @@ async function sharingInit(){
       .order("created_at",{ascending:true});
     if(memErr)throw memErr;
     const membership=(memberships||[])[0]||null;
-    if(!membership){sharingReset();return false}
+    if(!membership){
+      const removed=sharingRemoveAllLocalCopies();
+      sharingReset();
+      if(removed)await dbSet("state",state);
+      return false;
+    }
+    const staleRemoved=sharingRemoveAllLocalCopies(membership.household_id);
     sharingMembership=membership;
+    if(staleRemoved)await dbSet("state",state);
 
     const {data:house,error:houseErr}=await cloudClient.from("households")
       .select("id,name,created_by,created_at,updated_at")
