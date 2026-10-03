@@ -268,3 +268,39 @@
     min-height:0;
   }
 }
+
+
+/* Bills: compact cash calendar */
+.bill-calendar-card{
+  padding-top:10px!important;
+}
+.bill-calendar-week{
+  border-top:1px solid color-mix(in srgb,var(--secondary) 12%,var(--border));
+}
+.bill-calendar-week>summary{
+  list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  min-height:54px;padding:9px 0;cursor:pointer;
+}
+.bill-calendar-week>summary::-webkit-details-marker{display:none}
+.bill-calendar-week>summary>span:first-child,
+.bill-calendar-totals{display:grid;gap:2px;min-width:0}
+.bill-calendar-week>summary small{color:var(--muted);font-size:.66rem}
+.bill-calendar-totals{text-align:right}
+.bill-calendar-totals>b{font-size:.9rem}
+.bill-calendar-week-body{padding:0 0 8px 12px}
+.bill-calendar-item{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border:0;border-top:1px solid color-mix(in srgb,var(--secondary) 8%,var(--border));
+  background:transparent;color:inherit;text-align:left;padding:8px 0;font:inherit;cursor:pointer;
+}
+.bill-calendar-item>span{min-width:0;display:grid;gap:2px}
+.bill-calendar-item small{color:var(--muted);font-size:.65rem}
+.bill-calendar-item>b{white-space:nowrap;font-size:.78rem}
+.bill-calendar-item.income>b{color:color-mix(in srgb,var(--primary) 82%,white 18%)}
+.bill-calendar-income-label{padding:10px 0 2px;color:var(--secondary);font-size:.66rem;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.bill-calendar-empty{padding:6px 0}
+@media(max-width:520px){
+  .bill-calendar-week>summary{min-height:50px}
+  .bill-calendar-week-body{padding-left:0}
+  .bill-calendar-totals{max-width:54%}
+}
