@@ -304,3 +304,11 @@
   .bill-calendar-week-body{padding-left:0}
   .bill-calendar-totals{max-width:54%}
 }
+
+
+/* House map room identity */
+.room-color-dot{
+  display:inline-block;width:11px;height:11px;border-radius:50%;
+  margin-right:7px;vertical-align:0;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--panel) 68%,transparent),0 0 0 3px var(--border);
+}
