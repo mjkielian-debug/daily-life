@@ -136,3 +136,97 @@
     padding-block:12px;
   }
 }
+
+
+/* Broader less-boxy pass: keep entity cards, flatten surrounding utility sections. */
+.people-tabs ~ .card:not(.people-hero):not(.birthday-alert):not(.birthday-dashboard):not(.priority-card),
+.care-hub-header ~ .card:not(.self-care-card):not(.priority-card):not(.ups-contract):not(.seasonal-income),
+.pet-hero ~ .card:not(.priority-card),
+.garden-hero ~ .card:not(.garden-due):not(.priority-card),
+.inventory-hero ~ .card:not(.priority-card){
+  margin:0;
+  padding:13px 2px;
+  border:0;
+  border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border));
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.people-tabs ~ .card:not(.people-hero):first-of-type,
+.care-hub-header ~ .card:first-of-type,
+.pet-hero ~ .card:first-of-type,
+.garden-hero ~ .card:first-of-type,
+.inventory-hero ~ .card:first-of-type{
+  border-top:0;
+}
+
+/* Read-only callouts become inline guidance instead of nested rounded boxes. */
+.people-tabs ~ .card .notice,
+.care-hub-header ~ .card .notice,
+.pet-hero ~ .card .notice,
+.garden-hero ~ .card .notice,
+.inventory-hero ~ .card .notice{
+  border:0;
+  border-left:3px solid color-mix(in srgb,var(--primary) 48%,var(--border));
+  border-radius:0;
+  padding:8px 0 8px 11px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--primary) 6%,transparent),transparent 72%);
+}
+
+/* Keep actual people/pets/plants/projects visually grouped as entities. */
+.people-tabs ~ .people-grid .card,
+.pet-hero ~ .pet-grid .card,
+.garden-hero ~ .plant-grid .card,
+.hobby-project-card{
+  box-shadow:none;
+}
+
+/* People tabs stay horizontal on phones instead of becoming three tall rows. */
+@media(max-width:460px){
+  .people-tabs{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:3px;
+  }
+  .people-tabs button{
+    min-width:0;
+    padding:7px 3px;
+    font-size:.68rem;
+  }
+}
+
+/* Compact utility rows on secondary pages. */
+.people-tabs ~ .card .row,
+.care-hub-header ~ .card .row,
+.pet-hero ~ .card .row,
+.garden-hero ~ .card .row,
+.inventory-hero ~ .card .row{
+  padding:8px 0;
+}
+.people-tabs ~ .card .section-title,
+.care-hub-header ~ .card .section-title,
+.pet-hero ~ .card .section-title,
+.garden-hero ~ .card .section-title,
+.inventory-hero ~ .card .section-title{
+  margin:9px 0 5px;
+}
+
+/* Inventory is fundamentally a list/map tool, so remove extra shell weight. */
+.inventory-hero ~ .inventory-tools{
+  padding-top:10px;
+  padding-bottom:10px;
+}
+.inventory-hero ~ .card .inventory-item-row{
+  border-radius:0;
+  background:transparent;
+}
+
+/* Hobby page only needs one workspace shell; the project tiles carry the grouping. */
+.hobby-page-hero{
+  margin-bottom:6px;
+}
+.hobby-page-hero + .hobby-workspace{
+  margin-top:0;
+  box-shadow:none;
+  border-color:color-mix(in srgb,var(--secondary) 16%,var(--border));
+}
