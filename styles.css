@@ -3065,3 +3065,36 @@ textarea{resize:vertical}
 @media(max-width:460px){
   .repeat-habit-summary{flex-direction:column}
 }
+
+
+/* Sleep-protected Day Flow */
+.sleep-settings-box{
+  display:grid;gap:11px;padding:12px;border-radius:17px;
+  border:1px solid color-mix(in srgb,var(--secondary) 28%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 8%,transparent),color-mix(in srgb,var(--primary) 4%,transparent))
+}
+.sleep-protection-banner{
+  display:flex;align-items:flex-start;gap:10px;margin:10px 0;padding:11px 12px;border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--secondary) 34%,var(--border));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 10%,transparent),color-mix(in srgb,var(--accent) 4%,transparent))
+}
+.sleep-protection-banner .sleep-icon{font-size:1.2rem;line-height:1.2}
+.sleep-protection-banner>div{display:grid;gap:3px;min-width:0}
+.sleep-protection-banner b{font-family:var(--font-heading);color:var(--cream)}
+.sleep-protection-banner small{color:var(--muted);line-height:1.35}
+.sleep-conflict-box{
+  display:grid;gap:7px;margin:10px 0;padding:11px 12px;border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--danger) 50%,var(--border));
+  background:color-mix(in srgb,var(--danger) 7%,transparent)
+}
+.sleep-conflict-box>div{display:grid;gap:3px}
+.sleep-conflict-box small{color:var(--muted);font-size:.69rem;line-height:1.35}
+.sleep-conflict-box button{
+  display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-top:1px solid color-mix(in srgb,var(--danger) 20%,var(--border));
+  background:transparent;color:var(--text);padding:9px 0
+}
+.sleep-conflict-box button small{text-align:right}
+@media(max-width:520px){
+  .sleep-conflict-box button{flex-direction:column}
+  .sleep-conflict-box button small{text-align:left}
+}
