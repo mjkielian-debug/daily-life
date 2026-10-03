@@ -96,6 +96,7 @@
 
   function ltEnsureFab(){
     let rail=document.querySelector("#lifeToolsFab");
+    if(typeof needsSetup==="function"&&needsSetup()){if(rail)rail.remove();return}
     if(rail)return;
     rail=document.createElement("div");rail.id="lifeToolsFab";rail.className="life-tools-fab";
     rail.innerHTML='<button type="button" class="life-fab-search" aria-label="Find anything" onclick="openLifeSearch()">⌕</button><button type="button" class="life-fab-capture" aria-label="Quick capture" onclick="openLifeCapture()">＋</button>';
