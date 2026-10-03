@@ -279,25 +279,40 @@ function dateDayIndex(date){
   return Math.floor(new Date(date+"T12:00:00").getTime()/86400000);
 }
 function ensureFamilyDay(date=ymd()){
-  const settings=state.settings||{};
-  state.chores=(state.chores||[]).filter(x=>!(x.date===date&&x.generated==="daily-basics"&&String(x.chore||"").includes(" · ")));
-  const existing=new Set((state.chores||[]).filter(x=>x.date===date).map(x=>String(x.child||"")+"|"+String(x.chore||"")));
-  for(const child of settings.familyMembers||[]){
-    const name=String(child?.name||child||"").trim();if(!name)continue;
-    const basics=(settings.dailyKidBasics||[]).filter(Boolean);
-    for(const basic of basics){
-      const chore=String(basic),key=name+"|"+chore;
-      if(!existing.has(key)){state.chores.push({id:uid(),date,child:name,chore,done:false,generated:"daily-basics"});existing.add(key)}
+  const settings=state.settings||{},desired=new Map();
+  const addDesired=(child,chore,generated)=>{
+    const name=String(child||"").trim(),task=String(chore||"").trim();if(!name||!task)return;
+    desired.set(name+"|"+task,{child:name,chore:task,generated});
+  };
+  const family=(settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean),
+        basics=(settings.dailyKidBasics||[]).map(String).map(x=>x.trim()).filter(Boolean);
+  for(const name of family)for(const basic of basics)addDesired(name,basic,"daily-basics");
+  for(const r of settings.choreRotations||[]){
+    const members=(r.members||[]).map(String).map(x=>x.trim()).filter(Boolean),
+          chores=(r.chores||[]).map(String).map(x=>x.trim()).filter(Boolean);
+    if(!members.length||!chores.length)continue;
+    const anchor=/^\d{4}-\d{2}-\d{2}$/.test(String(r.anchorDate||""))?String(r.anchorDate):date,
+          offset=dateDayIndex(date)-dateDayIndex(anchor);
+    for(let i=0;i<members.length;i++){
+      const choreIndex=((i+offset)%chores.length+chores.length)%chores.length;
+      addDesired(members[i],chores[choreIndex],"rotation");
     }
   }
-  for(const r of settings.choreRotations||[]){
-    const members=(r.members||[]).map(String).filter(Boolean),chores=(r.chores||[]).map(String).filter(Boolean);
-    if(members.length<2||chores.length<2)continue;
-    const anchor=String(r.anchorDate||date),offset=Math.abs(dateDayIndex(date)-dateDayIndex(anchor));
-    for(let i=0;i<members.length;i++){
-      const chore=chores[(i+offset)%chores.length],key=members[i]+"|"+chore;
-      if(chore&&!existing.has(key)){state.chores.push({id:uid(),date,child:members[i],chore,done:false,generated:"rotation"});existing.add(key)}
-    }
+  const generatedKinds=new Set(["daily-basics","rotation"]),kept=new Map(),next=[];
+  for(const row of state.chores||[]){
+    if(row.date!==date||!generatedKinds.has(String(row.generated||""))){next.push(row);continue}
+    const key=String(row.child||"").trim()+"|"+String(row.chore||"").trim();
+    if(!desired.has(key)||kept.has(key))continue;
+    const target=desired.get(key);
+    row.child=target.child;row.chore=target.chore;row.generated=target.generated;
+    kept.set(key,row);next.push(row);
+  }
+  state.chores=next;
+  const existing=new Set((state.chores||[]).filter(x=>x.date===date).map(x=>String(x.child||"").trim()+"|"+String(x.chore||"").trim()));
+  for(const [key,target] of desired){
+    if(existing.has(key))continue;
+    state.chores.push({id:uid(),date,child:target.child,chore:target.chore,done:false,generated:target.generated});
+    existing.add(key);
   }
 }
 function ensureRecurringFamilyEvents(){
