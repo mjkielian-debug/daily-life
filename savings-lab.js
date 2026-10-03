@@ -110,7 +110,9 @@ function openSavingsComparisonFromRepeat(index=0){
     observedDays:r.windowDays||120,
     avgGapDays:r.avgGapDays,
     annualizedSpend:r.annualizedSpend,
-    cadenceStable:!!r.cadenceStable,\n    sourceCategories:Array.isArray(r.categories)?r.categories:[]\n  });
+    cadenceStable:!!r.cadenceStable,
+    sourceCategories:Array.isArray(r.categories)?r.categories:[]
+  });
 }
 
 function openSavingsComparison(id="",seed=""){
