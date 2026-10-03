@@ -1,0 +1,387 @@
+/* Daily Life · round visual system
+   Happy-Wax-inspired pastel glass, real circles/rings, and less box-shaped information.
+   Visual-only: this file does not change saved records. */
+
+:root{
+  --life-ink:#202039;
+  --life-muted:#6d687b;
+  --life-paper:rgba(255,252,248,.95);
+  --life-paper-strong:#fffaf6;
+  --life-pink:#ff7fa1;
+  --life-coral:#ff9b7b;
+  --life-peach:#ffc98e;
+  --life-yellow:#ffe69b;
+  --life-mint:#bdeccf;
+  --life-aqua:#a9e6ed;
+  --life-blue:#9ed7ff;
+  --life-lilac:#d8c1ff;
+  --life-outline:rgba(40,35,57,.14);
+  --life-shadow:0 16px 38px rgba(64,52,82,.12),0 3px 10px rgba(64,52,82,.05);
+}
+
+/* Core shape vocabulary */
+.life-orb,
+.round-stat,
+.progress-orb{
+  border:1px solid rgba(255,255,255,.92);
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 34% 25%,rgba(255,255,255,.94),rgba(255,255,255,.42) 42%,rgba(255,255,255,.2) 72%),
+    var(--orb-tint,rgba(169,230,237,.42));
+  box-shadow:0 9px 23px rgba(66,54,83,.11),inset 0 1px 0 rgba(255,255,255,.96);
+}
+.life-pill,
+.pill-tabs button,
+.life-chip{
+  border-radius:999px!important;
+}
+.bubble-card{
+  border-radius:34px!important;
+  background:
+    radial-gradient(circle at 12% 15%,rgba(158,215,255,.24),transparent 34%),
+    radial-gradient(circle at 88% 82%,rgba(255,201,142,.25),transparent 35%),
+    rgba(255,252,248,.9)!important;
+}
+.doodle-icon,
+.life-doodle{
+  color:#2d2940;
+}
+.life-doodle svg{
+  width:28px;height:28px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* Whole-life wheel */
+.life-system-card{
+  overflow:visible!important;
+  padding:18px 16px 20px!important;
+  border-radius:34px!important;
+  background:
+    radial-gradient(circle at 10% 14%,rgba(169,230,237,.35),transparent 31%),
+    radial-gradient(circle at 88% 16%,rgba(216,193,255,.3),transparent 28%),
+    radial-gradient(circle at 90% 84%,rgba(255,201,142,.33),transparent 31%),
+    radial-gradient(circle at 12% 88%,rgba(189,236,207,.35),transparent 31%),
+    rgba(255,252,248,.93)!important;
+  color:var(--life-ink)!important;
+}
+.life-system-card h2,.life-system-card b,.life-system-card strong{color:var(--life-ink)!important}
+.life-system-card .muted,.life-system-card small{color:var(--life-muted)!important}
+.life-system-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;
+}
+.life-system-head .eyebrow{color:#87536c!important}
+.life-system-note{
+  font-family:var(--font-hand);font-size:.9rem;color:var(--life-muted);max-width:31ch;text-align:right;
+}
+.life-wheel-wrap{
+  position:relative;
+  width:min(88vw,360px);
+  aspect-ratio:1;
+  margin:6px auto 12px;
+  display:grid;place-items:center;
+}
+.life-wheel{
+  width:100%;height:100%;overflow:visible;filter:drop-shadow(0 9px 20px rgba(62,52,80,.10));
+}
+.life-wheel .life-wedge{
+  cursor:pointer;
+  stroke:rgba(255,255,255,.95);
+  stroke-width:4;
+  transition:transform .16s ease,filter .16s ease,opacity .16s ease;
+  transform-origin:160px 160px;
+}
+.life-wheel .life-wedge:hover,.life-wheel .life-wedge:focus{filter:brightness(1.04);transform:scale(1.015)}
+.life-wheel .life-wedge-outline{fill:none;stroke:rgba(45,41,64,.10);stroke-width:1}
+.life-wheel-center{
+  position:absolute;
+  width:43%;aspect-ratio:1;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:14px;
+  background:rgba(255,252,248,.96);
+  border:1px solid rgba(255,255,255,.98);
+  box-shadow:0 12px 30px rgba(62,52,80,.13),inset 0 0 0 1px rgba(47,40,64,.05);
+  pointer-events:none;
+}
+.life-wheel-center small{font-family:var(--font-hand);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+.life-wheel-center b{font-family:var(--font-heading);font-size:1.06rem;line-height:1.08;margin-top:4px}
+.life-wheel-center span{font-family:var(--font-hand);font-size:.78rem;line-height:1.1;margin-top:4px;color:var(--life-muted)}
+.life-wheel-label{
+  font-family:var(--font-hand);font-size:12px;font-weight:700;fill:#29243b;
+  pointer-events:none;text-anchor:middle;
+}
+.life-domain-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:5px;
+}
+.life-domain{
+  min-width:0;min-height:104px;border:0;border-radius:50%;aspect-ratio:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:10px;color:var(--life-ink);cursor:pointer;
+  background:
+    radial-gradient(circle at 32% 24%,rgba(255,255,255,.94),rgba(255,255,255,.56) 43%,rgba(255,255,255,.2) 72%),
+    var(--life-domain-color,rgba(169,230,237,.46));
+  box-shadow:0 8px 20px rgba(62,52,80,.09),inset 0 0 0 1px rgba(255,255,255,.85);
+}
+.life-domain .life-doodle{margin-bottom:2px}
+.life-domain b{font-family:var(--font-hand)!important;font-size:.9rem!important;line-height:1}
+.life-domain strong{font-family:var(--font-heading)!important;font-size:1.25rem!important;line-height:1;margin-top:3px}
+.life-domain small{font-size:.65rem!important;line-height:1.05;margin-top:3px}
+.life-now-strip{
+  display:flex;align-items:center;gap:10px;margin-top:13px;padding:11px 13px;border-radius:999px;
+  background:rgba(255,255,255,.66);border:1px solid rgba(44,38,58,.08);
+}
+.life-now-strip .life-doodle{flex:0 0 28px}
+.life-now-strip>span{min-width:0}
+.life-now-strip b{display:block;font-family:var(--font-hand)!important}
+.life-now-strip small{display:block;white-space:normal}
+
+/* Readability pass for areas that still carried the dark/old shell */
+:is(.teacher-planner,.day-flow-card,.itinerary-hero,.robot-card,.inventory-hero,.school-card,.daily-advice-card,.today-sleep-plan,.safe-spend,.budget-coach-card,.spirituality-hero,.reading-hero,.care-hub-header,.people-hero){
+  color:var(--life-ink)!important;
+  background:
+    radial-gradient(circle at 10% 8%,rgba(169,230,237,.20),transparent 28%),
+    radial-gradient(circle at 92% 12%,rgba(255,126,161,.13),transparent 28%),
+    linear-gradient(155deg,rgba(255,255,255,.92),rgba(255,249,244,.95))!important;
+  border-color:rgba(255,255,255,.96)!important;
+  box-shadow:var(--life-shadow)!important;
+}
+:is(.teacher-planner,.day-flow-card,.itinerary-hero,.robot-card,.inventory-hero,.school-card,.daily-advice-card,.today-sleep-plan,.safe-spend,.budget-coach-card,.spirituality-hero,.reading-hero,.care-hub-header,.people-hero)
+ :is(h1,h2,h3,b,strong,.big,.planner-title){
+  color:var(--life-ink)!important;
+}
+:is(.teacher-planner,.day-flow-card,.itinerary-hero,.robot-card,.inventory-hero,.school-card,.daily-advice-card,.today-sleep-plan,.safe-spend,.budget-coach-card,.spirituality-hero,.reading-hero,.care-hub-header,.people-hero)
+ :is(.muted,.small,small,p,.planner-detail){
+  color:var(--life-muted)!important;
+}
+:is(.teacher-planner,.robot-card,.school-card,.daily-advice-card,.today-sleep-plan,.safe-spend,.budget-coach-card) .eyebrow{
+  color:#87536c!important;
+}
+
+/* Day Flow: timeline + circles, not a stack of rectangles */
+.itinerary-hero{
+  border-radius:36px!important;
+}
+.itinerary-date-nav input{
+  border-radius:999px!important;
+  text-align:center;
+  background:linear-gradient(120deg,rgba(189,236,207,.62),rgba(169,230,237,.54),rgba(216,193,255,.46))!important;
+}
+.teacher-planner{
+  border-radius:38px!important;
+  padding:18px 16px!important;
+}
+.planner-heading{gap:12px!important}
+.planner-summary{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:9px!important;margin:13px 0!important;
+}
+.planner-summary span{
+  min-width:0;aspect-ratio:1;border-radius:50%!important;
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:8px!important;border:1px solid rgba(255,255,255,.9)!important;
+  background:
+    radial-gradient(circle at 32% 24%,rgba(255,255,255,.95),rgba(255,255,255,.45) 55%,transparent 78%),
+    linear-gradient(145deg,rgba(169,230,237,.48),rgba(216,193,255,.34))!important;
+  box-shadow:0 7px 18px rgba(65,54,82,.08)!important;
+}
+.planner-summary span:nth-child(2){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.45) 55%,transparent 78%),linear-gradient(145deg,rgba(255,201,142,.56),rgba(255,126,161,.28))!important}
+.planner-summary span:nth-child(3){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.45) 55%,transparent 78%),linear-gradient(145deg,rgba(189,236,207,.62),rgba(169,230,237,.36))!important}
+.planner-summary b{font-family:var(--font-heading)!important;font-size:1.25rem!important}
+.planner-summary small{font-family:var(--font-hand)!important;font-size:.68rem!important}
+.planner-phase{
+  border:0!important;margin:18px 0 8px!important;padding:0!important;
+  font-family:var(--font-hand);color:#87536c!important;
+}
+.planner-phase span{
+  width:32px;height:32px;border-radius:50%;display:inline-grid;place-items:center;
+  background:rgba(255,201,142,.34);border:1px solid rgba(255,255,255,.85);
+}
+.planner-list{position:relative}
+.planner-list:before{
+  content:"";position:absolute;left:54px;top:4px;bottom:4px;width:2px;
+  background:linear-gradient(var(--life-aqua),var(--life-pink),var(--life-peach),var(--life-mint));opacity:.5;
+}
+.planner-row{
+  position:relative!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;padding:9px 0!important;margin:0!important;
+}
+.planner-time{
+  position:relative;z-index:2;background:rgba(255,252,248,.96);border-radius:20px!important;
+  border:1px solid rgba(45,41,64,.08)!important;padding:8px 6px!important;
+}
+.planner-content{
+  margin-left:8px;border:0!important;border-radius:26px!important;
+  padding:11px 13px!important;
+  background:rgba(255,255,255,.58)!important;
+  box-shadow:inset 0 0 0 1px rgba(45,41,64,.06)!important;
+}
+.planner-row.is-fixed .planner-content{background:linear-gradient(135deg,rgba(169,230,237,.24),rgba(158,215,255,.18))!important}
+.planner-routine .planner-content{background:linear-gradient(135deg,rgba(255,201,142,.22),rgba(255,230,155,.18))!important}
+.planner-task .planner-content{background:linear-gradient(135deg,rgba(189,236,207,.28),rgba(169,230,237,.18))!important}
+.planner-gap .planner-content{background:linear-gradient(135deg,rgba(216,193,255,.15),rgba(255,255,255,.46))!important}
+.planner-kind,.tag{border-radius:999px!important}
+.planner-needs-time{
+  border:0!important;border-radius:28px!important;
+  background:linear-gradient(135deg,rgba(255,230,155,.30),rgba(255,201,142,.24))!important;
+  color:var(--life-ink)!important;
+}
+.planner-needs-time button{
+  border:0!important;border-top:1px dashed rgba(45,41,64,.12)!important;background:transparent!important;color:var(--life-ink)!important;
+}
+.planner-now{
+  border-radius:999px!important;
+  background:linear-gradient(100deg,rgba(189,236,207,.62),rgba(169,230,237,.52))!important;
+  color:var(--life-ink)!important;border:1px solid rgba(255,255,255,.9)!important;
+}
+.sleep-protection-banner,.sleep-conflict-box{
+  border-radius:28px!important;background:rgba(255,255,255,.62)!important;color:var(--life-ink)!important;
+}
+
+/* Robot vacuum: four real status orbs */
+.robot-status-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  max-width:430px;margin:15px auto!important;gap:12px!important;
+}
+.robot-status-cell{
+  aspect-ratio:1!important;border-radius:50%!important;text-align:center!important;
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center!important;
+  padding:13px!important;color:var(--life-ink)!important;
+  border:1px solid rgba(255,255,255,.92)!important;
+  background:
+    radial-gradient(circle at 32% 24%,rgba(255,255,255,.96),rgba(255,255,255,.48) 52%,transparent 76%),
+    linear-gradient(145deg,rgba(169,230,237,.55),rgba(216,193,255,.34))!important;
+  box-shadow:0 8px 20px rgba(62,52,80,.09)!important;
+}
+.robot-status-cell:nth-child(2){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.48) 52%,transparent 76%),linear-gradient(145deg,rgba(189,236,207,.66),rgba(169,230,237,.34))!important}
+.robot-status-cell:nth-child(3){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.48) 52%,transparent 76%),linear-gradient(145deg,rgba(255,201,142,.62),rgba(255,230,155,.32))!important}
+.robot-status-cell:nth-child(4){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.48) 52%,transparent 76%),linear-gradient(145deg,rgba(255,126,161,.36),rgba(216,193,255,.42))!important}
+.robot-status-cell span,.robot-status-cell small{color:var(--life-muted)!important}
+.robot-status-cell b{color:var(--life-ink)!important;font-family:var(--font-heading)!important;font-size:1.1rem!important}
+.robot-floor{
+  border:0!important;border-radius:28px!important;background:rgba(255,255,255,.58)!important;
+}
+.robot-room-pill{background:rgba(255,255,255,.72)!important}
+
+/* Reading: round progress chips and flatter rows */
+.reader-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;
+}
+.reader-card{
+  border:0!important;border-radius:32px!important;
+  background:linear-gradient(145deg,rgba(169,230,237,.32),rgba(255,255,255,.7),rgba(255,201,142,.24))!important;
+  box-shadow:0 7px 18px rgba(62,52,80,.07)!important;color:var(--life-ink)!important;
+}
+.reader-card .big,.reader-card .eyebrow,.reader-card b{color:var(--life-ink)!important}
+.reader-card .muted{color:var(--life-muted)!important}
+
+/* School / People: preserve cards for actual children, flatten framing */
+.school-kids{gap:10px!important}
+.school-kid{
+  border:0!important;border-radius:30px!important;color:var(--life-ink)!important;
+  background:linear-gradient(145deg,rgba(189,236,207,.32),rgba(255,255,255,.68),rgba(216,193,255,.18))!important;
+  box-shadow:inset 0 0 0 1px rgba(45,41,64,.06)!important;
+}
+.school-kid :is(b,span){color:var(--life-ink)!important}
+.school-kid .muted{color:var(--life-muted)!important}
+.school-action{
+  border-radius:22px!important;
+  background:rgba(255,255,255,.54)!important;padding:10px 12px!important;
+}
+
+/* Money: old dark hero surfaces become light + visual */
+.safe-spend,.budget-coach-card{
+  border-radius:36px!important;
+}
+.safe-spend .row,.budget-coach-card .row{
+  color:var(--life-ink)!important;
+}
+.safe-spend .row span,.budget-coach-card .row span,.safe-spend p,.budget-coach-card p{
+  color:var(--life-muted)!important;
+}
+.safe-spend .big,.budget-coach-card .big,.safe-spend b,.budget-coach-card b{color:var(--life-ink)!important}
+
+/* Advice + sleep should feel like magazine spreads, not dark boxes */
+.daily-advice-row{
+  border:0!important;border-radius:28px!important;margin:10px 0!important;padding:13px!important;
+  background:rgba(255,255,255,.58)!important;color:var(--life-ink)!important;
+}
+.daily-advice-row.is-primary{
+  background:linear-gradient(135deg,rgba(255,201,142,.34),rgba(189,236,207,.28),rgba(169,230,237,.23))!important;
+}
+.daily-advice-icon{
+  width:46px;height:46px;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:rgba(255,255,255,.76)!important;color:var(--life-ink)!important;
+}
+.daily-advice-row small{color:var(--life-muted)!important}
+.sleep-plan-inline{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;
+}
+.sleep-plan-inline span{
+  aspect-ratio:1;border-radius:50%!important;
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:linear-gradient(145deg,rgba(216,193,255,.32),rgba(169,230,237,.28),rgba(255,255,255,.72))!important;
+  border:1px solid rgba(255,255,255,.9)!important;padding:8px!important;
+}
+.sleep-plan-inline b{font-family:var(--font-heading)!important;font-size:1.1rem!important}
+.sleep-plan-inline small{font-size:.64rem!important}
+
+/* Section launcher: pill/bubble list rather than brown rectangles */
+.section-launcher{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;
+}
+.section-launcher button{
+  min-height:120px!important;border:0!important;border-radius:34px!important;
+  color:var(--life-ink)!important;text-align:left!important;
+  background:
+    radial-gradient(circle at 18% 20%,rgba(255,255,255,.92),transparent 32%),
+    linear-gradient(145deg,rgba(169,230,237,.32),rgba(216,193,255,.24),rgba(255,201,142,.27))!important;
+  box-shadow:0 8px 20px rgba(62,52,80,.07)!important;
+}
+.section-launcher button:nth-child(3n+2){background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.92),transparent 32%),linear-gradient(145deg,rgba(255,126,161,.24),rgba(255,201,142,.35),rgba(255,255,255,.52))!important}
+.section-launcher button:nth-child(3n){background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.92),transparent 32%),linear-gradient(145deg,rgba(189,236,207,.38),rgba(169,230,237,.28),rgba(255,255,255,.52))!important}
+.section-launch-icon{
+  width:42px!important;height:42px!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:rgba(255,255,255,.75)!important;border:1px solid rgba(45,41,64,.08)!important;
+}
+
+/* Inventory shell */
+.inventory-hero{
+  border-radius:36px!important;
+}
+.inventory-hero .btn,.inventory-tools .btn{border-radius:999px!important}
+
+/* Tarot deeper meaning */
+.tarot-deeper{
+  margin-top:12px;padding:14px 15px;border-radius:28px;
+  background:linear-gradient(135deg,rgba(216,193,255,.23),rgba(169,230,237,.21),rgba(255,201,142,.22));
+  border:1px solid rgba(255,255,255,.88);
+}
+.tarot-deeper h3{margin:0 0 6px;font-family:var(--font-heading)!important;color:var(--life-ink)!important}
+.tarot-deeper p{margin:6px 0;color:var(--life-muted)!important}
+.tarot-deeper .tarot-doodle{
+  width:42px;height:42px;border-radius:50%;display:grid;place-items:center;float:left;margin:0 10px 5px 0;
+  background:rgba(255,255,255,.72);
+}
+
+/* Mobile */
+@media(max-width:520px){
+  .life-domain-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .life-domain{min-height:0;padding:7px}
+  .life-domain .life-doodle svg{width:22px;height:22px}
+  .life-domain b{font-size:.78rem!important}
+  .life-domain strong{font-size:1rem!important}
+  .life-domain small{font-size:.57rem!important}
+  .planner-list:before{left:49px}
+  .planner-time{font-size:.82rem!important}
+  .planner-content{padding:10px!important}
+  .reader-grid{grid-template-columns:1fr!important}
+  .section-launcher{grid-template-columns:1fr 1fr!important}
+  .section-launcher button{min-height:108px!important;padding:13px!important}
+}
+@media(max-width:360px){
+  .life-domain-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .life-domain{aspect-ratio:auto;min-height:96px;border-radius:28px}
+  .sleep-plan-inline{grid-template-columns:1fr 1fr!important}
+  .sleep-plan-inline span{aspect-ratio:auto;min-height:90px}
+}
