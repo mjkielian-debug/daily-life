@@ -1,0 +1,138 @@
+/* Daily Life — compact, less-boxy Money + Budget presentation.
+   Scoped so the rest of the app can be migrated safely page by page. */
+
+.money-tab-panel,
+.budget-tab-panel{
+  display:grid;
+  gap:0;
+}
+
+/* Flatten most read-only sections into one continuous page instead of stacked cards. */
+.money-tab-panel>.card:not(.safe-spend):not(.budget-coach-card):not(.priority-card),
+.budget-tab-panel>.card:not(.budget-coach-card):not(.priority-card){
+  margin:0;
+  padding:14px 2px;
+  border:0;
+  border-top:1px solid color-mix(in srgb,var(--secondary) 12%,var(--border));
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.money-tab-panel>.card:first-child,
+.budget-tab-panel>.card:first-child{
+  border-top:0;
+}
+
+/* Keep only the genuinely important decision cards visually emphasized. */
+.money-tab-panel>.safe-spend,
+.budget-tab-panel>.budget-coach-card{
+  margin:8px 0 10px;
+  box-shadow:none;
+  border-color:color-mix(in srgb,var(--primary) 26%,var(--border));
+  background:
+    linear-gradient(145deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 45%),
+    color-mix(in srgb,var(--panel) 88%,transparent);
+}
+
+/* Hero numbers should read like a dashboard, not four form fields. */
+.budget-hero .budget-summary{
+  gap:8px 14px;
+}
+.budget-hero .budget-summary .metric{
+  padding:7px 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  min-width:0;
+}
+.budget-hero .budget-summary .metric:nth-child(n+3){
+  border-top:1px solid color-mix(in srgb,var(--secondary) 10%,var(--border));
+  padding-top:10px;
+}
+
+/* Category cards become scan-friendly budget rows. */
+.budget-categories{
+  gap:0 18px;
+}
+.budget-categories .card{
+  margin:0;
+  padding:12px 0;
+  border:0;
+  border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border));
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.budget-categories .card:nth-child(-n+2){
+  border-top-color:transparent;
+}
+.budget-categories .section-title{
+  margin:0 0 5px;
+}
+.budget-categories .budget-progress{
+  height:8px;
+  margin:7px 0;
+}
+
+/* Notices should feel like inline guidance rather than another rounded box. */
+.money-tab-panel .notice,
+.budget-tab-panel .notice{
+  border:0;
+  border-left:3px solid color-mix(in srgb,var(--primary) 52%,var(--border));
+  border-radius:0;
+  padding:8px 0 8px 11px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--primary) 6%,transparent),transparent 72%);
+}
+.money-tab-panel .warning,
+.budget-tab-panel .warning{
+  border:0;
+  border-left:3px solid rgba(255,224,138,.55);
+  border-radius:0;
+  padding:8px 0 8px 11px;
+  background:linear-gradient(90deg,rgba(255,224,138,.06),transparent 72%);
+}
+
+/* Reduce vertical air without hurting tap targets. */
+.money-tab-panel .section-title,
+.budget-tab-panel .section-title{
+  margin:10px 0 5px;
+}
+.money-tab-panel .row,
+.budget-tab-panel .row{
+  padding:8px 0;
+}
+.money-tab-panel .btn,
+.budget-tab-panel .btn{
+  min-height:40px;
+}
+
+/* Savings goals and action rows stay visually distinct without nested boxes. */
+.money-tab-panel .savings-goal-row,
+.budget-tab-panel .savings-goal-row,
+.money-tab-panel .money-action,
+.budget-tab-panel .money-action{
+  border-left:0;
+  border-right:0;
+  border-radius:0;
+  background:transparent;
+}
+
+/* Compact mobile summaries stay two-up so key numbers fit before scrolling. */
+@media(max-width:520px){
+  .budget-hero .budget-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .budget-hero .budget-summary .metric{
+    min-height:70px;
+  }
+  .budget-categories{
+    grid-template-columns:1fr;
+  }
+  .budget-categories .card:nth-child(2){
+    border-top-color:color-mix(in srgb,var(--secondary) 11%,var(--border));
+  }
+  .money-tab-panel>.card:not(.safe-spend):not(.budget-coach-card):not(.priority-card),
+  .budget-tab-panel>.card:not(.budget-coach-card):not(.priority-card){
+    padding-block:12px;
+  }
+}
