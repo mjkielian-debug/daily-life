@@ -154,8 +154,9 @@ refreshDailyGarden();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshDailyGarden()});
 setInterval(refreshDailyGarden,60000);
 
+
 function openReviewedNotesImport(){
- modal("Import reviewed screenshot notes",'<div class="stack"><p>Add reviewed information to Vehicle, Garden, and Projects. Existing records are kept. Reimporting the same note does not duplicate it.</p><label>Reviewed notes file<input id="reviewedNotesFile" type="file" accept="application/json,.json"></label><div id="reviewedNotesPreview" class="notice">Choose the notes file downloaded from this chat.</div><div class="muted small">Identity documents should be added through the encrypted Vault instead.</div></div>',"Review file",async()=>{
+ modal("Import reviewed screenshot notes",'<div class="stack"><p>Add reviewed information to Vehicle, Garden, School, and Projects. Existing records are kept. Reimporting the same note does not duplicate it.</p><label>Reviewed notes file<input id="reviewedNotesFile" type="file" accept="application/json,.json"></label><div id="reviewedNotesPreview" class="notice">Choose the notes file downloaded from this chat.</div><div class="muted small">Identity documents should be added through the encrypted Vault instead.</div></div>',"Review file",async()=>{
  const file=$("#reviewedNotesFile").files[0];if(!file)return;if(file.size>8000000)throw Error("Choose a reviewed notes file smaller than 8 MB.");
  const data=JSON.parse(await file.text());validateReviewedNotes(data);
  closeModal();modal("Review additions",'<div class="stack">'+data.records.map(x=>'<div class="metric"><b>'+esc(x.section)+' · '+esc(x.title)+'</b><p>'+esc(x.note)+'</p></div>').join('')+'</div>',"Add to my app",async()=>{await applyReviewedNotes(data);closeModal();render()});
@@ -164,12 +165,12 @@ function openReviewedNotesImport(){
 function validateReviewedNotes(data){
  if(data?.format!=="daily-life-reviewed-notes-v1"||!Array.isArray(data.records)||data.records.length>50)throw Error("This is not a reviewed Daily Life notes file.");
  for(const r of data.records){
- if(!["vehicle","garden","project"].includes(r.section)||!/^review-[a-z0-9-]{1,100}$/.test(r.id)||typeof r.title!=="string"||typeof r.note!=="string"||r.note.length>20000)throw Error("Invalid reviewed note.");
+ if(!["vehicle","garden","project","schoolGrade","schoolAssignment","schoolContacts"].includes(r.section)||!/^review-[a-z0-9-]{1,100}$/.test(r.id)||typeof r.title!=="string"||typeof r.note!=="string"||r.note.length>20000)throw Error("Invalid reviewed note.");
  if(r.photos&&(!Array.isArray(r.photos)||r.photos.length>8||r.photos.some(p=>typeof p!=="string"||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p)||p.length>1500000)))throw Error("Invalid reference photo.");
  }
 }
 async function applyReviewedNotes(data){
- validateReviewedNotes(data);const original={vehicles:structuredClone(state.vehicles||[]),gardenJournal:structuredClone(state.gardenJournal||[]),projects:structuredClone(state.projects||[])};
+ validateReviewedNotes(data);const original={vehicles:structuredClone(state.vehicles||[]),gardenJournal:structuredClone(state.gardenJournal||[]),projects:structuredClone(state.projects||[]),schoolGrades:structuredClone(state.schoolGrades||[]),schoolAssignments:structuredClone(state.schoolAssignments||[]),peopleProfiles:structuredClone(state.peopleProfiles||[])};
  state.vehicles=state.vehicles||[];state.gardenJournal=state.gardenJournal||[];state.projects=state.projects||[];
  for(const r of data.records){
  if(r.section==="vehicle"){
@@ -177,6 +178,14 @@ async function applyReviewedNotes(data){
  if(!v){v={id:r.id,make:String(r.make||""),model:String(r.model||""),year:Number(r.year)||null,primary:state.vehicles.length===0};state.vehicles.push(v)}
  if(!v.year&&r.year)v.year=Number(r.year);v.reviewedSources=v.reviewedSources||[];
  if(!v.reviewedSources.includes(r.id)){v.notes=[v.notes,r.title+": "+r.note].filter(Boolean).join("\n\n");v.reviewedSources.push(r.id);if(r.photos)v.referencePhotos=[...(v.referencePhotos||[]),...r.photos]}
+ }else if(r.section==="schoolGrade"||r.section==="schoolAssignment"){
+ const key=r.section==="schoolGrade"?"schoolGrades":"schoolAssignments";state[key]=state[key]||[];if(state[key].some(x=>x.id===r.id))continue;
+ if(r.section==="schoolGrade")state[key].push({id:r.id,child:String(r.child||""),course:String(r.course||""),grade:String(r.grade||""),percent:Number.isFinite(Number(r.percent))?Number(r.percent):null,term:String(r.term||""),asOf:String(r.asOf||data.reviewedDate),source:"Reviewed screenshot",notes:r.note});
+ else state[key].push({id:r.id,child:String(r.child||""),course:String(r.course||""),title:r.title,due:String(r.due||""),status:["missing","due","graded","submitted"].includes(r.status)?r.status:"due",source:"Reviewed screenshot",notes:r.note});
+ }else if(r.section==="schoolContacts"){
+ const p=(state.peopleProfiles||[]).find(x=>String(x.name||"").toLowerCase()===String(r.child||"").toLowerCase());
+ if(p){p.schoolContacts=p.schoolContacts||[];for(const c of r.contacts||[]){if(p.schoolContacts.some(x=>String(x.name||"").toLowerCase()===String(c.name||"").toLowerCase()&&String(x.role||"")===String(c.role||"")))continue;p.schoolContacts.push({name:String(c.name||""),role:String(c.role||""),email:"",notes:String(c.notes||""),schoolYear:"2026-27",status:"verify",source:"Reviewed ParentVUE screenshot"})}}
+ if(!state.projects.some(x=>x.id===r.id))state.projects.push({id:r.id,title:r.title,status:"open",tasks:[],notes:r.note});
  }else{
  const rows=r.section==="garden"?state.gardenJournal:state.projects;if(rows.some(x=>x.id===r.id))continue;
  if(r.section==="garden")rows.push({id:r.id,date:data.reviewedDate,title:r.title,note:r.note,referencePhotos:r.photos||[]});
