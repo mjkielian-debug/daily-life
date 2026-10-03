@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261003-71";
+const CACHE_NAME="daily-life-shell-20261003-72";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const APP_SHELL=[
   "./spirituality.js",
   "./vault.js",\n  "./budget-coach.js",
   "./settings-tabs.js",
+  "./food-tabs.js",
   "./money-fix.js",
   "./manifest.webmanifest",
   "./icon.svg",
