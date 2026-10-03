@@ -3277,3 +3277,39 @@ textarea{resize:vertical}
   .today-drawer-body{padding-left:0}
   .today-drawer>summary{padding-inline:0}
 }
+
+
+/* Compact Money information architecture */
+.money-hero{
+  display:grid;gap:11px;margin:2px 0 10px;padding:10px 2px 14px;
+  border-bottom:1px solid color-mix(in srgb,var(--primary) 24%,var(--border))
+}
+.money-hero h1{font-family:var(--font-heading);font-size:1.45rem;margin:3px 0;color:var(--cream)}
+.money-hero-balances{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.money-hero-balances>span{display:grid;gap:2px}
+.money-hero-balances small{color:var(--muted);font-size:.68rem}
+.money-hero-balances b{font-family:var(--font-heading);font-size:1.15rem;color:var(--cream)}
+.money-tabs{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:8px 0 12px;padding:4px;
+  border:1px solid color-mix(in srgb,var(--secondary) 14%,var(--border));border-radius:16px;
+  background:color-mix(in srgb,var(--panel2) 84%,transparent)
+}
+.money-tabs button{
+  display:grid;place-items:center;gap:2px;min-height:48px;border:0;border-radius:12px;background:transparent;color:var(--muted);
+  font:inherit;font-size:.67rem;padding:6px 4px
+}
+.money-tabs button span{font-size:.9rem}.money-tabs button b{font-size:.67rem}
+.money-tabs button.active{
+  color:var(--cream);background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 15%,transparent),color-mix(in srgb,var(--secondary) 7%,transparent));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 24%,var(--border))
+}
+.money-tab-panel{min-width:0}
+.money-mini-totals{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0
+}
+.money-mini-totals>span{display:grid;gap:3px;padding:9px 10px;border-top:1px solid color-mix(in srgb,var(--secondary) 14%,var(--border))}
+.money-mini-totals small{color:var(--muted);font-size:.66rem}.money-mini-totals b{color:var(--cream);overflow-wrap:anywhere}
+@media(max-width:420px){
+  .money-tabs{gap:2px}.money-tabs button{min-height:44px;padding-inline:2px}
+  .money-mini-totals{grid-template-columns:1fr}
+}
