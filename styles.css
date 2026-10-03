@@ -3429,3 +3429,54 @@ textarea{resize:vertical}
 @media(max-width:460px){
   .workday-toggle-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
+
+
+/* Self-care botanical artwork — real plant motif, not cartoon iconography */
+.self-care-card.sparkle-card::before{
+  content:"";
+  right:-12px;
+  top:-8px;
+  width:132px;
+  height:132px;
+  background:url("botanical-sprig.svg") center/contain no-repeat;
+  opacity:.19;
+  filter:drop-shadow(0 5px 18px color-mix(in srgb,var(--primary) 14%,transparent));
+  transform:rotate(8deg);
+  text-shadow:none;
+}
+.care-hub-header{
+  position:relative;
+  overflow:hidden;
+}
+.care-hub-header::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  left:-24px;
+  bottom:-38px;
+  width:126px;
+  height:126px;
+  background:url("botanical-sprig.svg") center/contain no-repeat;
+  opacity:.11;
+  transform:rotate(192deg);
+}
+.self-care-group{
+  position:relative;
+}
+.self-care-group::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  right:2px;
+  top:14px;
+  width:28px;
+  height:28px;
+  border-radius:50% 0 50% 50%;
+  border:1px solid color-mix(in srgb,var(--primary) 18%,transparent);
+  transform:rotate(34deg);
+  opacity:.5;
+}
+@media(max-width:520px){
+  .self-care-card.sparkle-card::before{width:104px;height:104px;opacity:.15}
+  .care-hub-header::after{width:94px;height:94px}
+}
