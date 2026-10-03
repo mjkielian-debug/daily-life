@@ -320,8 +320,12 @@ function bankBillMatch(t){
   const best=scored[0],second=scored[1];
   if(t.is_transfer){
     const setup=String(best.bill?.paymentSetup||"").toLowerCase();
+    // Some real bill payments arrive from Plaid as transfer-like transactions.
+    // Keep this conservative: exact amount is already required above, and an
+    // account-based fallback only applies when there is one plausible bill.
     if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
-    if(best.accountMatch&&candidates.length===1&&best.days<=1&&["autopay","scheduled"].includes(setup))return best.bill;
+    if(best.accountMatch&&candidates.length===1&&best.days<=4)return best.bill;
+    if(best.accountMatch&&best.days<=7&&["autopay","scheduled"].includes(setup)&&(!second||best.score-second.score>=2))return best.bill;
     return null;
   }
   if(best.accountMatch)return best.bill;
