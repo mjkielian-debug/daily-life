@@ -76,6 +76,35 @@ homeView=function(){
   return `<div class="food-hero"><div class="section-title"><div><div class="eyebrow">🍽 Food</div><h1>Food + kitchen</h1><div class="muted small">Today first; meal planning, shopping, and pantry details one tap away.</div></div><button class="btn" onclick="openFood()">+ Intake</button></div></div>${compactFoodTabs()}${body}`;
 };
 
+function mealVisualIcon(dish){
+  const x=String(dish||"").toLowerCase();
+  if(/taco|nacho|burrito|quesadilla/.test(x))return"🌮";
+  if(/pizza/.test(x))return"🍕";
+  if(/pasta|spaghetti|mac/.test(x))return"🍝";
+  if(/soup|chili|stew/.test(x))return"🥣";
+  if(/chicken|wing/.test(x))return"🍗";
+  if(/burger|sandwich|blt/.test(x))return"🥪";
+  if(/salad/.test(x))return"🥗";
+  if(/potato|tater/.test(x))return"🥔";
+  if(/breakfast|pancake|waffle|egg/.test(x))return"🍳";
+  return"🍽";
+}
+
+generatedMealDetails=function(m){
+  const ingredients=splitLines(m?.ingredients),directions=splitLines(m?.prepSteps);
+  if(!ingredients.length&&!directions&&!m?.notes){
+    return `<div class="recipe-empty">${m?.recipeState==="queued"?"Building the recipe and grocery list automatically…":"Save the meal name and Daily Life will build the ingredients, directions, make-ahead prep, and grocery list for you."}</div>`;
+  }
+  const tips=m?.notes?`<details class="recipe-extra-tips"><summary><span><b>Extra recipe tips</b><small>Optional notes, substitutions, or useful reminders</small></span><span>Open</span></summary><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div></details>`:"";
+  return `<section class="recipe-details">
+    <div class="recipe-details-head"><span class="recipe-visual" aria-hidden="true">${mealVisualIcon(m?.dish)}</span><span><div class="eyebrow">Recipe details</div><b>${esc(m?.dish||"Dinner")}</b></span></div>
+    ${ingredients.length?`<div class="recipe-section"><div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div></div>`:""}
+    ${directions.length?`<div class="recipe-section"><div class="mini-heading">Directions</div><ol class="recipe-directions">${directions.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`:""}
+    ${m?.tomorrowPrep?`<div class="recipe-section recipe-make-ahead"><div class="mini-heading">Make-ahead prep</div><div class="muted small">${esc(m.tomorrowPrep).replace(/\n/g,"<br>")}</div></div>`:""}
+    ${tips}
+  </section>`;
+};
+
 (function installCompactFoodStyles(){
   if(document.getElementById("compactFoodStyles"))return;
   const style=document.createElement("style");
@@ -105,6 +134,19 @@ homeView=function(){
     .food-tab-panel>.pantry-card{border-top:0}
     .food-tab-panel .notice{border:0;border-left:3px solid color-mix(in srgb,var(--primary) 50%,var(--border));border-radius:0;background:linear-gradient(90deg,color-mix(in srgb,var(--primary) 6%,transparent),transparent 72%);padding:8px 0 8px 11px}
     .food-inline-actions{display:flex;justify-content:flex-end;padding:2px 0 8px}
+    .recipe-details{display:grid;gap:0;margin-top:4px;border-top:1px solid color-mix(in srgb,var(--secondary) 12%,var(--border))}
+    .recipe-details-head{display:flex;gap:10px;align-items:center;padding:12px 0}
+    .recipe-visual{width:38px;height:38px;flex:0 0 38px;border-radius:50%;display:grid;place-items:center;font-size:1.25rem;background:color-mix(in srgb,var(--primary) 10%,transparent)}
+    .recipe-section{padding:11px 0;border-top:1px solid var(--border)}
+    .recipe-section .mini-heading{margin:0 0 7px}
+    .recipe-directions{margin:0;padding-left:1.35rem;display:grid;gap:8px;color:var(--text)}
+    .recipe-directions li{padding-left:3px;line-height:1.45}
+    .recipe-make-ahead{border-left:3px solid color-mix(in srgb,var(--accent) 55%,var(--border));padding-left:10px}
+    .recipe-extra-tips{border-top:1px solid var(--border);padding:4px 0 0}
+    .recipe-extra-tips>summary{list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center;min-height:48px;cursor:pointer}
+    .recipe-extra-tips>summary::-webkit-details-marker{display:none}.recipe-extra-tips>summary>span:first-child{display:grid;gap:2px}.recipe-extra-tips>summary small{font-size:.67rem;color:var(--muted)}
+    .recipe-extra-tips>summary>span:last-child{font-size:.7rem;color:var(--secondary);font-weight:850}.recipe-extra-tips[open]>summary>span:last-child{font-size:0}.recipe-extra-tips[open]>summary>span:last-child:after{content:"Close";font-size:.7rem}
+    .recipe-empty{padding:10px 0;color:var(--muted);font-size:.78rem;line-height:1.45}
     @media(max-width:520px){
       .food-tabs{gap:2px}.food-tabs button{min-height:44px}
       .food-tonight-row{align-items:flex-start}
