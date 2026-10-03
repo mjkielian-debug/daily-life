@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-share6">
+<link rel="stylesheet" href="styles.css?v=20261002-backup1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -3559,6 +3559,23 @@ function openDiagnostics(){
   modal("Daily Life self-check",`<div class="stack"><div class="mini-heading">Needs review</div>${rows}<div class="mini-heading">Status</div>${h.info.map(x=>`<div class="row"><span>${esc(x)}</span><b>✓</b></div>`).join("")}<div class="notice"><b>Safe check only.</b><br><span class="muted small">This does not erase, merge, or rewrite your records. It only reports what it can verify from the data currently loaded on this device.</span></div></div>`,"Done",()=>closeModal());
 }
 
+function backupHealthCard(){
+  const lastExport=localStorage.getItem("dailyLifeLastExportAt"),lastRestore=localStorage.getItem("dailyLifeLastRestoreAt"),
+        user=typeof cloudUser==="function"?cloudUser():null,auto=typeof cloudAutoEnabled==="function"&&cloudAutoEnabled(),
+        remote=typeof cloudRemoteUpdatedAt!=="undefined"?cloudRemoteUpdatedAt:null,
+        records=(state.tasks||[]).length+(state.events||[]).length+(state.meals||[]).length+(state.homeLogs||[]).length+(state.foodLogs||[]).length+(state.workShifts||[]).length,
+        cloudLabel=!user?"Not signed in":remote?new Date(remote).toLocaleString():"No full snapshot yet",
+        cloudState=!user?"local only":remote?(auto?"auto sync on":"cloud copy exists"):"needs first backup";
+  return `<div class="card backup-health-card"><div class="section-title"><div><div class="eyebrow">↻ Data safety</div><h2>${remote&&lastExport?"Two recovery paths available":remote||lastExport?"One recovery path available":"Create a recovery copy"}</h2><div class="muted small">Local device data, private cloud snapshot, and downloaded JSON backup are tracked separately.</div></div><button class="btn primary" onclick="backup()">Export now</button></div>
+    <div class="backup-health-grid">
+      <div><span class="backup-health-icon">▣</span><b>On this device</b><small>${records.toLocaleString()} tracked records across core lists</small><span class="tag">local IndexedDB</span></div>
+      <div><span class="backup-health-icon">☁</span><b>Private cloud</b><small>${esc(cloudLabel)}</small><span class="tag">${esc(cloudState)}</span></div>
+      <div><span class="backup-health-icon">⇩</span><b>Downloaded backup</b><small>${lastExport?esc(new Date(lastExport).toLocaleString()):"No export recorded on this device"}</small><span class="tag">JSON file</span></div>
+    </div>
+    ${lastRestore?`<div class="muted small backup-last-restore">Last restore on this device: ${esc(new Date(lastRestore).toLocaleString())}</div>`:""}
+    <div class="warning"><b>Private Vault remains separate.</b><br><span class="muted small">Regular Daily Life snapshots and JSON exports do not contain Vault passwords, sensitive documents, or Vault attachments.</span></div>
+  </div>`;
+}
 function settingsView(){
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h2>Settings + routines</h2></div><button class="btn" onclick="setView('today')">Done</button></div><div class="notice">The bottom bar is for the parts of Daily Life you use all the time. Setup, recurring rules, cloud, and backup live here.</div></div>
   <div class="card"><div class="section-title"><div><h2>Private Vault</h2><div class="muted small">Encrypted logins, identity documents, medical records, insurance and school paperwork.</div></div><button class="btn primary" onclick="setView('vault')">Open Vault</button></div><div class="muted small">Vault data is stored separately from ordinary Daily Life state and normal cloud snapshots.</div></div> <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div></div>
@@ -3568,7 +3585,8 @@ function settingsView(){
   ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
   ${cloudPanel()}
   ${systemHealthCard()}
-  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Export a backup before changing phones or clearing browser data.</div><div class="warning"><b>Private Vault is separate.</b><br><span class="muted small">The regular Daily Life backup does not contain Vault passwords, sensitive documents, or Vault attachments. Use the Vault’s encrypted export or encrypted cloud backup for those records.</span></div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export app backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore app backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
+  ${backupHealthCard()}
+  <div class="card"><div class="section-title"><h2>Backup & ownership</h2><span class="tag">local-first</span></div><div class="notice">Your records live on this device, not in the public website code. Keep at least one recovery copy before changing phones or clearing browser data.</div><div class="actions" style="margin-top:10px"><button class="btn primary" onclick="backup()">Export app backup</button><button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore app backup</button><button class="btn danger" onclick="erase()">Erase local data</button></div></div>`;
 }
 
 // Budget values live only in the existing local state/backup, never in source defaults.
@@ -4441,8 +4459,8 @@ function openMealPattern(){
   modal("Add weekly meal pattern",`<div class="stack"><label>Weekday<select id="mpd"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Dinner / rule<input id="mpn"></label><label>Method<input id="mpm" placeholder="crock-pot, pickup, away…"></label><label>Notes<input id="mpnotes"></label></div>`,"Add pattern",async()=>{const dish=$("#mpn").value.trim();if(!dish)return;state.settings.mealPatterns.push({weekday:Number($("#mpd").value),dish,method:$("#mpm").value,notes:$("#mpnotes").value});ensureMealPatterns();await save();closeModal();render()})
 }
 async function removeMealPattern(i){if(confirm("Remove this weekly meal pattern?")){state.settings.mealPatterns.splice(i,1);await save();render()}}
-async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(j);await save();render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();localStorage.setItem("dailyLifeLastExportAt",new Date().toISOString());setTimeout(()=>URL.revokeObjectURL(a.href),1000);render()}
+async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(j);await save();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
 async function erase(){
   const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
   const warning=hasVault
@@ -4472,7 +4490,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-share6");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-backup1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
