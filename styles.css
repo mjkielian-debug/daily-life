@@ -3410,3 +3410,22 @@ textarea{resize:vertical}
 .savings-goal-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--accent))}
 .savings-goal-row.is-done{opacity:.68}
 @media(max-width:440px){.savings-goal-summary{grid-template-columns:1fr}}
+
+
+/* Sleep estimate workdays */
+.workday-toggle-grid{
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:6px
+}
+.workday-toggle-grid label{position:relative;cursor:pointer}
+.workday-toggle-grid input{position:absolute;opacity:0;pointer-events:none}
+.workday-toggle-grid span{
+  display:grid;place-items:center;min-height:36px;border-radius:12px;border:1px solid color-mix(in srgb,var(--secondary) 18%,var(--border));
+  background:rgba(255,255,255,.018);color:var(--muted);font-size:.72rem;font-weight:800
+}
+.workday-toggle-grid input:checked+span{
+  border-color:color-mix(in srgb,var(--secondary) 48%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 11%,transparent);color:var(--cream)
+}
+@media(max-width:460px){
+  .workday-toggle-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
