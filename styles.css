@@ -3040,3 +3040,28 @@ textarea{resize:vertical}
 }
 .home-cadence-highlight b{font-family:var(--font-heading);color:var(--cream)}
 .home-cadence-highlight span{color:var(--muted);font-size:.72rem}
+
+
+/* Repeatable self-care logging */
+.self-care-action{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch;min-width:0}
+.self-care-action .self-care-btn{min-width:0;width:100%}
+.self-care-times{
+  flex:0 0 auto;border:1px solid color-mix(in srgb,var(--secondary) 32%,var(--border));border-radius:999px;
+  padding:3px 6px;font-size:.68rem;color:var(--secondary);background:color-mix(in srgb,var(--secondary) 7%,transparent)
+}
+.care-repeat-btn{
+  width:42px;min-height:46px;border:1px solid color-mix(in srgb,var(--secondary) 28%,var(--border));border-radius:14px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 9%,transparent),color-mix(in srgb,var(--primary) 5%,transparent));
+  color:var(--cream);font-size:1.05rem;font-weight:900
+}
+.repeat-habit-summary{
+  display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin:12px 0;padding:11px 12px;
+  border:1px solid color-mix(in srgb,var(--secondary) 28%,var(--border));border-radius:16px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 8%,transparent),color-mix(in srgb,var(--primary) 4%,transparent))
+}
+.repeat-habit-summary>div{display:grid;gap:3px;min-width:0}
+.repeat-habit-summary b{font-family:var(--font-heading);color:var(--cream)}
+.repeat-habit-summary small{color:var(--muted);font-size:.69rem;line-height:1.35}
+@media(max-width:460px){
+  .repeat-habit-summary{flex-direction:column}
+}
