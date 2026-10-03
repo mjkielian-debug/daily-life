@@ -229,7 +229,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.03-cashflow2";
+const APP_BUILD="2026.10.03-sleepguard1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -454,7 +454,7 @@ function itinerarySleepPlan(date){
   let bedtime=usualLatest;
   if(next&&requiredBedtime!==null)bedtime=Math.min(bedtime,requiredBedtime);
   bedtime=Math.min(bedtime,configuredEnd);
-  bedtime=Math.max(17*60,Math.min(1439,Math.round(bedtime)));
+  bedtime=Math.max(14*60,Math.min(1439,Math.round(bedtime)));
   const wake=next?.wake??null,protectedHours=wake===null?target:Math.max(0,(wake+1440-bedtime)/60);
   return{date,tomorrow,targetHours:target,morningLeadMinutes:lead,preferredStart,preferredEnd,bedtimeMinutes:bedtime,bedtime:minutesHm(bedtime),wakeMinutes:wake,wake:wake===null?"":minutesHm(wake),reason:next?.reason||"",reasonKind:next?.kind||"",estimated:!!next?.estimated,protectedHours};
 }
@@ -2003,13 +2003,17 @@ function todayCareSnapshotCard(){
 }
 function todaySleepPlanCard(){
   const prefs=state.settings?.itinerary||{},plan=itinerarySleepPlan(ymd()),diagnostics=itineraryPlanningDiagnostics(ymd()),
-        protectedOn=prefs.protectSleep!==false,conflicts=diagnostics.sleepConflicts||[];
-  if(!protectedOn)return `<div class="card today-sleep-plan"><div class="section-title"><div><div class="eyebrow">☾ Tonight</div><h2>Sleep protection is off</h2><div class="muted small">Day Flow can protect an 8-hour sleep window when it places flexible tasks.</div></div><button class="btn" onclick="openItinerarySettings()">Turn on</button></div></div>`;
+        protectedOn=prefs.protectSleep!==false,conflicts=diagnostics.sleepConflicts||[],
+        protectedHours=Math.max(0,Number(plan.protectedHours||0)),shortBy=Math.max(0,Number(plan.targetHours||0)-protectedHours),
+        meetsTarget=!plan.wake||shortBy<.08;
+  if(!protectedOn)return `<div class="card today-sleep-plan"><div class="section-title"><div><div class="eyebrow">☾ Tonight</div><h2>Sleep protection is off</h2><div class="muted small">Day Flow can protect your ${esc(String(plan.targetHours))}-hour sleep target when it places flexible tasks.</div></div><button class="btn" onclick="openItinerarySettings()">Turn on</button></div></div>`;
   const usual=`${fmtClock(minutesHm(plan.preferredStart))}–${fmtClock(minutesHm(plan.preferredEnd))}`,
         heading=plan.wake?`Bed by ${fmtClock(plan.bedtime)} · wake ~${fmtClock(plan.wake)}`:`Bedtime ${usual}`,
-        detail=plan.wake?`${plan.targetHours} h protected before ${plan.reason||"tomorrow's first early commitment"}.${plan.estimated?" This work time is an estimate from recent history.":""}`:`${plan.targetHours} h target · no earlier wake requirement is loaded for tomorrow.`;
-  return `<div class="card today-sleep-plan ${conflicts.length?"has-conflict":""}"><div class="section-title"><div><div class="eyebrow">☾ Tonight’s sleep window</div><h2>${esc(heading)}</h2><div class="muted small">${esc(detail)}</div></div><button class="btn" onclick="setView('itinerary')">Day Flow</button></div>
-    <div class="sleep-plan-inline"><span><b>${esc(fmtClock(plan.bedtime))}</b><small>flexible scheduling stops</small></span><span><b>${plan.wake?esc(fmtClock(plan.wake)):"—"}</b><small>planned wake</small></span><span><b>${Number(plan.targetHours).toFixed(Number(plan.targetHours)%1?1:0)} h</b><small>sleep target</small></span></div>
+        protectedLabel=protectedHours.toFixed(protectedHours%1?.1:0),
+        detail=plan.wake?`${protectedLabel} h protected before ${plan.reason||"tomorrow's first early commitment"}.${plan.estimated?" This work time is estimated from recent history.":""}`:`${plan.targetHours} h target · no earlier wake requirement is loaded for tomorrow.`;
+  return `<div class="card today-sleep-plan ${conflicts.length||!meetsTarget?"has-conflict":""}"><div class="section-title"><div><div class="eyebrow">☾ Tonight’s sleep window</div><h2>${esc(heading)}</h2><div class="muted small">${esc(detail)}</div></div><button class="btn" onclick="setView('itinerary')">Day Flow</button></div>
+    <div class="sleep-plan-inline"><span><b>${esc(fmtClock(plan.bedtime))}</b><small>flexible scheduling stops</small></span><span><b>${plan.wake?esc(fmtClock(plan.wake)):"—"}</b><small>planned wake</small></span><span><b>${plan.wake?esc(protectedLabel+" h"):Number(plan.targetHours).toFixed(Number(plan.targetHours)%1?1:0)+" h"}</b><small>${plan.wake?"protected sleep":"sleep target"}</small></span></div>
+    ${!meetsTarget?`<div class="notice sleep-plan-warning"><b>Only ${esc(protectedLabel)} of ${esc(String(plan.targetHours))} target hours fit before the required wake time.</b><div class="muted small">Review fixed commitments or the wake/start time. Flexible tasks are already cut off at the earliest bedtime Daily Life can reasonably schedule.</div></div>`:""}
     ${conflicts.length?`<div class="notice sleep-plan-warning"><b>${conflicts.length} fixed commitment${conflicts.length===1?"":"s"} overlap the protected window.</b><div class="muted small">They stay on the calendar, but Daily Life won’t put flexible tasks after the sleep cutoff.</div></div>`:""}
   </div>`;
 }
@@ -4950,7 +4954,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-cashflow2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-sleepguard1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
