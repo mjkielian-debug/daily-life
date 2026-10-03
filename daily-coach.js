@@ -153,3 +153,42 @@ function refreshDailyGarden(){const date=ymd();if(date!==dailyGardenLastDate){da
 refreshDailyGarden();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshDailyGarden()});
 setInterval(refreshDailyGarden,60000);
+
+function openReviewedNotesImport(){
+ modal("Import reviewed screenshot notes",'<div class="stack"><p>Add reviewed information to Vehicle, Garden, and Projects. Existing records are kept. Reimporting the same note does not duplicate it.</p><label>Reviewed notes file<input id="reviewedNotesFile" type="file" accept="application/json,.json"></label><div id="reviewedNotesPreview" class="notice">Choose the notes file downloaded from this chat.</div><div class="muted small">Identity documents should be added through the encrypted Vault instead.</div></div>',"Review file",async()=>{
+ const file=$("#reviewedNotesFile").files[0];if(!file)return;if(file.size>8000000)throw Error("Choose a reviewed notes file smaller than 8 MB.");
+ const data=JSON.parse(await file.text());validateReviewedNotes(data);
+ closeModal();modal("Review additions",'<div class="stack">'+data.records.map(x=>'<div class="metric"><b>'+esc(x.section)+' · '+esc(x.title)+'</b><p>'+esc(x.note)+'</p></div>').join('')+'</div>',"Add to my app",async()=>{await applyReviewedNotes(data);closeModal();render()});
+ });
+}
+function validateReviewedNotes(data){
+ if(data?.format!=="daily-life-reviewed-notes-v1"||!Array.isArray(data.records)||data.records.length>50)throw Error("This is not a reviewed Daily Life notes file.");
+ for(const r of data.records){
+ if(!["vehicle","garden","project"].includes(r.section)||!/^review-[a-z0-9-]{1,100}$/.test(r.id)||typeof r.title!=="string"||typeof r.note!=="string"||r.note.length>20000)throw Error("Invalid reviewed note.");
+ if(r.photos&&(!Array.isArray(r.photos)||r.photos.length>8||r.photos.some(p=>typeof p!=="string"||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p)||p.length>1500000)))throw Error("Invalid reference photo.");
+ }
+}
+async function applyReviewedNotes(data){
+ validateReviewedNotes(data);const original={vehicles:structuredClone(state.vehicles||[]),gardenJournal:structuredClone(state.gardenJournal||[]),projects:structuredClone(state.projects||[])};
+ state.vehicles=state.vehicles||[];state.gardenJournal=state.gardenJournal||[];state.projects=state.projects||[];
+ for(const r of data.records){
+ if(r.section==="vehicle"){
+ let v=state.vehicles.find(v=>String(v.make||"").toLowerCase()===String(r.make||"").toLowerCase()&&String(v.model||"").toLowerCase().includes(String(r.model||"").toLowerCase()));
+ if(!v){v={id:r.id,make:String(r.make||""),model:String(r.model||""),year:Number(r.year)||null,primary:state.vehicles.length===0};state.vehicles.push(v)}
+ if(!v.year&&r.year)v.year=Number(r.year);v.reviewedSources=v.reviewedSources||[];
+ if(!v.reviewedSources.includes(r.id)){v.notes=[v.notes,r.title+": "+r.note].filter(Boolean).join("\n\n");v.reviewedSources.push(r.id);if(r.photos)v.referencePhotos=[...(v.referencePhotos||[]),...r.photos]}
+ }else{
+ const rows=r.section==="garden"?state.gardenJournal:state.projects;if(rows.some(x=>x.id===r.id))continue;
+ if(r.section==="garden")rows.push({id:r.id,date:data.reviewedDate,title:r.title,note:r.note,referencePhotos:r.photos||[]});
+ else rows.push({id:r.id,title:r.title,status:"open",nextAction:"",tasks:[],notes:r.note,referencePhotos:r.photos||[]});
+ }
+ }
+ try{await save()}catch(error){Object.assign(state,original);throw error}
+}
+function reviewedPhotoGallery(photos){return(photos||[]).length?'<div style="display:flex;overflow:auto;gap:8px;margin:10px 0">'+photos.map(p=>'<img src="'+esc(p)+'" alt="Imported reference photo" style="width:150px;height:130px;object-fit:contain;border-radius:14px;background:var(--panel2)">').join('')+'</div>':''}
+const reviewedVehicleCard=vehicleCard;
+vehicleCard=function(){const v=primaryVehicle();return reviewedVehicleCard()+reviewedPhotoGallery(v?.referencePhotos)};
+const reviewedGardenJournalCard=gardenJournalCard;
+gardenJournalCard=function(){return reviewedGardenJournalCard()+reviewedPhotoGallery((state.gardenJournal||[]).flatMap(x=>x.referencePhotos||[]))};
+const reviewedSettingsView=settingsView;
+settingsView=function(){return reviewedSettingsView()+'<div class="card"><h2>Reviewed screenshot notes</h2><p class="muted small">Add information reviewed in this chat to the relevant sections.</p><button class="btn" onclick="openReviewedNotesImport()">Import reviewed notes</button>'+(state.projects||[]).filter(x=>x.id?.startsWith("review-")).map(x=>'<details style="margin-top:12px"><summary>'+esc(x.title)+'</summary><p>'+esc(x.notes)+'</p>'+reviewedPhotoGallery(x.referencePhotos)+'</details>').join('')+'</div>'};
