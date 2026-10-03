@@ -3740,7 +3740,7 @@ function moreView(){
         accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>`,
         totals=`<div class="money-mini-totals"><span><small>House fund</small><b>${money(house)}</b></span><span><small>Known card debt</small><b>${money(debt)}</b></span><span><small>Retirement tracked</small><b>${money(ret)}</b></span></div>`;
   const overview=`${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}${savingsGoalsCard()}`,
-        bills=`${dueDateOutlookCard()}${upcomingBillsView()}`,
+        bills=`${billCalendarCard()}${dueDateOutlookCard()}${upcomingBillsView()}`,
         income=`${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}${upsPayrollCard()}`,
         accounts=`${accountList}${cloudFinancePanel()}${netWorthCard()}${totals}`;
   return `<div class="money-hero"><div><div class="eyebrow">💚 Money</div><h1>Your money picture</h1><div class="muted small">Cash guidance first; details one tap away.</div></div><div class="money-hero-balances"><span><small>Checking</small><b>${money(checking)}</b></span><span><small>Savings</small><b>${money(savings)}</b></span></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div>
@@ -4619,6 +4619,23 @@ function budgetExpectedIncomeCard(month=budgetMonth){
     <p class="muted small">${current?"Income still expected from today through month-end.":"Enabled expected-income entries scheduled in this month."} This is shown separately from the manual monthly budget amount so it is never silently double-counted.</p>
     ${rows.length?rows.slice(0,10).map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<div class="row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><div class="muted small">${esc(dl(x.date))} · ${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</div></span><b>+${money(x.amount)}</b></div>`}).join(""):`<div class="notice">No enabled expected income is scheduled for the rest of this month.</div>`}
   </div>`;
+}
+function billCalendarCard(){
+  const start=ymd(),endDate=new Date();endDate.setDate(endDate.getDate()+34);const end=ymd(endDate),
+        readiness=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=start&&r.bill.due<=end),
+        incomes=expectedIncomeOccurrences(end).filter(x=>x.date>=start&&x.date<=end),
+        buckets=[[0,6,"Next 7 days"],[7,13,"Week 2"],[14,20,"Week 3"],[21,34,"Weeks 4–5"]];
+  const datePlus=n=>{const d=new Date(start+"T12:00:00");d.setDate(d.getDate()+n);return ymd(d)};
+  const body=buckets.map(([a,b,label])=>{
+    const from=datePlus(a),to=datePlus(b),bills=readiness.filter(r=>r.bill.due>=from&&r.bill.due<=to),inc=incomes.filter(x=>x.date>=from&&x.date<=to),
+          billTotal=bills.reduce((sum,r)=>sum+Number(r.bill.amount||0),0),incomeTotal=inc.reduce((sum,x)=>sum+Number(x.amount||0),0),
+          attention=bills.filter(r=>["Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status)).length;
+    return `<details class="bill-calendar-week"><summary><span><b>${esc(label)}</b><small>${esc(dl(from))}–${esc(dl(to))}</small></span><span class="bill-calendar-totals"><b>−${money(billTotal)}</b><small>+${money(incomeTotal)} expected${attention?" · "+attention+" need attention":""}</small></span></summary><div class="bill-calendar-week-body">
+      ${bills.length?bills.map(r=>`<button type="button" class="bill-calendar-item" onclick="openBill(${r.index})"><span><b>${esc(dl(r.bill.due))} · ${esc(r.bill.name)}</b><small>${esc(r.account?.name||"payment account not set")} · ${esc(r.status)}</small></span><b>−${money(Number(r.bill.amount||0))}</b></button>`).join(""):`<div class="muted small bill-calendar-empty">No bills due in this window.</div>`}
+      ${inc.length?`<div class="bill-calendar-income-label">Expected income</div>`+inc.map(x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<button type="button" class="bill-calendar-item income" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(dl(x.date))} · ${esc(x.name)}</b><small>${esc(a?.name||"deposit account needed")}${x.confidence==="estimate"?" · estimate":""}</small></span><b>+${money(Number(x.amount||0))}</b></button>`}).join(""):""}
+    </div></details>`;
+  }).join("");
+  return `<div class="card bill-calendar-card"><div class="section-title"><div><div class="eyebrow">Bill calendar</div><h2>Next 5 weeks</h2><div class="muted small">Bills and expected deposits in the same timeline. Open a week for the exact dates.</div></div><button class="btn" onclick="openBill()">+ Bill</button></div>${body}</div>`;
 }
 function dueDateOutlookCard(){
   const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)).slice(0,8);
