@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261003-coaching5";
+const CACHE_NAME="daily-life-shell-20261003-rose1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -17,6 +17,8 @@ const APP_SHELL=[
   "./money-fix.js",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./daily-life-rose-192.png",
+  "./daily-life-rose-512.png",
   "./botanical-corners.svg",
   "./botanical-bg.svg",
   "./botanical-sprig.svg"
