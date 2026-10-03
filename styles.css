@@ -3388,3 +3388,25 @@ textarea{resize:vertical}
 .tarot-card-face{cursor:pointer}
 .tarot-card-shell.compact .tarot-card-back{min-height:180px}
 .tarot-card-shell.tarot-unrevealed .tarot-copy{align-content:center}
+
+
+/* Savings goals / buckets */
+.savings-goals-card{border-color:color-mix(in srgb,var(--accent) 28%,var(--primary) 18%)}
+.savings-goal-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.savings-goal-summary>span{display:grid;gap:2px;padding:9px 10px;border-radius:14px;border:1px solid color-mix(in srgb,var(--secondary) 14%,var(--border));background:rgba(255,255,255,.015)}
+.savings-goal-summary small{color:var(--muted);font-size:.66rem}.savings-goal-summary b{color:var(--cream);font-family:var(--font-heading)}
+.savings-goal-list{display:grid;gap:0}
+.savings-goal-row{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;border:0;border-top:1px solid color-mix(in srgb,var(--secondary) 12%,var(--border));
+  background:transparent;color:var(--text);padding:10px 0
+}
+.savings-goal-row:first-child{border-top:0}
+.savings-goal-row>.grow{display:grid;gap:4px;min-width:0}
+.savings-goal-name{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.savings-goal-name b{font-family:var(--font-heading);color:var(--cream);overflow-wrap:anywhere}
+.savings-goal-name em{font-style:normal;color:var(--secondary);font-size:.65rem;font-weight:850}
+.savings-goal-row small{color:var(--muted);font-size:.68rem;line-height:1.35}
+.savings-goal-track{display:block;height:6px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--secondary) 10%,var(--border))}
+.savings-goal-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--accent))}
+.savings-goal-row.is-done{opacity:.68}
+@media(max-width:440px){.savings-goal-summary{grid-template-columns:1fr}}
