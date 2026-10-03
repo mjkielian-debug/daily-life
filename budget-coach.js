@@ -65,7 +65,79 @@ function budgetCoachSnapshot(){
   const over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left);
   const repeats=budgetCoachRepeatPurchases();
 
-  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,over,repeats};
+  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,over,repeats};
+}
+
+function budgetCoachGoalPlan(x){
+  const planUnassigned=x.totals?Math.max(0,Number(x.totals.left||0)/100):0,
+        currentSafe=Math.max(0,Number(x.safe.safe||0)),
+        assignNow=Math.min(planUnassigned,currentSafe),
+        later=Math.max(0,planUnassigned-assignNow),
+        goals=[...(state.savingsGoals||[])]
+          .filter(g=>!g.done)
+          .map(g=>({...g,gap:Math.max(0,Number(g.target||0)-Number(g.allocated||0))}))
+          .filter(g=>g.gap>0)
+          .sort((a,b)=>Number(a.priority||99)-Number(b.priority||99)||String(a.targetDate||"9999").localeCompare(String(b.targetDate||"9999"))),
+        allocations=[];
+  let remaining=assignNow;
+  for(const goal of goals){
+    if(remaining<=0)break;
+    const amount=Math.min(remaining,goal.gap);
+    if(amount>0){allocations.push({goal,amount});remaining-=amount}
+  }
+  return {planUnassigned,assignNow,later,allocations,unallocatedAfterGoals:remaining,goals};
+}
+
+function budgetCoachCategoryGuide(x,limit=4){
+  if(!x.totals)return[];
+  const days=Math.max(1,Number(x.totals.daysLeft||1)),weeks=Math.max(1,days/7);
+  return (x.categoryStatus||[])
+    .filter(r=>r.limit>0&&r.left>0)
+    .map(r=>({...r,monthLeft:r.left/100,weeklyLeft:(r.left/100)/weeks,used:r.limit?Math.round(r.spent*100/r.limit):0}))
+    .sort((a,b)=>b.used-a.used||a.left-b.left)
+    .slice(0,limit);
+}
+
+function budgetCoachActionList(x,goalPlan){
+  const actions=[];
+  if(Number(x.safe.safe||0)<0){
+    actions.push({mark:"1",title:"Protect bills first",detail:`Pause optional spending until the entered cash shortfall of ${money(Math.abs(Number(x.safe.safe||0)))} is covered.`});
+  }
+  if(x.over.length){
+    const r=x.over[0];
+    actions.push({mark:String(actions.length+1),title:`Ease up on ${r.cat.name}`,detail:`This category is already ${money(Math.abs(r.left)/100)} over its monthly limit.`});
+  }
+  if(x.target&&x.movable>0){
+    actions.push({mark:String(actions.length+1),title:`Move extra checking cash to ${x.target.name||"savings"}`,detail:`Up to ${money(x.movable)} is above the 45-day bill/floor needs currently entered for checking.`});
+  }
+  if(goalPlan.allocations.length){
+    const first=goalPlan.allocations[0];
+    actions.push({mark:String(actions.length+1),title:`Fund ${first.goal.name||"your top savings goal"} next`,detail:`Based on the goal priority you set, ${money(first.amount)} of currently safe, unassigned planned cash can be earmarked there now.`});
+  }else if(goalPlan.planUnassigned>0&&goalPlan.goals.length===0){
+    actions.push({mark:String(actions.length+1),title:"Give unassigned money a purpose",detail:`${money(goalPlan.planUnassigned)} of the monthly plan is not assigned to a category or savings goal yet.`});
+  }
+  if(x.repeats.length){
+    actions.push({mark:String(actions.length+1),title:`Price-check ${x.repeats[0].name}`,detail:`It appears repeatedly in recent spending. Compare unit price, bulk, store brand, and subscription price before buying it again.`});
+  }
+  if(!actions.length){
+    actions.push({mark:"✓",title:"Stay with the current plan",detail:"No urgent shortfall, transfer, overspent category, or unassigned-goal action is showing from the information entered."});
+  }
+  return `<div class="coach-action-list">${actions.slice(0,4).map(a=>`<div class="coach-action-row"><span class="coach-action-mark">${esc(a.mark)}</span><span><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></span></div>`).join("")}</div>`;
+}
+
+function budgetCoachNextDollars(x,goalPlan){
+  const categoryGuide=budgetCoachCategoryGuide(x);
+  const goalRows=goalPlan.allocations.length
+    ?goalPlan.allocations.slice(0,4).map(a=>`<div class="coach-plan-row"><span><b>${esc(a.goal.name||"Savings goal")}</b><small>priority ${Number(a.goal.priority||3)}${a.goal.targetDate?" · target "+esc(dl(a.goal.targetDate)):""}</small></span><b>${money(a.amount)}</b></div>`).join("")
+    :`<div class="muted small">${goalPlan.planUnassigned>0?"Add or prioritize a savings goal if you want Daily Life to direct some of the unassigned plan toward a specific purpose.":"There is no positive unassigned monthly cash in the current plan yet."}</div>`;
+  const categoryRows=categoryGuide.length
+    ?categoryGuide.map(r=>`<div class="coach-plan-row"><span><b>${esc(r.cat.name)}</b><small>${money(r.monthLeft)} left this month · about ${money(r.weeklyLeft)}/week at the current pace</small></span><b>${r.used}% used</b></div>`).join("")
+    :`<div class="muted small">Set category limits to get specific weekly spending guidance for groceries, gas, household, fun, and other flexible spending.</div>`;
+  const later=goalPlan.later>0?`<div class="muted small">Another <b>${money(goalPlan.later)}</b> is planned but is not counted as safe current cash yet, so Daily Life is not telling you to assign or move it early.</div>`:"";
+  return `<div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Next dollars</div><h3>Give the money a job in this order</h3></div><span class="tag">${money(goalPlan.assignNow)} assignable now</span></div>
+    ${goalRows}${later}
+    <details class="compact-more"><summary>Flexible spending pace</summary><div class="coach-plan-list">${categoryRows}</div></details>
+  </div>`;
 }
 
 function budgetCoachTransferRows(x){
@@ -75,7 +147,7 @@ function budgetCoachTransferRows(x){
 }
 
 function budgetCoachCard(){
-  const x=budgetCoachSnapshot();
+  const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x);
   const targetName=x.target?esc(x.target.name||"preferred savings"):"your preferred savings account";
   const setupWarning=x.safe.incomplete
     ? `<div class="notice"><b>Some bill setup is incomplete.</b><div class="muted small">Treat these recommendations as provisional until missing accounts, balances, amounts, or due dates are fixed.</div></div>`
@@ -106,6 +178,8 @@ function budgetCoachCard(){
   return `<div class="card budget-coach-card">
     <div class="section-title"><div><div class="eyebrow">✦ Money coach</div><h2>What to do with the money next</h2><div class="muted small">Guidance from the information currently entered in Daily Life. It does not move money automatically.</div></div><span class="tag">${x.safe.incomplete?"provisional":"bill-aware"}</span></div>
     ${spendStatus}
+    <div class="coach-subsection"><div class="eyebrow">Do this next</div><h3>Recommended order</h3>${budgetCoachActionList(x,goalPlan)}</div>
+    ${budgetCoachNextDollars(x,goalPlan)}
     <div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Move to savings</div><h3>${transferHeadline}</h3></div>${x.target?`<span class="tag">${targetName}</span>`:""}</div>
       <p class="small">${transferBody}</p>
       ${x.target?budgetCoachTransferRows(x):`<button class="btn" type="button" onclick="setView('more');setMoneyTab('accounts')">Set account strategy</button>`}
@@ -129,6 +203,14 @@ function budgetCoachCard(){
     .coach-guardrails b{margin-top:4px;font-size:1.05rem}
     .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
     .coach-subsection h3{margin:.15rem 0 0;font-size:1.05rem}
+    .coach-action-list,.coach-plan-list{display:grid;gap:0}
+    .coach-action-row{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--border);align-items:start}
+    .coach-action-row:first-child{border-top:0}
+    .coach-action-mark{width:25px;height:25px;border-radius:999px;background:color-mix(in srgb,var(--primary) 18%,transparent);display:grid;place-items:center;font-weight:900}
+    .coach-action-row small,.coach-plan-row small{display:block;margin-top:3px;color:var(--muted);line-height:1.4}
+    .coach-plan-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--border)}
+    .coach-plan-row>span{min-width:0}
+    .coach-plan-row>b{white-space:nowrap}
     @media(max-width:520px){.coach-guardrails{grid-template-columns:1fr}.coach-guardrails span{display:flex;align-items:center;justify-content:space-between;gap:12px}}
   `;
   document.head.appendChild(style);
