@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-runtimefix1">
+<link rel="stylesheet" href="styles.css?v=20261002-workdays1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-62";
+const APP_BUILD="2026.10.02-63";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -362,7 +362,10 @@ function weatherPrepAdvice(){
 function hmMinutes(v){const m=String(v||"").match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
 function minutesHm(n){n=Math.max(0,Math.min(1439,Math.round(Number(n)||0)));return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
 function inferredWorkStartForDate(date){
-  const target=new Date(date+"T12:00:00"),targetWd=target.getDay(),cutoff=new Date(target);cutoff.setDate(cutoff.getDate()-42);
+  const prefs=state.settings?.itinerary||{},target=new Date(date+"T12:00:00"),targetWd=target.getDay(),
+        workDays=Array.isArray(prefs.workWeekdays)&&prefs.workWeekdays.length?prefs.workWeekdays.map(Number):[1,2,3,4,5];
+  if(!workDays.includes(targetWd))return null;
+  const cutoff=new Date(target);cutoff.setDate(cutoff.getDate()-42);
   const cutoffDate=ymd(cutoff),prior=(state.workShifts||[]).filter(w=>w.date<date&&w.date>=cutoffDate&&(w.start||w.scheduled));
   const toMinutes=w=>hmMinutes(w.start||w.scheduled),median=vals=>{
     const rows=vals.filter(Number.isFinite).sort((a,b)=>a-b);if(!rows.length)return null;
@@ -370,10 +373,8 @@ function inferredWorkStartForDate(date){
   };
   const sameWeekday=prior.filter(w=>new Date(w.date+"T12:00:00").getDay()===targetWd).map(toMinutes).filter(Number.isFinite);
   if(sameWeekday.length>=2)return{minutes:median(sameWeekday),samples:sameWeekday.length,source:"same weekday"};
-  if(targetWd>=1&&targetWd<=5){
-    const weekdays=prior.filter(w=>{const wd=new Date(w.date+"T12:00:00").getDay();return wd>=1&&wd<=5}).map(toMinutes).filter(Number.isFinite);
-    if(weekdays.length>=3)return{minutes:median(weekdays),samples:weekdays.length,source:"recent weekday"};
-  }
+  const workdayStarts=prior.filter(w=>workDays.includes(new Date(w.date+"T12:00:00").getDay())).map(toMinutes).filter(Number.isFinite);
+  if(workdayStarts.length>=3)return{minutes:median(workdayStarts),samples:workdayStarts.length,source:"recent workday"};
   return null;
 }
 function itinerarySleepPlan(date){
@@ -890,13 +891,15 @@ function openItinerarySettings(){
       <div class="grid3"><label>Sleep target<input id="idsleephours" type="number" min="4" max="12" step=".25" value="${esc(x.sleepTargetHours||8)}"></label><label>Usual bedtime from<input id="idbedstart" type="time" value="${esc(x.preferredBedtimeStart||"20:00")}"></label><label>Latest usual bedtime<input id="idbedend" type="time" value="${esc(x.preferredBedtimeEnd||"20:30")}"></label></div>
       <label>Wake-up lead time before work / early commitments (minutes)<input id="idmorning" type="number" min="15" max="180" step="5" value="${esc(x.morningLeadMinutes||60)}"></label>
       <label class="task"><input id="idinferwork" type="checkbox" ${x.inferWorkStartForSleep!==false?"checked":""}><span><b>Use recent UPS starts if tomorrow’s shift is missing</b><div class="muted small">Uses only your private work history and labels the result as estimated. It does not create a fake work shift.</div></span></label>
+      <div><div class="mini-heading">Likely UPS workdays for sleep estimates</div><div class="workday-toggle-grid">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d,i)=>`<label><input id="idwd${i}" type="checkbox" ${(Array.isArray(x.workWeekdays)?x.workWeekdays:[2,3,4,5,6]).includes(i)?"checked":""}><span>${d}</span></label>`).join("")}</div></div>
       <div class="muted small">Example: a 4:30 AM UPS start with 60 minutes to wake/get ready means a 3:30 AM wake. With an 8-hour target, Day Flow stops scheduling at 7:30 PM.</div>
     </div>
     <label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Use family routine blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep.</div></span></label>
     <label class="task"><input id="idauto" type="checkbox" ${x.autoScheduleTasks!==false?"checked":""}><span><b>Fit my open tasks into free time</b><div class="muted small">Daily Life uses the duration and preferred time you give a task. If you have not given a duration yet, it uses a small editable estimate instead of leaving a giant empty gap.</div></span></label>
   </div>`,"Save",async()=>{
     const hours=Math.max(4,Math.min(12,Number($("#idsleephours").value||8))),lead=Math.max(15,Math.min(180,Number($("#idmorning").value||60)));
-    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",protectSleep:$("#idsleep").checked,sleepTargetHours:hours,preferredBedtimeStart:$("#idbedstart").value||"20:00",preferredBedtimeEnd:$("#idbedend").value||"20:30",morningLeadMinutes:lead,inferWorkStartForSleep:$("#idinferwork").checked,showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
+    const workWeekdays=[0,1,2,3,4,5,6].filter(i=>$("#idwd"+i)?.checked);
+    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",protectSleep:$("#idsleep").checked,sleepTargetHours:hours,preferredBedtimeStart:$("#idbedstart").value||"20:00",preferredBedtimeEnd:$("#idbedend").value||"20:30",morningLeadMinutes:lead,inferWorkStartForSleep:$("#idinferwork").checked,workWeekdays,showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
   });
 }
 
@@ -4842,7 +4845,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-runtimefix1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-workdays1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
