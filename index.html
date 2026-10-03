@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-66";
+const APP_BUILD="2026.10.02-67";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -363,7 +363,7 @@ function hmMinutes(v){const m=String(v||"").match(/^(\d{1,2}):(\d{2})$/);return 
 function minutesHm(n){n=Math.max(0,Math.min(1439,Math.round(Number(n)||0)));return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
 function inferredWorkStartForDate(date){
   const prefs=state.settings?.itinerary||{},target=new Date(date+"T12:00:00"),targetWd=target.getDay(),
-        workDays=Array.isArray(prefs.workWeekdays)&&prefs.workWeekdays.length?prefs.workWeekdays.map(Number):[1,2,3,4,5];
+        workDays=Array.isArray(prefs.workWeekdays)?prefs.workWeekdays.map(Number):[2,3,4,5,6];
   if(!workDays.includes(targetWd))return null;
   const cutoff=new Date(target);cutoff.setDate(cutoff.getDate()-42);
   const cutoffDate=ymd(cutoff),prior=(state.workShifts||[]).filter(w=>w.date<date&&w.date>=cutoffDate&&(w.start||w.scheduled));
@@ -4849,7 +4849,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-hobbiesroute1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-workdays2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
