@@ -484,7 +484,7 @@ function cloudStateForUpload(){
       if(outfit.photo){delete outfit.photo;outfit.photoLocalOnly=true}
     }
   }
-  for(const key of ["pets","plants"]){
+  for(const key of ["pets","plants","hobbyProjects"]){
     if(!Array.isArray(copy[key]))continue;
     for(const item of copy[key]){
       if(item.photo){delete item.photo;item.photoLocalOnly=true}
