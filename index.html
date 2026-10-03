@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-mealprep1">
+<link rel="stylesheet" href="styles.css?v=20261002-homecadence1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -1985,6 +1985,19 @@ function lastHomeTask(task){
 function homeTaskAge(task){
   const x=lastHomeTask(task);if(!x)return null;return Math.max(0,Math.floor((Date.now()-new Date(x.date+"T12:00:00").getTime())/86400000));
 }
+function homeTaskCadence(task){
+  const dates=[...new Set((state.homeLogs||[]).filter(x=>String(x.task||"").toLowerCase()===String(task||"").toLowerCase()&&x.status==="done"&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||""))).map(x=>x.date))].sort();
+  const intervals=[];for(let i=1;i<dates.length;i++){const days=Math.round((new Date(dates[i]+"T12:00:00")-new Date(dates[i-1]+"T12:00:00"))/86400000);if(days>0)intervals.push(days)}
+  if(!intervals.length)return{dates,intervals,samples:0,typical:null,min:null,max:null,label:"Learning your rhythm"};
+  const recent=intervals.slice(-8),sorted=[...recent].sort((a,b)=>a-b),mid=Math.floor(sorted.length/2),
+        typical=sorted.length%2?sorted[mid]:Math.round((sorted[mid-1]+sorted[mid])/2),age=homeTaskAge(task);
+  let stateLabel="within your usual rhythm";
+  if(age!==null&&recent.length>=2){
+    if(age>=typical*1.2)stateLabel="longer than usual";
+    else if(age>=typical*.8)stateLabel="around your usual timing";
+  }
+  return{dates,intervals:recent,samples:recent.length,typical,min:Math.min(...recent),max:Math.max(...recent),age,stateLabel,label:`Usually about every ${typical} day${typical===1?"":"s"}`};
+}
 async function quickHomeTask(task,area="Home"){
   const time=new Date().toTimeString().slice(0,5);
   state.homeLogs.push({id:uid(),date:ymd(),time,area,task,status:"done",notes:"Quick log"});
@@ -1996,7 +2009,7 @@ async function quickHomeTask(task,area="Home"){
 }
 function householdRoutineCard(){
   const routines=[["Clean litter boxes","Cats"],["Clean toilets","Bathroom"],["Run robot vacuum","Floors"],["Clean refrigerator","Kitchen"],["Laundry reset","Laundry"],["Dishes / sink reset","Kitchen"],["Kids room reset","Kids rooms"]];
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Household cadence</div><h2>Track it — don’t remind me</h2></div><button class="btn" onclick="openHome()">Detailed log</button></div><div class="muted small">These are frequency logs only. Daily Life learns how often they actually happen without creating reminders.</div>${routines.map(([task,area])=>{const age=homeTaskAge(task),last=lastHomeTask(task);return `<div class="row"><span><b>${esc(task)}</b><div class="muted small">${last?(age===0?"Done today":age+" day"+(age===1?"":"s")+" ago"):"Not logged yet"}</div></span><button class="btn small good" onclick="quickHomeTask('${task.replace(/'/g,"&#39;")}','${area}')">Done</button></div>`}).join("")}</div>`;
+  return `<div class="card household-cadence-card"><div class="section-title"><div><div class="eyebrow">⌂ Household cadence</div><h2>Track it — don’t remind me</h2></div><button class="btn" onclick="openHome()">Detailed log</button></div><div class="muted small">Daily Life learns the interval between your actual completed logs. It describes your pattern; it does not create reminders.</div>${routines.map(([task,area])=>{const age=homeTaskAge(task),last=lastHomeTask(task),cadence=homeTaskCadence(task);return `<div class="row cadence-row"><span class="grow"><b>${esc(task)}</b><div class="muted small">${last?(age===0?"Done today":age+" day"+(age===1?"":"s")+" ago"):"Not logged yet"} · ${esc(cadence.label)}</div>${cadence.samples>=2?`<div class="cadence-learning"><span class="tag">${esc(cadence.stateLabel)}</span><small>${cadence.samples} interval${cadence.samples===1?"":"s"} learned · recent range ${cadence.min}–${cadence.max} days</small></div>`:`<div class="muted small">Log ${Math.max(0,3-cadence.dates.length)} more completion${Math.max(0,3-cadence.dates.length)===1?"":"s"} to establish a steadier pattern.</div>`}</span><button class="btn small good" onclick="quickHomeTask('${task.replace(/'/g,"&#39;")}','${area}')">Done</button></div>`}).join("")}</div>`;
 }
 function trendDates(days=7){const out=[];const d=new Date();for(let i=days-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}return out}
 function trendBar(value,max,label,display){
@@ -2219,11 +2232,13 @@ function tireHistoryCard(tr){
   </div>`;
 }
 function homeCareCard(){
-  const last=[...(state.homeLogs||[])].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
-        days=last?Math.max(0,Math.floor((Date.now()-new Date(last.date+"T12:00:00").getTime())/86400000)):null;
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div><div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>${state.homeLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${dl(x.date)}</b></div>`).join("")}</div>`;
+  const task="Clean refrigerator",last=lastHomeTask(task),days=homeTaskAge(task),cadence=homeTaskCadence(task);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div>
+    <div class="home-cadence-highlight"><b>${esc(cadence.label)}</b><span>${cadence.samples>=2?esc(cadence.stateLabel):"Keep logging and Daily Life will learn the interval."}</span></div>
+    <div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>
+    ${state.homeLogs.slice().filter(x=>x.status==="done").sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${esc(dl(x.date))}</b></div>`).join("")}
+  </div>`;
 }
-
 function daysSinceDate(date){
   if(!date)return null;
   const d=new Date(date+"T12:00:00");if(Number.isNaN(d.getTime()))return null;
@@ -3861,7 +3876,7 @@ async function importPayrollStatement(file){
 
 function openShopping(){modal("Add shopping item",`<div class="stack"><label>Item<input id="si"></label><label>Quantity<input id="sq"></label><label>Store<input id="ss"></label></div>`,"Add",async()=>{const item=$("#si").value.trim();if(!item)return;state.shopping.push({id:uid(),item,qty:$("#sq").value,store:$("#ss").value,status:"needed"});await save();closeModal();render()})}
 async function buy(id){const x=state.shopping.find(x=>x.id===id);if(x)x.status="bought";await save();render()}
-function openHome(){modal("Log home care",`<div class="stack"><label>Area<input id="ha" value="Home"></label><label>Task<input id="ht"></label><label>Notes<input id="hn"></label></div>`,"Save",async()=>{const task=$("#ht").value.trim();if(!task)return;state.homeLogs.push({id:uid(),date:ymd(),area:$("#ha").value||"Home",task,status:"done",notes:$("#hn").value});await save();closeModal();render()})}
+function openHome(){modal("Log home care",`<div class="stack"><div class="grid2"><label>Date<input id="hd" type="date" value="${ymd()}"></label><label>Time<input id="htime" type="time" value="${new Date().toTimeString().slice(0,5)}"></label></div><label>Area<input id="ha" value="Home"></label><label>Task<input id="ht" list="homeTaskSuggestions"></label><datalist id="homeTaskSuggestions">${["Clean litter boxes","Clean toilets","Run robot vacuum","Clean refrigerator","Laundry reset","Dishes / sink reset","Kids room reset"].map(x=>`<option value="${x}">`).join("")}</datalist><label>Notes<input id="hn"></label><div class="notice"><span class="muted small">You can backfill an older completion date if you remember it. Those dates help Daily Life learn a more realistic household cadence.</span></div></div>`,"Save",async()=>{const task=$("#ht").value.trim(),date=$("#hd").value;if(!task||!date)return;state.homeLogs.push({id:uid(),date,time:$("#htime").value,area:$("#ha").value||"Home",task,status:"done",notes:$("#hn").value});await save();closeModal();render()})}
 function compressImage(file,max=1100,quality=.78){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>max){const scale=max/Math.max(w,h);w=Math.round(w*scale);h=Math.round(h*scale)}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
 function openOutfit(){const x=state.outfits.find(x=>x.date===ymd())||{};modal("Today’s outfit",`<div class="stack"><label>Mirror photo<input id="op" type="file" accept="image/*"></label>${x.photo?`<img class="photo" src="${x.photo}">`:""}<label>Top<input id="ot" value="${esc(x.top||"")}"></label><label>Bottom<input id="ob" value="${esc(x.bottom||"")}"></label><label>Shoes<input id="os" value="${esc(x.shoes||"")}"></label><label>Outerwear<input id="oo" value="${esc(x.outerwear||"")}"></label><label>Accessories<input id="oa" value="${esc(x.accessories||"")}"></label><label>Occasion<input id="oc" value="${esc(x.occasion||"")}"></label><label>Comfort 1–5<input id="ocomf" type="number" min="1" max="5" value="${x.comfort||""}"></label><label>Confidence 1–5<input id="oconf" type="number" min="1" max="5" value="${x.confidence||""}"></label><label>Notes<textarea id="on">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let o=state.outfits.find(x=>x.date===ymd());if(!o){o={id:uid(),date:ymd()};state.outfits.push(o)}const file=$("#op").files[0];if(file)o.photo=await compressImage(file);Object.assign(o,{top:$("#ot").value,bottom:$("#ob").value,shoes:$("#os").value,outerwear:$("#oo").value,accessories:$("#oa").value,occasion:$("#oc").value,comfort:Number($("#ocomf").value||0)||null,confidence:Number($("#oconf").value||0)||null,notes:$("#on").value});await save();closeModal();render()})}
 
@@ -4311,7 +4326,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-mealprep1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-homecadence1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
