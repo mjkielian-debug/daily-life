@@ -3791,8 +3791,8 @@ function systemHealthChecks(){
     readers:state.settings?.readers,
     familyMembers:state.settings?.familyMembers,
     routines:state.settings?.recurringFamilyEvents
-  }).match(/Demitri/gi)?.length||0;
-  if(oldSpelling)issues.push(`Found ${oldSpelling} old “Demitri” spelling reference${oldSpelling===1?"":"s"}; use Dimitri`);
+  }).match(/Dimitri/gi)?.length||0;
+  if(oldSpelling)issues.push(`Found ${oldSpelling} old “Dimitri” spelling reference${oldSpelling===1?"":"s"}; use Demitri`);
   const badBills=(state.bills||[]).filter(b=>Number(b.amount)<0||!String(b.name||"").trim()).length;
   if(badBills)issues.push(`${badBills} bill record${badBills===1?"":"s"} need review`);
   const unfinishedUps=(state.workShifts||[]).filter(w=>w.date<ymd()&&w.start&&!w.end).length;
