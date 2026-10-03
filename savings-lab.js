@@ -65,17 +65,36 @@ function savingsLabSection(){
     <div class="savings-lab-body">
       <div class="section-title"><div><div class="eyebrow">Recurring purchases</div><h3>Compare the real cost</h3></div><button class="btn primary" onclick="openSavingsComparison()">+ Compare</button></div>
       ${rows.length?rows.slice(0,8).map(savingsLabRow).join(""):`<div class="muted small">No comparisons saved yet. Use the same item/pack size on both sides so the math is meaningful.</div>`}
-      ${repeats.length?`<div class="savings-lab-candidates"><div class="muted small"><b>Worth checking from recent spending labels:</b></div>${repeats.map(r=>`<button class="chip" onclick='openSavingsComparison("",${JSON.stringify(r.name)})'>${esc(r.name)}</button>`).join("")}</div>`:""}
+      ${repeats.length?`<div class="savings-lab-candidates"><div class="muted small"><b>Worth checking from recent spending labels:</b></div>${repeats.map((r,i)=>`<button class="chip" onclick="openSavingsComparisonFromRepeat(${i})">${esc(r.name)}${r.cadenceStable&&r.avgGapDays?` · ~${Math.max(1,Math.round(r.avgGapDays))}d`:""}</button>`).join("")}</div>`:""}
       <div class="muted small">This tool does not fetch live retailer prices yet. Enter a current price/deal when you see one; Daily Life will compare it with the subscription math and your target price.</div>
     </div>
   </details>`;
 }
 
+function openSavingsComparisonFromRepeat(index=0){
+  const repeats=typeof budgetCoachRepeatPurchases==="function"?budgetCoachRepeatPurchases(8):[],
+        r=repeats[Number(index)||0];
+  if(!r){openSavingsComparison();return}
+  openSavingsComparison("",{
+    item:r.name,
+    regularPrice:Math.round(Number(r.average||0)*100)/100,
+    ordersPerYear:r.estimatedOrdersPerYear||12,
+    observedCount:r.count,
+    observedDays:r.windowDays||120,
+    avgGapDays:r.avgGapDays,
+    annualizedSpend:r.annualizedSpend,
+    cadenceStable:!!r.cadenceStable
+  });
+}
+
 function openSavingsComparison(id="",seed=""){
   const existing=savingsLabRows().find(x=>x.id===id),
-        x=existing||{id:"",item:seed||"",store:"",regularPrice:"",subscribePrice:"",ordersPerYear:12,annualFee:0,wastePct:0,currentDealPrice:"",targetPrice:"",dealExpires:"",notes:""};
+        seedInfo=seed&&typeof seed==="object"?seed:{item:String(seed||"")},
+        seeded=!existing&&!!String(seedInfo.item||"").trim(),
+        x=existing||{id:"",item:String(seedInfo.item||""),store:"",regularPrice:Number(seedInfo.regularPrice||0)||"",subscribePrice:"",ordersPerYear:Math.max(1,Number(seedInfo.ordersPerYear||12)),annualFee:0,wastePct:0,currentDealPrice:"",targetPrice:"",dealExpires:"",notes:""};
   const preview=existing?savingsLabVerdict(existing):null,buyAdvice=existing?savingsLabBuyAdvice(existing):null,previewMath=existing?savingsLabMath(existing):null;
   modal(existing?"Savings comparison":"Compare recurring purchase",`<div class="stack">
+    ${seeded?`<div class="notice"><b>Prefilled from recent spending history.</b><div class="muted small">Daily Life used this spending label’s observed average amount and purchase cadence. Verify that the entries really represent the same item and pack size before trusting the comparison.${seedInfo.avgGapDays?` Observed timing was about every ${Math.max(1,Math.round(seedInfo.avgGapDays))} days.`:""}${Number(seedInfo.annualizedSpend)>0?` Recent pace is roughly ${money(seedInfo.annualizedSpend)}/year.`:""}</div></div>`:""}
     <label>Item / same pack size<input id="slitem" value="${esc(x.item||"")}" placeholder="Cat litter 38 lb, paper towels 12-pack…"></label>
     <label>Store / subscription source<input id="slstore" value="${esc(x.store||"")}" placeholder="Walmart, Sam's, Amazon…"></label>
     <div class="grid2"><label>Normal one-time price<input id="slregular" type="number" min="0" step=".01" value="${esc(x.regularPrice??"")}"></label><label>Subscription price<input id="slsub" type="number" min="0" step=".01" value="${esc(x.subscribePrice??"")}"></label></div>
