@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-48";
+const APP_BUILD="2026.10.02-49";
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -4612,8 +4612,15 @@ function openMealPattern(){
   modal("Add weekly meal pattern",`<div class="stack"><label>Weekday<select id="mpd"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Dinner / rule<input id="mpn"></label><label>Method<input id="mpm" placeholder="crock-pot, pickup, away…"></label><label>Notes<input id="mpnotes"></label></div>`,"Add pattern",async()=>{const dish=$("#mpn").value.trim();if(!dish)return;state.settings.mealPatterns.push({weekday:Number($("#mpd").value),dish,method:$("#mpm").value,notes:$("#mpnotes").value});ensureMealPatterns();await save();closeModal();render()})
 }
 async function removeMealPattern(i){if(confirm("Remove this weekly meal pattern?")){state.settings.mealPatterns.splice(i,1);await save();render()}}
-async function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();localStorage.setItem("dailyLifeLastExportAt",new Date().toISOString());setTimeout(()=>URL.revokeObjectURL(a.href),1000);render()}
-async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(j);await save();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function stripSharedHouseholdCopies(source){
+  const copy=structuredClone(source),isShared=x=>!!(x?.sharedEntryId||x?.sharedHouseholdId||(x?.shared===true&&x?.source==="Shared household"));
+  if(Array.isArray(copy.events))copy.events=copy.events.filter(x=>!isShared(x));
+  if(Array.isArray(copy.itineraryBlocks))copy.itineraryBlocks=copy.itineraryBlocks.filter(x=>!isShared(x));
+  if(Array.isArray(copy.tasks))copy.tasks=copy.tasks.filter(x=>!isShared(x));
+  return copy;
+}
+function backup(){const safe=stripSharedHouseholdCopies(state),blob=new Blob([JSON.stringify(safe,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();localStorage.setItem("dailyLifeLastExportAt",new Date().toISOString());setTimeout(()=>URL.revokeObjectURL(a.href),1000);render()}
+async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(stripSharedHouseholdCopies(j));await save();if(typeof sharingInit==="function"&&typeof cloudUser==="function"&&cloudUser())await sharingInit();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored. Shared household items were refreshed separately so old shared copies were not restored from the file.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
 async function erase(){
   const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
   const warning=hasVault
@@ -4643,7 +4650,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-private1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-backupprivacy1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
