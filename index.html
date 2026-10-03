@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-budgettabs1">
+<link rel="stylesheet" href="styles.css?v=20261002-hobbies1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -225,9 +225,9 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-56";
+const APP_BUILD="2026.10.02-57";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -508,7 +508,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const log of s.selfCare||[]){
@@ -3093,8 +3093,75 @@ function backupHealthCard(){
     <div class="warning"><b>Private Vault remains separate.</b><br><span class="muted small">Regular Daily Life snapshots and JSON exports do not contain Vault passwords, sensitive documents, or Vault attachments.</span></div>
   </div>`;
 }
+function hobbyProjectById(id){return (state.hobbyProjects||[]).find(x=>x.id===id)||null}
+function hobbyProjectStatusRank(status){
+  return ({"In progress":0,"Planned":1,"Idea":2,"Waiting":3,"Paused":4,"Finished":5})[String(status||"Idea")]??3;
+}
+function hobbyProjectsCard(){
+  const rows=[...(state.hobbyProjects||[])].sort((a,b)=>hobbyProjectStatusRank(a.status)-hobbyProjectStatusRank(b.status)||String(a.targetDate||"9999").localeCompare(String(b.targetDate||"9999"))||String(a.name||"").localeCompare(String(b.name||""))),
+        active=rows.filter(x=>!["Finished","Paused"].includes(String(x.status||""))).length,
+        finished=rows.filter(x=>x.status==="Finished").length;
+  return `<div class="card hobby-workspace"><div class="section-title"><div><div class="eyebrow">✂ Hobbies + crafts</div><h2>${active?active+" active / upcoming project"+(active===1?"":"s"):"Make space for something fun"}</h2><div class="muted small">Crafts, creative ideas, materials, costs, photos, and the next tiny step — separate from life-admin Projects.</div></div><button class="btn primary" onclick="openHobbyProject()">+ Project</button></div>
+    <div class="hobby-summary"><span><b>${rows.length}</b><small>total</small></span><span><b>${rows.filter(x=>x.status==="In progress").length}</b><small>in progress</small></span><span><b>${finished}</b><small>finished</small></span></div>
+    ${rows.length?`<div class="hobby-project-grid">${rows.slice(0,8).map(hobbyProjectCard).join("")}</div>${rows.length>8?`<details class="compact-more"><summary>Show ${rows.length-8} more project${rows.length-8===1?"":"s"}</summary><div class="hobby-project-grid">${rows.slice(8).map(hobbyProjectCard).join("")}</div></details>`:""}`:`<div class="notice">Add anything you want to make, learn, repair, decorate, sew, paint, build, scrapbook, or experiment with. No productivity pressure required.</div>`}
+  </div>`;
+}
+function hobbyProjectCard(x){
+  const cost=Number(x.actualCost||0)>0?money(x.actualCost):Number(x.estimatedCost||0)>0?"~"+money(x.estimatedCost):"",
+        materials=String(x.materials||"").split(/\r?\n/).map(v=>v.trim()).filter(Boolean),
+        next=String(x.nextStep||"").trim();
+  return `<button class="hobby-project-card ${x.status==="Finished"?"is-finished":""}" onclick="openHobbyProject('${x.id}')">
+    ${x.photo?`<img src="${x.photo}" alt="">`:`<span class="hobby-photo-placeholder">✦</span>`}
+    <span class="hobby-project-copy"><span class="hobby-project-top"><b>${esc(x.name||"Untitled project")}</b><em>${esc(x.status||"Idea")}</em></span><small>${esc(x.category||"Craft")}${x.targetDate?" · target "+esc(dl(x.targetDate)):""}${cost?" · "+esc(cost):""}</small>${next?`<strong>Next: ${esc(next)}</strong>`:materials.length?`<strong>${materials.length} material${materials.length===1?"":"s"} listed</strong>`:""}</span>
+  </button>`;
+}
+function openHobbyProject(id=""){
+  const existing=hobbyProjectById(id),x=existing||{id:"",name:"",category:"Craft",status:"Idea",startDate:"",targetDate:"",materials:"",nextStep:"",estimatedCost:"",actualCost:"",notes:"",photo:""};
+  modal(existing?"Hobby project":"New hobby project",`<div class="stack">
+    <label>Project<input id="hpname" value="${esc(x.name||"")}" placeholder="Halloween wreath, crochet blanket, paint dresser…"></label>
+    <div class="grid2"><label>Type<input id="hpcat" value="${esc(x.category||"Craft")}" placeholder="Craft, sewing, DIY, art…"></label><label>Status<select id="hpstatus">${["Idea","Planned","In progress","Waiting","Paused","Finished"].map(v=>`<option ${String(x.status||"Idea")===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label>Started<input id="hpstart" type="date" value="${esc(x.startDate||"")}"></label><label>Target / event date<input id="hptarget" type="date" value="${esc(x.targetDate||"")}"></label></div>
+    <label>Next tiny step<input id="hpnext" value="${esc(x.nextStep||"")}" placeholder="Buy ribbon, cut fabric, choose paint color…"></label>
+    <label>Materials / supplies<textarea id="hpmaterials" rows="4" placeholder="One per line">${esc(x.materials||"")}</textarea></label>
+    <div class="grid2"><label>Estimated cost<input id="hpest" type="number" min="0" step=".01" value="${esc(x.estimatedCost??"")}"></label><label>Actual cost so far<input id="hpactual" type="number" min="0" step=".01" value="${esc(x.actualCost??"")}"></label></div>
+    <label>Project photo<input id="hpphoto" type="file" accept="image/*"></label>
+    ${x.photo?`<div class="hobby-photo-preview"><img src="${x.photo}" alt="Current project photo"><button type="button" class="btn small danger" onclick="removeHobbyPhoto('${x.id}')">Remove photo</button></div>`:""}
+    <label>Notes<textarea id="hpnotes" rows="4">${esc(x.notes||"")}</textarea></label>
+    <div class="actions"><button type="button" class="btn" onclick="addHobbyMaterialsToShopping('${x.id||"draft"}')">Add materials to shopping</button>${existing?`<button type="button" class="btn danger" onclick="removeHobbyProject('${x.id}')">Delete project</button>`:""}</div>
+    <div class="muted small">Project photos stay on this device for now and are removed from private cloud snapshots so sync stays small.</div>
+  </div>`,"Save",async()=>{
+    const name=$("#hpname").value.trim();if(!name)return;
+    let row=hobbyProjectById(id);if(!row){row={id:uid(),createdAt:new Date().toISOString()};state.hobbyProjects.push(row)}
+    const file=$("#hpphoto")?.files?.[0];if(file)row.photo=await compressImage(file,900,.78);
+    const status=$("#hpstatus").value;
+    Object.assign(row,{name,category:$("#hpcat").value.trim()||"Craft",status,startDate:$("#hpstart").value,targetDate:$("#hptarget").value,nextStep:$("#hpnext").value.trim(),materials:$("#hpmaterials").value.trim(),estimatedCost:Number($("#hpest").value||0)||0,actualCost:Number($("#hpactual").value||0)||0,notes:$("#hpnotes").value.trim(),completedDate:status==="Finished"?(row.completedDate||ymd()):"" ,updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeHobbyProject(id){
+  const x=hobbyProjectById(id);if(!x||!confirm(`Delete "${x.name||"this project"}"?`))return;
+  state.hobbyProjects=(state.hobbyProjects||[]).filter(v=>v.id!==id);await save();closeModal();render();
+}
+async function removeHobbyPhoto(id){
+  const x=hobbyProjectById(id);if(!x)return;delete x.photo;x.photoLocalOnly=false;await save();closeModal();openHobbyProject(id);
+}
+async function addHobbyMaterialsToShopping(id){
+  const x=hobbyProjectById(id);
+  const raw=x?String(x.materials||""):String($("#hpmaterials")?.value||"");
+  const projectName=x?.name||String($("#hpname")?.value||"Hobby project").trim()||"Hobby project";
+  const lines=raw.split(/\r?\n/).map(v=>v.replace(/^[-•*]\s*/,"").trim()).filter(Boolean);
+  if(!lines.length){alert("Add materials first.");return}
+  let added=0;
+  for(const item of lines){
+    const key=normFood(item),exists=(state.shopping||[]).some(s=>s.status==="needed"&&normFood(s.item)===key);
+    if(exists)continue;
+    state.shopping.push({id:uid(),item,qty:"",store:"",status:"needed",source:"hobby",notes:"For "+projectName});added++;
+  }
+  await save();render();alert(added?added+" material"+(added===1?"":"s")+" added to the shopping list.":"Those materials are already on the shopping list.");
+}
 function settingsView(){
   return `<div class="card glow"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h2>Settings + routines</h2></div><button class="btn" onclick="setView('today')">Done</button></div><div class="notice">The bottom bar is for the parts of Daily Life you use all the time. Setup, recurring rules, cloud, and backup live here.</div></div>
+  ${hobbyProjectsCard()}
   <div class="card"><div class="section-title"><div><h2>Private Vault</h2><div class="muted small">Encrypted logins, identity documents, medical records, insurance and school paperwork.</div></div><button class="btn primary" onclick="setView('vault')">Open Vault</button></div><div class="muted small">Vault data is stored separately from ordinary Daily Life state and normal cloud snapshots.</div></div> <div class="card"><div class="section-title"><h2>Moon & astrology</h2><button class="btn" onclick="openAstrologySettings()">Edit</button></div><div class="row"><span>Sun sign</span><b>${esc(state.profile.sunSign||"Not set")}</b></div></div>
   <div class="card"><div class="section-title"><h2>Recurring routines</h2><button class="btn" onclick="openRoutine()">+ Routine</button></div>${(state.settings.recurringTasks||[]).map((x,i)=>`<div class="row"><span>${esc(x.title)}<div class="muted small">${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}</div></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join("")||`<div class="notice">No recurring tasks.</div>`}</div>
   <div class="card"><div class="section-title"><h2>Weekly meal patterns</h2><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>${(state.settings.mealPatterns||[]).map((p,i)=>`<div class="row"><span>${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][p.weekday]} · ${esc(p.dish)}</span><button class="btn small" onclick="removeMealPattern(${i})">Remove</button></div>`).join("")||`<div class="notice">No automatic meal patterns.</div>`}</div>
@@ -4041,7 +4108,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-budgettabs1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-hobbies1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
