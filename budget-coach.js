@@ -76,23 +76,33 @@ function budgetCoachSnapshot(){
     .filter(x=>x.amount>=0)
     .sort((a,b)=>b.amount-a.amount);
 
-  const movable=target?sourceRows.reduce((sum,x)=>sum+x.amount,0):0;
-  const monthRemaining=totals?Number(totals.remaining||0)/100:null;
-  const weeklyPlan=totals&&totals.daysLeft?Math.max(0,Number(totals.weekly||0)/100):null;
-  const dailyPlan=totals&&totals.daysLeft?Math.max(0,monthRemaining||0)/Math.max(1,Number(totals.daysLeft||1)):null;
-  const currentSafe=Math.max(0,Number(safe.safe||0));
-  const todayGuardrail=dailyPlan===null?currentSafe:Math.min(currentSafe,dailyPlan);
-  const weekGuardrail=weeklyPlan===null?currentSafe:Math.min(currentSafe,weeklyPlan);
+  const movable=target?sourceRows.reduce((sum,x)=>sum+x.amount,0):0,
+        monthRemaining=totals?Number(totals.remaining||0)/100:null,
+        categoryStatus=(totals?BUDGET_CATEGORIES.map(cat=>{
+          const limit=budgetCents(totals.plan?.limits?.[cat.id]),
+                spent=(totals.logs||[]).filter(x=>x.category===cat.id).reduce((sum,x)=>sum+budgetCents(x.amount),0),
+                left=limit-spent,
+                used=limit>0?Math.round(spent*100/limit):0;
+          return {cat,limit,spent,left,used};
+        }):[]),
+        assignedSpendableCents=categoryStatus.filter(x=>x.cat.id!=="cushion").reduce((sum,x)=>sum+x.limit,0),
+        cashFlexibleSpentCents=totals?(totals.logs||[]).filter(x=>x.category!=="ebt"&&x.category!=="cushion").reduce((sum,x)=>sum+budgetCents(x.amount),0):0,
+        categoryPlanRemaining=assignedSpendableCents>0
+          ?Math.min(Math.max(0,(assignedSpendableCents-cashFlexibleSpentCents)/100),Math.max(0,monthRemaining||0))
+          :Math.max(0,monthRemaining||0),
+        guardrailUsesCategories=assignedSpendableCents>0,
+        daysLeft=totals?Math.max(0,Number(totals.daysLeft||0)):0,
+        weeklyPlan=totals&&daysLeft?categoryPlanRemaining*7/daysLeft:null,
+        dailyPlan=totals&&daysLeft?categoryPlanRemaining/daysLeft:null,
+        currentSafe=Math.max(0,Number(safe.safe||0)),
+        todayGuardrail=dailyPlan===null?currentSafe:Math.min(currentSafe,dailyPlan),
+        weekGuardrail=weeklyPlan===null?currentSafe:Math.min(currentSafe,weeklyPlan),
+        unassignedPlanCash=totals?Math.max(0,Number(totals.left||0)/100):0,
+        over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left),
+        nearLimit=categoryStatus.filter(x=>x.cat.id!=="cushion"&&x.limit>0&&x.left>=0&&x.used>=80).sort((a,b)=>b.used-a.used||a.left-b.left),
+        repeats=budgetCoachRepeatPurchases();
 
-  const categoryStatus=(totals?BUDGET_CATEGORIES.map(cat=>{
-    const limit=budgetCents(totals.plan?.limits?.[cat.id]);
-    const spent=(totals.logs||[]).filter(x=>x.category===cat.id).reduce((sum,x)=>sum+budgetCents(x.amount),0);
-    return {cat,limit,spent,left:limit-spent};
-  }):[]);
-  const over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left);
-  const repeats=budgetCoachRepeatPurchases();
-
-  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,over,repeats};
+  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats};
 }
 
 function budgetCoachGoalPlan(x){
@@ -133,6 +143,10 @@ function budgetCoachActionList(x,goalPlan){
   if(x.over.length){
     const r=x.over[0];
     actions.push({mark:String(actions.length+1),title:`Ease up on ${r.cat.name}`,detail:`This category is already ${money(Math.abs(r.left)/100)} over its monthly limit.`});
+  }else if(x.nearLimit?.length){
+    const r=x.nearLimit[0],days=Math.max(1,Number(x.totals?.daysLeft||1)),weeks=Math.max(1,days/7),
+          weekly=Math.max(0,r.left/100)/weeks;
+    actions.push({mark:String(actions.length+1),title:`Stretch the rest of ${r.cat.name}`,detail:`${money(Math.max(0,r.left)/100)} remains for this month — about ${money(weekly)}/week across the remaining plan.`});
   }
   if(x.target&&x.movable>0){
     actions.push({mark:String(actions.length+1),title:`Move extra checking cash to ${x.target.name||"savings"}`,detail:`Up to ${money(x.movable)} is above the 45-day bill/floor needs currently entered for checking.`});
@@ -191,9 +205,12 @@ function budgetCoachCard(){
       ?`Based on the balances, entered bills, expected income assigned to each account, and each checking account's operating floor, up to <b>${money(x.movable)}</b> appears movable to <b>${targetName}</b> without draining the checking accounts that need to pay upcoming bills.`
       :`Your checking accounts do not currently show extra cash above their near-term bill needs and operating floors.`;
 
+  const guardrailNote=x.guardrailUsesCategories
+    ?`Based on your assigned flexible categories, not every unassigned dollar. ${x.unassignedPlanCash>0?money(x.unassignedPlanCash)+" is still unassigned and stays outside these spending guardrails.":"Unassigned money is kept outside the spending pace."}`
+    :"No flexible category limits are set yet, so the pace falls back to remaining monthly cash after entered bills/spending.";
   const spendStatus=Number(x.safe.safe||0)<0
     ?`<div class="warning"><b>Hold optional spending for now.</b> The current entered cash picture is short by ${money(Math.abs(Number(x.safe.safe||0)))} after bill reserves and the budget cushion.</div>`
-    :`<div class="coach-guardrails"><span><small>Today guardrail</small><b>${money(x.todayGuardrail)}</b></span><span><small>This week</small><b>${money(x.weekGuardrail)}</b></span><span><small>Current safe-to-spend</small><b>${money(Number(x.safe.safe||0))}</b></span></div>`;
+    :`<div class="coach-guardrails"><span><small>Flexible plan today</small><b>${money(x.todayGuardrail)}</b></span><span><small>Flexible plan this week</small><b>${money(x.weekGuardrail)}</b></span><span><small>Safe cash ceiling</small><b>${money(Number(x.safe.safe||0))}</b></span></div><div class="muted small coach-guardrail-note">${esc(guardrailNote)}</div>`;
 
   const trim=x.over.length
     ?`<div class="coach-subsection"><b>Where the plan is already tight</b>${x.over.slice(0,3).map(r=>`<div class="row"><span>${esc(r.cat.name)}</span><b class="budget-negative">${money(Math.abs(r.left)/100)} over</b></div>`).join("")}</div>`
@@ -228,8 +245,7 @@ function budgetCoachCard(){
     .coach-guardrails{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
     .coach-guardrails span{padding:10px 0;border-top:1px solid var(--border)}
     .coach-guardrails small,.coach-guardrails b{display:block}
-    .coach-guardrails b{margin-top:4px;font-size:1.05rem}
-    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+    .coach-guardrails b{margin-top:4px;font-size:1.05rem}\n    .coach-guardrail-note{margin-top:-4px}\n    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
     .coach-subsection h3{margin:.15rem 0 0;font-size:1.05rem}
     .coach-action-list,.coach-plan-list{display:grid;gap:0}
     .coach-action-row{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--border);align-items:start}
