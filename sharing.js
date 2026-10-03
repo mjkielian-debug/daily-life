@@ -285,6 +285,21 @@ function sharingMemberName(m){
   if(m.user_id===cloudUser?.()?.id)return String(m.display_name||state?.profile?.name||"You");
   return String(m.display_name||"Household member");
 }
+function sharingTodayCard(){
+  if(!sharingConnected())return "";
+  const today=ymd(),householdId=sharingHousehold.id,
+        tasks=(state.tasks||[]).filter(x=>x.sharedHouseholdId===householdId&&x.date===today),
+        openTasks=tasks.filter(x=>!x.done),
+        events=(state.events||[]).filter(x=>x.sharedHouseholdId===householdId&&x.date===today&&x.status!=="cancelled").sort((a,b)=>String(a.startTime||"99:99").localeCompare(String(b.startTime||"99:99"))),
+        blocks=(state.itineraryBlocks||[]).filter(x=>x.sharedHouseholdId===householdId&&x.date===today&&!x.done).sort((a,b)=>String(a.start||"99:99").localeCompare(String(b.start||"99:99"))),
+        memberNames=(sharingMembers||[]).map(sharingMemberName).filter(Boolean);
+  return `<div class="card shared-household-today"><div class="section-title"><div><div class="eyebrow">⌂ Shared household</div><h2>${openTasks.length} shared task${openTasks.length===1?"":"s"} open today</h2><div class="muted small">${esc(memberNames.join(" + ")||sharingHousehold.name||"Household")}</div></div><div class="actions"><button class="btn primary" onclick="openTask('','',true)">+ Shared task</button><button class="btn" onclick="sharingPullEntries()">Refresh</button></div></div>
+    ${openTasks.length?`<div class="mini-heading">Tasks</div>${openTasks.slice(0,6).map(t=>`<div class="row compact-row"><label class="task grow"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span><b>${esc(t.title)}</b>${t.child?`<div class="muted small">${esc(t.child)}</div>`:""}</span></label><button class="btn small" onclick="openTask('', '${t.id}')">Edit</button></div>`).join("")}`:""}
+    ${events.length||blocks.length?`<div class="mini-heading">Shared schedule today</div>${events.slice(0,4).map(e=>`<button class="shared-today-row" onclick="openEvent('${e.date}','${e.id}')"><span><b>${esc(e.startTime?fmtClock(e.startTime):"All day")}</b><small>event</small></span><span class="grow"><b>${esc(e.title)}</b><small>${esc([e.child,e.location].filter(Boolean).join(" · "))}</small></span></button>`).join("")}${blocks.slice(0,4).map(b=>`<button class="shared-today-row" onclick="openItineraryBlock('${b.date}','${b.id}')"><span><b>${esc(b.start?fmtClock(b.start):"")}</b><small>time block</small></span><span class="grow"><b>${esc(b.title)}</b><small>${esc(b.notes||"")}</small></span></button>`).join("")}`:""}
+    ${!openTasks.length&&!events.length&&!blocks.length?`<div class="notice">Nothing shared for today yet. Private items stay private until you explicitly share them.</div>`:""}
+    ${sharingLastPulledAt?`<div class="muted small shared-last-sync">Checked ${esc(new Date(sharingLastPulledAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}))}</div>`:""}
+  </div>`;
+}
 function sharingSettingsCard(){
   const user=cloudUser?.();
   if(!user){
