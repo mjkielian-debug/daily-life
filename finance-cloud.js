@@ -295,8 +295,11 @@ function normalizeBillWords(value){
 }
 
 function bankBillMatch(t){
-  const amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
-  if(!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
+  const transactionId=String(t.provider_transaction_id||""),pendingId=String(t.pending_transaction_id||""),
+        rejected=state.settings?.bankTransactionReviews?.[transactionId]?.action==="not_bill"||
+                 (pendingId&&state.settings?.bankTransactionReviews?.[pendingId]?.action==="not_bill"),
+        amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
+  if(rejected||!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
   const candidates=(state.bills||[]).filter(b=>{
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
@@ -424,7 +427,7 @@ async function cloudImportBankSpending(showAlert=false){
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
-      if(!existing&&!review)cloudUnreviewedTransactions.push(t);
+      if(!existing&&(!review||review.action==="not_bill"))cloudUnreviewedTransactions.push(t);
       continue;
     }
     if(existing?.userEdited)continue;
