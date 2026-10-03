@@ -4,6 +4,14 @@
 (function(){
   "use strict";
 
+  const LIFE_AUTO_DEFAULTS={bills:true,petCare:true,plants:true,groceries:true,projects:true,vehicle:true,school:true};
+  function lifeAutoSettings(){
+    state.settings=state.settings||{};
+    state.settings.lifeAutopilot=Object.assign({},LIFE_AUTO_DEFAULTS,state.settings.lifeAutopilot||{});
+    return state.settings.lifeAutopilot;
+  }
+  function lifeAutoEnabled(key){return lifeAutoSettings()[key]!==false}
+
   function lifeShift(date,days){
     return typeof shiftDateString==="function"?shiftDateString(date,days):(function(){
       const d=new Date(String(date)+"T12:00:00");d.setDate(d.getDate()+Number(days||0));return ymd(d);
@@ -40,7 +48,12 @@
 
   function lifeGeneratedSpecs(){
     const today=ymd(),soon=lifeShift(today,2),specs=[],
-      push=(x)=>specs.push(Object.assign({date:today,category:"life",minutes:15,preference:"any",order:35},x));
+      sourceSetting={bill:"bills",petRoutine:"petCare",plantRoutine:"plants",groceryOrder:"groceries",project:"projects",tire:"vehicle",vehicle:"vehicle",schoolAssignment:"school"},
+      push=(x)=>{
+        const setting=sourceSetting[x.sourceType];
+        if(setting&&!lifeAutoEnabled(setting))return;
+        specs.push(Object.assign({date:today,category:"life",minutes:15,preference:"any",order:35},x));
+      };
 
     for(const b of state.bills||[]){
       if(b.status==="paid"||b.paymentPending||!b.due||b.due>soon)continue;
@@ -303,6 +316,34 @@
       (q.waiting.length?'<details class="life-waiting"><summary>Waiting on '+q.waiting.length+' thing'+(q.waiting.length===1?"":"s")+'</summary>'+q.waiting.slice(0,6).map(w=>'<button onclick="lifeWaitingOpen(\''+w.kind+'\',\''+w.id+'\')"><b>'+esc(w.label)+'</b><small>'+esc(w.detail||"")+'</small></button>').join("")+'</details>':'')+
       '</div>';
   }
+
+  window.openLifeAutopilotSettings=function(){
+    const s=lifeAutoSettings(),rows=[
+      ["bills","Manual / unknown bills","Bring bills that need action into Today + Day Flow."],
+      ["school","School deadlines","Bring missing / due assignments into the daily plan."],
+      ["petCare","Pet care","Bring due recurring pet care into the daily plan."],
+      ["plants","Plant care","Bring due recurring plant care into the daily plan."],
+      ["groceries","Delivered groceries","Surface perishables that still need to be put away."],
+      ["vehicle","Car + tire care","Surface low recorded tire pressure and due maintenance."],
+      ["projects","Life-admin projects","Bring the next active life-admin action into Day Flow."]
+    ];
+    modal("Life Autopilot",'<div class="stack"><div class="notice"><b>Choose what Daily Life may pull forward automatically.</b><div class="muted small">Turning something off does not delete the underlying bill, school item, pet record, plant, vehicle, or project. It only stops unfinished auto-created action tasks for that area.</div></div>'+
+      rows.map(r=>'<label class="task life-auto-toggle"><input id="lifeAuto_'+r[0]+'" type="checkbox" '+(s[r[0]]!==false?'checked':'')+'><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></label>').join("")+
+      '</div>',"Save",async()=>{
+        const next={};rows.forEach(r=>next[r[0]]=document.querySelector("#lifeAuto_"+r[0])?.checked!==false);
+        state.settings.lifeAutopilot=Object.assign({},s,next);
+        lifeSyncGeneratedTasks();
+        await save();closeModal();render();
+      });
+  };
+
+  function lifeAutopilotSettingsCard(){
+    const s=lifeAutoSettings(),on=Object.values(s).filter(Boolean).length,total=Object.keys(LIFE_AUTO_DEFAULTS).length;
+    return '<div class="card"><div class="section-title"><div><div class="eyebrow">Life Autopilot</div><h2>'+on+'/'+total+' areas feeding the daily plan</h2><div class="muted small">Controls which parts of Daily Life may create practical action tasks when something becomes due or needs attention.</div></div><button class="btn" onclick="openLifeAutopilotSettings()">Choose areas</button></div></div>';
+  }
+
+  const baseSettingsView=settingsView;
+  settingsView=function(){return baseSettingsView()+lifeAutopilotSettingsCard()};
 
   const baseToday=todayView;
   todayView=function(){
