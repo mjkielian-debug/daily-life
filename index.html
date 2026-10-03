@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-hobbies1">
+<link rel="stylesheet" href="styles.css?v=20261002-savingsgoals1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -225,9 +225,9 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-59";
+const APP_BUILD="2026.10.02-60";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -508,7 +508,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement","savingsGoals"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const log of s.selfCare||[]){
@@ -2982,7 +2982,7 @@ function moreView(){
         ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0),
         accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>`,
         totals=`<div class="money-mini-totals"><span><small>House fund</small><b>${money(house)}</b></span><span><small>Known card debt</small><b>${money(debt)}</b></span><span><small>Retirement tracked</small><b>${money(ret)}</b></span></div>`;
-  const overview=`${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}`,
+  const overview=`${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}${savingsGoalsCard()}`,
         bills=`${dueDateOutlookCard()}${upcomingBillsView()}`,
         income=`${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}${upsPayrollCard()}`,
         accounts=`${accountList}${cloudFinancePanel()}${netWorthCard()}${totals}`;
@@ -3683,6 +3683,46 @@ function accountSortForBills(a){
   if(s==="Protected reserve")return 4;
   return 9;
 }
+function savingsGoalById(id){return (state.savingsGoals||[]).find(x=>x.id===id)||null}
+function savingsGoalsCard(){
+  const goals=[...(state.savingsGoals||[])].sort((a,b)=>Number(a.done)-Number(b.done)||Number(a.priority||99)-Number(b.priority||99)||String(a.targetDate||"9999").localeCompare(String(b.targetDate||"9999"))),
+        open=goals.filter(x=>!x.done),allocated=open.reduce((sum,x)=>sum+Math.max(0,Number(x.allocated||0)),0),
+        target=open.reduce((sum,x)=>sum+Math.max(0,Number(x.target||0)),0),safe=safeToSpendSnapshot();
+  return `<div class="card savings-goals-card"><div class="section-title"><div><div class="eyebrow">◎ Savings goals + buckets</div><h2>${open.length?money(allocated)+" earmarked":"Give future money a job"}</h2><div class="muted small">Bookkeeping buckets only — they do not move bank money or reduce bill-readiness calculations.</div></div><button class="btn primary" onclick="openSavingsGoal()">+ Goal</button></div>
+    ${open.length?`<div class="savings-goal-summary"><span><small>Open goals</small><b>${open.length}</b></span><span><small>Earmarked</small><b>${money(allocated)}</b></span><span><small>Total targets</small><b>${money(target)}</b></span></div>`:""}
+    ${safe.incomplete?`<div class="notice"><b>Bill setup is incomplete.</b><div class="muted small">Savings buckets can still track goals, but don’t use them as proof that cash is safe to move.</div></div>`:""}
+    ${goals.length?`<div class="savings-goal-list">${goals.slice(0,8).map(savingsGoalRow).join("")}</div>${goals.length>8?`<details class="compact-more"><summary>Show ${goals.length-8} more goal${goals.length-8===1?"":"s"}</summary><div class="savings-goal-list">${goals.slice(8).map(savingsGoalRow).join("")}</div></details>`:""}`:`<div class="notice">Examples: emergency cushion, holidays, car repair, kids’ birthdays, trip, furniture, or something just for you.</div>`}
+    <div class="muted small">Current safe-to-spend estimate: <b>${money(safe.safe)}</b>. That number is calculated separately from these buckets using recorded cash, entered bills, expected income timing, and the budget cushion.</div>
+  </div>`;
+}
+function savingsGoalRow(x){
+  const target=Math.max(0,Number(x.target||0)),allocated=Math.max(0,Number(x.allocated||0)),pct=target>0?Math.min(100,Math.round(allocated*100/target)):0,
+        account=(state.accounts||[]).find(a=>a.key===x.accountKey);
+  return `<button class="savings-goal-row ${x.done?"is-done":""}" onclick="openSavingsGoal('${x.id}')"><span class="grow"><span class="savings-goal-name"><b>${esc(x.name||"Savings goal")}</b><em>${x.done?"done":pct+"%"}</em></span><small>${target?money(allocated)+" of "+money(target):money(allocated)+" earmarked"}${account?" · held in "+esc(account.name):""}${x.targetDate?" · "+esc(dl(x.targetDate)):""}</small>${target?`<span class="savings-goal-track"><i style="width:${pct}%"></i></span>`:""}</span><span>›</span></button>`;
+}
+function openSavingsGoal(id=""){
+  const existing=savingsGoalById(id),x=existing||{id:"",name:"",target:"",allocated:0,targetDate:"",accountKey:"",priority:3,notes:"",done:false};
+  const accounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type));
+  modal(existing?"Savings goal / bucket":"New savings goal",`<div class="stack">
+    <label>Goal / bucket<input id="sgname" value="${esc(x.name||"")}" placeholder="Emergency cushion, Christmas, car repair…"></label>
+    <div class="grid2"><label>Target amount<input id="sgtarget" type="number" min="0" step=".01" value="${esc(x.target??"")}"></label><label>Earmarked so far<input id="sgallocated" type="number" min="0" step=".01" value="${esc(x.allocated??0)}"></label></div>
+    <div class="grid2"><label>Target date<input id="sgdate" type="date" value="${esc(x.targetDate||"")}"></label><label>Priority<select id="sgpriority">${[[1,"High"],[2,"Medium-high"],[3,"Normal"],[4,"Later"]].map(([v,l])=>`<option value="${v}" ${Number(x.priority||3)===v?"selected":""}>${l}</option>`).join("")}</select></label></div>
+    <label>Where the real money is held (optional)<select id="sgaccount"><option value="">No account link / mixed</option>${accounts.map(a=>`<option value="${esc(a.key)}" ${x.accountKey===a.key?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label>
+    <label>Notes<textarea id="sgnotes" rows="3">${esc(x.notes||"")}</textarea></label>
+    <label class="task"><input id="sgdone" type="checkbox" ${x.done?"checked":""}><span><b>Goal completed</b><div class="muted small">Keeps it in history without showing it as an open goal.</div></span></label>
+    <div class="notice"><b>This is an earmark, not a transfer.</b><div class="muted small">Daily Life will not subtract this amount from a bank balance or claim it is available to move. Bill readiness and safe-to-spend remain separate calculations.</div></div>
+    ${existing?`<button type="button" class="btn danger" onclick="removeSavingsGoal('${x.id}')">Delete goal</button>`:""}
+  </div>`,"Save",async()=>{
+    const name=$("#sgname").value.trim();if(!name)return;
+    let row=savingsGoalById(id);if(!row){row={id:uid(),createdAt:new Date().toISOString()};state.savingsGoals.push(row)}
+    Object.assign(row,{name,target:Math.max(0,Number($("#sgtarget").value||0)),allocated:Math.max(0,Number($("#sgallocated").value||0)),targetDate:$("#sgdate").value,accountKey:$("#sgaccount").value,priority:Number($("#sgpriority").value||3),notes:$("#sgnotes").value.trim(),done:$("#sgdone").checked,updatedAt:new Date().toISOString()});
+    await save();closeModal();render();
+  });
+}
+async function removeSavingsGoal(id){
+  const x=savingsGoalById(id);if(!x||!confirm(`Delete savings goal "${x.name||"this goal"}"?`))return;
+  state.savingsGoals=(state.savingsGoals||[]).filter(v=>v.id!==id);await save();closeModal();render();
+}
 function accountStrategyCard(){
   const accounts=state.accounts||[],interest=accounts.filter(a=>accountStrategy(a)==="Interest-first savings"),
         landings=accounts.filter(a=>accountStrategy(a)==="Deposit landing checking"),
@@ -4108,7 +4148,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-tarot1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-savingsgoals1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
