@@ -56,6 +56,50 @@ function budgetCoachBalanceAgeDays(account){
   return Math.max(0,(Date.now()-t)/86400000);
 }
 
+function budgetCoachFutureBillPlans(limit=5){
+  const today=ymd(),start=new Date(today+"T12:00:00").getTime();
+  return (state.bills||[]).map(b=>{
+    if(b.status==="paid"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(b.due||"")))return null;
+    const frequency=typeof recordedBillFrequency==="function"?recordedBillFrequency(b):String(b.frequency||"");
+    if(!["Annual","Irregular","One-time"].includes(frequency))return null;
+    const amount=Number(b.amount||0),dueTime=new Date(b.due+"T12:00:00").getTime();
+    if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(dueTime))return null;
+    const daysUntil=Math.ceil((dueTime-start)/86400000);
+    if(daysUntil<=14||daysUntil>550)return null;
+    const goal=(state.savingsGoals||[]).find(g=>!g.done&&String(g.sourceBillId||"")===String(b.id||""))||null,
+          earmarked=Math.max(0,Number(goal?.allocated||0)),
+          remaining=Math.max(0,amount-earmarked),
+          months=Math.max(1,daysUntil/30.4375),
+          weeks=Math.max(1,daysUntil/7);
+    return {bill:b,frequency,amount,daysUntil,goal,earmarked,remaining,monthly:remaining/months,weekly:remaining/weeks};
+  }).filter(Boolean)
+    .sort((a,b)=>a.daysUntil-b.daysUntil||b.amount-a.amount)
+    .slice(0,limit);
+}
+
+async function createBillSavingsGoal(billId){
+  const bill=(state.bills||[]).find(b=>String(b.id||"")===String(billId||""));
+  if(!bill)return;
+  const existing=(state.savingsGoals||[]).find(g=>!g.done&&String(g.sourceBillId||"")===String(bill.id||""));
+  if(existing){openSavingsGoal(existing.id);return}
+  const preferred=(state.accounts||[]).find(a=>a.type==="savings"&&accountStrategy(a)==="Interest-first savings")||null,
+        goal={
+          id:uid(),name:(bill.name||"Future bill")+" set-aside",target:Math.max(0,Number(bill.amount||0)),allocated:0,
+          targetDate:String(bill.due||""),accountKey:preferred?.key||"",priority:2,
+          notes:"Set aside for "+(bill.name||"bill")+" due "+String(bill.due||"")+". This bucket does not move money automatically.",
+          done:false,sourceBillId:bill.id,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+        };
+  state.savingsGoals=state.savingsGoals||[];
+  state.savingsGoals.push(goal);
+  await save();render();
+}
+
+function budgetCoachFutureBillsSection(x){
+  const rows=x.futureBills||[];
+  if(!rows.length)return"";
+  return `<div class="coach-subsection"><details class="compact-more coach-future-bills"><summary>Future bills to pre-fund · ${rows.length}</summary><div class="coach-plan-list">${rows.map(r=>`<div class="coach-future-bill"><span class="grow"><b>${esc(r.bill.name||"Future bill")}</b><small>${esc(r.frequency)} · due ${esc(dl(r.bill.due))} · ${money(r.remaining)} still to prepare</small><small>About ${money(r.monthly)}/month · ${money(r.weekly)}/week from now to the due date</small></span><button class="btn small ${r.goal?"":"primary"}" type="button" onclick="${r.goal?`openSavingsGoal('${r.goal.id}')`:`createBillSavingsGoal('${r.bill.id}')`}">${r.goal?"Open bucket":"Create bucket"}</button></div>`).join("")}</div><div class="muted small">These are planning buckets only. Creating one does not transfer money, and bill-readiness remains a separate calculation.</div></details></div>`;
+}
+
 function budgetCoachSnapshot(){
   const safe=typeof safeToSpendSnapshot==="function"
     ? safeToSpendSnapshot()
@@ -112,8 +156,7 @@ function budgetCoachSnapshot(){
         unassignedPlanCash=totals?Math.max(0,Number(totals.left||0)/100):0,
         over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left),
         nearLimit=categoryStatus.filter(x=>x.cat.id!=="cushion"&&x.limit>0&&x.left>=0&&x.used>=80).sort((a,b)=>b.used-a.used||a.left-b.left),
-        repeats=budgetCoachRepeatPurchases(),
-        transferIssues=[];
+        repeats=budgetCoachRepeatPurchases(),\n        futureBills=budgetCoachFutureBillPlans(),\n        transferIssues=[];
   if(safe.incomplete)transferIssues.push("Some bill/account setup is incomplete, so the bill reserve may change.");
   const movableSources=sourceRows.filter(r=>r.amount>0);
   if(movableSources.some(r=>r.needsFloor))transferIssues.push("A deposit-landing checking account has no minimum operating balance set.");
@@ -122,7 +165,7 @@ function budgetCoachSnapshot(){
   if(target&&accountStrategy(target)!=="Interest-first savings")transferIssues.push("The destination savings account is not marked as the preferred Interest-first savings account.");
   const transferConfidence=transferIssues.length?"review":"ready";
 
-  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats,transferIssues,transferConfidence};
+  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats,futureBills,transferIssues,transferConfidence};
 }
 
 function budgetCoachGoalPlan(x){
@@ -177,6 +220,10 @@ function budgetCoachActionList(x,goalPlan){
     actions.push({mark:String(actions.length+1),title:`Fund ${first.goal.name||"your top savings goal"} next`,detail:`Based on the goal priority you set, ${money(first.amount)} of currently safe, unassigned planned cash can be earmarked there now.`});
   }else if(goalPlan.planUnassigned>0&&goalPlan.goals.length===0){
     actions.push({mark:String(actions.length+1),title:"Give unassigned money a purpose",detail:`${money(goalPlan.planUnassigned)} of the monthly plan is not assigned to a category or savings goal yet.`});
+  }
+  const nextFuture=(x.futureBills||[]).find(r=>!r.goal&&r.remaining>0&&r.daysUntil<=180);
+  if(nextFuture){
+    actions.push({mark:String(actions.length+1),title:`Start setting aside for ${nextFuture.bill.name||"a future bill"}`,detail:`About ${money(nextFuture.monthly)}/month from now would prepare the remaining ${money(nextFuture.remaining)} by ${dl(nextFuture.bill.due)}.`});
   }
   if(x.repeats.length){
     const r=x.repeats[0],cadence=r.cadenceStable&&r.avgGapDays?` about every ${Math.max(1,Math.round(r.avgGapDays))} days`:"";
@@ -259,8 +306,7 @@ function budgetCoachCard(){
     <div class="section-title"><div><div class="eyebrow">✦ Money coach</div><h2>What to do with the money next</h2><div class="muted small">Guidance from the information currently entered in Daily Life. It does not move money automatically.</div></div><span class="tag">${x.safe.incomplete?"provisional":"bill-aware"}</span></div>
     ${spendStatus}
     <div class="coach-subsection"><div class="eyebrow">Do this next</div><h3>Recommended order</h3>${budgetCoachActionList(x,goalPlan)}</div>
-    ${budgetCoachNextDollars(x,goalPlan)}
-    <div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Move to savings</div><h3>${transferHeadline}</h3></div>${x.target?`<span class="tag">${targetName}</span>`:""}</div>
+    ${budgetCoachNextDollars(x,goalPlan)}\n    ${budgetCoachFutureBillsSection(x)}\n    <div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Move to savings</div><h3>${transferHeadline}</h3></div>${x.target?`<span class="tag">${targetName}</span>`:""}</div>
       <p class="small">${transferBody}</p>
       ${x.target?budgetCoachTransferRows(x):`<button class="btn" type="button" onclick="setView('more');setMoneyTab('accounts')">Set account strategy</button>`}
       ${budgetCoachTransferIssues(x)}
@@ -281,7 +327,7 @@ function budgetCoachCard(){
     .coach-guardrails{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
     .coach-guardrails span{padding:10px 0;border-top:1px solid var(--border)}
     .coach-guardrails small,.coach-guardrails b{display:block}
-    .coach-guardrails b{margin-top:4px;font-size:1.05rem}\n    .coach-guardrail-note{margin-top:-4px}\n    .coach-transfer-review{display:grid;gap:5px;border-left:3px solid color-mix(in srgb,var(--accent) 58%,var(--border));padding:8px 0 8px 11px}\n    .coach-transfer-review .btn{justify-self:start;margin-top:3px}\n    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+    .coach-guardrails b{margin-top:4px;font-size:1.05rem}\n    .coach-guardrail-note{margin-top:-4px}\n    .coach-transfer-review{display:grid;gap:5px;border-left:3px solid color-mix(in srgb,var(--accent) 58%,var(--border));padding:8px 0 8px 11px}\n    .coach-transfer-review .btn{justify-self:start;margin-top:3px}\n    .coach-future-bill{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}\n    .coach-future-bill:first-child{border-top:0}.coach-future-bill small{display:block;color:var(--muted);font-size:.68rem;line-height:1.35;margin-top:2px}.coach-future-bill .btn{flex:0 0 auto}\n    .coach-subsection{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
     .coach-subsection h3{margin:.15rem 0 0;font-size:1.05rem}
     .coach-action-list,.coach-plan-list{display:grid;gap:0}
     .coach-action-row{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--border);align-items:start}
