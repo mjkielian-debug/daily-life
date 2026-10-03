@@ -2931,3 +2931,26 @@ textarea{resize:vertical}
   .title{font-size:1.62rem}
   input,select,textarea{font-size:16px}
 }
+
+
+/* Tire-pressure trend */
+.vehicle-tire-summary,.tire-trend-summary{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0
+}
+.vehicle-tire-summary>div,.tire-trend-summary>div{
+  display:grid;gap:3px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--secondary) 24%,var(--border));
+  border-radius:15px;background:linear-gradient(145deg,color-mix(in srgb,var(--secondary) 7%,transparent),rgba(255,255,255,.018));min-width:0
+}
+.vehicle-tire-summary b,.tire-trend-summary b{font-family:var(--font-heading);font-size:.96rem;color:var(--cream);overflow-wrap:anywhere}
+.vehicle-tire-summary small,.tire-trend-summary small{color:var(--muted);font-size:.68rem;line-height:1.35}
+.tire-trend-card{border-color:color-mix(in srgb,var(--secondary) 28%,var(--border))}
+.tire-history-row{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;
+  border:0;border-top:1px solid color-mix(in srgb,var(--secondary) 15%,var(--border));background:transparent;color:var(--text);padding:11px 0
+}
+.tire-history-row span{display:grid;gap:2px;min-width:0}.tire-history-row span:last-child{text-align:right;flex:0 0 auto}
+.tire-history-row small{color:var(--muted);font-size:.68rem;overflow-wrap:anywhere}
+.tire-history-row:active{background:color-mix(in srgb,var(--secondary) 5%,transparent)}
+@media(max-width:520px){
+  .vehicle-tire-summary,.tire-trend-summary{grid-template-columns:1fr}
+}
