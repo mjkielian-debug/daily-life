@@ -1,0 +1,42 @@
+/* Daily Life · universal search and capture buttons */
+.life-tools-fab{
+  position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));
+  z-index:42;display:flex;flex-direction:column;gap:9px;align-items:center;
+}
+.life-tools-fab button{
+  border:1px solid rgba(255,255,255,.92);border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  color:var(--life-ink,#202039);box-shadow:0 10px 24px rgba(62,52,80,.14),inset 0 1px 0 rgba(255,255,255,.95);
+  backdrop-filter:blur(10px);
+}
+.life-fab-search{
+  width:44px;height:44px;font-size:1.25rem;background:rgba(255,252,248,.88);
+}
+.life-fab-capture{
+  width:58px;height:58px;font-size:1.7rem;background:linear-gradient(145deg,rgba(189,236,207,.92),rgba(169,230,237,.88),rgba(216,193,255,.72));
+}
+.life-search-modal{min-height:340px}
+.life-search-modal>label input{font-size:1.05rem}
+#lifeSearchResults{display:grid;gap:7px;max-height:min(60vh,620px);overflow:auto;padding-right:2px}
+.life-search-result{
+  width:100%;border:0;border-radius:24px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  background:rgba(255,255,255,.58);color:inherit;text-align:left;cursor:pointer;
+}
+.life-search-result:hover{background:color-mix(in srgb,var(--primary) 14%,rgba(255,255,255,.72))}
+.life-search-result>span:nth-child(2){min-width:0}
+.life-search-result b,.life-search-result small{display:block;overflow-wrap:anywhere}
+.life-search-result small{color:var(--muted);margin-top:2px}
+.life-search-icon{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,rgba(169,230,237,.42),rgba(216,193,255,.3));
+  font-family:var(--font-hand);font-weight:900;
+}
+.life-search-empty{
+  min-height:180px;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;
+  background:linear-gradient(145deg,rgba(169,230,237,.2),rgba(255,201,142,.2),rgba(255,255,255,.55));
+}
+.life-search-empty b{font-family:var(--font-heading);font-size:1.15rem}
+.life-search-empty small{max-width:34ch;margin-top:6px;color:var(--muted)}
+@media(max-width:520px){
+  .life-tools-fab{bottom:calc(72px + env(safe-area-inset-bottom));right:10px}
+  .life-fab-search{width:42px;height:42px}
+  .life-fab-capture{width:54px;height:54px}
+}
