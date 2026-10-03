@@ -3217,9 +3217,11 @@ function todayNutritionCard(){
 function foodIntakeTrends(){
   const dates=trendDates(7),labels=dates.map(d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"})),
     vals=key=>dates.map(d=>{const t=foodTotalsForDate(d);return Number(t[key]||0)}),
-    calories=vals("cal"),protein=vals("protein"),waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
-    row=(title,arr,fmt)=>{const max=Math.max(1,...arr);return `<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${arr.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`};
-  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition bars use known values only; blank or low days can simply mean nutrition was not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}</div>`;
+    calories=vals("cal"),protein=vals("protein"),caffeine=vals("caffeineMg"),monsters=vals("monsters"),
+    waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
+    row=(title,arr,fmt)=>{const max=Math.max(1,...arr);return `<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${arr.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`},
+    caffeineKnown=caffeine.some(v=>v>0),monsterKnown=monsters.some(v=>v>0);
+  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition and caffeine bars use known values only; blank or low days can simply mean values were not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}${caffeineKnown?row("Known caffeine",caffeine,v=>Math.round(v)+"mg"):""}${monsterKnown?row("Energy drinks",monsters,v=>Number(v.toFixed(1))+""):""}</div>`;
 }
 
 function homeView(){
@@ -4357,7 +4359,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-carecount1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-intaketrends1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
