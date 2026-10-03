@@ -312,3 +312,28 @@
   margin-right:7px;vertical-align:0;
   box-shadow:0 0 0 2px color-mix(in srgb,var(--panel) 68%,transparent),0 0 0 3px var(--border);
 }
+
+
+/* Daily advice actions */
+.daily-advice-row{
+  align-items:center;
+}
+.daily-advice-actions{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+}
+.daily-advice-actions .tag{
+  white-space:nowrap;
+}
+@media(max-width:520px){
+  .daily-advice-row{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .daily-advice-actions{
+    grid-column:2;
+    justify-content:flex-start;
+    margin-top:3px;
+  }
+}
