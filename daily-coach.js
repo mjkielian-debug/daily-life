@@ -155,8 +155,9 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshDai
 setInterval(refreshDailyGarden,60000);
 
 
+
 function openReviewedNotesImport(){
- modal("Import reviewed screenshot notes",'<div class="stack"><p>Add reviewed information to Vehicle, Garden, School, and Projects. Existing records are kept. Reimporting the same note does not duplicate it.</p><label>Reviewed notes file<input id="reviewedNotesFile" type="file" accept="application/json,.json"></label><div id="reviewedNotesPreview" class="notice">Choose the notes file downloaded from this chat.</div><div class="muted small">Identity documents should be added through the encrypted Vault instead.</div></div>',"Review file",async()=>{
+ modal("Import reviewed screenshot notes",'<div class="stack"><p>Add reviewed information to Vehicle, Garden, School, House Map, and Projects. Existing records are kept. Reimporting the same note does not duplicate it.</p><label>Reviewed notes file<input id="reviewedNotesFile" type="file" accept="application/json,.json"></label><div id="reviewedNotesPreview" class="notice">Choose the notes file downloaded from this chat.</div><div class="muted small">Identity documents should be added through the encrypted Vault instead.</div></div>',"Review file",async()=>{
  const file=$("#reviewedNotesFile").files[0];if(!file)return;if(file.size>8000000)throw Error("Choose a reviewed notes file smaller than 8 MB.");
  const data=JSON.parse(await file.text());validateReviewedNotes(data);
  closeModal();modal("Review additions",'<div class="stack">'+data.records.map(x=>'<div class="metric"><b>'+esc(x.section)+' · '+esc(x.title)+'</b><p>'+esc(x.note)+'</p></div>').join('')+'</div>',"Add to my app",async()=>{await applyReviewedNotes(data);closeModal();render()});
@@ -165,12 +166,13 @@ function openReviewedNotesImport(){
 function validateReviewedNotes(data){
  if(data?.format!=="daily-life-reviewed-notes-v1"||!Array.isArray(data.records)||data.records.length>50)throw Error("This is not a reviewed Daily Life notes file.");
  for(const r of data.records){
- if(!["vehicle","garden","project","schoolGrade","schoolAssignment","schoolContacts"].includes(r.section)||!/^review-[a-z0-9-]{1,100}$/.test(r.id)||typeof r.title!=="string"||typeof r.note!=="string"||r.note.length>20000)throw Error("Invalid reviewed note.");
+ if(!["vehicle","garden","project","schoolGrade","schoolAssignment","schoolContacts","houseMap"].includes(r.section)||!/^review-[a-z0-9-]{1,100}$/.test(r.id)||typeof r.title!=="string"||typeof r.note!=="string"||r.note.length>20000)throw Error("Invalid reviewed note.");
+ if(r.section==="houseMap"&&(!Array.isArray(r.zones)||r.zones.length>30||r.zones.some(z=>!/^zone-[a-z0-9-]+$/.test(z.key)||typeof z.name!=="string"||typeof z.floor!=="string"||!/^#[0-9a-f]{6}$/i.test(z.color))))throw Error("Invalid house map rooms.");
  if(r.photos&&(!Array.isArray(r.photos)||r.photos.length>8||r.photos.some(p=>typeof p!=="string"||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p)||p.length>1500000)))throw Error("Invalid reference photo.");
  }
 }
 async function applyReviewedNotes(data){
- validateReviewedNotes(data);const original={vehicles:structuredClone(state.vehicles||[]),gardenJournal:structuredClone(state.gardenJournal||[]),projects:structuredClone(state.projects||[]),schoolGrades:structuredClone(state.schoolGrades||[]),schoolAssignments:structuredClone(state.schoolAssignments||[]),peopleProfiles:structuredClone(state.peopleProfiles||[])};
+ validateReviewedNotes(data);const original={vehicles:structuredClone(state.vehicles||[]),gardenJournal:structuredClone(state.gardenJournal||[]),projects:structuredClone(state.projects||[]),schoolGrades:structuredClone(state.schoolGrades||[]),schoolAssignments:structuredClone(state.schoolAssignments||[]),peopleProfiles:structuredClone(state.peopleProfiles||[]),houseRooms:structuredClone(state.houseRooms||[])};
  state.vehicles=state.vehicles||[];state.gardenJournal=state.gardenJournal||[];state.projects=state.projects||[];
  for(const r of data.records){
  if(r.section==="vehicle"){
@@ -182,6 +184,10 @@ async function applyReviewedNotes(data){
  const key=r.section==="schoolGrade"?"schoolGrades":"schoolAssignments";state[key]=state[key]||[];if(state[key].some(x=>x.id===r.id))continue;
  if(r.section==="schoolGrade")state[key].push({id:r.id,child:String(r.child||""),course:String(r.course||""),grade:String(r.grade||""),percent:Number.isFinite(Number(r.percent))?Number(r.percent):null,term:String(r.term||""),asOf:String(r.asOf||data.reviewedDate),source:"Reviewed screenshot",notes:r.note});
  else state[key].push({id:r.id,child:String(r.child||""),course:String(r.course||""),title:r.title,due:String(r.due||""),status:["missing","due","graded","submitted"].includes(r.status)?r.status:"due",source:"Reviewed screenshot",notes:r.note});
+ }else if(r.section==="houseMap"){
+ state.houseRooms=state.houseRooms||[];
+ if(!state.projects.some(x=>x.id===r.id))state.projects.push({id:r.id,title:r.title,status:"open",tasks:[],notes:r.note,referencePhotos:r.photos||[],mapZones:r.zones});
+ for(const z of r.zones){const id=r.id+"-"+z.key;if(!state.houseRooms.some(x=>x.id===id))state.houseRooms.push({id,name:z.name,notes:z.floor+" · Map label: "+String(z.sourceLabel||""),floor:z.floor,mapColor:z.color,mapSource:r.id})}
  }else if(r.section==="schoolContacts"){
  const p=(state.peopleProfiles||[]).find(x=>String(x.name||"").toLowerCase()===String(r.child||"").toLowerCase());
  if(p){p.schoolContacts=p.schoolContacts||[];for(const c of r.contacts||[]){if(p.schoolContacts.some(x=>String(x.name||"").toLowerCase()===String(c.name||"").toLowerCase()&&String(x.role||"")===String(c.role||"")))continue;p.schoolContacts.push({name:String(c.name||""),role:String(c.role||""),email:"",notes:String(c.notes||""),schoolYear:"2026-27",status:"verify",source:"Reviewed ParentVUE screenshot"})}}
@@ -201,3 +207,7 @@ const reviewedGardenJournalCard=gardenJournalCard;
 gardenJournalCard=function(){return reviewedGardenJournalCard()+reviewedPhotoGallery((state.gardenJournal||[]).flatMap(x=>x.referencePhotos||[]))};
 const reviewedSettingsView=settingsView;
 settingsView=function(){return reviewedSettingsView()+'<div class="card"><h2>Reviewed screenshot notes</h2><p class="muted small">Add information reviewed in this chat to the relevant sections.</p><button class="btn" onclick="openReviewedNotesImport()">Import reviewed notes</button>'+(state.projects||[]).filter(x=>x.id?.startsWith("review-")).map(x=>'<details style="margin-top:12px"><summary>'+esc(x.title)+'</summary><p>'+esc(x.notes)+'</p>'+reviewedPhotoGallery(x.referencePhotos)+'</details>').join('')+'</div>'};
+
+function reviewedHouseMapCard(){const maps=(state.projects||[]).filter(x=>Array.isArray(x.mapZones));if(!maps.length)return "";return maps.map(m=>'<div class="card"><h2>'+esc(m.title)+'</h2><p class="muted small">'+esc(m.notes)+'</p>'+(m.referencePhotos||[]).map(p=>'<img src="'+esc(p)+'" alt="House map reference" style="display:block;width:100%;max-height:540px;object-fit:contain;border-radius:16px">').join('')+'<div class="stack">'+(state.houseRooms||[]).filter(r=>r.mapSource===m.id).map(r=>'<button class="btn" onclick="openInventoryRoom(\''+esc(r.id)+'\')"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+esc(r.mapColor)+'"></span> '+esc(r.name)+' · '+esc(r.floor)+'</button>').join('')+'</div><p class="muted small">Tap a room to name it and add notes. This reference does not establish measurements or an emergency route.</p></div>').join('')}
+const reviewedInventoryView=inventoryView;
+inventoryView=function(){return reviewedHouseMapCard()+reviewedInventoryView()};
