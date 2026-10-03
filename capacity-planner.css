@@ -1,0 +1,25 @@
+/* Daily Life · planning capacity guardrail */
+.capacity-card{
+  display:flex;gap:14px;align-items:center;border-radius:34px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(169,230,237,.19),rgba(216,193,255,.18))!important;
+  color:var(--life-ink,#202039)!important;
+}
+.capacity-card :is(h2,b,strong){color:var(--life-ink,#202039)!important}
+.capacity-card :is(.muted,small){color:var(--life-muted,#6d687b)!important}
+.capacity-light{background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(216,193,255,.26),rgba(255,201,142,.24))!important}
+.capacity-moderate{background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(255,230,155,.24),rgba(169,230,237,.2))!important}
+.capacity-ring{
+  --p:calc(var(--capacity)*1%);
+  flex:0 0 92px;width:92px;height:92px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:
+    radial-gradient(circle closest-side,rgba(255,252,248,.96) 72%,transparent 74% 99%),
+    conic-gradient(var(--primary) var(--p),rgba(45,41,64,.08) 0);
+}
+.capacity-ring span{font-family:var(--font-heading);font-size:1.35rem;font-weight:800}
+.capacity-ring small{font-family:var(--font-hand);font-size:.58rem;line-height:1}
+.capacity-card h2{margin:.15rem 0 .3rem}
+.capacity-rule{font-family:var(--font-hand);font-size:.72rem;margin-top:7px;color:#87536c}
+@media(max-width:430px){
+  .capacity-card{align-items:flex-start}
+  .capacity-ring{flex-basis:76px;width:76px;height:76px}
+}
