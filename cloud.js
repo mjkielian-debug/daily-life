@@ -81,7 +81,7 @@ function cloudPanel(){
   <div class="row"><span>ChatGPT log scan</span><b>${esc(lastLifePullText)}</b></div>
   ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
-  <p class="muted small">Your device keeps its IndexedDB copy. Outfit photos remain local while photo storage is built separately.</p>
+  <p class="muted small">Your device keeps its IndexedDB copy. Outfit, meal, pet, plant, and hobby photos remain local while private photo storage is built separately.</p>
   ${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}
   <div class="actions">
     ${cloudNeedsReview?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Use cloud copy</button><button class="btn" onclick="cloudKeepThisDevice()">Keep this device</button>`:`
@@ -484,7 +484,7 @@ function cloudStateForUpload(){
       if(outfit.photo){delete outfit.photo;outfit.photoLocalOnly=true}
     }
   }
-  for(const key of ["pets","plants","hobbyProjects"]){
+  for(const key of ["pets","plants","hobbyProjects","meals"]){
     if(!Array.isArray(copy[key]))continue;
     for(const item of copy[key]){
       if(item.photo){delete item.photo;item.photoLocalOnly=true}
