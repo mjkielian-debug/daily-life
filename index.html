@@ -204,7 +204,7 @@ async function dbClear(){
 <script src="cloud.js?v=20261002-cloud23"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
-<script src="spirituality.js?v=20261002-spirit2"></script>
+<script src="spirituality.js?v=20261003-tarotart1"></script>
 <script src="vault.js?v=20261002-vault4"></script>
 <script src="budget-coach.js?v=20261003-budgetcoach2"></script>
 <script>
@@ -4901,7 +4901,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-robot1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-tarotart1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
