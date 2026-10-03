@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-diag1">
+<link rel="stylesheet" href="styles.css?v=20261002-advice1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-44";
+const APP_BUILD="2026.10.02-45";
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -275,7 +275,110 @@ function moonLens(m){
   return{sign,theme,question,phaseAction};
 }
 function weatherText(c){if(c===0)return"Clear";if([1,2].includes(c))return"Partly cloudy";if(c===3)return"Cloudy";if([45,48].includes(c))return"Foggy";if([51,53,55,56,57].includes(c))return"Drizzle";if([61,63,65,66,67,80,81,82].includes(c))return"Rain";if([71,73,75,77,85,86].includes(c))return"Snow";if([95,96,99].includes(c))return"Thunderstorms";return"Mixed conditions"}
-async function getWeather(){async function go(lat,lon){try{const u=new URL("https://api.open-meteo.com/v1/forecast");u.searchParams.set("latitude",lat);u.searchParams.set("longitude",lon);u.searchParams.set("current","temperature_2m,apparent_temperature,weather_code,wind_speed_10m");u.searchParams.set("daily","temperature_2m_max,temperature_2m_min,precipitation_probability_max");u.searchParams.set("temperature_unit","fahrenheit");u.searchParams.set("wind_speed_unit","mph");u.searchParams.set("forecast_days","1");u.searchParams.set("timezone","auto");const j=await(await fetch(u)).json();weather={temp:Math.round(j.current.temperature_2m),feels:Math.round(j.current.apparent_temperature),code:j.current.weather_code,wind:Math.round(j.current.wind_speed_10m),high:Math.round(j.daily.temperature_2m_max[0]),low:Math.round(j.daily.temperature_2m_min[0]),rain:Math.round(j.daily.precipitation_probability_max[0]||0)};render()}catch(e){}}navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>go(40.8136,-96.7026),{timeout:5000,maximumAge:900000}):go(40.8136,-96.7026)}
+async function getWeather(){
+  async function go(lat,lon){
+    try{
+      const u=new URL("https://api.open-meteo.com/v1/forecast");
+      u.searchParams.set("latitude",lat);u.searchParams.set("longitude",lon);
+      u.searchParams.set("current","temperature_2m,apparent_temperature,weather_code,wind_speed_10m");
+      u.searchParams.set("daily","weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max");
+      u.searchParams.set("temperature_unit","fahrenheit");u.searchParams.set("wind_speed_unit","mph");
+      u.searchParams.set("forecast_days","5");u.searchParams.set("timezone","auto");
+      const j=await(await fetch(u)).json(),days=(j.daily?.time||[]).map((date,i)=>({
+        date,
+        code:Number(j.daily.weather_code?.[i]??0),
+        high:Math.round(Number(j.daily.temperature_2m_max?.[i]??0)),
+        low:Math.round(Number(j.daily.temperature_2m_min?.[i]??0)),
+        rain:Math.round(Number(j.daily.precipitation_probability_max?.[i]||0)),
+        wind:Math.round(Number(j.daily.wind_speed_10m_max?.[i]||0))
+      }));
+      weather={
+        temp:Math.round(j.current.temperature_2m),feels:Math.round(j.current.apparent_temperature),
+        code:j.current.weather_code,wind:Math.round(j.current.wind_speed_10m),
+        high:days[0]?.high??Math.round(j.current.temperature_2m),
+        low:days[0]?.low??Math.round(j.current.temperature_2m),
+        rain:days[0]?.rain??0,
+        days
+      };
+      render();
+    }catch(e){}
+  }
+  navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>go(40.8136,-96.7026),{timeout:5000,maximumAge:900000}):go(40.8136,-96.7026)
+}
+function weatherForecastDayLabel(date){
+  if(date===ymd())return"today";
+  const tomorrow=shiftDateString(ymd(),1);if(date===tomorrow)return"tomorrow";
+  return new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"});
+}
+function weatherPrepAdvice(){
+  const days=weather?.days||[];if(!days.length)return[];
+  const items=[],today=days[0],next=days.slice(1,4);
+  const add=(priority,icon,title,detail,category)=>{if(!items.some(x=>x.title===title))items.push({priority,icon,title,detail,category})};
+  const freeze=next.find(d=>d.low<=32);
+  if(freeze){
+    const when=weatherForecastDayLabel(freeze.date);
+    add(100,"❄","Prepare for a freeze "+when,
+      "House: protect outdoor faucets/hoses and bring sensitive plants in. Car: put a scraper where you can reach it and check washer fluid. Kids: set out warmer layers the night before.","weather");
+  }
+  const sharpCold=next.find(d=>today&&Math.max(today.high,today.low)-Math.max(d.high,d.low)>=18);
+  if(sharpCold){
+    const when=weatherForecastDayLabel(sharpCold.date);
+    add(92,"↘","A noticeable temperature drop is coming "+when,
+      "Move coats/layers where they are easy to grab and check tire pressure after the colder air arrives; pressure commonly falls as temperature drops.","weather");
+  }
+  const snow=next.find(d=>[71,73,75,77,85,86].includes(d.code));
+  if(snow){
+    const when=weatherForecastDayLabel(snow.date);
+    add(98,"☃","Snow is in the forecast "+when,
+      "Car: make sure the scraper is in the vehicle and leave extra travel time. House: clear a path plan. Kids: stage gloves, hats, and dry shoes.","weather");
+  }
+  const storm=next.find(d=>[95,96,99].includes(d.code));
+  if(storm){
+    const when=weatherForecastDayLabel(storm.date);
+    add(96,"⚡","Thunderstorms are possible "+when,
+      "Charge phones, secure loose outdoor items, and keep indoor plans available for the kids. Recheck the forecast closer to the event for timing.","weather");
+  }
+  const rain=next.find(d=>d.rain>=65);
+  if(rain){
+    const when=weatherForecastDayLabel(rain.date);
+    add(82,"☂","Plan for rain "+when,
+      "Put umbrellas/rain gear by the door, protect anything outside that should stay dry, and allow a little extra drive time.","weather");
+  }
+  const wind=next.find(d=>d.wind>=30);
+  if(wind){
+    const when=weatherForecastDayLabel(wind.date);
+    add(88,"≋","Windy weather is expected "+when,
+      "Secure lightweight outdoor items and trash/recycling. Check that anything loose around the car or porch is put away.","weather");
+  }
+  const heat=next.find(d=>d.high>=90);
+  if(heat){
+    const when=weatherForecastDayLabel(heat.date);
+    add(84,"☀","Hot weather is coming "+when,
+      "Set out water bottles, plan lighter outdoor timing for the kids, and avoid leaving heat-sensitive items in the car.","weather");
+  }
+  return items.sort((a,b)=>b.priority-a.priority).slice(0,3);
+}
+function dailyLifeAdvice(){
+  const items=[...weatherPrepAdvice()];
+  const sleep=itinerarySleepPlan(ymd()),now=new Date(),mins=now.getHours()*60+now.getMinutes();
+  if(state.settings?.itinerary?.protectSleep!==false&&sleep?.bedtimeMinutes&&mins<sleep.bedtimeMinutes){
+    const remaining=sleep.bedtimeMinutes-mins;
+    if(remaining<=180)items.push({priority:78,icon:"☾",title:"Protect tonight’s sleep window",detail:`Day Flow is holding ${fmtClock(sleep.bedtime)} as your scheduling cutoff${sleep.wake?" for about "+fmtClock(sleep.wake)+" wake-up":""}. Keep anything optional out of the remaining ${Math.max(1,Math.round(remaining/60))} hour${Math.round(remaining/60)===1?"":"s"}.`,category:"sleep"});
+  }
+  const tomorrow=shiftDateString(ymd(),1),tm=mealForDate(tomorrow),prep=tomorrowMealPrepOutstanding(tm);
+  if(prep.length)items.push({priority:72,icon:"🍽",title:"Make tomorrow easier tonight",detail:prep.slice(0,2).join(" · ")+(prep.length>2?` · +${prep.length-2} more`:""),category:"food"});
+  const fridge=homeTaskCadence("Clean refrigerator");
+  if(fridge.samples>=2&&fridge.stateLabel==="longer than usual")items.push({priority:58,icon:"⌂",title:"Your fridge is past its usual clean interval",detail:`${fridge.label}. A quick shelf/produce check now may prevent a bigger clean later.`,category:"home"});
+  return items.sort((a,b)=>b.priority-a.priority).slice(0,4);
+}
+function dailyAdviceCard(){
+  const items=dailyLifeAdvice();
+  if(!items.length)return `<div class="card daily-advice-card"><div class="eyebrow">✦ Daily Life advice</div><h2>Nothing special to prepare for</h2><div class="muted small">I’ll surface practical weather, sleep, meal-prep, and household cues here when something is worth acting on.</div></div>`;
+  return `<div class="card daily-advice-card"><div class="section-title"><div><div class="eyebrow">✦ Daily Life advice</div><h2>${esc(items[0].title)}</h2></div><span class="tag">${weather?.days?.length?"looks ahead":"today"}</span></div>
+    ${items.map((x,i)=>`<div class="daily-advice-row ${i===0?"is-primary":""}"><span class="daily-advice-icon">${x.icon}</span><span class="grow"><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></div>`).join("")}
+    <div class="muted small daily-advice-note">Weather prep uses the app’s forecast and is meant for planning ahead; check official alerts when severe weather is possible.</div>
+  </div>`;
+}
 function dateDayIndex(date){
   return Math.floor(new Date(date+"T12:00:00").getTime()/86400000);
 }
@@ -1835,6 +1938,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
+  ${dailyAdviceCard()}
   <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${typeof sharingTodayCard==="function"?sharingTodayCard():""}${todaySleepPlanCard()}${todayCareSnapshotCard()}${todaySpiritualityCard()}${todayPeopleSnapshotCard()}${todayLivingThingsCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
@@ -4539,7 +4643,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-signout1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-advice1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
