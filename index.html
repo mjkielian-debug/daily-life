@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-familyroutine1">
+<link rel="stylesheet" href="styles.css?v=20261002-familyschedule1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -3063,9 +3063,43 @@ function openFamilyRoutineSettings(){
     await save();closeModal();render();
   });
 }
+function recurringFamilyEventEditor(r={},originIndex=-1){
+  const weekdays=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  return `<div class="family-schedule-editor" data-origin-index="${originIndex}">
+    <div class="family-rotation-head"><div><div class="mini-heading">Weekly activity</div><div class="muted small">This creates upcoming calendar items automatically.</div></div><button class="btn small danger" type="button" onclick="this.closest('.family-schedule-editor').remove()">Remove</button></div>
+    <label>Activity<input class="fre-title" value="${esc(r.title||"")}" placeholder="Club, rehearsal, dance…"></label>
+    <div class="grid2"><label>Person<input class="fre-child" value="${esc(r.child||"")}"></label><label>Day<select class="fre-weekday">${weekdays.map((name,i)=>`<option value="${i}" ${Number(r.weekday)===i?"selected":""}>${name}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label>Start<input class="fre-start" type="time" value="${esc(r.startTime||"")}"></label><label>End<input class="fre-end" type="time" value="${esc(r.endTime||"")}"></label></div>
+    <div class="grid2"><label>Type<select class="fre-type">${["activity","school","family","appointment","other"].map(v=>`<option ${String(r.type||"activity")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Location<input class="fre-location" value="${esc(r.location||"")}"></label></div>
+    <label>Notes<input class="fre-notes" value="${esc(r.notes||"")}"></label>
+  </div>`;
+}
+function addRecurringFamilyEventEditor(){
+  const host=document.querySelector("#familyScheduleEditors");if(!host)return;
+  host.insertAdjacentHTML("beforeend",recurringFamilyEventEditor({weekday:new Date().getDay(),type:"activity"},-1));
+}
+function openFamilyScheduleSettings(){
+  const settings=state.settings||{},defs=settings.recurringFamilyEvents||[];
+  modal("Recurring family schedule",`<div class="stack family-routine-settings">
+    <div class="notice"><b>Weekly activities</b><div class="muted small">Use this for repeating clubs, rehearsals, lessons, practices, or recurring family commitments. One-off appointments still belong in Upcoming.</div></div>
+    <div class="section-title"><div><div class="mini-heading">Schedule rules</div><div class="muted small">Daily Life generates the next five weeks from these rules.</div></div><button class="btn small" type="button" onclick="addRecurringFamilyEventEditor()">+ Weekly activity</button></div>
+    <div id="familyScheduleEditors" class="family-rotation-list">${defs.map((r,i)=>recurringFamilyEventEditor(r,i)).join("")}</div>
+    <div class="notice"><b>One-time changes stay one-time.</b><div class="muted small">If you edit one generated event from Upcoming, Daily Life treats that date as an exception instead of changing the weekly rule.</div></div>
+  </div>`,"Save schedule",async()=>{
+    const old=settings.recurringFamilyEvents||[],rows=[...document.querySelectorAll(".family-schedule-editor")],next=[];
+    for(const row of rows){
+      const title=String(row.querySelector(".fre-title")?.value||"").trim(),child=String(row.querySelector(".fre-child")?.value||"").trim();
+      if(!title)continue;
+      const origin=Number(row.dataset.originIndex),base=Number.isInteger(origin)&&origin>=0&&old[origin]?old[origin]:{id:uid()};
+      next.push({...base,title,child,weekday:Number(row.querySelector(".fre-weekday")?.value||0),startTime:row.querySelector(".fre-start")?.value||"",endTime:row.querySelector(".fre-end")?.value||"",type:row.querySelector(".fre-type")?.value||"activity",location:String(row.querySelector(".fre-location")?.value||"").trim(),notes:String(row.querySelector(".fre-notes")?.value||"").trim(),status:"confirmed"});
+    }
+    settings.recurringFamilyEvents=next;ensureRecurringFamilyEvents();
+    await save();closeModal();render();
+  });
+}
 function familyRoutinesCard(){
   const rows=state.chores.filter(x=>x.date===ymd());
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">Daily basics and alternating chores are generated from your routine setup. Manual chores stay separate.</div></div><div class="actions"><button class="btn" onclick="openFamilyRoutineSettings()">Routine setup</button><button class="btn" onclick="openChore()">+ Chore</button></div></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>${x.generated?`<span class="tag">${x.generated==="rotation"?"rotation":"daily"}</span>`:""}</div>`).join("")||`<div class="notice">No family routines logged today. Use Routine setup to add daily basics or alternating chore groups.</div>`}</div>`;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">Daily basics, alternating chores, and weekly activities can all be adjusted without changing app code.</div></div><div class="actions"><button class="btn" onclick="openFamilyRoutineSettings()">Chore setup</button><button class="btn" onclick="openFamilyScheduleSettings()">Weekly schedule</button><button class="btn" onclick="openChore()">+ Chore</button></div></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>${x.generated?`<span class="tag">${x.generated==="rotation"?"rotation":"daily"}</span>`:""}</div>`).join("")||`<div class="notice">No family routines logged today. Use Routine setup to add daily basics or alternating chore groups.</div>`}</div>`;
 }
 function familyView(){
   ensurePeopleProfiles();
@@ -4245,7 +4279,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-familyroutine1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-familyschedule1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
