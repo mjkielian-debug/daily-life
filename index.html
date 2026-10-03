@@ -2023,6 +2023,28 @@ function openProject(id=""){
 async function toggleProjectTask(id,index,done){const p=(state.projects||[]).find(p=>p.id===id);if(!p?.tasks?.[index])return;p.tasks[index].done=done;await save();render()}
 function primaryVehicle(){return (state.vehicles||[]).find(v=>v.primary)||(state.vehicles||[])[0]||null}
 function isFuelService(x){return /fuel|gas/i.test(String(x?.type||""))||Number(x?.gallons||0)>0}
+function tireLogTimestamp(x){
+  const date=String(x?.date||""),rawTime=String(x?.time||"");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return NaN;
+  const time=/^\d{2}:\d{2}$/.test(rawTime)?rawTime:"12:00";
+  return new Date(date+"T"+time+":00").getTime();
+}
+function tirePressureStats(){
+  const rows=[...(state.tireLogs||[])].map(x=>({...x,_ts:tireLogTimestamp(x)}))
+    .filter(x=>Number.isFinite(x._ts)&&Number.isFinite(Number(x.psi))&&Number(x.psi)>0)
+    .sort((a,b)=>a._ts-b._ts);
+  const losses=[];let lastFill=null;
+  for(const row of rows){
+    const event=String(row.event||"reading").toLowerCase();
+    if(event==="fill"){lastFill=row;continue}
+    if(!lastFill)continue;
+    const hours=(row._ts-lastFill._ts)/3600000,loss=Number(lastFill.psi)-Number(row.psi);
+    if(hours>=1&&loss>0)losses.push({from:lastFill,to:row,hours,loss,perDay:loss/(hours/24)});
+    lastFill=null;
+  }
+  const recent=losses.slice(-4),avgPerDay=recent.length?recent.reduce((n,x)=>n+x.perDay,0)/recent.length:null;
+  return{rows,latest:rows[rows.length-1]||null,latestFill:[...rows].reverse().find(x=>String(x.event||"").toLowerCase()==="fill")||null,losses,recent,avgPerDay,samples:recent.length};
+}
 function latestVehicleService(vehicleId,pattern){
   return [...(state.vehicleServices||[])].filter(x=>(!vehicleId||!x.vehicleId||x.vehicleId===vehicleId)&&pattern.test(String(x.type||"")))
     .sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||Number(b.mileage||0)-Number(a.mileage||0))[0]||null;
@@ -2100,9 +2122,11 @@ function vehicleFuelStats(vehicleId=""){
   return{fills,latest,byId,avgMpg,mpgs};
 }
 function vehicleCard(){
-  const v=primaryVehicle(),services=[...(state.vehicleServices||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,8),fuel=vehicleFuelStats(v?.id),maintenance=vehicleMaintenanceSnapshot(v),oil=vehicleMaintenanceText(maintenance.oil),rotation=vehicleMaintenanceText(maintenance.rotation);
+  const v=primaryVehicle(),services=[...(state.vehicleServices||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,8),fuel=vehicleFuelStats(v?.id),maintenance=vehicleMaintenanceSnapshot(v),oil=vehicleMaintenanceText(maintenance.oil),rotation=vehicleMaintenanceText(maintenance.rotation),tireStats=tirePressureStats();
+  const tireTrend=tireStats.samples&&Number.isFinite(tireStats.avgPerDay)?tireStats.avgPerDay.toFixed(1)+" PSI/day observed":"Need a fill → later reading pair";
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚙 Vehicle</div><h2>${v?esc([v.year,v.make,v.model].filter(Boolean).join(" ")):"No vehicle profile"}</h2></div><button class="btn" onclick="openVehicle()">${v?"Edit":"Add"}</button></div>
     ${v?`<div class="grid3"><div class="metric"><div class="muted small">Mileage</div><div class="big">${v.mileage?Number(v.mileage).toLocaleString():"—"}</div></div><div class="metric"><div class="muted small">Registration</div><div class="big">${v.registrationDue?esc(dl(v.registrationDue)):"—"}</div></div><div class="metric"><div class="muted small">Open recalls</div><div class="big">${Number.isFinite(Number(v.openRecalls))?Number(v.openRecalls):"—"}</div></div></div><div class="vehicle-maint-grid"><div class="${maintenance.oil?.due?"maintenance-due":""}"><span class="muted small">Oil change</span><b>${esc(oil.main)}</b>${oil.detail?`<small>${esc(oil.detail)}</small>`:""}</div><div class="${maintenance.rotation?.due?"maintenance-due":""}"><span class="muted small">Tire rotation</span><b>${esc(rotation.main)}</b>${rotation.detail?`<small>${esc(rotation.detail)}</small>`:""}</div><div><span class="muted small">Tread / tires</span><b>${esc(v.tireTread||"not logged")}</b><small>${v.tireTread?"Saved tire note":"Add tread or tire condition when checked"}</small></div><div><span class="muted small">Estimated value</span><b>${v.estimatedValue?money(v.estimatedValue):"—"}</b><small>${v.estimatedValue?"Manual estimate":"Optional"}</small></div></div>${v.appointmentDate?`<div class="notice"><b>Service appointment:</b> ${esc(dl(v.appointmentDate))}${v.appointmentTime?" · "+esc(fmtClock(v.appointmentTime)):""}${v.appointmentPlace?" · "+esc(v.appointmentPlace):""}</div>`:""}${v.notes?`<div class="muted small">${esc(v.notes)}</div>`:""}`:`<div class="notice">Add the vehicle once; tire readings and maintenance can live underneath it.</div>`}
+    ${tireStats.latest?`<div class="vehicle-tire-summary"><div><span class="muted small">Latest tire pressure</span><b>${Number(tireStats.latest.psi).toFixed(1)} PSI</b><small>${esc(dl(tireStats.latest.date))}${tireStats.latest.time?" · "+esc(fmtClock(tireStats.latest.time)):""} · ${esc(tireStats.latest.event||"reading")}</small></div><div><span class="muted small">Pressure-loss pattern</span><b>${esc(tireTrend)}</b><small>${tireStats.samples?`Based on ${tireStats.samples} recent fill-to-reading interval${tireStats.samples===1?"":"s"}`:"Log a pressure reading after a fill to calculate an observed rate."}</small></div></div>`:""}
     ${fuel.latest?`<div class="fuel-economy-summary"><div><span class="muted small">Latest fuel-up</span><b>${Number(fuel.latest.gallons).toFixed(3)} gal · ${fuel.latest.cost?money(fuel.latest.cost):"cost not logged"}</b><small>${fuel.byId.get(fuel.latest.id)?.pricePerGallon?"$"+fuel.byId.get(fuel.latest.id).pricePerGallon.toFixed(2)+"/gal":""}</small></div><div><span class="muted small">Fuel economy</span><b>${fuel.byId.get(fuel.latest.id)?.mpg?fuel.byId.get(fuel.latest.id).mpg.toFixed(1)+" MPG":fuel.avgMpg?fuel.avgMpg.toFixed(1)+" MPG avg":"Need another full fill"}</b><small>${fuel.mpgs.length?"Calculated from full-to-full odometer fills":"Trip T2 is saved but not used unless its reset point is confirmed."}</small></div></div>`:""}
     <div class="section-title" style="margin-top:10px"><h3>Service / maintenance</h3><button class="btn small" onclick="openVehicleService()">+ Log</button></div>${services.map(x=>{const fm=fuel.byId.get(x.id);return `<div class="row vehicle-service-row"><span><b>${esc(x.type||"Service")}</b><div class="muted small">${esc(dl(x.date))}${x.mileage?` · ${Number(x.mileage).toLocaleString()} mi`:""}${Number(x.gallons)>0?` · ${Number(x.gallons).toFixed(3)} gal`:""}${fm?.mpg?` · ${fm.mpg.toFixed(1)} MPG`:""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="vehicle-service-actions"><b>${x.cost?money(x.cost):""}</b><button class="btn small" onclick="openVehicleService('${x.id}')">Edit</button></span></div>`}).join("")||`<div class="muted small">No service history logged yet.</div>`}
   </div>`;
@@ -2134,8 +2158,13 @@ async function removeVehicleService(id){
 }
 
 function tireHistoryCard(tr){
-  const rows=[...(state.tireLogs||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,6);
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚗 Tire + car</div><h2>${tr?esc(tr.psi)+" PSI":"No reading"}</h2></div><button class="btn" onclick="openTire()">Log</button></div>${rows.map(x=>`<div class="row"><span>${esc(dl(x.date))}${x.time?` · ${esc(fmtClock(x.time))}`:""}<div class="muted small">${esc(x.event||"reading")}${x.notes?" · "+esc(x.notes):""}</div></span><b>${esc(x.psi)} PSI</b></div>`).join("")||`<div class="notice">No tire history yet.</div>`}</div>`;
+  const stats=tirePressureStats(),rows=[...(state.tireLogs||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,8),
+        latestSample=stats.losses[stats.losses.length-1]||null,
+        trend=stats.samples&&Number.isFinite(stats.avgPerDay)?stats.avgPerDay.toFixed(1)+" PSI/day":"Not enough paired readings yet";
+  return `<div class="card tire-trend-card"><div class="section-title"><div><div class="eyebrow">🛞 Tire pressure</div><h2>${tr?esc(tr.psi)+" PSI":"No reading"}</h2></div><button class="btn primary" onclick="openTire()">+ Reading</button></div>
+    <div class="tire-trend-summary"><div><span class="muted small">Observed pressure loss</span><b>${esc(trend)}</b><small>${stats.samples?`Average of ${stats.samples} recent fill → later-reading interval${stats.samples===1?"":"s"}`:"A fill followed by a later reading creates the first trend sample."}</small></div><div><span class="muted small">Latest paired interval</span><b>${latestSample?latestSample.loss.toFixed(1)+" PSI / "+latestSample.hours.toFixed(latestSample.hours<10?1:0)+" h":"—"}</b><small>Temperature, gauge variation and partial fills can affect PSI, so this is an observed log trend rather than a diagnosis.</small></div></div>
+    ${rows.map(x=>`<button class="tire-history-row" onclick="openTire('${x.id}')"><span><b>${esc(dl(x.date))}${x.time?` · ${esc(fmtClock(x.time))}`:""}</b><small>${esc(x.event||"reading")}${x.notes?" · "+esc(x.notes):""}</small></span><span><b>${Number(x.psi).toFixed(1)} PSI</b><small>Edit</small></span></button>`).join("")||`<div class="notice">No tire history yet.</div>`}
+  </div>`;
 }
 function homeCareCard(){
   const last=[...(state.homeLogs||[])].filter(x=>x.task==="Clean refrigerator"&&x.status==="done").sort((a,b)=>b.date.localeCompare(a.date))[0],
@@ -3534,7 +3563,22 @@ function openWork(date=ymd()){
     await save();closeModal();render();
   });
 }
-function openTire(){modal("Log tire",`<div class="stack"><label>PSI<input id="tp" type="number" step=".1"></label><label>Event<select id="te"><option>reading</option><option>fill</option><option>repair</option></select></label><label>Notes<input id="tn"></label></div>`,"Save",async()=>{const psi=Number($("#tp").value);if(!psi)return;state.tireLogs.push({id:uid(),date:ymd(),time:new Date().toTimeString().slice(0,5),psi,event:$("#te").value,notes:$("#tn").value});await save();closeModal();render()})}
+function openTire(id=""){
+  const existing=(state.tireLogs||[]).find(x=>x.id===id)||null,
+        x=existing||{id:"",date:ymd(),time:new Date().toTimeString().slice(0,5),psi:"",event:"reading",notes:""};
+  modal(existing?"Edit tire pressure":"Log tire pressure",`<div class="stack"><div class="grid2"><label>Date<input id="td" type="date" value="${esc(x.date||ymd())}"></label><label>Time<input id="tt" type="time" value="${esc(x.time||"")}"></label></div><label>PSI<input id="tp" type="number" min="1" max="100" step=".1" value="${esc(x.psi??"")}"></label><label>Event<select id="te"><option ${x.event==="reading"?"selected":""}>reading</option><option ${x.event==="fill"?"selected":""}>fill</option><option ${x.event==="repair"?"selected":""}>repair</option></select></label><label>Notes<input id="tn" value="${esc(x.notes||"")}" placeholder="Which tire, weather, partial fill, repair detail…"></label>${existing?`<button type="button" class="btn danger" onclick="removeTireLog('${x.id}')">Remove this entry</button>`:""}</div>`,"Save",async()=>{
+    const psi=Number($("#tp").value),date=$("#td").value,time=$("#tt").value;if(!Number.isFinite(psi)||psi<=0||!date)return;
+    let row=(state.tireLogs||[]).find(x=>x.id===id);
+    if(!row){row={id:uid()};state.tireLogs.push(row)}
+    Object.assign(row,{date,time,psi:Math.round(psi*10)/10,event:$("#te").value,notes:$("#tn").value.trim(),vehicleId:row.vehicleId||primaryVehicle()?.id||""});
+    await save();closeModal();render();
+  });
+}
+async function removeTireLog(id){
+  if(!confirm("Remove this tire-pressure entry?"))return;
+  state.tireLogs=(state.tireLogs||[]).filter(x=>x.id!==id);
+  await save();closeModal();render();
+}
 function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
 async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
