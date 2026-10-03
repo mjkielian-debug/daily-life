@@ -620,6 +620,7 @@ async function cloudRestoreSnapshot(){
     await cloudPullHouseholdMembers();
     await cloudPullLifeEntries(false);
     await cloudPullPetProfiles();
+    if(typeof sharingInit==="function")await sharingInit();
     render();alert("Cloud copy restored to this device.");
   }catch(error){
     cloudError=error?.message||"Cloud restore failed.";render();
