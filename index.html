@@ -9,7 +9,7 @@
 <link rel="icon" href="icon.svg?v=20261003-rose1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="daily-life-rose-192.png">
 <link rel="stylesheet" href="styles.css?v=20261002-workdays1">
-<link rel="stylesheet" href="compact-ui.css?v=20261003-billcalendar1">
+<link rel="stylesheet" href="compact-ui.css?v=20261003-housemap3">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -229,7 +229,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.03-housemap2";
+const APP_BUILD="2026.10.03-housemap3";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -3593,7 +3593,7 @@ function inventoryView(){
     <div class="card"><div class="section-title"><div><h2>House map</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
     ${rooms.length?rooms.map(room=>{
       const locs=locations.filter(x=>x.roomId===room.id),roomItems=all.filter(x=>x.roomId===room.id||locs.some(l=>l.id===x.locationId));
-      return `<details class="inventory-room" open><summary><span><b>${room.mapColor?`<i class="room-color-dot" style="background:${esc(room.mapColor)}"></i>`:""}${esc(room.name)}</b><small>${room.floor?esc(room.floor)+" · ":""}${roomItems.length} item${roomItems.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span><button class="btn small" onclick="event.preventDefault();event.stopPropagation();openInventoryRoom('${room.id}')">Edit</button></summary>
+      return `<details class="inventory-room"><summary><span><b>${room.mapColor?`<i class="room-color-dot" style="background:${esc(room.mapColor)}"></i>`:""}${esc(room.name)}</b><small>${room.floor?esc(room.floor)+" · ":""}${roomItems.length} item${roomItems.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span><button class="btn small" onclick="event.preventDefault();event.stopPropagation();openInventoryRoom('${room.id}')">Edit</button></summary>
       <div class="inventory-room-body">
       ${locs.length?locs.map(loc=>{const li=all.filter(x=>x.locationId===loc.id);return `<div class="inventory-location"><div class="row"><span><b>${esc(loc.name)}</b><div class="muted small">${li.length} item${li.length===1?"":"s"}${loc.notes?" · "+esc(loc.notes):""}</div></span><button class="btn small" onclick="openInventoryLocation('${loc.id}')">Edit</button></div>${li.slice(0,8).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></button>`).join("")}${li.length>8?`<div class="muted small">+${li.length-8} more</div>`:""}</div>`}).join(""):`<div class="notice">No shelves, bins, closets, or other locations added in this room yet.</div>`}
       ${roomItems.filter(x=>!x.locationId).length?`<div class="inventory-location"><div class="mini-heading">Room-level items</div>${roomItems.filter(x=>!x.locationId).map(x=>`<button class="inventory-mini-item" onclick="openInventoryItem('${x.id}')"><span>${esc(x.name)}</span></button>`).join("")}</div>`:""}
@@ -4931,7 +4931,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-billcalendar1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-housemap3");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -4953,7 +4953,7 @@ registerAppWorker();
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261003-mealmemory1"></script>
 <script src="daily-coach.js?v=20261003-dailycoach1"></script>
-<script src="house-robot.js?v=20261003-robot2"></script>
+<script src="house-robot.js?v=20261003-housemap3"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
 </body>
 </html>
