@@ -217,7 +217,7 @@ const blankState=()=>({
   version:34,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.03-74";
+const APP_BUILD="2026.10.03-routine1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -377,12 +377,59 @@ function inferredWorkStartForDate(date){
   if(workdayStarts.length>=3)return{minutes:median(workdayStarts),samples:workdayStarts.length,source:"recent workday"};
   return null;
 }
+
+// Weekly routine preferences are additive; dated blocks and completed history stay intact.
+const ITINERARY_ROUTINES=[
+  ["work-morning","Wake + get ready for work"],["after-work","Eat + reset after work"],
+  ["after-school-launch","Snack + after-school reset"],["homework","Homework + reading"],
+  ["meal-prep","Active meal prep"],["dinner","Dinner + kitchen reset"],
+  ["chores","Chores + showers / baths"],["tomorrow-prep","Set tomorrow up"],["wind-down","Wind down + bedtime"]
+];
+function itineraryDayStart(date){
+  const prefs=state.settings?.itinerary||{},weekday=new Date(date+"T12:00:00").getDay();
+  const explicit=hmMinutes(prefs.wakeByWeekday?.[weekday]);
+  if(explicit!==null)return explicit;
+  const configured=hmMinutes(prefs.dayStart||"03:30")??210,work=workForDate(date),start=hmMinutes(work?.start||work?.scheduled),lead=Math.max(15,Math.min(180,Number(prefs.morningLeadMinutes||60)));
+  if(start!==null)return Math.max(configured,start-lead);
+  const inferred=prefs.inferWorkStartForSleep!==false?inferredWorkStartForDate(date):null;
+  return inferred?Math.max(configured,inferred.minutes-lead):configured;
+}
+function openWeeklyRoutine(weekday=new Date(itineraryDate+"T12:00:00").getDay()){
+  weekday=Number(weekday);if(!Number.isInteger(weekday)||weekday<0||weekday>6)return;
+  const prefs=state.settings.itinerary||{},names=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+    date=shiftDateString(itineraryDate,weekday-new Date(itineraryDate+"T12:00:00").getDay()),
+    suggestions=itinerarySuggestedBlocks(date),saved=prefs.routinePreferences||{};
+  modal("Your weekly rhythm",`<div class="stack">
+    <div class="actions">${names.map((name,i)=>`<button type="button" class="btn ${i===weekday?"primary":""}" onclick="openWeeklyRoutine(${i})">${name.slice(0,3)}</button>`).join("")}</div>
+    <div class="notice"><b>${names[weekday]} routine</b><div class="muted small">Pick usual times and durations. Day Flow fits these around fixed commitments and stops at your sleep cutoff. Dates you already edited keep their own blocks. Save before switching days.</div></div>
+    <label>My wake time on ${names[weekday]}<input id="wrwake" type="time" value="${esc(prefs.wakeByWeekday?.[weekday]||minutesHm(itineraryDayStart(date)))}"></label>
+    <div class="muted small">No flexible tasks or open-time blocks will be placed before this wake time.</div>
+    ${ITINERARY_ROUTINES.map(([key,label],i)=>{const row=saved[weekday+":"+key]||{},suggestion=suggestions.find(x=>x.templateKey===key),start=row.start||suggestion?.start||"",end=row.end||suggestion?.end||"",minutes=hmMinutes(end)!==null&&hmMinutes(start)!==null?hmMinutes(end)-hmMinutes(start):30;return `<details class="card" style="margin:0"><summary><b>${esc(label)}</b> · ${row.enabled===false?"off":start?esc(fmtClock(start))+" · "+minutes+" min":"automatic"}</summary><div class="stack" style="margin-top:12px"><label class="task"><input id="wrenabled${i}" type="checkbox" ${row.enabled!==false?"checked":""}><span>Include this routine when it applies</span></label><div class="grid2"><label>Usual start<input id="wrstart${i}" type="time" value="${esc(start)}"></label><label>Duration (minutes)<input id="wrminutes${i}" type="number" min="5" max="240" step="5" value="${Math.max(5,Math.min(240,minutes||30))}"></label></div><label>What happens in this block<textarea id="wrnotes${i}" rows="2">${esc(row.detail??"")}</textarea></label><div class="muted small">Leave start blank to use the automatic timing, including meal start/serve times. Notes override the usual description when entered.</div></div></details>`}).join("")}
+    <label class="task"><input id="wrcopy" type="checkbox"><span>Apply these routine timings to all seven weekdays</span></label>
+    <div class="muted small">Wake time applies only to ${names[weekday]}. Copying timings does not create routines on days when they do not apply, such as homework on a weekend.</div>
+  </div>`,"Save routine",async()=>{
+    const wake=$("#wrwake").value;if(hmMinutes(wake)===null){$("#wrwake").reportValidity();return}
+    const updates={};for(let i=0;i<ITINERARY_ROUTINES.length;i++){
+      const key=ITINERARY_ROUTINES[i][0],start=$("#wrstart"+i).value,input=$("#wrminutes"+i),minutes=Number(input.value);
+      if(!input.checkValidity()||!Number.isFinite(minutes)||minutes<5||minutes>240){input.reportValidity();return}
+      if(start&&hmMinutes(start)+minutes>=1440){alert("A routine must finish before midnight. Adjust "+ITINERARY_ROUTINES[i][1]+".");return}
+      updates[key]={enabled:$("#wrenabled"+i).checked,start,end:start?minutesHm(hmMinutes(start)+minutes):"",durationMinutes:minutes,detail:$("#wrnotes"+i).value.trim(),updatedAt:new Date().toISOString()};
+    }
+    const before=structuredClone(state.settings.itinerary),next={...prefs,wakeByWeekday:{...(prefs.wakeByWeekday||{}),[weekday]:wake},routinePreferences:{...(prefs.routinePreferences||{})}};
+    for(const day of $("#wrcopy").checked?[0,1,2,3,4,5,6]:[weekday])for(const [key,row] of Object.entries(updates))next.routinePreferences[day+":"+key]={...row};
+    state.settings.itinerary=next;
+    try{await save();closeModal();render()}catch(error){state.settings.itinerary=before;alert("Your routine could not be saved. Please try again.")}
+  });
+}
+
 function itinerarySleepPlan(date){
   const prefs=state.settings?.itinerary||{},target=Math.max(4,Math.min(12,Number(prefs.sleepTargetHours||8))),
         lead=Math.max(15,Math.min(180,Number(prefs.morningLeadMinutes||60))),
         preferredStart=hmMinutes(prefs.preferredBedtimeStart||"20:00")??1200,
         preferredEnd=hmMinutes(prefs.preferredBedtimeEnd||"20:30")??1230,
         tomorrow=shiftDateString(date,1),candidates=[];
+  const wakeOverride=hmMinutes(prefs.wakeByWeekday?.[new Date(tomorrow+"T12:00:00").getDay()]);
+  if(wakeOverride!==null)candidates.push({wake:wakeOverride,reason:"your saved wake time",kind:"routine",estimated:false});
   const work=workForDate(tomorrow),workStart=hmMinutes(work?.start||work?.scheduled);
   if(workStart!==null)candidates.push({wake:Math.max(0,workStart-lead),reason:"UPS "+fmtClock(work.start||work.scheduled),kind:"work",estimated:false});
   else if(prefs.inferWorkStartForSleep!==false){
@@ -473,7 +520,7 @@ function itinerarySuggestedBlocks(date){
   if(state.settings?.itinerary?.showFlexible===false)return[];
   const out=[],w=workForDate(date),meal=mealForDate(date),weekday=new Date(date+"T12:00:00").getDay(),kids=childProfiles(),
         overrides=new Set(itineraryCustomBlocks(date).map(x=>x.templateKey).filter(Boolean)),
-        dayStart=hmMinutes(state.settings?.itinerary?.dayStart||"03:00")??180,
+        dayStart=itineraryDayStart(date),
         sleepPlan=itinerarySleepPlan(date),bedtime=itineraryDayEnd(date),
         events=(state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"&&e.startTime),
         awayEvent=events.filter(e=>{const text=[e.title,e.notes,e.location].filter(Boolean).join(" ");return /\b(dad|other parent|custody|overnight|kids? away)\b/i.test(text)&&!/\b(return|returns|back home|come home|comes home|pickup|pick up)\b/i.test(text)}).sort((a,b)=>String(a.startTime).localeCompare(String(b.startTime)))[0]||null,
@@ -513,31 +560,31 @@ function itinerarySuggestedBlocks(date){
   }
   if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:"Wind down + get ready for bed",detail:[kids.length?"Settle the house / kids":"Settle the house",sleepPlan.wake?"Bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
   const prefs=state.settings?.itinerary?.routinePreferences||{};
-  return out.map((x,i)=>{
-    const saved=prefs[weekday+":"+x.templateKey]||null;
-    return {...x,start:saved?.start||x.start,end:saved?.end||x.end,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested",learnedRoutine:!!saved};
+  return out.filter(x=>prefs[weekday+":"+x.templateKey]?.enabled!==false).map((x,i)=>{
+    const saved=prefs[weekday+":"+x.templateKey]||null,start=saved?.start||x.start,duration=Number(saved?.durationMinutes||0),end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved?.end||x.end);
+    return {...x,start,end,detail:saved?.detail||x.detail,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested",learnedRoutine:!!saved};
   });
 }
 
 function itineraryRoutineWindow(x,date){
-  const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=itineraryDayEnd(date),
+  const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
         desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
   if(x.templateKey==="work-morning")return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
   if(x.templateKey==="homework")return{start:15*60,end:18*60+30};
-  if(x.templateKey==="meal-prep")return{start:Math.max(15*60,desired-60),end:Math.min(dayEnd,desired+120)};
+  if(x.templateKey==="meal-prep")return{start:Math.max(dayStart,desired-60),end:Math.min(dayEnd,desired+120)};
   if(x.templateKey==="dinner")return{start:16*60+30,end:20*60+30};
   if(x.templateKey==="chores")return{start:17*60+30,end:21*60};
-  if(x.templateKey==="wind-down")return{start:19*60,end:dayEnd};
-  if(x.templateKey==="tomorrow-prep")return{start:19*60+30,end:dayEnd};
+  if(x.templateKey==="wind-down")return{start:Math.max(dayStart,dayEnd-90),end:dayEnd};
+  if(x.templateKey==="tomorrow-prep")return{start:Math.max(dayStart,dayEnd-150),end:Math.max(dayStart,dayEnd-30)};
   return{start:dayStart,end:dayEnd};
 }
 function itineraryFitRoutines(date,blockingItems,routines){
   const {dayStart,dayEnd}=itineraryEffectiveIntervals(blockingItems,date),
         gaps=itineraryOpenGaps(blockingItems,date).map(g=>({...g})),
         placed=[];
-  const ordered=routines.slice().sort((a,b)=>(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
+  const ordered=routines.slice().sort((a,b)=>(a.templateKey==="wind-down"?-1:0)-(b.templateKey==="wind-down"?-1:0)||(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
   for(const x of ordered){
     const desired=hmMinutes(x.start);if(desired===null)continue;
     const rawEnd=hmMinutes(x.end),duration=Math.max(15,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
@@ -625,7 +672,7 @@ function itineraryTaskPreferredRange(task,date){
 }
 
 function itineraryEffectiveIntervals(items,date){
-  const prefs=state.settings?.itinerary||{},dayStart=hmMinutes(prefs.dayStart||"03:00")??180,dayEnd=itineraryDayEnd(date),
+  const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
         sorted=items.filter(x=>hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
   for(let i=0;i<sorted.length;i++){
     const x=sorted[i],s=hmMinutes(x.start);let e=hmMinutes(x.end);
@@ -633,7 +680,8 @@ function itineraryEffectiveIntervals(items,date){
       const next=sorted.slice(i+1).map(y=>hmMinutes(y.start)).find(v=>v!==null&&v>s);
       e=next!==undefined?next:dayEnd;
     }else if(e===null||e<=s)e=s+Math.max(15,Number(x.durationMinutes||15));
-    intervals.push({start:Math.max(dayStart,s),end:Math.min(dayEnd,e),source:x});
+    const boundedStart=Math.max(dayStart,s),boundedEnd=Math.min(dayEnd,e);
+    if(boundedEnd>boundedStart)intervals.push({start:boundedStart,end:boundedEnd,source:x});
   }
   intervals.sort((a,b)=>a.start-b.start);
   const merged=[];
@@ -652,7 +700,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
   for(const t of tasks){
     if(t.itineraryStart&&t.date===date){
       const s=hmMinutes(t.itineraryStart),mins=itineraryTaskMinutes(t);
-      if(s!==null)explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:false});
+      if(s!==null&&s>=itineraryDayStart(date)&&s+mins<=itineraryDayEnd(date))explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:false});
       else waiting.push(t);
     }else waiting.push(t);
   }
@@ -831,7 +879,7 @@ function itineraryView(){
   return `<div class="card glow itinerary-hero">
     <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Your daily lesson plan</h2><div class="muted small">A realistic agenda built from work, school, family commitments, routines, and the tasks you give Daily Life.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
     <div class="itinerary-date-nav"><button class="btn" onclick="shiftItineraryDate(-1)">←</button><input type="date" value="${esc(date)}" onchange="setItineraryDate(this.value)"><button class="btn" onclick="shiftItineraryDate(1)">→</button><button class="btn" onclick="setItineraryDate(ymd())">Today</button></div>
-    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button></div>
+    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button></div>
   </div>
   ${itineraryFlowCard(date)}
   <div class="today-section-grid">
@@ -845,13 +893,15 @@ function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
   modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${x.templateKey?`<label class="task"><input id="ibremember" type="checkbox"><span><b>Use this timing on future ${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}))}s</b><div class="muted small">Daily Life will remember this routine's start and end time for this weekday.</div></span></label>`:""}${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
     const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
+    if(end&&hmMinutes(end)<=hmMinutes(start)){alert("End time must be after start time.");return}
+    if($("#ibkind").value!=="fixed"&&(hmMinutes(start)<itineraryDayStart(date)||hmMinutes(start)>=itineraryDayEnd(date)||(end&&hmMinutes(end)>itineraryDayEnd(date)))){alert("Keep flexible blocks between your wake time and sleep cutoff. Use a fixed commitment only for something that cannot move.");return}
     const shareRequested=$("#ibshared")?$("#ibshared").checked:!!x.shared;
     let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
     Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked,templateKey:x.templateKey||"",icon:x.icon||"◷"});
     if(x.templateKey&&$("#ibremember")?.checked){
       if(!state.settings.itinerary.routinePreferences||typeof state.settings.itinerary.routinePreferences!=="object")state.settings.itinerary.routinePreferences={};
       const weekday=new Date(date+"T12:00:00").getDay();
-      state.settings.itinerary.routinePreferences[weekday+":"+x.templateKey]={start,end,updatedAt:new Date().toISOString()};
+      state.settings.itinerary.routinePreferences[weekday+":"+x.templateKey]={...(state.settings.itinerary.routinePreferences[weekday+":"+x.templateKey]||{}),enabled:true,start,end,durationMinutes:Math.max(5,(hmMinutes(end)||0)-(hmMinutes(start)||0)),updatedAt:new Date().toISOString()};
     }
     if(typeof sharingCanShare==="function"&&sharingCanShare()){
       if(shareRequested){const ok=await sharingUpsertItineraryBlock(row);if(!ok)return}
