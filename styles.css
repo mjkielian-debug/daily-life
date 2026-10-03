@@ -3026,3 +3026,17 @@ textarea{resize:vertical}
   padding:8px 0;border-top:1px solid color-mix(in srgb,var(--secondary) 13%,var(--border));min-height:42px
 }
 .tomorrow-prep-item:first-of-type{border-top:0}
+
+
+/* Learned household cadence */
+.household-cadence-card{border-color:color-mix(in srgb,var(--primary) 24%,var(--secondary) 14%)}
+.cadence-row{align-items:flex-start}
+.cadence-learning{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px}
+.cadence-learning small{color:var(--muted);font-size:.67rem}
+.home-cadence-highlight{
+  display:grid;gap:3px;margin:10px 0;padding:10px 11px;border-radius:15px;
+  border:1px solid color-mix(in srgb,var(--primary) 26%,var(--secondary) 16%);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 8%,transparent),color-mix(in srgb,var(--secondary) 4%,transparent))
+}
+.home-cadence-highlight b{font-family:var(--font-heading);color:var(--cream)}
+.home-cadence-highlight span{color:var(--muted);font-size:.72rem}
