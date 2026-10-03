@@ -2954,3 +2954,22 @@ textarea{resize:vertical}
 @media(max-width:520px){
   .vehicle-tire-summary,.tire-trend-summary{grid-template-columns:1fr}
 }
+
+
+/* Installed-app update prompt */
+.app-update-notice{
+  position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  z-index:90;width:min(720px,calc(100% - 24px));display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 12px;border:1px solid color-mix(in srgb,var(--secondary) 34%,var(--border));border-radius:18px;
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--secondary) 13%,transparent),transparent 38%),
+    linear-gradient(145deg,color-mix(in srgb,var(--panel2) 94%,var(--secondary) 6%),var(--panel));
+  box-shadow:0 18px 46px rgba(0,0,0,.34),0 7px 24px color-mix(in srgb,var(--secondary) 8%,transparent);
+  color:var(--cream);backdrop-filter:blur(16px)
+}
+.app-update-notice>div{min-width:0}.app-update-notice .small{color:var(--muted);margin-top:2px;line-height:1.35}
+.app-update-notice .btn{flex:0 0 auto}
+@media(max-width:460px){
+  .app-update-notice{align-items:stretch;flex-direction:column;bottom:calc(78px + env(safe-area-inset-bottom))}
+  .app-update-notice .btn{width:100%}
+}
