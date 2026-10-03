@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-advice1">
+<link rel="stylesheet" href="styles.css?v=20261002-forecast1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-49";
+const APP_BUILD="2026.10.02-50";
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -370,6 +370,10 @@ function dailyLifeAdvice(){
   const fridge=homeTaskCadence("Clean refrigerator");
   if(fridge.samples>=2&&fridge.stateLabel==="longer than usual")items.push({priority:58,icon:"⌂",title:"Your fridge is past its usual clean interval",detail:`${fridge.label}. A quick shelf/produce check now may prevent a bigger clean later.`,category:"home"});
   return items.sort((a,b)=>b.priority-a.priority).slice(0,4);
+}
+function weatherForecastStrip(){
+  const days=(weather?.days||[]).slice(1,5);if(!days.length)return"";
+  return `<div class="weather-forecast-strip">${days.map(d=>`<div class="weather-forecast-day"><b>${esc(new Date(d.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}))}</b><span>${esc(weatherText(d.code))}</span><strong>${d.high}° / ${d.low}°</strong><small>${d.rain}% rain · ${d.wind} mph</small></div>`).join("")}</div>`;
 }
 function dailyAdviceCard(){
   const items=dailyLifeAdvice();
@@ -1955,7 +1959,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   ${todayMoneySnapshot()}
   ${nextLifeAdminAction()?`<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">📌 Life admin</div><h2>${esc(nextLifeAdminAction().title)}</h2><div class="muted small">${esc(nextLifeAdminAction().notes)}</div></div><button class="btn" onclick="openProject('${nextLifeAdminAction().projectId}')">Open</button></div></div>`:""}
   <div class="metric"><div class="eyebrow">Tire · last logged</div><div class="big">${tr?esc(tr.psi)+" PSI":"No reading"}</div><div class="muted small">${tr?.date?esc(dl(tr.date))+(tr.time?" · "+esc(tr.time):" · time not recorded"):"Date not recorded"}${tr?.event?" · "+esc(tr.event):""}</div>${tr?.notes?`<div class="muted small">${esc(tr.notes)}</div>`:""}<button class="btn small" onclick="openTire()">Log tire</button></div>
-  <div class="card today-weather"><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div>
+  <div class="card today-weather"><div class="section-title"><div><div class="eyebrow">Weather</div><h2>${weather?`${weather.temp}° · ${weatherText(weather.code)}`:"Loading…"}</h2><div class="muted small">${weather?`Feels ${weather.feels}° · H ${weather.high}° / L ${weather.low}° · Rain ${weather.rain}% · Wind ${weather.wind} mph`:"Uses location when allowed; Lincoln fallback."}</div></div>${weather?`<span class="tag">5-day view</span>`:""}</div>${weatherForecastStrip()}</div>
   <details class="card today-moon"><summary><span class="orb">${m[1]}</span><span class="moon-label"><span class="eyebrow">Moon today · astronomy</span><br><b>${m[0]}</b><span class="muted small"> · ${Math.round(m[3]*100)}%</span></span><span class="muted small moon-toggle">Reflection ＋</span></summary><div class="moon-lens"><div class="muted small">Approx. ${Math.round(m[3]*100)}% illuminated · lunar day ${m[2].toFixed(1)}</div><div class="eyebrow">Astrology / spiritual lens${ml.sign?` · ${esc(ml.sign)}`:""}</div><b>${esc(ml.phaseAction)}</b>${ml.sign?`<p class="muted small">${esc(ml.sign)} themes: ${esc(ml.theme)}. ${esc(ml.question)}</p>`:`<p class="muted small">Astrology is a reflective tradition, not an astronomical or scientific prediction. Add your sun sign if you want a personalized prompt.</p><button class="btn small" onclick="openAstrologySettings()">Choose sun sign</button>`}</div></details>`;
 }
 function sleepForDate(date=ymd()){return (state.sleepLogs||[]).find(x=>x.date===date)||null}
@@ -4650,7 +4654,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-backupprivacy1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-forecast1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
