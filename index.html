@@ -4901,7 +4901,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-billreview1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-robot1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -4923,6 +4923,7 @@ registerAppWorker();
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261003-foodtabs1"></script>
 <script src="daily-coach.js?v=20261003-dailycoach1"></script>
+<script src="house-robot.js?v=20261003-robot1"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
 </body>
 </html>
