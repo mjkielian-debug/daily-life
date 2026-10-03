@@ -92,7 +92,7 @@ function spiritualitySeason(){
 }
 function openTarotReflection(date){
  date=date||ymd();ensureDailyTarotSaved(date);const x=(state.tarotDraws||[]).find(v=>v.date===date),t=tarotForDate(date);
- modal("Tarot reflection · "+t.name,'<div class="stack"><div class="notice">'+esc(t.meaning)+'</div><div class="muted small">'+esc(t.prompt)+'</div><label>Your reflection<textarea id="tarotNote" rows="5" placeholder="What does this bring up for you?">'+esc(x.note||"")+'</textarea></label></div>',"Save",async()=>{x.note=$("#tarotNote").value.trim();await save();closeModal();render()})
+ modal("Tarot reflection · "+t.name,'<div class="stack">'+tarotArtwork(t)+'<details><summary>Explore the meaning</summary><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b></details><label>My first reaction<textarea id="tarotReaction" rows="2" placeholder="Before interpreting it, what stood out?">'+esc(x.reaction||"")+'</textarea></label><label>One small intention for today<textarea id="tarotIntention" rows="2" placeholder="Something kind, practical, and within reach">'+esc(x.intention||"")+'</textarea></label><label>Your reflection<textarea id="tarotNote" rows="4" placeholder="How does the card connect with your day?">'+esc(x.note||"")+'</textarea></label><label>Looking back this evening<textarea id="tarotEvening" rows="3" placeholder="What happened? What would you like to carry into tomorrow?">'+esc(x.evening||"")+'</textarea></label></div>',"Save",async()=>{const before={...x};x.note=$("#tarotNote").value.trim();x.reaction=$("#tarotReaction").value.trim();x.intention=$("#tarotIntention").value.trim();x.evening=$("#tarotEvening").value.trim();try{await save();closeModal();render()}catch(error){Object.assign(x,before);throw error}})
 }
 function openSpiritualJournal(type){
  type=type||"Reflection";
@@ -104,7 +104,7 @@ function tarotCardMarkup(date,compact){
  if(!revealed){
    return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" onclick="revealTarot(\''+date+'\')" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
  }
- return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-revealed"><button class="tarot-card-face" type="button" onclick="openTarotReflection(\''+date+'\')"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-symbol">☾</div><div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(compact?'<div class="actions" style="margin-top:8px"><button class="btn small" onclick="openTarotReflection(\''+date+'\')">Reflect</button></div>':'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
+ return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-revealed"><button class="tarot-card-face" type="button" onclick="openTarotReflection(\''+date+'\')"><div class="tarot-stars">✦ · ☾ · ✧</div>'+tarotArtwork(t)+'<div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(t.saved?.intention?'<div class="notice"><b>My intention</b><p>'+esc(t.saved.intention)+'</p></div>':'')+(compact?'<div class="actions" style="margin-top:8px"><button class="btn small" onclick="openTarotReflection(\''+date+'\')">Reflect</button></div>':'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
 }
 function dailyPracticeCard(){
  const x=spiritualityLogFor()||{},steps=[["reading","Daily reading"],["tarot","Tarot"],["stillness","Stillness / meditation"],["ritual","Small ritual"]],done=steps.filter(v=>x[v[0]]).length;
@@ -137,4 +137,32 @@ function spiritualityLaunchCard(){
 function todaySpiritualityCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),tarotLabel=tarotRevealed()?t.name:"card ready to reveal";
  return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" onclick="setView(\'spirituality\')">Open</button></div><div class="muted small">'+esc(r.body)+'</div></div>'
+}
+
+function tarotArtwork(t){
+ const motifs=[
+ '<path d="M35 120L75 90L100 115L120 75L160 120M70 88L70 50M62 55L78 55"/>',
+ '<path d="M55 115L145 115M70 115L70 80L130 80L130 115M100 72L100 32M85 48L115 48"/>',
+ '<path d="M55 125L55 40M145 125L145 40M75 120Q100 80 125 120"/><path d="M108 35A18 18 0 1 0 108 67A14 14 0 0 1 108 35"/>',
+ '<path d="M100 125L100 75M100 95Q55 100 65 70Q95 65 100 95M100 85Q145 90 135 60Q105 55 100 85"/><circle cx="100" cy="50" r="15"/>',
+ '<path d="M60 120L60 65L140 65L140 120M70 65L70 45L90 55L100 35L110 55L130 45L130 65"/>',
+ '<path d="M65 120L65 45L135 45L135 120M100 45L100 115M80 65L90 65M110 65L120 65"/>',
+ '<path d="M100 110Q35 70 65 50Q85 35 100 60Q115 35 135 50Q165 70 100 110"/>',
+ '<path d="M55 100L65 60L135 60L145 100ZM100 60L100 35M90 40L110 40"/><circle cx="70" cy="115" r="12"/><circle cx="130" cy="115" r="12"/>',
+ '<path d="M60 80C60 30 95 30 100 60C105 90 140 90 140 60C140 30 105 30 100 60C95 90 60 90 60 80"/><path d="M70 120Q100 85 130 120"/>',
+ '<path d="M80 120L80 55L120 55L120 120M80 70L120 70M100 55L100 35"/><circle cx="100" cy="90" r="10"/>',
+ '<circle cx="100" cy="80" r="42"/><circle cx="100" cy="80" r="12"/><path d="M100 38L100 122M58 80L142 80M70 50L130 110M70 110L130 50"/>',
+ '<path d="M100 120L100 40M65 55L135 55M65 55L45 90L85 90ZM135 55L115 90L155 90ZM75 120L125 120"/>',
+ '<path d="M55 40L145 40M100 40L100 85L75 100L100 115L125 100M100 85L100 130"/>',
+ '<path d="M65 120Q100 60 135 120M100 120L100 75M100 75Q65 70 75 45Q100 40 100 75M100 75Q135 70 125 45Q100 40 100 75"/>',
+ '<path d="M60 55L85 55L80 95Q72 110 60 95ZM115 80L140 80L135 120Q127 130 115 120ZM85 60Q110 65 118 90"/>',
+ '<path d="M75 60Q60 30 55 45M125 60Q140 30 145 45M75 60L125 60L135 105L100 120L65 105ZM85 80L90 80M110 80L115 80"/>',
+ '<path d="M75 125L75 60L125 60L125 125M65 60L135 60M80 60L80 40L100 50L120 40L120 60M130 25L110 70L135 65L115 105"/>',
+ '<path d="M100 30L110 65L145 65L117 87L127 120L100 100L73 120L83 87L55 65L90 65Z"/>',
+ '<path d="M110 35A38 38 0 1 0 110 110A30 30 0 0 1 110 35"/><path d="M55 125Q75 115 95 125T135 125"/>',
+ '<circle cx="100" cy="80" r="25"/><path d="M100 30L100 45M100 115L100 130M50 80L65 80M135 80L150 80M65 45L76 56M124 104L135 115M65 115L76 104M124 56L135 45"/>',
+ '<path d="M60 50L110 65L110 90L60 105ZM110 75L145 75M110 85L145 85M65 110L65 125M80 110L80 125M95 110L95 125"/>',
+ '<ellipse cx="100" cy="80" rx="38" ry="48"/><path d="M80 100Q100 60 120 100M100 60L100 40M65 35L55 25M135 35L145 25M65 125L55 135M135 125L145 135"/>'
+ ];
+ return '<svg viewBox="0 0 200 160" role="img" aria-label="'+esc(t.name)+' symbolic illustration" style="display:block;width:100%;max-width:220px;margin:auto;color:inherit"><rect x="8" y="8" width="184" height="144" rx="24" fill="currentColor" opacity=".06"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'+(t.reversed?' transform="rotate(180 100 80)"':'')+'>'+motifs[t.index]+'</g><g fill="currentColor" opacity=".45"><circle cx="30" cy="35" r="2"/><circle cx="170" cy="125" r="2"/><path d="M166 30L169 37L176 40L169 43L166 50L163 43L156 40L163 37Z"/></g></svg>';
 }
