@@ -3313,3 +3313,14 @@ textarea{resize:vertical}
   .money-tabs{gap:2px}.money-tabs button{min-height:44px;padding-inline:2px}
   .money-mini-totals{grid-template-columns:1fr}
 }
+
+
+/* Compact Budget tabs */
+.budget-hero{
+  display:grid;gap:10px;margin:2px 0 10px;padding:10px 2px 14px;
+  border-bottom:1px solid color-mix(in srgb,var(--primary) 24%,var(--border))
+}
+.budget-hero h1{font-family:var(--font-heading);font-size:1.4rem;margin:3px 0;color:var(--cream)}
+.budget-hero .budget-month{margin:2px 0}
+.budget-hero .budget-summary{margin:4px 0}
+.budget-tab-panel{min-width:0}
