@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-sleep2">
+<link rel="stylesheet" href="styles.css?v=20261002-share6">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -201,7 +201,7 @@ async function dbClear(){
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261002-cloud19"></script>
-<script src="sharing.js?v=20261002-share5"></script>
+<script src="sharing.js?v=20261002-share6"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
 <script src="vault.js?v=20261002-vault4"></script>
@@ -1814,7 +1814,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
   return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
-  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${todaySleepPlanCard()}${todayCareSnapshotCard()}${todaySpiritualityCard()}${todayPeopleSnapshotCard()}${todayLivingThingsCard()}
+  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${typeof sharingTodayCard==="function"?sharingTodayCard():""}${todaySleepPlanCard()}${todayCareSnapshotCard()}${todaySpiritualityCard()}${todayPeopleSnapshotCard()}${todayLivingThingsCard()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
@@ -3716,10 +3716,10 @@ async function toggleCare(key){
   await save();render();
 }
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
-function openTask(person="",id=""){
+function openTask(person="",id="",shareDefault=false){
   ensurePeopleProfiles();
   const existing=(state.tasks||[]).find(x=>x.id===id)||null,
-        x=existing||{date:ymd(),title:"",child:person||"",category:"life",notes:"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:""};
+        x=existing||{date:ymd(),title:"",child:person||"",category:"life",notes:"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
   modal(existing?"Edit task":"Add task",`<div class="stack">
     <label>Task<input id="task" value="${esc(x.title||"")}"></label>
     <div class="grid2"><label>Date<input id="taskdate" type="date" value="${esc(x.date||ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
@@ -4472,7 +4472,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-sleep2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-share6");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
