@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-dayflowrestore1">
+<link rel="stylesheet" href="styles.css?v=20261002-runtimefix1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-61";
+const APP_BUILD="2026.10.02-62";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -900,6 +900,158 @@ function openItinerarySettings(){
   });
 }
 
+
+function latestPaycheck(){return [...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||"")))[0]||null}
+
+function payrollLoggedHours(p){
+  if(!p?.periodStart||!p?.periodEnd)return 0;
+  return (state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).reduce((sum,w)=>sum+workCreditedHours(w),0);
+}
+
+function payrollReconcile(p){
+  const rows=p?.periodStart&&p?.periodEnd?(state.workShifts||[]).filter(w=>w.date>=p.periodStart&&w.date<=p.periodEnd).sort((a,b)=>a.date.localeCompare(b.date)):[],
+        logged=rows.reduce((sum,w)=>sum+workCreditedHours(w),0),official=Number(p?.totalHours||0),diff=official-logged,
+        needsEnd=rows.filter(w=>workNeedsPunchOut(w)),
+        incomplete=rows.filter(w=>w.start&&!w.end&&!workNeedsPunchOut(w));
+  if(!official)return {logged,official,diff,status:"unknown",rows,needsEnd,incomplete};
+  const status=needsEnd.length||incomplete.length?"review":Math.abs(diff)<=0.10?"match":Math.abs(diff)<=0.50?"close":"review";
+  return {logged,official,diff,status,rows,needsEnd,incomplete};
+}function payrollReconcileDetail(p){
+  const r=payrollReconcile(p);if(!p?.periodStart||!p?.periodEnd)return"";
+  const issueDates=[...r.needsEnd,...r.incomplete].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i),gap=Math.abs(r.diff);
+  return `<div class="payroll-audit ${r.status}"><div class="row"><span><b>${r.status==="match"?"Daily work log matches official hours":r.status==="close"?"Small hours difference":"Work log needs review"}</b><div class="muted small">Official ${r.official.toFixed(2)} h · daily log ${r.logged.toFixed(2)} h · difference ${r.diff>=0?"+":""}${r.diff.toFixed(2)} h</div></span><span class="tag">${r.status}</span></div>${issueDates.length?`<div class="work-issue-dates"><div class="muted small"><b>Punch-out / end time still needed:</b></div>${issueDates.map(w=>`<button class="btn small" onclick="event.stopPropagation();openWork(\'${w.date}\')">${esc(dl(w.date))} · ${esc(fmtClock(w.start||w.scheduled||""))}</button>`).join("")}</div>`:""}${!issueDates.length&&r.status==="review"&&gap>.10?`<div class="notice">${r.diff>0?"Official payroll contains "+gap.toFixed(2)+" more hours than the completed daily log. Check for a missing shift or incomplete punch times.":"The daily log contains "+gap.toFixed(2)+" more hours than official payroll. Review entered start/end times."}</div>`:""}</div>`;
+}
+
+function payrollReconcileDetail(p){
+  const r=payrollReconcile(p);if(!p?.periodStart||!p?.periodEnd)return"";
+  const issueDates=[...r.needsEnd,...r.incomplete].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i),gap=Math.abs(r.diff);
+  return `<div class="payroll-audit ${r.status}"><div class="row"><span><b>${r.status==="match"?"Daily work log matches official hours":r.status==="close"?"Small hours difference":"Work log needs review"}</b><div class="muted small">Official ${r.official.toFixed(2)} h · daily log ${r.logged.toFixed(2)} h · difference ${r.diff>=0?"+":""}${r.diff.toFixed(2)} h</div></span><span class="tag">${r.status}</span></div>${issueDates.length?`<div class="work-issue-dates"><div class="muted small"><b>Punch-out / end time still needed:</b></div>${issueDates.map(w=>`<button class="btn small" onclick="event.stopPropagation();openWork(\'${w.date}\')">${esc(dl(w.date))} · ${esc(fmtClock(w.start||w.scheduled||""))}</button>`).join("")}</div>`:""}${!issueDates.length&&r.status==="review"&&gap>.10?`<div class="notice">${r.diff>0?"Official payroll contains "+gap.toFixed(2)+" more hours than the completed daily log. Check for a missing shift or incomplete punch times.":"The daily log contains "+gap.toFixed(2)+" more hours than official payroll. Review entered start/end times."}</div>`:""}</div>`;
+}
+
+function upsEmploymentProfile(){
+  return (state.employmentProfiles||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
+}
+
+function upsSeasonality(){
+  return (state.incomeSeasonality||[]).find(x=>String(x.employer||"").toLowerCase().includes("ups"))||null;
+}
+
+function employmentRateForDate(profile,date=ymd()){
+  const rows=Array.isArray(profile?.progression)?profile.progression.filter(x=>x.date&&Number(x.rate)>0).sort((a,b)=>a.date.localeCompare(b.date)):[];
+  let active=null;for(const row of rows)if(row.date<=date)active=row;
+  return active;
+}
+
+function nextEmploymentRaise(profile,date=ymd()){
+  return (profile?.progression||[]).filter(x=>x.date>date&&Number(x.rate)>0).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
+}
+
+function upsContractPayCard(){
+  const p=upsEmploymentProfile();if(!p)return"";
+  const verified=[...(p.verifiedRates||[])].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
+  const latestInside=verified.slice().reverse().find(x=>x.job==="inside")||{};
+  const current=Number(p.currentRate||latestInside.rate||0);
+  const steps=Array.isArray(p.contractProgression)&&p.contractProgression.length?p.contractProgression:(p.progression||[]);
+  const nextStep=steps.find(x=>Number(x.rate)>current);
+  return `<div class="card ups-contract"><div class="section-title"><div><div class="eyebrow">📦 UPS contract + pay</div><h2>${current?money(current)+"/hr inside rate":"Rate not set"}</h2><div class="muted small">${esc(p.role||"UPS employee")} · ${esc(p.unionLocal||"Teamsters")}</div></div><span class="tag">contract tracking</span></div>
+    ${verified.length?`<div class="mini-heading">Verified paystub history</div><div class="pay-progression">${verified.map(x=>`<div class="pay-step"><span>${esc(x.jobLabel||x.job||"Rate")}</span><b>${money(x.rate)}/hr</b><small>${esc(x.date?dl(x.date):"")}</small></div>`).join("")}</div>`:""}
+    ${steps.length?`<div class="notice"><b>Contract progression</b><br><span class="muted small">${steps.map(x=>`${esc(x.label)} ${money(x.rate)}`).join(" · ")}.</span>${nextStep?`<br><span class="muted small">Next contractual step after ${money(current)}/hr: ${money(nextStep.rate)}/hr at ${esc(nextStep.label)}.</span>`:""}</div>`:""}
+    ${p.scheduledStartDate?`<div class="row"><span>Scheduled first day</span><b>${esc(dl(p.scheduledStartDate))}</b></div>`:""}
+    <div class="row"><span>Official seniority date</span><b>${p.seniorityDate?esc(dl(p.seniorityDate)):"Not confirmed yet"}</b></div>
+    ${p.raiseTimingNote?`<div class="notice"><span class="muted small">${esc(p.raiseTimingNote)}</span></div>`:""}
+    ${p.ssd?.rateFloor?`<div class="row"><span><b>Seasonal Support Driver</b><div class="muted small">${esc(p.ssd.note||"Seasonal driver rate tracked from private payroll/contract data.")}</div></span><b>${money(p.ssd.rateFloor)}/hr</b></div>`:""}
+    ${p.peakReference?`<div class="notice"><b>${esc(p.peakReference.label||"Peak reference paycheck")}</b><br><span class="muted small">${Number(p.peakReference.workedHours||0).toFixed(2)} worked hours · ${money(p.peakReference.grossPay)} gross · ${money(p.peakReference.mileageReimbursement)} mileage · ${money(p.peakReference.netPay)} net.</span></div>`:""}
+  </div>`;
+}
+
+function monthNameFromKey(key){const n=Number(key);return n>=1&&n<=12?new Date(2026,n-1,1).toLocaleDateString("en-US",{month:"short"}):String(key)}
+
+function peakSeasonPlanningRows(){
+  const x=upsSeasonality(),p=upsEmploymentProfile();if(!x)return[];
+  const year=Number(ymd().slice(0,4)),previous=String(year-1),current=String(year),
+        lastYear=x.years?.[previous]||{},thisYear=x.years?.[current]||{},
+        recent=Number(x.recentWeeklyAverageNet||0),
+        latestInside=[...(p?.verifiedRates||[])].filter(v=>v.job==="inside"&&Number(v.rate)>0).sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).slice(-1)[0],
+        currentRate=Number(p?.currentRate||latestInside?.rate||employmentRateForDate(p,ymd())?.rate||0),
+        months=["10","11","12"];
+  return months.map(month=>{
+    const targetDate=`${year}-${month}-15`,effective=employmentRateForDate(p,targetDate),targetRate=Number(effective?.rate||currentRate||0),
+          rateFactor=currentRate>0&&targetRate>0?targetRate/currentRate:1,
+          recentMonthly=recent>0?recent*4.345*rateFactor:0,
+          prior=Number(lastYear[month]||0),actual=Number(thisYear[month]||0),
+          candidates=[prior,recentMonthly].filter(n=>Number.isFinite(n)&&n>0),
+          low=candidates.length?Math.min(...candidates):0,high=candidates.length?Math.max(...candidates):0;
+    return{month,targetDate,prior,recentMonthly,actual,low,high,targetRate,rateAdjusted:Math.abs(rateFactor-1)>.001};
+  });
+}
+
+function seasonalIncomeCard(){
+  const x=upsSeasonality();if(!x)return"";
+  const year=Number(ymd().slice(0,4)),previous=String(year-1),current=String(year),
+        prev=x.years?.[previous]||{},cur=x.years?.[current]||{},months=["09","10","11","12"],
+        recent=Number(x.recentWeeklyAverageNet||0),planning=peakSeasonPlanningRows();
+  return `<div class="card seasonal-income"><div class="section-title"><div><div class="eyebrow">Peak-season income pattern</div><h2>UPS income changes a lot by season</h2></div><span class="tag">history + planning range</span></div>
+    <div class="season-grid">${months.map(m=>`<div class="metric"><div class="muted small">${monthNameFromKey(m)} ${previous}</div><div class="big">${money(Number(prev[m]||0))}</div><div class="muted small">net payroll deposited</div></div>`).join("")}</div>
+    ${Number(cur["09"]||0)?`<div class="row"><span><b>Sep ${current} actual deposits</b><div class="muted small">Recorded UPS payroll deposits</div></span><b>${money(Number(cur["09"]||0))}</b></div>`:""}
+    ${recent?`<div class="row"><span>Recent weekly net baseline</span><b>${money(recent)}</b></div>`:""}
+    ${planning.some(r=>r.low>0)?`<div class="mini-heading">Upcoming peak planning range</div><div class="season-grid">${planning.map(r=>`<div class="metric"><div class="muted small">${monthNameFromKey(r.month)} ${current}</div><div class="big">${r.low>0&&r.high>0?(r.low===r.high?money(r.low):money(r.low)+"–"+money(r.high)):"—"}</div><div class="muted small">${r.rateAdjusted&&r.targetRate?"recent baseline adjusted for "+money(r.targetRate)+"/hr rate · ":""}same-month history ↔ recent weekly pace</div>${r.actual>0?`<div class="muted small">Actual posted so far: ${money(r.actual)}</div>`:""}</div>`).join("")}</div>`:""}
+    <div class="notice"><b>How Daily Life uses this:</b><br><span class="muted small">The range is planning context from last year’s same-month net deposits and your recent weekly net pace. When a dated UPS rate change is known, the recent-pay side of the range is adjusted proportionally for that rate. Hours, overtime, mileage, taxes, and peak staffing can still change the actual result. These ranges are <b>not</b> automatically promised to bills; bill coverage only counts enabled expected-income entries until real paychecks arrive.</span></div>
+  </div>`;
+}
+
+function currentWeekWorkCard(){
+  const dates=week(),rows=(state.workShifts||[]).filter(w=>dates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date)),
+        summary=state.settings?.upsTimecardSummary||null,
+        summaryFits=!!(summary&&summary.periodStart&&summary.periodEnd&&dates.includes(summary.periodStart)&&dates.includes(summary.periodEnd)),
+        rowHours=rows.reduce((sum,w)=>sum+workCreditedHours(w),0),
+        rowGross=rows.reduce((sum,w)=>sum+(w.timecardVerified?Number(w.officialGrossPay||0):0),0),
+        total=summaryFits&&Number.isFinite(Number(summary.totalHours))?Number(summary.totalHours):rowHours,
+        officialGross=summaryFits&&Number.isFinite(Number(summary.grossPay))?Number(summary.grossPay):rowGross,
+        needs=rows.filter(w=>workNeedsPunchOut(w)),
+        sourceLabel=summaryFits?"UPS weekly timecard":rows.some(w=>w.timecardVerified)?"official / confirmed":"confirmed";
+  return `<div class="card work-week-card"><div class="section-title"><div><div class="eyebrow">📦 UPS this week</div><h2>${total.toFixed(2)} ${sourceLabel==="UPS weekly timecard"?"official":"confirmed"} hours</h2><div class="muted small">${officialGross>0?money(officialGross)+" official gross · ":""}${needs.length?needs.length+" shift"+(needs.length===1?"":"s")+" still need a punch-out":"Completed shifts use actual entered start + end times; official UPS totals win when imported."}</div>${summaryFits&&summary.lastUpdatedRaw?`<div class="muted small">UPS timecard last updated ${esc(summary.lastUpdatedRaw)}</div>`:""}</div><div class="actions"><button class="btn" onclick="openWork()">Edit today</button><button class="btn" onclick="openPunchImport()">Paste punches</button></div></div>${rows.length?rows.map(w=>{const hrs=workCreditedHours(w),live=liveWorkHours(w),needsEnd=workNeedsPunchOut(w);return `<button class="work-day-row" onclick="openWork(\'${w.date}\')"><span><b>${esc(dl(w.date))}</b><small>${esc(workStatusText(w))}</small></span><span><b>${hrs?hrs.toFixed(2)+" h":live?live.toFixed(2)+" h*":needsEnd?"needs end":"—"}</b><small>${w.timecardVerified&&Number(w.officialGrossPay)>0?money(w.officialGrossPay)+" gross":needsEnd?"tap to finish":hrs?"confirmed":"edit"}</small></span></button>`}).join(""):`<div class="notice">No UPS shifts logged this week yet.</div>`}</div>`;
+}
+
+function upsPayrollCard(){
+  const checks=[...(state.paychecks||[])].sort((a,b)=>String(b.payDate||"").localeCompare(String(a.payDate||""))).slice(0,5),last=checks[0];
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">UPS payroll</div><h2>${last?money(last.netPay)+" latest net":"No statements imported"}</h2></div><div class="actions"><button class="btn primary" onclick="document.querySelector(\'#payrollFile\').click()">Import PDF</button><button class="btn" onclick="openPaycheck()">+ Manual</button></div></div><div class="payroll-drop muted small">Import a Dayforce earnings statement. Daily Life compares official payroll hours with confirmed daily start/end times and points to dates that still need attention. Sensitive employee/bank identifiers are discarded.</div>${last?`<div class="grid3 payroll-balances"><div class="metric"><div class="eyebrow">Vacation</div><div class="big">${Number(last.vacationHours||0).toFixed(0)} h</div></div><div class="metric"><div class="eyebrow">PST</div><div class="big">${Number(last.pstHours||0).toFixed(0)} h</div></div><div class="metric"><div class="eyebrow">Option week</div><div class="big">${Number(last.optionWeekHours||0).toFixed(0)} h</div></div></div>`:""}${checks.map(p=>`<div class="paycheck-row" onclick="openPaycheck(\'${p.id}\')"><div class="row"><span><b>${esc(p.payDate?dl(p.payDate):"Paycheck")}</b><div class="muted small">${p.periodStart&&p.periodEnd?esc(dl(p.periodStart))+"–"+esc(dl(p.periodEnd))+" · ":""}${Number(p.totalHours||0).toFixed(2)} official h · ${money(p.grossPay)} gross</div></span><b>${money(p.netPay)}</b></div>${payrollReconcileDetail(p)}</div>`).join("")}</div>`;
+}
+
+function monthlyReaderTickets(){
+  const prefix=ymd().slice(0,7), readers=state.settings.readers||[];
+  return readers.map(reader=>{
+    const daily={};
+    for(const r of state.readingLogs.filter(x=>x.reader===reader&&x.date.startsWith(prefix)))daily[r.date]=(daily[r.date]||0)+Number(r.pages||0);
+    let tickets=0,pages=0,days=0;
+    for(const p of Object.values(daily)){pages+=p;days++;tickets+=p>=40?3:p>=20?2:p>=5?1:0}
+    return {reader,tickets,pages,days};
+  });
+}
+
+function spinReaderWheel(){
+  const pool=[];
+  for(const r of monthlyReaderTickets())for(let i=0;i<r.tickets;i++)pool.push(r.reader);
+  if(!pool.length){alert("No Reader Wheel tickets earned yet this month.");return}
+  const winner=pool[Math.floor(Math.random()*pool.length)];
+  alert(`Reader Wheel winner: ${winner}!`);
+}
+
+function openSectionLauncher(){
+  const sections=[["today","✦","Today","Dashboard + what needs attention"],["itinerary","◷","Day Flow","Hourly rhythm + what comes next"],["family","♡","People","Family, birthdays, gifts + plans"],["reading","◫","Reading","Books, pages + Reader Wheel"],["home","◇","Food","Meals, pantry + grocery"],["inventory","▦","Inventory","Everything you own + use what you have"],["more","$","Money","Accounts, budget + bills"],["log","✧","Care","Self care, work + life"],["spirituality","☾","Spirituality","Daily reading, tarot + seasonal rituals"],["vault","▣","Vault","Encrypted documents + logins"],["pets","♢","Pets","Profiles, care + health"],["garden","⌁","Garden","Plants, seeds + journal"],["settings","⚙","Settings","Routines, cloud + backup"]];
+  modal("Daily Life sections",`<div class="section-launcher">${sections.map(([id,icon,title,detail])=>`<button onclick="closeModal();setView('${id}')"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
+}
+
+function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
+
+function needsSetup(){return !state.profile?.name}
+
+function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life ✦</div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
+
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="icon.svg?v=20261002-botanical3" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+
+function changeBudgetMonth(offset){
+  const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
+}
 
 function dailyLifeAdvice(){
   const items=[...weatherPrepAdvice()];
@@ -4690,7 +4842,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-dayflowrestore1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-runtimefix1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
