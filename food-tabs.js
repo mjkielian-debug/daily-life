@@ -39,7 +39,7 @@ function compactFoodMealsWeek(){
         ready=remainingMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,
         choosing=remainingMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
   return `<section class="food-flat-section"><div class="section-title"><div><div class="eyebrow">Meal plan</div><h2>This week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
-    ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),sg=latestMealSuggestion(d),past=d<today;return `<div class="food-meal-row ${past?"past-row":""}"><button class="food-meal-main" onclick="openMeal('${d}')"><span><b>${dl(d)}</b><small>${m?.method?esc(m.method):past?"Past":""}</small></span><span class="food-meal-dish">${m?.dish?esc(m.dish):past?"No meal logged":sg?"Suggestion ready":m?.recipeState==="suggestion-queued"?"Choosing…":"Not planned"}<small>${m?.dish?(rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"):""}</small></span></button>${!past&&!m?.dish&&!sg&&m?.recipeState!=="suggestion-queued"?`<button class="btn small" onclick="requestMealSuggestion('${d}')">Suggest</button>`:""}</div>`}).join("")}
+    ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),sg=latestMealSuggestion(d),past=d<today;return `<div class="food-meal-row ${past?"past-row":""}"><button class="food-meal-main" onclick="openMeal('${d}')"><span><b>${dl(d)}</b><small>${m?.method?esc(m.method):past?"Past":""}</small></span><span class="food-meal-dish">${m?.dish?`<span class="food-meal-dish-line">${m.photo?`<img src="${m.photo}" alt="">`:`<i aria-hidden="true">${mealVisualIcon(m.dish)}</i>`}<span>${esc(m.dish)}</span></span>`:past?"No meal logged":sg?"Suggestion ready":m?.recipeState==="suggestion-queued"?"Choosing…":"Not planned"}<small>${m?.dish?(rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"):""}</small></span></button>${!past&&!m?.dish&&!sg&&m?.recipeState!=="suggestion-queued"?`<button class="btn small" onclick="requestMealSuggestion('${d}')">Suggest</button>`:""}</div>`}).join("")}
   </section>`;
 }
 
@@ -90,6 +90,29 @@ function mealVisualIcon(dish){
   return"🍽";
 }
 
+function mealMemoryPhoto(m){
+  return m?.photo?`<img class="recipe-photo" src="${m.photo}" alt="${esc((m.dish||"Dinner")+" meal photo")}">`:`<span class="recipe-visual" aria-hidden="true">${mealVisualIcon(m?.dish)}</span>`;
+}
+function openMealMemory(id){
+  const m=(state.meals||[]).find(x=>x.id===id);if(!m)return;
+  modal("Meal memory · "+(m.dish||"Dinner"),`<div class="stack">
+    <div class="meal-memory-preview">${m.photo?`<img src="${m.photo}" alt="Current meal photo">`:`<span>${mealVisualIcon(m.dish)}</span>`}</div>
+    <label>Meal photo<input id="mealMemoryPhoto" type="file" accept="image/*"></label>
+    <label>My cooking notes<textarea id="mealCookNotes" rows="5" placeholder="What worked? What would you change next time? Who liked it?">${esc(m.cookNotes||"")}</textarea></label>
+    <div class="muted small">Meal photos stay on this device for now so cloud snapshots stay small. Cooking notes sync normally.</div>
+    ${m.photo?`<button type="button" class="btn danger" onclick="removeMealMemoryPhoto('${m.id}')">Remove current photo</button>`:""}
+  </div>`,"Save memory",async()=>{
+    const file=$("#mealMemoryPhoto")?.files?.[0];
+    if(file)m.photo=await compressImage(file,1000,.8);
+    m.cookNotes=$("#mealCookNotes").value.trim();m.photoLocalOnly=!!m.photo;m.updatedAt=new Date().toISOString();
+    await save();closeModal();render();
+  });
+}
+async function removeMealMemoryPhoto(id){
+  const m=(state.meals||[]).find(x=>x.id===id);if(!m)return;
+  delete m.photo;m.photoLocalOnly=false;await save();closeModal();openMealMemory(id);
+}
+
 generatedMealDetails=function(m){
   const ingredients=splitLines(m?.ingredients),directions=splitLines(m?.prepSteps);
   if(!ingredients.length&&!directions&&!m?.notes){
@@ -97,7 +120,8 @@ generatedMealDetails=function(m){
   }
   const tips=m?.notes?`<details class="recipe-extra-tips"><summary><span><b>Extra recipe tips</b><small>Optional notes, substitutions, or useful reminders</small></span><span>Open</span></summary><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div></details>`:"";
   return `<section class="recipe-details">
-    <div class="recipe-details-head"><span class="recipe-visual" aria-hidden="true">${mealVisualIcon(m?.dish)}</span><span><div class="eyebrow">Recipe details</div><b>${esc(m?.dish||"Dinner")}</b></span></div>
+    <div class="recipe-details-head">${mealMemoryPhoto(m)}<span class="grow"><div class="eyebrow">Recipe details</div><b>${esc(m?.dish||"Dinner")}</b><small>${m?.cookNotes?"Your cooking notes saved":"Add a photo or your own notes"}</small></span><button class="btn small" type="button" onclick="openMealMemory('${m.id}')">Photo + notes</button></div>
+    ${m?.cookNotes?`<div class="meal-cook-notes"><div class="mini-heading">My cooking notes</div><div>${esc(m.cookNotes).replace(/\n/g,"<br>")}</div></div>`:""}
     ${ingredients.length?`<div class="recipe-section"><div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div></div>`:""}
     ${directions.length?`<div class="recipe-section"><div class="mini-heading">Directions</div><ol class="recipe-directions">${directions.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`:""}
     ${m?.tomorrowPrep?`<div class="recipe-section recipe-make-ahead"><div class="mini-heading">Make-ahead prep</div><div class="muted small">${esc(m.tomorrowPrep).replace(/\n/g,"<br>")}</div></div>`:""}
