@@ -2973,3 +2973,12 @@ textarea{resize:vertical}
   .app-update-notice{align-items:stretch;flex-direction:column;bottom:calc(78px + env(safe-area-inset-bottom))}
   .app-update-notice .btn{width:100%}
 }
+
+
+/* Bank-match correction */
+.bank-match-notice{
+  display:grid;gap:7px;
+  border-color:color-mix(in srgb,var(--primary) 34%,var(--secondary) 18%);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 9%,transparent),color-mix(in srgb,var(--secondary) 5%,transparent))
+}
+.bank-match-notice .btn{justify-self:start}
