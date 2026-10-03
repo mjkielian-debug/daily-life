@@ -1,0 +1,343 @@
+/* Daily Life · orchestration layer
+   Pulls important loose ends from across the app into one command center
+   and feeds genuinely actionable items into Day Flow. */
+(function(){
+  "use strict";
+
+  function lifeShift(date,days){
+    return typeof shiftDateString==="function"?shiftDateString(date,days):(function(){
+      const d=new Date(String(date)+"T12:00:00");d.setDate(d.getDate()+Number(days||0));return ymd(d);
+    })();
+  }
+  function lifeDaysBetween(a,b){
+    return Math.round((new Date(String(b)+"T12:00:00")-new Date(String(a)+"T12:00:00"))/86400000);
+  }
+  function lifeTaskOpen(t){return t&&!t.done}
+  function lifeTaskDate(t){return /^\d{4}-\d{2}-\d{2}$/.test(String(t?.date||""))?t.date:ymd()}
+  function lifeDueLabel(date){
+    const today=ymd(),d=lifeDaysBetween(today,date);
+    if(d<0)return Math.abs(d)+"d overdue";
+    if(d===0)return"today";
+    if(d===1)return"tomorrow";
+    return"in "+d+" days";
+  }
+  function lifeInferCategory(text){
+    const s=String(text||"").toLowerCase();
+    if(/school|teacher|grade|homework|reading|band|dance|club|assignment|parentvue/.test(s))return"school";
+    if(/bill|pay |payment|bank|money|budget|account|transfer|insurance/.test(s))return"money";
+    if(/car|tire|gas|fuel|oil|vehicle|walmart tire/.test(s))return"car";
+    if(/cat|pet|litter|vet|indy|paul/.test(s))return"pets";
+    if(/plant|garden|seed|water plant|fertiliz/.test(s))return"garden";
+    if(/food|dinner|meal|grocery|fridge|freezer|pantry|cook/.test(s))return"food";
+    if(/clean|laundry|dishes|declutter|room|house|vacuum|mop|bathroom|closet|organize/.test(s))return"home";
+    if(/call|email|form|appointment|paperwork|order|return|schedule/.test(s))return"life";
+    return"life";
+  }
+  function lifeTaskMinutesFor(title,category){
+    if(typeof itineraryTaskMinutes==="function")return itineraryTaskMinutes({title:title,category:category||lifeInferCategory(title)});
+    return 20;
+  }
+
+  function lifeGeneratedSpecs(){
+    const today=ymd(),soon=lifeShift(today,2),specs=[],
+      push=(x)=>specs.push(Object.assign({date:today,category:"life",minutes:15,preference:"any",order:35},x));
+
+    for(const b of state.bills||[]){
+      if(b.status==="paid"||b.paymentPending||!b.due||b.due>soon)continue;
+      const setup=typeof recordedBillSetup==="function"?recordedBillSetup(b):String(b.paymentSetup||"Unknown");
+      if(setup==="Autopay"||setup==="Scheduled")continue;
+      push({
+        key:"bill:"+b.id,title:"Pay / confirm "+(b.name||"bill"),category:"money",minutes:15,preference:"morning",order:8,
+        note:(b.due?"Due "+lifeDueLabel(b.due):"")+(Number.isFinite(Number(b.amount))?" · "+money(b.amount):""),
+        sourceType:"bill",sourceId:b.id
+      });
+    }
+
+    if(typeof duePetRoutines==="function"){
+      for(const r of duePetRoutines().slice(0,4)){
+        const p=typeof petById==="function"?petById(r.petId):null;
+        push({
+          key:"pet:"+r.id,title:r.title||"Pet care",category:"pets",minutes:15,preference:"any",order:18,
+          note:[p?.name,typeof petRoutineDueState==="function"?petRoutineDueState(r).label:"due"].filter(Boolean).join(" · "),
+          sourceType:"petRoutine",sourceId:r.id
+        });
+      }
+    }
+
+    if(typeof duePlantRoutines==="function"){
+      for(const r of duePlantRoutines().slice(0,4)){
+        const p=typeof plantById==="function"?plantById(r.plantId):null;
+        push({
+          key:"plant:"+r.id,title:r.title||"Plant care",category:"garden",minutes:15,preference:"any",order:22,
+          note:[p?.name,typeof plantRoutineDueState==="function"?plantRoutineDueState(r).label:"due"].filter(Boolean).join(" · "),
+          sourceType:"plantRoutine",sourceId:r.id
+        });
+      }
+    }
+
+    for(const o of state.orders||[]){
+      if(String(o.status||"").toLowerCase()==="delivered"&&!o.perishablesAway){
+        push({key:"groceries:"+o.id,title:"Put grocery perishables away",category:"food",minutes:15,preference:"any",order:5,
+          note:o.store||"Delivered grocery order",sourceType:"groceryOrder",sourceId:o.id});
+      }
+    }
+
+    if(typeof nextLifeAdminAction==="function"){
+      const a=nextLifeAdminAction();
+      if(a)push({key:"project:"+a.projectId,title:a.title,category:"life",minutes:20,preference:"any",order:26,
+        note:a.notes||"Life admin",sourceType:"project",sourceId:a.projectId});
+    }
+
+    if(typeof tirePressureStats==="function"){
+      const ts=tirePressureStats(),latest=ts.latest;
+      if(latest&&Number(latest.psi)>0&&Number(latest.psi)<28){
+        push({key:"tire-low",title:"Check / air low tire",category:"car",minutes:15,preference:"morning",order:3,
+          note:"Last recorded "+Number(latest.psi).toFixed(1)+" PSI · "+(latest.date?dl(latest.date):"recent reading"),
+          sourceType:"tire",sourceId:latest.id||""});
+      }
+    }
+
+    if(typeof vehicleMaintenanceSnapshot==="function"){
+      const m=vehicleMaintenanceSnapshot();
+      if(m?.oil?.due)push({key:"vehicle:oil",title:"Plan / handle oil change",category:"car",minutes:20,preference:"any",order:17,
+        note:"Vehicle maintenance is due",sourceType:"vehicle",sourceId:"oil"});
+      if(m?.rotation?.due)push({key:"vehicle:rotation",title:"Plan / handle tire rotation",category:"car",minutes:20,preference:"any",order:18,
+        note:"Vehicle maintenance is due",sourceType:"vehicle",sourceId:"rotation"});
+    }
+
+    for(const a of state.schoolAssignments||[]){
+      if(!["missing","due"].includes(String(a.status||"").toLowerCase()))continue;
+      if(a.due&&a.due>lifeShift(today,2))continue;
+      push({
+        key:"school:"+a.id,title:(a.child?a.child+" · ":"")+("Check "+(a.title||"school assignment")),category:"school",
+        minutes:30,preference:"after-school",order:String(a.status).toLowerCase()==="missing"?4:12,
+        note:[a.course,a.due?"due "+lifeDueLabel(a.due):"",a.status].filter(Boolean).join(" · "),
+        sourceType:"schoolAssignment",sourceId:a.id
+      });
+    }
+    return specs;
+  }
+
+  function lifeSyncGeneratedTasks(){
+    state.tasks=state.tasks||[];
+    const specs=lifeGeneratedSpecs(),desired=new Map(specs.map(x=>[x.key,x])),today=ymd();
+    let changed=false;
+
+    for(const s of specs){
+      let t=state.tasks.find(x=>x.generated==="life-orchestrator"&&x.lifeSourceKey===s.key);
+      if(!t){
+        t={id:uid(),date:s.date,title:s.title,child:"",category:s.category,notes:s.note||"",done:false,order:s.order,
+          itineraryMinutes:s.minutes,itineraryPreference:s.preference,itineraryStart:"",generated:"life-orchestrator",
+          lifeSourceKey:s.key,lifeSourceType:s.sourceType,lifeSourceId:s.sourceId,createdAt:new Date().toISOString()};
+        state.tasks.push(t);changed=true;
+      }else if(!t.done){
+        const patch={date:s.date,title:s.title,category:s.category,notes:s.note||"",order:s.order,itineraryMinutes:s.minutes,itineraryPreference:s.preference,
+          lifeSourceType:s.sourceType,lifeSourceId:s.sourceId};
+        for(const [k,v] of Object.entries(patch))if(t[k]!==v){t[k]=v;changed=true}
+      }
+    }
+
+    const before=state.tasks.length;
+    state.tasks=state.tasks.filter(function(t){
+      if(t.generated!=="life-orchestrator")return true;
+      if(t.done)return true;
+      if(desired.has(t.lifeSourceKey))return true;
+      return lifeTaskDate(t)<today;
+    });
+    if(state.tasks.length!==before)changed=true;
+    return changed;
+  }
+
+  function lifeCompleteRoutine(r,everyField,nextField,lastField){
+    if(!r)return;
+    const date=ymd();r[lastField]=date;
+    const every=Math.max(0,Number(r[everyField]||0));
+    r[nextField]=every?lifeShift(date,every):"";
+  }
+
+  const baseToggleTask=toggleTask;
+  toggleTask=async function(id,d){
+    const t=(state.tasks||[]).find(x=>x.id===id);
+    if(t&&d&&t.generated==="life-orchestrator"){
+      if(t.lifeSourceType==="petRoutine"){
+        const r=(state.petCareRoutines||[]).find(x=>x.id===t.lifeSourceId);
+        lifeCompleteRoutine(r,"everyDays","nextDate","lastDone");
+      }else if(t.lifeSourceType==="plantRoutine"){
+        const r=(state.plantCareRoutines||[]).find(x=>x.id===t.lifeSourceId);
+        lifeCompleteRoutine(r,"everyDays","nextDate","lastDone");
+      }else if(t.lifeSourceType==="groceryOrder"){
+        const o=(state.orders||[]).find(x=>x.id===t.lifeSourceId);if(o)o.perishablesAway=true;
+      }
+    }
+    return baseToggleTask(id,d);
+  };
+
+  function lifeOpenSource(task){
+    if(!task)return;
+    const type=task.lifeSourceType,id=task.lifeSourceId;
+    if(type==="bill"&&typeof openBill==="function")return openBill(id);
+    if(type==="petRoutine"&&typeof openPetRoutine==="function")return openPetRoutine(id);
+    if(type==="plantRoutine"&&typeof openPlantRoutine==="function")return openPlantRoutine(id);
+    if(type==="groceryOrder"&&typeof openOrder==="function")return openOrder(id);
+    if(type==="project"&&typeof openProject==="function")return openProject(id);
+    if(type==="schoolAssignment"){setView("family");return}
+    if(type==="tire"&&typeof openTire==="function")return openTire();
+    if(type==="vehicle"&&typeof openVehicle==="function")return openVehicle();
+    if(typeof openTask==="function")return openTask("",task.id);
+  }
+  window.lifeOpenSource=function(id){
+    const t=(state.tasks||[]).find(x=>x.id===id);lifeOpenSource(t);
+  };
+
+  function lifeQueue(){
+    const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
+      todayRows=tasks.filter(t=>lifeTaskDate(t)<=today).sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
+      soonRows=tasks.filter(t=>lifeTaskDate(t)>today&&lifeTaskDate(t)<=weekEnd).sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100)),
+      waitingProjects=(state.projects||[]).filter(p=>String(p.status||"").toLowerCase()==="waiting"),
+      waitingBills=(state.bills||[]).filter(b=>b.paymentPending),
+      waitingDeliveries=(state.deliveries||[]).filter(d=>["expected","in transit","out for delivery","delayed"].includes(String(d.status||"").toLowerCase())),
+      waitingMeals=(state.meals||[]).filter(m=>["suggestion-queued","waiting_for_cloud","building"].includes(String(m.recipeState||""))),
+      events=(typeof upcomingEvents==="function"?upcomingEvents(7):[]),
+      waiting=[
+        ...waitingProjects.map(p=>({label:p.title||"Project",detail:p.due?"due "+dl(p.due):"waiting",kind:"project",id:p.id})),
+        ...waitingBills.map(b=>({label:b.name||"Bill",detail:"payment pending",kind:"bill",id:b.id})),
+        ...waitingDeliveries.map(d=>({label:d.sender||d.carrier||"Delivery",detail:d.status+(d.expectedDate?" · "+dl(d.expectedDate):""),kind:"delivery",id:d.id})),
+        ...waitingMeals.map(m=>({label:m.dish||"Meal recipe",detail:"recipe / suggestion processing",kind:"meal",id:m.id}))
+      ];
+    return{todayRows,soonRows,waiting,events};
+  }
+
+  function lifeScoreTask(t){
+    const today=ymd(),date=lifeTaskDate(t),days=lifeDaysBetween(today,date),
+      cat=String(t.category||""),now=new Date(),mins=now.getHours()*60+now.getMinutes();
+    let score=100-Number(t.order||100);
+    if(days<0)score+=60+Math.min(30,Math.abs(days)*4);
+    else if(days===0)score+=45;
+    if(t.generated==="life-orchestrator")score+=18;
+    if(["money","school","car"].includes(cat))score+=8;
+    if(t.itineraryStart){
+      const s=hmMinutes(t.itineraryStart);if(s!==null)score+=Math.max(0,30-Math.abs(s-mins)/10);
+    }
+    return score;
+  }
+
+  function lifeNextTask(){
+    const q=lifeQueue();
+    return q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
+  }
+
+  function lifeCurrentGuidance(){
+    const items=itineraryDayItems(ymd()),now=new Date(),m=now.getHours()*60+now.getMinutes(),
+      active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&e!==null&&s<=m&&e>m}),
+      next=items.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
+    if(active&&active.kind!=="gap")return{title:active.title,detail:active.detail||("Until "+fmtClock(active.end)),task:active.source==="task"?(state.tasks||[]).find(t=>t.id===active.sourceId):null,mode:"active"};
+    const task=lifeNextTask();
+    if(active&&active.kind==="gap"&&task)return{title:task.title,detail:(task.notes?task.notes+" · ":"")+"Use this open block for it.",task,mode:"open"};
+    if(next)return{title:"Next · "+fmtClock(next.start)+" · "+next.title,detail:next.detail||"",task:next.source==="task"?(state.tasks||[]).find(t=>t.id===next.sourceId):null,mode:"next"};
+    if(task)return{title:task.title,detail:task.notes||"This is the highest-priority open item Daily Life can see.",task,mode:"task"};
+    return{title:"No urgent loose ends",detail:"Use the open time for recovery, a room reset, or something you actually want to do.",task:null,mode:"clear"};
+  }
+
+  window.openLifeCapture=function(){
+    const tomorrow=lifeShift(ymd(),1);
+    modal("Quick capture",'<div class="stack">'+
+      '<div class="notice"><b>Dump it here. Daily Life will sort the basics.</b><div class="muted small">One item per line. Lines beginning with “buy” or “get” can go straight to Shopping.</div></div>'+
+      '<label>What is on your mind?<textarea id="lifeCaptureText" rows="7" placeholder="Call school about form\nbuy cat litter\nclean out hallway closet"></textarea></label>'+
+      '<div class="grid2"><label>When<select id="lifeCaptureWhen"><option value="'+ymd()+'">Today</option><option value="'+tomorrow+'">Tomorrow</option><option value="'+lifeShift(ymd(),3)+'">In the next few days</option><option value="'+lifeShift(ymd(),7)+'">Next week</option></select></label>'+
+      '<label>Route<select id="lifeCaptureRoute"><option value="auto">Auto-sort</option><option value="task">Tasks</option><option value="shopping">Shopping list</option></select></label></div>'+
+      '<label>Person (optional)<input id="lifeCapturePerson" list="lifeCapturePeople" placeholder="Leave blank if it is not for one person"><datalist id="lifeCapturePeople">'+(state.peopleProfiles||[]).map(p=>'<option value="'+esc(p.name)+'">').join("")+'</datalist></label>'+
+      '</div>',"Add",async()=>{
+        const lines=$("#lifeCaptureText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),date=$("#lifeCaptureWhen").value||ymd(),
+          route=$("#lifeCaptureRoute").value,person=$("#lifeCapturePerson").value.trim();
+        if(!lines.length)return;
+        for(const line of lines){
+          const shoppingMatch=line.match(/^(?:buy|get|pick up|pickup)\s+(.+)/i),asShopping=route==="shopping"||(route==="auto"&&shoppingMatch);
+          if(asShopping){
+            const item=(shoppingMatch?shoppingMatch[1]:line).trim();
+            state.shopping=state.shopping||[];
+            state.shopping.push({id:uid(),item:item,qty:"",store:"",status:"needed",source:"quick-capture",createdAt:new Date().toISOString()});
+          }else{
+            const category=lifeInferCategory(line);
+            state.tasks.push({id:uid(),date:date,title:line,child:person,category:category,notes:"Quick capture",done:false,order:55,
+              itineraryMinutes:lifeTaskMinutesFor(line,category),itineraryPreference:category==="school"?"after-school":"",itineraryStart:"",generated:"quick-capture"});
+          }
+        }
+        await save();closeModal();render();
+      });
+  };
+
+  function lifeWaitingOpen(row){
+    if(row.kind==="project"&&typeof openProject==="function")return openProject(row.id);
+    if(row.kind==="bill"&&typeof openBill==="function")return openBill(row.id);
+    if(row.kind==="delivery"&&typeof openDelivery==="function")return openDelivery(row.id);
+    if(row.kind==="meal"){setView("home");return}
+  }
+  window.lifeWaitingOpen=function(kind,id){lifeWaitingOpen({kind,id})};
+
+  function lifeCommandCard(){
+    const q=lifeQueue(),guide=lifeCurrentGuidance(),
+      soonCount=q.soonRows.length,waitingCount=q.waiting.length,eventCount=q.events.length,
+      top=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)).slice(0,5),
+      tomorrow=lifeShift(ymd(),1),tomorrowEvents=q.events.filter(e=>e.date===tomorrow),
+      tomorrowMeal=typeof mealForDate==="function"?mealForDate(tomorrow):null,
+      tomorrowWork=typeof workForDate==="function"?workForDate(tomorrow):null;
+    return '<div class="card life-command">'+
+      '<div class="life-command-head"><div><div class="eyebrow">Daily Life command center</div><h2>What needs you next</h2></div><div class="actions"><button class="btn primary" onclick="openLifeCapture()">＋ Capture</button><button class="btn" onclick="setView(\'itinerary\')">Day Flow</button></div></div>'+
+      '<div class="life-next-orb"><div class="life-next-label">DO NEXT</div><b>'+esc(guide.title)+'</b><small>'+esc(guide.detail)+'</small>'+
+        (guide.task?'<div class="actions"><button class="btn primary small" onclick="openItineraryTask(\''+guide.task.id+'\')">Put it on my clock</button><button class="btn small" onclick="lifeOpenSource(\''+guide.task.id+'\')">Open</button></div>':'')+
+      '</div>'+
+      '<div class="life-radar">'+
+        '<button onclick="setView(\'itinerary\')"><b>'+q.todayRows.length+'</b><span>Today</span></button>'+
+        '<button onclick="setView(\'today\')"><b>'+soonCount+'</b><span>Next 7 days</span></button>'+
+        '<button onclick="setView(\'log\')"><b>'+waitingCount+'</b><span>Waiting</span></button>'+
+        '<button onclick="setView(\'family\')"><b>'+eventCount+'</b><span>Upcoming</span></button>'+
+      '</div>'+
+      (top.length?'<div class="life-command-list"><div class="mini-heading">Today’s loose ends</div>'+top.map(t=>
+        '<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(t.title)+'</b><small>'+esc([t.child,t.notes,t.date<ymd()?"carried forward":""].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>'
+      ).join("")+'</div>':'<div class="life-clear"><b>Today’s tracked loose ends are clear.</b><small>Day Flow can stay light instead of inventing work for you.</small></div>')+
+      '<details class="life-tomorrow"><summary><span>Tomorrow check</span><b>'+tomorrowEvents.length+' event'+(tomorrowEvents.length===1?"":"s")+' · '+(tomorrowMeal?.dish?"dinner planned":"dinner open")+' · '+(tomorrowWork?.scheduled||tomorrowWork?.start?"work time known":"work time not entered")+'</b></summary>'+
+        '<div class="life-tomorrow-body">'+
+          (tomorrowEvents.slice(0,4).map(e=>'<div><b>'+esc(e.title)+'</b><small>'+esc((e.startTime?fmtClock(e.startTime)+" · ":"")+(e.child||e.location||""))+'</small></div>').join("")||'<div><b>No captured events tomorrow</b><small>That can be a good thing.</small></div>')+
+          '<div><b>'+(tomorrowMeal?.dish?esc(tomorrowMeal.dish):"Dinner is not planned")+'</b><small>'+(tomorrowMeal?.startBy?"Start by "+esc(fmtClock(tomorrowMeal.startBy)):"Open Food to plan or use what is on hand")+'</small></div>'+
+        '</div></details>'+
+      (q.waiting.length?'<details class="life-waiting"><summary>Waiting on '+q.waiting.length+' thing'+(q.waiting.length===1?"":"s")+'</summary>'+q.waiting.slice(0,6).map(w=>'<button onclick="lifeWaitingOpen(\''+w.kind+'\',\''+w.id+'\')"><b>'+esc(w.label)+'</b><small>'+esc(w.detail||"")+'</small></button>').join("")+'</details>':'')+
+      '</div>';
+  }
+
+  const baseToday=todayView;
+  todayView=function(){
+    lifeSyncGeneratedTasks();
+    return lifeCommandCard()+baseToday.apply(this,arguments);
+  };
+
+  /* Make the rotating off-day home reset point at a real mapped room when possible. */
+  const baseSuggested=itinerarySuggestedBlocks;
+  itinerarySuggestedBlocks=function(date){
+    const rows=baseSuggested(date),rooms=(state.houseRooms||[]).filter(r=>String(r.name||"").trim());
+    if(rooms.length){
+      const day=Math.floor(new Date(date+"T12:00:00").getTime()/86400000),
+        room=rooms[Math.abs(day)%rooms.length],
+        row=rows.find(x=>x.templateKey==="home-reset");
+      if(row){
+        row.title="20-minute "+room.name+" reset";
+        row.detail="Declutter one visible zone in "+room.name+" · put away what already has a home · stop when the block ends";
+      }
+    }
+    return rows;
+  };
+
+  /* Keep generated items current without requiring a manual refresh. */
+  const baseRender=render;
+  let lifeSyncSaveQueued=false;
+  render=function(){
+    const changed=lifeSyncGeneratedTasks();
+    if(changed&&!lifeSyncSaveQueued){
+      lifeSyncSaveQueued=true;
+      Promise.resolve(save()).catch(()=>{}).finally(()=>{lifeSyncSaveQueued=false});
+    }
+    return baseRender.apply(this,arguments);
+  };
+
+  lifeSyncGeneratedTasks();
+  if(typeof render==="function")render();
+})();
