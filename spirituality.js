@@ -59,7 +59,19 @@ function tarotForDate(date){
 }
 function ensureDailyTarotSaved(date){
  date=date||ymd();if((state.tarotDraws||[]).some(x=>x.date===date))return;
- const t=tarotForDate(date);state.tarotDraws.push({id:uid(),date:date,cardIndex:t.index,reversed:t.reversed,note:"",createdAt:new Date().toISOString()})
+ const t=tarotForDate(date);state.tarotDraws.push({id:uid(),date:date,cardIndex:t.index,reversed:t.reversed,note:"",revealed:false,revealedAt:"",createdAt:new Date().toISOString()})
+}
+function tarotRevealed(date){
+ date=date||ymd();const saved=(state.tarotDraws||[]).find(x=>x.date===date);
+ if(!saved)return false;
+ if(saved.revealed===undefined)return true;
+ return saved.revealed===true;
+}
+async function revealTarot(date){
+ date=date||ymd();ensureDailyTarotSaved(date);const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
+ draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();
+ let log=spiritualityLogFor(date);if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log)}
+ log.tarot=true;await save();render();
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
 async function toggleSpiritualPractice(key){
@@ -88,8 +100,11 @@ function openSpiritualJournal(type){
  modal("Spiritual journal",'<div class="stack"><div class="grid2"><label>Date<input id="sjDate" type="date" value="'+ymd()+'"></label><label>Type<select id="sjType">'+opts+'</select></label></div><label>Entry<textarea id="sjNote" rows="7" placeholder="Write what you want to remember, question, or explore."></textarea></label></div>',"Save",async()=>{const note=$("#sjNote").value.trim();if(!note)return;state.spiritualityJournal.push({id:uid(),date:$("#sjDate").value||ymd(),type:$("#sjType").value,note:note,createdAt:new Date().toISOString()});await save();closeModal();render()})
 }
 function tarotCardMarkup(date,compact){
- date=date||ymd();const t=tarotForDate(date);
- return'<div class="tarot-card-shell '+(compact?"compact":"")+'"><div class="tarot-card-face"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-symbol">☾</div><div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></div><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(compact?"":'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
+ date=date||ymd();ensureDailyTarotSaved(date);const t=tarotForDate(date),revealed=tarotRevealed(date);
+ if(!revealed){
+   return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" onclick="revealTarot(\''+date+'\')" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
+ }
+ return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-revealed"><button class="tarot-card-face" type="button" onclick="openTarotReflection(\''+date+'\')"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-symbol">☾</div><div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(compact?'<div class="actions" style="margin-top:8px"><button class="btn small" onclick="openTarotReflection(\''+date+'\')">Reflect</button></div>':'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
 }
 function dailyPracticeCard(){
  const x=spiritualityLogFor()||{},steps=[["reading","Daily reading"],["tarot","Tarot"],["stillness","Stillness / meditation"],["ritual","Small ritual"]],done=steps.filter(v=>x[v[0]]).length;
@@ -116,10 +131,10 @@ function spiritualityView(m){
  return'<div class="card glow spirituality-hero floral-card"><div class="eyebrow">Spirituality</div><div class="spirituality-title">A practice that can stay open</div><div class="muted">Daily reflection, tarot, stillness, seasonal rituals, nature, questions, and meaning—without requiring one fixed doctrine.</div>'+spiritualityTabs()+'</div>'+body
 }
 function spiritualityLaunchCard(){
- const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason();
- return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(t.name)+' · '+esc(s.title)+'</div></div><button class="btn primary" onclick="setView(\'spirituality\')">Open</button></div></div>'
+ const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
+ return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" onclick="setView(\'spirituality\')">Open</button></div></div>'
 }
 function todaySpiritualityCard(){
- const r=dailySpiritualReading(),t=tarotForDate();
- return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(t.name)+'</div></div><button class="btn" onclick="setView(\'spirituality\')">Open</button></div><div class="muted small">'+esc(r.body)+'</div></div>'
+ const r=dailySpiritualReading(),t=tarotForDate(),tarotLabel=tarotRevealed()?t.name:"card ready to reveal";
+ return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" onclick="setView(\'spirituality\')">Open</button></div><div class="muted small">'+esc(r.body)+'</div></div>'
 }
