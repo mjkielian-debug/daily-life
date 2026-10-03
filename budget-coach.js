@@ -156,7 +156,9 @@ function budgetCoachSnapshot(){
         unassignedPlanCash=totals?Math.max(0,Number(totals.left||0)/100):0,
         over=categoryStatus.filter(x=>x.limit>0&&x.left<0).sort((a,b)=>a.left-b.left),
         nearLimit=categoryStatus.filter(x=>x.cat.id!=="cushion"&&x.limit>0&&x.left>=0&&x.used>=80).sort((a,b)=>b.used-a.used||a.left-b.left),
-        repeats=budgetCoachRepeatPurchases(),\n        futureBills=budgetCoachFutureBillPlans(),\n        transferIssues=[];
+        repeats=budgetCoachRepeatPurchases(),
+        futureBills=budgetCoachFutureBillPlans(),
+        transferIssues=[];
   if(safe.incomplete)transferIssues.push("Some bill/account setup is incomplete, so the bill reserve may change.");
   const movableSources=sourceRows.filter(r=>r.amount>0);
   if(movableSources.some(r=>r.needsFloor))transferIssues.push("A deposit-landing checking account has no minimum operating balance set.");
