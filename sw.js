@@ -1,13 +1,15 @@
-const CACHE_NAME="daily-life-shell-20261003-74";
+const CACHE_NAME="daily-life-shell-20261003-routine1";
 const APP_SHELL=[
   "./",
   "./index.html",
-  "./styles.css",\n  "./compact-ui.css",
+  "./styles.css",
+  "./compact-ui.css",
   "./cloud.js",
   "./sharing.js",
   "./finance-cloud.js",
   "./spirituality.js",
-  "./vault.js",\n  "./budget-coach.js",
+  "./vault.js",
+  "./budget-coach.js",
   "./settings-tabs.js",
   "./food-tabs.js",
   "./daily-coach.js",
