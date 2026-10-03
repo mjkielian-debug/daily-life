@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-moneytabs1">
+<link rel="stylesheet" href="styles.css?v=20261002-budgettabs1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-55";
+const APP_BUILD="2026.10.02-56";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -3117,6 +3117,7 @@ const BUDGET_CATEGORIES=[
   {id:"cushion",name:"Cushion"}
 ];
 let budgetMonth=localStorage.getItem("dailyLifeBudgetMonth")||ymd().slice(0,7);
+let budgetTab=localStorage.getItem("dailyLifeBudgetTab")||"plan";
 const budgetCents=value=>Number.isFinite(Number(value))?Math.round(Math.max(0,Number(value))*100):0;
 const budgetMoney=cents=>money(cents/100);
 function budgetPlan(month=budgetMonth){
@@ -3142,46 +3143,58 @@ function budgetProgress(spent,limit,label){
   const percent=limit>0?Math.min(100,Math.round(spent*100/limit)):spent>0?100:0;
   return `<progress class="budget-progress ${spent>limit?"over":""}" max="100" value="${percent}" aria-label="${esc(label)}" aria-valuetext="${esc(budgetMoney(spent))} spent of ${esc(budgetMoney(limit))}">${percent}%</progress>`;
 }
+function setBudgetTab(tab){
+  budgetTab=["plan","bills","categories","activity"].includes(tab)?tab:"plan";
+  localStorage.setItem("dailyLifeBudgetTab",budgetTab);render();
+}
+function budgetTabs(){
+  const tabs=[["plan","✦","Plan"],["bills","▤","Bills"],["categories","◫","Categories"],["activity","↕","Activity"]];
+  return `<div class="money-tabs budget-tabs" role="tablist" aria-label="Budget sections">${tabs.map(([key,icon,label])=>`<button type="button" role="tab" aria-selected="${budgetTab===key?"true":"false"}" class="${budgetTab===key?"active":""}" onclick="setBudgetTab('${key}')"><span>${icon}</span><b>${label}</b></button>`).join("")}</div>`;
+}
 function budgetView(){
   const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
         actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0};
-  return `<div class="card glow"><div class="section-title"><h2>Budget</h2><button class="btn" onclick="setView('more')">Back to Money</button></div>
-  <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
-  <p class="muted small">Monthly cash plan · stored on this device. New months start blank.</p>
-  <div class="actions"><button class="btn primary" onclick="openBudgetIncome()">Edit income & benefits</button><button class="btn" onclick="openBudgetSpending()">+ Log spending</button></div>
-  <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected monthly cash income</div><div class="big">${budgetMoney(t.income)}</div></div>
-  <div class="metric"><div class="eyebrow">Known bills this month</div><div class="big">${budgetMoney(t.billTotal)}</div></div>
-  <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${budgetMoney(t.left)}</div><div class="muted small">Cash income − bills − category limits${t.left<0?" · overassigned":""}</div></div>
-  <div class="metric"><div class="eyebrow">Estimated flexible / week</div><div class="big">${t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`Cash after bills and logged cash spending, spread over ${t.daysLeft} remaining days (including today in the current month).`:"View another month to plan ahead."}</div></div></div>
-  ${t.plan.income===null?`<p class="notice">Enter expected cash income to begin. EBT does not increase cash available.</p>`:""}
-  ${t.remaining<0?`<p class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</p>`:""}
-  <p class="muted small">Planning estimates, not your bank balance. Only bills entered for this month and spending logged here are included.</p></div>
-  ${budgetExpectedIncomeCard()}
-  ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported into this budget</span><b>${money(actual.imported)}</b></div><p class="muted small">Actuals come from connected posted transactions. “Bank-identified income” only counts transactions the provider classifies as income, so refunds and transfers are not silently treated as earnings.</p></div>`:""}
-  <div class="card"><div class="section-title"><h2>EBT / grocery benefit</h2><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
-  <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
-  ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
-  <div class="row"><span>${t.ebtAvailable<0?"Over available EBT":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
-  <p class="muted small">EBT available = starting carryover + this month’s benefit − EBT spending. Keep EBT separate from cash; log any cash portion of a grocery purchase under Cash Grocery Overflow.</p></div>
-  <div class="card"><div class="section-title"><h2>Known bills</h2><button class="btn" onclick="openBill()">+ Bill</button></div>
-  <p class="muted small">From your existing Bills list, by due date. Paid bills remain in the monthly plan. Repeating bills add their next occurrence when marked paid; bills are never duplicated as spending.</p>
-  ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>{const current=state.accounts.find(a=>a.key===b.paymentAccountKey),desired=state.accounts.find(a=>a.key===b.desiredAccountKey);return`<div class="row budget-row"><span>${esc(b.name)}<div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"} · ${esc(recordedBillAmountType(b))} · ${esc(recordedBillFrequency(b))}</div><div class="muted small">Current: ${esc(current?.name||"Unassigned")}${desired&&desired.key!==b.paymentAccountKey?` · Desired: ${esc(desired.name)}`:""}</div></span><div><b>${budgetMoney(budgetCents(b.amount))}</b><button class="btn small" onclick="openBill(${state.bills.indexOf(b)})">Edit</button></div></div>`}).join("")||`<div class="notice">No bills due this month. Add known bills before allocating money.</div>`}</div>
-  <div class="card"><div class="section-title"><h2>Flexible categories</h2><button class="btn" onclick="autoSplitBudget()">Auto-split</button></div>
-  <div class="row"><span>Cash after bills</span><b>${budgetMoney(t.flexible)}</b></div><div class="row"><span>Assigned limits</span><b>${budgetMoney(t.assigned)}</b></div><div class="row"><span>Cash spending logged</span><b>${budgetMoney(t.spent)}</b></div>
-  <p class="muted small">Auto-split optionally replaces the seven limits with an equal share of expected cash income minus all this month’s bills. EBT and account balances are excluded.</p></div>
-  <div class="budget-categories">${BUDGET_CATEGORIES.map(c=>{
-    const limit=budgetCents(t.plan.limits[c.id]),spent=t.logs.filter(x=>x.category===c.id).reduce((sum,x)=>sum+budgetCents(x.amount),0),left=limit-spent;
-    return `<div class="card"><div class="section-title"><h3>${c.name}</h3><button class="btn small" aria-label="Edit ${c.name} limit" onclick="openBudgetLimit('${c.id}')">Edit limit</button></div>
-    <div class="row"><span class="muted small">Monthly limit</span><b>${budgetMoney(limit)}</b></div><div class="row"><span class="muted small">Spent</span><b>${budgetMoney(spent)}</b></div>
-    ${budgetProgress(spent,limit,c.name)}<div class="row"><span>${left<0?"Over limit":"Remaining"}</span><b class="${left<0?"budget-negative":""}">${budgetMoney(Math.abs(left))}</b></div>
-    <button class="btn" onclick="openBudgetSpending('${c.id}')">+ Log spending</button></div>`;
-  }).join("")}</div>
-  <div class="card"><div class="section-title"><h2>Spending log</h2><button class="btn" onclick="openBudgetSpending()">+ Add</button></div>
-  <p class="muted small">Flexible spending can be logged here or auto-imported from connected bank transactions. Bills stay separate to avoid double-counting. Daily Life only auto-categorizes transactions it can place conservatively; unclear transactions are left for review.</p>
-  ${t.logs.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{const index=state.budget.spending.indexOf(x);return `<div class="row budget-row"><span>${esc(x.note||"Purchase")}<div class="muted small">${dl(x.date)} · ${esc(x.category==="ebt"?"EBT / grocery benefit":BUDGET_CATEGORIES.find(c=>c.id===x.category)?.name||"Other cash")}${x.source==="bank"?` · bank-synced${x.userEdited?" · reviewed":""}`:""}</div></span><div><b>${budgetMoney(budgetCents(x.amount))}</b><div class="actions"><button class="btn small" onclick="openBudgetSpending('',${index})">Edit</button><button class="btn small" onclick="removeBudgetSpending(${index})">Remove</button></div></div></div>`}).join("")||`<div class="notice">No spending logged this month.</div>`}</div>`;
-}
-function changeBudgetMonth(offset){
-  const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
+
+  const hero=`<div class="budget-hero"><div class="section-title"><div><div class="eyebrow">Budget</div><h1>${esc(label)}</h1><div class="muted small">Monthly cash plan · local-first.</div></div><button class="btn" onclick="setView('more')">Money</button></div>
+    <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
+    <div class="actions"><button class="btn primary" onclick="openBudgetIncome()">Edit income & benefits</button><button class="btn" onclick="openBudgetSpending()">+ Spending</button></div>
+    <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected cash income</div><div class="big">${budgetMoney(t.income)}</div></div>
+      <div class="metric"><div class="eyebrow">Known bills</div><div class="big">${budgetMoney(t.billTotal)}</div></div>
+      <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${budgetMoney(t.left)}</div><div class="muted small">Income − bills − category limits</div></div>
+      <div class="metric"><div class="eyebrow">Flexible / week</div><div class="big">${t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`${t.daysLeft} days remain including today.`:"View another month to plan ahead."}</div></div></div>
+    ${t.plan.income===null?`<div class="notice">Enter expected cash income to begin. EBT does not increase cash available.</div>`:""}
+    ${t.remaining<0?`<div class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</div>`:""}
+  </div>`;
+
+  const plan=`${budgetExpectedIncomeCard()}
+    ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported</span><b>${money(actual.imported)}</b></div><p class="muted small">Income only counts transactions the provider classifies as income; refunds and transfers are not silently treated as earnings.</p></div>`:""}
+    <div class="card"><div class="section-title"><div><h2>EBT / grocery benefit</h2><div class="muted small">Kept separate from cash.</div></div><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
+      <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
+      ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
+      <div class="row"><span>${t.ebtAvailable<0?"Over available EBT":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
+      <p class="muted small">Available = starting carryover + monthly benefit − EBT spending.</p>
+    </div>`;
+
+  const bills=`<div class="card"><div class="section-title"><div><h2>Known bills</h2><div class="muted small">By due date for ${esc(label)}.</div></div><button class="btn" onclick="openBill()">+ Bill</button></div>
+    ${t.bills.slice().sort((a,b)=>String(a.due).localeCompare(String(b.due))).map(b=>{const current=state.accounts.find(a=>a.key===b.paymentAccountKey),desired=state.accounts.find(a=>a.key===b.desiredAccountKey);return`<div class="row budget-row"><span><b>${esc(b.name)}</b><div class="muted small">${dl(b.due)} · ${b.status==="paid"?"Paid":"Upcoming"} · ${esc(recordedBillAmountType(b))} · ${esc(recordedBillFrequency(b))}</div><div class="muted small">Current: ${esc(current?.name||"Unassigned")}${desired&&desired.key!==b.paymentAccountKey?` · Desired: ${esc(desired.name)}`:""}</div></span><div><b>${budgetMoney(budgetCents(b.amount))}</b><button class="btn small" onclick="openBill(${state.bills.indexOf(b)})">Edit</button></div></div>`}).join("")||`<div class="notice">No bills due this month.</div>`}
+    <p class="muted small">Paid bills remain in the monthly plan. Bills are not duplicated as flexible spending.</p></div>`;
+
+  const categories=`<div class="card"><div class="section-title"><div><h2>Flexible categories</h2><div class="muted small">Set limits after bills and essentials.</div></div><button class="btn" onclick="autoSplitBudget()">Auto-split</button></div>
+      <div class="row"><span>Cash after bills</span><b>${budgetMoney(t.flexible)}</b></div><div class="row"><span>Assigned limits</span><b>${budgetMoney(t.assigned)}</b></div><div class="row"><span>Cash spending logged</span><b>${budgetMoney(t.spent)}</b></div>
+    </div>
+    <div class="budget-categories">${BUDGET_CATEGORIES.map(cat=>{
+      const limit=budgetCents(t.plan.limits[cat.id]),spent=t.logs.filter(x=>x.category===cat.id).reduce((sum,x)=>sum+budgetCents(x.amount),0),left=limit-spent;
+      return `<div class="card"><div class="section-title"><h3>${cat.name}</h3><button class="btn small" aria-label="Edit ${cat.name} limit" onclick="openBudgetLimit('${cat.id}')">Edit</button></div>
+        <div class="row"><span class="muted small">Limit</span><b>${budgetMoney(limit)}</b></div><div class="row"><span class="muted small">Spent</span><b>${budgetMoney(spent)}</b></div>
+        ${budgetProgress(spent,limit,cat.name)}<div class="row"><span>${left<0?"Over":"Remaining"}</span><b class="${left<0?"budget-negative":""}">${budgetMoney(Math.abs(left))}</b></div>
+        <button class="btn" onclick="openBudgetSpending('${cat.id}')">+ Spending</button></div>`;
+    }).join("")}</div>`;
+
+  const activity=`<div class="card"><div class="section-title"><div><h2>Spending activity</h2><div class="muted small">Manual and conservatively imported flexible spending.</div></div><button class="btn" onclick="openBudgetSpending()">+ Add</button></div>
+    ${t.logs.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{const index=state.budget.spending.indexOf(x);return `<div class="row budget-row"><span><b>${esc(x.note||"Purchase")}</b><div class="muted small">${dl(x.date)} · ${esc(x.category==="ebt"?"EBT / grocery benefit":BUDGET_CATEGORIES.find(c=>c.id===x.category)?.name||"Other cash")}${x.source==="bank"?` · bank-synced${x.userEdited?" · reviewed":""}`:""}</div></span><div><b>${budgetMoney(budgetCents(x.amount))}</b><div class="actions"><button class="btn small" onclick="openBudgetSpending('',${index})">Edit</button><button class="btn small" onclick="removeBudgetSpending(${index})">Remove</button></div></div></div>`}).join("")||`<div class="notice">No spending logged this month.</div>`}
+    <p class="muted small">Bills stay separate so they are not double-counted.</p></div>`;
+
+  return `${hero}${budgetTabs()}<div class="budget-tab-panel">${budgetTab==="plan"?plan:budgetTab==="bills"?bills:budgetTab==="categories"?categories:activity}</div>`;
 }
 function budgetAmountInput(id,label,value){return `<label>${label}<input id="${id}" type="number" inputmode="decimal" min="0" max="999999999" step="0.01" placeholder="0.00" value="${value===null||value===undefined?"":esc(value)}"></label>`}
 function readBudgetAmount(id){
@@ -4028,7 +4041,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-moneytabs1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-budgettabs1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
