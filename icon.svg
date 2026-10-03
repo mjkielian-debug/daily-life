@@ -1,57 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Life sage and blush botanical icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Life botanical flower icon">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7fa98a"/>
-      <stop offset=".46" stop-color="#426b50"/>
-      <stop offset=".78" stop-color="#8b596d"/>
-      <stop offset="1" stop-color="#c8859f"/>
+    <linearGradient id="bg" x1="72" y1="40" x2="438" y2="476" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8eb59a"/>
+      <stop offset=".34" stop-color="#52765d"/>
+      <stop offset=".72" stop-color="#355742"/>
+      <stop offset="1" stop-color="#263f32"/>
     </linearGradient>
-    <radialGradient id="creamGlow" cx=".22" cy=".12" r=".82">
-      <stop offset="0" stop-color="#fff5ec" stop-opacity=".26"/>
-      <stop offset="1" stop-color="#fff5ec" stop-opacity="0"/>
+    <radialGradient id="glow" cx=".28" cy=".18" r=".9">
+      <stop offset="0" stop-color="#fff7ef" stop-opacity=".24"/>
+      <stop offset=".58" stop-color="#f8e6d8" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#f8e6d8" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="blushGlow" cx=".83" cy=".25" r=".52">
-      <stop offset="0" stop-color="#f5c4d3" stop-opacity=".48"/>
-      <stop offset="1" stop-color="#f5c4d3" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="line" x1=".15" y1=".85" x2=".85" y2=".1">
-      <stop offset="0" stop-color="#fff5ec"/>
-      <stop offset=".66" stop-color="#fff9f4"/>
-      <stop offset="1" stop-color="#f8dfe7"/>
+    <linearGradient id="petal" x1="188" y1="186" x2="326" y2="334" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f5dbe3"/>
+      <stop offset=".48" stop-color="#e8b7c7"/>
+      <stop offset="1" stop-color="#c9849d"/>
     </linearGradient>
+    <linearGradient id="cream" x1="155" y1="140" x2="365" y2="386" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff9f2"/>
+      <stop offset="1" stop-color="#f2dfcf"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6e8b8"/>
+      <stop offset="1" stop-color="#d7b975"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="9" stdDeviation="12" flood-color="#13291e" flood-opacity=".34"/>
+    </filter>
   </defs>
 
-  <rect x="18" y="18" width="476" height="476" rx="118" fill="url(#bg)"/>
-  <rect x="18" y="18" width="476" height="476" rx="118" fill="url(#creamGlow)"/>
-  <rect x="18" y="18" width="476" height="476" rx="118" fill="url(#blushGlow)"/>
+  <rect x="18" y="18" width="476" height="476" rx="122" fill="url(#bg)"/>
+  <rect x="18" y="18" width="476" height="476" rx="122" fill="url(#glow)"/>
+  <rect x="27" y="27" width="458" height="458" rx="114" fill="none" stroke="#fff7ef" stroke-opacity=".18" stroke-width="3"/>
 
-  <path d="M153 369c38-93 94-163 183-220" fill="none" stroke="url(#line)" stroke-width="13" stroke-linecap="round"/>
-
-  <path d="M210 290c-42 5-74-10-91-45 43-10 79 4 98 34" fill="none" stroke="#fff5ec" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M278 219c-4-41 13-73 49-89 7 41-8 76-38 94" fill="none" stroke="#fff5ec" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M184 337c-36 9-67 0-88-29 35-13 68-5 91 19" fill="none" stroke="#fff5ec" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M329 175c16-35 43-56 81-58-12 38-38 62-73 67" fill="none" stroke="#fff5ec" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <g fill="#f2b8ca">
-    <circle cx="348" cy="274" r="14"/>
-    <circle cx="367" cy="262" r="12"/>
-    <circle cx="373" cy="282" r="12"/>
-    <circle cx="353" cy="294" r="12"/>
-    <circle cx="336" cy="282" r="12"/>
+  <!-- graceful botanical arch -->
+  <g fill="none" stroke="url(#cream)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 353C126 276 148 203 205 156" stroke-width="10"/>
+    <path d="M362 354C387 276 364 202 307 155" stroke-width="10"/>
+    <path d="M171 286C132 280 112 257 106 223C145 220 174 236 188 266" stroke-width="8"/>
+    <path d="M156 238C126 222 114 194 121 164C154 175 176 198 177 226" stroke-width="8"/>
+    <path d="M198 181C170 162 166 133 178 105C207 123 222 149 215 173" stroke-width="8"/>
+    <path d="M341 286C380 280 400 257 406 223C367 220 338 236 324 266" stroke-width="8"/>
+    <path d="M356 238C386 222 398 194 391 164C358 175 336 198 335 226" stroke-width="8"/>
+    <path d="M314 181C342 162 346 133 334 105C305 123 290 149 297 173" stroke-width="8"/>
   </g>
-  <circle cx="354" cy="278" r="7" fill="#ecd5a4"/>
 
-  <g fill="#f8d8e2">
-    <circle cx="206" cy="211" r="9"/>
-    <circle cx="217" cy="203" r="8"/>
-    <circle cx="221" cy="216" r="8"/>
-    <circle cx="209" cy="224" r="8"/>
+  <!-- soft flower / peony -->
+  <g filter="url(#soft)">
+    <path d="M256 316C219 315 190 290 188 258C186 229 206 210 230 205C229 177 244 158 256 151C268 158 283 177 282 205C306 210 326 229 324 258C322 290 293 315 256 316Z" fill="url(#petal)"/>
+    <path d="M256 299C233 297 215 282 214 260C213 241 226 228 242 224C241 204 249 190 256 185C263 190 271 204 270 224C286 228 299 241 298 260C297 282 279 297 256 299Z" fill="#f8e7eb" fill-opacity=".9"/>
+    <path d="M256 282C242 281 232 271 232 258C232 246 240 238 249 236C248 224 253 216 256 213C259 216 264 224 263 236C272 238 280 246 280 258C280 271 270 281 256 282Z" fill="#c9879d"/>
+    <circle cx="256" cy="258" r="10" fill="url(#gold)"/>
+    <circle cx="249" cy="255" r="3.2" fill="#fff3d4"/>
+    <circle cx="263" cy="255" r="3.2" fill="#fff3d4"/>
+    <circle cx="256" cy="265" r="3.2" fill="#fff3d4"/>
   </g>
-  <circle cx="213" cy="214" r="4.5" fill="#ecd5a4"/>
 
-  <path d="M387 333l8 18 18 8-18 8-8 18-8-18-18-8 18-8z" fill="#edd7a8"/>
-  <path d="M132 149l5 12 12 5-12 5-5 12-5-12-12-5 12-5z" fill="#f9e3ea"/>
+  <!-- lower leaves -->
+  <g fill="none" stroke="url(#cream)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M214 325C193 347 183 374 186 401" stroke-width="8"/>
+    <path d="M298 325C319 347 329 374 326 401" stroke-width="8"/>
+    <path d="M190 363C166 354 145 361 132 381C158 389 180 382 196 367" stroke-width="7"/>
+    <path d="M322 363C346 354 367 361 380 381C354 389 332 382 316 367" stroke-width="7"/>
+  </g>
 
-  <path d="M103 414c47 17 98 22 145 14" fill="none" stroke="#f3c7d4" stroke-opacity=".28" stroke-width="3" stroke-linecap="round"/>
-  <rect x="18" y="18" width="476" height="476" rx="118" fill="none" stroke="#fff0f4" stroke-opacity=".26" stroke-width="3"/>
+  <!-- champagne sparkles -->
+  <g fill="url(#gold)">
+    <path d="M393 124l7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/>
+    <path d="M116 137l4.5 11 11 4.5-11 4.5-4.5 11-4.5-11-11-4.5 11-4.5z"/>
+    <path d="M397 337l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+  </g>
+
+  <!-- quiet blush accents -->
+  <circle cx="109" cy="313" r="7" fill="#e9b9c8" fill-opacity=".78"/>
+  <circle cx="407" cy="306" r="5" fill="#f3d7df" fill-opacity=".78"/>
 </svg>
