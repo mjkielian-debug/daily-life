@@ -125,3 +125,31 @@ dailyLifeAdvice=function(){
 
   return items.sort((a,b)=>Number(b.priority||0)-Number(a.priority||0)).slice(0,4);
 };
+
+/* A complete local-day palette: surfaces change along with the accents. */
+const DAILY_GARDEN_PALETTES=[
+ ["Rose garden","#10251c","#18382a","#244935","#98dab1","#f2becf","#eed59a"],
+ ["Moonlit magnolia","#191c2c","#252b3d","#323b50","#b7c9f0","#e8bfdc","#f1dfac"],
+ ["Peach blossom","#28201c","#392c25","#4a3930","#e8bf9b","#f0bac1","#d9e5b0"],
+ ["Fern & rain","#10262a","#19383d","#244b50","#93d6d2","#e8c6d7","#e9d8ac"],
+ ["Wild lavender","#241d2d","#35283e","#44344e","#d2b7eb","#efc2d3","#c8dfb4"],
+ ["Golden meadow","#252515","#353723","#474b30","#c9da9d","#efc4aa","#f0d78c"],
+ ["Blush & sage","#271c24","#392a35","#4a3543","#efbace","#b8dac3","#eed7af"]
+];
+function dailyGardenPalette(date){
+ const parts=String(date||ymd()).split("-").map(Number);
+ const day=Math.floor(Date.UTC(parts[0],parts[1]-1,parts[2])/86400000);
+ return DAILY_GARDEN_PALETTES[((day%DAILY_GARDEN_PALETTES.length)+DAILY_GARDEN_PALETTES.length)%DAILY_GARDEN_PALETTES.length];
+}
+theme=function(){
+ const p=dailyGardenPalette(),root=document.documentElement;
+ ["--bg","--panel","--panel2","--primary","--secondary","--accent"].forEach((key,i)=>root.style.setProperty(key,p[i+1]));
+ root.style.setProperty("--text","#fff9f5");root.style.setProperty("--muted","#d7d5d1");root.style.setProperty("--cream","#fff5ed");
+ const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",p[1]);
+ return p[0];
+};
+let dailyGardenLastDate="";
+function refreshDailyGarden(){const date=ymd();if(date!==dailyGardenLastDate){dailyGardenLastDate=date;theme()}}
+refreshDailyGarden();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshDailyGarden()});
+setInterval(refreshDailyGarden,60000);
