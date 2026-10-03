@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-flower1">
 <link rel="icon" href="icon.svg?v=20261002-flower1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-flower1">
-<link rel="stylesheet" href="styles.css?v=20261002-forecast1">
+<link rel="stylesheet" href="styles.css?v=20261002-workweek1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -217,7 +217,7 @@ const blankState=()=>({
   version:34,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,taskPatterns:{},routinePreferences:{}},
+    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:00",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -227,7 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.02-51";
+const APP_BUILD="2026.10.02-52";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -901,9 +901,12 @@ function inferredWorkStartForDate(date){
   };
   const sameWeekday=prior.filter(w=>new Date(w.date+"T12:00:00").getDay()===targetWd).map(toMinutes).filter(Number.isFinite);
   if(sameWeekday.length>=2)return{minutes:median(sameWeekday),samples:sameWeekday.length,source:"same weekday"};
-  if(targetWd>=1&&targetWd<=5){
-    const weekdays=prior.filter(w=>{const wd=new Date(w.date+"T12:00:00").getDay();return wd>=1&&wd<=5}).map(toMinutes).filter(Number.isFinite);
-    if(weekdays.length>=3)return{minutes:median(weekdays),samples:weekdays.length,source:"recent weekday"};
+  const workWeekdays=Array.isArray(state.settings?.itinerary?.workWeekdays)&&state.settings.itinerary.workWeekdays.length
+    ?state.settings.itinerary.workWeekdays.map(Number)
+    :[2,3,4,5,6];
+  if(workWeekdays.includes(targetWd)){
+    const workweek=prior.filter(w=>workWeekdays.includes(new Date(w.date+"T12:00:00").getDay())).map(toMinutes).filter(Number.isFinite);
+    if(workweek.length>=3)return{minutes:median(workweek),samples:workweek.length,source:"recent workweek"};
   }
   return null;
 }
@@ -1414,20 +1417,23 @@ function openItineraryTask(id){
 async function toggleItineraryBlock(id,done){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!x)return;x.done=done;if(x.sharedEntryId&&typeof sharingUpsertItineraryBlock==="function")await sharingUpsertItineraryBlock(x);await save();render()}
 async function removeItineraryBlock(id){const x=(state.itineraryBlocks||[]).find(v=>v.id===id);if(x?.sharedEntryId&&typeof sharingMakeItineraryPrivate==="function"){const ok=await sharingMakeItineraryPrivate(x);if(!ok)return}state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>x.id!==id);await save();closeModal();render()}
 function openItinerarySettings(){
-  const x=state.settings.itinerary||{};
+  const x=state.settings.itinerary||{},workDays=Array.isArray(x.workWeekdays)&&x.workWeekdays.length?x.workWeekdays.map(Number):[2,3,4,5,6],
+        weekdayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   modal("Day Flow settings",`<div class="stack">
     <div class="grid2"><label>Day starts<input id="ids" type="time" value="${esc(x.dayStart||"03:00")}"></label><label>Absolute latest day end<input id="ide" type="time" value="${esc(x.dayEnd||"21:30")}"></label></div>
     <div class="sleep-settings-box"><div class="mini-heading">Sleep protection</div><label class="task"><input id="idsleep" type="checkbox" ${x.protectSleep!==false?"checked":""}><span><b>Protect my sleep window when Day Flow schedules things</b><div class="muted small">Daily Life moves or leaves out flexible items rather than scheduling them after the bedtime needed for your sleep target.</div></span></label>
       <div class="grid3"><label>Sleep target<input id="idsleephours" type="number" min="4" max="12" step=".25" value="${esc(x.sleepTargetHours||8)}"></label><label>Usual bedtime from<input id="idbedstart" type="time" value="${esc(x.preferredBedtimeStart||"20:00")}"></label><label>Latest usual bedtime<input id="idbedend" type="time" value="${esc(x.preferredBedtimeEnd||"20:30")}"></label></div>
       <label>Wake-up lead time before work / early commitments (minutes)<input id="idmorning" type="number" min="15" max="180" step="5" value="${esc(x.morningLeadMinutes||60)}"></label>
       <label class="task"><input id="idinferwork" type="checkbox" ${x.inferWorkStartForSleep!==false?"checked":""}><span><b>Use recent UPS starts if tomorrow’s shift is missing</b><div class="muted small">Uses only your private work history and labels the result as estimated. It does not create a fake work shift.</div></span></label>
+      <div><div class="mini-heading">Normal UPS workweek</div><div class="weekday-toggle-row">${weekdayNames.map((name,i)=>`<label class="weekday-toggle"><input type="checkbox" data-workday="${i}" ${workDays.includes(i)?"checked":""}><span>${name}</span></label>`).join("")}</div><div class="muted small">Same-weekday history wins first. This workweek is only the fallback when tomorrow has no shift loaded.</div></div>
       <div class="muted small">Example: a 4:30 AM UPS start with 60 minutes to wake/get ready means a 3:30 AM wake. With an 8-hour target, Day Flow stops scheduling at 7:30 PM.</div>
     </div>
     <label class="task"><input id="idflex" type="checkbox" ${x.showFlexible!==false?"checked":""}><span><b>Use family routine blocks</b><div class="muted small">After-work reset, homework/reading, dinner, chores/baths, wind-down and tomorrow prep.</div></span></label>
     <label class="task"><input id="idauto" type="checkbox" ${x.autoScheduleTasks!==false?"checked":""}><span><b>Fit my open tasks into free time</b><div class="muted small">Daily Life uses the duration and preferred time you give a task. If you have not given a duration yet, it uses a small editable estimate instead of leaving a giant empty gap.</div></span></label>
   </div>`,"Save",async()=>{
-    const hours=Math.max(4,Math.min(12,Number($("#idsleephours").value||8))),lead=Math.max(15,Math.min(180,Number($("#idmorning").value||60)));
-    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",protectSleep:$("#idsleep").checked,sleepTargetHours:hours,preferredBedtimeStart:$("#idbedstart").value||"20:00",preferredBedtimeEnd:$("#idbedend").value||"20:30",morningLeadMinutes:lead,inferWorkStartForSleep:$("#idinferwork").checked,showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
+    const hours=Math.max(4,Math.min(12,Number($("#idsleephours").value||8))),lead=Math.max(15,Math.min(180,Number($("#idmorning").value||60))),
+          workWeekdays=[...document.querySelectorAll("[data-workday]:checked")].map(el=>Number(el.dataset.workday));
+    state.settings.itinerary={...(state.settings.itinerary||{}),dayStart:$("#ids").value||"03:00",dayEnd:$("#ide").value||"21:30",protectSleep:$("#idsleep").checked,sleepTargetHours:hours,preferredBedtimeStart:$("#idbedstart").value||"20:00",preferredBedtimeEnd:$("#idbedend").value||"20:30",morningLeadMinutes:lead,inferWorkStartForSleep:$("#idinferwork").checked,workWeekdays:workWeekdays.length?workWeekdays:[2,3,4,5,6],showFlexible:$("#idflex").checked,autoScheduleTasks:$("#idauto").checked};await save();closeModal();render();
   });
 }
 
@@ -4669,7 +4675,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-resume1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-workweek1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
