@@ -141,8 +141,7 @@
     state.tasks=state.tasks.filter(function(t){
       if(t.generated!=="life-orchestrator")return true;
       if(t.done)return true;
-      if(desired.has(t.lifeSourceKey))return true;
-      return lifeTaskDate(t)<today;
+      return desired.has(t.lifeSourceKey);
     });
     if(state.tasks.length!==before)changed=true;
     return changed;
@@ -222,8 +221,9 @@
   }
 
   function lifeNextTask(){
-    const q=lifeQueue();
-    return q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
+    const q=lifeQueue(),oldest=lifeShift(ymd(),-30),
+      usable=q.todayRows.filter(t=>lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator");
+    return usable.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
   }
 
   function lifeCurrentGuidance(){
