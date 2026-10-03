@@ -459,7 +459,13 @@ async function cloudSignOut(){
   if(!confirm("Sign out of the Daily Life cloud account? Local records on this device will remain here."))return;
   const {error}=await cloudClient.auth.signOut();
   if(error){alert("Could not sign out: "+error.message);return}
-  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;if(typeof vaultCloudUpdatedAt!=="undefined")vaultCloudUpdatedAt="";if(typeof sharingReset==="function")sharingReset();render();
+  cloudSession=null;cloudRemoteUpdatedAt=null;cloudError="";cloudNeedsReview=false;cloudAutoCanPush=false;
+  if(typeof vaultCloudUpdatedAt!=="undefined")vaultCloudUpdatedAt="";
+  let removedShared=0;
+  if(typeof sharingRemoveAllLocalCopies==="function")removedShared=sharingRemoveAllLocalCopies();
+  if(typeof sharingReset==="function")sharingReset();
+  if(removedShared)await dbSet("state",state);
+  render();
 }
 
 function cloudStateForUpload(){
