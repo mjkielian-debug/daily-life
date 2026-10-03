@@ -3752,8 +3752,9 @@ function openMeal(date){
 async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
 async function setMealStatus(id,status){const m=state.meals.find(x=>x.id===id);if(!m)return;m.status=status;await save();render()}
 function openEvent(date=ymd(),id="",person=""){
-  const x=state.events.find(e=>e.id===id)||{};
+  const x=state.events.find(e=>e.id===id)||{},recurringLinked=!!x.recurringRuleId&&(x.generated==="recurring"||x.recurringException===true||x.generated==="recurring-exception");
   modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
+    ${recurringLinked?`<div class="notice recurring-event-notice"><b>${x.recurringException?"One-time schedule exception":"Generated from your weekly family schedule"}</b><div class="muted small">${x.recurringException?"This date is different from the normal weekly rule.":"Saving changes here will change only this occurrence, not every week."}</div><div class="actions"><button class="btn small" type="button" onclick="closeModal();openFamilyScheduleSettings()">Edit weekly schedule</button>${x.recurringException?`<button class="btn small good" type="button" onclick="resetRecurringEventException('${x.id}')">Use normal schedule for this date</button>`:""}</div></div>`:""}
     <label>Title<input id="etitle" value="${esc(x.title||"")}"></label>
     <label>Child / person<input id="echild" value="${esc(x.child||person||"")}"></label>
     <label>Type<select id="etype">${["school","appointment","deadline","activity","family","birthday","birthday-party","relationship","attendance","teacher-message","other"].map(v=>`<option ${(x.type||"school")===v?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -3768,7 +3769,10 @@ function openEvent(date=ymd(),id="",person=""){
     const title=$("#etitle").value.trim(),eventDate=$("#edate").value;if(!title||!eventDate)return;
     const shareRequested=$("#eshared")?$("#eshared").checked:!!x.shared;
     let e=state.events.find(e=>e.id===id);if(!e){e={id:uid(),source:"Manual"};state.events.push(e)}
+    const wasRecurring=!!e.recurringRuleId&&(e.generated==="recurring"||e.generated==="recurring-exception"||e.recurringException===true||e.source==="Family routine"),
+          occurrenceDate=String(e.recurringOccurrenceDate||e.date||eventDate);
     Object.assign(e,{title,child:canonicalPersonName($("#echild").value),type:$("#etype").value,date:eventDate,startTime:$("#estart").value,endTime:$("#eend").value,location:$("#eloc").value,notes:$("#enotes").value,status:$("#estatus").value});
+    if(wasRecurring){e.recurringException=true;e.recurringOccurrenceDate=occurrenceDate;e.generated="recurring-exception";e.source="Family routine exception";}
     if(typeof sharingCanShare==="function"&&sharingCanShare()){
       if(shareRequested){const ok=await sharingUpsertEvent(e);if(!ok)return}
       else if(e.sharedEntryId){const ok=await sharingMakeEventPrivate(e);if(!ok)return}
@@ -3776,6 +3780,14 @@ function openEvent(date=ymd(),id="",person=""){
     await save();closeModal();render();
   });
 }
+async function resetRecurringEventException(id){
+  const e=(state.events||[]).find(x=>x.id===id);if(!e?.recurringRuleId)return;
+  const ruleId=e.recurringRuleId,occurrenceDate=String(e.recurringOccurrenceDate||e.date||"");
+  state.events=(state.events||[]).filter(x=>x.id!==id);
+  ensureRecurringFamilyEvents();
+  await save();closeModal();render();
+}
+
 async function removeEvent(id){
   const e=(state.events||[]).find(x=>x.id===id);if(!e)return;
   if(!confirm(`Delete "${e.title||"this event"}"?`))return;
