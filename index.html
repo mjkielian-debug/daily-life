@@ -229,7 +229,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.03-advice1";
+const APP_BUILD="2026.10.03-cashflow1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -4497,6 +4497,15 @@ async function removeSavingsGoal(id){
   const x=savingsGoalById(id);if(!x||!confirm(`Delete savings goal "${x.name||"this goal"}"?`))return;
   state.savingsGoals=(state.savingsGoals||[]).filter(v=>v.id!==id);await save();closeModal();render();
 }
+async function addCashSweepTask(fromIndex,toIndex,amount){
+  const from=(state.accounts||[])[Number(fromIndex)],to=(state.accounts||[])[Number(toIndex)],value=Math.max(0,Number(amount||0));
+  if(!from?.key||!to?.key||from.key===to.key||value<.01)return;
+  const rounded=Math.round(value*100)/100,key="cash-sweep|"+from.key+"|"+to.key+"|"+ymd(),
+        existing=(state.tasks||[]).find(t=>t.date===ymd()&&t.cashSweepKey===key);
+  if(existing){render();return}
+  state.tasks.push({id:uid(),date:ymd(),title:`Transfer ${money(rounded)} from ${from.name} → ${to.name}`,category:"money",notes:"Cash-strategy suggestion. Recheck live bank balances before moving money; this task does not initiate a bank transfer.",done:false,order:32,generated:"cash-strategy",cashSweepKey:key});
+  await save();render();
+}
 function accountStrategyCard(){
   const accounts=state.accounts||[],interest=accounts.filter(a=>accountStrategy(a)==="Interest-first savings"),
         landings=accounts.filter(a=>accountStrategy(a)==="Deposit landing checking"),
@@ -4505,9 +4514,11 @@ function accountStrategyCard(){
   if(!interest.length&&!landings.length&&!exiting.length)return `<div class="card money-strategy-card"><div class="section-title"><div><div class="eyebrow">Cash strategy</div><h2>Tell Daily Life where money should live</h2><div class="muted small">Mark an account as interest-first savings, deposit-landing checking, or transition/close. Daily Life will keep those goals separate from bill payment rules.</div></div></div><div class="notice">Edit an account to set its strategy. This does not move money.</div></div>`;
   const savingsBills=home?(state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===home.key).length:0;
   const landingRows=landings.map(a=>{
-    const plan=accountSweepPlan(a,45);
+    const plan=accountSweepPlan(a,45),fromIndex=accounts.indexOf(a),toIndex=home?accounts.indexOf(home):-1,
+          sweepKey=home?"cash-sweep|"+a.key+"|"+home.key+"|"+ymd():"",
+          sweepTask=sweepKey?(state.tasks||[]).find(t=>t.date===ymd()&&t.cashSweepKey===sweepKey):null;
     const suggestion=home&&plan.excess>=1
-      ?`<div class="sweep-suggestion"><span>Suggested sweep to ${esc(home.name)}</span><b>${money(plan.excess)}</b><small>Leaves ${money(plan.requiredNow)} for known 45-day checking bills + your buffer.</small></div>`
+      ?`<div class="sweep-suggestion"><span><b>Transfer ${money(plan.excess)} from ${esc(a.name)} → ${esc(home.name)}</b><small>Leaves ${money(plan.requiredNow)} in ${esc(a.name)} for known 45-day checking bills + your buffer. Recheck live balances before moving it.</small></span>${sweepTask?`<span class="tag">${sweepTask.done?"done today":"on today list"}</span>`:`<button class="btn small" type="button" onclick="addCashSweepTask(${fromIndex},${toIndex},${Number(plan.excess)})">+ Today</button>`}</div>`
       :plan.short>0
         ?`<div class="sweep-suggestion short"><span>Known checking need above current balance</span><b>${money(plan.short)}</b><small>Based on entered bills, expected income timing, and your buffer.</small></div>`
         :`<div class="sweep-suggestion settled"><span>Checking is near the calculated operating amount</span><b>${money(plan.requiredNow)}</b><small>Known 45-day bills + your buffer.</small></div>`;
@@ -4939,7 +4950,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-advice1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-cashflow1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
