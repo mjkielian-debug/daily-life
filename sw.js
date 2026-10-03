@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261002-22";
+const CACHE_NAME="daily-life-shell-20261002-23";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -11,7 +11,9 @@ const APP_SHELL=[
   "./money-fix.js",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./botanical-corners.svg"
+  "./botanical-corners.svg",
+  "./botanical-bg.svg",
+  "./botanical-sprig.svg"
 ];
 
 const LOCAL_ASSET_PATHS=new Set(APP_SHELL.filter(x=>x!=="./").map(x=>new URL(x,self.location).pathname));
