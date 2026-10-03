@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-homecadence1">
+<link rel="stylesheet" href="styles.css?v=20261002-carecount1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -401,6 +401,10 @@ function migrateState(s){
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
   for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement"]){
     if(!Array.isArray(s[key]))s[key]=[];
+  }
+  for(const log of s.selfCare||[]){
+    if(log.count===undefined)log.count=log.done?1:0;
+    if(!Array.isArray(log.times))log.times=[];
   }
   for(const bill of s.bills){
     if(bill.paymentAccountKey===undefined)bill.paymentAccountKey="";
@@ -1792,6 +1796,22 @@ function selfCareHabits(){
 function selfCareDone(key,date=ymd()){
   return !!(state.selfCare||[]).find(x=>x.date===date&&x.key===key&&x.done);
 }
+function selfCareLogRow(key,date=ymd()){return (state.selfCare||[]).find(x=>x.date===date&&x.key===key)||null}
+function selfCareOccurrenceCount(key,days=7){
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-(days-1));const start=ymd(cutoff);
+  return (state.selfCare||[]).filter(x=>x.key===key&&x.date>=start&&x.date<=ymd()).reduce((sum,x)=>sum+Math.max(0,Number(x.count!==undefined?x.count:(x.done?1:0))||0),0);
+}
+function selfCareOccurrencesToday(key){
+  const x=selfCareLogRow(key);return x?Math.max(0,Number(x.count!==undefined?x.count:(x.done?1:0))||0):0;
+}
+async function logCareOccurrence(key){
+  let x=selfCareLogRow(key);
+  if(!x){x={id:uid(),date:ymd(),key,done:true,count:0,times:[]};state.selfCare.push(x)}
+  if(!Array.isArray(x.times))x.times=[];
+  const current=Math.max(0,Number(x.count!==undefined?x.count:(x.done?1:0))||0);
+  x.done=true;x.count=current+1;x.times.push(new Date().toTimeString().slice(0,5));
+  await save();render();
+}
 function selfCareTodayStats(){
   const habits=selfCareHabits(),done=habits.filter(h=>selfCareDone(h.key)).length;
   return{done,total:habits.length,percent:habits.length?Math.round(done*100/habits.length):0};
@@ -2641,7 +2661,10 @@ function logView(f,w,tr){
   }
   return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
 }
-function care(key,label){const on=selfCareDone(key);return`<button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span>${esc(label)}</span></button>`}
+function care(key,label){
+  const on=selfCareDone(key),count=selfCareOccurrencesToday(key),repeatable=key==="brush";
+  return `<div class="self-care-action"><button class="self-care-btn ${on?"is-done":""}" onclick="toggleCare('${key}')"><span class="self-care-mark">${on?"✓":"○"}</span><span class="grow">${esc(label)}</span>${count>1?`<span class="self-care-times">${count}×</span>`:""}</button>${repeatable?`<button class="care-repeat-btn" type="button" aria-label="Log ${esc(label)} again" onclick="logCareOccurrence('${key}')">＋</button>`:""}</div>`;
+}
 function ensurePeopleProfiles(){
   if(!Array.isArray(state.peopleProfiles))state.peopleProfiles=[];
   const names=[...(state.settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean)];
@@ -3613,7 +3636,13 @@ async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(x)x.do
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
 function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
-async function toggleCare(key){let x=state.selfCare.find(x=>x.date===ymd()&&x.key===key);if(!x)state.selfCare.push({id:uid(),date:ymd(),key,done:true});else x.done=!x.done;await save();render()}
+async function toggleCare(key){
+  let x=selfCareLogRow(key);
+  if(!x){state.selfCare.push({id:uid(),date:ymd(),key,done:true,count:1,times:[new Date().toTimeString().slice(0,5)]})}
+  else if(x.done){x.done=false;x.count=0;x.times=[]}
+  else{x.done=true;x.count=Math.max(1,Number(x.count||0));if(!Array.isArray(x.times))x.times=[];if(!x.times.length)x.times.push(new Date().toTimeString().slice(0,5))}
+  await save();render();
+}
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
 function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90].map(n=>`<option value="${n}">${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="">Use remembered preference / fit where it works</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="after-school">After school</option><option value="evening">Evening</option><option value="any">Anywhere</option></select></label></div><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||""});await save();closeModal();render()})}
 function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
@@ -4326,7 +4355,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-homecadence1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-carecount1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
