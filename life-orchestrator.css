@@ -1,0 +1,85 @@
+/* Daily Life · command center */
+.life-command{
+  border-radius:38px!important;
+  padding:18px 16px!important;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(255,255,255,.9),transparent 24%),
+    radial-gradient(circle at 90% 12%,rgba(216,193,255,.32),transparent 30%),
+    radial-gradient(circle at 88% 88%,rgba(255,201,142,.3),transparent 30%),
+    linear-gradient(155deg,rgba(255,252,248,.96),rgba(246,255,252,.94))!important;
+  color:var(--life-ink,#202039)!important;
+  box-shadow:var(--life-shadow,0 16px 38px rgba(64,52,82,.12))!important;
+}
+.life-command :is(h2,b,strong){color:var(--life-ink,#202039)!important}
+.life-command :is(small,.muted){color:var(--life-muted,#6d687b)!important}
+.life-command-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.life-command-head h2{margin:.15rem 0}
+.life-next-orb{
+  width:min(88vw,330px);min-height:250px;aspect-ratio:1;
+  margin:16px auto 14px;border-radius:50%;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  padding:34px;
+  background:
+    radial-gradient(circle at 34% 25%,rgba(255,255,255,.98),rgba(255,255,255,.58) 45%,transparent 75%),
+    conic-gradient(from 200deg,rgba(169,230,237,.56),rgba(189,236,207,.58),rgba(255,230,155,.5),rgba(255,155,123,.36),rgba(216,193,255,.48),rgba(169,230,237,.56));
+  box-shadow:0 14px 32px rgba(62,52,80,.11),inset 0 0 0 1px rgba(255,255,255,.94);
+}
+.life-next-label{font-family:var(--font-hand);font-size:.7rem;letter-spacing:.13em;color:#87536c;font-weight:800}
+.life-next-orb>b{font-family:var(--font-heading);font-size:1.35rem;line-height:1.08;margin:7px 0;max-width:14ch}
+.life-next-orb>small{max-width:28ch;line-height:1.3}
+.life-next-orb .actions{justify-content:center;margin-top:13px}
+.life-radar{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 15px;
+}
+.life-radar button{
+  border:1px solid rgba(255,255,255,.9);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 24%,rgba(255,255,255,.96),rgba(255,255,255,.52) 55%,transparent 78%),rgba(169,230,237,.36);
+  color:var(--life-ink,#202039);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;padding:8px;box-shadow:0 6px 16px rgba(62,52,80,.07);
+}
+.life-radar button:nth-child(2){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.5) 55%,transparent 78%),rgba(189,236,207,.48)}
+.life-radar button:nth-child(3){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.5) 55%,transparent 78%),rgba(216,193,255,.42)}
+.life-radar button:nth-child(4){background:radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.5) 55%,transparent 78%),rgba(255,201,142,.46)}
+.life-radar b{font-family:var(--font-heading)!important;font-size:1.35rem!important}
+.life-radar span{font-family:var(--font-hand);font-size:.68rem;line-height:1.05;text-align:center}
+.life-command-list{margin-top:12px}
+.life-command-row{
+  display:flex;align-items:center;gap:8px;padding:9px 2px;border-top:1px dashed rgba(45,41,64,.11);
+}
+.life-command-row:first-of-type{border-top:0}
+.life-command-row label.task{background:transparent!important;border:0!important;padding:0!important}
+.life-command-row label.task span{min-width:0}
+.life-command-row label.task b{display:block}
+.life-command-row label.task small{display:block;margin-top:2px}
+.life-clear{
+  border-radius:28px;padding:14px 16px;margin-top:10px;
+  background:linear-gradient(135deg,rgba(189,236,207,.35),rgba(169,230,237,.25));
+}
+.life-clear b,.life-clear small{display:block}
+.life-tomorrow,.life-waiting{
+  margin-top:12px;border-radius:28px;border:1px solid rgba(45,41,64,.07);background:rgba(255,255,255,.55);overflow:hidden;
+}
+.life-tomorrow summary,.life-waiting summary{
+  cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px 15px;
+}
+.life-tomorrow summary::-webkit-details-marker,.life-waiting summary::-webkit-details-marker{display:none}
+.life-tomorrow summary span,.life-waiting summary{font-family:var(--font-hand)}
+.life-tomorrow summary b{font-size:.75rem!important;text-align:right}
+.life-tomorrow-body{padding:0 15px 14px;display:grid;gap:8px}
+.life-tomorrow-body>div{padding:9px 11px;border-radius:20px;background:rgba(255,255,255,.58)}
+.life-tomorrow-body b,.life-tomorrow-body small{display:block}
+.life-waiting button{
+  width:100%;border:0;border-top:1px dashed rgba(45,41,64,.1);background:transparent;color:inherit;text-align:left;padding:11px 15px;cursor:pointer;
+}
+.life-waiting button b,.life-waiting button small{display:block}
+@media(max-width:520px){
+  .life-radar{grid-template-columns:repeat(2,minmax(0,1fr));max-width:300px;margin-left:auto;margin-right:auto}
+  .life-radar button{aspect-ratio:auto;min-height:116px}
+  .life-next-orb{min-height:0;padding:28px}
+  .life-command-row{align-items:flex-start}
+}
+@media(max-width:360px){
+  .life-command{padding:15px 12px!important}
+  .life-next-orb{width:92%;padding:24px}
+}
