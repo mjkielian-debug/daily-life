@@ -166,3 +166,79 @@ function tarotArtwork(t){
  ];
  return '<svg viewBox="0 0 200 160" role="img" aria-label="'+esc(t.name)+' symbolic illustration" style="display:block;width:100%;max-width:220px;margin:auto;color:inherit"><rect x="8" y="8" width="184" height="144" rx="24" fill="currentColor" opacity=".06"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'+(t.reversed?' transform="rotate(180 100 80)"':'')+'>'+motifs[t.index]+'</g><g fill="currentColor" opacity=".45"><circle cx="30" cy="35" r="2"/><circle cx="170" cy="125" r="2"/><path d="M166 30L169 37L176 40L169 43L166 50L163 43L156 40L163 37Z"/></g></svg>';
 }
+
+const TAROT_SPREADS={one:{name:"One card · focus",positions:["Your focus"]},three:{name:"Three cards · situation, challenge, guidance",positions:["The situation","The challenge","Your guidance"]},five:{name:"Five cards · a deeper reading",positions:["Where you are","What is challenging you","What supports you","What to release","Your next step"]}};
+const TAROT_SUITS=[
+ {name:"Wands",theme:"energy, creativity, and action",prompt:"Where can you direct your energy?",symbol:'<path d="M80 115L120 40M100 75Q65 65 75 45M105 65Q140 75 135 95"/>'},
+ {name:"Cups",theme:"feelings, relationships, and care",prompt:"What feeling or connection needs attention?",symbol:'<path d="M65 45L135 45L125 90Q100 115 75 90ZM100 103L100 125M80 125L120 125M135 55Q160 55 140 85"/>'},
+ {name:"Swords",theme:"thoughts, communication, and clarity",prompt:"What needs to be named clearly?",symbol:'<path d="M100 30L112 48L105 100L95 100L88 48ZM75 100L125 100M100 100L100 125"/>'},
+ {name:"Pentacles",theme:"resources, home, work, and practical care",prompt:"What practical act will support your life?",symbol:'<circle cx="100" cy="80" r="42"/><path d="M100 40L110 68L140 68L116 88L125 116L100 99L75 116L84 88L60 68L90 68Z"/>'}
+];
+const TAROT_RANKS=[
+ ["Ace","A beginning or opening is available","Notice a delayed beginning or a resource you have not used"],
+ ["Two","Balance two needs and choose deliberately","Revisit an imbalance or a decision you are avoiding"],
+ ["Three","Build with others and let early progress take shape","Check where collaboration or follow-through is missing"],
+ ["Four","Pause, stabilize, and examine what you are holding","Notice whether comfort has become stagnation or control"],
+ ["Five","Meet friction honestly and look for a workable response","Consider what repair or recovery is asking of you"],
+ ["Six","Receive support, share generously, and notice progress","Check whether giving and receiving are out of balance"],
+ ["Seven","Reflect on your choices and protect what matters","Ask whether scattered effort or doubt is obscuring your priorities"],
+ ["Eight","Practice steadily and let movement teach you","Notice a repeated pattern that needs a different approach"],
+ ["Nine","Recognize what you have learned while respecting your limits","Reconsider overextension or the pressure to manage everything alone"],
+ ["Ten","A cycle is reaching fullness; decide what to carry forward","Release a burden or revisit an unfinished ending"],
+ ["Page","Approach this as a learner with curiosity","Notice hesitation, inexperience, or a lesson still unfolding"],
+ ["Knight","Bring purposeful movement and commitment","Slow impulsive action or question a stalled commitment"],
+ ["Queen","Offer grounded attention and mature care","Include your own needs in the care you give"],
+ ["King","Take responsibility with steadiness and perspective","Question rigid control or responsibility that lacks follow-through"]
+];
+function spreadTarotCard(index,reversed){
+ index=Number(index);if(!Number.isInteger(index)||index<0||index>=78)throw Error("Invalid tarot card");
+ if(index<22){const row=TAROT_MAJOR[index];return{index,name:row[0],reversed:!!reversed,meaning:reversed?row[2]:row[1],prompt:row[3],theme:"life patterns and personal growth"}}
+ const suit=TAROT_SUITS[Math.floor((index-22)/14)],rank=TAROT_RANKS[(index-22)%14];
+ return{index,name:rank[0]+" of "+suit.name,reversed:!!reversed,meaning:(reversed?rank[2]:rank[1])+" in "+suit.theme+".",prompt:suit.prompt,theme:suit.theme,suit};
+}
+function spreadCardArtwork(t){
+ if(t.index<22)return tarotArtwork(t);
+ return '<svg viewBox="0 0 200 160" role="img" aria-label="'+esc(t.name)+' symbolic illustration" style="width:100%;max-width:180px;color:var(--secondary)"><rect x="10" y="8" width="180" height="144" rx="22" fill="currentColor" opacity=".08"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'+(t.reversed?' transform="rotate(180 100 80)"':'')+'>'+t.suit.symbol+'</g></svg>';
+}
+function tarotRandomIndex(max){
+ const values=new Uint32Array(1),limit=Math.floor(4294967296/max)*max;
+ do{crypto.getRandomValues(values)}while(values[0]>=limit);
+ return values[0]%max;
+}
+function drawTarotSpread(kind,deck,question){
+ const spec=TAROT_SPREADS[kind];if(!spec)throw Error("Choose a valid spread");
+ const pool=Array.from({length:deck==="major"?22:78},(_,i)=>i),cards=[];
+ for(const position of spec.positions){const chosen=pool.splice(tarotRandomIndex(pool.length),1)[0];cards.push({cardIndex:chosen,reversed:tarotRandomIndex(4)===0,position})}
+ return{id:uid(),date:ymd(),type:"Tarot spread",spreadKind:kind,deck:deck==="major"?"major":"full",question:String(question||"").trim().slice(0,1000),cards,createdAt:new Date().toISOString()};
+}
+function tarotSpreadReading(reading){
+ const cards=reading.cards.map(c=>({...spreadTarotCard(c.cardIndex,c.reversed),position:c.position}));
+ const paragraphs=cards.map(c=>c.position+" — "+c.name+(c.reversed?" (reversed)":" (upright)")+": "+c.meaning+" "+c.prompt);
+ const first=cards[0],last=cards[cards.length-1];
+ let together=cards.length===1?"Stay with "+first.name+" as today's lens. "+first.prompt:
+ "Read these cards as a conversation: "+first.name+" frames what needs your attention, while "+last.name+" offers a direction to explore. The movement from "+first.theme+" toward "+last.theme+" invites you to connect understanding with a small, deliberate action.";
+ if(cards.length>=3)together+=" The challenge in "+cards[1].name+" is something to work with, rather than a verdict about you. Compare it with the guidance card: what changes when you use the support already available?";
+ if(cards.length===5)together+=" Let "+cards[2].name+" name a resource you can lean on. Use "+cards[3].name+" to ask what can be loosened or left behind before taking the next step.";
+ return{cards,paragraphs,together,next:"Choose one action you can take today, one boundary or burden you can soften, and one thing to observe before deciding more. Return tonight and note what actually happened."};
+}
+function tarotSpreadMarkup(reading){
+ const r=tarotSpreadReading(reading);
+ return '<div class="stack">'+(reading.question?'<div class="notice"><b>Your question</b><p>'+esc(reading.question)+'</p></div>':'')+'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">'+r.cards.map(c=>'<div class="metric" style="text-align:center"><div class="eyebrow">'+esc(c.position)+'</div>'+spreadCardArtwork(c)+'<b>'+esc(c.name)+'</b><div class="muted small">'+(c.reversed?'Reversed':'Upright')+'</div></div>').join('')+'</div><h3>Your full reading</h3>'+r.paragraphs.map(p=>'<p>'+esc(p)+'</p>').join('')+'<div class="notice"><h3>How the cards connect</h3><p>'+esc(r.together)+'</p></div><p>'+esc(r.next)+'</p><div class="muted small">A locally generated symbolic reading for reflection, not a prediction. Keep what feels useful and question what does not.</div></div>';
+}
+async function startTarotSpread(){
+ const reading=drawTarotSpread($("#tarotSpreadKind").value,$("#tarotSpreadDeck").value,$("#tarotSpreadQuestion").value);
+ const r=tarotSpreadReading(reading);reading.note=[reading.question?"Question: "+reading.question:"",...r.paragraphs,"How the cards connect: "+r.together,r.next].filter(Boolean).join("\n\n");
+ state.spiritualityJournal=state.spiritualityJournal||[];state.spiritualityJournal.push(reading);
+ try{await save()}catch(error){state.spiritualityJournal=state.spiritualityJournal.filter(x=>x.id!==reading.id);throw error}
+ render();openSavedTarotSpread(reading.id);
+}
+function openSavedTarotSpread(id){
+ const reading=(state.spiritualityJournal||[]).find(x=>x.id===id&&x.type==="Tarot spread"&&Array.isArray(x.cards));if(!reading)return;
+ modal(TAROT_SPREADS[reading.spreadKind]?.name||"Tarot reading",tarotSpreadMarkup(reading)+'<label>My reflection<textarea id="spreadReflection" rows="4" placeholder="What resonates? What will you try?">'+esc(reading.reflection||"")+'</textarea></label>',"Save reflection",async()=>{const old=reading.reflection;reading.reflection=$("#spreadReflection").value.trim();try{await save();closeModal();render()}catch(error){reading.reflection=old;throw error}});
+}
+function tarotSpreadChooser(){
+ const history=(state.spiritualityJournal||[]).filter(x=>x.type==="Tarot spread"&&Array.isArray(x.cards)).slice().sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,15);
+ return '<div class="card floral-card"><div class="eyebrow">Explore a fuller reading</div><h2>Choose your tarot spread</h2><div class="stack"><label>Spread<select id="tarotSpreadKind">'+Object.entries(TAROT_SPREADS).map(([k,v])=>'<option value="'+k+'"'+(k==="three"?' selected':'')+'>'+esc(v.name)+'</option>').join('')+'</select></label><label>Deck<select id="tarotSpreadDeck"><option value="full">Full 78-card deck</option><option value="major">22 Major Arcana cards</option></select></label><label>Your question or focus (optional)<textarea id="tarotSpreadQuestion" rows="2" maxlength="1000" placeholder="What would I like to understand or explore?"></textarea></label><button class="btn primary" onclick="startTarotSpread()">Draw cards & read</button><div class="muted small">Each spread draws distinct cards and saves the reading in your journal. Your daily card stays the same.</div></div></div>'+(history.length?'<div class="card"><h2>Saved readings</h2>'+history.map(x=>'<button class="btn" style="display:block;width:100%;text-align:left;margin:8px 0" onclick="openSavedTarotSpread(\''+x.id+'\')"><b>'+esc(TAROT_SPREADS[x.spreadKind]?.name||"Reading")+'</b><div class="muted small">'+esc(dl(x.date))+(x.question?' · '+esc(x.question):'')+'</div></button>').join('')+'</div>':'');
+}
+const tarotOriginalPanel=spiritualityTarotPanel;
+spiritualityTarotPanel=function(){return tarotSpreadChooser()+tarotOriginalPanel()};
