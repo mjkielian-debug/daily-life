@@ -7,7 +7,7 @@
     state.homeAutomation.robotVacuum={
       deviceName:String(current.deviceName||"Robot vacuum"),
       status:String(current.status||"Unknown"),
-      battery:Number.isFinite(Number(current.battery))?Math.max(0,Math.min(100,Number(current.battery))):null,
+      battery:(current.battery===null||current.battery===undefined||current.battery==="")?null:(Number.isFinite(Number(current.battery))?Math.max(0,Math.min(100,Number(current.battery))):null),
       mode:String(current.mode||"Auto"),
       dockState:String(current.dockState||"Unknown"),
       binState:String(current.binState||"Unknown"),
