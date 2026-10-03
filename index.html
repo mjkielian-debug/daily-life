@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-sleep1">
+<link rel="stylesheet" href="styles.css?v=20261002-sharedtasks1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -201,7 +201,7 @@ async function dbClear(){
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261002-cloud19"></script>
-<script src="sharing.js?v=20261002-share4"></script>
+<script src="sharing.js?v=20261002-share5"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
 <script src="vault.js?v=20261002-vault4"></script>
@@ -1275,8 +1275,11 @@ function openSuggestedItineraryBlock(date,templateKey){
 function openItineraryTask(id){
   const t=(state.tasks||[]).find(x=>x.id===id);if(!t)return;
   const mins=itineraryTaskMinutes(t);
-  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><label class="task"><input id="iptRemember" type="checkbox" checked><span><b>Remember this timing for tasks named “${esc(t.title||"this task")}”</b><div class="muted small">Future matching tasks can reuse the duration and preferred part of day.</div></span></label>${t.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b> Completing this Daily Life task means the planned work block is done; it does not claim the assignment was submitted in ParentVUE.</div>`:""}<div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Exact starts stay specific to this task.</div></div>`,"Save",async()=>{
-    t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;if($("#iptRemember")?.checked)itineraryRememberTaskPattern(t);await save();closeModal();render();
+  modal("Plan task",`<div class="stack"><label>Task<input id="iptTitle" value="${esc(t.title||"")}"></label><div class="grid2"><label>About how long?<select id="iptMinutes">${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${mins===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best part of day<select id="iptPref">${[["any","Fit it where it works"],["morning","Morning"],["afternoon","Afternoon"],["after-school","After school"],["evening","Evening"]].map(([v,l])=>`<option value="${v}" ${String(t.itineraryPreference||"any")===v?"selected":""}>${l}</option>`).join("")}</select></label></div><label>Exact start (optional)<input id="iptStart" type="time" value="${esc(t.itineraryStart||"")}"></label><label>Person<input id="iptPerson" value="${esc(t.child||"")}"></label><label>Notes<input id="iptNotes" value="${esc(t.notes||"")}"></label><label class="task"><input id="iptDone" type="checkbox" ${t.done?"checked":""}><span>Done</span></label><label class="task"><input id="iptRemember" type="checkbox" checked><span><b>Remember this timing for tasks named “${esc(t.title||"this task")}”</b><div class="muted small">Future matching tasks can reuse the duration and preferred part of day.</div></span></label>${t.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b> Completing this Daily Life task means the planned work block is done; it does not claim the assignment was submitted in ParentVUE.</div>`:""}${typeof sharingTaskControl==="function"?sharingTaskControl(t):""}<div class="notice">Leave Exact start blank and Daily Life will fit this into a real opening. Exact starts stay specific to this task.</div></div>`,"Save",async()=>{
+    t.title=$("#iptTitle").value.trim()||t.title;t.itineraryMinutes=Number($("#iptMinutes").value||mins);t.itineraryPreference=$("#iptPref").value;t.itineraryStart=$("#iptStart").value;t.child=$("#iptPerson").value.trim();t.notes=$("#iptNotes").value.trim();t.done=$("#iptDone").checked;if($("#iptRemember")?.checked)itineraryRememberTaskPattern(t);
+    const shareRequested=$("#taskShared")?$("#taskShared").checked:!!t.sharedEntryId;
+    if(typeof sharingCanShare==="function"&&sharingCanShare()){if(shareRequested){const ok=await sharingUpsertTask(t);if(!ok)return}else if(t.sharedEntryId){const ok=await sharingMakeTaskPrivate(t);if(!ok)return}}
+    await save();closeModal();render();
   });
 }
 
@@ -1805,7 +1808,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   ${birthdayPrepCard()}
   ${todayTimelineCard()}
   ${tonightPrepCard()}
-  <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}">${esc(x.title)}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><span class="tag">${esc(x.category)}</span></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
+  <div class="card"><div class="section-title"><h2>Today’s tasks</h2><button class="btn" onclick="openTask()">+ Add</button></div>${tk.length?tk.map(x=>`<div class="row task-list-row"><label class="task grow"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.title)}</b>${x.child?`<div class="muted small">${esc(x.child)}</div>`:""}${x.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</span></label><div class="task-row-actions">${x.sharedEntryId?`<span class="tag shared-task-tag">shared</span>`:""}<span class="tag">${esc(x.category)}</span><button class="btn small" onclick="openTask('', '${x.id}')">Edit</button></div></div>`).join(""):`<div class="notice">No tasks yet.</div>`}</div>
   <div class="today-metrics">
     <div class="metric"><div class="eyebrow">Today</div><div class="big">${done} / ${tk.length}</div><div class="muted small">tasks complete</div>${tk.length?todayProgress(done,tk.length,"Tasks complete"):""}</div>
     <div class="metric"><div class="eyebrow">UPS</div><div class="big">${actual?h.toFixed(2)+" h":workNeedsPunchOut(w)?"Punch-out needed":w?.start&&liveWorkHours(w)>0?liveWorkHours(w).toFixed(2)+" h so far":"No completed hours"}</div><div class="muted small">${esc(workStatusText(w))}${actual&&Number(w.rate)>0?` · ${money(h*Number(w.rate))} est. gross`:""}</div><button class="btn small" onclick="openWork()">Edit work</button></div>
@@ -3689,7 +3692,7 @@ function openAstrologySettings(){
   const options=['<option value="">No personalized sign lens</option>'].concat(ZODIAC_SIGNS.map(sign=>`<option ${sign===current?"selected":""}>${sign}</option>`)).join("");
   modal("Moon & astrology",`<div class="stack"><label>Sun sign<select id="sunSign">${options}</select></label></div><p class="muted small">The moon phase shown in Daily Life is astronomical. A sun-sign lens is an optional astrology/spiritual reflection tool and is not a scientific prediction.</p>`,"Save",async()=>{state.profile.sunSign=$("#sunSign").value;await save();closeModal();render()});
 }
-async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(!x)return;x.done=d;if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){const ok=await sharingUpsertTask(x);if(!ok){x.done=!d;render();return}}await save();render()}
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
 function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
@@ -3701,7 +3704,41 @@ async function toggleCare(key){
   await save();render();
 }
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
-function openTask(person=""){ensurePeopleProfiles();modal("Add to today",`<div class="stack"><label>Task<input id="task"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(person)}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label><label>Category<input id="cat" value="life"></label><div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90].map(n=>`<option value="${n}">${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="">Use remembered preference / fit where it works</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="after-school">After school</option><option value="evening">Evening</option><option value="any">Anywhere</option></select></label></div><label>Notes<input id="notes"></label></div>`,"Add",async()=>{const title=$("#task").value.trim();if(!title)return;state.tasks.push({id:uid(),date:ymd(),title,child:$("#taskperson").value.trim(),category:$("#cat").value||"life",notes:$("#notes").value,done:false,order:100,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||""});await save();closeModal();render()})}
+function openTask(person="",id=""){
+  ensurePeopleProfiles();
+  const existing=(state.tasks||[]).find(x=>x.id===id)||null,
+        x=existing||{date:ymd(),title:"",child:person||"",category:"life",notes:"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:""};
+  modal(existing?"Edit task":"Add task",`<div class="stack">
+    <label>Task<input id="task" value="${esc(x.title||"")}"></label>
+    <div class="grid2"><label>Date<input id="taskdate" type="date" value="${esc(x.date||ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
+    <label>Category<input id="cat" value="${esc(x.category||"life")}"></label>
+    <div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${Number(x.itineraryMinutes)===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="" ${!x.itineraryPreference?"selected":""}>Use remembered preference / fit where it works</option><option value="morning" ${x.itineraryPreference==="morning"?"selected":""}>Morning</option><option value="afternoon" ${x.itineraryPreference==="afternoon"?"selected":""}>Afternoon</option><option value="after-school" ${x.itineraryPreference==="after-school"?"selected":""}>After school</option><option value="evening" ${x.itineraryPreference==="evening"?"selected":""}>Evening</option><option value="any" ${x.itineraryPreference==="any"?"selected":""}>Anywhere</option></select></label></div>
+    <label>Exact start (optional)<input id="taskstart" type="time" value="${esc(x.itineraryStart||"")}"></label>
+    <label>Notes<input id="notes" value="${esc(x.notes||"")}"></label>
+    <label class="task"><input id="taskdone" type="checkbox" ${x.done?"checked":""}><span>Done</span></label>
+    ${typeof sharingTaskControl==="function"?sharingTaskControl(x):""}
+    ${x.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b><div class="muted small">Sharing this task shares only the task text and timing—not the private assignment snapshot or school source link.</div></div>`:""}
+    ${existing?`<button type="button" class="btn danger" onclick="removeTask('${x.id}')">Delete task</button>`:""}
+  </div>`,"Save",async()=>{
+    const title=$("#task").value.trim(),date=$("#taskdate").value||ymd();if(!title)return;
+    let t=existing;
+    if(!t){t={id:uid(),done:false,order:100};state.tasks.push(t)}
+    Object.assign(t,{date,title,child:$("#taskperson").value.trim(),category:$("#cat").value.trim()||"life",notes:$("#notes").value.trim(),done:$("#taskdone").checked,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"",itineraryStart:$("#taskstart").value||""});
+    const shareRequested=$("#taskShared")?$("#taskShared").checked:!!t.sharedEntryId;
+    if(typeof sharingCanShare==="function"&&sharingCanShare()){
+      if(shareRequested){const ok=await sharingUpsertTask(t);if(!ok)return}
+      else if(t.sharedEntryId){const ok=await sharingMakeTaskPrivate(t);if(!ok)return}
+    }
+    await save();closeModal();render();
+  });
+}
+async function removeTask(id){
+  const t=(state.tasks||[]).find(x=>x.id===id);if(!t)return;
+  if(!confirm(`Delete "${t.title||"this task"}"?`))return;
+  if(t.sharedEntryId&&typeof sharingMakeTaskPrivate==="function"){const ok=await sharingMakeTaskPrivate(t);if(!ok)return}
+  state.tasks=(state.tasks||[]).filter(x=>x.id!==id);
+  await save();closeModal();render();
+}
 function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
 function parsePunchDate(text){
   const iso=String(text||"").match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);if(iso)return iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
@@ -4423,7 +4460,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-clipboard1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-sharedtasks1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
