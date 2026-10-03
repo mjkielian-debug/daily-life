@@ -2834,3 +2834,100 @@ body::before{
 .vehicle-maint-grid>div.maintenance-due>b{
   color:color-mix(in srgb,var(--secondary) 82%,white 18%);
 }
+
+
+/* Daily Life visual polish v4 — typography, readable headings, softer form fields */
+:root{
+  --font-heading:"Lora",Georgia,"Times New Roman",serif;
+  --font-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+html,body{font-family:var(--font-body)}
+body,button,input,select,textarea{font-family:var(--font-body)}
+.title,
+.card .big,
+.card>h2,
+.section-title h2,
+.people-section-title h2,
+.care-hub-title,
+.spirituality-title,
+.person-card-top h2,
+.pet-card h2,
+.plant-card h2,
+.people-hero-stats b,
+.garden-stats b,
+.pet-setup-stats b,
+.garden-season-meta b,
+.kids-money-summary b{
+  font-family:var(--font-heading);
+}
+.title{
+  font-weight:700;
+  color:#fff8f2;
+  text-shadow:0 2px 0 rgba(0,0,0,.34),0 0 24px rgba(243,170,196,.20);
+}
+.eyebrow{
+  color:#ffd5e2;
+  text-shadow:0 1px 0 rgba(0,0,0,.42);
+}
+.section-title h2,
+.card>h2,
+.people-section-title h2,
+.care-section-intro b,
+.mini-heading{
+  color:#fff8f2;
+  text-shadow:0 1px 0 rgba(0,0,0,.32);
+}
+.modal label:not(.task),
+.card label:not(.task){
+  color:color-mix(in srgb,var(--cream) 92%,var(--secondary) 8%);
+  font-weight:800;
+}
+input,select,textarea{
+  border-radius:16px;
+  padding:12px 13px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(243,170,196,.07),transparent 38%),
+    linear-gradient(180deg,#17261f,#101a16);
+  border-color:rgba(243,170,196,.32);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 6px 18px rgba(0,0,0,.08);
+}
+input::placeholder,textarea::placeholder{
+  color:color-mix(in srgb,var(--muted) 74%,var(--secondary) 26%);
+  opacity:.82;
+}
+input:focus,select:focus,textarea:focus{
+  outline:3px solid rgba(243,170,196,.16);
+  outline-offset:2px;
+  border-color:rgba(243,170,196,.58);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 0 0 1px rgba(169,213,181,.16),0 8px 22px rgba(0,0,0,.10);
+}
+textarea{resize:vertical}
+.modal{
+  position:relative;
+  overflow-x:hidden;
+}
+.modal:before{
+  content:"";
+  position:absolute;
+  right:-34px;
+  top:52px;
+  width:150px;
+  height:118px;
+  background:url("botanical-sprig.svg?v=20261002-2") center/contain no-repeat;
+  opacity:.075;
+  pointer-events:none;
+}
+.modal>*{position:relative;z-index:1}
+.card .section-title h2:after{
+  content:"";
+  display:block;
+  width:38px;
+  height:1px;
+  margin-top:5px;
+  background:linear-gradient(90deg,var(--secondary),var(--accent),transparent);
+  opacity:.55;
+}
+@media(max-width:520px){
+  .title{font-size:1.62rem}
+  input,select,textarea{font-size:16px}
+}
