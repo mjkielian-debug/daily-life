@@ -3010,3 +3010,19 @@ textarea{resize:vertical}
   border-color:color-mix(in srgb,var(--primary) 32%,var(--secondary) 18%);
   background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 8%,transparent),color-mix(in srgb,var(--secondary) 5%,transparent))
 }
+
+
+/* Tomorrow meal prep checklist */
+.tomorrow-prep-checklist{
+  display:grid;gap:7px;margin:10px 0;padding:11px 12px;border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--secondary) 16%);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 7%,transparent),color-mix(in srgb,var(--secondary) 5%,transparent))
+}
+.tomorrow-prep-checklist.compact{margin-top:12px}
+.tomorrow-prep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.tomorrow-prep-head>span:first-child{display:grid;gap:2px}
+.tomorrow-prep-head small{color:var(--muted);font-size:.68rem}
+.tomorrow-prep-item{
+  padding:8px 0;border-top:1px solid color-mix(in srgb,var(--secondary) 13%,var(--border));min-height:42px
+}
+.tomorrow-prep-item:first-of-type{border-top:0}
