@@ -3152,3 +3152,20 @@ textarea{resize:vertical}
 @media(max-width:460px){
   .shared-today-row{grid-template-columns:70px minmax(0,1fr)}
 }
+
+
+/* Backup / recovery health */
+.backup-health-card{border-color:color-mix(in srgb,var(--primary) 28%,var(--secondary) 16%)}
+.backup-health-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0}
+.backup-health-grid>div{
+  display:grid;gap:5px;align-content:start;min-width:0;padding:11px;border-radius:15px;
+  border:1px solid color-mix(in srgb,var(--secondary) 18%,var(--border));background:rgba(255,255,255,.018)
+}
+.backup-health-grid b{font-family:var(--font-heading);color:var(--cream)}
+.backup-health-grid small{color:var(--muted);font-size:.68rem;line-height:1.35;overflow-wrap:anywhere}
+.backup-health-grid .tag{justify-self:start}
+.backup-health-icon{font-size:1.15rem;color:var(--secondary)}
+.backup-last-restore{margin:2px 0 10px}
+@media(max-width:620px){
+  .backup-health-grid{grid-template-columns:1fr}
+}
