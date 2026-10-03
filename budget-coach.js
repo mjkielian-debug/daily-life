@@ -2,24 +2,51 @@
    This file contains generic calculation/display logic only. It never embeds user balances. */
 
 function budgetCoachRepeatPurchases(limit=3){
-  const rows=[...(state?.budget?.spending||[])].filter(x=>{
-    const d=String(x?.date||"");
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return false;
-    const age=(new Date(ymd()+"T12:00:00")-new Date(d+"T12:00:00"))/86400000;
-    return age>=0&&age<=120&&String(x.note||"").trim().length>=3&&x.category!=="ebt";
-  });
-  const groups=new Map();
+  const windowDays=120,today=ymd(),todayTime=new Date(today+"T12:00:00").getTime(),
+        rows=[...(state?.budget?.spending||[])].filter(x=>{
+          const d=String(x?.date||"");
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return false;
+          const age=(todayTime-new Date(d+"T12:00:00").getTime())/86400000;
+          return age>=0&&age<=windowDays&&String(x.note||"").trim().length>=3&&x.category!=="ebt"&&Number(x.amount||0)>0;
+        }),
+        groups=new Map();
   for(const x of rows){
-    const key=String(x.note||"").trim().toLowerCase().replace(/\s+/g," ");
+    const name=String(x.note||"").trim(),key=name.toLowerCase().replace(/\s+/g," ");
     if(!key)continue;
-    const g=groups.get(key)||{name:String(x.note||"").trim(),count:0,total:0,categories:new Set()};
-    g.count+=1;g.total+=Math.max(0,Number(x.amount||0));g.categories.add(x.category);groups.set(key,g);
+    const g=groups.get(key)||{name,count:0,total:0,categories:new Set(),dates:[],amounts:[]};
+    const amount=Math.max(0,Number(x.amount||0));
+    g.count+=1;g.total+=amount;g.categories.add(x.category);g.dates.push(String(x.date));g.amounts.push(amount);groups.set(key,g);
   }
-  return [...groups.values()]
-    .filter(x=>x.count>=2)
-    .sort((a,b)=>b.count-a.count||b.total-a.total)
-    .slice(0,limit)
-    .map(x=>({...x,average:x.count?x.total/x.count:0,categories:[...x.categories]}));
+  return [...groups.values()].filter(x=>x.count>=2).map(g=>{
+    const uniqueDates=[...new Set(g.dates)].sort(),
+          gaps=[];
+    for(let i=1;i<uniqueDates.length;i++){
+      const a=new Date(uniqueDates[i-1]+"T12:00:00"),b=new Date(uniqueDates[i]+"T12:00:00"),
+            days=Math.round((b-a)/86400000);
+      if(days>0)gaps.push(days);
+    }
+    const average=g.count?g.total/g.count:0,
+          avgGapDays=gaps.length?gaps.reduce((sum,n)=>sum+n,0)/gaps.length:null,
+          gapSpread=gaps.length>1?Math.sqrt(gaps.reduce((sum,n)=>sum+Math.pow(n-avgGapDays,2),0)/gaps.length):null,
+          cadenceVariation=avgGapDays&&gapSpread!==null?gapSpread/avgGapDays:null,
+          cadenceStable=g.count>=3&&gaps.length>=2&&avgGapDays>=5&&avgGapDays<=120&&cadenceVariation!==null&&cadenceVariation<=.55,
+          estimatedOrdersPerYear=avgGapDays?Math.max(1,Math.min(365,Math.round(365/avgGapDays))):null,
+          annualizedSpend=g.total*(365/windowDays),
+          lastDate=uniqueDates[uniqueDates.length-1]||"",
+          nextLikelyDate=avgGapDays&&lastDate?shiftDateString(lastDate,Math.max(1,Math.round(avgGapDays))):"";
+    return {...g,average,categories:[...g.categories],uniqueDates,gaps,avgGapDays,cadenceVariation,cadenceStable,estimatedOrdersPerYear,annualizedSpend,lastDate,nextLikelyDate,windowDays};
+  }).sort((a,b)=>{
+    if(a.cadenceStable!==b.cadenceStable)return a.cadenceStable?-1:1;
+    return b.count-a.count||b.annualizedSpend-a.annualizedSpend;
+  }).slice(0,limit);
+}
+
+function budgetCoachRepeatDetail(r){
+  const bits=[`Logged ${r.count} time${r.count===1?"":"s"} in about ${r.windowDays||120} days`];
+  if(r.avgGapDays)bits.push(`about every ${Math.max(1,Math.round(r.avgGapDays))} days`);
+  bits.push(`average ${money(r.average)}`);
+  if(Number.isFinite(r.annualizedSpend)&&r.annualizedSpend>0)bits.push(`roughly ${money(r.annualizedSpend)}/year at this observed pace`);
+  return bits.join(" · ");
 }
 
 function budgetCoachSnapshot(){
@@ -117,7 +144,7 @@ function budgetCoachActionList(x,goalPlan){
     actions.push({mark:String(actions.length+1),title:"Give unassigned money a purpose",detail:`${money(goalPlan.planUnassigned)} of the monthly plan is not assigned to a category or savings goal yet.`});
   }
   if(x.repeats.length){
-    actions.push({mark:String(actions.length+1),title:`Price-check ${x.repeats[0].name}`,detail:`It appears repeatedly in recent spending. Compare unit price, bulk, store brand, and subscription price before buying it again.`});
+    const r=x.repeats[0],cadence=r.cadenceStable&&r.avgGapDays?` about every ${Math.max(1,Math.round(r.avgGapDays))} days`:"";\n    actions.push({mark:String(actions.length+1),title:`Price-check ${r.name}`,detail:`This spending label repeats${cadence}. Compare unit price, bulk, store brand, and subscription price before buying it again.`});
   }
   if(!actions.length){
     actions.push({mark:"✓",title:"Stay with the current plan",detail:"No urgent shortfall, transfer, overspent category, or unassigned-goal action is showing from the information entered."});
@@ -172,7 +199,7 @@ function budgetCoachCard(){
     :"";
 
   const repeat=x.repeats.length
-    ?`<details class="compact-more"><summary>Repeat-purchase savings checks</summary><div class="coach-subsection">${x.repeats.map(r=>`<div class="money-action"><div class="money-action-mark">↻</div><div class="grow"><b>${esc(r.name)}</b><div class="muted small">Logged ${r.count} times in about 120 days · average ${money(r.average)}. If these are the same recurring items, compare unit price, bulk size, store brand, and subscription pricing before the next purchase. Only subscribe when the total cost is actually lower and the quantity will be used.</div></div></div>`).join("")}</div></details>`
+    ?`<details class="compact-more"><summary>Repeat-purchase savings checks</summary><div class="coach-subsection">${x.repeats.map(r=>`<div class="money-action"><div class="money-action-mark">↻</div><div class="grow"><b>${esc(r.name)}</b><div class="muted small">${esc(budgetCoachRepeatDetail(r))}</div><div class="muted small">${r.cadenceStable?`Cadence looks fairly consistent${r.nextLikelyDate?` · another purchase may be due around ${esc(dl(r.nextLikelyDate))}`:""}. This is a stronger candidate for a subscription/unit-price comparison.`:`There is not enough consistent timing yet to assume a subscription schedule. Compare the math, but keep flexibility.`}</div></div><span class="tag">${r.cadenceStable?"steady":"watch"}</span></div>`).join("")}</div></details>`
     :`<div class="muted small">As repeat purchases build up in spending history, Daily Life can flag candidates worth comparing for bulk, store-brand, or subscription savings.</div>`;
 
   return `<div class="card budget-coach-card">
