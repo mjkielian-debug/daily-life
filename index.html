@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-backup1">
+<link rel="stylesheet" href="styles.css?v=20261002-diag1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -227,6 +227,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],budget:{months:{},spending:[]}
 });
+const APP_BUILD="2026.10.02-41";
 let state=blankState(),view="today",installPrompt=null,weather=null,selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -3544,19 +3545,47 @@ function systemHealthChecks(){
   if(typeof vaultEnvelope!=="undefined"&&vaultEnvelope)info.push("Encrypted Private Vault exists on this device");
   else info.push("Private Vault not created on this device");
   info.push(`${people.length} People profiles · ${(state.events||[]).length} events · ${(state.tasks||[]).length} tasks`);
+  info.push(`Build ${APP_BUILD} · data schema v${Number(state.version)||0}`);
+  info.push(navigator.serviceWorker?.controller?"Installed-app service worker active":"Service worker not controlling this page yet");
+  const lastExport=localStorage.getItem("dailyLifeLastExportAt");if(lastExport)info.push("Last manual export "+new Date(lastExport).toLocaleString());
+  if(typeof cloudRemoteUpdatedAt!=="undefined"&&cloudRemoteUpdatedAt)info.push("Cloud snapshot "+new Date(cloudRemoteUpdatedAt).toLocaleString());
+  if(typeof sharingLastPulledAt!=="undefined"&&sharingLastPulledAt)info.push("Shared household sync "+new Date(sharingLastPulledAt).toLocaleString());
   return{issues,info};
 }
 function systemHealthCard(){
   const h=systemHealthChecks();
-  return `<div class="card"><div class="section-title"><div><h2>System health</h2><div class="muted small">A quick check for broken links, unfinished setup, and common data problems.</div></div><span class="tag">${h.issues.length?h.issues.length+" to review":"looks good"}</span></div>
+  return `<div class="card"><div class="section-title"><div><h2>System health</h2><div class="muted small">A quick check for broken links, unfinished setup, and common data problems. · Build ${esc(APP_BUILD)}</div></div><span class="tag">${h.issues.length?h.issues.length+" to review":"looks good"}</span></div>
     ${h.issues.length?`<div class="warning"><b>${h.issues.length} item${h.issues.length===1?"":"s"} to review</b><br><span class="muted small">${esc(h.issues[0])}${h.issues.length>1?" · +"+(h.issues.length-1)+" more":""}</span></div>`:`<div class="notice"><b>No obvious structural problems found.</b></div>`}
-    <div class="actions"><button class="btn primary" onclick="openDiagnostics()">Run full self-check</button></div>
+    <div class="actions"><button class="btn primary" onclick="openDiagnostics()">Run full self-check</button><button class="btn" onclick="copyDiagnostics()">Copy diagnostics</button></div>
   </div>`;
+}
+function diagnosticsText(){
+  const h=systemHealthChecks(),rows=[
+    "Daily Life diagnostics",
+    "Build: "+APP_BUILD,
+    "Data schema: v"+(Number(state.version)||0),
+    "Date: "+new Date().toLocaleString(),
+    "Service worker: "+(navigator.serviceWorker?.controller?"active":"not controlling"),
+    "Cloud: "+(typeof cloudUser==="function"&&cloudUser()?(cloudRemoteUpdatedAt?"snapshot "+new Date(cloudRemoteUpdatedAt).toLocaleString():"signed in, no full snapshot"):"not signed in"),
+    "Auto sync: "+(typeof cloudAutoEnabled==="function"&&cloudAutoEnabled()?"on":"off"),
+    "Household sharing: "+(typeof sharingConnected==="function"&&sharingConnected()?"connected":"not connected"),
+    "Last manual export: "+(localStorage.getItem("dailyLifeLastExportAt")?new Date(localStorage.getItem("dailyLifeLastExportAt")).toLocaleString():"none recorded"),
+    "Counts: "+(state.tasks||[]).length+" tasks · "+(state.events||[]).length+" events · "+(state.meals||[]).length+" meals · "+(state.workShifts||[]).length+" work shifts",
+    "Issues: "+(h.issues.length?h.issues.join(" | "):"none found")
+  ];
+  return rows.join("\n");
+}
+async function copyDiagnostics(){
+  const text=diagnosticsText();
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error("clipboard unavailable");
+    await navigator.clipboard.writeText(text);alert("Non-sensitive diagnostics copied.");
+  }catch(error){prompt("Copy these diagnostics",text)}
 }
 function openDiagnostics(){
   const h=systemHealthChecks();
   const rows=h.issues.length?h.issues.map(x=>`<div class="row"><span>⚠ ${esc(x)}</span></div>`).join(""):`<div class="notice">No obvious structural problems found.</div>`;
-  modal("Daily Life self-check",`<div class="stack"><div class="mini-heading">Needs review</div>${rows}<div class="mini-heading">Status</div>${h.info.map(x=>`<div class="row"><span>${esc(x)}</span><b>✓</b></div>`).join("")}<div class="notice"><b>Safe check only.</b><br><span class="muted small">This does not erase, merge, or rewrite your records. It only reports what it can verify from the data currently loaded on this device.</span></div></div>`,"Done",()=>closeModal());
+  modal("Daily Life self-check",`<div class="stack"><div class="mini-heading">Needs review</div>${rows}<div class="mini-heading">Status</div>${h.info.map(x=>`<div class="row"><span>${esc(x)}</span><b>✓</b></div>`).join("")}<div class="notice"><b>Safe check only.</b><br><span class="muted small">This does not erase, merge, or rewrite your records. The copied diagnostic excludes passwords, bank balances, Vault contents, and personal notes.</span></div><button type="button" class="btn primary" onclick="copyDiagnostics()">Copy diagnostics</button></div>`,"Done",()=>closeModal());
 }
 
 function backupHealthCard(){
@@ -4490,7 +4519,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-backup1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-diag1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
