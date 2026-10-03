@@ -565,6 +565,7 @@ function generatedMealDetails(m){
   return `<div class="notice recipe-built"><b>Recipe built for you</b>
     ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div>`:""}
     ${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}
+    ${m?.tomorrowPrep?`<div class="mini-heading">Tonight / day-before prep</div><div class="muted small">${esc(m.tomorrowPrep).replace(/\n/g,"<br>")}</div>`:""}
     ${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}
   </div>`;
 }
@@ -632,6 +633,25 @@ function mealShoppingNeeds(m){
   if(!m)return[];
   const key=mealKey(m.date,m.type||"dinner");
   return (state.shopping||[]).filter(x=>x.status==="needed"&&x.source==="recipe"&&x.mealKey===key);
+}
+function tomorrowMealPrepLines(m){
+  return String(m?.tomorrowPrep||"").split(/\r?\n/).map(x=>x.replace(/^[-•*]\s*/,"").trim()).filter(Boolean);
+}
+function tomorrowMealPrepDone(m){return new Set((m?.tomorrowPrepDone||[]).map(Number))}
+function tomorrowMealPrepOutstanding(m){
+  const lines=tomorrowMealPrepLines(m),done=tomorrowMealPrepDone(m);
+  return lines.filter((_,i)=>!done.has(i));
+}
+async function toggleTomorrowMealPrep(mealId,index,checked){
+  const m=(state.meals||[]).find(x=>x.id===mealId);if(!m)return;
+  const set=tomorrowMealPrepDone(m);if(checked)set.add(Number(index));else set.delete(Number(index));
+  m.tomorrowPrepDone=[...set].sort((a,b)=>a-b);
+  await save();render();
+}
+function tomorrowMealPrepChecklist(m,compact=false){
+  const lines=tomorrowMealPrepLines(m);if(!lines.length)return"";
+  const done=tomorrowMealPrepDone(m),remaining=lines.filter((_,i)=>!done.has(i)).length;
+  return `<div class="tomorrow-prep-checklist ${compact?"compact":""}"><div class="tomorrow-prep-head"><span><b>Tonight for tomorrow</b><small>${remaining?remaining+" left":"All set"}</small></span>${/freezer|thaw|defrost|refrigerator/i.test(lines.join(" "))?'<span class="tag">freezer / thaw</span>':""}</div>${lines.map((line,i)=>`<label class="task tomorrow-prep-item"><input type="checkbox" ${done.has(i)?"checked":""} onchange="toggleTomorrowMealPrep('${m.id}',${i},this.checked)"><span class="${done.has(i)?"done":""}">${esc(line)}</span></label>`).join("")}</div>`;
 }
 function recipeNeedSummary(m){
   const needs=mealShoppingNeeds(m);
@@ -726,7 +746,7 @@ async function rejectMealSuggestion(id){
 function todayMealCard(){
   const meal=todayMeal(),suggestion=latestMealSuggestion(ymd()),tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const tm=state.meals.find(x=>x.date===ymd(tomorrow)&&x.type==="dinner");
   if(!meal?.dish&&suggestion)return suggestionCard(suggestion);
-  if(!meal||(!meal.dish&&meal.recipeState!=="suggestion-queued"))return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>Let’s find something lovely for dinner</h2></div><div class="actions"><button class="btn primary" onclick="requestMealSuggestion('${ymd()}')">Pick for me</button><button class="btn" onclick="openMeal('${ymd()}')">Choose meal</button></div></div>${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
+  if(!meal||(!meal.dish&&meal.recipeState!=="suggestion-queued"))return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>Let’s find something lovely for dinner</h2></div><div class="actions"><button class="btn primary" onclick="requestMealSuggestion('${ymd()}')">Pick for me</button><button class="btn" onclick="openMeal('${ymd()}')">Choose meal</button></div></div>${tm?.tomorrowPrep?tomorrowMealPrepChecklist(tm,true):""}</div>`;
   if(meal&&!meal.dish&&meal.recipeState==="suggestion-queued")return `<div class="card priority-card"><div class="eyebrow">🍽 Today’s food</div><h2>✨ Choosing dinner for you…</h2><div class="muted small">Daily Life is picking a family meal, then it will build the recipe and grocery list.</div><button class="btn" onclick="openMeal('${ymd()}')">Choose something myself</button></div>`;
   const ingredients=splitLines(meal.ingredients),prep=splitLines(meal.prepSteps),done=new Set((meal.prepDone||[]).map(Number)),recipeStatus=mealRecipeStatus(meal);
   return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">🍽 Today’s food</div><h2>${esc(meal.dish||"Dinner")}</h2><div class="muted small">${meal.method?esc(meal.method)+" · ":""}${meal.serveTime?"Serve "+esc(fmtClock(meal.serveTime)):""}${meal.startBy?" · start by "+esc(fmtClock(meal.startBy)):""}${meal.assigned?" · "+esc(meal.assigned):""}</div></div><button class="btn" onclick="openMeal('${ymd()}')">Edit</button></div>
@@ -736,7 +756,7 @@ function todayMealCard(){
   ${recipeNeedSummary(meal)}
   <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="setMealStatus('${meal.id}','made')">${meal.status==="made"?"✓ Made":"Mark made"}</button><button class="btn" onclick="openMeal('${ymd()}')">Recipe / details</button></div>
   ${meal.status==="made"?mealFeedbackControls(meal):""}
-  ${tm?.tomorrowPrep?`<div class="tomorrow-prep"><b>Tonight for tomorrow</b><div class="muted small">${esc(tm.tomorrowPrep)}</div></div>`:""}</div>`;
+  ${tm?.tomorrowPrep?tomorrowMealPrepChecklist(tm,true):""}</div>`;
 }
 function birthdayPrepCard(){
   ensurePeopleProfiles();
@@ -3726,6 +3746,7 @@ function openMeal(date){
     <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
     <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
     <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
+    <label>Tonight / day-before prep<textarea id="mtomorrow" rows="3" placeholder="Move meat from freezer to fridge, chop vegetables, assemble crock-pot insert…">${esc(x.tomorrowPrep||"")}</textarea></label>
     ${generatedMealDetails(x)}
   </div>`,"Save meal",async()=>{
     const newDish=$("#md").value.trim();if(!newDish)return;
@@ -3735,9 +3756,9 @@ function openMeal(date){
     if(changed){
       const key=mealKey(date,"dinner");
       state.shopping=(state.shopping||[]).filter(item=>!(item.source==="recipe"&&item.mealKey===key));
-      m.ingredients="";m.prepSteps="";m.tomorrowPrep="";m.notes="";m.prepDone=[];m.recipeState="queued";
+      m.ingredients="";m.prepSteps="";m.tomorrowPrep="";m.tomorrowPrepDone=[];m.notes="";m.prepDone=[];m.recipeState="queued";
     }
-    Object.assign(m,{dish:newDish,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,status:$("#mst").value});
+    Object.assign(m,{dish:newDish,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,status:$("#mst").value,tomorrowPrep:$("#mtomorrow").value.trim()});
     if(!Array.isArray(m.prepDone))m.prepDone=[];
     if(!m.ingredients&&!m.prepSteps)m.recipeState="queued";
     await save();
