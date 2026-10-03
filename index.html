@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261002-botanical3">
 <link rel="icon" href="icon.svg?v=20261002-botanical3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg?v=20261002-botanical3">
-<link rel="stylesheet" href="styles.css?v=20261002-updates1">
+<link rel="stylesheet" href="styles.css?v=20261002-billundo1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -202,7 +202,7 @@ async function dbClear(){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261002-cloud19"></script>
 <script src="sharing.js?v=20261002-share4"></script>
-<script src="finance-cloud.js?v=20261002-billmatch2"></script>
+<script src="finance-cloud.js?v=20261002-billundo1"></script>
 <script src="spirituality.js?v=20261002-spirit1"></script>
 <script src="vault.js?v=20261002-vault4"></script>
 <script>
@@ -4076,10 +4076,10 @@ function openBill(index=-1,sourceIndex=-1){
   const existing=index>=0?state.bills[index]:null;if(index>=0&&!existing)return;
   const source=sourceIndex>=0?state.bills[sourceIndex]:null;
   const b=existing||(source?nextBillDraft(source):{name:"",amount:null,due:"",paymentAccountKey:"",desiredAccountKey:"",paymentSetup:"Unknown",amountType:"Fixed amount",frequency:"One-time",repeatMonths:0});
-  const paid=existing?.status==="paid",pendingPayment=paid&&existing?.paymentPending===true;
+  const paid=existing?.status==="paid",pendingPayment=paid&&existing?.paymentPending===true,bankMatched=paid&&existing?.paidSource==="bank";
   const accountOptions=state.accounts.filter(a=>a.key&&(!a.avoidNewBills||a.key===b.paymentAccountKey||a.key===b.desiredAccountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||""))),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
   modal(pendingPayment?"Edit payment pending":paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
-  ${pendingPayment?`<p class="notice">This payment is still pending at the bank. It is not being reserved again because it is already reflected in available cash.</p>`:paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
+  ${pendingPayment?`<p class="notice">This payment is still pending at the bank. It is not being reserved again because it is already reflected in available cash.</p>`:bankMatched?`<div class="notice bank-match-notice"><b>Matched from your bank</b><div class="muted small">${existing?.paidDate?"Posted "+esc(dl(existing.paidDate)):""}${existing?.paidMerchant?" · "+esc(existing.paidMerchant):""}${Number.isFinite(Number(existing?.paidAmount))?" · "+money(existing.paidAmount):""}</div><button class="btn small" type="button" onclick="undoBankBillMatch('${existing.id}')">This is not this bill</button></div>`:paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
   <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
   <div><label for="bd">Due date</label><div class="bill-date-control"><input id="bd" type="date" required value="${esc(b.due)}"><button class="btn" type="button" onclick="pickBillDate()" aria-label="Choose bill due date">Choose date</button></div></div>
   <label>Current payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
@@ -4106,9 +4106,29 @@ function openBill(index=-1,sourceIndex=-1){
     catch(error){if(existing)state.bills[liveIndex]=existing;else state.bills.splice(state.bills.indexOf(entry),1);button.disabled=false;alert("Could not save this bill on this device. Please try again.")}
   });
 }
+async function undoBankBillMatch(id,ask=true){
+  const x=state.bills.find(b=>b.id===id);if(!x||x.paidSource!=="bank")return false;
+  if(ask&&!confirm("Remove this bank match and put the bill back in Upcoming?")){render();return false}
+  const before=structuredClone(state.bills),reviewsBefore=structuredClone(state.settings.bankTransactionReviews||{}),
+        transactionId=String(x.paidByBankTransactionId||"");
+  if(!state.settings.bankTransactionReviews)state.settings.bankTransactionReviews={};
+  if(transactionId)state.settings.bankTransactionReviews[transactionId]={action:"not_bill",reviewedAt:new Date().toISOString()};
+  x.status="upcoming";x.paymentPending=false;
+  delete x.paidByBankTransactionId;delete x.paidSource;delete x.paidDate;delete x.paidAmount;delete x.paidMerchant;
+  try{
+    await save();
+    if(typeof cloudImportBankSpending==="function")await cloudImportBankSpending(false);
+    closeModal();render();return true;
+  }catch(error){
+    state.bills=before;state.settings.bankTransactionReviews=reviewsBefore;render();
+    alert("Could not undo this bank match on this device. Please try again.");return false;
+  }
+}
 async function toggleBill(id,paid){
   const x=state.bills.find(b=>b.id===id);if(!x)return;
+  if(!paid&&x.paidSource==="bank"){await undoBankBillMatch(id,true);return}
   const before=structuredClone(state.bills);x.status=paid?"paid":"upcoming";
+  if(!paid){x.paymentPending=false;delete x.paidByBankTransactionId;delete x.paidSource;delete x.paidDate;delete x.paidAmount;delete x.paidMerchant}
   if(paid&&billRepeat(x))appendNextBill(x);
   try{await save();render()}catch(error){state.bills=before;render();alert("Could not save this payment on this device. Please try again.")}
 }
@@ -4154,7 +4174,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-updates1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261002-billundo1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
