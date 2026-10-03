@@ -2998,3 +2998,15 @@ textarea{resize:vertical}
   .family-rotation-head{flex-direction:column}
   .family-rotation-head .btn{align-self:flex-start}
 }
+
+
+/* Recurring family schedule */
+.family-schedule-editor{
+  display:grid;gap:10px;padding:12px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--secondary) 16%);
+  border-radius:17px;background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 7%,transparent),color-mix(in srgb,var(--secondary) 5%,transparent))
+}
+.recurring-event-notice{
+  display:grid;gap:8px;
+  border-color:color-mix(in srgb,var(--primary) 32%,var(--secondary) 18%);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 8%,transparent),color-mix(in srgb,var(--secondary) 5%,transparent))
+}
