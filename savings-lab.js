@@ -26,14 +26,34 @@ function savingsLabMath(x){
 function savingsLabVerdict(x){
   const m=savingsLabMath(x);
   if(!m.regular||!m.subscribe)return{kind:"setup",label:"Needs prices",detail:"Enter a normal price and subscription price for the same item/size."};
-  if(m.difference>1)return{kind:"save",label:`Subscription saves about ${money(m.difference)}/year`,detail:`After ${m.waste}% expected unused product and ${money(m.annualFee)} in extra yearly fees.`};
-  if(m.difference<-1)return{kind:"cost",label:`Subscription costs about ${money(Math.abs(m.difference))} more/year`,detail:`The headline discount is not enough after the assumptions entered.`};
-  return{kind:"even",label:"About break-even",detail:"The annual difference is small enough that flexibility may matter more than the discount."};
+  const breakEvenText=`Break-even subscription price is about ${money(m.breakEven)} per order with these assumptions.`;
+  if(m.difference>1)return{kind:"save",label:`Subscription saves about ${money(m.difference)}/year`,detail:`After ${m.waste}% expected unused product and ${money(m.annualFee)} in extra yearly fees. ${breakEvenText}`};
+  if(m.difference<-1)return{kind:"cost",label:`Subscription costs about ${money(Math.abs(m.difference))} more/year`,detail:`The headline discount is not enough after the assumptions entered. ${breakEvenText}`};
+  return{kind:"even",label:"About break-even",detail:`The annual difference is small enough that flexibility may matter more than the discount. ${breakEvenText}`};
+}
+
+function savingsLabBuyAdvice(x){
+  const m=savingsLabMath(x);
+  if(!m.deal)return null;
+  const expiry=x.dealExpires?(` · deal ends ${dl(x.dealExpires)}`):"";
+  if(m.target&&m.deal<=m.target&&(!m.subscribe||m.deal<m.subscribe)){
+    return{kind:"buy",title:"Buy now meets your target",detail:`Current deal ${money(m.deal)} is at or below your ${money(m.target)} target and beats the entered subscription price${expiry}.`};
+  }
+  if(m.subscribe&&m.deal<m.subscribe){
+    return{kind:"buy",title:"One-time deal beats the subscription",detail:`Current deal ${money(m.deal)} is ${money(m.subscribe-m.deal)} cheaper per order than the entered subscription price${expiry}.`};
+  }
+  if(m.target&&m.deal>m.target){
+    return{kind:"wait",title:"Wait if this is not urgent",detail:`Current deal ${money(m.deal)} is still ${money(m.deal-m.target)} above your target price${expiry}.`};
+  }
+  if(m.subscribe&&m.subscribe<m.deal&&m.difference>1){
+    return{kind:"subscribe",title:"Subscription is currently cheaper",detail:`Entered subscription price ${money(m.subscribe)} beats the current one-time deal by ${money(m.deal-m.subscribe)} per order, and the annual comparison still saves money after your waste/fee assumptions.`};
+  }
+  return{kind:"compare",title:"Current deal does not clearly win",detail:`Current deal is ${money(m.deal)}. Compare timing and quantity before buying; the annual subscription break-even is about ${money(m.breakEven)} per order.`};
 }
 
 function savingsLabRow(x){
-  const v=savingsLabVerdict(x),m=savingsLabMath(x);
-  const dealNote=m.deal?m.target?(m.deal<=m.target?` · current deal ${money(m.deal)} meets target`:` · current deal ${money(m.deal)} above target`):` · current deal ${money(m.deal)}`:"";
+  const v=savingsLabVerdict(x),m=savingsLabMath(x),buy=savingsLabBuyAdvice(x);
+  const dealNote=buy?` · ${buy.title}`:m.deal?` · current deal ${money(m.deal)}`:"";
   return `<button class="savings-lab-row ${v.kind}" onclick="openSavingsComparison('${x.id}')"><span class="grow"><b>${esc(x.item||"Recurring purchase")}</b><small>${esc(x.store||"")}${x.store?" · ":""}${esc(v.label)}${esc(dealNote)}</small></span><span>›</span></button>`;
 }
 
@@ -54,7 +74,7 @@ function savingsLabSection(){
 function openSavingsComparison(id="",seed=""){
   const existing=savingsLabRows().find(x=>x.id===id),
         x=existing||{id:"",item:seed||"",store:"",regularPrice:"",subscribePrice:"",ordersPerYear:12,annualFee:0,wastePct:0,currentDealPrice:"",targetPrice:"",dealExpires:"",notes:""};
-  const preview=existing?savingsLabVerdict(existing):null;
+  const preview=existing?savingsLabVerdict(existing):null,buyAdvice=existing?savingsLabBuyAdvice(existing):null,previewMath=existing?savingsLabMath(existing):null;
   modal(existing?"Savings comparison":"Compare recurring purchase",`<div class="stack">
     <label>Item / same pack size<input id="slitem" value="${esc(x.item||"")}" placeholder="Cat litter 38 lb, paper towels 12-pack…"></label>
     <label>Store / subscription source<input id="slstore" value="${esc(x.store||"")}" placeholder="Walmart, Sam's, Amazon…"></label>
@@ -64,7 +84,8 @@ function openSavingsComparison(id="",seed=""){
     <div class="grid2"><label>Current temporary deal price<input id="sldeal" type="number" min="0" step=".01" value="${esc(x.currentDealPrice??"")}"></label><label>Your target buy price<input id="sltarget" type="number" min="0" step=".01" value="${esc(x.targetPrice??"")}"></label></div>
     <label>Deal expiration (optional)<input id="slexpires" type="date" value="${esc(x.dealExpires||"")}"></label>
     <label>Notes<textarea id="slnotes" rows="3">${esc(x.notes||"")}</textarea></label>
-    ${preview?`<div class="notice"><b>${esc(preview.label)}</b><div class="muted small">${esc(preview.detail)}</div></div>`:""}
+    ${preview?`<div class="notice"><b>${esc(preview.label)}</b><div class="muted small">${esc(preview.detail)}</div>${previewMath?.regular&&previewMath?.subscribe?`<div class="savings-lab-math"><span><small>Normal annual</small><b>${money(previewMath.regularAnnual)}</b></span><span><small>Subscription effective annual</small><b>${money(previewMath.subscribeEffectiveAnnual)}</b></span><span><small>Break-even sub price</small><b>${money(previewMath.breakEven)}</b></span></div>`:""}</div>`:""}
+    ${buyAdvice?`<div class="savings-buy-advice ${buyAdvice.kind}"><b>${esc(buyAdvice.title)}</b><div class="muted small">${esc(buyAdvice.detail)}</div></div>`:""}
     ${existing?`<button type="button" class="btn danger" onclick="removeSavingsComparison('${x.id}')">Delete comparison</button>`:""}
   </div>`,"Save comparison",async()=>{
     const item=$("#slitem").value.trim();if(!item)return;
@@ -115,6 +136,12 @@ budgetCoachCard=function(){
     .savings-lab-row:first-of-type{border-top:0}.savings-lab-row small{display:block;margin-top:2px;color:var(--muted);font-size:.68rem;line-height:1.35}
     .savings-lab-row.save b{color:var(--success)}.savings-lab-row.cost b{color:var(--danger)}
     .savings-lab-candidates{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}.savings-lab-candidates>div{width:100%}
+    .savings-lab-math{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}
+    .savings-lab-math span{display:grid;gap:2px;padding-top:7px;border-top:1px solid var(--border)}.savings-lab-math small{font-size:.64rem;color:var(--muted)}.savings-lab-math b{font-size:.8rem}
+    .savings-buy-advice{border-left:3px solid color-mix(in srgb,var(--primary) 52%,var(--border));padding:8px 0 8px 11px;background:linear-gradient(90deg,color-mix(in srgb,var(--primary) 6%,transparent),transparent 72%)}
+    .savings-buy-advice.wait{border-left-color:color-mix(in srgb,var(--accent) 65%,var(--border))}
+    .savings-buy-advice.subscribe{border-left-color:color-mix(in srgb,var(--secondary) 65%,var(--border))}
+    @media(max-width:520px){.savings-lab-math{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
 })();
