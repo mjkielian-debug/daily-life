@@ -9,7 +9,7 @@
 <link rel="icon" href="icon.svg?v=20261003-rose1" type="image/svg+xml">
 <link rel="apple-touch-icon" href="daily-life-rose-192.png">
 <link rel="stylesheet" href="styles.css?v=20261002-workdays1">
-<link rel="stylesheet" href="compact-ui.css?v=20261003-housemap3">
+<link rel="stylesheet" href="compact-ui.css?v=20261003-advice1">
 <title>Daily Life</title>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -229,7 +229,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.03-housemap3";
+const APP_BUILD="2026.10.03-advice1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1125,11 +1125,19 @@ function weatherForecastStrip(){
   const days=(weather?.days||[]).slice(1,5);if(!days.length)return"";
   return `<div class="weather-forecast-strip">${days.map(d=>`<div class="weather-forecast-day"><b>${esc(new Date(d.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}))}</b><span>${esc(weatherText(d.code))}</span><strong>${d.high}° / ${d.low}°</strong><small>${d.rain}% rain · ${d.wind} mph</small></div>`).join("")}</div>`;
 }
+async function dailyAdviceToToday(index){
+  const item=dailyLifeAdvice()[Number(index)];if(!item)return;
+  const key=String(item.category||"life")+"|"+String(item.title||""),
+        existing=(state.tasks||[]).find(t=>t.date===ymd()&&(t.adviceKey===key||String(t.title||"")===String(item.title||"")));
+  if(existing){render();return}
+  state.tasks.push({id:uid(),date:ymd(),title:item.title,category:item.category||"life",notes:item.detail||"",done:false,order:35,generated:"daily-advice",adviceKey:key});
+  await save();render();
+}
 function dailyAdviceCard(){
   const items=dailyLifeAdvice();
   if(!items.length)return `<div class="card daily-advice-card"><div class="eyebrow">✦ Daily Life advice</div><h2>Nothing special to prepare for</h2><div class="muted small">I’ll surface practical weather, sleep, meal-prep, and household cues here when something is worth acting on.</div></div>`;
   return `<div class="card daily-advice-card"><div class="section-title"><div><div class="eyebrow">✦ Daily Life advice</div><h2>${esc(items[0].title)}</h2></div><span class="tag">${weather?.days?.length?"looks ahead":"today"}</span></div>
-    ${items.map((x,i)=>`<div class="daily-advice-row ${i===0?"is-primary":""}"><span class="daily-advice-icon">${x.icon}</span><span class="grow"><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></div>`).join("")}
+    ${items.map((x,i)=>{const key=String(x.category||"life")+"|"+String(x.title||""),task=(state.tasks||[]).find(t=>t.date===ymd()&&(t.adviceKey===key||String(t.title||"")===String(x.title||"")));return `<div class="daily-advice-row ${i===0?"is-primary":""}"><span class="daily-advice-icon">${x.icon}</span><span class="grow"><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span><span class="daily-advice-actions">${task?`<span class="tag">${task.done?"done today":"on today list"}</span>`:`<button class="btn small" type="button" onclick="dailyAdviceToToday(${i})">+ Today</button>`}</span></div>`}).join("")}
     <div class="muted small daily-advice-note">Weather prep uses the app’s forecast and is meant for planning ahead; check official alerts when severe weather is possible.</div>
   </div>`;
 }
@@ -4931,7 +4939,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-housemap3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261003-advice1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
