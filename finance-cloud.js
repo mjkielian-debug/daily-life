@@ -5,6 +5,7 @@
 let cloudFinancialAccounts=[];
 let cloudRecentTransactions=[];
 let cloudUnreviewedTransactions=[];
+let cloudLikelyBillTransactions=[];
 let cloudBankReviewRules=[];
 let cloudFinanceBusy=false;
 let cloudFinanceMessage="";
@@ -139,6 +140,7 @@ function cloudFinancePanel(){
   return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><div class="actions"><button class="btn primary" onclick="startPlaidLink('bank')">Connect bank / card</button><button class="btn" onclick="startPlaidLink('investment')">Connect retirement / investment</button><button class="btn" onclick="cloudSyncBanks(true)">Sync now</button></div></div>
   <p class="muted small">Bank credentials are entered only in Plaid Link. Daily Life stores provider tokens server-side, never in this public app code. Balances below update mapped Money accounts.</p>
   ${cloudFinanceMessage?`<div class="notice">${esc(cloudFinanceMessage)}</div>`:""}
+  ${cloudLikelyBillTransactions.length?`<div class="warning"><b>${cloudLikelyBillTransactions.length} bank transaction${cloudLikelyBillTransactions.length===1?" may":"s may"} be bill payment${cloudLikelyBillTransactions.length===1?"":"s"}.</b> Daily Life is holding ${cloudLikelyBillTransactions.length===1?"it":"them"} out of flexible spending until you confirm. <button class="btn small" onclick="openLikelyBillPaymentReview(0)">Review</button></div>`:""}
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
     const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id),strategy=cloudFinanceStrategy(r);
@@ -294,11 +296,51 @@ function normalizeBillWords(value){
     .filter(x=>x.length>=4&&!["payment","monthly","bill","autopay","subscription"].includes(x));
 }
 
+function bankTransactionReviewFor(t){
+  const reviews=state.settings?.bankTransactionReviews||{},
+        transactionId=String(t?.provider_transaction_id||""),
+        pendingId=String(t?.pending_transaction_id||"");
+  return (transactionId&&reviews[transactionId])||(pendingId&&reviews[pendingId])||null;
+}
+
+function bankBillReviewCandidates(t){
+  const review=bankTransactionReviewFor(t),
+        amount=Number(t?.provider_amount||0),
+        posted=new Date(String(t?.posted_date||"")+"T12:00:00");
+  if(review?.action==="not_bill"||review?.action==="ignored"||!Number.isFinite(amount)||amount<=0||isNaN(posted))return[];
+  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
+  return (state.bills||[]).map(b=>{
+    const awaitingPost=b.status==="paid"&&b.paymentPending===true;
+    if((b.status==="paid"&&!awaitingPost)||!b.due)return null;
+    const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
+    if(!Number.isFinite(billAmount)||billAmount<0||isNaN(due))return null;
+    const signedDays=(posted-due)/86400000;
+    if(signedDays < -14 || signedDays > 10)return null;
+    const local=(state.accounts||[]).find(a=>a.key&&a.key===b.paymentAccountKey),
+          accountMatch=!!(local?.cloudAccountId&&String(local.cloudAccountId)===String(t.account_id||"")),
+          accountConflict=!!(local?.cloudAccountId&&String(local.cloudAccountId)!==String(t.account_id||"")),
+          nameMatch=normalizeBillWords(b.name).some(w=>words.has(w)),
+          amountDiff=Math.abs(billAmount-amount),
+          amountType=typeof recordedBillAmountType==="function"?recordedBillAmountType(b):String(b.amountType||"Fixed amount"),
+          flexibleAmount=amountType!=="Fixed amount",
+          allowedDiff=flexibleAmount?Math.max(10,billAmount*.12):Math.max(3,billAmount*.03),
+          exactAmount=amountDiff<=.01;
+    if(!exactAmount&&amountDiff>allowedDiff)return null;
+    const days=Math.abs(signedDays),
+          amountScore=exactAmount?6:Math.max(1,4-(amountDiff/Math.max(1,allowedDiff))*3),
+          score=(accountMatch?8:0)+(nameMatch?6:0)+amountScore+Math.max(0,4-days/3)-(accountConflict?5:0);
+    if(score<7)return null;
+    return {bill:b,days,accountMatch,accountConflict,nameMatch,amountDiff,exactAmount,amountType,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.amountDiff-b.amountDiff||a.days-b.days).slice(0,5);
+}
+
 function bankBillMatch(t){
   const transactionId=String(t.provider_transaction_id||""),pendingId=String(t.pending_transaction_id||""),
-        rejected=state.settings?.bankTransactionReviews?.[transactionId]?.action==="not_bill"||
-                 (pendingId&&state.settings?.bankTransactionReviews?.[pendingId]?.action==="not_bill"),
+        review=bankTransactionReviewFor(t),
+        reviewedBill=review?.action==="bill"&&review?.billId?(state.bills||[]).find(b=>b.id===review.billId):null,
+        rejected=review?.action==="not_bill",
         amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
+  if(reviewedBill&&!(reviewedBill.status==="paid"&&!reviewedBill.paymentPending))return reviewedBill;
   if(rejected||!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
   const candidates=(state.bills||[]).filter(b=>{
@@ -383,6 +425,7 @@ async function cloudImportBankSpending(showAlert=false){
   const remoteIds=new Set((data||[]).map(t=>t.provider_transaction_id));
   const postedFromPendingIds=new Set((data||[]).map(t=>String(t.pending_transaction_id||"")).filter(Boolean));
   cloudUnreviewedTransactions=[];
+  cloudLikelyBillTransactions=[];
   let changed=0;
   for(const bill of state.bills||[]){
     if(!bill.paymentPending||!bill.paidByBankTransactionId)continue;
@@ -403,13 +446,21 @@ async function cloudImportBankSpending(showAlert=false){
     if(Number(t.provider_amount||0)<=0)continue;
     const category=bankBudgetCategory(t);
     const existing=state.budget.spending.find(x=>x.bankTransactionId===t.provider_transaction_id);
-    const review=state.settings.bankTransactionReviews?.[t.provider_transaction_id];
+    const review=bankTransactionReviewFor(t);
     const privateRule=cloudBankRuleFor(t);
     const matchResult=bankApplyBillPayment(t);
     const matchedBill=matchResult?.bill||null;
     const knownBill=!!matchedBill;
     if(matchResult?.changed)changed++;
     if(review?.action==="ignored"||privateRule?.action==="ignore"||knownBill){
+      if(existing?.autoImported&&!existing.userEdited){
+        state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
+      }
+      continue;
+    }
+    const likelyCandidates=bankBillReviewCandidates(t),likelyBill=likelyCandidates[0]||null;
+    if(likelyBill){
+      cloudLikelyBillTransactions.push({...t,_candidateBillId:likelyBill.bill.id,_candidateScore:likelyBill.score,_candidateAmountDiff:likelyBill.amountDiff});
       if(existing?.autoImported&&!existing.userEdited){
         state.budget.spending.splice(state.budget.spending.indexOf(existing),1);changed++;
       }
@@ -533,6 +584,31 @@ function openCloudRecurringIncomeSuggestion(index=0){
   const suggestion=cloudRecurringIncomeSuggestions()[index];
   if(!suggestion||typeof openExpectedIncome!=="function")return;
   openExpectedIncome("",suggestion);
+}
+
+function openLikelyBillPaymentReview(index=0){
+  const t=cloudLikelyBillTransactions[index];if(!t)return;
+  const candidates=bankBillReviewCandidates(t);if(!candidates.length){cloudLikelyBillTransactions.splice(index,1);render();return}
+  const label=String(t.merchant_name||t.name||"Bank transaction"),
+        amount=Math.round(Number(t.provider_amount||0)*100)/100,
+        account=cloudFinancialAccounts.find(a=>String(a.id)===String(t.account_id||"")),
+        options=candidates.map((c,i)=>`<option value="${esc(c.bill.id)}" ${i===0?"selected":""}>${esc(c.bill.name)} · due ${esc(c.bill.due)} · ${money(c.bill.amount)}${c.exactAmount?" · exact amount":" · "+money(c.amountDiff)+" difference"}${c.accountMatch?" · same account":""}</option>`).join("");
+  modal("Is this a bill payment?",
+    `<div class="row"><span><b>${esc(label)}</b><div class="muted small">${esc(t.posted_date||"")} · ${esc(account?.display_name||"synced account")}${t.pending?" · pending":""}</div></span><b>${money(amount)}</b></div>
+    <div class="stack"><label>Match this transaction to<select id="likelyBillChoice">${options}<option value="__not_bill__">This is not one of these bills</option></select></label></div>
+    <p class="muted small">Daily Life found a close amount/date/account or merchant match, but not enough evidence to mark the bill paid automatically. Confirming a bill removes that bill from future cash reservations. Choosing “not a bill” lets the transaction return to normal budget categorization.</p>`,
+    "Save review",async()=>{
+      const choice=document.querySelector("#likelyBillChoice")?.value;if(!choice)return;
+      if(!state.settings.bankTransactionReviews)state.settings.bankTransactionReviews={};
+      const reviewedAt=new Date().toISOString(),ids=[String(t.provider_transaction_id||""),String(t.pending_transaction_id||"")].filter(Boolean);
+      for(const id of ids){
+        state.settings.bankTransactionReviews[id]=choice==="__not_bill__"
+          ?{action:"not_bill",reviewedAt}
+          :{action:"bill",billId:choice,reviewedAt};
+      }
+      await save();closeModal();await cloudImportBankSpending(false);render();
+    }
+  );
 }
 
 function openBankTransactionReview(index=0){
