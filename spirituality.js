@@ -242,3 +242,31 @@ function tarotSpreadChooser(){
 }
 const tarotOriginalPanel=spiritualityTarotPanel;
 spiritualityTarotPanel=function(){return tarotSpreadChooser()+tarotOriginalPanel()};
+/* Hands-on selection uses a shuffled deck; it only saves a completed reading. */
+let tarotSelectionDraft=null,tarotSelectionSaving=false;
+function shuffledTarotDeck(deck){const cards=Array.from({length:deck==="major"?22:78},(_,i)=>i);for(let i=cards.length-1;i>0;i--){const j=tarotRandomIndex(i+1);[cards[i],cards[j]]=[cards[j],cards[i]]}return cards}
+function beginTarotSelection(){
+ const kind=$("#tarotSpreadKind").value,deck=$("#tarotSpreadDeck").value;if(!TAROT_SPREADS[kind])return;
+ tarotSelectionDraft={id:uid(),date:ymd(),type:"Tarot spread",spreadKind:kind,deck:deck==="major"?"major":"full",question:String($("#tarotSpreadQuestion").value||"").trim().slice(0,1000),cards:[],createdAt:new Date().toISOString(),selectionMethod:"hand-picked",pool:shuffledTarotDeck(deck),chosenSlots:[],page:0};showTarotSelection();
+}
+function tarotCardBack(){return '<svg viewBox="0 0 100 140" aria-hidden="true" style="width:100%;max-width:82px"><rect x="3" y="3" width="94" height="134" rx="12" fill="var(--panel)" stroke="var(--secondary)" stroke-width="2"/><rect x="10" y="10" width="80" height="120" rx="9" fill="none" stroke="var(--accent)" opacity=".6"/><path d="M50 27L72 70L50 113L28 70Z" fill="none" stroke="var(--secondary)"/><circle cx="50" cy="70" r="16" fill="none" stroke="var(--accent)"/><path d="M50 47V93M38 70H62M27 22Q40 30 27 40M73 100Q60 110 73 118" fill="none" stroke="var(--secondary)"/></svg>'}
+function chooseTarotSlot(slot){
+ const d=tarotSelectionDraft;if(!d||tarotSelectionSaving||!Number.isInteger(slot)||slot<0||slot>=d.pool.length||d.chosenSlots.includes(slot)||d.cards.length>=TAROT_SPREADS[d.spreadKind].positions.length)return;
+ d.chosenSlots.push(slot);d.cards.push({cardIndex:d.pool[slot],reversed:tarotRandomIndex(4)===0,position:TAROT_SPREADS[d.spreadKind].positions[d.cards.length]});showTarotSelection();
+}
+function changeTarotSelectionPage(step){const d=tarotSelectionDraft;if(!d)return;d.page=Math.max(0,Math.min(Math.ceil(d.pool.length/12)-1,d.page+Number(step||0)));showTarotSelection()}
+function showTarotSelection(){
+ const d=tarotSelectionDraft;if(!d)return;const spec=TAROT_SPREADS[d.spreadKind],complete=d.cards.length===spec.positions.length,start=d.page*12;
+ const selected=d.cards.map((x,i)=>{const c=spreadTarotCard(x.cardIndex,x.reversed);return '<div class="metric" style="text-align:center;min-width:0"><div class="eyebrow">'+esc(x.position)+'</div>'+spreadCardArtwork(c)+'<b>'+esc(c.name)+'</b><div class="muted small">'+(c.reversed?'Reversed':'Upright')+'</div></div>'}).join('');
+ const choices=Array.from({length:Math.min(12,d.pool.length-start)},(_,i)=>start+i).map(slot=>'<button class="btn" '+(d.chosenSlots.includes(slot)?'disabled aria-label="Card '+(slot+1)+' already selected"':'aria-label="Choose face-down card '+(slot+1)+'" onclick="chooseTarotSlot('+slot+')"')+' style="padding:5px;min-width:0">'+tarotCardBack()+'<span class="small">'+(d.chosenSlots.includes(slot)?'Chosen':slot+1)+'</span></button>').join('');
+ const body='<div class="stack"><p role="status" aria-live="polite">'+d.cards.length+' of '+spec.positions.length+' cards chosen'+(complete?' · Your spread is ready.':' · Choose a card for '+esc(spec.positions[d.cards.length])+'.')+'</p>'+(d.question?'<div class="notice">'+esc(d.question)+'</div>':'')+(selected?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">'+selected+'</div>':'')+(complete?'':'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px">'+choices+'</div><div class="actions"><button class="btn small" '+(d.page===0?'disabled':'')+' onclick="changeTarotSelectionPage(-1)">Previous cards</button><span class="muted small">'+(start+1)+'–'+Math.min(start+12,d.pool.length)+' of '+d.pool.length+'</span><button class="btn small" '+(start+12>=d.pool.length?'disabled':'')+' onclick="changeTarotSelectionPage(1)">More cards</button></div>')+'<p class="muted small">Your daily card stays the same. This selection is saved when you tap Save & read; unsaved choices last until you reload the app.</p></div>';
+ closeModal();modal("Choose your cards",body,complete?"Save & read":"Pause selection",async()=>{if(complete)await saveSelectedTarotSpread();else{closeModal();render()}});
+}
+async function saveSelectedTarotSpread(){
+ const d=tarotSelectionDraft;if(!d||tarotSelectionSaving||d.cards.length!==TAROT_SPREADS[d.spreadKind].positions.length)return;
+ tarotSelectionSaving=true;const {pool,chosenSlots,page,...reading}=d;const r=tarotSpreadReading(reading);reading.note=[reading.question?'Question: '+reading.question:'',...r.paragraphs,'How the cards connect: '+r.together,r.next].filter(Boolean).join('\n\n');
+ state.spiritualityJournal=state.spiritualityJournal||[];if(state.spiritualityJournal.some(x=>x.id===reading.id)){tarotSelectionSaving=false;return}state.spiritualityJournal.push(reading);
+ try{await save();tarotSelectionDraft=null;closeModal();render();openSavedTarotSpread(reading.id)}catch(error){state.spiritualityJournal=state.spiritualityJournal.filter(x=>x.id!==reading.id);throw error}finally{tarotSelectionSaving=false}
+}
+const tarotChooserBeforeSelection=tarotSpreadChooser;
+tarotSpreadChooser=function(){let html=tarotChooserBeforeSelection().replace('<button class="btn primary" onclick="startTarotSpread()">Draw cards & read</button>','<div class="actions"><button class="btn primary" onclick="beginTarotSelection()">Choose my cards</button><button class="btn" onclick="startTarotSpread()">Quick draw & read</button></div>');if(tarotSelectionDraft)html='<div class="notice"><button class="btn" onclick="showTarotSelection()">Continue my card selection</button></div>'+html;return html};
