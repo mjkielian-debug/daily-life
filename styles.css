@@ -3098,3 +3098,17 @@ textarea{resize:vertical}
   .sleep-conflict-box button{flex-direction:column}
   .sleep-conflict-box button small{text-align:left}
 }
+
+
+/* Shared household tasks */
+.task-list-row{align-items:flex-start}
+.task-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;flex:0 0 auto}
+.shared-task-tag{
+  border-color:color-mix(in srgb,var(--secondary) 55%,var(--border));
+  color:var(--secondary);
+  background:color-mix(in srgb,var(--secondary) 8%,transparent)
+}
+@media(max-width:520px){
+  .task-list-row{flex-wrap:wrap}
+  .task-row-actions{width:100%;justify-content:flex-start;padding-left:28px}
+}
