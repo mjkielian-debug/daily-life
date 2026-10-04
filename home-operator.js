@@ -12,11 +12,13 @@
       const floor=String(r.floor||"").trim()||"Unassigned";
       if(!seen.has(floor)){seen.add(floor);rows.push(floor)}
     }
-    if(!rows.length)rows.push("First floor");
+    for(const floor of ["First floor","Basement"]){
+      if(!seen.has(floor)){seen.add(floor);rows.push(floor)}
+    }
     const rank=floor=>{
       const x=String(floor||"").toLowerCase();
-      if(/basement/.test(x))return 0;
-      if(/first|main/.test(x))return 1;
+      if(/first|main/.test(x))return 0;
+      if(/basement/.test(x))return 1;
       if(/second/.test(x))return 2;
       if(/third/.test(x))return 3;
       if(/garage/.test(x))return 4;
