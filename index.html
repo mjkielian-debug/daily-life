@@ -166,7 +166,7 @@ dialog,
   .modal .btn{max-width:100%}
 }
 </style>
-<link rel="stylesheet" href="readability-fix.css?v=20261004-contrast4">
+<link rel="stylesheet" href="readability-fix.css?v=20261004-recipefix1">
 </head>
 <body>
 <div id="app"></div>
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-weeknav1";
+const APP_BUILD="2026.10.04-recipefix1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -5191,15 +5191,21 @@ async function requestWeekSuggestions(offset=foodWeekOffset){
 }
 function openMeal(date){
   const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
-  modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor">
-    <div class="notice"><b>You choose the meal. I build the rest.</b><br><span class="muted small">After you save, Daily Life automatically requests the recipe, ingredients, prep steps, and grocery list. You do not need to type those.</span></div>
-    <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Pot roast, chili, tacos…"></label>
-    <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Optional — crock-pot, oven, stovetop…"></label>
-    <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
-    <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
-    <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
-    <label>Tonight / day-before prep<textarea id="mtomorrow" rows="3" placeholder="Move meat from freezer to fridge, chop vegetables, assemble crock-pot insert…">${esc(x.tomorrowPrep||"")}</textarea></label>
+  modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor meal-editor-v2">
+    <div class="meal-main-field">
+      <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Pot roast, chili, tacos…"></label>
+    </div>
     ${generatedMealDetails(x)}
+    <details class="meal-plan-settings">
+      <summary><span><b>Timing + meal settings</b><small>${esc([x.method,x.serveTime?"Serve "+fmtClock(x.serveTime):"",x.assigned?"Cook: "+x.assigned:""].filter(Boolean).join(" · ")||"Optional")}</small></span><span>Open</span></summary>
+      <div class="meal-plan-settings-body">
+        <label>Method<input id="mm" value="${esc(x.method||"")}" placeholder="Optional — oven, crock-pot, stovetop…"></label>
+        <div class="grid2"><label>Serve time<input id="mserve" type="time" value="${esc(x.serveTime||"")}"></label><label>Start by<input id="mstart" type="time" value="${esc(x.startBy||"")}"></label></div>
+        <label>Assigned to<input id="ma" value="${esc(x.assigned||"")}"></label>
+        <label>Status<select id="mst"><option ${x.status==="planned"?"selected":""}>planned</option><option ${x.status==="prepping"?"selected":""}>prepping</option><option ${x.status==="made"?"selected":""}>made</option><option ${x.status==="skipped"?"selected":""}>skipped</option></select></label>
+        <label>Tonight / day-before prep<textarea id="mtomorrow" rows="3" placeholder="Move meat from freezer to fridge, chop vegetables…">${esc(x.tomorrowPrep||"")}</textarea></label>
+      </div>
+    </details>
   </div>`,"Save meal",async()=>{
     const newDish=$("#md").value.trim();if(!newDish)return;
     let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
@@ -5210,7 +5216,15 @@ function openMeal(date){
       state.shopping=(state.shopping||[]).filter(item=>!(item.source==="recipe"&&item.mealKey===key));
       m.ingredients="";m.prepSteps="";m.tomorrowPrep="";m.tomorrowPrepDone=[];m.notes="";m.prepDone=[];m.recipeState="queued";
     }
-    Object.assign(m,{dish:newDish,method:$("#mm").value,serveTime:$("#mserve").value,startBy:$("#mstart").value,assigned:$("#ma").value,status:$("#mst").value,tomorrowPrep:$("#mtomorrow").value.trim()});
+    Object.assign(m,{
+      dish:newDish,
+      method:$("#mm")?.value||m.method||"",
+      serveTime:$("#mserve")?.value||"",
+      startBy:$("#mstart")?.value||"",
+      assigned:$("#ma")?.value||"",
+      status:$("#mst")?.value||m.status||"planned",
+      tomorrowPrep:$("#mtomorrow")?.value.trim()||m.tomorrowPrep||""
+    });
     if(!Array.isArray(m.prepDone))m.prepDone=[];
     if(!m.ingredients&&!m.prepSteps)m.recipeState="queued";
     await save();
@@ -5853,7 +5867,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-weeknav1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-recipefix1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
