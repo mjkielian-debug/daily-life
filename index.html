@@ -608,8 +608,8 @@ function itinerarySuggestedBlocks(date){
     if(m!==null)add({templateKey:"after-work",start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat + reset after work",detail:"Food, water, sit down, then decide what comes next",icon:"♡"});
   }
   if(kids.length&&weekday!==0&&weekday!==6&&(kidsAwayAt===null||kidsAwayAt>15*60+30)){
-    add({templateKey:"after-school-launch",start:"15:30",end:"16:15",title:"Snack + after-school reset",detail:"Snack · unpack bags · check papers · get settled",icon:"🎒"});
-    add({templateKey:"homework",start:"16:15",end:"17:15",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
+    add({templateKey:"after-school-launch",start:"15:30",end:"16:00",title:"Snack + after-school reset",detail:"Snack · unpack bags · check papers · get settled",icon:"🎒"});
+    add({templateKey:"homework",start:"16:00",end:"16:45",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
   }
   const hasDetailedMealFlow=Array.isArray(meal?.dayFlowSteps)&&meal.dayFlowSteps.length>0,
         requestedDinnerStart=hmMinutes(meal?.serveTime||"17:30")??1050,kidsGoneByDinner=kidsAwayAt!==null&&kidsAwayAt<=requestedDinnerStart,
@@ -645,7 +645,7 @@ function itineraryRoutineWindow(x,date){
   if(x.templateKey==="work-morning")return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
-  if(x.templateKey==="homework")return{start:15*60,end:18*60+30};
+  if(x.templateKey==="homework")return{start:15*60,end:19*60+15};
   if(x.templateKey==="meal-prep")return{start:Math.max(dayStart,desired-60),end:Math.min(dayEnd,desired+120)};
   if(x.templateKey==="dinner")return{start:16*60+30,end:20*60+30};
   if(x.templateKey==="chores")return{start:17*60+30,end:21*60};
