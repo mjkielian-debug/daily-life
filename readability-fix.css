@@ -544,3 +544,78 @@
   #app .school-family-segment small{font-size:.61rem!important}
   #app .reading-hero .people-hero-stats span{width:72px!important;height:72px!important;flex-basis:72px!important;min-height:72px!important}
 }
+
+
+/* ---------- 11. Header, Vault, and pet contrast cleanup ---------- */
+#app .app>header{
+  background:linear-gradient(145deg,rgba(255,246,250,.88),rgba(239,248,244,.86),rgba(242,237,252,.84))!important;
+  border:1px solid rgba(135,92,125,.16)!important;
+  border-radius:22px!important;
+  padding:8px 10px!important;
+  margin:5px 0 8px!important;
+  box-shadow:0 8px 22px rgba(85,57,91,.08)!important;
+  min-height:0!important;
+}
+#app .app>header::before,
+#app .app>header::after{opacity:.34!important}
+#app .brand-copy .title{
+  color:#281f31!important;
+  text-shadow:none!important;
+  font-weight:900!important;
+}
+#app .brand-copy .eyebrow{
+  color:#754f70!important;
+  opacity:1!important;
+  font-weight:800!important;
+}
+#app .brand-copy .muted{
+  color:#5c4b60!important;
+  opacity:1!important;
+}
+#app .header-tools .pill{
+  background:#f2d9e6!important;
+  color:#463347!important;
+  border-color:rgba(112,76,106,.16)!important;
+}
+#app .header-tools .btn{
+  background:rgba(255,255,255,.76)!important;
+  color:#3c2d42!important;
+  border-color:rgba(108,74,105,.17)!important;
+}
+#app .header-tools .btn.primary{
+  background:#d9b6df!important;
+  color:#2a2030!important;
+}
+
+#app .vault-hero,
+#app .vault-row,
+#app .vault-row *{
+  color:#292131!important;
+}
+#app .vault-hero .muted,
+#app .vault-row small,
+#app .vault-cloud-status{
+  color:#5e5063!important;
+}
+#app .vault-icon{
+  background:#e7d4ee!important;
+  color:#49364f!important;
+  border-color:rgba(105,73,105,.18)!important;
+}
+#app .vault-row{
+  border-bottom-color:rgba(105,73,105,.14)!important;
+}
+#app .vault-hero .eyebrow{
+  color:#7b536f!important;
+}
+
+#app .pet-card,
+#app .pet-card *{
+  color:#292131!important;
+}
+#app .pet-card :is(.muted,small){
+  color:#5e5063!important;
+}
+#app .pet-card .btn{
+  color:#35283a!important;
+}
