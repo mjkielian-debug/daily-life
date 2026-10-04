@@ -640,7 +640,7 @@ body:has(.people-one-screen-shell){
 
 
 /* Compact one-screen header: tools aligned with date */
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header{
   display:grid!important;
   grid-template-columns:auto minmax(0,1fr) auto!important;
   grid-template-areas:
@@ -653,17 +653,17 @@ body:has(.people-one-screen-shell){
   padding:7px 9px!important;
   min-height:0!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-lockup{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-lockup{
   display:contents!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-mark{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-mark{
   grid-area:mark!important;
   align-self:center!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy{
   display:contents!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .eyebrow{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .eyebrow{
   grid-area:date!important;
   align-self:end!important;
   white-space:nowrap!important;
@@ -671,15 +671,15 @@ body:has(.people-one-screen-shell){
   text-overflow:ellipsis!important;
   padding-right:4px!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .title{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .title{
   grid-area:title!important;
   align-self:center!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .muted{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .muted{
   grid-area:subtitle!important;
   align-self:start!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools{
   grid-area:tools!important;
   align-self:start!important;
   justify-self:end!important;
@@ -687,35 +687,35 @@ body:has(.people-one-screen-shell){
   gap:5px!important;
   margin-top:0!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools .btn{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools .btn{
   width:34px!important;
   height:34px!important;
   min-width:34px!important;
   min-height:34px!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header::after{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header::after{
   opacity:.18!important;
 }
 @media(max-width:420px){
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header{
     padding:6px 8px!important;
     column-gap:7px!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-mark{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-mark{
     width:34px!important;
     height:34px!important;
     flex-basis:34px!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .title{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .title{
     font-size:1.28rem!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .eyebrow{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .eyebrow{
     font-size:.58rem!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .muted{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .muted{
     font-size:.56rem!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools .btn{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools .btn{
     width:32px!important;
     height:32px!important;
     min-width:32px!important;
@@ -758,7 +758,7 @@ body:has(.people-one-screen-shell){
 }
 
 /* The white Daily Life card becomes a compact two-row bar. */
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header{
   grid-template-columns:30px minmax(0,1fr) auto!important;
   grid-template-areas:
     "mark date tools"
@@ -769,40 +769,40 @@ body:has(.people-one-screen-shell){
   column-gap:7px!important;
   border-radius:17px!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-mark{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-mark{
   width:30px!important;
   height:30px!important;
   min-width:30px!important;
   flex-basis:30px!important;
   border-radius:10px!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .eyebrow{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .eyebrow{
   font-size:.52rem!important;
   line-height:1.05!important;
   letter-spacing:.04em!important;
   padding:0!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .title{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .title{
   font-size:1.08rem!important;
   line-height:1!important;
   margin:0!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .muted{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .muted{
   display:none!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools{
   align-self:center!important;
   gap:4px!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools .btn{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools .btn{
   width:29px!important;
   height:29px!important;
   min-width:29px!important;
   min-height:29px!important;
   font-size:.72rem!important;
 }
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header::after,
-:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header::before{
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header::after,
+:is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header::before{
   opacity:.12!important;
 }
 .today-one-screen-shell .life-today-one-screen,
@@ -822,23 +822,23 @@ body:has(.people-one-screen-shell){
     width:33%!important;
     top:6%!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header{
     grid-template-columns:28px minmax(0,1fr) auto!important;
     padding:4px 6px!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-mark{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-mark{
     width:28px!important;
     height:28px!important;
     min-width:28px!important;
     flex-basis:28px!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .title{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .title{
     font-size:1rem!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .brand-copy .eyebrow{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .brand-copy .eyebrow{
     font-size:.49rem!important;
   }
-  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell)>header .header-tools .btn{
+  :is(.today-one-screen-shell,.people-one-screen-shell,.food-one-screen-shell,.money-one-screen-shell,.care-one-screen-shell,.reading-one-screen-shell,.spirituality-one-screen-shell,.garden-hobbies-one-screen-shell,.household-one-screen-shell)>header .header-tools .btn{
     width:27px!important;
     height:27px!important;
     min-width:27px!important;
@@ -1637,5 +1637,109 @@ body:has(.garden-hobbies-one-screen-shell){
   .garden-hobbies-one-topline .btn{
     padding:5px 6px!important;
     font-size:.62rem!important;
+  }
+}
+
+
+/* One-screen Home + Household radial hub */
+body:has(.household-one-screen-shell){
+  overflow:hidden!important;
+  background:#f3c5da!important;
+}
+.household-one-screen-shell{
+  height:100dvh!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  padding-top:6px!important;
+  padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+}
+.household-one-screen-shell>header{flex:0 0 auto!important}
+.household-one-screen{
+  height:calc(100dvh - 128px - env(safe-area-inset-bottom));
+  min-height:0!important;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow:hidden;
+  padding:0 2px 4px;
+}
+.household-one-topline{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  padding:2px 4px 0;
+}
+.household-one-topline>div{display:grid;gap:1px;min-width:0}
+.household-one-topline>b{
+  font-family:var(--font-heading);
+  font-size:.98rem;
+  color:#2b2134;
+}
+.household-one-topline .eyebrow{
+  color:#7b536f!important;
+  text-shadow:none!important;
+}
+.household-wheel{
+  --wheel-size:min(94vw,calc(100dvh - 195px),560px)!important;
+  margin:auto!important;
+}
+.household-one-screen-shell .household-wheel-center{
+  box-sizing:border-box!important;
+  width:30%!important;
+  height:30%!important;
+  padding:7px!important;
+  border-width:2px!important;
+}
+.household-one-screen-shell .household-wheel-center .eyebrow{font-size:.39rem!important}
+.household-one-screen-shell .household-wheel-center>b{
+  font-size:.69rem!important;
+  margin:2px 0!important;
+  max-width:12ch!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.household-one-screen-shell .household-wheel-center>strong{
+  font-size:.46rem!important;
+  max-width:14ch!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.household-one-screen-shell .household-wheel-center>small{
+  font-size:.35rem!important;
+  max-width:14ch!important;
+  margin-top:2px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.household-one-screen-shell .life-wheel-segment>span{
+  width:32%!important;
+  top:6.2%!important;
+}
+.household-one-screen-shell .life-wheel-segment small{max-width:17ch!important}
+.household-hub-modal{color:#292131}
+.household-hub-modal .card{margin:7px 0!important}
+.household-hub-modal :is(.muted,small){color:#5e5063!important}
+@media(max-width:420px){
+  .household-one-screen-shell{
+    padding-left:8px!important;
+    padding-right:8px!important;
+    padding-top:6px!important;
+  }
+  .household-one-screen{height:calc(100dvh - 120px - env(safe-area-inset-bottom))}
+  .household-wheel{
+    --wheel-size:min(94vw,calc(100dvh - 185px),390px)!important;
+  }
+  .household-one-screen-shell .household-wheel-center{
+    width:28%!important;
+    height:28%!important;
+    padding:6px!important;
+  }
+  .household-one-screen-shell .life-wheel-segment>span{
+    width:33%!important;
+    top:6%!important;
   }
 }
