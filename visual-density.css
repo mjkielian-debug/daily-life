@@ -35,7 +35,8 @@ body{
 }
 
 /* Keep page shells translucent so the color and botanicals show through. */
-#app,.app{position:relative;z-index:1}\n.app{background:transparent!important}
+#app,.app{position:relative;z-index:1}
+.app{background:transparent!important}
 .card,.setupCard,.modal{
   backdrop-filter:blur(11px) saturate(1.08);
 }
@@ -210,3 +211,84 @@ input,select,textarea{min-height:42px!important}
   outline:3px solid rgba(255,120,158,.72)!important;
   outline-offset:2px!important;
 }
+
+/* October 4: saturated garden surfaces, dark reading ink, compact disclosures. */
+:root{
+ --text:#292039;--muted:#4b4059;--cream:#292039;--joy-ink:#292039;--joy-muted:#4b4059;
+ --panel:#f8c5d7;--panel2:#c7e4bc;--bg:#e7bad5;--border:#ac7899;
+ --success:#23653d;--danger:#99264b;--vd-ink:#292039;
+}
+body{color:#292039;background:linear-gradient(145deg,#e8b4d0 0%,#aed9ba 38%,#c5bae7 70%,#edbdca 100%)!important}
+body::before{opacity:.6}
+#app .app{background:transparent!important}
+#app .card:nth-child(6n+1){--tile-a:#f3aac6;--tile-b:#eac3df}
+#app .card:nth-child(6n+2){--tile-a:#a8d7b3;--tile-b:#c6e3b8}
+#app .card:nth-child(6n+3){--tile-a:#efbf93;--tile-b:#efdaa3}
+#app .card:nth-child(6n+4){--tile-a:#bdb2e4;--tile-b:#cbd0ed}
+#app .card:nth-child(6n+5){--tile-a:#eeb2ce;--tile-b:#f3c3b6}
+#app .card:nth-child(6n){--tile-a:#9dd4cb;--tile-b:#bce0cf}
+#app .card{background:linear-gradient(125deg,var(--tile-a,#f3aac6),var(--tile-b,#c6e3b8))!important;border:1px solid #a2789c!important;border-radius:28px!important;box-shadow:0 5px 0 #694c6815,0 9px 22px #694c6812!important}
+#app .card::after{color:#59374f!important}
+#app .card::before{background:url('botanical-sprig.svg') center/contain no-repeat!important;width:115px;height:115px;right:-24px;bottom:-24px;opacity:.35}
+#app :is(h1,h2,h3,h4,.title,.big,.care-hub-title,.spirituality-title,.people-section-title,.eyebrow,.mini-heading){color:#292039!important;text-shadow:none!important}
+#app :is(.muted,.small,.field-help,small,label,.tag,.pill){color:#4b4059!important}
+#app :is(.muted,.small,.field-help,small,label){font-family:var(--font-body)!important;letter-spacing:0;line-height:1.4!important}
+#app :is(.eyebrow,.tag,.bill-status){font-size:.75rem!important;font-weight:800}
+#app .small{font-size:.84rem!important}
+#app small{font-size:.78rem!important}
+#app .card h2{font-size:1.15rem!important}
+#app .card h3{font-size:1.05rem!important}
+#app :is(.btn,.navbtn,summary){min-height:44px!important}
+#app .btn{background:#f8e0eb!important;color:#35213d!important;border:1px solid #95617f!important;border-radius:999px!important;box-shadow:none!important}
+#app .btn.primary{background:#a6376b!important;color:#fff!important;border-color:#892757!important}
+#app .btn.good{background:#b6dcad!important;color:#244c31!important}
+#app .btn.danger{background:#f8ced4!important;color:#8a2442!important}
+#app :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea),#app select option{background:#fff3f7!important;color:#292039!important;border-color:#95617f!important;color-scheme:light!important}
+#app input::placeholder,#app textarea::placeholder{color:#68566d!important;opacity:1}
+#app :is(input,select,textarea):focus{background:#fff8fc!important;outline:2px solid #9d3568!important}
+#app :is(.notice,.metric,.school-kid,.reader-card,.birthday-planner-head,.care-balance,.relationship-card,.routine-intro,.self-care-btn,.birthday-mini,.gift-board-row,.personal-care-item,.wellness-checkin){background:#fbe5ee!important;color:#292039!important;border-color:#b989a5!important}
+#app :is(.metric,.self-care-btn,.birthday-mini):nth-child(even){background:#d6e9c9!important}
+#app :is(.tag,.pill){background:#f8d4e4!important;border-color:#b989a5!important}
+#app :is(.bottom-nav,.people-tabs,.self-care-tabs){background:#ecd0e4!important;border-color:#ad789c!important}
+#app .navbtn{color:#4b3654!important}
+#app .navbtn.active{background:#a6376b!important;color:white!important}
+#app :is(.people-tabs,.self-care-tabs) button{color:#49354f!important}
+#app :is(.people-tabs,.self-care-tabs) button.active{background:#bbdba9!important;color:#293b2b!important}
+#app :is(.bill-status.covered,.state.have){color:#23653d!important;background:#d6e9c9!important}
+#app :is(.bill-status.short,.state.need,.budget-negative){color:#99264b!important;background:#fbe0e7!important}
+#app :is(.bill-status.unknown,.state.check){color:#6b4a13!important;background:#f5dfa8!important}
+#app :is(.today-drawer,.bill-calendar-week,.bill-history,.today-moon,.reading-details,.bill-details){background:#eed4e5!important;border:1px solid #b989a5!important;border-radius:22px!important}
+#app :is(.today-drawer,.bill-calendar-week,.bill-history,.today-moon):nth-child(even){background:#c5dfba!important}
+#app :is(.reading-details,.bill-details)>summary{padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;cursor:pointer}
+#app :is(.reading-details,.bill-details)>:not(summary){margin:6px 12px 10px}
+#app .bill-details{margin:7px 0 0!important}
+#app .bill-info{flex:1 1 200px}
+#app .bill-actions{flex-direction:row;align-items:center}
+#app .bill-row{padding:10px 0!important}
+#app .today-money .grid3{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#app :is(.today-money .metric,.today-care-inline>span,.sleep-plan-inline>span){border-radius:30px!important;aspect-ratio:auto!important;padding:12px 8px!important;text-align:center;background:#e9dcef!important}
+#app .today-money .metric:nth-child(2),#app .today-care-inline>span:nth-child(2){background:#cce5bb!important}
+#app .today-money .metric:nth-child(3),#app .today-care-inline>span:nth-child(3){background:#f6c6d7!important}
+#app .today-money .big{font-size:1.12rem!important;overflow-wrap:anywhere}
+#app .section-launcher button{background:#f2b1cc!important;color:#35213d!important;border:1px solid #a97495!important}
+#app .section-launcher button:nth-child(3n+2){background:#b5dca8!important}
+#app .section-launcher button:nth-child(3n){background:#c7b7e8!important}
+#app .section-launcher :is(b,small){color:#35213d!important}
+#app .section-launcher b{font-size:.86rem!important;line-height:1.2!important}
+#app .section-launcher small{font-size:.72rem!important;line-height:1.2!important}
+#app .reading-ring{--ring-fill:#a6376b;width:82px;height:82px;flex:0 0 82px;border-radius:50%;display:grid;place-items:center;margin:8px auto;background:conic-gradient(var(--ring-fill) calc(var(--ring-pct)*1%),#bfa4bd 0);position:relative}
+#app .reading-ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:#fff1f7}
+#app .reading-ring b{z-index:1;color:#35213d;font-family:var(--font-heading);font-size:1.05rem}
+#app .reading-ring-caption{text-align:center;font-size:.8rem;color:#4b4059}
+#app .section-title{column-gap:8px}
+@media(max-width:520px){
+ #app .today-section-grid .small{font-size:.82rem!important}
+ #app .section-title>div:first-child{flex-basis:120px}
+ #app .bill-actions{display:flex;width:100%;gap:8px}
+ #app .today-money .grid3{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #app .today-money .metric:last-child{grid-column:1/-1;border-radius:999px!important}
+}
+@media(max-width:365px){
+ #app :is(.school-kids,.reader-grid,.people-grid,.pet-grid,.plant-grid,.self-care-grid,.today-section-grid){grid-template-columns:1fr!important}
+}
+@media print{body{background:white!important}body::before{display:none}#app .card{background:white!important;box-shadow:none!important}}
