@@ -37,6 +37,7 @@
   }
 
   function lifeActualWork(date){
+    if(typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date))return false;
     const w=workForDate(date);
     return !!(w&&w.start);
   }
