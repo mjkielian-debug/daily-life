@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#d98aad">
+<meta name="theme-color" content="#e9b4d0">
 <meta name="description" content="Daily Life — local-first personal command center">
   <link rel="manifest" href="manifest.webmanifest?v=20261004-rainbow1">
 <link rel="icon" href="icon.svg?v=20261004-rainbow1" type="image/svg+xml">
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261003-command1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-wheel1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-map1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261003-tools1">
@@ -1101,8 +1101,21 @@ function spinReaderWheel(){
 }
 
 function openSectionLauncher(){
-  const sections=[["today","✦","Today","Dashboard + what needs attention"],["itinerary","◷","Day Flow","Hourly rhythm + what comes next"],["family","♡","People","Family, birthdays, gifts + plans"],["reading","◫","Reading","Books, pages + Reader Wheel"],["home","◇","Food","Meals, pantry + grocery"],["inventory","▦","Inventory","Everything you own + use what you have"],["more","$","Money","Accounts, budget + bills"],["log","✧","Care","Self care, work + life"],["spirituality","☾","Spirituality","Daily reading, tarot + seasonal rituals"],["vault","▣","Vault","Encrypted documents + logins"],["pets","♢","Pets","Profiles, care + health"],["garden","⌁","Garden","Plants, seeds + journal"],["hobbies","✂","Hobbies","Crafts, materials, photos + next steps"],["settings","⚙","Settings","Routines, cloud + backup"]];
-  modal("Daily Life sections",`<div class="section-launcher">${sections.map(([id,icon,title,detail])=>`<button onclick="closeModal();setView('${id}')"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
+  const sections=[
+    ["✦","Today","One-screen daily hub","setView('today')"],
+    ["◷","Day Flow","Schedule + what comes next","setView('itinerary')"],
+    ["♡","People","Family, kids, birthdays + plans","setView('family')"],
+    ["◫","Reading","Books, pages + Reader Wheel","setView('reading')"],
+    ["◇","Food","Meals, pantry + grocery","setView('home')"],
+    ["⌂","Home + Household","Map, inventory, cleaning + pets","openHouseholdHub()"],
+    ["$","Money","Accounts, budget + bills","setView('more')"],
+    ["✧","Care","Self care, work + life","setView('log')"],
+    ["☾","Spirituality","Daily reading, tarot + rituals","setView('spirituality')"],
+    ["⌁","Garden + Hobbies","Plants, crafts, projects + supplies","openGardenHobbiesHub()"],
+    ["▣","Vault","Encrypted documents + logins","setView('vault')"],
+    ["⚙","Settings","Routines, cloud + backup","setView('settings')"]
+  ];
+  modal("Daily Life sections",`<div class="section-launcher">${sections.map(([icon,title,detail,action])=>`<button onclick="closeModal();${action}"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
 }
 
 function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
@@ -1111,7 +1124,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="icon.svg?v=20261004-rose2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="icon.svg?v=20261004-rose2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="icon.svg?v=20261004-rose2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -5009,7 +5022,7 @@ registerAppWorker();
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
 <script src="life-system.js?v=20261003-life1"></script>
-<script src="life-orchestrator.js?v=20261003-command4"></script>
+<script src="life-orchestrator.js?v=20261004-wheel1"></script>
 <script src="home-operator.js?v=20261004-homeop2"></script>
 <script src="week-pilot.js?v=20261003-week1"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
