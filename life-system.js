@@ -88,8 +88,9 @@
      Use a visible recent-duration estimate until the real punch-out is known. */
   const baseFixedItems=itineraryFixedItems;
   itineraryFixedItems=function(date){
-    const rows=baseFixedItems(date),w=workForDate(date),allowed=lifeIsWorkday(date)||lifeActualWork(date);
-    return rows.filter(function(x){
+    const w=workForDate(date),allowed=lifeIsWorkday(date)||lifeActualWork(date),
+      confirmedOff=typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date);
+    let rows=baseFixedItems(date).filter(function(x){
       return x.source!=="work"||allowed;
     }).map(function(x){
       if(x.source!=="work"||!x.endUnknown)return x;
@@ -104,6 +105,16 @@
         detail:"End estimated around "+fmtClock(minutesHm(end))+" from recent completed shifts until the real punch-out is known."
       });
     });
+    if(allowed&&!confirmedOff&&!rows.some(function(x){return x.source==="work"})&&typeof inferredWorkStartForDate==="function"){
+      const inferred=inferredWorkStartForDate(date);
+      if(inferred&&Number.isFinite(inferred.minutes)){
+        const mins=lifeEstimatedWorkMinutes(date),end=Math.min(1439,inferred.minutes+mins);
+        rows.push({id:"work-est:"+date,start:minutesHm(inferred.minutes),end:minutesHm(end),title:"UPS expected shift",
+          detail:"Start estimated from "+inferred.samples+" "+inferred.source+" shift"+(inferred.samples===1?"":"s")+" until the posted schedule is entered.",
+          fixed:true,kind:"work",icon:"📦",source:"work",estimatedEnd:true,estimatedMinutes:mins});
+      }
+    }
+    return rows.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
   };
 
   /* Sleep planning uses confirmed Tue-Sat work rhythm and ignores stale off-day schedules. */
