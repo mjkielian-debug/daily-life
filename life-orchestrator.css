@@ -633,11 +633,9 @@ body:has(.people-one-screen-shell){
   .life-wheel-center{
     transition:none!important;
   }
-  .life-wheel:active,
-  .life-wheel-segment:active,
-  .life-wheel-center:active{
-    transform:none!important;
-  }
+  .life-wheel:active{transform:none!important}
+  .life-wheel-segment:active{transform:rotate(var(--rot))!important}
+  .life-wheel-center:active{transform:translate(-50%,-50%)!important}
 }
 
 
