@@ -164,6 +164,9 @@
       '</div></details>';
   }
 
+  window.homeFloorPlanCard=homeFloorPlanCard;
+  window.homeResetDashboard=homeResetDashboard;
+
   const baseInventory=inventoryView;
   inventoryView=function(){
     const html=baseInventory();
