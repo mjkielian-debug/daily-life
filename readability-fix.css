@@ -619,3 +619,205 @@
 #app .pet-card .btn{
   color:#35283a!important;
 }
+
+
+/* ---------- 2026-10-04 recipe modal repair ---------- */
+/* Dinner editor modals are rendered outside #app, so Food readability rules must target .modal directly. */
+.modal .meal-editor-v2{
+  color:#2b2231!important;
+  gap:10px!important;
+}
+.modal .meal-editor-v2 label:not(.task){
+  color:#5a4058!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:900!important;
+}
+.modal .meal-editor-v2 input,
+.modal .meal-editor-v2 select,
+.modal .meal-editor-v2 textarea{
+  color:#2a2038!important;
+  -webkit-text-fill-color:#2a2038!important;
+  background:
+    radial-gradient(circle at 96% 0,rgba(244,183,209,.16),transparent 32%),
+    linear-gradient(180deg,#fffdfd,#fff8fb)!important;
+  border:1px solid rgba(130,85,118,.32)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 5px 14px rgba(81,56,82,.06)!important;
+}
+.modal .meal-editor-v2 input::placeholder,
+.modal .meal-editor-v2 textarea::placeholder{
+  color:#867589!important;
+  -webkit-text-fill-color:#867589!important;
+  opacity:1!important;
+}
+.modal .meal-editor-v2 .meal-main-field{
+  padding:2px 0 4px;
+}
+.modal .meal-editor-v2 .meal-main-field input{
+  font-size:1.08rem!important;
+  font-weight:800!important;
+}
+.modal .recipe-details{
+  margin:0!important;
+  padding:3px 0 0!important;
+  color:#2b2231!important;
+  border-top:1px solid rgba(122,83,114,.22)!important;
+}
+.modal .recipe-details-head{
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+  gap:10px!important;
+  align-items:center!important;
+  padding:12px 0!important;
+}
+.modal .recipe-details-head>.grow{
+  display:grid!important;
+  gap:2px!important;
+  min-width:0!important;
+}
+.modal .recipe-details-head>.grow>b{
+  display:block!important;
+  color:#2a2038!important;
+  font-family:var(--font-heading)!important;
+  font-size:1rem!important;
+  line-height:1.08!important;
+}
+.modal .recipe-details-head>.grow>small{
+  display:block!important;
+  color:#665468!important;
+  opacity:1!important;
+  font-size:.73rem!important;
+  line-height:1.18!important;
+}
+.modal .recipe-details .eyebrow,
+.modal .recipe-details .mini-heading{
+  color:#6c4565!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:900!important;
+}
+.modal .recipe-section{
+  color:#2b2231!important;
+  padding:12px 0!important;
+  border-top:1px solid rgba(118,81,111,.20)!important;
+}
+.modal .recipe-ingredients{
+  display:grid!important;
+  gap:0!important;
+}
+.modal .ingredient-row.compact{
+  color:#2b2231!important;
+  min-height:48px!important;
+  padding:7px 0!important;
+  border-color:rgba(117,82,110,.14)!important;
+}
+.modal .ingredient-row.compact>.grow{
+  color:#2b2231!important;
+  font-size:.9rem!important;
+  line-height:1.3!important;
+}
+.modal .ingredient-actions{
+  flex:0 0 auto!important;
+}
+.modal .recipe-directions{
+  color:#2b2231!important;
+  opacity:1!important;
+  margin:0!important;
+  padding-left:1.45rem!important;
+  display:grid!important;
+  gap:10px!important;
+}
+.modal .recipe-directions li{
+  color:#2b2231!important;
+  opacity:1!important;
+  font-size:.9rem!important;
+  line-height:1.42!important;
+  padding-left:3px!important;
+}
+.modal .recipe-make-ahead,
+.modal .recipe-extra-tips{
+  color:#2b2231!important;
+}
+.modal .recipe-make-ahead .muted,
+.modal .recipe-extra-tips .muted,
+.modal .recipe-extra-tips small{
+  color:#625164!important;
+  opacity:1!important;
+}
+.modal .recipe-extra-tips>summary{
+  color:#2b2231!important;
+}
+.modal .recipe-extra-tips>summary b{
+  color:#2b2231!important;
+}
+.modal .meal-plan-settings{
+  margin-top:2px;
+  border-top:1px solid rgba(118,81,111,.20);
+  border-bottom:1px solid rgba(118,81,111,.20);
+}
+.modal .meal-plan-settings>summary{
+  list-style:none;
+  min-height:54px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  color:#2b2231!important;
+}
+.modal .meal-plan-settings>summary::-webkit-details-marker{display:none}
+.modal .meal-plan-settings>summary>span:first-child{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+.modal .meal-plan-settings>summary b{
+  color:#2b2231!important;
+  font-family:var(--font-heading)!important;
+  font-size:.9rem!important;
+}
+.modal .meal-plan-settings>summary small{
+  color:#685769!important;
+  opacity:1!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.modal .meal-plan-settings>summary>span:last-child{
+  color:#9a557c!important;
+  font-weight:900!important;
+  font-size:.72rem!important;
+}
+.modal .meal-plan-settings[open]>summary>span:last-child{
+  font-size:0!important;
+}
+.modal .meal-plan-settings[open]>summary>span:last-child:after{
+  content:"Close";
+  font-size:.72rem;
+}
+.modal .meal-plan-settings-body{
+  display:grid;
+  gap:9px;
+  padding:4px 0 12px;
+}
+@media(max-width:520px){
+  .modal .recipe-details-head{
+    grid-template-columns:38px minmax(0,1fr) auto!important;
+  }
+  .modal .recipe-details-head>.btn{
+    min-height:38px!important;
+    padding:6px 8px!important;
+    font-size:.72rem!important;
+  }
+  .modal .ingredient-row.compact{
+    align-items:center!important;
+  }
+  .modal .ingredient-actions{
+    max-width:104px!important;
+  }
+  .modal .ingredient-actions .btn{
+    min-height:32px!important;
+    padding:5px 7px!important;
+    font-size:.68rem!important;
+  }
+}
