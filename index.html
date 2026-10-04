@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-peoplecompact1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-dayflow2">
 <link rel="stylesheet" href="home-operator.css?v=20261004-multifloor1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-houseref1";
+const APP_BUILD="2026.10.04-dayflow2";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -996,19 +996,20 @@ function itineraryView(){
   const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),
         placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
         unscheduled=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)).length+(state.chores||[]).filter(x=>x.date===date&&!x.done).length,
-        buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+first.title:"Open"}}),
-        segments=[
-          ...buckets,
-          {key:"unscheduled",title:"Unscheduled",icon:"?",count:unscheduled,detail:unscheduled?unscheduled+" loose":"Clear"},
-          {key:"plan",title:"Plan / Settings",icon:"⚙",count:0,detail:"Edit + print"}
-        ],
+        buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+rows.length+" block"+(rows.length===1?"":"s"):"Open"}}),
+        segments=buckets,
+        currentBucket=current&&hmMinutes(current.start)!==null?dayFlowBucketForMinutes(hmMinutes(current.start)):"",
         centerTitle=current?current.title:(date===ymd()?"Open time":"Day overview"),
         centerDetail=current?fmtClock(current.start)+(current.end?"–"+fmtClock(current.end):""):(items.length?items.length+" blocks planned":"Nothing timed"),
         centerAction=current?dayFlowItemAction(current,date):`openDayFlowSection('plan','${date}')`;
   return `<section class="dayflow-one-screen"><div class="dayflow-one-topline"><div class="dayflow-date-nav"><button class="btn small" onclick="shiftItineraryDate(-1)">←</button><span><div class="eyebrow">Day Flow</div><b>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}))}</b></span><button class="btn small" onclick="shiftItineraryDate(1)">→</button></div><div class="actions"><button class="btn small" onclick="setItineraryDate(ymd())">Today</button><button class="btn small primary" onclick="openItineraryBlock('${date}')">＋ Block</button></div></div>
     <div class="life-wheel dayflow-wheel" role="group" aria-label="Day Flow dashboard">
-      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openDayFlowSection('${x.key}','${date}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment${x.key===currentBucket?" is-current":""}" style="--i:${i};--seg:${i}" onclick="openDayFlowSection('${x.key}','${date}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
       <button type="button" class="life-wheel-center dayflow-wheel-center" onclick="event.stopPropagation();${centerAction};return false;"><span class="eyebrow">${date===ymd()?"NOW / NEXT":"DAY FOCUS"}</span><b>${esc(centerTitle)}</b><strong>${esc(centerDetail)}</strong><small>${current?"Tap to open":"Tap for plan"}</small></button>
+    </div>
+    <div class="dayflow-quick-actions">
+      <button type="button" onclick="openDayFlowSection('unscheduled','${date}')"><span class="dayflow-mini-icon">?</span><span><b>Loose items</b><small>${unscheduled?unscheduled+" to place":"All placed"}</small></span></button>
+      <button type="button" onclick="openDayFlowSection('plan','${date}')"><span class="dayflow-mini-icon">✦</span><span><b>Plan day</b><small>Week · settings · print</small></span></button>
     </div>
   </section>`;
 }
@@ -5833,7 +5834,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-houseref1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-dayflow2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
