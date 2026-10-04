@@ -754,6 +754,10 @@ function cloudApplyLifeEntry(row){
       return true;
     }
     case "work_shift":{
+      if(typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date)){
+        state.workShifts=(state.workShifts||[]).filter(x=>x.date!==date);
+        return false;
+      }
       let x=state.workShifts.find(x=>x.date===date);
       if(!x){x=common;state.workShifts.push(x)}
       Object.assign(x,{scheduled:String(p.scheduled||x.scheduled||""),start:String(p.start||x.start||""),end:String(p.end||x.end||""),rate:Number(p.rate??x.rate??0),status:String(p.status||x.status||""),endedUnknown:p.endedUnknown!==undefined?!!p.endedUnknown:!!x.endedUnknown,notes:String(p.notes??x.notes??""),source:String(p.source||x.source||""),cloudEntryId:row.id});
