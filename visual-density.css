@@ -1,0 +1,212 @@
+/* Daily Life — color + density pass 2 (2026-10-04)
+   Pushes the app toward a colorful, illustrated dashboard while preserving behavior/data. */
+
+:root{
+  --vd-pink:#ff8eb0;
+  --vd-peach:#ffc58f;
+  --vd-yellow:#ffeaa1;
+  --vd-mint:#bfeccf;
+  --vd-aqua:#a9e6ed;
+  --vd-blue:#a9d9ff;
+  --vd-lilac:#d9c7ff;
+  --vd-ink:#25223a;
+}
+
+/* Make the botanical artwork actually visible. */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    url("botanical-corners.svg") center top/760px auto repeat-y,
+    url("botanical-bg.svg") center top/760px auto repeat-y;
+  opacity:.42;
+}
+body{
+  background:
+    radial-gradient(circle at 10% 4%,rgba(255,142,176,.42),transparent 24%),
+    radial-gradient(circle at 91% 8%,rgba(169,217,255,.44),transparent 26%),
+    radial-gradient(circle at 75% 35%,rgba(217,199,255,.38),transparent 28%),
+    radial-gradient(circle at 8% 54%,rgba(191,236,207,.48),transparent 27%),
+    radial-gradient(circle at 90% 74%,rgba(255,197,143,.40),transparent 27%),
+    linear-gradient(145deg,#eef9ff 0%,#fff0f6 30%,#fff8df 59%,#effff7 100%)!important;
+}
+
+/* Keep page shells translucent so the color and botanicals show through. */
+.app{background:transparent!important}
+.card,.setupCard,.modal{
+  backdrop-filter:blur(11px) saturate(1.08);
+}
+.card{
+  background-color:rgba(255,252,248,.72)!important;
+}
+
+/* Stronger rotating palette across dashboard cards. */
+#app .card:nth-child(6n+1){--tile-a:rgba(255,142,176,.28);--tile-b:rgba(217,199,255,.22)}
+#app .card:nth-child(6n+2){--tile-a:rgba(191,236,207,.34);--tile-b:rgba(169,230,237,.23)}
+#app .card:nth-child(6n+3){--tile-a:rgba(255,197,143,.34);--tile-b:rgba(255,234,161,.25)}
+#app .card:nth-child(6n+4){--tile-a:rgba(169,217,255,.34);--tile-b:rgba(217,199,255,.24)}
+#app .card:nth-child(6n+5){--tile-a:rgba(255,142,176,.24);--tile-b:rgba(255,197,143,.23)}
+#app .card:nth-child(6n){--tile-a:rgba(169,230,237,.31);--tile-b:rgba(191,236,207,.25)}
+#app .card{
+  background:
+    radial-gradient(circle at 92% 8%,var(--tile-a,rgba(217,199,255,.20)),transparent 34%),
+    radial-gradient(circle at 6% 96%,var(--tile-b,rgba(191,236,207,.18)),transparent 38%),
+    rgba(255,252,248,.76)!important;
+}
+
+/* Visual summary tiles: round, compact, colorful. */
+:is(.today-metrics,.planner-summary,.people-hero-stats,.robot-status-grid,.sleep-plan-inline,.care-track-summary){
+  gap:7px!important;
+}
+:is(.today-metrics .metric,.planner-summary span,.people-hero-stats span,.robot-status-cell,.sleep-plan-inline span){
+  border-radius:50%!important;
+  aspect-ratio:1!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:8px!important;
+  border:3px solid rgba(255,255,255,.70)!important;
+  box-shadow:0 7px 18px rgba(69,55,88,.08),inset 0 0 0 1px rgba(59,47,76,.06)!important;
+}
+
+/* Use smaller 2-up / 3-up bento layouts instead of long single-column stacks. */
+:is(.school-kids,.reader-grid,.people-grid,.pet-grid,.plant-grid,.self-care-grid,.birthday-grid,.gift-board-grid){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+:is(.school-kid,.reader-card,.people-grid>.card,.pet-grid>.card,.plant-grid>.card,.self-care-grid>.card){
+  margin:0!important;
+  padding:12px!important;
+  border-radius:24px!important;
+  min-width:0!important;
+}
+
+/* Section launchers become compact bubbles rather than large panels. */
+.section-launcher{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.section-launcher button{
+  min-height:0!important;
+  aspect-ratio:1.08!important;
+  border-radius:50%!important;
+  padding:9px!important;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center!important;
+}
+.section-launch-icon{
+  width:34px!important;height:34px!important;margin-bottom:3px!important;
+}
+.section-launcher small{font-size:.62rem!important;line-height:1.05!important}
+.section-launcher b{font-size:.76rem!important;line-height:1.05!important}
+
+/* Existing accordions/drawers should feel like compact dashboard controls. */
+details{
+  border-radius:20px;
+}
+details>summary{
+  cursor:pointer;
+}
+.today-drawer,
+.bill-calendar-week,
+.bill-history,
+.today-moon{
+  margin:5px 0!important;
+  border:1px solid rgba(67,54,83,.08)!important;
+  border-radius:20px!important;
+  background:rgba(255,255,255,.42)!important;
+}
+.today-drawer>summary,
+.bill-calendar-week>summary,
+.bill-history>summary,
+.today-moon>summary{
+  min-height:44px!important;
+  padding:8px 10px!important;
+}
+.today-drawer-body,.bill-calendar-week-body{
+  padding:0 10px 9px!important;
+}
+
+/* Flatten repeated text rows even further. */
+:is(.priority-item,.school-action,.connection-row,.person-detail-line,.today-people-row,.person-note-row,.order-row,.pay-step,.daily-advice-row,.bill-calendar-item){
+  min-height:0!important;
+  padding:7px 9px!important;
+  margin:3px 0!important;
+  border-radius:15px!important;
+}
+.priority-item .state,.tag,.bill-status{
+  padding:3px 7px!important;
+  font-size:.66rem!important;
+}
+
+/* Headers consume less vertical space while keeping the playful identity. */
+.card{padding:12px!important;margin:7px 0!important}
+.section-title{margin:2px 0 6px!important}
+.section-title h2{font-size:1.03rem!important}
+.eyebrow{font-size:.72rem!important}
+.card p{margin:4px 0!important;line-height:1.35!important}
+.small,.muted{line-height:1.3!important}
+.stack{gap:7px!important}
+.grid2,.grid3{gap:7px!important}
+.btn{min-height:38px!important;padding:7px 10px!important}
+
+/* Progress bars become colorful "pie piece" companion graphics visually. */
+:is(.today-progress,.budget-progress,progress){
+  height:8px!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  box-shadow:inset 0 0 0 1px rgba(60,48,78,.05);
+}
+:is(.self-care-progress span,.trend-fill){
+  background:linear-gradient(90deg,var(--vd-pink),var(--vd-peach),var(--vd-yellow),var(--vd-mint),var(--vd-aqua),var(--vd-lilac))!important;
+}
+
+/* Compact chip clouds can wrap sideways rather than make tall columns. */
+:is(.chips,.tag-list,.person-chips,.pantry-chips,.robot-room-pills){
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:5px!important;
+}
+
+/* On phones, preserve dense visual grouping rather than falling back to one giant column. */
+@media(max-width:520px){
+  .app{padding-inline:8px!important}
+  :is(.school-kids,.reader-grid,.people-grid,.pet-grid,.plant-grid,.self-care-grid,.birthday-grid,.gift-board-grid){
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .section-launcher{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .today-section-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .today-section-grid>.card{padding:10px!important}
+  .today-section-grid h2{font-size:.92rem!important}
+  .today-section-grid .small{font-size:.74rem!important}
+  .bottom-nav{padding-top:5px!important}
+  .navbtn{min-height:52px!important}
+}
+@media(max-width:365px){
+  :is(.school-kids,.reader-grid,.people-grid,.pet-grid,.plant-grid,.self-care-grid){
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .section-launcher{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* Accessibility: don't let the tighter layout shrink touch targets for form controls. */
+input,select,textarea{min-height:42px!important}
+:is(button,.btn,a,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:3px solid rgba(255,120,158,.72)!important;
+  outline-offset:2px!important;
+}
