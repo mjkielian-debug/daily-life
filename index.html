@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
 <link rel="stylesheet" href="life-orchestrator.css?v=20261003-command1">
-<link rel="stylesheet" href="home-operator.css?v=20261003-homeop1">
+<link rel="stylesheet" href="home-operator.css?v=20261004-map1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261003-tools1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
@@ -163,7 +163,7 @@ dialog,
   .modal .btn{max-width:100%}
 }
 </style>
-<link rel="stylesheet" href="readability-fix.css?v=20261004-contrast2">
+<link rel="stylesheet" href="readability-fix.css?v=20261004-contrast3">
 </head>
 <body>
 <div id="app"></div>
@@ -1977,6 +1977,27 @@ function schoolGradeSnapshotCard(){
   </div>`;
 }
 
+function schoolKidOverview(name){
+  const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate),
+        grades=latestSchoolGrades(name),
+        assignments=schoolAssignmentRows(name).filter(x=>!["graded","excused"].includes(String(x.status||"").toLowerCase())).slice(0,8),
+        events=dedupeEventList((state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e)&&String(e.child||"")===String(name))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,8);
+  modal("School · "+name,`<div class="stack school-kid-overview">
+    <div class="school-kid-overview-top"><div><div class="eyebrow">School snapshot</div><h2>${esc(name)}</h2></div><div class="actions"><button class="btn small" onclick="openSchoolGrade()">+ Grade</button><button class="btn small" onclick="openSchoolAssignment()">+ Assignment</button></div></div>
+    <div class="grid2"><div class="metric"><div class="eyebrow">Classes saved</div><div class="big">${grades.length}</div></div><div class="metric"><div class="eyebrow">Open / missing</div><div class="big">${assignments.length}</div></div></div>
+    ${grades.length?`<div><div class="mini-heading">Grades</div><div class="school-grade-grid">${grades.slice(0,8).map(g=>`<button class="school-grade-chip ${schoolGradeTone(g)}" onclick="openSchoolGrade('${g.id}')"><span>${esc(g.course)}</span><b>${esc(schoolGradeDisplay(g))}</b><small>${esc(schoolGradeFreshness(g))}</small></button>`).join("")}</div></div>`:""}
+    ${assignments.length?`<div><div class="mini-heading">Assignments</div><div class="school-assignment-list">${assignments.map(a=>`<button onclick="openSchoolAssignment('${a.id}')"><span><b>${esc(a.title)}</b><small>${esc(a.course||"")}${a.due?" · due "+esc(dl(a.due)):""}</small></span><span class="school-assignment-status ${esc(String(a.status||"due").toLowerCase())}">${esc(a.status||"due")}</span></button>`).join("")}</div></div>`:""}
+    <div><div class="mini-heading">Next 30 days</div>${events.length?events.map(e=>`<button class="school-wheel-event" onclick="closeModal();openEvent('${e.date}','${e.id}')"><span><b>${esc(e.title)}</b><small>${esc(dl(e.date))}${e.startTime?" · "+esc(fmtClock(e.startTime)):""}</small></span><span>›</span></button>`).join(""):`<div class="notice">No upcoming school items captured.</div>`}</div>
+  </div>`,"Close",closeModal);
+}
+function schoolFamilyWheel(kids,events){
+  const shown=kids.slice(0,4);
+  if(!shown.length)return"";
+  return `<div class="school-family-wheel-section"><div class="mini-heading">Tap a child</div><div class="school-family-wheel" role="group" aria-label="School by child">
+    ${shown.map((k,i)=>{const mine=events.filter(e=>String(e.child||"")===String(k)),next=mine[0];return `<button type="button" class="school-family-segment school-family-segment-${i+1}" onclick='schoolKidOverview(${esc(JSON.stringify(k))})'><b>${esc(k)}</b><small>${mine.length?mine.length+" upcoming":"No upcoming"}${next?" · "+esc(dl(next.date)):""}</small></button>`}).join("")}
+  </div>${kids.length>4?`<div class="muted small school-wheel-extra">+${kids.length-4} more family member${kids.length-4===1?"":"s"} listed in School</div>`:""}</div>`;
+}
+
 function schoolDashboard(){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+30);const end=ymd(endDate);
   const events=dedupeEventList((state.events||[]).filter(e=>e.date>=start&&e.date<=end&&e.status!=="cancelled"&&isSchoolEvent(e))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
@@ -1988,7 +2009,7 @@ function schoolDashboard(){
     ${schoolGradeSnapshotCard()}
     ${schoolTasks.length?`<div class="school-actions"><div class="mini-heading">Homework Hub + action needed</div>${schoolTasks.slice(0,8).map(t=>`<label class="school-action task"><input type="checkbox" onchange="toggleTask('${t.id}',this.checked)"><span class="grow"><b>${esc(t.title)}</b><div class="muted small">${t.child?esc(t.child)+" · ":""}${esc(dl(t.date))}${t.notes?" · "+esc(t.notes):""}</div></span></label>`).join("")}</div>`:""}
     ${recentSchool.length?`<details class="school-notes"><summary>Recent attendance / teacher notes (${recentSchool.length})</summary>${recentSchool.map(e=>`<div class="row"><span><b>${esc(e.title)}</b><div class="muted small">${e.child?esc(e.child)+" · ":""}${esc(e.notes||"")}</div></span><b>${esc(dl(e.date))}</b></div>`).join("")}</details>`:""}
-    ${kids.length?`<div class="school-kids">${kids.map(k=>{const mine=events.filter(e=>String(e.child||"")===k).slice(0,4);return `<div class="school-kid"><b>${esc(k)}</b>${mine.length?mine.map(e=>`<div class="school-item" onclick="openEvent('${e.date}','${e.id}')"><span>${esc(dl(e.date))}</span><span class="grow">${esc(e.title)}${e.startTime?` · ${esc(fmtClock(e.startTime))}`:""}</span></div>`).join(""):`<div class="muted small">No upcoming school items captured.</div>`}</div>`}).join("")}</div>`:""}
+    ${kids.length?schoolFamilyWheel(kids,events):""}
   </div>`;
 }
 
@@ -4963,7 +4984,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-contrast2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-map1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -4985,11 +5006,11 @@ registerAppWorker();
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261003-mealmemory1"></script>
 <script src="daily-coach.js?v=20261003-dailycoach1"></script>
-<script src="house-robot.js?v=20261003-housemap3"></script>
+<script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
 <script src="life-system.js?v=20261003-life1"></script>
 <script src="life-orchestrator.js?v=20261003-command4"></script>
-<script src="home-operator.js?v=20261003-homeop1"></script>
+<script src="home-operator.js?v=20261004-homeop2"></script>
 <script src="week-pilot.js?v=20261003-week1"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
 <script src="capacity-planner.js?v=20261003-capacity1"></script>
