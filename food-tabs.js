@@ -71,7 +71,7 @@ function compactFoodPantry(){
   return `<div class="food-tab-panel"><div class="food-inline-actions"><button class="btn" onclick="setView('inventory')">Open whole-house inventory</button></div>${pantryCard()}</div>`;
 }
 
-homeView=function(){
+function legacyTabbedFoodView(){
   const body=foodTab==="meals"?compactFoodMeals():foodTab==="shop"?compactFoodShop():foodTab==="pantry"?compactFoodPantry():compactFoodToday();
   return `<div class="food-hero"><div class="section-title"><div><div class="eyebrow">🍽 Food</div><h1>Food + kitchen</h1><div class="muted small">Today first; meal planning, shopping, and pantry details one tap away.</div></div><button class="btn" onclick="openFood()">+ Intake</button></div></div>${compactFoodTabs()}${body}`;
 };
