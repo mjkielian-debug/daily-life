@@ -1936,8 +1936,8 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
   letter-spacing:.06em!important;
 }
 .dayflow-one-screen-shell .dayflow-wheel-center>b{
-  font-size:.88rem!important;
-  line-height:1.02!important;
+  font-size:.76rem!important;
+  line-height:1.01!important;
   margin:4px 0 3px!important;
   max-width:13ch!important;
   white-space:normal!important;
@@ -1946,8 +1946,8 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
   overflow-wrap:anywhere;
 }
 .dayflow-one-screen-shell .dayflow-wheel-center>strong{
-  font-size:.58rem!important;
-  line-height:1.12!important;
+  font-size:.52rem!important;
+  line-height:1.1!important;
   max-width:17ch!important;
   white-space:normal!important;
   overflow:visible!important;
@@ -2106,8 +2106,8 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
     padding:9px!important;
   }
   .dayflow-one-screen-shell .dayflow-wheel-center .eyebrow{font-size:.42rem!important}
-  .dayflow-one-screen-shell .dayflow-wheel-center>b{font-size:.79rem!important;max-width:12ch!important}
-  .dayflow-one-screen-shell .dayflow-wheel-center>strong{font-size:.52rem!important}
+  .dayflow-one-screen-shell .dayflow-wheel-center>b{font-size:.69rem!important;max-width:12ch!important}
+  .dayflow-one-screen-shell .dayflow-wheel-center>strong{font-size:.47rem!important}
   .dayflow-one-screen-shell .dayflow-wheel-center>small{font-size:.4rem!important}
   .dayflow-quick-actions{
     width:min(91vw,360px);
