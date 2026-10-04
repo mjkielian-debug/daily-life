@@ -40,3 +40,20 @@
   .life-fab-search{width:42px;height:42px}
   .life-fab-capture{width:54px;height:54px}
 }
+
+/* Keep radial one-screen hubs visually clean: Search/Capture live in the hamburger launcher there. */
+body:has(#app .life-wheel) .life-tools-fab{
+  display:none!important;
+}
+.section-launcher-tools{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:2px 0 10px;
+}
+.section-launcher-tools .btn{
+  min-width:0;
+}
+@media(max-width:360px){
+  .section-launcher-tools{grid-template-columns:1fr}
+}
