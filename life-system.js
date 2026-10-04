@@ -12,11 +12,11 @@
 
   function lifeEnsureSettings(){
     const p=lifePrefs();
-    if(Number(p.workScheduleOffDayFixVersion||0)<2){
+    if(Number(p.workScheduleOffDayFixVersion||0)<3){
       p.workWeekdays=[2,3,4,5,6];
       p.workScheduleConfirmedAt="2026-10-04";
       p.workScheduleLabel="Tuesday–Saturday";
-      p.workScheduleOffDayFixVersion=2;
+      p.workScheduleOffDayFixVersion=3;
       p.lifeWorkWeekConfirmed=true;
     }
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
@@ -30,7 +30,9 @@
   }
 
   function lifeIsWorkday(date){
-    const p=lifeEnsureSettings(),days=p.workWeekdays.map(Number);
+    lifeEnsureSettings();
+    if(typeof isUsualWorkday==="function")return isUsualWorkday(date);
+    const p=lifePrefs(),days=p.workWeekdays.map(Number);
     return days.includes(lifeWeekday(date));
   }
 
