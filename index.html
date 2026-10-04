@@ -1176,7 +1176,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -3589,10 +3589,68 @@ function familyRoutinesCard(){
   const rows=state.chores.filter(x=>x.date===ymd());
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">Daily basics, alternating chores, and weekly activities can all be adjusted without changing app code.</div></div><div class="actions"><button class="btn" onclick="openFamilyRoutineSettings()">Chore setup</button><button class="btn" onclick="openFamilyScheduleSettings()">Weekly schedule</button><button class="btn" onclick="openChore()">+ Chore</button></div></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>${x.generated?`<span class="tag">${x.generated==="rotation"?"rotation":"daily"}</span>`:""}</div>`).join("")||`<div class="notice">No family routines logged today. Use Routine setup to add daily basics or alternating chore groups.</div>`}</div>`;
 }
+function peopleHubProfileList(){
+  const profiles=[...(state.peopleProfiles||[])].sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+  return `<div class="stack"><div class="section-title"><div><div class="eyebrow">All People</div><h2>${profiles.length} profile${profiles.length===1?"":"s"}</h2><div class="muted small">Tap a person for their full profile, plans, school details, gifts, notes, and routines.</div></div><button class="btn primary" onclick="closeModal();openPersonProfile()">+ Person</button></div>
+    <div class="people-hub-list">${profiles.map(p=>`<button onclick="closeModal();openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(p.name)}</b><small>${esc(relationshipLabel(p))}${livesWithUser(p)?" · household":" · extended"}</small></span><span>›</span></button>`).join("")||`<div class="notice">No people profiles yet.</div>`}</div>
+  </div>`;
+}
+function peopleKidsHub(){
+  const kids=childProfiles();
+  return `<div class="stack"><div class="section-title"><div><div class="eyebrow">Kids</div><h2>${kids.length} child profile${kids.length===1?"":"s"}</h2></div></div>
+    <div class="people-hub-list">${kids.map(p=>{const sum=personTodaySummary(p);return `<button onclick="closeModal();openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").charAt(0).toUpperCase())}</span><span><b>${esc(p.name)}</b><small>${esc([p.grade,p.schoolName,sum?.summary].filter(Boolean).join(" · ")||"Profile + routines")}</small></span><span>›</span></button>`}).join("")||`<div class="notice">No child profiles are configured yet.</div>`}</div>
+  </div>`;
+}
+function peopleActivitiesHub(){
+  const end=shiftDateString(ymd(),35),rows=(state.events||[]).filter(e=>e.date>=ymd()&&e.date<=end&&e.status!=="cancelled"&&(e.type==="activity"||e.type==="school"||String(e.source||"").toLowerCase().includes("school"))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,18);
+  return `<div class="stack"><div class="section-title"><div><div class="eyebrow">Activities</div><h2>Clubs, dance + rehearsals</h2><div class="muted small">Upcoming repeating and one-time kid activities.</div></div><button class="btn" onclick="closeModal();openFamilyScheduleSettings()">Weekly schedule</button></div>
+    ${rows.length?rows.map(e=>`<button class="people-agenda-row" onclick="closeModal();openEvent('${e.date}','${e.id}')"><div class="agenda-date"><b>${new Date(e.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</b><span>${new Date(e.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})}</span></div><div class="grow"><b>${esc(e.title)}</b><div class="muted small">${esc([e.child,e.startTime?fmtClock(e.startTime):"",e.location].filter(Boolean).join(" · "))}</div></div><span>›</span></button>`).join(""):`<div class="notice">No upcoming activities captured.</div>`}
+  </div>`;
+}
+function peoplePlansHub(){
+  const rows=peopleAgendaItems().slice(0,18),partners=(state.peopleProfiles||[]).filter(isPartnerProfile);
+  return `<div class="stack">${peopleAgendaCard()}${partners.map(p=>`<div class="card relationship-card"><div class="section-title"><div><div class="eyebrow">Check-in</div><h2>${esc(p.name)}</h2><div class="muted small">Relationship notes and recurring check-ins.</div></div><button class="btn" onclick="closeModal();openPersonHub('${p.id}')">Open</button></div></div>`).join("")}</div>`;
+}
+function openPeopleHubSection(section){
+  let title="People",body="";
+  if(section==="profiles"){title="All People";body=peopleHubProfileList()}
+  else if(section==="kids"){title="Kids";body=peopleKidsHub()}
+  else if(section==="school"){title="School";body=`${schoolDashboard()}${schoolContactsCard()}`}
+  else if(section==="activities"){title="Activities";body=peopleActivitiesHub()}
+  else if(section==="birthdays"){title="Birthdays + Gifts";body=`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`}
+  else if(section==="money"){title="Kids Money";body=kidsMoneyCard()}
+  else if(section==="routines"){title="Chores + Routines";body=familyRoutinesCard()}
+  else if(section==="family"){title="Family + Extended";body=`${familyConnectionsCard()}${peopleMissingInfoCard()}${peopleHubProfileList()}`}
+  else if(section==="plans"){title="Plans + Check-ins";body=peoplePlansHub()}
+  modal(title,`<div class="people-hub-modal">${body}</div>`,"Close",closeModal);
+}
 function familyView(){
   ensurePeopleProfiles();
-  const body=peopleTab==="birthdays"?`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}`:peopleTab==="household"?`${schoolDashboard()}${schoolContactsCard()}${kidsMoneyCard()}${familyRoutinesCard()}`:`${peopleOverviewCard()}${peopleFilterBar()}${familyConnectionsCard()}${peopleAgendaCard()}${peopleMissingInfoCard()}${personCards()}`;
-  return `${peopleTabs()}${body}`;
+  const profiles=state.peopleProfiles||[],kids=childProfiles(),today=ymd(),end7=shiftDateString(today,7),end35=shiftDateString(today,35),
+        school=(state.events||[]).filter(e=>e.date>=today&&e.date<=end35&&e.status!=="cancelled"&&isSchoolEvent(e)).length,
+        activities=(state.events||[]).filter(e=>e.date>=today&&e.date<=end35&&e.status!=="cancelled"&&e.type==="activity").length,
+        birthdays=profiles.map(p=>nextBirthdayInfo(p)).filter(b=>b&&b.days<=90).length,
+        moneyKids=kids.filter(p=>(state.kidsMoneyAccounts||[]).some(a=>a.personId===p.id)).length,
+        chores=(state.chores||[]).filter(x=>x.date===today&&!x.done).length,
+        extended=profiles.filter(p=>!livesWithUser(p)).length,
+        plans=peopleAgendaItems().filter(x=>x.date>=today&&x.date<=end35).length,
+        next=peopleAgendaItems()[0]||null,
+        segments=[
+          {icon:"♡",title:"Kids",detail:kids.length+" profiles",section:"kids"},
+          {icon:"🎒",title:"School",detail:school?school+" upcoming":"School hub",section:"school"},
+          {icon:"✦",title:"Activities",detail:activities?activities+" upcoming":"Clubs + dance",section:"activities"},
+          {icon:"🎂",title:"Birthdays",detail:birthdays?birthdays+" within 90d":"Gifts + plans",section:"birthdays"},
+          {icon:"$",title:"Kids Money",detail:moneyKids?moneyKids+" accounts":"Modak + ledger",section:"money"},
+          {icon:"✓",title:"Routines",detail:chores?chores+" chores today":"Chores + basics",section:"routines"},
+          {icon:"♧",title:"Family",detail:extended?extended+" extended":"Connections",section:"family"},
+          {icon:"◷",title:"Plans",detail:plans?plans+" upcoming":"Check-ins",section:"plans"}
+        ];
+  return `<section class="people-one-screen"><div class="people-one-topline"><div><div class="eyebrow">People at a glance</div><b>Family + kids</b></div><button class="btn small primary" onclick="openPersonProfile()">＋ Person</button></div>
+    <div class="life-wheel people-wheel" role="group" aria-label="People dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openPeopleHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center people-wheel-center" onclick="event.stopPropagation();openPeopleHubSection('profiles');return false;"><span class="eyebrow">PEOPLE</span><b>${profiles.length} profiles</b><strong>${next?esc(next.person.name+" · "+next.title):"Family + connections"}</strong><small>${next?esc(dl(next.date)+(next.time?" · "+fmtClock(next.time):"")):"Tap a section to open it."}</small></button>
+    </div>
+  </section>`;
 }
 function readingView(){
   const ticketRows=monthlyReaderTickets(),todayReads=reads(),totalPages=todayReads.reduce((sum,x)=>sum+Number(x.pages||0),0),
