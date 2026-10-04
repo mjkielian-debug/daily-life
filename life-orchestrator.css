@@ -303,3 +303,64 @@
   .life-today-footer button{font-size:.6rem;padding:5px}
   .household-hub-grid,.household-hub-grid.two{grid-template-columns:1fr}
 }
+
+
+/* One-screen shell: Today only */
+body:has(.today-one-screen-shell){
+  overflow:hidden!important;
+  background:#f3c5da!important;
+}
+.today-one-screen-shell{
+  height:100dvh!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  padding-top:8px!important;
+  padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+}
+.today-one-screen-shell>header{
+  flex:0 0 auto!important;
+  min-height:0!important;
+  padding:7px 9px!important;
+  margin:0 0 6px!important;
+  border-radius:22px!important;
+}
+.today-one-screen-shell .brand-mark{
+  width:42px!important;height:42px!important;flex-basis:42px!important;border-radius:14px!important;
+}
+.today-one-screen-shell .brand-copy .title{
+  font-size:1.55rem!important;
+  line-height:1!important;
+}
+.today-one-screen-shell .brand-copy .eyebrow{
+  font-size:.62rem!important;
+  line-height:1.15!important;
+}
+.today-one-screen-shell .brand-copy .small{
+  font-size:.62rem!important;
+  line-height:1.15!important;
+}
+.today-one-screen-shell .header-tools{
+  gap:5px!important;
+  flex-wrap:nowrap!important;
+}
+.today-one-screen-shell .header-tools .pill{display:none!important}
+.today-one-screen-shell .header-tools .btn{
+  width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+  padding:0!important;border-radius:50%!important;
+}
+.today-one-screen-shell .life-today-one-screen{
+  flex:1 1 auto;
+  min-height:0!important;
+  max-height:none!important;
+  height:auto!important;
+}
+@media(max-width:420px){
+  .today-one-screen-shell{
+    padding-left:8px!important;
+    padding-right:8px!important;
+    padding-top:6px!important;
+  }
+  .today-one-screen-shell .brand-mark{width:38px!important;height:38px!important;flex-basis:38px!important}
+  .today-one-screen-shell .brand-copy .title{font-size:1.38rem!important}
+  .today-one-screen-shell .header-tools .btn{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important}
+}
