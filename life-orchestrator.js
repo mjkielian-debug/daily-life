@@ -366,10 +366,67 @@
   const baseSettingsView=settingsView;
   settingsView=function(){return baseSettingsView()+lifeAutopilotSettingsCard()};
 
+  window.openTodayTasksHub=function(){
+    const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a));
+    modal("Today · Tasks",'<div class="stack"><div class="section-title"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2></div><button class="btn primary" onclick="closeModal();openTask()">+ Add task</button></div>'+
+      (rows.length?rows.map(t=>'<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(t.title)+'</b><small>'+esc([t.child,t.notes].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>').join(''):'<div class="notice"><b>Today’s tracked tasks are clear.</b></div>')+
+      '<div class="actions"><button class="btn" onclick="closeModal();setView(\'itinerary\')">Open Day Flow</button></div></div>',"Close",closeModal);
+  };
+
+  window.openHouseholdHub=function(){
+    const rooms=(state.houseRooms||[]).length,pets=(state.pets||[]).length,items=(state.inventoryItems||[]).length;
+    modal("Home + household",'<div class="stack"><div class="household-hub-grid">'+
+      '<button onclick="closeModal();inventorySetTab(\'map\');setView(\'inventory\')"><span class="hub-icon">⌂</span><span><b>House map</b><small>'+rooms+' room'+(rooms===1?'':'s')+' · layout + storage</small></span></button>'+
+      '<button onclick="closeModal();inventorySetTab(\'items\');setView(\'inventory\')"><span class="hub-icon">▦</span><span><b>Inventory</b><small>'+items+' tracked item'+(items===1?'':'s')+'</small></span></button>'+
+      '<button onclick="closeModal();setView(\'pets\')"><span class="hub-icon">♢</span><span><b>Pets</b><small>'+pets+' pet profile'+(pets===1?'':'s')+' · care + health</small></span></button>'+
+      '<button onclick="closeModal();setView(\'itinerary\')"><span class="hub-icon">✓</span><span><b>Cleaning + resets</b><small>Room resets inside Day Flow</small></span></button>'+
+      '</div></div>',"Close",closeModal);
+  };
+
+  window.openGardenHobbiesHub=function(){
+    const plants=(state.plants||[]).length,projects=(state.hobbyProjects||[]).length;
+    modal("Garden + Hobbies",'<div class="stack"><div class="household-hub-grid two">'+
+      '<button onclick="closeModal();setView(\'garden\')"><span class="hub-icon">⌁</span><span><b>Garden</b><small>'+plants+' plant'+(plants===1?'':'s')+' · seeds + care + journal</small></span></button>'+
+      '<button onclick="closeModal();setView(\'hobbies\')"><span class="hub-icon">✂</span><span><b>Hobbies</b><small>'+projects+' project'+(projects===1?'':'s')+' · crafts + supplies + photos</small></span></button>'+
+      '</div></div>',"Close",closeModal);
+  };
+
+  function lifeTodayWheel(){
+    const q=lifeQueue(),guide=lifeCurrentGuidance(),today=ymd(),now=new Date(),mins=now.getHours()*60+now.getMinutes(),
+      agenda=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
+      next=agenda.find(x=>{const m=hmMinutes(x.start);return m!==null&&m>=mins}),
+      meal=typeof mealForDate==="function"?mealForDate(today):null,
+      care=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},
+      readingPages=(state.readingLogs||[]).filter(x=>x.date===today).reduce((n,x)=>n+Number(x.pages||0),0),
+      end=lifeShift(today,7),
+      billCount=(state.bills||[]).filter(b=>b.status!=="paid"&&b.due>=today&&b.due<=end).length,
+      peopleCount=(state.events||[]).filter(e=>e.date>=today&&e.date<=end&&e.status!=="cancelled"&&String(e.child||"").trim()).length,
+      homeCount=(state.houseRooms||[]).length,
+      petCount=(state.pets||[]).length,
+      openTasks=q.todayRows.length,
+      greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
+      segments=[
+        {icon:"◷",title:"Day Flow",detail:next?(fmtClock(next.start)+" · "+next.title):"Today’s schedule",action:"setView('itinerary')"},
+        {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
+        {icon:"◇",title:"Food",detail:meal?.dish?meal.dish:"Dinner open",action:"setView('home')"},
+        {icon:"$",title:"Money",detail:billCount?billCount+" bill"+(billCount===1?"":"s")+" soon":"Bills clear",action:"setView('more')"},
+        {icon:"♡",title:"Care",detail:care.total?care.done+"/"+care.total+" today":"Self care",action:"setView('log')"},
+        {icon:"♧",title:"People",detail:peopleCount?peopleCount+" family item"+(peopleCount===1?"":"s"):"Family + kids",action:"setView('family')"},
+        {icon:"⌂",title:"Home",detail:[homeCount?homeCount+" rooms":"house",petCount?petCount+" pets":""].filter(Boolean).join(" · "),action:"openHouseholdHub()"},
+        {icon:"◫",title:"Reading",detail:readingPages?readingPages+" pages today":"Pages + wheel",action:"setView('reading')"}
+      ];
+    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div>'+
+      '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
+        segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
+        '<button class="life-wheel-center" onclick="setView(\'itinerary\')"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(guide.detail||"Tap a section to open it.")+'</small></button>'+
+      '</div>'+
+      '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
+  }
+
   const baseToday=todayView;
   todayView=function(){
     lifeSyncGeneratedTasks();
-    return lifeCommandCard()+baseToday.apply(this,arguments);
+    return lifeTodayWheel();
   };
 
   /* Make the rotating off-day home reset point at a real mapped room when possible. */
