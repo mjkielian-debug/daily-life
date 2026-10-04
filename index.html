@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-modalclose1";
+const APP_BUILD="2026.10.04-peoplecompact1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -3740,10 +3740,14 @@ function peopleAgendaItems(){
   }
   return rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
 }
+function openMissingBirthdayInfo(){
+  const missing=(state.peopleProfiles||[]).filter(p=>!nextBirthdayInfo(p));
+  modal("Birthdays to fill in",`<div class="stack"><div class="notice">These can stay unknown until you learn them. Tap a person whenever you want to add the birthday.</div><div class="people-hub-list people-profile-grid">${missing.map(p=>`<button onclick="closeModal();openPersonProfile('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").charAt(0).toUpperCase())}</span><span><b>${esc(p.name)}</b><small>Add birthday</small></span><span>›</span></button>`).join("")||'<div class="notice">No birthdays are missing.</div>'}</div></div>`,"Close",closeModal);
+}
 function peopleMissingInfoCard(){
   const missing=(state.peopleProfiles||[]).filter(p=>!nextBirthdayInfo(p));
   if(!missing.length)return"";
-  return `<div class="card people-missing"><div class="section-title"><div><div class="eyebrow">Fill in over time</div><h2>${missing.length} birthday${missing.length===1?"":"s"} still unknown</h2><div class="muted small">No need to know everything now. Add details whenever you learn them.</div></div></div><div class="person-chips">${missing.map(p=>`<button class="person-chip person-chip-button" onclick="openPersonProfile('${p.id}')">${esc(p.name)} · add birthday</button>`).join("")}</div></div>`;
+  return `<button type="button" class="people-missing-launch" onclick="openMissingBirthdayInfo()"><span><span class="eyebrow">Fill in over time</span><b>${missing.length} birthday${missing.length===1?"":"s"} still unknown</b><small>No rush — tap when you want to add them.</small></span><span>›</span></button>`;
 }
 function peopleAgendaCard(){
   const rows=peopleAgendaItems().slice(0,10);
@@ -3862,7 +3866,7 @@ function familyRoutinesCard(){
 function peopleHubProfileList(){
   const profiles=[...(state.peopleProfiles||[])].sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
   return `<div class="stack"><div class="section-title"><div><div class="eyebrow">All People</div><h2>${profiles.length} profile${profiles.length===1?"":"s"}</h2><div class="muted small">Tap a person for their full profile, plans, school details, gifts, notes, and routines.</div></div><button class="btn primary" onclick="closeModal();openPersonProfile()">+ Person</button></div>
-    <div class="people-hub-list">${profiles.map(p=>`<button onclick="closeModal();openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(p.name)}</b><small>${esc(relationshipLabel(p))}${livesWithUser(p)?" · household":" · extended"}</small></span><span>›</span></button>`).join("")||`<div class="notice">No people profiles yet.</div>`}</div>
+    <div class="people-hub-list people-profile-grid">${profiles.map(p=>`<button onclick="closeModal();openPersonHub('${p.id}')"><span class="person-avatar mini">${esc((p.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(p.name)}</b><small>${esc(relationshipLabel(p))}${livesWithUser(p)?" · household":" · extended"}</small></span><span>›</span></button>`).join("")||`<div class="notice">No people profiles yet.</div>`}</div>
   </div>`;
 }
 function peopleKidsHub(){
