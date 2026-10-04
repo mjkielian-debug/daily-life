@@ -211,8 +211,12 @@
       flowStarts=flow.map(function(x){return hmMinutes(x.start)}).filter(Number.isFinite),
       firstMealStart=flowStarts.length?Math.min.apply(null,flowStarts):hmMinutes(meal&&meal.startBy),
       serve=hmMinutes(meal&&meal.serveTime),
-      earlyDinner=(firstMealStart!==null&&firstMealStart<=17*60)||(serve!==null&&serve<=17*60+30),
-      busyEvening=(state.events||[]).some(function(e){const m=hmMinutes(e.startTime);return e.date===date&&e.status!=="cancelled"&&m!==null&&m>=17*60+30}),
+      earlyDinner=serve!==null&&serve<=17*60+30,
+      busyEvening=(state.events||[]).some(function(e){
+        const m=hmMinutes(e.startTime),text=[e.title,e.location,e.notes].filter(Boolean).join(" ");
+        return e.date===date&&e.status!=="cancelled"&&m!==null&&m>=17*60+30&&
+          (String(e.location||"").trim()||/meeting|conference|appointment|drive|drop off|drop kids/i.test(text));
+      }),
       p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
       if((x.templateKey==="work-morning"||x.templateKey==="after-work")&&!lifeIsWorkday(date)&&!lifeActualWork(date))return false;
       if(x.templateKey==="after-school-launch"&&earlyDinner)return false;
