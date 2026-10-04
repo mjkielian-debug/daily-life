@@ -1176,7 +1176,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -4059,21 +4059,70 @@ function moneyTabs(){
   const tabs=[["overview","✦","Overview"],["bills","▤","Bills"],["income","↥","Income"],["accounts","◇","Accounts"]];
   return `<div class="money-tabs" role="tablist" aria-label="Money sections">${tabs.map(([key,icon,label])=>`<button type="button" role="tab" aria-selected="${moneyTab===key?"true":"false"}" class="${moneyTab===key?"active":""}" onclick="setMoneyTab('${key}')"><span>${icon}</span><b>${label}</b></button>`).join("")}</div>`;
 }
+function moneyAccountsCard(){
+  const accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>`;
+  return accountList+cloudFinancePanel()+netWorthCard();
+}
+function moneyTransfersCard(){
+  return `${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}`;
+}
+function moneyIncomeHub(){
+  return `${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}`;
+}
+function moneySpendingHub(){
+  const old=budgetTab;budgetTab="activity";
+  const html=budgetView();
+  budgetTab=old;
+  return html;
+}
+function moneyNextActionSummary(){
+  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due));
+  const urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
+  if(!urgent)return{title:"Nothing urgent",detail:"Upcoming bills look covered with current information."};
+  if(urgent.status==="Transfer needed")return{title:"Transfer needed",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+  if(urgent.status==="Projected short")return{title:"Projected short",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+  if(urgent.status==="Needs account")return{title:"Choose account",detail:urgent.bill.name,index:urgent.index};
+  if(urgent.status==="Balance unavailable")return{title:"Update balance",detail:urgent.bill.name,index:urgent.index};
+  return{title:"Check bill",detail:urgent.bill.name,index:urgent.index};
+}
+function openMoneyHubSection(section){
+  let title="Money",body="";
+  if(section==="bills"){title="Bills";body=`${billCalendarCard()}${dueDateOutlookCard()}${upcomingBillsView()}`}
+  else if(section==="budget"){closeModal();setView("budget");return}
+  else if(section==="income"){title="Income";body=moneyIncomeHub()}
+  else if(section==="accounts"){title="Accounts";body=moneyAccountsCard()}
+  else if(section==="transfers"){title="Transfers + Next Steps";body=moneyTransfersCard()}
+  else if(section==="savings"){title="Savings Goals";body=savingsGoalsCard()}
+  else if(section==="pay"){title="UPS Pay";body=upsPayrollCard()}
+  else if(section==="spending"){closeModal();setView("budget");setBudgetTab("activity");return}
+  modal(title,`<div class="money-hub-modal">${body}</div>`,"Close",closeModal);
+}
 function moreView(){
-  const checking=state.accounts.filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
-        savings=state.accounts.filter(x=>x.type==="savings").reduce((sum,x)=>sum+Number(x.balance||0),0),
-        house=state.accounts.find(x=>x.key==="house_fund")?.balance||0,
-        debt=state.accounts.filter(x=>x.type==="credit").reduce((sum,x)=>sum+Number(x.balance||0),0),
-        ret=state.retirement.reduce((sum,x)=>sum+Number(x.balance||0),0),
-        accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>`,
-        totals=`<div class="money-mini-totals"><span><small>House fund</small><b>${money(house)}</b></span><span><small>Known card debt</small><b>${money(debt)}</b></span><span><small>Retirement tracked</small><b>${money(ret)}</b></span></div>`;
-  const overview=`${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}${savingsGoalsCard()}`,
-        bills=`${billCalendarCard()}${dueDateOutlookCard()}${upcomingBillsView()}`,
-        income=`${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}${upsPayrollCard()}`,
-        accounts=`${accountList}${cloudFinancePanel()}${netWorthCard()}${totals}`;
-  return `<div class="money-hero"><div><div class="eyebrow">💚 Money</div><h1>Your money picture</h1><div class="muted small">Cash guidance first; details one tap away.</div></div><div class="money-hero-balances"><span><small>Checking</small><b>${money(checking)}</b></span><span><small>Savings</small><b>${money(savings)}</b></span></div><div class="actions"><button class="btn primary" onclick="setView('budget')">Budget</button><button class="btn" onclick="openAccount()">+ Account</button></div></div>
-    ${moneyTabs()}
-    <div class="money-tab-panel" role="tabpanel">${moneyTab==="overview"?overview:moneyTab==="bills"?bills:moneyTab==="income"?income:accounts}</div>`;
+  const today=ymd(),end30=shiftDateString(today,30),
+        bills=(state.bills||[]).filter(b=>b.status!=="paid"&&validBillDate(b.due)&&b.due>=today&&b.due<=end30),
+        income=expectedIncomeOccurrences(end30).filter(x=>x.date>=today),
+        accounts=(state.accounts||[]).length,
+        activeGoals=(state.savingsGoals||[]).filter(g=>!g.done).length,
+        actions=billReadiness().filter(r=>r.bill.status!=="paid"&&["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status)).length,
+        month=budgetMonth||today.slice(0,7),spend=(state.budget?.spending||[]).filter(x=>String(x.date||"").startsWith(month)).length,
+        paychecks=(state.paychecks||[]).filter(p=>p.payDate&&p.payDate>=shiftDateString(today,-60)).length,
+        next=moneyNextActionSummary(),
+        segments=[
+          {icon:"▤",title:"Bills",detail:bills.length?bills.length+" next 30d":"No bills soon",section:"bills"},
+          {icon:"◫",title:"Budget",detail:new Date(month+"-01T12:00:00").toLocaleDateString("en-US",{month:"short"}),section:"budget"},
+          {icon:"↥",title:"Income",detail:income.length?income.length+" expected":"Add income",section:"income"},
+          {icon:"◇",title:"Accounts",detail:accounts?accounts+" tracked":"Add accounts",section:"accounts"},
+          {icon:"↔",title:"Transfers",detail:actions?actions+" action"+(actions===1?"":"s"):"Looks clear",section:"transfers"},
+          {icon:"✦",title:"Savings",detail:activeGoals?activeGoals+" goal"+(activeGoals===1?"":"s"):"Goals",section:"savings"},
+          {icon:"▣",title:"UPS Pay",detail:paychecks?paychecks+" recent":"Pay history",section:"pay"},
+          {icon:"↕",title:"Spending",detail:spend?spend+" logged":"Activity",section:"spending"}
+        ];
+  return `<section class="money-one-screen"><div class="money-one-topline"><div><div class="eyebrow">Money at a glance</div><b>Plan + bills + income</b></div><button class="btn small primary" onclick="openBill()">＋ Bill</button></div>
+    <div class="life-wheel money-wheel" role="group" aria-label="Money dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openMoneyHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center money-wheel-center" onclick="event.stopPropagation();${Number.isInteger(next.index)?`openBill(${next.index})`:`openMoneyHubSection('transfers')`};return false;"><span class="eyebrow">NEXT MONEY MOVE</span><b>${esc(next.title)}</b><strong>${esc(next.detail)}</strong><small>Tap for details</small></button>
+    </div>
+  </section>`;
 }
 function connectionsCard(){
   const signed=!!cloudUser?.();
