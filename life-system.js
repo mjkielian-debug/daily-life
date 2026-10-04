@@ -22,17 +22,22 @@
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
-    if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<1){
+    if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<2){
       p.workMorningRoutine={
-        version:1,
+        version:2,
         leadMinutes:60,
         commuteMinutes:15,
         steps:[
-          {key:"hygiene",from:-60,to:-45,title:"Wake + morning hygiene",detail:"Brush teeth · floss · mouthwash · wash face · ponytail · deodorant · perfume",icon:"♡"},
-          {key:"dress",from:-45,to:-30,title:"Get dressed for work",detail:"Shirt · pants · socks · shoes · jacket if needed",icon:"◷"},
-          {key:"stretch",from:-30,to:-25,title:"5-minute stretch",detail:"Stretch for 5 minutes before finishing work prep",icon:"✦"},
-          {key:"gather",from:-25,to:-15,title:"Gather work things + check tire",detail:"Water bottle · earbuds · energy drink · jacket · bag · check tire pressure",icon:"✓"},
-          {key:"commute",from:-15,to:0,title:"Drive · park · clock in",detail:"Leave for UPS · about 12-minute drive · park and clock in by start time",icon:"🚗"}
+          {key:"hygiene",from:-60,to:-45,title:"Wake + morning hygiene",detail:"Brush teeth · Floss · Mouthwash · Wash face · Put hair in ponytail · Deodorant · Perfume",
+            subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put hair in ponytail","Deodorant","Perfume"],icon:"♡"},
+          {key:"dress",from:-45,to:-30,title:"Get dressed for work",detail:"Shirt · Pants · Socks · Shoes · Jacket if needed",
+            subtasks:["Shirt","Pants","Socks","Shoes","Jacket if needed"],icon:"◷"},
+          {key:"stretch",from:-30,to:-25,title:"5-minute stretch",detail:"Stretch for 5 minutes",
+            subtasks:["Stretch for 5 minutes"],icon:"✦"},
+          {key:"gather",from:-25,to:-15,title:"Gather work things + check tire",detail:"Water bottle · Earbuds · Energy drink · Jacket · Bag · Check tire pressure",
+            subtasks:["Water bottle","Earbuds","Energy drink","Jacket","Bag","Check tire pressure"],icon:"✓"},
+          {key:"commute",from:-15,to:0,title:"Drive · park · clock in",detail:"Leave for UPS · Drive to work · Park · Clock in",
+            subtasks:["Leave for UPS","Drive to work","Park","Clock in"],icon:"🚗"}
         ]
       };
     }
@@ -255,7 +260,7 @@
       morningRoutine.forEach(function(step){
         const start=Math.max(0,workStart+Number(step.from||0)),end=Math.max(start+5,workStart+Number(step.to||0));
         add({templateKey:"work-"+String(step.key||"prep"),start:minutesHm(start),end:minutesHm(end),
-          title:String(step.title||"Work prep"),detail:String(step.detail||""),icon:String(step.icon||"")});
+          title:String(step.title||"Work prep"),detail:String(step.detail||""),subtasks:Array.isArray(step.subtasks)?step.subtasks.slice():[],icon:String(step.icon||"")});
       });
     }
 
