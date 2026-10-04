@@ -4595,7 +4595,7 @@ function settingsView(){
         recurring=(state.settings.recurringTasks||[]).length,
         meals=(state.settings.mealPatterns||[]).length,
         shared=typeof sharingConnected==="function"&&sharingConnected(),
-        health=systemHealthSummary(),
+        health=systemHealthChecks(),
         segments=[
           {icon:"↻",title:"Routines",detail:recurring?recurring+" recurring":"Set routines",section:"routines"},
           {icon:"◇",title:"Meal Patterns",detail:meals?meals+" patterns":"Food rules",section:"meals"},
