@@ -2064,6 +2064,121 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
   color:#716174!important;
   font-size:.61rem;
 }
+
+.dayflow-completable{
+  cursor:default;
+}
+.dayflow-row-title{
+  display:block;
+  color:#292131!important;
+  font-family:var(--font-heading);
+  font-size:.88rem;
+  line-height:1.15;
+  margin-bottom:3px;
+}
+.dayflow-inline-steps{
+  display:block!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  line-height:1.65!important;
+  color:#5d5062!important;
+}
+.dayflow-step-word{
+  appearance:none;
+  -webkit-appearance:none;
+  display:inline;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:1px 0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:inherit!important;
+  font:inherit!important;
+  line-height:inherit!important;
+  text-align:left;
+  cursor:pointer;
+  text-decoration:none;
+  text-decoration-thickness:1.5px;
+}
+.dayflow-step-word:active{
+  opacity:.65;
+}
+.dayflow-step-word.is-done{
+  text-decoration:line-through;
+  text-decoration-thickness:2px;
+  opacity:.48;
+}
+.dayflow-title-word{
+  display:block;
+  color:#292131!important;
+  font-family:var(--font-heading)!important;
+  font-size:.88rem!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+}
+.dayflow-step-sep{
+  opacity:.55;
+  user-select:none;
+}
+.dayflow-row-meta{
+  display:block!important;
+  margin-top:2px;
+  color:#78697a!important;
+  font-size:.58rem!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.dayflow-open-detail{
+  width:30px!important;
+  min-width:30px!important;
+  height:36px!important;
+  min-height:36px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  color:#4d3a50!important;
+  font-size:1rem!important;
+  box-shadow:none!important;
+}
+.dayflow-phase-row.is-done .dayflow-row-title,
+.dayflow-phase-row.is-done .dayflow-title-word,
+.dayflow-phase-row.is-done .dayflow-phase-time{
+  text-decoration:line-through;
+  opacity:.48;
+}
+.dayflow-phase-row.is-done{
+  background:rgba(255,255,255,.20);
+}
+.dayflow-finished-card{
+  margin-top:10px!important;
+}
+.dayflow-finished-row{
+  display:grid;
+  grid-template-columns:22px minmax(0,1fr);
+  gap:7px;
+  align-items:start;
+  padding:7px 0;
+  border-top:1px solid rgba(105,74,103,.12);
+  color:#5b4b5e;
+}
+.dayflow-finished-row:first-of-type{border-top:0}
+.dayflow-finished-row b{
+  display:block;
+  text-decoration:line-through;
+  opacity:.7;
+}
+.dayflow-finished-row small{
+  display:block;
+  font-size:.6rem;
+  opacity:.7;
+}
+
 @media(max-width:420px){
   .dayflow-one-screen-shell{
     padding-left:8px!important;
