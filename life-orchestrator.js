@@ -367,10 +367,11 @@
   settingsView=function(){return baseSettingsView()+lifeAutopilotSettingsCard()};
 
   window.openTodayTasksHub=function(){
-    const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a));
-    modal("Today · Tasks",'<div class="stack"><div class="section-title"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2></div><button class="btn primary" onclick="closeModal();openTask()">+ Add task</button></div>'+
+    const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
+      review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0};
+    modal("Today · Tasks",'<div class="stack"><div class="section-title"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2><div class="muted small">'+(review.unknown?review.unknown+' daily check'+(review.unknown===1?'':'s')+' still unknown':'Daily review is complete')+'</div></div><div class="actions"><button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add task</button></div></div>'+
       (rows.length?rows.map(t=>'<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(t.title)+'</b><small>'+esc([t.child,t.notes].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>').join(''):'<div class="notice"><b>Today’s tracked tasks are clear.</b></div>')+
-      '<div class="actions"><button class="btn" onclick="closeModal();setView(\'itinerary\')">Open Day Flow</button></div></div>',"Close",closeModal);
+      '<div class="actions"><button class="btn" onclick="closeModal();openTodayDayFlow()">Open Day Flow</button></div></div>',"Close",closeModal);
   };
 
   window.openHouseholdHub=function(){
@@ -404,6 +405,7 @@
       homeCount=(state.houseRooms||[]).length,
       petCount=(state.pets||[]).length,
       openTasks=q.todayRows.length,
+      review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
       centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean)[0]||"Tap for Day Flow.",
       segments=[
@@ -411,12 +413,12 @@
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
         {icon:"◇",title:"Food",detail:meal?.dish?String(meal.dish).split(/[·—–,:]/)[0].trim().slice(0,18):"Dinner open",action:"setView('home')"},
         {icon:"$",title:"Money",detail:billCount?billCount+" bill"+(billCount===1?"":"s")+" soon":"Bills clear",action:"setView('more')"},
-        {icon:"♡",title:"Care",detail:care.total?care.done+"/"+care.total+" today":"Self care",action:"setView('log')"},
+        {icon:"♡",title:"Care",detail:care.total?(care.done+" done"+(care.unknown?" · ?"+care.unknown:"")):"Self care",action:"setView('log')"},
         {icon:"♧",title:"People",detail:peopleCount?peopleCount+" upcoming":"Family + kids",action:"setView('family')"},
         {icon:"⌂",title:"Home",detail:[homeCount?homeCount+" rooms":"house",petCount?petCount+" pets":""].filter(Boolean).join(" · "),action:"openHouseholdHub()"},
         {icon:"◫",title:"Reading",detail:readingPages?readingPages+" pages today":"Pages + wheel",action:"setView('reading')"}
       ];
-    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div>'+
+    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><div class="life-today-top-actions"><button class="btn small" onclick="openDailyReview()">? Review'+(review.unknown?' '+review.unknown:'')+'</button><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
         segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
         '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(centerDetail)+'</small></button>'+
