@@ -12,8 +12,11 @@
 
   function lifeEnsureSettings(){
     const p=lifePrefs();
-    if(!p.lifeWorkWeekConfirmed){
+    if(Number(p.workScheduleOffDayFixVersion||0)<2){
       p.workWeekdays=[2,3,4,5,6];
+      p.workScheduleConfirmedAt="2026-10-04";
+      p.workScheduleLabel="Tuesday–Saturday";
+      p.workScheduleOffDayFixVersion=2;
       p.lifeWorkWeekConfirmed=true;
     }
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
