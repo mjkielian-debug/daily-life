@@ -425,3 +425,122 @@
  :is(.mini-heading,.eyebrow,.muted,.small,small){
   opacity:1!important;
 }
+
+
+/* ---------- 10. Compact family wheel + reading density ---------- */
+/* Four children share one clickable circle instead of four tall cards. */
+#app .school-family-wheel-section{
+  margin-top:12px;
+  display:grid;
+  justify-items:center;
+  gap:7px;
+}
+#app .school-family-wheel{
+  width:min(76vw,270px)!important;
+  aspect-ratio:1!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  grid-template-rows:1fr 1fr!important;
+  overflow:hidden!important;
+  border-radius:50%!important;
+  border:4px solid rgba(255,255,255,.86)!important;
+  box-shadow:0 10px 24px rgba(71,52,82,.12),inset 0 0 0 1px rgba(74,52,78,.10)!important;
+  background:#fff!important;
+}
+#app .school-family-segment{
+  min-width:0!important;
+  min-height:0!important;
+  border:0!important;
+  border-radius:0!important;
+  margin:0!important;
+  padding:12px 8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  color:#221c2b!important;
+  cursor:pointer;
+  box-shadow:none!important;
+}
+#app .school-family-segment:nth-child(1){background:#f4b6cf!important;border-right:2px solid rgba(255,255,255,.78)!important;border-bottom:2px solid rgba(255,255,255,.78)!important}
+#app .school-family-segment:nth-child(2){background:#b9dfb1!important;border-left:2px solid rgba(255,255,255,.78)!important;border-bottom:2px solid rgba(255,255,255,.78)!important}
+#app .school-family-segment:nth-child(3){background:#bcd9f1!important;border-right:2px solid rgba(255,255,255,.78)!important;border-top:2px solid rgba(255,255,255,.78)!important}
+#app .school-family-segment:nth-child(4){background:#e1c7ef!important;border-left:2px solid rgba(255,255,255,.78)!important;border-top:2px solid rgba(255,255,255,.78)!important}
+#app .school-family-segment b{
+  color:#201a27!important;
+  font-family:var(--font-heading)!important;
+  font-size:1.03rem!important;
+  font-weight:900!important;
+  line-height:1.05!important;
+}
+#app .school-family-segment small{
+  color:#4c3e50!important;
+  font-size:.66rem!important;
+  line-height:1.2!important;
+  margin-top:5px!important;
+  font-weight:750!important;
+}
+#app .school-wheel-extra{max-width:34ch;text-align:center}
+#app .school-wheel-event{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  text-align:left;
+  border:0;
+  border-top:1px solid rgba(94,68,95,.16);
+  background:transparent!important;
+  color:#2b2231!important;
+  padding:10px 2px;
+}
+#app .school-wheel-event:first-of-type{border-top:0}
+#app .school-wheel-event small{display:block;color:#625164!important;margin-top:2px}
+
+/* Reading hero: keep the colorful circles but stop them from becoming huge. */
+#app .reading-hero .people-hero-stats{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  justify-content:center!important;
+  gap:8px!important;
+  margin-top:10px!important;
+}
+#app .reading-hero .people-hero-stats span{
+  width:78px!important;
+  height:78px!important;
+  flex:0 0 78px!important;
+  min-height:78px!important;
+  aspect-ratio:auto!important;
+  padding:7px!important;
+  border-radius:50%!important;
+}
+#app .reading-hero .people-hero-stats b{
+  font-size:.98rem!important;
+  line-height:1!important;
+  color:#271f31!important;
+}
+#app .reading-hero .people-hero-stats small{
+  font-size:.58rem!important;
+  line-height:1.15!important;
+  color:#594a5c!important;
+}
+
+/* Keep text dark on the pastel bento surfaces called out in screenshots. */
+#app :is(.reader-card,.school-kid,.pet-grid>.card,.people-grid>.card,.inventory-room,.inventory-location){
+  color:#282131!important;
+}
+#app :is(.reader-card,.school-kid,.pet-grid>.card,.people-grid>.card) :is(b,strong,h2,h3){
+  color:#241c2c!important;
+}
+#app :is(.reader-card,.school-kid,.pet-grid>.card,.people-grid>.card) :is(small,.muted){
+  color:#5c4e61!important;
+}
+
+@media(max-width:420px){
+  #app .school-family-wheel{width:min(82vw,250px)!important}
+  #app .school-family-segment{padding:9px 6px!important}
+  #app .school-family-segment b{font-size:.95rem!important}
+  #app .school-family-segment small{font-size:.61rem!important}
+  #app .reading-hero .people-hero-stats span{width:72px!important;height:72px!important;flex-basis:72px!important;min-height:72px!important}
+}
