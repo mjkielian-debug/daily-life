@@ -375,13 +375,8 @@
   };
 
   window.openHouseholdHub=function(){
-    const rooms=(state.houseRooms||[]).length,pets=(state.pets||[]).length,items=(state.inventoryItems||[]).length;
-    modal("Home + household",'<div class="stack"><div class="household-hub-grid">'+
-      '<button onclick="closeModal();inventorySetTab(\'map\');setView(\'inventory\')"><span class="hub-icon">⌂</span><span><b>House map</b><small>'+rooms+' room'+(rooms===1?'':'s')+' · layout + storage</small></span></button>'+
-      '<button onclick="closeModal();inventorySetTab(\'items\');setView(\'inventory\')"><span class="hub-icon">▦</span><span><b>Inventory</b><small>'+items+' tracked item'+(items===1?'':'s')+'</small></span></button>'+
-      '<button onclick="closeModal();setView(\'pets\')"><span class="hub-icon">♢</span><span><b>Pets</b><small>'+pets+' pet profile'+(pets===1?'':'s')+' · care + health</small></span></button>'+
-      '<button onclick="closeModal();setView(\'itinerary\')"><span class="hub-icon">✓</span><span><b>Cleaning + resets</b><small>Room resets inside Day Flow</small></span></button>'+
-      '</div></div>',"Close",closeModal);
+    closeModal();
+    setView("household");
   };
 
   window.openGardenHobbiesHub=function(){
