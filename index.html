@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-weekmodel1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-inlinechecks1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-multifloor1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
@@ -239,9 +239,9 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-workmorning1";
+const APP_BUILD="2026.10.04-inlinechecks1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -804,6 +804,118 @@ function itineraryRestBlocks(items,date){
   }
   return out;
 }
+function dayFlowCheckRows(){
+  if(!Array.isArray(state.dayFlowChecks))state.dayFlowChecks=[];
+  return state.dayFlowChecks;
+}
+function dayFlowFinishedRows(){
+  if(!Array.isArray(state.dayFlowFinishedTasks))state.dayFlowFinishedTasks=[];
+  return state.dayFlowFinishedTasks;
+}
+function dayFlowItemKey(x,date){
+  const source=String(x?.source||"item"),
+    ref=String(x?.sourceId||x?.templateKey||x?.id||""),
+    start=String(x?.start||""),
+    title=String(x?.title||"");
+  return String(date||x?.date||ymd())+"|"+source+"|"+ref+"|"+start+"|"+title;
+}
+function dayFlowSubtaskLabels(x){
+  if(Array.isArray(x?.subtasks)&&x.subtasks.length)return x.subtasks.map(String).filter(Boolean);
+  if(String(x?.templateKey||"")==="homework")return["Homework","Read 20 minutes"];
+  if(x?.source==="suggested"){
+    const parts=String(x.detail||"").split(/\s+·\s+/).map(v=>v.trim()).filter(Boolean);
+    if(parts.length>1)return parts;
+  }
+  return[String(x?.title||"Task")];
+}
+function dayFlowPartKey(itemKey,index){return itemKey+"|part:"+index}
+function dayFlowPartDone(x,date,index){
+  const key=dayFlowPartKey(dayFlowItemKey(x,date),index);
+  return dayFlowCheckRows().some(r=>r.key===key);
+}
+function dayFlowBlockDone(x,date){
+  const labels=dayFlowSubtaskLabels(x);
+  return !!labels.length&&labels.every((_,i)=>dayFlowPartDone(x,date,i));
+}
+function dayFlowApplyNativeDone(x,done){
+  if(!x)return;
+  if(x.source==="task"){
+    const t=(state.tasks||[]).find(v=>v.id===x.sourceId);
+    if(t){t.done=done;t.completedAt=done?new Date().toISOString():""}
+  }else if(x.source==="custom"){
+    const b=(state.itineraryBlocks||[]).find(v=>v.id===x.sourceId);
+    if(b)b.done=done;
+  }else if(x.source==="meal"){
+    const m=(state.meals||[]).find(v=>v.id===x.sourceId),
+      step=m&&Array.isArray(m.dayFlowSteps)?m.dayFlowSteps.find(v=>String(v.start||"")===String(x.start||"")&&String(v.title||"")===String(x.title||"")):null;
+    if(step)step.done=done;
+  }
+}
+function dayFlowSyncFinished(x,date){
+  const itemKey=dayFlowItemKey(x,date),finished=dayFlowFinishedRows(),index=finished.findIndex(r=>r.itemKey===itemKey),
+    done=dayFlowBlockDone(x,date);
+  if(done&&index<0){
+    finished.push({
+      id:"finished:"+uid(),itemKey,date,title:String(x.title||"Finished task"),start:String(x.start||""),end:String(x.end||""),
+      detail:String(x.detail||""),subtasks:dayFlowSubtaskLabels(x),source:String(x.source||""),sourceId:String(x.sourceId||""),
+      templateKey:String(x.templateKey||""),kind:String(x.kind||""),icon:String(x.icon||"✓"),completedAt:new Date().toISOString()
+    });
+  }else if(!done&&index>=0)finished.splice(index,1);
+  dayFlowApplyNativeDone(x,done);
+}
+function dayFlowOverlayFinished(date,rows){
+  const finished=dayFlowFinishedRows().filter(r=>r.date===date),keys=new Set();
+  for(const x of rows){
+    const key=dayFlowItemKey(x,date);keys.add(key);
+    x.done=dayFlowBlockDone(x,date)||!!x.done;
+  }
+  for(const r of finished){
+    if(keys.has(r.itemKey))continue;
+    rows.push({
+      id:r.itemKey,title:r.title,start:r.start,end:r.end,detail:r.detail,subtasks:r.subtasks||[],
+      source:r.source,sourceId:r.sourceId,templateKey:r.templateKey,kind:r.kind,icon:r.icon,done:true,archivedCompletion:true
+    });
+  }
+  return rows;
+}
+async function toggleDayFlowPart(event,date,encodedItemKey,index){
+  event?.preventDefault?.();event?.stopPropagation?.();
+  const itemKey=decodeURIComponent(String(encodedItemKey||"")),
+    x=itineraryDayItems(date).find(v=>dayFlowItemKey(v,date)===itemKey);
+  if(!x)return;
+  const key=dayFlowPartKey(itemKey,Number(index)||0),rows=dayFlowCheckRows(),at=rows.findIndex(r=>r.key===key);
+  if(at>=0)rows.splice(at,1);
+  else rows.push({key,date,itemKey,index:Number(index)||0,label:dayFlowSubtaskLabels(x)[Number(index)||0]||x.title,completedAt:new Date().toISOString()});
+  dayFlowSyncFinished(x,date);
+  const button=event?.currentTarget;
+  if(button)button.classList.toggle("is-done",at<0);
+  const row=button?.closest(".dayflow-phase-row");
+  if(row){
+    const all=[...row.querySelectorAll(".dayflow-step-word")].every(el=>el.classList.contains("is-done"));
+    row.classList.toggle("is-done",all);
+  }
+  await save();
+}
+function dayFlowFinishedCard(date){
+  const rows=dayFlowFinishedRows().filter(r=>r.date===date).slice().sort((a,b)=>String(a.completedAt||"").localeCompare(String(b.completedAt||"")));
+  return `<div class="card dayflow-finished-card"><div class="section-title"><div><div class="eyebrow">Finished today</div><h2>${rows.length} finished task${rows.length===1?"":"s"}</h2></div></div>
+    ${rows.map(r=>`<div class="dayflow-finished-row"><span>✓</span><span class="grow"><b>${esc(r.title)}</b><small>${r.completedAt?esc(new Date(r.completedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})):""}</small></span></div>`).join("")||`<div class="muted small">Completed Day Flow items will collect here.</div>`}
+  </div>`;
+}
+function dayFlowOpenButton(x,date){
+  const action=dayFlowItemAction(x,date);
+  return `<button type="button" class="dayflow-open-detail" onclick="event.stopPropagation();${action}" aria-label="Open details">›</button>`;
+}
+function dayFlowRowHtml(x,date){
+  const labels=dayFlowSubtaskLabels(x),itemKey=dayFlowItemKey(x,date),allDone=dayFlowBlockDone(x,date)||!!x.done,
+    encoded=encodeURIComponent(itemKey),multi=labels.length>1,
+    title=multi?`<b class="dayflow-row-title">${esc(x.title)}</b>`:
+      `<button type="button" class="dayflow-step-word dayflow-title-word ${dayFlowPartDone(x,date,0)?"is-done":""}" onclick="toggleDayFlowPart(event,'${date}','${encoded}',0)">${esc(x.title)}</button>`,
+    steps=multi?`<small class="dayflow-inline-steps">${labels.map((label,i)=>`<button type="button" class="dayflow-step-word ${dayFlowPartDone(x,date,i)?"is-done":""}" onclick="toggleDayFlowPart(event,'${date}','${encoded}',${i})">${esc(label)}</button>`).join('<span class="dayflow-step-sep"> · </span>')}</small>`:
+      `<small class="dayflow-row-meta">${esc([x.detail,itineraryTypeLabel(x)].filter(Boolean).join(" · "))}</small>`;
+  return `<div class="dayflow-phase-row dayflow-completable ${allDone?"is-done":""}"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow">${title}${steps}${multi&&itineraryTypeLabel(x)?`<small class="dayflow-row-meta">${esc(itineraryTypeLabel(x))}</small>`:""}</span>${dayFlowOpenButton(x,date)}</div>`;
+}
+
 function itineraryDayItems(date){
   const anchors=itineraryFixedItems(date),
         routinesRaw=itinerarySuggestedBlocks(date),
@@ -813,7 +925,7 @@ function itineraryDayItems(date){
         tasks=itineraryAutoTaskBlocks(date,base),
         used=[...base,...tasks],
         open=itineraryRestBlocks(used,date);
-  return [...used,...open].sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
+  return dayFlowOverlayFinished(date,[...used,...open]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
 function itineraryPlanningDiagnostics(date){
@@ -974,7 +1086,7 @@ function dayFlowItemAction(x,date){
 function dayFlowBucketCard(date,key){
   const cfg=DAY_FLOW_BUCKETS[key],rows=dayFlowBucketItems(date,key);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">${cfg.icon} ${cfg.title}</div><h2>${rows.length} block${rows.length===1?"":"s"}</h2></div><button class="btn" onclick="openItineraryBlock('${date}')">+ Block</button></div>
-    ${rows.map(x=>`<button class="dayflow-phase-row" onclick="${dayFlowItemAction(x,date)}"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow"><b>${esc(x.title)}</b><small>${esc([x.detail,itineraryTypeLabel(x)].filter(Boolean).join(" · "))}</small></span><span>${x.done?"✓":"›"}</span></button>`).join("")||`<div class="notice">Nothing planned in this part of the day.</div>`}
+    ${rows.map(x=>dayFlowRowHtml(x,date)).join("")||`<div class="notice">Nothing planned in this part of the day.</div>`}
   </div>`;
 }
 function dayFlowUnscheduledCard(date){
@@ -988,7 +1100,7 @@ function dayFlowUnscheduledCard(date){
   </div>`;
 }
 function dayFlowPlanCard(date){
-  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button>${typeof openWeekPilot==="function"?`<button class="btn" onclick="closeModal();openWeekPilot()">Week Pilot</button>`:""}<button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button>${typeof openCapacityGuardrail==="function"?`<button class="btn" onclick="openCapacityGuardrail('${date}')">Planning capacity</button>`:""}<button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}</div>`;
+  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button>${typeof openWeekPilot==="function"?`<button class="btn" onclick="closeModal();openWeekPilot()">Week Pilot</button>`:""}<button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button>${typeof openCapacityGuardrail==="function"?`<button class="btn" onclick="openCapacityGuardrail('${date}')">Planning capacity</button>`:""}<button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}${dayFlowFinishedCard(date)}</div>`;
 }
 function openDayFlowSection(section,date=itineraryDate||ymd()){
   if(DAY_FLOW_BUCKETS[section]){modal(DAY_FLOW_BUCKETS[section].title,`<div class="dayflow-hub-modal">${dayFlowBucketCard(date,section)}</div>`,"Close",closeModal);return}
@@ -1001,8 +1113,8 @@ function dayFlowCurrentItem(date,items){
     return memorable||items.find(x=>!x.done&&x.kind!=="gap")||items[0]||null;
   }
   const now=new Date(),m=now.getHours()*60+now.getMinutes(),
-        active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&e!==null&&s<=m&&e>m&&x.kind!=="gap"}),
-        next=items.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
+        active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return !x.done&&s!==null&&e!==null&&s<=m&&e>m&&x.kind!=="gap"}),
+        next=items.find(x=>{const s=hmMinutes(x.start);return !x.done&&s!==null&&s>=m&&x.kind!=="gap"});
   return active||next||null;
 }
 function itineraryView(){
@@ -5882,7 +5994,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-workmorning1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-inlinechecks1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -5906,7 +6018,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261004-workmorning1"></script>
+<script src="life-system.js?v=20261004-inlinechecks1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
