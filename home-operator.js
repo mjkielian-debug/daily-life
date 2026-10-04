@@ -2,6 +2,65 @@
    Turns the house map into a practical reset / declutter system. */
 (function(){
   "use strict";
+  const HOME_MAP_IMAGE_KEY="dailyLifeLocalHouseMap:firstFloor";
+
+  function homeLocalMapImage(){
+    try{return localStorage.getItem(HOME_MAP_IMAGE_KEY)||""}catch(e){return""}
+  }
+  window.homeChooseFloorPlan=function(){
+    const input=document.createElement("input");
+    input.type="file";
+    input.accept="image/jpeg,image/png,image/webp";
+    input.onchange=()=>{const file=input.files&&input.files[0];if(file)homeSaveFloorPlan(file)};
+    input.click();
+  };
+  window.homeSaveFloorPlan=function(file){
+    if(!file||!/^image\/(jpeg|png|webp)$/i.test(String(file.type||""))){alert("Choose a JPG, PNG, or WebP image.");return}
+    const reader=new FileReader();
+    reader.onerror=()=>alert("Daily Life could not read that image.");
+    reader.onload=()=>{
+      const data=String(reader.result||"");
+      if(!data.startsWith("data:image/"))return;
+      try{
+        localStorage.setItem(HOME_MAP_IMAGE_KEY,data);
+        render();
+      }catch(e){
+        alert("That image is too large to keep locally. Try a cropped screenshot of just the floor plan.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  window.homeRemoveFloorPlan=function(){
+    if(!confirm("Remove the saved first-floor map from this device? Inventory rooms and items will stay."))return;
+    try{localStorage.removeItem(HOME_MAP_IMAGE_KEY)}catch(e){}
+    render();
+  };
+  window.homeAddInventoryItemToRoom=function(roomId){
+    const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
+    closeModal();openInventoryItem();
+    setTimeout(()=>{const el=document.querySelector("#invroom");if(el&&!el.value)el.value=room.name||""},0);
+  };
+  window.homeOpenRoomInventory=function(roomId){
+    const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
+    const locs=(state.inventoryLocations||[]).filter(x=>x.roomId===roomId),
+          locIds=new Set(locs.map(x=>x.id)),
+          items=(state.inventoryItems||[]).filter(x=>x.roomId===roomId||locIds.has(x.locationId));
+    modal("Inventory · "+(room.name||"Room"),`<div class="stack">
+      <div class="home-room-modal-head"><span class="home-room-modal-dot" style="background:${esc(room.mapColor||"#bdeccf")}"></span><span><b>${esc(room.name||"Room")}</b><small>${esc(room.floor||"Floor not set")} · ${items.length} item${items.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span></div>
+      ${locs.length?locs.map(loc=>{const rows=items.filter(x=>x.locationId===loc.id);return `<div class="inventory-location"><div class="row"><span><b>${esc(loc.name)}</b><div class="muted small">${rows.length} item${rows.length===1?"":"s"}${loc.notes?" · "+esc(loc.notes):""}</div></span><button class="btn small" onclick="closeModal();openInventoryLocation('${loc.id}')">Edit</button></div>${rows.slice(0,10).map(x=>`<button class="inventory-mini-item" onclick="closeModal();openInventoryItem('${x.id}')"><span>${esc(x.name)}</span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></button>`).join("")}${rows.length>10?`<div class="muted small">+${rows.length-10} more</div>`:""}</div>`}).join(""):`<div class="notice">No shelves, drawers, closets, bins, or other storage locations are saved in this room yet.</div>`}
+      ${items.filter(x=>!x.locationId).length?`<div class="inventory-location"><div class="mini-heading">Room-level items</div>${items.filter(x=>!x.locationId).map(x=>`<button class="inventory-mini-item" onclick="closeModal();openInventoryItem('${x.id}')"><span>${esc(x.name)}</span></button>`).join("")}</div>`:""}
+      <div class="actions"><button class="btn primary" onclick="homeAddInventoryItemToRoom('${room.id}')">+ Item here</button><button class="btn" onclick="closeModal();openInventoryLocation('','${room.id}')">+ Storage location</button><button class="btn" onclick="closeModal();openInventoryRoom('${room.id}')">Edit room</button></div>
+    </div>`,"Close",closeModal);
+  };
+  function homeFloorPlanCard(){
+    const src=homeLocalMapImage(),rooms=[...(state.houseRooms||[])].filter(r=>String(r.name||"").trim()).sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||"")));
+    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · local only</div><h2>First-floor layout</h2><div class="muted small">Use the labeled floor plan as the visual index for rooms, storage, and inventory.</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick="homeChooseFloorPlan()">${src?"Replace map":"Add map image"}</button>${src?`<button class="btn small" type="button" onclick="homeRemoveFloorPlan()">Remove</button>`:""}</div></div>
+      ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="First-floor house layout reference"></div>`:`<div class="notice home-map-empty"><b>Add the labeled robot-vacuum screenshot once from this phone.</b><div class="small">Daily Life keeps this image in this browser only. It is not published with the app code or included in cloud sync.</div></div>`}
+      <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Unassigned")}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick="openInventoryRoom()"><span><b>+ Add the first room</b><small>Use the labels on the floor plan</small></span><span>›</span></button>`}</div>
+      <div class="muted small home-map-privacy">The floor-plan picture stays on this device. Room names and inventory continue using your normal Daily Life data.</div>
+    </div>`;
+  }
+
 
   function homeEnsure(){
     if(!Array.isArray(state.homeRoomResets))state.homeRoomResets=[];
@@ -94,22 +153,21 @@
   function homeResetDashboard(){
     const rooms=(state.houseRooms||[]).filter(r=>String(r.name||"").trim()),focus=homeFocusRoom(),floors=homeFloorNames(),
       resets=homeEnsure().filter(x=>x.date===ymd()).length,openRooms=rooms.filter(r=>homeRoomOpenItems(r.id).length).length;
-    if(!rooms.length)return '<div class="card home-operator"><div class="eyebrow">House operating system</div><h2>Build the map once, then use it</h2><div class="muted small">Add rooms to turn House Map into a decluttering, storage, robot-vacuum, and maintenance dashboard.</div><button class="btn primary" onclick="openInventoryRoom()">+ Add room</button></div>';
-    return '<div class="card home-operator">'+
-      '<div class="section-title"><div><div class="eyebrow">House operating system</div><h2>'+(focus?"Focus room · "+esc(focus.name):"House map")+'</h2><div class="muted small">'+rooms.length+' mapped room'+(rooms.length===1?"":"s")+' · '+resets+' reset'+(resets===1?"":"s")+' logged today · '+openRooms+' room'+(openRooms===1?"":"s")+' with open tasks</div></div>'+
-        (focus?'<button class="btn primary" onclick="homeScheduleRoomReset(\''+focus.id+'\',20)">Start 20-min reset</button>':'')+
-      '</div>'+
-      (focus?'<div class="home-focus-ring" style="--room-tint:'+esc(focus.mapColor||"#bdeccf")+'"><span>FOCUS</span><b>'+esc(focus.name)+'</b><small>'+esc(homeResetLabel(focus))+' · '+homeRoomItemCount(focus.id)+' tracked items</small><div class="actions"><button class="btn small primary" onclick="homeLogRoomReset(\''+focus.id+'\',20)">Mark reset done</button><button class="btn small" onclick="openInventoryRoom(\''+focus.id+'\')">Open room</button></div></div>':'')+
+    if(!rooms.length)return '<details class="card home-operator home-operator-collapsible"><summary><span><span class="eyebrow">House reset tools</span><b>Room reset dashboard</b><small>Add rooms to track resets, storage, and maintenance by area.</small></span><span class="home-operator-summary-count">0 rooms</span></summary><div class="home-operator-body"><button class="btn primary" onclick="openInventoryRoom()">+ Add room</button></div></details>';
+    return '<details class="card home-operator home-operator-collapsible">'+
+      '<summary><span><span class="eyebrow">House reset tools</span><b>'+(focus?'Focus · '+esc(focus.name):'House reset dashboard')+'</b><small>'+rooms.length+' rooms · '+resets+' reset'+(resets===1?'':'s')+' today · '+openRooms+' with open tasks</small></span><span class="home-operator-summary-count">Open</span></summary>'+
+      '<div class="home-operator-body">'+
+      (focus?'<div class="home-focus-ring" style="--room-tint:'+esc(focus.mapColor||"#bdeccf")+'"><span>FOCUS</span><b>'+esc(focus.name)+'</b><small>'+esc(homeResetLabel(focus))+' · '+homeRoomItemCount(focus.id)+' items</small><div class="actions"><button class="btn small primary" onclick="homeLogRoomReset(\''+focus.id+'\',20)">Done</button><button class="btn small" onclick="homeScheduleRoomReset(\''+focus.id+'\',20)">20 min</button></div></div>':'')+
       '<div class="home-floor-pills">'+floors.map(f=>'<span>'+esc(f)+'</span>').join("")+'</div>'+
       '<div class="home-room-grid">'+rooms.slice().sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name).localeCompare(String(b.name))).map(homeRoomBubble).join("")+'</div>'+
-      '<div class="muted small home-operator-note">A room reset is intentionally short: one visible zone, obvious put-away, one trash/donate decision, then stop. The app remembers when each room was last touched and brings the stalest room forward.</div>'+
-      '</div>';
+      '<div class="muted small home-operator-note">Short resets stay intentionally small: one visible zone, obvious put-away, one trash/donate decision, then stop.</div>'+
+      '</div></details>';
   }
 
   const baseInventory=inventoryView;
   inventoryView=function(){
     const html=baseInventory();
-    return inventoryTab==="map"?homeResetDashboard()+html:html;
+    return inventoryTab==="map"?homeFloorPlanCard()+html+homeResetDashboard():html;
   };
 
   /* Replace the rotating off-day focus with the room that has actually gone longest without a reset. */
