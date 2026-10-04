@@ -561,3 +561,38 @@ body:has(.people-one-screen-shell){
     --wheel-size:min(94vw,calc(100dvh - 225px),390px)!important;
   }
 }
+
+
+/* Smaller Today center for wider outer labels */
+.today-one-screen-shell .life-wheel-center{
+  width:38%!important;
+  height:38%!important;
+  padding:11px!important;
+}
+.today-one-screen-shell .life-wheel-center>b{
+  font-size:.9rem!important;
+}
+.today-one-screen-shell .life-wheel-center>strong{
+  font-size:.6rem!important;
+  max-width:13ch!important;
+}
+.today-one-screen-shell .life-wheel-center>small{
+  font-size:.46rem!important;
+  max-width:17ch!important;
+}
+@media(max-width:420px){
+  .today-one-screen-shell .life-wheel-center{
+    width:36%!important;
+    height:36%!important;
+    padding:9px!important;
+  }
+  .today-one-screen-shell .life-wheel-center>b{
+    font-size:.84rem!important;
+  }
+  .today-one-screen-shell .life-wheel-center>strong{
+    font-size:.56rem!important;
+  }
+  .today-one-screen-shell .life-wheel-center>small{
+    font-size:.43rem!important;
+  }
+}
