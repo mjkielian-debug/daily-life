@@ -224,7 +224,7 @@
 
   function lifeQueue(){
     const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
-      todayRows=tasks.filter(t=>lifeTaskDate(t)<=today).sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
+      todayRows=tasks.filter(t=>lifeTaskDate(t)<=today&&!(String(t.title||"").trim().toLowerCase()==="ups shift"&&lifeTaskDate(t)<today)).sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
       soonRows=tasks.filter(t=>lifeTaskDate(t)>today&&lifeTaskDate(t)<=weekEnd).sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100)),
       waitingProjects=(state.projects||[]).filter(p=>String(p.status||"").toLowerCase()==="waiting"),
       waitingBills=(state.bills||[]).filter(b=>b.paymentPending),
