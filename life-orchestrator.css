@@ -1525,7 +1525,7 @@ body:has(.spirituality-one-screen-shell){
 
 
 /* One-screen Garden + Hobbies radial hub */
-body:has(.garden-hobbies-one-screen-shell){
+body:has(.garden-hobbies-one-screen-shell,.household-one-screen-shell){
   overflow:hidden!important;
   background:#f3c5da!important;
 }
