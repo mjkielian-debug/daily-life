@@ -405,14 +405,14 @@
       petCount=(state.pets||[]).length,
       openTasks=q.todayRows.length,
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
-      centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean).slice(0,3).join(" · ")||"Tap a section to open it.",
+      centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean)[0]||"Tap for Day Flow.",
       segments=[
-        {icon:"◷",title:"Day Flow",detail:next?(fmtClock(next.start)+" · "+next.title):"Today’s schedule",action:"setView('itinerary')"},
+        {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"setView('itinerary')"},
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
-        {icon:"◇",title:"Food",detail:meal?.dish?meal.dish:"Dinner open",action:"setView('home')"},
+        {icon:"◇",title:"Food",detail:meal?.dish?String(meal.dish).split(/[·—–,:]/)[0].trim().slice(0,18):"Dinner open",action:"setView('home')"},
         {icon:"$",title:"Money",detail:billCount?billCount+" bill"+(billCount===1?"":"s")+" soon":"Bills clear",action:"setView('more')"},
         {icon:"♡",title:"Care",detail:care.total?care.done+"/"+care.total+" today":"Self care",action:"setView('log')"},
-        {icon:"♧",title:"People",detail:peopleCount?peopleCount+" family item"+(peopleCount===1?"":"s"):"Family + kids",action:"setView('family')"},
+        {icon:"♧",title:"People",detail:peopleCount?peopleCount+" upcoming":"Family + kids",action:"setView('family')"},
         {icon:"⌂",title:"Home",detail:[homeCount?homeCount+" rooms":"house",petCount?petCount+" pets":""].filter(Boolean).join(" · "),action:"openHouseholdHub()"},
         {icon:"◫",title:"Reading",detail:readingPages?readingPages+" pages today":"Pages + wheel",action:"setView('reading')"}
       ];
