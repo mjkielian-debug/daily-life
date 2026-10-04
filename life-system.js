@@ -237,32 +237,27 @@
     return out.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
   };
 
-  /* Open time is still flexible, but it now tells you how to use it instead of saying nothing. */
+  /* Fill open time with named tasks when possible instead of generic focus labels. */
   itineraryRestBlocks=function(items,date){
-    const gaps=itineraryOpenGaps(items,date),out=[];
+    const gaps=itineraryOpenGaps(items,date),out=[],
+      placed=new Set((items||[]).filter(function(x){return x.source==="task"}).map(function(x){return x.sourceId})),
+      priorities=(state.tasks||[]).filter(function(t){return !t.done&&!placed.has(t.id)&&String(t.date||date)<=date})
+        .sort(function(a,b){return Number(a.order||100)-Number(b.order||100)||String(a.date||"").localeCompare(String(b.date||""))});
+    let priorityIndex=0;
     gaps.forEach(function(g){
       let cursor=g.start;
       while(g.end-cursor>=15){
-        const remaining=g.end-cursor,chunk=Math.min(90,remaining),end=cursor+chunk;
-        let title,detail;
-        if(chunk<30){
-          title="Transition + tiny reset";
-          detail="Water / bathroom if needed · put away 5 things · check what starts next";
-        }else if(cursor<10*60){
-          title="Morning focus block";
-          detail="Do the next unscheduled priority. If the list is clear: 20-minute declutter → food/water → recovery.";
-        }else if(cursor<14*60+30){
-          title="Home + life-admin focus";
-          detail="Use this for the next task, errand, paperwork item, or one decluttering zone. Stop when this block ends.";
-        }else if(cursor<18*60){
-          title="Afternoon flex block";
-          detail="Finish the next useful task, prep for pickups/activities, or take recovery time if the important work is handled.";
-        }else{
-          title="Evening buffer";
-          detail="Family / home reset · finish only what matters · protect the bedtime cutoff.";
-        }
-        out.push({id:"gap:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:title,detail:detail,
-          fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+        const task=priorities[priorityIndex++]||null,
+          chunk=Math.min(task?Math.max(15,Math.min(60,itineraryTaskMinutes(task))):60,g.end-cursor),
+          end=cursor+chunk;
+        out.push(task?{
+          id:"gap-task:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:task.title,
+          detail:[task.child,task.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",
+          sourceId:task.id,durationMinutes:chunk,done:false,autoPlanned:true
+        }:{
+          id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:"Open time",
+          detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk
+        });
         cursor=end;
       }
     });
