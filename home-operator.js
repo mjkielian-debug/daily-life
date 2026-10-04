@@ -49,9 +49,15 @@
       return "";
     }catch(e){return""}
   }
+  function homeRefreshMapSurface(){
+    if(document.querySelector("#modal")&&typeof openInventoryHubSection==="function"){
+      closeModal();openInventoryHubSection("map");return;
+    }
+    render();
+  }
   window.homeSetMapFloor=function(floor){
     homeSetActiveFloorValue(floor);
-    render();
+    homeRefreshMapSurface();
   };
   window.homeChooseFloorPlan=function(floor=homeActiveFloor()){
     homeSetActiveFloorValue(floor);
@@ -72,7 +78,7 @@
         localStorage.setItem(homeFloorStorageKey(floor),data);
         homeSetActiveFloorValue(floor);
         if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
-        render();
+        homeRefreshMapSurface();
       }catch(e){
         alert("That image is too large to keep locally. Try a cropped screenshot of just that floor.");
       }
@@ -85,7 +91,7 @@
       localStorage.removeItem(homeFloorStorageKey(floor));
       if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
     }catch(e){}
-    render();
+    homeRefreshMapSurface();
   };
   window.homeAddInventoryItemToRoom=function(roomId){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
