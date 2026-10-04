@@ -292,3 +292,46 @@ body::before{opacity:.6}
  #app :is(.school-kids,.reader-grid,.people-grid,.pet-grid,.plant-grid,.self-care-grid,.today-section-grid){grid-template-columns:1fr!important}
 }
 @media print{body{background:white!important}body::before{display:none}#app .card{background:white!important;box-shadow:none!important}}
+
+
+/* Oct 4 screenshot fixes: modal cards must use the same readable light palette as dashboard cards. */
+.modal .card,
+.modal .priority-card,
+.modal .birthday-dashboard,
+.modal .birthday-alert,
+.modal .ups-contract,
+.modal .month-overview,
+.modal .work-week-card,
+.modal .school-card,
+.modal .safe-spend{
+  background:linear-gradient(135deg,#fff6fa 0%,#f6d9e7 52%,#dcebd0 100%)!important;
+  color:#292039!important;
+  border:1px solid #b989a5!important;
+  box-shadow:0 8px 22px rgba(69,55,88,.08)!important;
+}
+.modal .card:nth-of-type(even),
+.modal .priority-card:nth-of-type(even){
+  background:linear-gradient(135deg,#f6e9f2 0%,#dcebd0 58%,#eef4dc 100%)!important;
+}
+.modal .card::before{
+  opacity:.18!important;
+}
+.modal .card :is(h1,h2,h3,h4,b,strong,.big,.eyebrow,.mini-heading),
+.modal .priority-card :is(h1,h2,h3,h4,b,strong,.big,.eyebrow,.mini-heading){
+  color:#292039!important;
+  text-shadow:none!important;
+}
+.modal .card :is(.muted,.small,small,label,.tag),
+.modal .priority-card :is(.muted,.small,small,label,.tag){
+  color:#5a4b61!important;
+}
+.modal .card :is(.metric,.notice,.tag,.pill),
+.modal .priority-card :is(.metric,.notice,.tag,.pill){
+  background:#fbe5ee!important;
+  color:#292039!important;
+  border-color:#b989a5!important;
+}
+.modal .card .metric:nth-child(even),
+.modal .priority-card .metric:nth-child(even){
+  background:#d6e9c9!important;
+}
