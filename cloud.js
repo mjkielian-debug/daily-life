@@ -1533,6 +1533,7 @@ async function cloudPullLifeEntries(showAlert=false){
       offset+=batchSize;
     }
     if(applied){
+      if(typeof sanitizeWorkScheduleData==="function")sanitizeWorkScheduleData(state);
       await dbSet("state",state);
       if(petProfileEntryIds.size&&typeof cloudUpsertPetProfile==="function"){
         for(const pet of state.pets||[]){
@@ -1565,6 +1566,7 @@ document.addEventListener("visibilitychange",()=>{
     if(typeof queueMissingMealRecipes==="function")await queueMissingMealRecipes();
     if(typeof cloudPullHouseholdMembers==="function")await cloudPullHouseholdMembers();
     if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
+    if(typeof sanitizeWorkScheduleData==="function")sanitizeWorkScheduleData(state);
     if(typeof cloudPullPetProfiles==="function")await cloudPullPetProfiles();
     if(typeof render==="function")render();
   }).catch(()=>{});
