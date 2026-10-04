@@ -114,15 +114,29 @@ async function removeMealMemoryPhoto(id){
 }
 
 generatedMealDetails=function(m){
-  const ingredients=splitLines(m?.ingredients),directions=splitLines(m?.prepSteps);
+  const ingredients=splitLines(m?.ingredients),directions=splitLines(m?.prepSteps),n=m?.nutritionEstimate&&typeof m.nutritionEstimate==="object"?m.nutritionEstimate:null;
   if(!ingredients.length&&!directions&&!m?.notes){
     return `<div class="recipe-empty">${m?.recipeState==="queued"?"Building the recipe and grocery list automatically…":"Save the meal name and Daily Life will build the ingredients, directions, make-ahead prep, and grocery list for you."}</div>`;
   }
   const tips=m?.notes?`<details class="recipe-extra-tips"><summary><span><b>Extra recipe tips</b><small>Optional notes, substitutions, or useful reminders</small></span><span>Open</span></summary><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div></details>`:"";
+  const yieldText=Number(m?.yieldCount)>0?`Makes about ${Number(m.yieldCount)} ${esc(m.yieldLabel||"servings")}`:"";
+  const nutrition=n?`<div class="recipe-section recipe-nutrition">
+      <div class="recipe-section-title"><div class="mini-heading">Estimated nutrition</div>${yieldText?`<span class="recipe-yield">${yieldText}</span>`:""}</div>
+      <div class="recipe-nutrition-grid">
+        <span><b>≈ ${Math.round(Number(n.caloriesPerServing||0))}</b><small>calories / ${esc(n.servingLabel||"serving")}</small></span>
+        <span><b>≈ ${Math.round(Number(n.proteinPerServing||0))}g</b><small>protein</small></span>
+        <span><b>≈ ${Math.round(Number(n.carbsPerServing||0))}g</b><small>carbs</small></span>
+        <span><b>≈ ${Math.round(Number(n.fatPerServing||0))}g</b><small>fat</small></span>
+        <span><b>≈ ${Number(n.fiberPerServing||0).toFixed(1)}g</b><small>fiber</small></span>
+        <span><b>≈ ${Math.round(Number(n.sodiumPerServing||0))}mg</b><small>sodium</small></span>
+      </div>
+      ${n.basis?`<div class="recipe-nutrition-note">${esc(n.basis)}</div>`:""}
+    </div>`:"";
   return `<section class="recipe-details">
-    <div class="recipe-details-head">${mealMemoryPhoto(m)}<span class="grow"><div class="eyebrow">Recipe details</div><b>${esc(m?.dish||"Dinner")}</b><small>${m?.cookNotes?"Your cooking notes saved":"Add a photo or your own notes"}</small></span><button class="btn small" type="button" onclick="openMealMemory('${m.id}')">Photo + notes</button></div>
+    <div class="recipe-details-head">${mealMemoryPhoto(m)}<span class="grow"><div class="eyebrow">Recipe details</div><b>${esc(m?.dish||"Dinner")}</b><small>${yieldText|| (m?.cookNotes?"Your cooking notes saved":"Add a photo or your own notes")}</small></span><button class="btn small" type="button" onclick="openMealMemory('${m.id}')">Photo + notes</button></div>
     ${m?.cookNotes?`<div class="meal-cook-notes"><div class="mini-heading">My cooking notes</div><div>${esc(m.cookNotes).replace(/\n/g,"<br>")}</div></div>`:""}
-    ${ingredients.length?`<div class="recipe-section"><div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div></div>`:""}
+    ${ingredients.length?`<div class="recipe-section"><div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line),refresh=`setIngredientState('${m.id}',${i},'STATE').then(()=>{closeModal();openMeal('${m.date}')})`;return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span><div class="ingredient-actions"><button class="btn small ingredient-have ${p.state==="have"?"selected":""}" onclick="${refresh.replace("STATE","have")}">${p.state==="have"?"✓ ":""}Have</button><button class="btn small ingredient-need ${p.state==="need"?"selected":""}" onclick="${refresh.replace("STATE","need")}">${p.state==="need"?"✓ ":""}Need</button></div></div>`}).join("")}</div></div>`:""}
+    ${nutrition}
     ${directions.length?`<div class="recipe-section"><div class="mini-heading">Directions</div><ol class="recipe-directions">${directions.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`:""}
     ${m?.tomorrowPrep?`<div class="recipe-section recipe-make-ahead"><div class="mini-heading">Make-ahead prep</div><div class="muted small">${esc(m.tomorrowPrep).replace(/\n/g,"<br>")}</div></div>`:""}
     ${tips}
