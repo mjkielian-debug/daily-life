@@ -213,7 +213,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261004-refsafety1"></script>
+<script src="cloud.js?v=20261004-nutrition2"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
 <script src="spirituality.js?v=20261004-spirituality1"></script>
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-recipefix1";
+const APP_BUILD="2026.10.04-nutrition2";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -4063,15 +4063,17 @@ function foodTotalsForDate(date){
 }
 function todayNutritionCard(){
   const f=foodTotalsForDate(ymd()),waterNow=water(),calTarget=Number(state.settings.calTarget||0),proteinTarget=Number(state.settings.proteinTarget||0),
-    incomplete=f.rows.some(x=>/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
-  return `<div class="card food-intake-card"><div class="section-title"><div><div class="eyebrow">My intake today</div><h2>${Math.round(f.cal)} known calories · ${Math.round(f.protein)}g known protein</h2><div class="muted small">What you have actually logged so far today.</div></div><button class="btn primary" onclick="openFood()">+ Food / drink</button></div>
-    ${incomplete?`<div class="notice"><b>Some nutrition is intentionally unknown.</b> Totals show only values we actually know, so they may be lower than what you consumed.</div>`:""}
+    estimated=f.rows.some(x=>!!x.nutritionEstimated),
+    incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
+  return `<div class="card food-intake-card"><div class="section-title"><div><div class="eyebrow">My intake today</div><h2>${Math.round(f.cal)} tracked calories · ${Math.round(f.protein)}g tracked protein</h2><div class="muted small">What you have actually logged so far today.</div></div><button class="btn primary" onclick="openFood()">+ Food / drink</button></div>
+    ${estimated?`<div class="notice"><b>Some nutrition is estimated.</b> When the exact package or portion was not confirmed, Daily Life uses a reasonable product-label estimate and marks it as approximate.</div>`:""}
+    ${incomplete?`<div class="notice"><b>Some nutrition is still unknown.</b> Totals include only values that were entered or reasonably estimated.</div>`:""}
     <div class="intake-progress-grid">
-      <div><span>Known calories</span><b>${Math.round(f.cal)}${calTarget?" / "+calTarget:""}</b>${calTarget?todayProgress(f.cal,calTarget,"Known calories logged"):""}</div>
-      <div><span>Known protein</span><b>${Math.round(f.protein)}g${proteinTarget?" / "+proteinTarget+"g":""}</b>${proteinTarget?todayProgress(f.protein,proteinTarget,"Known protein logged"):""}</div>
+      <div><span>Tracked calories</span><b>${Math.round(f.cal)}${calTarget?" / "+calTarget:""}</b>${calTarget?todayProgress(f.cal,calTarget,"Calories logged"):""}</div>
+      <div><span>Tracked protein</span><b>${Math.round(f.protein)}g${proteinTarget?" / "+proteinTarget+"g":""}</b>${proteinTarget?todayProgress(f.protein,proteinTarget,"Protein logged"):""}</div>
     </div>
-    <div class="intake-macro-grid"><span><b>${Math.round(f.carbs)}g</b><small>known carbs</small></span><span><b>${Math.round(f.fat)}g</b><small>known fat</small></span><span><b>${Math.round(f.fiber)}g</b><small>known fiber</small></span><span><b>${Math.round(waterNow)} oz</b><small>water</small></span><span><b>${f.knownCaffeine?Math.round(f.caffeineMg)+" mg":"—"}</b><small>${f.knownCaffeine?"known caffeine":"caffeine not fully known"}</small></span><span><b>${f.monsters?Number(f.monsters.toFixed(1)):"0"}</b><small>Monster cans logged</small></span></div>
-    ${f.rows.length?`<div class="mini-heading">Logged today</div>${f.rows.slice().reverse().slice(0,8).map(x=>`<div class="row compact-row"><span><b>${esc(x.name||"Food / drink")}</b><div class="muted small">${foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":""}${Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":""}${Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":""}${x.notes?" · "+esc(x.notes):""}</div></span></div>`).join("")}`:`<div class="notice">Nothing has been logged yet today.</div>`}
+    <div class="intake-macro-grid"><span><b>${Math.round(f.carbs)}g</b><small>tracked carbs</small></span><span><b>${Math.round(f.fat)}g</b><small>tracked fat</small></span><span><b>${Math.round(f.fiber)}g</b><small>tracked fiber</small></span><span><b>${Math.round(waterNow)} oz</b><small>water</small></span><span><b>${f.knownCaffeine?Math.round(f.caffeineMg)+" mg":"—"}</b><small>${f.knownCaffeine?"tracked caffeine":"caffeine not entered"}</small></span><span><b>${f.monsters?Number(f.monsters.toFixed(1)):"0"}</b><small>Monster cans logged</small></span></div>
+    ${f.rows.length?`<div class="mini-heading">Logged today</div>${f.rows.slice().reverse().slice(0,8).map(x=>`<div class="row compact-row"><span><b>${esc(x.name||"Food / drink")}</b><div class="muted small">${foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":""}${x.nutritionEstimated?"≈ ":""}${Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":""}${Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":""}${x.notes?" · "+esc(x.notes):""}</div></span></div>`).join("")}`:`<div class="notice">Nothing has been logged yet today.</div>`}
     ${micronutrientSummary()}
     <div class="actions"><button class="btn" onclick="customWater()">+ Water</button><button class="btn" onclick="setView('log');careTab='patterns';render()">Open 7-day patterns</button></div>
   </div>`;
@@ -4083,7 +4085,7 @@ function foodIntakeTrends(){
     waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((a,x)=>a+Number(x.oz||0),0)),
     row=(title,arr,fmt)=>{const max=Math.max(1,...arr);return `<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${arr.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`},
     caffeineKnown=caffeine.some(v=>v>0),monsterKnown=monsters.some(v=>v>0);
-  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition and caffeine bars use known values only; blank or low days can simply mean values were not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}${caffeineKnown?row("Known caffeine",caffeine,v=>Math.round(v)+"mg"):""}${monsterKnown?row("Energy drinks",monsters,v=>Number(v.toFixed(1))+""):""}</div>`;
+  return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition and caffeine bars use tracked values, including clearly marked estimates when exact package details are unavailable.</div>${row("Tracked calories",calories,v=>Math.round(v)+"")}${row("Tracked protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}${caffeineKnown?row("Tracked caffeine",caffeine,v=>Math.round(v)+"mg"):""}${monsterKnown?row("Energy drinks",monsters,v=>Number(v.toFixed(1))+""):""}</div>`;
 }
 
 let foodWeekOffset=0;
@@ -5867,7 +5869,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-recipefix1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-nutrition2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
