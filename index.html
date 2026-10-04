@@ -1176,7 +1176,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -3973,6 +3973,62 @@ function homeView(){
     <div class="life-wheel food-wheel" role="group" aria-label="Food dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openFoodHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
       <button type="button" class="life-wheel-center food-wheel-center" onclick="event.stopPropagation();openMeal('${today}');return false;"><span class="eyebrow">TODAY’S DINNER</span><b>${esc(centerTitle)}</b><strong>${esc(centerDetail)}</strong><small>${meal?.assigned?esc("Cook: "+meal.assigned):"Tap for recipe + prep"}</small></button>
+    </div>
+  </section>`;
+}
+
+function householdRoomsCard(){
+  const rooms=[...(state.houseRooms||[])].sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||"")));
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Rooms</div><h2>${rooms.length} mapped room${rooms.length===1?"":"s"}</h2></div><button class="btn" onclick="openInventoryRoom()">+ Room</button></div><div class="people-hub-list">${rooms.map(r=>`<button onclick="closeModal();homeOpenRoomInventory('${r.id}')"><span class="home-room-modal-dot" style="background:${esc(r.mapColor||"#bdeccf")}"></span><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Floor not set")}</small></span><span>›</span></button>`).join("")||`<div class="notice">Add rooms from the house map.</div>`}</div></div>`;
+}
+function householdSuppliesCard(){
+  const cats=new Set(["Household","Cleaning","Bathroom","Tools","Seasonal"]),
+        rows=(state.inventoryItems||[]).filter(x=>cats.has(String(x.category||""))).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))).slice(0,40);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Household supplies</div><h2>${rows.length} tracked item${rows.length===1?"":"s"}</h2></div><button class="btn" onclick="closeModal();openInventoryItem()">+ Item</button></div>${rows.map(x=>`<div class="row"><span><b>${esc(x.name)}</b><div class="muted small">${esc([x.category,inventoryLocationLabel(x)].filter(Boolean).join(" · "))}</div></span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></div>`).join("")||`<div class="notice">No household supplies are categorized yet.</div>`}</div>`;
+}
+function householdHomeLogCard(){
+  const rows=[...(state.homeLogs||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,30);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Home log</div><h2>What has actually been done</h2><div class="muted small">Completion dates help Daily Life learn realistic household cadence.</div></div><button class="btn primary" onclick="openHome()">+ Log</button></div>${rows.map(x=>`<div class="row"><span><b>${esc(x.task||"Home care")}</b><div class="muted small">${esc(dl(x.date))}${x.area?" · "+esc(x.area):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.status==="done"?"✓":""}</b></div>`).join("")||`<div class="notice">No home-care completions logged yet.</div>`}</div>`;
+}
+function householdCleaningCard(){
+  return `${typeof homeResetDashboard==="function"?homeResetDashboard():""}${householdRoutineCard()}${homeCareCard()}`;
+}
+function openHouseholdSection(section){
+  if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");setView("inventory");return}
+  if(section==="inventory"){inventoryTab="items";localStorage.setItem("dailyLifeInventoryTab","items");setView("inventory");return}
+  if(section==="pets"){setView("pets");return}
+  let title="Home + Household",body="";
+  if(section==="rooms"){title="Rooms";body=householdRoomsCard()}
+  else if(section==="cleaning"){title="Cleaning + Resets";body=householdCleaningCard()}
+  else if(section==="petcare"){title="Pet Care";body=petCareSummaryCard()}
+  else if(section==="supplies"){title="Supplies";body=householdSuppliesCard()}
+  else if(section==="log"){title="Home Log";body=householdHomeLogCard()}
+  modal(title,`<div class="household-hub-modal">${body}</div>`,"Close",closeModal);
+}
+function householdView(){
+  const rooms=(state.houseRooms||[]).length,items=(state.inventoryItems||[]).length,pets=(state.pets||[]).length,
+        petDue=typeof duePetRoutines==="function"?duePetRoutines():[],
+        homeToday=(state.homeLogs||[]).filter(x=>x.date===ymd()&&x.status==="done").length,
+        roomTasks=(state.tasks||[]).filter(t=>!t.done&&t.date<=ymd()&&String(t.category||"").toLowerCase()==="home").length,
+        supplies=(state.inventoryItems||[]).filter(x=>["Household","Cleaning","Bathroom","Tools","Seasonal"].includes(String(x.category||""))).length,
+        focus=petDue[0]||null,
+        centerTitle=focus?(petById(focus.petId)?.name||"Pet care"):(roomTasks?"Home reset":"Household"),
+        centerDetail=focus?(focus.title||focus.type||"Care due"):(roomTasks?roomTasks+" home task"+(roomTasks===1?"":"s")+" open":rooms+" rooms · "+pets+" pets"),
+        centerAction=focus?`openPetRoutine('${focus.id}')`:`openHouseholdSection('cleaning')`,
+        segments=[
+          {icon:"⌂",title:"House Map",detail:rooms?rooms+" rooms":"Add map",section:"map"},
+          {icon:"◫",title:"Rooms",detail:rooms?rooms+" mapped":"Add rooms",section:"rooms"},
+          {icon:"▦",title:"Inventory",detail:items?items+" items":"Track items",section:"inventory"},
+          {icon:"✓",title:"Cleaning",detail:roomTasks?roomTasks+" open":homeToday?homeToday+" done today":"Resets",section:"cleaning"},
+          {icon:"♢",title:"Pets",detail:pets?pets+" profiles":"Add pets",section:"pets"},
+          {icon:"♡",title:"Pet Care",detail:petDue.length?petDue.length+" due":"Caught up",section:"petcare"},
+          {icon:"◇",title:"Supplies",detail:supplies?supplies+" tracked":"Household stock",section:"supplies"},
+          {icon:"↕",title:"Home Log",detail:homeToday?homeToday+" today":"Completions",section:"log"}
+        ];
+  return `<section class="household-one-screen"><div class="household-one-topline"><div><div class="eyebrow">Home + Household</div><b>House + pets + inventory</b></div><button class="btn small primary" onclick="openHome()">＋ Log care</button></div>
+    <div class="life-wheel household-wheel" role="group" aria-label="Home and household dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openHouseholdSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center household-wheel-center" onclick="event.stopPropagation();${centerAction};return false;"><span class="eyebrow">HOME FOCUS</span><b>${esc(centerTitle)}</b><strong>${esc(centerDetail)}</strong><small>Tap to open</small></button>
     </div>
   </section>`;
 }
