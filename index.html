@@ -228,7 +228,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:35,createdAt:new Date().toISOString(),
+  version:36,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
@@ -238,7 +238,7 @@ const blankState=()=>({
     ],
     mealPatterns:[]
   },
-  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
+  tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
 const APP_BUILD="2026.10.04-work-schedule4";
@@ -1316,7 +1316,7 @@ function migrateState(s){
   const b=blankState();
   s=s||b;
   const previousVersion=Number(s.version)||0;
-  s.version=Math.max(previousVersion,35);
+  s.version=Math.max(previousVersion,36);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -1349,7 +1349,7 @@ function migrateState(s){
   }
   s.settings.appliedCloudEntryIds=Array.isArray(s.settings.appliedCloudEntryIds)?s.settings.appliedCloudEntryIds:[];
   if(!s.settings.bankTransactionReviews||typeof s.settings.bankTransactionReviews!=="object"||Array.isArray(s.settings.bankTransactionReviews))s.settings.bankTransactionReviews={};
-  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement","savingsGoals"]){
+  for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","dailyReviews","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement","savingsGoals"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
   for(const log of s.selfCare||[]){
@@ -2215,9 +2215,100 @@ const DEFAULT_SELF_CARE_HABITS=[
   {key:"meditate",label:"Meditation",group:"Reset + restore",routine:"anytime",builtin:true},
   {key:"wind_down",label:"Bedtime wind-down",group:"Reset + restore",routine:"evening",builtin:true}
 ];
+
 const WELLNESS_MOODS=[
   [1,"Very low"],[2,"Low"],[3,"Okay"],[4,"Good"],[5,"Really good"]
 ];
+function dailyReviewEntry(kind,key,date=ymd()){
+  return (state.dailyReviews||[]).find(x=>x.date===date&&x.kind===kind&&String(x.key)===String(key))||null;
+}
+function dailyReviewSet(kind,key,date,status,label="",group=""){
+  if(!Array.isArray(state.dailyReviews))state.dailyReviews=[];
+  let x=dailyReviewEntry(kind,key,date);
+  if(!x){x={id:uid(),date,kind,key:String(key)};state.dailyReviews.push(x)}
+  Object.assign(x,{status,label,group,updatedAt:new Date().toISOString()});
+  return x;
+}
+function dailyReviewClear(kind,key,date=ymd()){
+  state.dailyReviews=(state.dailyReviews||[]).filter(x=>!(x.date===date&&x.kind===kind&&String(x.key)===String(key)));
+}
+function dailyReviewStatus(kind,key,date=ymd()){
+  if(kind==="task"){
+    const x=(state.tasks||[]).find(v=>String(v.id)===String(key));
+    if(x?.done)return"yes";
+  }else if(kind==="chore"){
+    const x=(state.chores||[]).find(v=>String(v.id)===String(key));
+    if(x?.done)return"yes";
+  }else if(kind==="care"){
+    if(selfCareDone(key,date))return"yes";
+  }
+  return dailyReviewEntry(kind,key,date)?.status||"unknown";
+}
+function dailyReviewExpected(date=ymd()){
+  const rows=[];
+  for(const t of (state.tasks||[]).filter(x=>x.date===date)){
+    if(String(t.title||"").trim().toLowerCase()==="ups shift"&&typeof isUsualWorkday==="function"&&!isUsualWorkday(date)&&!(typeof workShiftHasActual==="function"&&workShiftHasActual(workForDate(date))))continue;
+    rows.push({kind:"task",key:t.id,label:t.title||"Task",group:"Tasks",detail:[t.child,t.category].filter(Boolean).join(" · "),status:dailyReviewStatus("task",t.id,date)});
+  }
+  for(const c of (state.chores||[]).filter(x=>x.date===date)){
+    rows.push({kind:"chore",key:c.id,label:c.chore||"Chore",group:"Chores + routines",detail:c.child||"",status:dailyReviewStatus("chore",c.id,date)});
+  }
+  for(const h of selfCareHabits()){
+    rows.push({kind:"care",key:h.key,label:h.label,group:"Self care",detail:h.group||"",status:dailyReviewStatus("care",h.key,date)});
+  }
+  return rows;
+}
+function dailyReviewSummary(date=ymd()){
+  const rows=dailyReviewExpected(date),counts={yes:0,no:0,na:0,unknown:0,total:rows.length};
+  rows.forEach(x=>counts[x.status in counts?x.status:"unknown"]++);
+  return counts;
+}
+function selfCarePatternStats(key,days=7){
+  const dates=trendDates(days),out={yes:0,no:0,na:0,unknown:0,known:0,total:dates.length};
+  for(const date of dates){
+    const status=dailyReviewStatus("care",key,date);
+    if(status==="yes"){out.yes++;out.known++}
+    else if(status==="no"){out.no++;out.known++}
+    else if(status==="na")out.na++;
+    else out.unknown++;
+  }
+  out.percent=out.known?Math.round(out.yes*100/out.known):0;
+  return out;
+}
+async function applyDailyReview(kind,key,date,status){
+  const item=dailyReviewExpected(date).find(x=>x.kind===kind&&String(x.key)===String(key));
+  if(!item)return;
+  if(kind==="task"){
+    const t=(state.tasks||[]).find(x=>String(x.id)===String(key));
+    if(t&&status==="yes")t.done=true;
+    else if(t)t.done=false;
+  }else if(kind==="chore"){
+    const c=(state.chores||[]).find(x=>String(x.id)===String(key));
+    if(c&&status==="yes")c.done=true;
+    else if(c)c.done=false;
+  }else if(kind==="care"){
+    let row=selfCareLogRow(key,date);
+    if(status==="yes"){
+      if(!row){row={id:uid(),date,key,done:true,count:1,times:[],source:"daily-review"};state.selfCare.push(row)}
+      else{row.done=true;row.count=Math.max(1,Number(row.count||0));if(!Array.isArray(row.times))row.times=[]}
+    }else if(row&&row.source==="daily-review"){
+      row.done=false;row.count=0;row.times=[];
+    }
+  }
+  dailyReviewSet(kind,key,date,status,item.label,item.group);
+  await save();
+  openDailyReview(date);
+}
+function openDailyReview(date=ymd()){
+  date=/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))?date:ymd();
+  const all=dailyReviewExpected(date),unknown=all.filter(x=>x.status==="unknown"),summary=dailyReviewSummary(date),item=unknown[0];
+  const dateLabel=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+  if(!item){
+    modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-complete"><div class="eyebrow">${esc(dateLabel)}</div><h2>Review complete</h2><div class="muted">Nothing is being silently treated as “no.”</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>0</b><small>unknown</small></span></div><label>Review another day<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Done",closeModal);
+    return;
+  }
+  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button><button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button></div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div><label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
+}
 function selfCareHabits(){
   const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[];
   return list.length?list:DEFAULT_SELF_CARE_HABITS;
@@ -2242,8 +2333,10 @@ async function logCareOccurrence(key){
   await save();render();
 }
 function selfCareTodayStats(){
-  const habits=selfCareHabits(),done=habits.filter(h=>selfCareDone(h.key)).length;
-  return{done,total:habits.length,percent:habits.length?Math.round(done*100/habits.length):0};
+  const habits=selfCareHabits(),statuses=habits.map(h=>dailyReviewStatus("care",h.key,ymd())),
+        done=statuses.filter(x=>x==="yes").length,no=statuses.filter(x=>x==="no").length,na=statuses.filter(x=>x==="na").length,
+        unknown=statuses.filter(x=>x==="unknown").length,known=done+no;
+  return{done,no,na,unknown,known,total:habits.length,percent:known?Math.round(done*100/known):0};
 }
 function wellnessForDate(date=ymd()){
   return (state.wellnessLogs||[]).find(x=>x.date===date)||null;
@@ -4307,15 +4400,15 @@ function openAstrologySettings(){
   const options=['<option value="">No personalized sign lens</option>'].concat(ZODIAC_SIGNS.map(sign=>`<option ${sign===current?"selected":""}>${sign}</option>`)).join("");
   modal("Moon & astrology",`<div class="stack"><label>Sun sign<select id="sunSign">${options}</select></label></div><p class="muted small">The moon phase shown in Daily Life is astronomical. A sun-sign lens is an optional astrology/spiritual reflection tool and is not a scientific prediction.</p>`,"Save",async()=>{state.profile.sunSign=$("#sunSign").value;await save();closeModal();render()});
 }
-async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(!x)return;x.done=d;if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){const ok=await sharingUpsertTask(x);if(!ok){x.done=!d;render();return}}await save();render()}
+async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(!x)return;x.done=d;if(d)dailyReviewSet("task",id,x.date||ymd(),"yes",x.title||"Task","Tasks");else dailyReviewClear("task",id,x.date||ymd());if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){const ok=await sharingUpsertTask(x);if(!ok){x.done=!d;render();return}}await save();render()}
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
 function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
 async function toggleCare(key){
   let x=selfCareLogRow(key);
-  if(!x){state.selfCare.push({id:uid(),date:ymd(),key,done:true,count:1,times:[new Date().toTimeString().slice(0,5)]})}
-  else if(x.done){x.done=false;x.count=0;x.times=[]}
-  else{x.done=true;x.count=Math.max(1,Number(x.count||0));if(!Array.isArray(x.times))x.times=[];if(!x.times.length)x.times.push(new Date().toTimeString().slice(0,5))}
+  if(!x){state.selfCare.push({id:uid(),date:ymd(),key,done:true,count:1,times:[new Date().toTimeString().slice(0,5)]});dailyReviewSet("care",key,ymd(),"yes",selfCareHabits().find(h=>h.key===key)?.label||key,"Self care")}
+  else if(x.done){x.done=false;x.count=0;x.times=[];dailyReviewClear("care",key,ymd())}
+  else{x.done=true;x.count=Math.max(1,Number(x.count||0));if(!Array.isArray(x.times))x.times=[];if(!x.times.length)x.times.push(new Date().toTimeString().slice(0,5));dailyReviewSet("care",key,ymd(),"yes",selfCareHabits().find(h=>h.key===key)?.label||key,"Self care")}
   await save();render();
 }
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
@@ -4469,7 +4562,7 @@ async function removeTireLog(id){
 }
 function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0);if(!pages)return;state.readingLogs.push({id:uid(),date:ymd(),reader,book:$("#rb").value,start,end,pages,minutes:Number($("#rm").value||0)});await save();closeModal();render()})}
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
-async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(x)x.done=d;await save();render()}
+async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(!x)return;x.done=d;if(d)dailyReviewSet("chore",id,x.date||ymd(),"yes",x.chore||"Chore","Chores + routines");else dailyReviewClear("chore",id,x.date||ymd());await save();render()}
 async function requestMealSuggestion(date){
   let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
   if(!m){m={id:uid(),date,type:"dinner",dish:"",status:"planned",recipeState:"suggestion-queued",prepDone:[]};state.meals.push(m)}
