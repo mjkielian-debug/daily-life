@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-multifloor1";
+const APP_BUILD="2026.10.04-review-catchup1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -2325,6 +2325,19 @@ function dailyReviewSummary(date=ymd()){
   rows.forEach(x=>counts[x.status in counts?x.status:"unknown"]++);
   return counts;
 }
+function dailyReviewBacklog(days=7){
+  const out=[];
+  for(const date of trendDates(Math.max(1,Number(days)||7))){
+    const summary=dailyReviewSummary(date);
+    if(summary.unknown)out.push({date,unknown:summary.unknown,total:summary.total});
+  }
+  return out;
+}
+function openDailyReviewCatchup(days=7){
+  const rows=dailyReviewBacklog(days);
+  if(!rows.length){openDailyReview();return}
+  openDailyReview(rows[0].date);
+}
 function selfCarePatternStats(key,days=7){
   const dates=trendDates(days),out={yes:0,no:0,na:0,unknown:0,known:0,total:dates.length};
   for(const date of dates){
@@ -2367,13 +2380,13 @@ async function applyDailyReview(kind,key,date,status){
 }
 function openDailyReview(date=ymd(),cursor=0){
   date=/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))?date:ymd();
-  const all=dailyReviewExpected(date),unknown=all.filter(x=>x.status==="unknown"),summary=dailyReviewSummary(date),position=Math.max(0,Math.trunc(Number(cursor)||0))%(unknown.length||1),item=unknown[position];
+  const all=dailyReviewExpected(date),unknown=all.filter(x=>x.status==="unknown"),summary=dailyReviewSummary(date),backlog=dailyReviewBacklog(7),backlogUnknown=backlog.reduce((n,x)=>n+x.unknown,0),position=Math.max(0,Math.trunc(Number(cursor)||0))%(unknown.length||1),item=unknown[position];
   const dateLabel=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
   if(!item){
-    modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-complete"><div class="eyebrow">${esc(dateLabel)}</div><h2>Review complete</h2><div class="muted">Nothing is being silently treated as “no.”</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>0</b><small>unknown</small></span></div><label>Review another day<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Done",closeModal);
+    modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-complete"><div class="eyebrow">${esc(dateLabel)}</div><h2>Review complete</h2><div class="muted">Nothing is being silently treated as “no.”</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>0</b><small>unknown</small></span></div>${backlogUnknown?`<div class="notice"><b>${backlogUnknown} unknown check${backlogUnknown===1?"":"s"} remain across the last 7 days.</b><div class="actions" style="margin-top:8px"><button class="btn primary" onclick="openDailyReviewCatchup(7)">Catch up earlier days</button></div></div>`:""}<label>Review another day<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Done",closeModal);
     return;
   }
-  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button>${item.kind==="care"?`<button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button>`:""}<button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div><div class="muted small">Skipped items stay unknown. You can come back to them later.</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div><label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
+  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button>${item.kind==="care"?`<button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button>`:""}<button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div><div class="muted small">Skipped items stay unknown. You can come back to them later.</div>${backlogUnknown>summary.unknown?`<div class="actions" style="margin-top:9px"><button class="btn small" onclick="openDailyReviewCatchup(7)">Catch up ${backlogUnknown-summary.unknown} earlier unknown${backlogUnknown-summary.unknown===1?"":"s"}</button></div>`:""}</div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div><label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
 }
 function selfCareHabits(){
   const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[];
