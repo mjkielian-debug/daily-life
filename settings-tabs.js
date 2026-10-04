@@ -21,7 +21,7 @@ function compactSettingsTabs(){
 
 function compactSettingsGeneral(){
   return `<div class="settings-tab-panel">
-    <div class="settings-row-section"><div><div class="eyebrow">Hobbies + crafts</div><h2>Creative workspace</h2><div class="muted small">Projects, materials, costs, progress photos, and next steps live outside Settings.</div></div><button class="btn primary" onclick="setView('hobbies')">Open</button></div>
+    <div class="settings-row-section"><div><div class="eyebrow">Hobbies + crafts</div><h2>Creative workspace</h2><div class="muted small">Projects, materials, costs, progress photos, and next steps live outside Settings.</div></div><button class="btn primary" onclick="setView('gardenhobbies')">Open</button></div>
     <div class="settings-row-section"><div><div class="eyebrow">Private Vault</div><h2>Secure documents + logins</h2><div class="muted small">Encrypted identity documents, insurance, school paperwork, medical/admin records, and passwords.</div></div><button class="btn primary" onclick="setView('vault')">Open</button></div>
     <div class="settings-row-section"><div><div class="eyebrow">Moon + astrology</div><h2>${esc(state.profile.sunSign||"No sign lens set")}</h2><div class="muted small">Optional spiritual reflection settings.</div></div><button class="btn" onclick="openAstrologySettings()">Edit</button></div>
   </div>`;
@@ -62,15 +62,19 @@ function compactSettingsBackup(){
   </div>`;
 }
 
-settingsView=function(){
-  const body=settingsTab==="routines"?compactSettingsRoutines():
-             settingsTab==="connections"?compactSettingsConnections():
-             settingsTab==="backup"?compactSettingsBackup():
-             compactSettingsGeneral();
-  return `<div class="settings-hero"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h1>Settings</h1><div class="muted small">Setup and maintenance, organized so you do not have to scroll through everything at once.</div></div><button class="btn" onclick="setView('today')">Done</button></div></div>
-    ${compactSettingsTabs()}
-    ${body}`;
-};
+/* The main app now provides the radial one-screen Settings hub.
+   Keep this legacy compact view only as a fallback for older shells. */
+if(typeof openSettingsHubSection!=="function"){
+  settingsView=function(){
+    const body=settingsTab==="routines"?compactSettingsRoutines():
+               settingsTab==="connections"?compactSettingsConnections():
+               settingsTab==="backup"?compactSettingsBackup():
+               compactSettingsGeneral();
+    return `<div class="settings-hero"><div class="section-title"><div><div class="eyebrow">⚙ Daily Life</div><h1>Settings</h1><div class="muted small">Setup and maintenance, organized so you do not have to scroll through everything at once.</div></div><button class="btn" onclick="setView('today')">Done</button></div></div>
+      ${compactSettingsTabs()}
+      ${body}`;
+  };
+}
 
 (function installCompactSettingsStyles(){
   if(document.getElementById("compactSettingsStyles"))return;
