@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-patterncharts2";
+const APP_BUILD="2026.10.04-workcompact1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1129,14 +1129,20 @@ function upsContractPayCard(){
   const current=Number(p.currentRate||latestInside.rate||0);
   const steps=Array.isArray(p.contractProgression)&&p.contractProgression.length?p.contractProgression:(p.progression||[]);
   const nextStep=steps.find(x=>Number(x.rate)>current);
+  const details=[
+    verified.length?`<div class="mini-heading">Verified paystub history</div><div class="pay-progression">${verified.map(x=>`<div class="pay-step"><span>${esc(x.jobLabel||x.job||"Rate")}</span><b>${money(x.rate)}/hr</b><small>${esc(x.date?dl(x.date):"")}</small></div>`).join("")}</div>`:"",
+    steps.length?`<div class="notice"><b>Contract progression</b><br><span class="muted small">${steps.map(x=>`${esc(x.label)} ${money(x.rate)}`).join(" · ")}.</span></div>`:"",
+    p.raiseTimingNote?`<div class="notice"><span class="muted small">${esc(p.raiseTimingNote)}</span></div>`:"",
+    p.ssd?.rateFloor?`<div class="row"><span><b>Seasonal Support Driver</b><div class="muted small">${esc(p.ssd.note||"Seasonal driver rate tracked from private payroll/contract data.")}</div></span><b>${money(p.ssd.rateFloor)}/hr</b></div>`:"",
+    p.peakReference?`<div class="notice"><b>${esc(p.peakReference.label||"Peak reference paycheck")}</b><br><span class="muted small">${Number(p.peakReference.workedHours||0).toFixed(2)} worked hours · ${money(p.peakReference.grossPay)} gross · ${money(p.peakReference.mileageReimbursement)} mileage · ${money(p.peakReference.netPay)} net.</span></div>`:""
+  ].filter(Boolean).join("");
   return `<div class="card ups-contract"><div class="section-title"><div><div class="eyebrow">📦 UPS contract + pay</div><h2>${current?money(current)+"/hr inside rate":"Rate not set"}</h2><div class="muted small">${esc(p.role||"UPS employee")} · ${esc(p.unionLocal||"Teamsters")}</div></div><span class="tag">contract tracking</span></div>
-    ${verified.length?`<div class="mini-heading">Verified paystub history</div><div class="pay-progression">${verified.map(x=>`<div class="pay-step"><span>${esc(x.jobLabel||x.job||"Rate")}</span><b>${money(x.rate)}/hr</b><small>${esc(x.date?dl(x.date):"")}</small></div>`).join("")}</div>`:""}
-    ${steps.length?`<div class="notice"><b>Contract progression</b><br><span class="muted small">${steps.map(x=>`${esc(x.label)} ${money(x.rate)}`).join(" · ")}.</span>${nextStep?`<br><span class="muted small">Next contractual step after ${money(current)}/hr: ${money(nextStep.rate)}/hr at ${esc(nextStep.label)}.</span>`:""}</div>`:""}
-    ${p.scheduledStartDate?`<div class="row"><span>Scheduled first day</span><b>${esc(dl(p.scheduledStartDate))}</b></div>`:""}
-    <div class="row"><span>Official seniority date</span><b>${p.seniorityDate?esc(dl(p.seniorityDate)):"Not confirmed yet"}</b></div>
-    ${p.raiseTimingNote?`<div class="notice"><span class="muted small">${esc(p.raiseTimingNote)}</span></div>`:""}
-    ${p.ssd?.rateFloor?`<div class="row"><span><b>Seasonal Support Driver</b><div class="muted small">${esc(p.ssd.note||"Seasonal driver rate tracked from private payroll/contract data.")}</div></span><b>${money(p.ssd.rateFloor)}/hr</b></div>`:""}
-    ${p.peakReference?`<div class="notice"><b>${esc(p.peakReference.label||"Peak reference paycheck")}</b><br><span class="muted small">${Number(p.peakReference.workedHours||0).toFixed(2)} worked hours · ${money(p.peakReference.grossPay)} gross · ${money(p.peakReference.mileageReimbursement)} mileage · ${money(p.peakReference.netPay)} net.</span></div>`:""}
+    ${nextStep?`<div class="ups-next-step"><span><small>Next contractual step</small><b>${money(nextStep.rate)}/hr</b></span><span>${esc(nextStep.label)}</span></div>`:""}
+    <div class="ups-contract-dates">
+      ${p.scheduledStartDate?`<span><small>Scheduled first day</small><b>${esc(dl(p.scheduledStartDate))}</b></span>`:""}
+      <span><small>Official seniority</small><b>${p.seniorityDate?esc(dl(p.seniorityDate)):"Not confirmed"}</b></span>
+    </div>
+    ${details?`<details class="ups-contract-details"><summary><span><b>Pay history + contract details</b><small>Progression, seasonal driver rate and reference paychecks</small></span><span>Open</span></summary><div class="stack">${details}</div></details>`:""}
   </div>`;
 }
 
