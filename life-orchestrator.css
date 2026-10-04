@@ -1926,8 +1926,8 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
 }
 .dayflow-one-screen-shell .dayflow-wheel-center{
   box-sizing:border-box!important;
-  width:42%!important;
-  height:42%!important;
+  width:36%!important;
+  height:36%!important;
   padding:12px!important;
   border-width:3px!important;
 }
@@ -2101,8 +2101,8 @@ body:has(.dayflow-one-screen-shell,.vault-one-screen-shell,.settings-one-screen-
   .dayflow-wheel .life-wheel-segment b{font-size:.69rem!important}
   .dayflow-wheel .life-wheel-segment small{font-size:.44rem!important}
   .dayflow-one-screen-shell .dayflow-wheel-center{
-    width:43%!important;
-    height:43%!important;
+    width:37%!important;
+    height:37%!important;
     padding:9px!important;
   }
   .dayflow-one-screen-shell .dayflow-wheel-center .eyebrow{font-size:.42rem!important}
