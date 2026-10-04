@@ -2286,3 +2286,64 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
     --wheel-size:min(93vw,calc(100dvh - 245px),340px);
   }
 }
+
+
+/* Compact People modal: reduce scrolling without hiding profile access. */
+.people-profile-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.people-profile-grid>button{
+  grid-template-columns:auto minmax(0,1fr)!important;
+  padding:9px!important;
+  min-width:0;
+}
+.people-profile-grid>button>span:last-child{
+  display:none;
+}
+.people-profile-grid .person-avatar.mini{
+  width:36px;
+  height:36px;
+  min-width:36px;
+  font-size:.8rem;
+}
+.people-profile-grid>button b,
+.people-profile-grid>button small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.people-missing-launch{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  border:1px solid rgba(112,78,106,.16);
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(249,225,235,.82),rgba(231,242,228,.82));
+  color:#2b2231;
+  padding:10px 12px;
+  margin:7px 0;
+}
+.people-missing-launch>span:first-child{
+  display:grid;
+  min-width:0;
+}
+.people-missing-launch .eyebrow{
+  color:#84556f!important;
+  text-shadow:none!important;
+  font-size:.62rem!important;
+}
+.people-missing-launch b{
+  color:#281f30!important;
+  font-family:var(--font-heading);
+}
+.people-missing-launch small{
+  color:#5d5062!important;
+  font-size:.68rem!important;
+}
+@media(min-width:620px){
+  .people-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
