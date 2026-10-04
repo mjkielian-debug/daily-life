@@ -847,6 +847,59 @@ body:has(.people-one-screen-shell){
 }
 
 
+/* Week Plan navigation */
+.food-week-nav{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:7px;
+  margin:0 0 10px;
+  padding:3px 1px 8px;
+  border-bottom:1px solid rgba(122,83,114,.14);
+}
+.food-week-nav>div{
+  min-width:0;
+  text-align:center;
+  display:grid;
+  gap:1px;
+}
+.food-week-nav>div>b{
+  color:#312537!important;
+  font-family:var(--font-heading)!important;
+  font-size:.9rem!important;
+  white-space:nowrap;
+}
+.food-week-nav>.btn{
+  min-width:38px!important;
+  height:38px!important;
+  padding:0 9px!important;
+  border-radius:18px!important;
+}
+.food-week-nav>.btn:first-child,
+.food-week-nav>.btn:nth-of-type(2){
+  width:38px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  font-size:1rem!important;
+}
+.food-week-current{
+  width:auto!important;
+  white-space:nowrap!important;
+  font-size:.62rem!important;
+}
+@media(max-width:420px){
+  .food-week-nav{
+    grid-template-columns:auto minmax(0,1fr) auto;
+  }
+  .food-week-current{
+    grid-column:1 / -1;
+    justify-self:center;
+    height:30px!important;
+    min-height:30px!important;
+    margin-top:1px;
+  }
+}
+
 /* One-screen Food radial hub */
 body:has(.food-one-screen-shell){
   overflow:hidden!important;
