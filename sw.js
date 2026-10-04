@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261003-autopilot2";
+const CACHE_NAME="daily-life-shell-20261004-vivid1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const APP_SHELL=[
   "./week-pilot.css",
   "./life-tools.css",
   "./capacity-planner.css",
+  "./visual-density.css",
   "./cloud.js",
   "./sharing.js",
   "./finance-cloud.js",
@@ -75,19 +76,20 @@ async function navigationResponse(request){
   }
 }
 
-async function staticAssetResponse(request,url){
-  const key=url.pathname;
+async function staticAssetResponse(request,url,event){
+  // A new version URL must never receive an older cached version while online.
+  const key=url.pathname+url.search;
   const cache=await caches.open(CACHE_NAME);
   const cached=await cache.match(key);
   const refresh=fetch(request).then(async response=>{
     if(response.ok)await cache.put(key,response.clone());
     return response;
   }).catch(()=>null);
+  event.waitUntil(refresh.then(()=>{}));
   if(cached){
-    refresh.catch(()=>{});
     return cached;
   }
-  return (await refresh) || new Response("",{status:504});
+  return (await refresh) || (await cache.match(url.pathname)) || new Response("",{status:504});
 }
 
 self.addEventListener("fetch",event=>{
@@ -103,6 +105,6 @@ self.addEventListener("fetch",event=>{
   }
 
   if(LOCAL_ASSET_PATHS.has(url.pathname)){
-    event.respondWith(staticAssetResponse(request,url));
+    event.respondWith(staticAssetResponse(request,url,event));
   }
 });
