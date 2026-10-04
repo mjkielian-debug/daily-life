@@ -279,3 +279,149 @@
   :is(.muted,.small,small){
   opacity:1!important;
 }
+
+
+/* ---------- 2026-10-04 pass 2: menu scroll + Food cleanup ---------- */
+
+/* The joyful layer set .modal to overflow:hidden, which trapped lower section choices.
+   Restore native vertical scrolling on every modal, especially the section launcher. */
+.modal-backdrop{
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+}
+.modal{
+  max-height:calc(100dvh - 16px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  scrollbar-gutter:stable;
+}
+
+/* The section launcher is mounted directly under body, not inside #app.
+   Give its circle copy strong contrast and ensure the final rows are reachable. */
+.modal .section-launcher{
+  padding:2px 0 18px!important;
+}
+.modal .section-launcher button{
+  color:#2a2038!important;
+  border:1px solid rgba(143,84,123,.30)!important;
+  box-shadow:0 8px 18px rgba(87,58,96,.09),inset 0 0 0 1px rgba(255,255,255,.48)!important;
+}
+.modal .section-launcher button:nth-child(4n+1){
+  background:radial-gradient(circle at 30% 23%,rgba(255,255,255,.70),transparent 42%),linear-gradient(145deg,#e6c7e9,#f1c3d5)!important;
+}
+.modal .section-launcher button:nth-child(4n+2){
+  background:radial-gradient(circle at 30% 23%,rgba(255,255,255,.70),transparent 42%),linear-gradient(145deg,#f1cfba,#ebcce0)!important;
+}
+.modal .section-launcher button:nth-child(4n+3){
+  background:radial-gradient(circle at 30% 23%,rgba(255,255,255,.70),transparent 42%),linear-gradient(145deg,#c7e3df,#caddef)!important;
+}
+.modal .section-launcher button:nth-child(4n){
+  background:radial-gradient(circle at 30% 23%,rgba(255,255,255,.70),transparent 42%),linear-gradient(145deg,#d5c9ec,#edc9d7)!important;
+}
+.modal .section-launcher button b,
+.modal .section-launcher button strong{
+  color:#261d35!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:900!important;
+}
+.modal .section-launcher button small{
+  color:#5a435d!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+}
+.modal .section-launcher button>span:last-child{
+  color:#4f3855!important;
+  opacity:1!important;
+  font-weight:900!important;
+}
+.modal .section-launcher .section-launch-icon{
+  color:#754c70!important;
+  opacity:1!important;
+  background:rgba(255,255,255,.78)!important;
+  border-color:rgba(126,76,110,.18)!important;
+}
+
+/* Food tabs were still being injected at runtime with the old dark green panel. */
+#app .food-tabs{
+  background:linear-gradient(100deg,#efbfd3 0%,#e8d1ed 42%,#f1d1bb 72%,#c8dfe9 100%)!important;
+  border:1px solid #9e668a!important;
+  box-shadow:0 5px 14px rgba(91,55,82,.09)!important;
+}
+#app .food-tabs button{
+  color:#4d3b56!important;
+  background:transparent!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:850!important;
+}
+#app .food-tabs button span,
+#app .food-tabs button b{
+  color:inherit!important;
+  opacity:1!important;
+}
+#app .food-tabs button.active{
+  color:#fff9fb!important;
+  background:linear-gradient(145deg,#bd3c74,#985180)!important;
+  box-shadow:0 4px 10px rgba(112,45,88,.18),inset 0 0 0 1px rgba(255,255,255,.24)!important;
+}
+
+/* Meal details: the ingredients disclosure label was still nearly white. */
+#app .meal-ingredients-collapse{
+  border-color:rgba(124,78,111,.28)!important;
+}
+#app .meal-ingredients-collapse summary,
+#app .meal-ingredients-collapse[open] summary{
+  color:#3d2d48!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-weight:900!important;
+}
+#app .recipe-section .mini-heading,
+#app .recipe-details .mini-heading,
+#app .food-fold>summary,
+#app .food-fold>summary small{
+  color:#4a3852!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#app .food-fold>summary b,
+#app .recipe-details-head b{
+  color:#2a2038!important;
+}
+
+/* Remove remaining green-ish read-only Food shells while keeping the rainbow accents. */
+#app .food-tab-panel>.card,
+#app .food-fold-body>.card,
+#app .food-flat-section,
+#app .food-inline-section{
+  color:#2a2038!important;
+}
+#app .food-tab-panel .notice{
+  color:#56445e!important;
+  border-left-color:#bd668e!important;
+  background:linear-gradient(90deg,rgba(242,168,195,.25),rgba(206,193,234,.12),transparent 84%)!important;
+}
+
+/* The bottom navigation itself should never fall back to the original dark-green shell. */
+.bottom-nav{
+  color:#2a2038!important;
+  background:rgba(239,211,227,.95)!important;
+  border-color:#9f6a8e!important;
+}
+.navbtn{color:#4d3b56!important}
+.navbtn.active{
+  color:#fff9fb!important;
+  background:linear-gradient(145deg,#bd3c74,#9d4f84)!important;
+}
+
+/* Keep common light-on-light labels readable in Food/family cards. */
+#app :is(.food-tab-panel,.priority-card,.family-routine-card,.chore-card)
+ :is(.mini-heading,.eyebrow,.muted,.small,small){
+  opacity:1!important;
+}
