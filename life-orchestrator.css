@@ -364,3 +364,30 @@ body:has(.today-one-screen-shell){
   .today-one-screen-shell .brand-copy .title{font-size:1.38rem!important}
   .today-one-screen-shell .header-tools .btn{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important}
 }
+
+
+/* Prevent radial wheel copy from clipping */
+.life-wheel-center>small{
+  display:block!important;
+  max-width:19ch!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  max-height:none!important;
+  line-height:1.1!important;
+}
+.life-wheel-center>strong{
+  display:block!important;
+  max-width:14ch!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.life-wheel-segment small{
+  display:block!important;
+  width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  max-height:none!important;
+}
