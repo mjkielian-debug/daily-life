@@ -2282,6 +2282,10 @@ async function applyDailyReview(kind,key,date,status){
     const t=(state.tasks||[]).find(x=>String(x.id)===String(key));
     if(t&&status==="yes")t.done=true;
     else if(t)t.done=false;
+    if(t?.sharedEntryId&&status==="yes"&&typeof sharingUpsertTask==="function"){
+      const ok=await sharingUpsertTask(t);
+      if(!ok){t.done=false;return}
+    }
   }else if(kind==="chore"){
     const c=(state.chores||[]).find(x=>String(x.id)===String(key));
     if(c&&status==="yes")c.done=true;
