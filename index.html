@@ -1176,7 +1176,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -3178,20 +3178,59 @@ function careWorkTodayCard(w){
 function careSectionIntro(title,detail){
   return `<div class="care-section-intro"><b>${esc(title)}</b><span>${esc(detail)}</span></div>`;
 }
+function careHydrationHub(){
+  const now=water(),goal=Number(state.settings.waterTarget||0),pct=goal?Math.min(100,Math.round(now*100/goal)):0;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Hydration</div><h2>${Math.round(now)} oz today</h2><div class="muted small">${goal?pct+"% of "+Math.round(goal)+" oz goal":"Log what you actually drank."}</div></div><button class="btn" onclick="customWater()">Custom</button></div>${goal?todayProgress(now,goal,"Water logged"):""}<div class="actions"><button class="btn" onclick="addWater(8)">+ 8 oz</button><button class="btn" onclick="addWater(16)">+ 16 oz</button><button class="btn" onclick="addWater(24)">+ 24 oz</button></div><div class="muted small" style="margin-top:8px">No water entry means unknown, not zero, in pattern summaries.</div></div>`;
+}
+function careSelfHub(){
+  return `${selfCareCard()}${careOutfitCard()}${spiritualityLaunchCard()}`;
+}
+function careWorkHub(w){
+  return `${currentWeekWorkCard()}${upsContractPayCard()}${careWorkTodayCard(w)}`;
+}
+function careLifeAdminHub(tr){
+  return `${lifeAdminCard()}${vehicleCard()}${tireHistoryCard(tr)}${mailDeliveryCard()}`;
+}
+function carePatternsHub(){
+  return `${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
+}
+function openCareHubSection(section){
+  if(section==="review"){openDailyReview();return}
+  if(section==="sleep"){openSleep();return}
+  let title="Care",body="";
+  if(section==="self"){title="Self Care";body=careSelfHub()}
+  else if(section==="water"){title="Hydration";body=careHydrationHub()}
+  else if(section==="movement"){title="Movement";body=fitnessCard()}
+  else if(section==="work"){title="Work";body=careWorkHub(work())}
+  else if(section==="life"){title="Life Admin";body=careLifeAdminHub(tire())}
+  else if(section==="patterns"){title="Patterns";body=carePatternsHub()}
+  modal(title,`<div class="care-hub-modal">${body}</div>`,"Close",closeModal);
+}
 function logView(f,w,tr){
-  let body="";
-  if(careTab==="work"){
-    body=`${careSectionIntro("Work","UPS schedule, hours, pay progression and today’s shift.")}${currentWeekWorkCard()}${upsContractPayCard()}${careWorkTodayCard(w)}`;
-  }else if(careTab==="home"){
-    body=`${careSectionIntro("Home","Household cadence, pets, plants and the care that keeps home running.")}${livingThingsLaunchCard()}${householdRoutineCard()}${homeCareCard()}`;
-  }else if(careTab==="life"){
-    body=`${careSectionIntro("Life","Paperwork, car care, tires, mail and the practical loose ends.")}${lifeAdminCard()}${vehicleCard()}${tireHistoryCard(tr)}${mailDeliveryCard()}`;
-  }else if(careTab==="patterns"){
-    body=`${careSectionIntro("Patterns","A quieter place for weekly and monthly trends—nothing here is a score.")}${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
-  }else{
-    body=`${careSectionIntro("Me","Self care, movement and personal tracking. Food stays in the Food tab so this page stays manageable.")}${spiritualityLaunchCard()}${selfCareCard()}${fitnessCard()}${careOutfitCard()}`;
-  }
-  return `<div class="card glow care-hub-header"><div class="eyebrow">Care</div><div class="care-hub-title">Choose what you need</div>${careTabs()}</div>${body}`;
+  const today=ymd(),well=wellnessForDate(today),review=dailyReviewSummary(today),sleep=sleepHours(sleepForDate(today)),
+        waterNow=water(),stretchNow=stretch(),
+        weekStart=shiftDateString(today,-6),
+        workouts=(state.workouts||[]).filter(x=>x.date>=weekStart&&x.date<=today).length,
+        admin=(state.projects||[]).filter(p=>!["done","complete","cancelled"].includes(String(p.status||"").toLowerCase())).length,
+        workToday=workForDate(today),
+        segments=[
+          {icon:"♡",title:"Self Care",detail:selfCareTodayStats().unknown?"?"+selfCareTodayStats().unknown+" unknown":selfCareTodayStats().done+" done",section:"self"},
+          {icon:"?",title:"Daily Review",detail:review.unknown?review.unknown+" unknown":"Complete",section:"review"},
+          {icon:"☾",title:"Sleep",detail:sleep?sleep.toFixed(1)+" h":"Not logged",section:"sleep"},
+          {icon:"◌",title:"Hydration",detail:waterNow?Math.round(waterNow)+" oz":"Not logged",section:"water"},
+          {icon:"↗",title:"Movement",detail:workouts?workouts+" this week":stretchNow?stretchNow+" min today":"Movement",section:"movement"},
+          {icon:"▣",title:"Work",detail:workToday?workStatusText(workToday):"Off today",section:"work"},
+          {icon:"⌁",title:"Life Admin",detail:admin?admin+" open":"Practical stuff",section:"life"},
+          {icon:"✦",title:"Patterns",detail:"Week + month",section:"patterns"}
+        ],
+        mood=well?.mood?moodLabel(well.mood):"No check-in yet",
+        checkDetail=review.unknown?review.unknown+" daily item"+(review.unknown===1?"":"s")+" unknown":"Tracking reviewed";
+  return `<section class="care-one-screen"><div class="care-one-topline"><div><div class="eyebrow">Care at a glance</div><b>You + your patterns</b></div><button class="btn small primary" onclick="openWellnessCheckin()">＋ Check in</button></div>
+    <div class="life-wheel care-wheel" role="group" aria-label="Care dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openCareHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center care-wheel-center" onclick="event.stopPropagation();openWellnessCheckin();return false;"><span class="eyebrow">TODAY’S CHECK-IN</span><b>${esc(mood)}</b><strong>${esc(checkDetail)}</strong><small>Tap to check in</small></button>
+    </div>
+  </section>`;
 }
 function care(key,label){
   const on=selfCareDone(key),count=selfCareOccurrencesToday(key),repeatable=key==="brush";
