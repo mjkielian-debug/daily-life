@@ -164,22 +164,72 @@ function vaultTypeLabel(type){
     other:"Other important record"
   })[type]||"Other important record";
 }
+function vaultRecordRows(items){
+  items=[...(items||[])].sort((a,b)=>String(a.title||"").localeCompare(String(b.title||"")));
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Encrypted records</div><h2>${items.length} record${items.length===1?"":"s"}</h2><div class="muted small">Titles and categories are shown only while the Vault is unlocked. Secrets stay inside the encrypted record.</div></div><button class="btn primary" onclick="closeModal();openVaultItem()">+ Record</button></div>
+    ${items.length?items.map(x=>`<button class="vault-row" onclick="closeModal();openVaultItem('${x.id}')"><span class="vault-icon">${x.attachment?"▤":"▣"}</span><span class="grow"><b>${esc(x.title||vaultTypeLabel(x.type))}</b><small>${esc(vaultTypeLabel(x.type))}${x.owner?" · "+esc(x.owner):""}${x.attachment?" · attachment":""}</small></span><span>›</span></button>`).join(""):`<div class="notice">No records in this section yet.</div>`}
+  </div>`;
+}
+function vaultHubItems(section){
+  const items=vaultData?.items||[];
+  if(section==="logins")return items.filter(x=>x.type==="login");
+  if(section==="identity")return items.filter(x=>["birth","ssn"].includes(x.type));
+  if(section==="medical")return items.filter(x=>["medical","immunization"].includes(x.type));
+  if(section==="school")return items.filter(x=>x.type==="school");
+  if(section==="insurance")return items.filter(x=>x.type==="insurance");
+  if(section==="documents")return items.filter(x=>x.type==="other"||!!x.attachment);
+  return items;
+}
+function vaultSecurityCard(){
+  const device=!!localStorage.getItem("dailyLifeVaultCredential");
+  return `<div class="card"><div class="eyebrow">Vault security</div><h2>Encrypted + separately locked</h2><div class="muted small">AES-256-GCM encryption with a PBKDF2-derived key. The Vault passcode is never uploaded.</div>
+    <div class="actions" style="margin-top:12px"><button class="btn primary" onclick="closeModal();vaultLock()">Lock now</button><button class="btn" onclick="closeModal();vaultChangePasscode()">Change passcode</button>${device?`<button class="btn" onclick="closeModal();vaultTestDeviceUnlock()">Test device verification</button><button class="btn" onclick="closeModal();vaultEnableDeviceUnlock()">Reconfigure device verification</button>`:`<button class="btn" onclick="closeModal();vaultEnableDeviceUnlock()">Enable device verification</button>`}</div>
+    ${device?`<div class="notice"><b>Device verification configured.</b><br><span class="muted small">After a full app reload, unlock with the passcode once before device re-unlock can work during that session.</span></div>`:""}
+  </div>`;
+}
+function vaultBackupCard(){
+  return `<div class="card"><div class="eyebrow">Encrypted backup</div><h2>Protect the Vault copy</h2><div class="muted small">${vaultCloudSignedIn()?"Cloud: "+esc(vaultCloudTimeLabel()):"Cloud account is not signed in."}</div><div class="actions" style="margin-top:12px"><button class="btn" onclick="vaultExportEncrypted()">Export encrypted file</button>${vaultCloudSignedIn()?`<button class="btn primary" onclick="vaultUploadCloudBackup()">Back up encrypted vault to cloud</button><button class="btn" onclick="vaultRestoreCloudBackup()">Restore encrypted cloud backup</button>`:""}</div></div>`;
+}
+function openVaultHubSection(section){
+  if(!vaultUnlocked||!vaultData){vaultPromptUnlock();return}
+  vaultTouch();
+  let title="Private Vault",body="";
+  if(["all","logins","identity","medical","school","insurance","documents"].includes(section)){
+    const names={all:"All Records",logins:"Logins",identity:"Identity",medical:"Medical + Immunizations",school:"School Records",insurance:"Insurance",documents:"Documents"};
+    title=names[section];body=vaultRecordRows(vaultHubItems(section));
+  }else if(section==="backup"){title="Vault Backup";body=vaultBackupCard()}
+  else if(section==="security"){title="Vault Security";body=vaultSecurityCard()}
+  modal(title,`<div class="vault-hub-modal">${body}</div>`,"Close",closeModal);
+}
 function vaultView(){
   const hasVault=!!vaultEnvelope;
   if(!hasVault){
-    return `<div class="card glow vault-hero"><div class="eyebrow">▣ Private Vault</div><h2>Encrypted records, separate from the rest of Daily Life</h2><p class="muted">Vault contents stay encrypted at rest on this device and are excluded from normal Daily Life cloud snapshots.</p><div class="warning"><b>Keep the passcode.</b> Daily Life cannot recover it. The passcode itself is never stored.</div><div class="actions"><button class="btn primary" onclick="vaultCreate()">Create private vault</button><button class="btn" onclick="vaultImportEncrypted()">Import encrypted vault backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultRestoreCloudBackup()">Restore encrypted cloud backup</button>':""}<button class="btn" onclick="setView(\'today\')">Back</button></div>${vaultCloudSignedIn()?`<div class="muted small" style="margin-top:10px">Encrypted cloud backup: ${esc(vaultCloudTimeLabel())}</div>`:""}</div>`;
+    return `<div class="card glow vault-hero"><div class="eyebrow">▣ Private Vault</div><h2>Encrypted records, separate from the rest of Daily Life</h2><p class="muted">Vault contents stay encrypted at rest on this device and are excluded from normal Daily Life cloud snapshots.</p><div class="warning"><b>Keep the passcode.</b> Daily Life cannot recover it. The passcode itself is never stored.</div><div class="actions"><button class="btn primary" onclick="vaultCreate()">Create private vault</button><button class="btn" onclick="vaultImportEncrypted()">Import encrypted vault backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultRestoreCloudBackup()">Restore encrypted cloud backup</button>':""}<button class="btn" onclick="setView('today')">Back</button></div>${vaultCloudSignedIn()?`<div class="muted small" style="margin-top:10px">Encrypted cloud backup: ${esc(vaultCloudTimeLabel())}</div>`:""}</div>`;
   }
   if(!vaultUnlocked){
     const canBio=!!localStorage.getItem("dailyLifeVaultCredential")&&!!vaultWarmKey&&Date.now()<vaultWarmUntil;
     return `<div class="card glow vault-hero"><div class="eyebrow">▣ Private Vault</div><h2>Vault locked</h2><p class="muted">Your vault is encrypted. Unlock it before viewing document names, logins, notes, or attachments.</p><div class="actions">${canBio?`<button class="btn primary" onclick="vaultBiometricUnlock()">Use device verification</button>`:""}<button class="btn primary" onclick="vaultPromptUnlock()">Unlock with passcode</button><button class="btn" onclick="vaultImportEncrypted()">Import encrypted backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultRestoreCloudBackup()">Restore encrypted cloud backup</button>':""}<button class="btn" onclick="setView('today')">Back</button></div>${localStorage.getItem("dailyLifeVaultCredential")&&!canBio?`<div class="notice">Device verification is configured, but after an app reload the passcode is required once before biometric/device re-unlock can work during that session.</div>`:""}${vaultCloudSignedIn()?`<div class="muted small" style="margin-top:10px">Cloud backup status: ${esc(vaultCloudTimeLabel())}</div>`:""}</div>`;
   }
   vaultTouch();
-  const items=[...(vaultData?.items||[])].sort((a,b)=>String(a.title||"").localeCompare(String(b.title||"")));
-  return `<div class="card glow vault-hero"><div class="section-title"><div><div class="eyebrow">▣ Private Vault</div><h2>${items.length} encrypted record${items.length===1?"":"s"}</h2><div class="muted small">Michelle + children only · encrypted local storage</div>${vaultCloudSignedIn()?`<div class="muted small vault-cloud-status">Encrypted cloud backup: ${esc(vaultCloudTimeLabel())}</div>`:""}</div><button class="btn" onclick="vaultLock()">Lock</button></div><div class="actions"><button class="btn primary" onclick="openVaultItem()">+ Add record</button><button class="btn" onclick="vaultExportEncrypted()">Export encrypted backup</button>${vaultCloudSignedIn()?'<button class="btn" onclick="vaultUploadCloudBackup()">Back up encrypted vault to cloud</button>':""}<button class="btn" onclick="vaultChangePasscode()">Change passcode</button>${localStorage.getItem("dailyLifeVaultCredential")?`<button class="btn primary" onclick="vaultTestDeviceUnlock()">Test device verification</button><button class="btn" onclick="vaultEnableDeviceUnlock()">Reconfigure device verification</button>`:`<button class="btn" onclick="vaultEnableDeviceUnlock()">Enable device verification</button>`}</div></div>
-  <div class="card"><div class="section-title"><div><h2>Records</h2><div class="muted small">Passwords and document contents are never shown on this list.</div></div></div>
-  ${items.length?items.map(x=>`<button class="vault-row" onclick="openVaultItem('${x.id}')"><span class="vault-icon">${x.attachment?"▤":"▣"}</span><span class="grow"><b>${esc(x.title||vaultTypeLabel(x.type))}</b><small>${esc(vaultTypeLabel(x.type))}${x.owner?" · "+esc(x.owner):""}${x.attachment?" · attachment":""}</small></span><span>›</span></button>`).join(""):`<div class="notice">No private records stored yet.</div>`}
-  </div>
-  <div class="card"><div class="mini-heading">Security</div><p class="muted small">AES-256-GCM encryption with a PBKDF2-derived key. Normal app snapshots do not contain vault records. Encrypted file exports and the optional private cloud vault backup contain ciphertext only; the vault passcode is never uploaded.</p>${localStorage.getItem("dailyLifeVaultCredential")?`<div class="notice"><b>Device verification configured.</b><br><span class="muted small">Use Test device verification above to confirm your phone actually shows its fingerprint, face, or screen-lock prompt. After a full app reload, the Vault still requires the passcode once before device re-unlock can work during that session.</span></div>`:""}</div>`;
+  const items=vaultData?.items||[],counts={
+    logins:vaultHubItems("logins").length,identity:vaultHubItems("identity").length,medical:vaultHubItems("medical").length,
+    school:vaultHubItems("school").length,insurance:vaultHubItems("insurance").length,documents:vaultHubItems("documents").length
+  },segments=[
+    {icon:"●",title:"Logins",detail:counts.logins?counts.logins+" saved":"Passwords",section:"logins"},
+    {icon:"◇",title:"Identity",detail:counts.identity?counts.identity+" records":"Birth + SSN",section:"identity"},
+    {icon:"♡",title:"Medical",detail:counts.medical?counts.medical+" records":"Health + shots",section:"medical"},
+    {icon:"▤",title:"School",detail:counts.school?counts.school+" records":"School docs",section:"school"},
+    {icon:"▣",title:"Insurance",detail:counts.insurance?counts.insurance+" records":"Cards + docs",section:"insurance"},
+    {icon:"◫",title:"Documents",detail:counts.documents?counts.documents+" files":"Attachments",section:"documents"},
+    {icon:"↥",title:"Backup",detail:vaultCloudUpdatedAt?"Cloud backed up":"Encrypted copy",section:"backup"},
+    {icon:"⌾",title:"Security",detail:localStorage.getItem("dailyLifeVaultCredential")?"Device verify":"Passcode",section:"security"}
+  ];
+  return `<section class="vault-one-screen"><div class="vault-one-topline"><div><div class="eyebrow">Private Vault</div><b>You + children only</b></div><div class="actions"><button class="btn small" onclick="vaultLock()">Lock</button><button class="btn small primary" onclick="openVaultItem()">＋ Record</button></div></div>
+    <div class="life-wheel vault-wheel" role="group" aria-label="Private Vault dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openVaultHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center vault-wheel-center" onclick="event.stopPropagation();openVaultHubSection('all');return false;"><span class="eyebrow">ENCRYPTED</span><b>${items.length} record${items.length===1?"":"s"}</b><strong>Private Vault</strong><small>Tap for all records</small></button>
+    </div>
+  </section>`;
 }
 function vaultCreate(){
   if(!crypto?.subtle){alert("Encrypted vault storage is not available in this browser.");return}
