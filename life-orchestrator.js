@@ -385,11 +385,8 @@
   };
 
   window.openGardenHobbiesHub=function(){
-    const plants=(state.plants||[]).length,projects=(state.hobbyProjects||[]).length;
-    modal("Garden + Hobbies",'<div class="stack"><div class="household-hub-grid two">'+
-      '<button onclick="closeModal();setView(\'garden\')"><span class="hub-icon">⌁</span><span><b>Garden</b><small>'+plants+' plant'+(plants===1?'':'s')+' · seeds + care + journal</small></span></button>'+
-      '<button onclick="closeModal();setView(\'hobbies\')"><span class="hub-icon">✂</span><span><b>Hobbies</b><small>'+projects+' project'+(projects===1?'':'s')+' · crafts + supplies + photos</small></span></button>'+
-      '</div></div>',"Close",closeModal);
+    closeModal();
+    setView("gardenhobbies");
   };
 
   function lifeTodayWheel(){
