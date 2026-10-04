@@ -5043,7 +5043,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-wheel2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-data1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
