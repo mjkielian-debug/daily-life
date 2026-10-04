@@ -490,6 +490,16 @@ function cloudStateForUpload(){
       if(item.photo){delete item.photo;item.photoLocalOnly=true}
     }
   }
+  // Reviewed screenshot/reference photos can also be multi-megabyte data URLs.
+  // Keep the descriptive records in cloud snapshots, but keep image bytes on this device.
+  for(const key of ["vehicles","projects","gardenJournal"]){
+    if(!Array.isArray(copy[key]))continue;
+    for(const item of copy[key]){
+      if(Array.isArray(item.referencePhotos)&&item.referencePhotos.length){
+        delete item.referencePhotos;item.referencePhotosLocalOnly=true;
+      }
+    }
+  }
   return copy;
 }
 
