@@ -970,3 +970,103 @@ body:has(.food-one-screen-shell){
     top:6%!important;
   }
 }
+
+
+/* Daily Review tri-state tracking */
+.life-today-top-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:nowrap;
+}
+.life-today-top-actions .btn{
+  white-space:nowrap;
+}
+.daily-review{
+  color:#2b2231;
+}
+.daily-review-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+.daily-review-head h2,
+.daily-review-complete h2{
+  margin:.15rem 0 .3rem;
+  color:#2b2231!important;
+}
+.daily-review-question{
+  padding:18px 14px;
+  border-radius:26px;
+  border:1px solid rgba(117,80,108,.14);
+  background:linear-gradient(145deg,rgba(249,225,235,.9),rgba(232,242,230,.88),rgba(235,229,248,.88));
+  text-align:center;
+}
+.daily-review-question h2{
+  margin:.35rem 0 .3rem;
+  color:#2b2231!important;
+}
+.daily-review-group{
+  display:inline-block;
+  border-radius:999px;
+  padding:4px 8px;
+  background:rgba(255,255,255,.72);
+  color:#75536d;
+  font-size:.66rem;
+  font-weight:850;
+  letter-spacing:.04em;
+}
+.daily-review-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:15px;
+}
+.daily-review-actions button{
+  min-height:48px;
+  border-radius:18px;
+  border:1px solid rgba(103,73,101,.16);
+  font-weight:900;
+  font-size:.82rem;
+  color:#2f2434;
+  background:rgba(255,255,255,.75);
+}
+.daily-review-actions .review-yes{background:#dff0dd}
+.daily-review-actions .review-no{background:#f4dce4}
+.daily-review-actions .review-na{background:#ece8f3}
+.daily-review-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+}
+.daily-review-summary span{
+  min-width:0;
+  border-radius:18px;
+  padding:9px 5px;
+  background:rgba(255,255,255,.68);
+  border:1px solid rgba(103,73,101,.12);
+  display:grid;
+  justify-items:center;
+  gap:1px;
+}
+.daily-review-summary b{
+  font-family:var(--font-heading);
+  color:#2b2231!important;
+}
+.daily-review-summary small{
+  color:#625365!important;
+  font-size:.62rem;
+}
+.daily-review-complete{
+  padding:18px 14px;
+  border-radius:24px;
+  text-align:center;
+  background:linear-gradient(145deg,#e5f1df,#f7e3ec);
+}
+@media(max-width:420px){
+  .life-today-top-actions{gap:4px}
+  .life-today-top-actions .btn{padding:6px 8px!important;font-size:.66rem!important}
+  .daily-review-actions{grid-template-columns:1fr 1fr}
+  .daily-review-actions .review-na{grid-column:1/-1}
+}
