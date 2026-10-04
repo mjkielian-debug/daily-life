@@ -412,3 +412,61 @@ body::before{opacity:.6}
   .pattern-compare-head b{font-size:1.05rem}
   .pattern-mini-bars small{font-size:.54rem!important}
 }
+
+
+/* Work: keep the useful rate/next-step visible and collapse reference detail. */
+.ups-next-step{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  border:1px solid #b989a5;
+  border-radius:18px;
+  background:#fbe5ee;
+  padding:9px 11px;
+  margin:7px 0;
+}
+.ups-next-step>span:first-child{display:grid}
+.ups-next-step small{color:#6b5668!important;font-size:.64rem!important}
+.ups-next-step b{font-family:var(--font-heading);font-size:1rem;color:#292039!important}
+.ups-next-step>span:last-child{font-size:.72rem;font-weight:800;color:#6b5668;text-align:right}
+.ups-contract-dates{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin:7px 0;
+}
+.ups-contract-dates>span{
+  display:grid;
+  gap:2px;
+  border-radius:17px;
+  background:#dcebd0;
+  border:1px solid #b8cda9;
+  padding:8px 10px;
+}
+.ups-contract-dates small{font-size:.62rem!important;color:#5d5062!important}
+.ups-contract-dates b{font-size:.8rem;color:#292039!important}
+.ups-contract-details{
+  margin-top:7px;
+  border:1px solid #b989a5;
+  border-radius:18px;
+  background:rgba(255,255,255,.38);
+  overflow:hidden;
+}
+.ups-contract-details>summary{
+  list-style:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:9px 11px;
+  cursor:pointer;
+}
+.ups-contract-details>summary::-webkit-details-marker{display:none}
+.ups-contract-details>summary>span:first-child{display:grid;min-width:0}
+.ups-contract-details>summary b{color:#292039!important}
+.ups-contract-details>summary small{color:#5d5062!important;font-size:.63rem!important}
+.ups-contract-details>summary>span:last-child{font-size:.68rem;font-weight:850;color:#7b536f}
+.ups-contract-details[open]>summary>span:last-child{font-size:0}
+.ups-contract-details[open]>summary>span:last-child:after{content:"Close";font-size:.68rem}
+.ups-contract-details>.stack{padding:0 10px 10px}
