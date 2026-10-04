@@ -228,7 +228,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`};
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
-  version:34,createdAt:new Date().toISOString(),
+  version:35,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-vivid1";
+const APP_BUILD="2026.10.04-work-schedule1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -478,7 +478,42 @@ function itineraryDayEnd(date){
 function shiftDateString(date,days){const d=new Date(String(date||ymd())+"T12:00:00");d.setDate(d.getDate()+Number(days||0));return ymd(d)}
 function setItineraryDate(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return;itineraryDate=date;localStorage.setItem("dailyLifeItineraryDate",date);render()}
 function shiftItineraryDate(days){setItineraryDate(shiftDateString(itineraryDate,days))}
-function workForDate(date){return (state.workShifts||[]).find(x=>x.date===date)||null}
+function workWeekdays(){
+  const raw=state.settings?.itinerary?.workWeekdays;
+  const days=Array.isArray(raw)?raw.map(Number).filter(x=>Number.isInteger(x)&&x>=0&&x<=6):[2,3,4,5,6];
+  return [...new Set(days)];
+}
+function isUsualWorkday(date){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return false;
+  return workWeekdays().includes(new Date(date+"T12:00:00").getDay());
+}
+function workShiftHasActual(w){
+  return !!(w&&(w.start||w.end||w.timecardVerified||Number(w.officialHours)>0||Number(w.officialGrossPay)>0));
+}
+function scheduledWorkTask(t){
+  return !!(t&&String(t.title||"")==="UPS shift"&&(String(t.generated||"")==="work-schedule"||/^Scheduled\s+\d{1,2}:\d{2}/i.test(String(t.notes||""))));
+}
+function sanitizeWorkScheduleData(target){
+  const itinerary=target?.settings?.itinerary||{},days=new Set(Array.isArray(itinerary.workWeekdays)?itinerary.workWeekdays.map(Number):[2,3,4,5,6]);
+  target.workShifts=(target.workShifts||[]).filter(w=>{
+    if(!w?.date||!/^\d{4}-\d{2}-\d{2}$/.test(String(w.date)))return true;
+    const wd=new Date(w.date+"T12:00:00").getDay();
+    return days.has(wd)||workShiftHasActual(w);
+  });
+  target.tasks=(target.tasks||[]).filter(t=>{
+    if(!scheduledWorkTask(t)||!t.date)return true;
+    const wd=new Date(t.date+"T12:00:00").getDay();
+    if(days.has(wd))return true;
+    const w=(target.workShifts||[]).find(x=>x.date===t.date);
+    return workShiftHasActual(w);
+  });
+  return target;
+}
+function workForDate(date){
+  const w=(state.workShifts||[]).find(x=>x.date===date)||null;
+  if(!w)return null;
+  return isUsualWorkday(date)||workShiftHasActual(w)?w:null;
+}
 function mealForDate(date){return (state.meals||[]).find(x=>x.date===date&&x.type==="dinner")||null}
 function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x=>x.date===date)}
 function itineraryEstimatedEventMinutes(e){
@@ -1258,14 +1293,16 @@ function ensureToday(){
   for(const t of state.settings.recurringTasks||[]){
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
-  const ws=state.workShifts.find(x=>x.date===date);
-  if(ws?.scheduled&&!existing.has("UPS shift"))state.tasks.push({id:uid(),date,title:"UPS shift",category:"work",notes:`Scheduled ${ws.scheduled}`,done:!!ws.end,order:10});
+  sanitizeWorkScheduleData(state);
+  const ws=workForDate(date);
+  if(ws?.scheduled&&(isUsualWorkday(date)||workShiftHasActual(ws))&&!existing.has("UPS shift"))state.tasks.push({id:uid(),date,title:"UPS shift",category:"work",notes:`Scheduled ${ws.scheduled}`,done:!!ws.end,order:10,generated:"work-schedule"});
 }
 
 function migrateState(s){
   const b=blankState();
   s=s||b;
-  s.version=Math.max(Number(s.version)||0,34);
+  const previousVersion=Number(s.version)||0;
+  s.version=Math.max(previousVersion,35);
   s.profile=s.profile||b.profile;
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
   s.settings={...b.settings,...(s.settings||{})};
@@ -1278,6 +1315,11 @@ function migrateState(s){
   s.settings.garden={...b.settings.garden,...(s.settings.garden&&typeof s.settings.garden==="object"?s.settings.garden:{})};
   s.settings.spirituality={...b.settings.spirituality,...(s.settings.spirituality&&typeof s.settings.spirituality==="object"?s.settings.spirituality:{})};
   s.settings.itinerary={...b.settings.itinerary,...(s.settings.itinerary&&typeof s.settings.itinerary==="object"?s.settings.itinerary:{})};
+  if(previousVersion<35){
+    s.settings.itinerary.workWeekdays=[2,3,4,5,6];
+    s.settings.itinerary.workScheduleConfirmedAt="2026-10-04";
+    s.settings.itinerary.workScheduleLabel="Tuesday–Saturday";
+  }
   for(const d of DEFAULT_SELF_CARE_HABITS){
     const existing=s.settings.selfCareHabits.find(h=>h.key===d.key);
     if(!existing)s.settings.selfCareHabits.push({...d});
@@ -1373,6 +1415,7 @@ function migrateState(s){
   if(!s.budget||typeof s.budget!=="object"||Array.isArray(s.budget))s.budget={};
   if(!s.budget.months||typeof s.budget.months!=="object"||Array.isArray(s.budget.months))s.budget.months={};
   if(!Array.isArray(s.budget.spending))s.budget.spending=[];
+  sanitizeWorkScheduleData(s);
   return s;
 }
 function ensureMealPatterns(){
