@@ -934,24 +934,84 @@ function printItineraryWeek(date=itineraryDate){
   openItineraryPrint(dates,`Daily Life · Week of ${new Date(d).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}`);
 }
 
-function itineraryView(){
-  const date=itineraryDate||ymd(),meal=mealForDate(date),items=itineraryDayItems(date),
-        placedTaskIds=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
-        tasks=itineraryTaskCandidates(date).filter(x=>!placedTaskIds.has(x.id)),
-        chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
-  return `<div class="card glow itinerary-hero">
-    <div class="section-title"><div><div class="eyebrow">Day Flow</div><h2>Your daily lesson plan</h2><div class="muted small">A realistic agenda built from work, school, family commitments, routines, and the tasks you give Daily Life.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>
-    <div class="itinerary-date-nav"><button class="btn" onclick="shiftItineraryDate(-1)">←</button><input type="date" value="${esc(date)}" onchange="setItineraryDate(this.value)"><button class="btn" onclick="shiftItineraryDate(1)">→</button><button class="btn" onclick="setItineraryDate(ymd())">Today</button></div>
-    <div class="actions"><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button><button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button></div>
-  </div>
-  ${itineraryFlowCard(date)}
-  <div class="today-section-grid">
-    <div class="card"><div class="eyebrow">Dinner</div><h2>${meal?.dish?esc(meal.dish):"Not planned"}</h2><div class="muted small">${meal?.startBy?"Start "+esc(fmtClock(meal.startBy)):""}${meal?.serveTime?(meal?.startBy?" · ":"")+"Serve "+esc(fmtClock(meal.serveTime)):""}</div><button class="btn small" onclick="openMeal('${date}')">${meal?"Open dinner":"Plan dinner"}</button></div>
-    <div class="card"><div class="eyebrow">Still unscheduled</div><h2>${tasks.length}</h2><div class="muted small">${tasks.slice(0,4).map(x=>esc(x.title)).join(" · ")||"Every open task that fits has a spot in the agenda"}</div>${tasks.length?`<div class="muted small" style="margin-top:8px">These may not fit the available openings or their preferred time window. Tap a task in Today to adjust it, or add a custom block.</div>`:""}</div>
-    <div class="card"><div class="eyebrow">Family chores inside the routine</div><h2>${chores.length}</h2><div class="muted small">${chores.slice(0,6).map(x=>esc((x.child?x.child+" · ":"")+x.chore)).join(" · ")||"No open chores for this day"}</div></div>
+function dayFlowBucketForMinutes(m){
+  if(m<360)return"before";
+  if(m<720)return"morning";
+  if(m<900)return"midday";
+  if(m<1080)return"afternoon";
+  if(m<1200)return"evening";
+  return"tonight";
+}
+const DAY_FLOW_BUCKETS={
+  before:{title:"Before Sunrise",icon:"☾"},
+  morning:{title:"Morning",icon:"☀"},
+  midday:{title:"Midday",icon:"◷"},
+  afternoon:{title:"Afternoon",icon:"✎"},
+  evening:{title:"Evening",icon:"⌂"},
+  tonight:{title:"Tonight",icon:"✦"}
+};
+function dayFlowBucketItems(date,key){
+  return itineraryDayItems(date).filter(x=>{const m=hmMinutes(x.start);return m!==null&&dayFlowBucketForMinutes(m)===key});
+}
+function dayFlowItemAction(x,date){
+  if(x.source==="custom")return `openItineraryBlock('${date}','${x.sourceId}')`;
+  if(x.source==="event")return `openEvent('${date}','${x.sourceId}')`;
+  if(x.source==="meal")return `openMeal('${date}')`;
+  if(x.source==="suggested")return `openSuggestedItineraryBlock('${date}','${x.templateKey}')`;
+  if(x.source==="task")return `openItineraryTask('${x.sourceId}')`;
+  return `openDayFlowSection('plan','${date}')`;
+}
+function dayFlowBucketCard(date,key){
+  const cfg=DAY_FLOW_BUCKETS[key],rows=dayFlowBucketItems(date,key);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">${cfg.icon} ${cfg.title}</div><h2>${rows.length} block${rows.length===1?"":"s"}</h2></div><button class="btn" onclick="openItineraryBlock('${date}')">+ Block</button></div>
+    ${rows.map(x=>`<button class="dayflow-phase-row" onclick="${dayFlowItemAction(x,date)}"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow"><b>${esc(x.title)}</b><small>${esc([x.detail,itineraryTypeLabel(x)].filter(Boolean).join(" · "))}</small></span><span>${x.done?"✓":"›"}</span></button>`).join("")||`<div class="notice">Nothing planned in this part of the day.</div>`}
   </div>`;
 }
-
+function dayFlowUnscheduledCard(date){
+  const items=itineraryDayItems(date),placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
+        tasks=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)),
+        chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Unscheduled</div><h2>${tasks.length+chores.length} loose item${tasks.length+chores.length===1?"":"s"}</h2><div class="muted small">Things not currently placed into a time block.</div></div><button class="btn" onclick="openItineraryBlock('${date}')">+ Block</button></div>
+    ${tasks.map(t=>`<button class="dayflow-phase-row" onclick="openItineraryTask('${t.id}')"><span class="dayflow-phase-time"><b>Task</b></span><span class="grow"><b>${esc(t.title)}</b><small>${esc([t.child,t.notes].filter(Boolean).join(" · "))}</small></span><span>›</span></button>`).join("")}
+    ${chores.map(c=>`<div class="dayflow-phase-row"><span class="dayflow-phase-time"><b>Chore</b></span><span class="grow"><b>${esc(c.child||"")}</b><small>${esc(c.chore||"")}</small></span><label class="task"><input type="checkbox" onchange="toggleChore('${c.id}',this.checked)"><span>Done</span></label></div>`).join("")}
+    ${!tasks.length&&!chores.length?`<div class="notice">Everything that needs a time is placed or complete.</div>`:""}
+  </div>`;
+}
+function dayFlowPlanCard(date){
+  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button><button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}</div>`;
+}
+function openDayFlowSection(section,date=itineraryDate||ymd()){
+  if(DAY_FLOW_BUCKETS[section]){modal(DAY_FLOW_BUCKETS[section].title,`<div class="dayflow-hub-modal">${dayFlowBucketCard(date,section)}</div>`,"Close",closeModal);return}
+  if(section==="unscheduled"){modal("Unscheduled",`<div class="dayflow-hub-modal">${dayFlowUnscheduledCard(date)}</div>`,"Close",closeModal);return}
+  modal("Day Flow · Plan",`<div class="dayflow-hub-modal">${dayFlowPlanCard(date)}</div>`,"Close",closeModal);
+}
+function dayFlowCurrentItem(date,items){
+  if(date!==ymd())return items.find(x=>!x.done&&x.kind!=="gap")||items[0]||null;
+  const now=new Date(),m=now.getHours()*60+now.getMinutes(),
+        active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&e!==null&&s<=m&&e>m&&x.kind!=="gap"}),
+        next=items.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
+  return active||next||null;
+}
+function itineraryView(){
+  const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),
+        placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
+        unscheduled=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)).length+(state.chores||[]).filter(x=>x.date===date&&!x.done).length,
+        buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+first.title:"Open"}}),
+        segments=[
+          ...buckets,
+          {key:"unscheduled",title:"Unscheduled",icon:"?",count:unscheduled,detail:unscheduled?unscheduled+" loose":"Clear"},
+          {key:"plan",title:"Plan / Settings",icon:"⚙",count:0,detail:"Edit + print"}
+        ],
+        centerTitle=current?current.title:(date===ymd()?"Open time":"Day overview"),
+        centerDetail=current?fmtClock(current.start)+(current.end?"–"+fmtClock(current.end):""):(items.length?items.length+" blocks planned":"Nothing timed"),
+        centerAction=current?dayFlowItemAction(current,date):`openDayFlowSection('plan','${date}')`;
+  return `<section class="dayflow-one-screen"><div class="dayflow-one-topline"><div class="dayflow-date-nav"><button class="btn small" onclick="shiftItineraryDate(-1)">←</button><span><div class="eyebrow">Day Flow</div><b>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}))}</b></span><button class="btn small" onclick="shiftItineraryDate(1)">→</button></div><div class="actions"><button class="btn small" onclick="setItineraryDate(ymd())">Today</button><button class="btn small primary" onclick="openItineraryBlock('${date}')">＋ Block</button></div></div>
+    <div class="life-wheel dayflow-wheel" role="group" aria-label="Day Flow dashboard">
+      ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openDayFlowSection('${x.key}','${date}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center dayflow-wheel-center" onclick="event.stopPropagation();${centerAction};return false;"><span class="eyebrow">${date===ymd()?"NOW / NEXT":"DAY FOCUS"}</span><b>${esc(centerTitle)}</b><strong>${esc(centerDetail)}</strong><small>${current?"Tap to open":"Tap for plan"}</small></button>
+    </div>
+  </section>`;
+}
 function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
   modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${x.templateKey?`<label class="task"><input id="ibremember" type="checkbox"><span><b>Use this timing on future ${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}))}s</b><div class="muted small">Daily Life will remember this routine's start and end time for this weekday.</div></span></label>`:""}${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
@@ -1176,7 +1236,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
