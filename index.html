@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-dayflow2">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-weeknav1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-multifloor1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-dayflow2";
+const APP_BUILD="2026.10.04-weeknav1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -4039,7 +4039,7 @@ function readingView(){
     </div>
   </section>`;
 }
-function week(){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function week(offset=0){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff+(Number(offset)||0)*7);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
 function activeOrders(){
   return [...(state.orders||[])].filter(o=>!["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
 }
@@ -4086,12 +4086,31 @@ function foodIntakeTrends(){
   return `<div class="card food-trends-card"><div class="eyebrow">7-day intake</div><h2>What you actually logged</h2><div class="muted small">Nutrition and caffeine bars use known values only; blank or low days can simply mean values were not entered.</div>${row("Known calories",calories,v=>Math.round(v)+"")}${row("Known protein",protein,v=>Math.round(v)+"g")}${row("Water",waterVals,v=>Math.round(v)+" oz")}${caffeineKnown?row("Known caffeine",caffeine,v=>Math.round(v)+"mg"):""}${monsterKnown?row("Energy drinks",monsters,v=>Number(v.toFixed(1))+""):""}</div>`;
 }
 
+let foodWeekOffset=0;
+function shiftFoodWeek(delta){
+  foodWeekOffset+=Number(delta)||0;
+  closeModal();
+  openFoodHubSection("week");
+}
+function resetFoodWeek(){
+  foodWeekOffset=0;
+  closeModal();
+  openFoodHubSection("week");
+}
+function foodWeekRangeLabel(dates){
+  if(!dates?.length)return"";
+  const a=new Date(dates[0]+"T12:00:00"),b=new Date(dates[dates.length-1]+"T12:00:00");
+  const sameMonth=a.getMonth()===b.getMonth();
+  const left=a.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  const right=b.toLocaleDateString("en-US",sameMonth?{day:"numeric"}:{month:"short",day:"numeric"});
+  return left+" – "+right;
+}
 function foodWeekCard(){
-  const dates=week(),today=ymd(),remainingDates=dates.filter(d=>d>=today),
+  const dates=week(foodWeekOffset),today=ymd(),remainingDates=dates.filter(d=>d>=today),
         remainingMeals=remainingDates.map(d=>state.meals.find(x=>x.date===d&&x.type==="dinner")).filter(Boolean),
         planned=remainingMeals.filter(m=>m.dish).length,ready=remainingMeals.filter(m=>m.dish&&mealRecipeStatus(m)==="ready").length,
         choosing=remainingMeals.filter(m=>!m.dish&&m.recipeState==="suggestion-queued").length;
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Week plan</div><h2>Meals this week</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions()">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>render())">Build recipes</button></div></div>
+  return `<div class="card"><div class="food-week-nav"><button class="btn small" onclick="shiftFoodWeek(-1)" aria-label="Previous week">←</button><div><div class="eyebrow">${foodWeekOffset===0?"This week":foodWeekOffset===1?"Next week":foodWeekOffset===-1?"Last week":"Week plan"}</div><b>${esc(foodWeekRangeLabel(dates))}</b></div><button class="btn small" onclick="shiftFoodWeek(1)" aria-label="Next week">→</button>${foodWeekOffset!==0?`<button class="btn small food-week-current" onclick="resetFoodWeek()">This week</button>`:""}</div><div class="section-title"><div><h2>Meals ${foodWeekOffset===0?"this week":foodWeekOffset===1?"next week":"for this week"}</h2><div class="muted small">${planned}/${remainingDates.length} remaining days planned · ${ready} recipes ready${choosing?` · ${choosing} being chosen`:""}</div></div><div class="actions"><button class="btn primary" onclick="requestWeekSuggestions(foodWeekOffset)">Plan week for me</button><button class="btn" onclick="queueMissingMealRecipes().then(()=>{closeModal();openFoodHubSection('week')})">Build recipes</button></div></div>
     ${dates.map(d=>{const m=state.meals.find(x=>x.date===d&&x.type==="dinner"),rs=mealRecipeStatus(m),sg=latestMealSuggestion(d),past=d<today;return `<div class="row ${past?"past-row":""}"><span onclick="openMeal('${d}')" style="flex:1"><b>${dl(d)}</b><div class="muted small">${m?.method?esc(m.method):past?"Past":""}</div></span>${m?.dish?`<span onclick="openMeal('${d}')" style="text-align:right">${esc(m.dish)}<div class="muted small">${rs==="ready"?"✓ recipe ready":rs==="waiting"?"cloud needed":"✨ building recipe"}</div></span>`:past?`<span class="muted small">No meal logged</span>`:sg?suggestionCard(sg,true):m?.recipeState==="suggestion-queued"?`<span class="muted small">✨ choosing from your kitchen…</span>`:`<div class="actions"><button class="btn small primary" onclick="requestMealSuggestion('${d}')">Suggest</button><button class="btn small" onclick="openMeal('${d}')">Choose</button></div>`}</div>`}).join("")}</div>`;
 }
 function foodGroceryCard(){
@@ -5152,8 +5171,8 @@ async function requestMealSuggestion(date){
   }
   render();
 }
-async function requestWeekSuggestions(){
-  const today=ymd(),dates=week(),targets=dates.filter(date=>{
+async function requestWeekSuggestions(offset=foodWeekOffset){
+  const today=ymd(),dates=week(offset),targets=dates.filter(date=>{
     if(date<today)return false;
     const m=state.meals.find(x=>x.date===date&&x.type==="dinner");
     return !m?.dish&&m?.recipeState!=="suggestion-queued";
@@ -5834,7 +5853,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-dayflow2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-weeknav1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
