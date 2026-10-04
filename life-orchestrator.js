@@ -316,7 +316,7 @@
       tomorrowMeal=typeof mealForDate==="function"?mealForDate(tomorrow):null,
       tomorrowWork=typeof workForDate==="function"?workForDate(tomorrow):null;
     return '<div class="card life-command">'+
-      '<div class="life-command-head"><div><div class="eyebrow">Daily Life command center</div><h2>What needs you next</h2></div><div class="actions"><button class="btn primary" onclick="openLifeCapture()">＋ Capture</button><button class="btn" onclick="setView(\'itinerary\')">Day Flow</button></div></div>'+
+      '<div class="life-command-head"><div><div class="eyebrow">Daily Life command center</div><h2>What needs you next</h2></div><div class="actions"><button class="btn primary" onclick="openLifeCapture()">＋ Capture</button><button class="btn" onclick="openTodayDayFlow()">Day Flow</button></div></div>'+
       '<div class="life-next-orb"><div class="life-next-label">DO NEXT</div><b>'+esc(guide.title)+'</b><small>'+esc(guide.detail)+'</small>'+
         (guide.task?'<div class="actions"><button class="btn primary small" onclick="lifeStartTaskNow(\''+guide.task.id+'\')">Start next</button><button class="btn small" onclick="openItineraryTask(\''+guide.task.id+'\')">Choose time</button><button class="btn small" onclick="lifeOpenSource(\''+guide.task.id+'\')">Open</button></div>':'')+
       '</div>'+
@@ -407,7 +407,7 @@
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
       centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean)[0]||"Tap for Day Flow.",
       segments=[
-        {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"setView('itinerary')"},
+        {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"openTodayDayFlow()"},
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
         {icon:"◇",title:"Food",detail:meal?.dish?String(meal.dish).split(/[·—–,:]/)[0].trim().slice(0,18):"Dinner open",action:"setView('home')"},
         {icon:"$",title:"Money",detail:billCount?billCount+" bill"+(billCount===1?"":"s")+" soon":"Bills clear",action:"setView('more')"},
@@ -419,7 +419,7 @@
     return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div>'+
       '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
         segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
-        '<button class="life-wheel-center" onclick="setView(\'itinerary\')"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(centerDetail)+'</small></button>'+
+        '<button class="life-wheel-center" onclick="openTodayDayFlow()"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(centerDetail)+'</small></button>'+
       '</div>'+
       '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
   }
