@@ -74,9 +74,9 @@
   };
 
   const baseItinerary=itineraryView;
-  itineraryView=function(){
+  function legacyCapacityItineraryView(){
     return baseItinerary.apply(this,arguments);
-  };
+  }
 
   if(typeof render==="function")render();
 })();
