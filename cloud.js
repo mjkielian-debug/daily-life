@@ -752,7 +752,18 @@ function cloudApplyLifeEntry(row){
     }
     case "food":{
       const name=String(p.name||"").trim();if(!name)return false;
-      state.foodLogs.push({...common,name,category:String(p.category||"food"),quantity:Number(p.quantity||1)>0?Number(p.quantity||1):1,calories:Number(p.calories||0),protein:Number(p.protein||0),carbs:Number(p.carbs||0),fat:Number(p.fat||0),fiber:Number(p.fiber||0),caffeineMg:Number(p.caffeineMg||0),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||"")});
+      const quantity=Number(p.quantity||1)>0?Number(p.quantity||1):1;
+      const next={...common,name,category:String(p.category||"food"),quantity,calories:Number(p.calories||0),protein:Number(p.protein||0),carbs:Number(p.carbs||0),fat:Number(p.fat||0),fiber:Number(p.fiber||0),caffeineMg:Number(p.caffeineMg||0),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||""),nutritionEstimated:!!p.nutritionEstimated,nutritionSource:String(p.nutritionSource||"")};
+      if(p.replaceExisting){
+        const key=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+        const existing=(state.foodLogs||[]).find(x=>x.date===date&&key(x.name)===key(name));
+        if(existing){
+          const keepId=existing.id;
+          Object.assign(existing,next,{id:keepId,cloudEntryId:row.id});
+          return true;
+        }
+      }
+      state.foodLogs.push(next);
       return true;
     }
     case "sleep":{
