@@ -69,10 +69,13 @@
       '</div>';
   }
 
+  window.openCapacityGuardrail=function(date=itineraryDate||ymd()){
+    modal("Planning capacity",capacityCard(date),"Close",closeModal);
+  };
+
   const baseItinerary=itineraryView;
   itineraryView=function(){
-    const date=itineraryDate||ymd();
-    return capacityCard(date)+baseItinerary.apply(this,arguments);
+    return baseItinerary.apply(this,arguments);
   };
 
   if(typeof render==="function")render();
