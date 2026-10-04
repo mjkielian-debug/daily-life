@@ -2336,7 +2336,7 @@ function selfCareTodayStats(){
   const habits=selfCareHabits(),statuses=habits.map(h=>dailyReviewStatus("care",h.key,ymd())),
         done=statuses.filter(x=>x==="yes").length,no=statuses.filter(x=>x==="no").length,na=statuses.filter(x=>x==="na").length,
         unknown=statuses.filter(x=>x==="unknown").length,known=done+no;
-  return{done,no,na,unknown,known,total:habits.length,percent:known?Math.round(done*100/known):0};
+  return{done,no,na,unknown,known,total:habits.length,percent:habits.length?Math.round(done*100/habits.length):0,knownPercent:known?Math.round(done*100/known):0};
 }
 function wellnessForDate(date=ymd()){
   return (state.wellnessLogs||[]).find(x=>x.date===date)||null;
@@ -2358,8 +2358,9 @@ function selfCareTabs(){
   </div>`;
 }
 function selfCareGroupCard(group,habits){
-  const done=habits.filter(h=>selfCareDone(h.key)).length;
-  return `<div class="self-care-group"><div class="self-care-group-head"><div><div class="mini-heading">${esc(group)}</div><div class="muted small">${done} of ${habits.length} logged today</div></div><span class="self-care-count">${done}/${habits.length}</span></div><div class="self-care-grid">${habits.map(h=>care(h.key,h.label)).join("")}</div></div>`;
+  const statuses=habits.map(h=>dailyReviewStatus("care",h.key,ymd())),
+        done=statuses.filter(x=>x==="yes").length,no=statuses.filter(x=>x==="no").length,unknown=statuses.filter(x=>x==="unknown").length;
+  return `<div class="self-care-group"><div class="self-care-group-head"><div><div class="mini-heading">${esc(group)}</div><div class="muted small">${done} yes${no?" · "+no+" no":""}${unknown?" · "+unknown+" unknown":""}</div></div><span class="self-care-count">${done}✓ ${unknown?"· "+unknown+"?":""}</span></div><div class="self-care-grid">${habits.map(h=>care(h.key,h.label)).join("")}</div></div>`;
 }
 function selfCareBalanceCards(){
   const sleep=sleepHours(sleepForDate()),waterNow=water(),waterGoal=Number(state.settings.waterTarget||0),stretchNow=stretch(),f=totals();
@@ -2381,8 +2382,9 @@ function selfCareTodayPanel(){
 }
 function routineName(value){return value==="morning"?"Morning":value==="evening"?"Evening":"Anytime"}
 function routinePanel(routine){
-  const rows=selfCareHabits().filter(h=>(h.routine||"anytime")===routine),done=rows.filter(h=>selfCareDone(h.key)).length;
-  return `<div class="routine-panel"><div class="self-care-group-head"><div><div class="mini-heading">${routineName(routine)}</div><div class="muted small">${done}/${rows.length} logged today</div></div></div><div class="self-care-grid">${rows.map(h=>care(h.key,h.label)).join("")||'<div class="muted small">No habits assigned here yet.</div>'}</div></div>`;
+  const rows=selfCareHabits().filter(h=>(h.routine||"anytime")===routine),statuses=rows.map(h=>dailyReviewStatus("care",h.key,ymd())),
+        done=statuses.filter(x=>x==="yes").length,unknown=statuses.filter(x=>x==="unknown").length;
+  return `<div class="routine-panel"><div class="self-care-group-head"><div><div class="mini-heading">${routineName(routine)}</div><div class="muted small">${done} yes${unknown?" · "+unknown+" unknown":""}</div></div></div><div class="self-care-grid">${rows.map(h=>care(h.key,h.label)).join("")||'<div class="muted small">No habits assigned here yet.</div>'}</div></div>`;
 }
 function selfCareRoutinesPanel(){
   return `<div class="routine-intro"><b>Shape the day without adding reminders.</b><div class="muted small">These are just grouped check-ins. Move habits between morning, anytime, and evening whenever your routine changes.</div></div>
@@ -2468,25 +2470,27 @@ function selfCarePersonalPanel(){
     ${(state.selfCareActivities||[]).length?`<details class="self-care-history"><summary>Recent personal-care history</summary>${[...(state.selfCareActivities||[])].sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,20).map(x=>{const d=defs.find(v=>v.key===x.key);return`<div class="row compact-row"><span><b>${esc(d?.label||x.key)}</b><div class="muted small">${esc(dl(x.date))}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.time?esc(fmtClock(x.time)):""}</b></div>`}).join("")}</details>`:""}`;
 }
 function selfCareTrackPanel(){
-  const habits=selfCareHabits(),dates=trendDates(7),total=Math.max(1,habits.length),
+  const habits=selfCareHabits(),dates=trendDates(7),
         waterVals=dates.map(d=>(state.waterLogs||[]).filter(x=>x.date===d).reduce((n,x)=>n+Number(x.oz||0),0)),
+        waterKnown=waterVals.filter(v=>v>0),
         sleepVals=dates.map(d=>sleepHours((state.sleepLogs||[]).find(x=>x.date===d))).filter(Boolean),
-        avgWater=waterVals.reduce((a,b)=>a+b,0)/7,avgSleep=sleepVals.length?sleepVals.reduce((a,b)=>a+b,0)/sleepVals.length:0,
+        avgWater=waterKnown.length?waterKnown.reduce((a,b)=>a+b,0)/waterKnown.length:0,
+        avgSleep=sleepVals.length?sleepVals.reduce((a,b)=>a+b,0)/sleepVals.length:0,
         ranked=habits.map(h=>({...h,count:selfCareCount(h.key,30)})).sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label)).slice(0,5),
         brush7=selfCareOccurrenceCount("brush",7),brushDays7=selfCareCount("brush",7),brush30=selfCareOccurrenceCount("brush",30),brushDays30=selfCareCount("brush",30);
-  return `<div class="care-track-summary"><div class="metric"><div class="eyebrow">Care days</div><div class="big">${careDaysInWindow(7)}/7</div><div class="muted small">any self-care logged</div></div><div class="metric"><div class="eyebrow">30-day care days</div><div class="big">${careDaysInWindow(30)}</div></div><div class="metric"><div class="eyebrow">Avg water</div><div class="big">${Math.round(avgWater)} oz</div><div class="muted small">last 7 days</div></div><div class="metric"><div class="eyebrow">Avg sleep</div><div class="big">${avgSleep?avgSleep.toFixed(1)+" h":"—"}</div><div class="muted small">logged nights</div></div></div>
-  <div class="mini-heading">Last 7 days</div><div class="care-week-strip">${dates.map(d=>{const count=habits.filter(h=>selfCareDone(h.key,d)).length,pct=Math.round(count*100/total),label=new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"});return `<div class="care-day"><span>${label}</span><div class="care-day-ring" style="--pct:${pct}"><b>${count}</b></div></div>`}).join("")}</div>
-  ${brush30?`<div class="repeat-habit-summary"><div><span class="eyebrow">Brush teeth · actual frequency</span><b>${brush7} log${brush7===1?"":"s"} in the last 7 days</b><small>${brushDays7} day${brushDays7===1?"":"s"} with brushing logged · ${brush30} total logs across ${brushDays30} day${brushDays30===1?"":"s"} in 30 days</small></div><span class="tag">tracks repeats</span></div>`:""}
+  return `<div class="care-track-summary"><div class="metric"><div class="eyebrow">Care days logged</div><div class="big">${careDaysInWindow(7)}</div><div class="muted small">last 7 days · missing days stay unknown</div></div><div class="metric"><div class="eyebrow">30-day care days</div><div class="big">${careDaysInWindow(30)}</div><div class="muted small">days with a yes logged</div></div><div class="metric"><div class="eyebrow">Avg water</div><div class="big">${avgWater?Math.round(avgWater)+" oz":"—"}</div><div class="muted small">${waterKnown.length?waterKnown.length+" logged day"+(waterKnown.length===1?"":"s"):"no logged days"}</div></div><div class="metric"><div class="eyebrow">Avg sleep</div><div class="big">${avgSleep?avgSleep.toFixed(1)+" h":"—"}</div><div class="muted small">logged nights only</div></div></div>
+  <div class="mini-heading">Last 7 days · unknown is not “no”</div><div class="care-week-strip">${dates.map(d=>{const statuses=habits.map(h=>dailyReviewStatus("care",h.key,d)),yes=statuses.filter(x=>x==="yes").length,no=statuses.filter(x=>x==="no").length,unknown=statuses.filter(x=>x==="unknown").length,known=yes+no,pct=known?Math.round(yes*100/known):0,label=new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"});return `<div class="care-day"><span>${label}</span><div class="care-day-ring" style="--pct:${pct}"><b>${yes}${known?"/"+known:""}</b></div><small>?${unknown}</small></div>`}).join("")}</div>
+  ${brush30?`<div class="repeat-habit-summary"><div><span class="eyebrow">Brush teeth · actual frequency</span><b>${brush7} log${brush7===1?"":"s"} in the last 7 days</b><small>${brushDays7} day${brushDays7===1?"":"s"} with brushing logged · unreviewed days are unknown, not zero</small></div><span class="tag">tracks repeats</span></div>`:""}
   <div class="mini-heading">Most frequently logged · 30 days</div>${ranked.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><b>${h.count} day${h.count===1?"":"s"}</b></div>`).join("")}
   ${personalCareDefinitions().some(x=>lastPersonalCare(x.key))?`<div class="mini-heading">Personal-care frequency · 30 days</div>${personalCareDefinitions().filter(x=>personalCareCount(x.key,30)>0).sort((a,b)=>personalCareCount(b.key,30)-personalCareCount(a.key,30)).slice(0,8).map(x=>`<div class="row compact-row"><span>${esc(x.label)}<div class="muted small">${esc(personalCareWhen(x.key))}</div></span><b>${personalCareCount(x.key,30)}x</b></div>`).join("")}`:""}
-  <details class="self-care-history"><summary>All habit history</summary><div class="muted small" style="margin:8px 0 4px">Days logged, not a score or requirement.</div>${habits.map(h=>`<div class="row compact-row"><span>${esc(h.label)}</span><span class="self-care-window"><b>${selfCareCount(h.key,7)}/7</b><span class="muted small">7d</span><b>${selfCareCount(h.key,30)}/30</b><span class="muted small">30d</span></span></div>`).join("")}</details>`;
+  <details class="self-care-history"><summary>Habit pattern detail</summary><div class="muted small" style="margin:8px 0 4px">Rates use only days you actually answered yes/no. Unknown days are excluded.</div>${habits.map(h=>{const s7=selfCarePatternStats(h.key,7),s30=selfCarePatternStats(h.key,30);return `<div class="row compact-row"><span>${esc(h.label)}<div class="muted small">?${s7.unknown} unknown in 7d · ?${s30.unknown} in 30d</div></span><span class="self-care-window"><b>${s7.yes}/${s7.known||"?"}</b><span class="muted small">7d known</span><b>${s30.yes}/${s30.known||"?"}</b><span class="muted small">30d known</span></span></div>`}).join("")}</details>`;
 }
 function selfCareCard(){
   const stats=selfCareTodayStats();
   const body=selfCareTab==="routines"?selfCareRoutinesPanel():selfCareTab==="personal"?selfCarePersonalPanel():selfCareTab==="track"?selfCareTrackPanel():selfCareTodayPanel();
   return `<div class="card self-care-card sparkle-card"><div class="section-title"><div><div class="eyebrow">Self care</div><h2>Care that fits your actual life</h2><div class="muted small">Track what happened, notice patterns, and keep routines flexible. Nothing here creates a reminder unless you ask for one.</div></div><button class="btn" onclick="openSelfCareSettings()">Customize</button></div>
   ${selfCareTabs()}
-  ${selfCareTab==="today"?`<div class="self-care-progress-label"><span>Today</span><b>${stats.done}/${stats.total}</b></div><div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>`:""}
+  ${selfCareTab==="today"?`<div class="self-care-progress-label"><span>Today</span><b>${stats.done} yes · ${stats.unknown} ?${stats.no?" · "+stats.no+" no":""}</b></div><div class="self-care-progress"><span style="width:${stats.percent}%"></span></div>`:""}
   <div class="self-care-tab-panel">${body}</div></div>`;
 }
 function openWellnessCheckin(){
