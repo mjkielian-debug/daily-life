@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-petshub1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-inventoryhub1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-map1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261003-tools1">
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-petshub1";
+const APP_BUILD="2026.10.04-inventoryhub1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1236,7 +1236,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -4111,7 +4111,7 @@ function householdCleaningCard(){
   return `${typeof homeResetDashboard==="function"?homeResetDashboard():""}${householdRoutineCard()}${homeCareCard()}`;
 }
 function openHouseholdSection(section){
-  if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");setView("inventory");return}
+  if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");setView("inventory");openInventoryHubSection("map");return}
   if(section==="inventory"){inventoryTab="items";localStorage.setItem("dailyLifeInventoryTab","items");setView("inventory");return}
   if(section==="pets"){setView("pets");return}
   let title="Home + Household",body="";
@@ -4185,7 +4185,7 @@ function inventoryVisibleItems(){
     return hay.includes(q);
   }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
 }
-function inventoryView(){
+function inventoryDetailedView(){
   const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
   const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
   const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button></div>`;
@@ -4208,6 +4208,59 @@ function inventoryView(){
   ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.</div>`}
   </div>`;
 }
+function inventoryHubDetailHtml(tab){
+  const next=tab==="map"?"map":"items",previous=inventoryTab;
+  inventoryTab=next;
+  const html=inventoryDetailedView();
+  inventoryTab=previous;
+  return html;
+}
+function openInventoryHubSection(tab){
+  const title=tab==="map"?"House Map + Storage":"Inventory";
+  modal(title,`<div class="inventory-hub-modal">${inventoryHubDetailHtml(tab)}</div>`,"Close",closeModal);
+}
+function openInventoryLowStock(){
+  const rows=(state.inventoryItems||[]).filter(x=>["Low","Need"].includes(String(x.status||""))).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+  modal("Low + Needed",`<div class="inventory-low-modal">${rows.map(x=>`<button class="inventory-item-row" onclick="closeModal();openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc([x.category,inventoryLocationLabel(x)].filter(Boolean).join(" · "))}</small></span><span class="inventory-item-meta"><small class="inventory-low">${esc(x.status||"Need")}</small></span></button>`).join("")||'<div class="notice">Nothing is marked Low or Need.</div>'}</div>`,"Close",closeModal);
+}
+function inventoryView(){
+  const all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],
+        low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length,
+        categories=new Set(all.map(x=>String(x.category||"Other")).filter(Boolean)).size,
+        centerTitle=low?low+" low / needed":all.length+" items tracked",
+        centerDetail=rooms.length?rooms.length+" rooms · "+locations.length+" storage spots":"Add rooms to build your house map",
+        segments=[
+          {icon:"▦",title:"Items",detail:all.length?all.length+" tracked":"Add inventory",action:"openInventoryHubSection('items')"},
+          {icon:"⌂",title:"House Map",detail:rooms.length?rooms.length+" rooms":"Build map",action:"openInventoryHubSection('map')"},
+          {icon:"◫",title:"Rooms",detail:rooms.length?rooms.length+" mapped":"Add room",action:"openHouseholdSection('rooms')"},
+          {icon:"◇",title:"Locations",detail:locations.length?locations.length+" storage spots":"Shelves + bins",action:"openInventoryHubSection('map')"},
+          {icon:"!",title:"Low / Need",detail:low?low+" items":"All stocked",action:"openInventoryLowStock()"},
+          {icon:"+",title:"Add Item",detail:"Track something",action:"openInventoryItem()"},
+          {icon:"＋",title:"Add Location",detail:"Shelf, bin + more",action:"openInventoryLocation()"},
+          {icon:"⌂",title:"Household",detail:"Back to home",action:"setView('household')"}
+        ];
+  return `<section class="life-today-one-screen inventory-hub-one-screen">
+    <div class="life-today-topline inventory-hub-topline">
+      <div><div class="eyebrow">Inventory</div><b>${categories?categories+" categor"+(categories===1?"y":"ies"):"Use what you already have"}</b></div>
+      <div class="life-today-top-actions"><button class="btn small primary" onclick="openInventoryItem()">＋ Item</button></div>
+    </div>
+    <div class="life-wheel" role="group" aria-label="Inventory dashboard">
+      ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center" onclick="openInventoryHubSection('items')">
+        <span class="eyebrow">HOUSE INVENTORY</span>
+        <b>${esc(centerTitle)}</b>
+        <strong>${all.length?"Know what you have":"Start mapping"}</strong>
+        <small>${esc(centerDetail)}</small>
+      </button>
+    </div>
+    <div class="life-today-footer inventory-hub-footer">
+      <button onclick="setView('household')"><span>‹</span>Household</button>
+      <button onclick="openInventoryItem()"><span>＋</span>Add item</button>
+      <button onclick="openInventoryHubSection('map')"><span>⌂</span>House map</button>
+    </div>
+  </section>`;
+}
+
 function openInventoryItem(id=""){
   const x=(state.inventoryItems||[]).find(v=>v.id===id)||{id:"",name:"",category:"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:""};
   const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
