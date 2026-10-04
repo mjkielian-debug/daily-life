@@ -1179,7 +1179,14 @@ function cloudApplyLifeEntry(row){
       const employer=String(p.employer||"").trim();if(!employer)return false;
       let x=state.employmentProfiles.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||"")||String(x.employer||"").toLowerCase()===employer.toLowerCase());
       if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.employmentProfiles.push(x)}
-      Object.assign(x,{employer,role:String(p.role||x.role||""),jobCode:String(p.jobCode||x.jobCode||""),location:String(p.location||x.location||""),union:String(p.union||x.union||""),unionLocal:String(p.unionLocal||x.unionLocal||""),contract:String(p.contract||x.contract||""),supplement:String(p.supplement||x.supplement||""),scheduledStartDate:String(p.scheduledStartDate||x.scheduledStartDate||""),seniorityDate:String(p.seniorityDate||x.seniorityDate||""),currentRate:Number(p.currentRate||x.currentRate||0),progression:Array.isArray(p.progression)?p.progression:(x.progression||[]),ssd:p.ssd&&typeof p.ssd==="object"?{...(x.ssd||{}),...p.ssd}:(x.ssd||{}),notes:String(p.notes||x.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
+      const scheduleDays=Array.isArray(p.workWeekdays)?[...new Set(p.workWeekdays.map(Number).filter(v=>Number.isInteger(v)&&v>=0&&v<=6))]:(Array.isArray(x.workWeekdays)?x.workWeekdays:[]);
+      Object.assign(x,{employer,role:String(p.role||x.role||""),jobCode:String(p.jobCode||x.jobCode||""),location:String(p.location||x.location||""),union:String(p.union||x.union||""),unionLocal:String(p.unionLocal||x.unionLocal||""),contract:String(p.contract||x.contract||""),supplement:String(p.supplement||x.supplement||""),scheduledStartDate:String(p.scheduledStartDate||x.scheduledStartDate||""),seniorityDate:String(p.seniorityDate||x.seniorityDate||""),currentRate:Number(p.currentRate||x.currentRate||0),progression:Array.isArray(p.progression)?p.progression:(x.progression||[]),ssd:p.ssd&&typeof p.ssd==="object"?{...(x.ssd||{}),...p.ssd}:(x.ssd||{}),workWeekdays:scheduleDays,workScheduleLabel:String(p.workScheduleLabel||x.workScheduleLabel||""),workScheduleConfirmedAt:String(p.workScheduleConfirmedAt||x.workScheduleConfirmedAt||""),notes:String(p.notes||x.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
+      if(Array.isArray(p.workWeekdays)&&scheduleDays.length){
+        state.settings=state.settings||{};state.settings.itinerary=state.settings.itinerary||{};
+        state.settings.itinerary.workWeekdays=[...scheduleDays];
+        state.settings.itinerary.workScheduleLabel=String(p.workScheduleLabel||scheduleDays.map(i=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][i]).join(" · "));
+        state.settings.itinerary.workScheduleConfirmedAt=String(p.workScheduleConfirmedAt||row.local_date||"");
+      }
       return true;
     }
     case "income_seasonality":{
@@ -1277,7 +1284,7 @@ function cloudApplyLifeEntry(row){
       if(!Number.isInteger(weekday)||weekday<0||weekday>6||!title)return false;
       if(!Array.isArray(state.settings.recurringFamilyEvents))state.settings.recurringFamilyEvents=[];
       const match=state.settings.recurringFamilyEvents.find(x=>Number(x.weekday)===weekday&&String(x.title||"").trim().toLowerCase()===title.toLowerCase()&&String(x.child||"").trim().toLowerCase()===child.toLowerCase());
-      const value={weekday,title,child,type:String(r.type||"activity"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),notes:String(r.notes||"")};
+      const value={weekday,title,child,type:String(r.type||"activity"),startTime,endTime:String(r.endTime||""),location:String(r.location||""),notes:String(r.notes||""),startDate:String(r.startDate||match?.startDate||""),endDate:String(r.endDate||match?.endDate||"")};
       if(match)Object.assign(match,value);else state.settings.recurringFamilyEvents.push(value);
       if(typeof ensureRecurringFamilyEvents==="function")ensureRecurringFamilyEvents();
       return true;
