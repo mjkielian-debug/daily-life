@@ -722,3 +722,126 @@ body:has(.people-one-screen-shell){
     min-height:32px!important;
   }
 }
+
+
+/* Tight header + extra label room */
+/* Give Today's outer wedges more room: the center is intentionally small. */
+.today-one-screen-shell .life-wheel-center{
+  box-sizing:border-box!important;
+  width:29%!important;
+  height:29%!important;
+  padding:7px!important;
+  border-width:2px!important;
+}
+.today-one-screen-shell .life-wheel-center .eyebrow{
+  font-size:.48rem!important;
+}
+.today-one-screen-shell .life-wheel-center>b{
+  font-size:.78rem!important;
+  margin:2px 0!important;
+}
+.today-one-screen-shell .life-wheel-center>strong{
+  font-size:.52rem!important;
+  max-width:12ch!important;
+}
+.today-one-screen-shell .life-wheel-center>small{
+  font-size:.39rem!important;
+  max-width:15ch!important;
+  margin-top:2px!important;
+}
+.today-one-screen-shell .life-wheel-segment>span{
+  width:32%!important;
+  top:6.3%!important;
+}
+.today-one-screen-shell .life-wheel-segment small{
+  max-width:17ch!important;
+}
+
+/* The white Daily Life card becomes a compact two-row bar. */
+:is(.today-one-screen-shell,.people-one-screen-shell)>header{
+  grid-template-columns:30px minmax(0,1fr) auto!important;
+  grid-template-areas:
+    "mark date tools"
+    "mark title tools"!important;
+  min-height:0!important;
+  padding:4px 7px!important;
+  margin:0 0 5px!important;
+  column-gap:7px!important;
+  border-radius:17px!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-mark{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  flex-basis:30px!important;
+  border-radius:10px!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-copy .eyebrow{
+  font-size:.52rem!important;
+  line-height:1.05!important;
+  letter-spacing:.04em!important;
+  padding:0!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-copy .title{
+  font-size:1.08rem!important;
+  line-height:1!important;
+  margin:0!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-copy .muted{
+  display:none!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .header-tools{
+  align-self:center!important;
+  gap:4px!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header .header-tools .btn{
+  width:29px!important;
+  height:29px!important;
+  min-width:29px!important;
+  min-height:29px!important;
+  font-size:.72rem!important;
+}
+:is(.today-one-screen-shell,.people-one-screen-shell)>header::after,
+:is(.today-one-screen-shell,.people-one-screen-shell)>header::before{
+  opacity:.12!important;
+}
+.today-one-screen-shell .life-today-one-screen,
+.people-one-screen-shell .people-one-screen{
+  height:auto!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+}
+
+@media(max-width:420px){
+  .today-one-screen-shell .life-wheel-center{
+    width:28%!important;
+    height:28%!important;
+    padding:6px!important;
+  }
+  .today-one-screen-shell .life-wheel-segment>span{
+    width:33%!important;
+    top:6%!important;
+  }
+  :is(.today-one-screen-shell,.people-one-screen-shell)>header{
+    grid-template-columns:28px minmax(0,1fr) auto!important;
+    padding:4px 6px!important;
+  }
+  :is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-mark{
+    width:28px!important;
+    height:28px!important;
+    min-width:28px!important;
+    flex-basis:28px!important;
+  }
+  :is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-copy .title{
+    font-size:1rem!important;
+  }
+  :is(.today-one-screen-shell,.people-one-screen-shell)>header .brand-copy .eyebrow{
+    font-size:.49rem!important;
+  }
+  :is(.today-one-screen-shell,.people-one-screen-shell)>header .header-tools .btn{
+    width:27px!important;
+    height:27px!important;
+    min-width:27px!important;
+    min-height:27px!important;
+  }
+}
