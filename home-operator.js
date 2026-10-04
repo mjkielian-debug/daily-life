@@ -3,18 +3,65 @@
 (function(){
   "use strict";
   const HOME_MAP_IMAGE_KEY="dailyLifeLocalHouseMap:firstFloor";
+  const HOME_MAP_PREFIX="dailyLifeLocalHouseMap:floor:";
+  const HOME_MAP_ACTIVE_KEY="dailyLifeLocalHouseMap:activeFloor";
 
-  function homeLocalMapImage(){
-    try{return localStorage.getItem(HOME_MAP_IMAGE_KEY)||""}catch(e){return""}
+  function homeFloorList(){
+    const seen=new Set(),rows=[];
+    for(const r of state.houseRooms||[]){
+      const floor=String(r.floor||"").trim()||"Unassigned";
+      if(!seen.has(floor)){seen.add(floor);rows.push(floor)}
+    }
+    if(!rows.length)rows.push("First floor");
+    const rank=floor=>{
+      const x=String(floor||"").toLowerCase();
+      if(/basement/.test(x))return 0;
+      if(/first|main/.test(x))return 1;
+      if(/second/.test(x))return 2;
+      if(/third/.test(x))return 3;
+      if(/garage/.test(x))return 4;
+      if(/outside/.test(x))return 5;
+      if(/unassigned/.test(x))return 99;
+      return 50;
+    };
+    return rows.sort((a,b)=>rank(a)-rank(b)||String(a).localeCompare(String(b)));
   }
-  window.homeChooseFloorPlan=function(){
+  function homeFloorStorageKey(floor){
+    return HOME_MAP_PREFIX+encodeURIComponent(String(floor||"First floor").trim()||"First floor");
+  }
+  function homeActiveFloor(){
+    const floors=homeFloorList();
+    let active="";
+    try{active=localStorage.getItem(HOME_MAP_ACTIVE_KEY)||""}catch(e){}
+    if(!floors.includes(active))active=floors.includes("First floor")?"First floor":floors[0];
+    return active;
+  }
+  function homeSetActiveFloorValue(floor){
+    floor=String(floor||"").trim();
+    if(!floor)return;
+    try{localStorage.setItem(HOME_MAP_ACTIVE_KEY,floor)}catch(e){}
+  }
+  function homeLocalMapImage(floor=homeActiveFloor()){
+    try{
+      const modern=localStorage.getItem(homeFloorStorageKey(floor))||"";
+      if(modern)return modern;
+      if(String(floor).toLowerCase()==="first floor")return localStorage.getItem(HOME_MAP_IMAGE_KEY)||"";
+      return "";
+    }catch(e){return""}
+  }
+  window.homeSetMapFloor=function(floor){
+    homeSetActiveFloorValue(floor);
+    render();
+  };
+  window.homeChooseFloorPlan=function(floor=homeActiveFloor()){
+    homeSetActiveFloorValue(floor);
     const input=document.createElement("input");
     input.type="file";
     input.accept="image/jpeg,image/png,image/webp";
-    input.onchange=()=>{const file=input.files&&input.files[0];if(file)homeSaveFloorPlan(file)};
+    input.onchange=()=>{const file=input.files&&input.files[0];if(file)homeSaveFloorPlan(file,floor)};
     input.click();
   };
-  window.homeSaveFloorPlan=function(file){
+  window.homeSaveFloorPlan=function(file,floor=homeActiveFloor()){
     if(!file||!/^image\/(jpeg|png|webp)$/i.test(String(file.type||""))){alert("Choose a JPG, PNG, or WebP image.");return}
     const reader=new FileReader();
     reader.onerror=()=>alert("Daily Life could not read that image.");
@@ -22,17 +69,22 @@
       const data=String(reader.result||"");
       if(!data.startsWith("data:image/"))return;
       try{
-        localStorage.setItem(HOME_MAP_IMAGE_KEY,data);
+        localStorage.setItem(homeFloorStorageKey(floor),data);
+        homeSetActiveFloorValue(floor);
+        if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
         render();
       }catch(e){
-        alert("That image is too large to keep locally. Try a cropped screenshot of just the floor plan.");
+        alert("That image is too large to keep locally. Try a cropped screenshot of just that floor.");
       }
     };
     reader.readAsDataURL(file);
   };
-  window.homeRemoveFloorPlan=function(){
-    if(!confirm("Remove the saved first-floor map from this device? Inventory rooms and items will stay."))return;
-    try{localStorage.removeItem(HOME_MAP_IMAGE_KEY)}catch(e){}
+  window.homeRemoveFloorPlan=function(floor=homeActiveFloor()){
+    if(!confirm("Remove the saved "+floor+" map from this device? Inventory rooms and items will stay."))return;
+    try{
+      localStorage.removeItem(homeFloorStorageKey(floor));
+      if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
+    }catch(e){}
     render();
   };
   window.homeAddInventoryItemToRoom=function(roomId){
@@ -53,11 +105,13 @@
     </div>`,"Close",closeModal);
   };
   function homeFloorPlanCard(){
-    const src=homeLocalMapImage(),rooms=[...(state.houseRooms||[])].filter(r=>String(r.name||"").trim()).sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||"")));
-    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · local only</div><h2>First-floor layout</h2><div class="muted small">Use the labeled floor plan as the visual index for rooms, storage, and inventory.</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick="homeChooseFloorPlan()">${src?"Replace map":"Add map image"}</button>${src?`<button class="btn small" type="button" onclick="homeRemoveFloorPlan()">Remove</button>`:""}</div></div>
-      ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="First-floor house layout reference"></div>`:`<div class="notice home-map-empty"><b>Add the labeled robot-vacuum screenshot once from this phone.</b><div class="small">Daily Life keeps this image in this browser only. It is not published with the app code or included in cloud sync.</div></div>`}
-      <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Unassigned")}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick="openInventoryRoom()"><span><b>+ Add the first room</b><small>Use the labels on the floor plan</small></span><span>›</span></button>`}</div>
-      <div class="muted small home-map-privacy">The floor-plan picture stays on this device. Room names and inventory continue using your normal Daily Life data.</div>
+    const floors=homeFloorList(),active=homeActiveFloor(),src=homeLocalMapImage(active),
+          rooms=[...(state.houseRooms||[])].filter(r=>(String(r.floor||"").trim()||"Unassigned")===active&&String(r.name||"").trim()).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · local only</div><h2>${esc(active)} layout</h2><div class="muted small">Keep a separate visual floor plan for each level, then use the room links for storage and inventory.</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick='homeChooseFloorPlan(${JSON.stringify(active)})'>${src?"Replace map":"Add map image"}</button>${src?`<button class="btn small" type="button" onclick='homeRemoveFloorPlan(${JSON.stringify(active)})'>Remove</button>`:""}</div></div>
+      <div class="home-map-floor-tabs" role="tablist" aria-label="House floors">${floors.map(f=>`<button type="button" role="tab" aria-selected="${f===active?"true":"false"}" class="${f===active?"active":""}" onclick='homeSetMapFloor(${JSON.stringify(f)})'>${esc(f)}</button>`).join("")}</div>
+      ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="${esc(active)} house layout reference"></div>`:`<div class="notice home-map-empty"><b>Add the ${esc(active)} robot-vacuum or floor-plan screenshot once from this phone.</b><div class="small">Daily Life keeps each floor image in this browser only. It is not published with the app code or included in cloud sync.</div></div>`}
+      <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(active)}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick="openInventoryRoom()"><span><b>+ Add a room on ${esc(active)}</b><small>Use the labels on this floor plan</small></span><span>›</span></button>`}</div>
+      <div class="muted small home-map-privacy">Floor-plan pictures stay on this device. Room names and inventory continue using your normal Daily Life data.</div>
     </div>`;
   }
 
@@ -167,11 +221,13 @@
   window.homeFloorPlanCard=homeFloorPlanCard;
   window.homeResetDashboard=homeResetDashboard;
 
-  const baseInventory=inventoryView;
-  inventoryView=function(){
-    const html=baseInventory();
-    return inventoryTab==="map"?homeFloorPlanCard()+html+homeResetDashboard():html;
-  };
+  if(typeof inventoryDetailedView==="function"){
+    const baseInventoryDetailed=inventoryDetailedView;
+    inventoryDetailedView=function(){
+      const html=baseInventoryDetailed();
+      return inventoryTab==="map"?homeFloorPlanCard()+html+homeResetDashboard():html;
+    };
+  }
 
   /* Replace the rotating off-day focus with the room that has actually gone longest without a reset. */
   const baseSuggested=itinerarySuggestedBlocks;
