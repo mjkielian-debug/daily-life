@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261003-tools1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
-<link rel="stylesheet" href="visual-density.css?v=20261004-vivid1">
+<link rel="stylesheet" href="visual-density.css?v=20261004-modalread1">
 <title>Daily Life</title>
 <style id="status-bar-root-tint">html{background:#e9b4d0!important;color-scheme:light}body{background-color:#e9b4d0}</style>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-multifloor2";
+const APP_BUILD="2026.10.04-screenshotfix1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -978,7 +978,7 @@ function dayFlowUnscheduledCard(date){
   </div>`;
 }
 function dayFlowPlanCard(date){
-  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button><button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button><button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}</div>`;
+  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button><button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button>${typeof openCapacityGuardrail==="function"?`<button class="btn" onclick="openCapacityGuardrail('${date}')">Planning capacity</button>`:""}<button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}</div>`;
 }
 function openDayFlowSection(section,date=itineraryDate||ymd()){
   if(DAY_FLOW_BUCKETS[section]){modal(DAY_FLOW_BUCKETS[section].title,`<div class="dayflow-hub-modal">${dayFlowBucketCard(date,section)}</div>`,"Close",closeModal);return}
@@ -5815,15 +5815,15 @@ registerAppWorker();
 
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
-<script src="food-tabs.js?v=20261003-mealmemory1"></script>
+<script src="food-tabs.js?v=20261004-radialfix1"></script>
 <script src="daily-coach.js?v=20261003-dailycoach1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
 <script src="life-system.js?v=20261004-schedule4"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
-<script src="home-operator.js?v=20261004-multifloor2"></script>
+<script src="home-operator.js?v=20261004-multifloor3"></script>
 <script src="week-pilot.js?v=20261003-week1"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
-<script src="capacity-planner.js?v=20261003-capacity1"></script>
+<script src="capacity-planner.js?v=20261004-dayflowfix1"></script>
 </body>
 </html>
