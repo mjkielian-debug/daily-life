@@ -18,7 +18,7 @@ body::before{
   position:fixed;
   inset:0;
   pointer-events:none;
-  z-index:-1;
+  z-index:0;
   background:
     url("botanical-corners.svg") center top/760px auto repeat-y,
     url("botanical-bg.svg") center top/760px auto repeat-y;
@@ -35,7 +35,7 @@ body{
 }
 
 /* Keep page shells translucent so the color and botanicals show through. */
-.app{background:transparent!important}
+#app,.app{position:relative;z-index:1}\n.app{background:transparent!important}
 .card,.setupCard,.modal{
   backdrop-filter:blur(11px) saturate(1.08);
 }
