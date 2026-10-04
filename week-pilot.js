@@ -60,7 +60,7 @@
     if(action==="meal"&&typeof openMeal==="function")return openMeal(id);
     if(action==="event"&&typeof openEvent==="function")return openEvent("",id);
   }
-  window.weekPilotOpenItem=function(action,id){wpOpenItem(action,id)};
+  window.weekPilotOpenItem=function(action,id){if(typeof closeModal==="function")closeModal();wpOpenItem(action,id)};
 
   function wpBalanceSuggestions(){
     const dates=wpDates(),loads=new Map(dates.map(d=>[d,wpDayLoad(d)])),
@@ -100,13 +100,14 @@
   };
 
   window.weekPilotGoDay=function(date){
+    if(typeof closeModal==="function")closeModal();
     if(typeof setItineraryDate==="function"){setItineraryDate(date);setView("itinerary");}
   };
 
   function weekPilotCard(){
     const days=wpDates().map(wpDayLoad),prep=wpPrepItems(),moves=wpBalanceSuggestions();
     return '<div class="card week-pilot">'+
-      '<div class="section-title"><div><div class="eyebrow">Week Pilot</div><h2>See the pressure before it becomes today</h2><div class="muted small">Work, fixed commitments, open tasks, dinner, and sleep windows across the next seven days.</div></div><div class="actions"><button class="btn primary" onclick="openWeekBalance()">Balance flexible tasks'+(moves.length?" · "+moves.length:"")+'</button></div></div>'+
+      '<div class="section-title"><div><div class="eyebrow">Week Pilot</div><h2>See the pressure before it becomes today</h2><div class="muted small">Work, fixed commitments, open tasks, dinner, and sleep windows across the next seven days.</div></div><div class="actions"><button class="btn primary" onclick="closeModal();openWeekBalance()">Balance flexible tasks'+(moves.length?" · "+moves.length:"")+'</button></div></div>'+
       '<div class="week-orbits">'+days.map(d=>
         '<button class="week-orbit '+(d.date===ymd()?"is-today":"")+'" onclick="weekPilotGoDay(\''+d.date+'\')">'+
           '<span>'+esc(wpDayName(d.date))+'</span><b>'+wpDateNum(d.date)+'</b><strong>'+esc(wpLoadLabel(d))+'</strong>'+
@@ -120,10 +121,14 @@
       '</div>';
   }
 
-  const baseItinerary=itineraryView;
-  itineraryView=function(){
-    return baseItinerary.apply(this,arguments)+weekPilotCard();
+  window.openWeekPilot=function(){
+    modal("Week Pilot",weekPilotCard(),"Close",closeModal);
   };
+
+  const baseItinerary=itineraryView;
+  function legacyWeekPilotItineraryView(){
+    return baseItinerary.apply(this,arguments)+weekPilotCard();
+  }
 
   if(typeof render==="function")render();
 })();
