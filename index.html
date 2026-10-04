@@ -2293,6 +2293,8 @@ function dailyReviewClear(kind,key,date=ymd()){
   state.dailyReviews=(state.dailyReviews||[]).filter(x=>!(x.date===date&&x.kind===kind&&String(x.key)===String(key)));
 }
 function dailyReviewStatus(kind,key,date=ymd()){
+  const review=dailyReviewEntry(kind,key,date);
+  if(review&&["no","na"].includes(String(review.status||"")))return review.status;
   if(kind==="task"){
     const x=(state.tasks||[]).find(v=>String(v.id)===String(key));
     if(x?.done)return"yes";
@@ -2302,7 +2304,7 @@ function dailyReviewStatus(kind,key,date=ymd()){
   }else if(kind==="care"){
     if(selfCareDone(key,date))return"yes";
   }
-  return dailyReviewEntry(kind,key,date)?.status||"unknown";
+  return review?.status||"unknown";
 }
 function dailyReviewExpected(date=ymd()){
   const rows=[];
@@ -2355,7 +2357,7 @@ async function applyDailyReview(kind,key,date,status){
     if(status==="yes"){
       if(!row){row={id:uid(),date,key,done:true,count:1,times:[],source:"daily-review"};state.selfCare.push(row)}
       else{row.done=true;row.count=Math.max(1,Number(row.count||0));if(!Array.isArray(row.times))row.times=[]}
-    }else if(row&&row.source==="daily-review"){
+    }else if(row){
       row.done=false;row.count=0;row.times=[];
     }
   }
