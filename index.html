@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-budgethub1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-petshub1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-map1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261003-tools1">
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-budgethub1";
+const APP_BUILD="2026.10.04-petshub1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1236,7 +1236,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -2984,7 +2984,7 @@ function petHandoffCard(){
   if(!has)return"";
   return `<div class="card pet-handoff-card"><div class="section-title"><div><div class="eyebrow">Care handoff</div><h2>If someone else is helping</h2></div><div class="actions"><button class="btn" onclick="copyPetHandoff()">Copy</button><button class="btn" onclick="openPetCareSettings()">Edit</button></div></div>${x.feedingRoutine?`<div class="row"><span>Feeding routine</span><b>${esc(x.feedingRoutine)}</b></div>`:""}${x.carrierLocation?`<div class="row"><span>Carrier / supplies</span><b>${esc(x.carrierLocation)}</b></div>`:""}${x.emergencyVet?`<div class="row"><span>Emergency vet / contact</span><b>${esc(x.emergencyVet)}</b></div>`:""}${x.sitterNotes?`<div class="notice">${esc(x.sitterNotes)}</div>`:""}</div>`;
 }
-function petsView(){
+function petsDetailedView(){
   const pets=(state.pets||[]).filter(p=>p.status!=="Archived"),archived=(state.pets||[]).filter(p=>p.status==="Archived"),logs=[...(state.petLogs||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.time||"").localeCompare(String(a.time||""))),
         litter=logs.find(x=>x.type==="Litter");
   const overview=`<div class="pet-grid">${pets.map(petCard).join("")||"<div class='card'><div class='notice'>No pets added yet.</div></div>"}</div>
@@ -3002,6 +3002,61 @@ function petsView(){
   return `<div class="card glow pet-hero"><div class="section-title"><div><div class="eyebrow">Pets</div><h2>${pets.length?pets.length+" pet"+(pets.length===1?"":"s"):"Your pets"}</h2><div class="muted small">Profiles, everyday care, health records, weight history, and shared household pet care.</div></div><div class="actions"><button class="btn primary" onclick="openPetProfile()">+ Pet</button><button class="btn" onclick="setView('log')">Back to Care</button></div></div>${petsTabs()}</div>
   ${body}`;
 }
+function petHubDetailHtml(tab){
+  const allowed=["overview","health","history"],next=allowed.includes(tab)?tab:"overview",previous=petsTab;
+  petsTab=next;
+  const html=petsDetailedView();
+  petsTab=previous;
+  return html;
+}
+function openPetsHubSection(tab){
+  const titles={overview:"Pets · Care + Profiles",health:"Pets · Health",history:"Pets · History"};
+  modal(titles[tab]||"Pets",`<div class="pets-hub-modal">${petHubDetailHtml(tab)}</div>`,"Close",closeModal);
+}
+function petsView(){
+  const pets=(state.pets||[]).filter(p=>p.status!=="Archived"),
+        due=duePetRoutines().length,
+        today=ymd(),
+        horizonDate=new Date(today+"T12:00:00"),
+        todayLogs=(state.petLogs||[]).filter(x=>x.date===today).length;
+  horizonDate.setDate(horizonDate.getDate()+14);
+  const horizon=ymd(horizonDate),
+        healthSoon=(state.petRecords||[]).filter(x=>x.nextDate&&x.nextDate>=today&&x.nextDate<=horizon).length,
+        lastLitter=[...(state.petLogs||[])].filter(x=>x.type==="Litter").sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")))[0],
+        centerTitle=due?due+" care item"+(due===1?"":"s")+" due":"Pets are steady",
+        centerDetail=pets.length?(pets.map(p=>p.name).filter(Boolean).slice(0,2).join(" + ")+(pets.length>2?" + "+(pets.length-2)+" more":"")):"Add a pet profile",
+        segments=[
+          {icon:"♢",title:"Profiles",detail:pets.length?pets.length+" active":"Add pets",action:"openPetsHubSection('overview')"},
+          {icon:"✓",title:"Routines",detail:due?due+" due":"Up to date",action:"openPetsHubSection('overview')"},
+          {icon:"♡",title:"Health",detail:healthSoon?healthSoon+" coming up":"Records",action:"openPetsHubSection('health')"},
+          {icon:"↕",title:"History",detail:todayLogs?todayLogs+" today":"Care logs",action:"openPetsHubSection('history')"},
+          {icon:"◇",title:"Litter",detail:lastLitter?dl(lastLitter.date):"Not logged",action:"openPetLog('','Litter')"},
+          {icon:"+",title:"Add Pet",detail:"New profile",action:"openPetProfile()"},
+          {icon:"✦",title:"Care Log",detail:"Food, meds + more",action:"openPetLog()"},
+          {icon:"⌂",title:"Household",detail:"Back to home",action:"setView('household')"}
+        ];
+  return `<section class="life-today-one-screen pets-hub-one-screen">
+    <div class="life-today-topline pets-hub-topline">
+      <div><div class="eyebrow">Pets</div><b>${pets.length?pets.length+" active pet"+(pets.length===1?"":"s"):"Care + profiles"}</b></div>
+      <div class="life-today-top-actions"><button class="btn small primary" onclick="openPetLog()">＋ Care</button></div>
+    </div>
+    <div class="life-wheel" role="group" aria-label="Pets dashboard">
+      ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center" onclick="openPetsHubSection('overview')">
+        <span class="eyebrow">PET CARE</span>
+        <b>${esc(centerTitle)}</b>
+        <strong>${healthSoon?healthSoon+" health item"+(healthSoon===1?"":"s")+" in next 14d":"Everyday care"}</strong>
+        <small>${esc(centerDetail)}</small>
+      </button>
+    </div>
+    <div class="life-today-footer pets-hub-footer">
+      <button onclick="setView('household')"><span>‹</span>Household</button>
+      <button onclick="openPetProfile()"><span>＋</span>Add pet</button>
+      <button onclick="openPetLog()"><span>✓</span>Log care</button>
+    </div>
+  </section>`;
+}
+
 function openPetProfile(id=""){
   const p=petById(id)||{id:"",name:"",species:"cat",status:"Active",lifestyle:"",birthday:"",diet:"",vet:"",medications:"",microchip:"",personality:"",favorites:"",notes:""};
   modal(p.id?`Pet · ${p.name}`:"Add pet",`<div class="stack"><div class="grid2"><label>Name<input id="petname" value="${esc(p.name||"")}"></label><label>Species<input id="petspecies" value="${esc(p.species||"")}" placeholder="cat, dog…"></label></div><div class="grid2"><label>Profile status<select id="petstatus">${["Active","Archived"].map(v=>`<option ${(p.status||"Active")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Lifestyle<select id="petlifestyle"><option value="">Not set</option>${["Indoor","Outdoor","Indoor / outdoor","Other"].map(v=>`<option ${p.lifestyle===v?"selected":""}>${v}</option>`).join("")}</select></label></div><label>Photo<input id="petphoto" type="file" accept="image/*"></label>${p.photo?`<img class="living-photo-preview" src="${p.photo}" alt="">`:""}<label>Birthday / gotcha date<input id="petbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label><label>Food / diet notes<input id="petdiet" value="${esc(p.diet||"")}"></label><label>Vet<input id="petvet" value="${esc(p.vet||"")}"></label><label>Medications / recurring care<textarea id="petmeds" rows="2">${esc(p.medications||"")}</textarea></label><label>Microchip / ID note<input id="petchip" value="${esc(p.microchip||"")}"></label><div class="grid2"><label>Personality / quirks<textarea id="petpersonality" rows="3">${esc(p.personality||"")}</textarea></label><label>Favorite treats / toys / things<textarea id="petfavorites" rows="3">${esc(p.favorites||"")}</textarea></label></div><label>Notes<textarea id="petnotes" rows="3">${esc(p.notes||"")}</textarea></label></div>`,"Save",async()=>{
