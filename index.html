@@ -1236,7 +1236,7 @@ function needsSetup(){return !state.profile?.name}
 
 function renderSetup(){const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt;return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt="Daily Life rose emblem"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>Set up this device</h2><p class="muted">Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one.</p><div class="warning"><b>Already have a Daily Life account?</b> Sign in first. Do not choose Start blank just to get past this screen.</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private starter backup</button><button class="btn" onclick="manualSetup()">Start blank</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data. After setup, create the first full cloud backup from Settings.</div>`:""}<p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`}
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-pastel-icon.svg?v=20261004-icon2" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -4294,7 +4294,7 @@ function moneyIncomeHub(){
 }
 function moneySpendingHub(){
   const old=budgetTab;budgetTab="activity";
-  const html=budgetView();
+  const html=budgetDetailedView();
   budgetTab=old;
   return html;
 }
@@ -4317,7 +4317,7 @@ function openMoneyHubSection(section){
   else if(section==="transfers"){title="Transfers + Next Steps";body=moneyTransfersCard()}
   else if(section==="savings"){title="Savings Goals";body=savingsGoalsCard()}
   else if(section==="pay"){title="UPS Pay";body=upsPayrollCard()}
-  else if(section==="spending"){closeModal();setView("budget");setBudgetTab("activity");return}
+  else if(section==="spending"){closeModal();setView("budget");openBudgetHubSection("activity");return}
   modal(title,`<div class="money-hub-modal">${body}</div>`,"Close",closeModal);
 }
 function moreView(){
@@ -4663,7 +4663,7 @@ function budgetTabs(){
   const tabs=[["plan","✦","Plan"],["bills","▤","Bills"],["categories","◫","Categories"],["activity","↕","Activity"]];
   return `<div class="money-tabs budget-tabs" role="tablist" aria-label="Budget sections">${tabs.map(([key,icon,label])=>`<button type="button" role="tab" aria-selected="${budgetTab===key?"true":"false"}" class="${budgetTab===key?"active":""}" onclick="setBudgetTab('${key}')"><span>${icon}</span><b>${label}</b></button>`).join("")}</div>`;
 }
-function budgetView(){
+function budgetDetailedView(){
   const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
         actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0};
 
@@ -4708,6 +4708,59 @@ function budgetView(){
 
   return `${hero}${budgetTabs()}<div class="budget-tab-panel">${budgetTab==="plan"?plan:budgetTab==="bills"?bills:budgetTab==="categories"?categories:activity}</div>`;
 }
+function budgetHubDetailHtml(section){
+  const allowed=["plan","bills","categories","activity"],next=allowed.includes(section)?section:"plan",previous=budgetTab;
+  budgetTab=next;
+  const html=budgetDetailedView();
+  budgetTab=previous;
+  return html;
+}
+function openBudgetHubSection(section){
+  const titles={plan:"Budget Plan",bills:"Budget Bills",categories:"Flexible Categories",activity:"Spending Activity"};
+  modal(titles[section]||"Budget",`<div class="budget-hub-modal">${budgetHubDetailHtml(section)}</div>`,"Close",closeModal);
+}
+function budgetView(){
+  const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
+        billCount=t.bills.length,spendCount=t.logs.length,
+        categoryCount=BUDGET_CATEGORIES.filter(cat=>budgetCents(t.plan.limits[cat.id])>0).length,
+        centerTitle=t.plan.income===null?"Set expected income":"Left to assign",
+        centerAmount=t.plan.income===null?"Start plan":budgetMoney(t.left),
+        centerDetail=t.plan.income===null?"Tap Plan to enter income and benefits.":(t.daysLeft?`${budgetMoney(t.weekly)} flexible / week · ${t.daysLeft} days left`:"Month ended"),
+        segments=[
+          {icon:"✦",title:"Plan",detail:t.plan.income===null?"Set income":budgetMoney(t.income)+" expected",action:"openBudgetHubSection('plan')"},
+          {icon:"▤",title:"Bills",detail:billCount?billCount+" this month":"None due",action:"openBudgetHubSection('bills')"},
+          {icon:"◫",title:"Categories",detail:categoryCount?categoryCount+" funded":"Set limits",action:"openBudgetHubSection('categories')"},
+          {icon:"↕",title:"Activity",detail:spendCount?spendCount+" entries":"No spending",action:"openBudgetHubSection('activity')"},
+          {icon:"↥",title:"Income",detail:budgetMoney(t.income),action:"openBudgetIncome()"},
+          {icon:"◇",title:"EBT",detail:budgetMoney(Math.max(0,t.ebtAvailable))+" available",action:"openBudgetHubSection('plan')"},
+          {icon:"+",title:"Spending",detail:"Log purchase",action:"openBudgetSpending()"},
+          {icon:"$",title:"Money",detail:"Back to hub",action:"setView('more')"}
+        ];
+  return `<section class="life-today-one-screen budget-hub-one-screen">
+    <div class="life-today-topline budget-hub-topline">
+      <div><div class="eyebrow">Budget</div><b>${esc(label)}</b></div>
+      <div class="life-today-top-actions budget-month-actions">
+        <button class="btn small" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button>
+        <button class="btn small" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button>
+      </div>
+    </div>
+    <div class="life-wheel" role="group" aria-label="Budget dashboard">
+      ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
+      <button type="button" class="life-wheel-center" onclick="openBudgetHubSection('plan')">
+        <span class="eyebrow">${esc(centerTitle)}</span>
+        <b>${esc(centerAmount)}</b>
+        <strong>${t.remaining<0?"Cash plan is short":t.left<0?"Over-assigned":"Monthly plan"}</strong>
+        <small>${esc(centerDetail)}</small>
+      </button>
+    </div>
+    <div class="life-today-footer budget-hub-footer">
+      <button onclick="setView('more')"><span>‹</span>Money</button>
+      <button onclick="openBudgetIncome()"><span>↥</span>Edit income</button>
+      <button onclick="openBudgetSpending()"><span>＋</span>Spending</button>
+    </div>
+  </section>`;
+}
+
 function budgetAmountInput(id,label,value){return `<label>${label}<input id="${id}" type="number" inputmode="decimal" min="0" max="999999999" step="0.01" placeholder="0.00" value="${value===null||value===undefined?"":esc(value)}"></label>`}
 function readBudgetAmount(id){
   const input=$("#"+id),value=input.value.trim();
