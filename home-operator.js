@@ -51,6 +51,14 @@
       return "";
     }catch(e){return""}
   }
+  function homeImportedMapReference(floor=homeActiveFloor()){
+    const needle=String(floor||"").trim().toLowerCase();
+    const maps=(state.projects||[]).filter(x=>Array.isArray(x.mapZones)&&Array.isArray(x.referencePhotos)&&x.referencePhotos.length);
+    const match=maps.find(m=>(m.mapZones||[]).some(z=>String(z.floor||"").trim().toLowerCase()===needle));
+    if(!match)return{src:"",title:""};
+    const src=(match.referencePhotos||[]).find(p=>String(p||"").startsWith("data:image/"))||"";
+    return{src,title:String(match.title||"Reviewed house map")};
+  }
   function homeRefreshMapSurface(){
     if(document.querySelector("#modal")&&typeof openInventoryHubSection==="function"){
       closeModal();openInventoryHubSection("map");return;
@@ -113,13 +121,14 @@
     </div>`,"Close",closeModal);
   };
   function homeFloorPlanCard(){
-    const floors=homeFloorList(),active=homeActiveFloor(),src=homeLocalMapImage(active),
+    const floors=homeFloorList(),active=homeActiveFloor(),localSrc=homeLocalMapImage(active),imported=homeImportedMapReference(active),
+          importedOnly=!localSrc&&!!imported.src,src=localSrc||imported.src,
           rooms=[...(state.houseRooms||[])].filter(r=>(String(r.floor||"").trim()||"Unassigned")===active&&String(r.name||"").trim()).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
-    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · local only</div><h2>${esc(active)} layout</h2><div class="muted small">Keep a separate visual floor plan for each level, then use the room links for storage and inventory.</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick='homeChooseFloorPlan(${JSON.stringify(active)})'>${src?"Replace map":"Add map image"}</button>${src?`<button class="btn small" type="button" onclick='homeRemoveFloorPlan(${JSON.stringify(active)})'>Remove</button>`:""}</div></div>
+    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · ${importedOnly?"imported reference":"local only"}</div><h2>${esc(active)} layout</h2><div class="muted small">Keep a separate visual floor plan for each level, then use the room links for storage and inventory.</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick='homeChooseFloorPlan(${JSON.stringify(active)})'>${localSrc?"Replace map":importedOnly?"Use different image":"Add map image"}</button>${localSrc?`<button class="btn small" type="button" onclick='homeRemoveFloorPlan(${JSON.stringify(active)})'>Remove</button>`:""}</div></div>
       <div class="home-map-floor-tabs" role="tablist" aria-label="House floors">${floors.map(f=>`<button type="button" role="tab" aria-selected="${f===active?"true":"false"}" class="${f===active?"active":""}" onclick='homeSetMapFloor(${JSON.stringify(f)})'>${esc(f)}</button>`).join("")}</div>
-      ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="${esc(active)} house layout reference"></div>`:`<div class="notice home-map-empty"><b>Add the ${esc(active)} robot-vacuum or floor-plan screenshot once from this phone.</b><div class="small">Daily Life keeps each floor image in this browser only. It is not published with the app code or included in cloud sync.</div></div>`}
+      ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="${esc(active)} house layout reference"></div>${importedOnly?`<div class="muted small home-map-source">Using the reviewed map reference from ${esc(imported.title)}.</div>`:""}`:`<div class="notice home-map-empty"><b>Add the ${esc(active)} robot-vacuum or floor-plan screenshot once from this phone.</b><div class="small">Daily Life keeps floor-plan images out of normal cloud snapshots.</div></div>`}
       <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(active)}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick='openInventoryRoom("",${JSON.stringify(active)})'><span><b>+ Add a room on ${esc(active)}</b><small>Use the labels on this floor plan</small></span><span>›</span></button>`}</div>
-      <div class="muted small home-map-privacy">Floor-plan pictures stay on this device. Room names and inventory continue using your normal Daily Life data.</div>
+      <div class="muted small home-map-privacy">Floor-plan pictures stay on this device and are excluded from normal cloud snapshots. Room names and inventory continue using your normal Daily Life data.</div>
     </div>`;
   }
 
