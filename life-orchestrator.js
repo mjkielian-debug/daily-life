@@ -405,6 +405,7 @@
       petCount=(state.pets||[]).length,
       openTasks=q.todayRows.length,
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
+      centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean).slice(0,3).join(" · ")||"Tap a section to open it.",
       segments=[
         {icon:"◷",title:"Day Flow",detail:next?(fmtClock(next.start)+" · "+next.title):"Today’s schedule",action:"setView('itinerary')"},
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
@@ -418,7 +419,7 @@
     return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div>'+
       '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
         segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
-        '<button class="life-wheel-center" onclick="setView(\'itinerary\')"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(guide.detail||"Tap a section to open it.")+'</small></button>'+
+        '<button class="life-wheel-center" onclick="setView(\'itinerary\')"><span class="eyebrow">NOW / NEXT</span><b>'+esc(greeting)+'</b><strong>'+esc(guide.title||"Today")+'</strong><small>'+esc(centerDetail)+'</small></button>'+
       '</div>'+
       '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
   }
