@@ -126,9 +126,55 @@ function spiritualityJournalPanel(){
  const rows=[...(state.spiritualityJournal||[])].sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||"")));
  return'<div class="card floral-card"><div class="section-title"><div><div class="eyebrow">Journal</div><h2>Spiritual reflections</h2><div class="muted small">Questions, gratitude, intentions, dreams, rituals, or whatever feels meaningful.</div></div><button class="btn primary" onclick="openSpiritualJournal()">+ Entry</button></div>'+(rows.slice(0,30).map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+' · '+esc(x.note)+'</div></span></div>').join("")||'<div class="notice">No journal entries yet.</div>')+'</div>'
 }
+function spiritualityReadingCard(){
+ const r=dailySpiritualReading();
+ return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div><button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'
+}
+function spiritualityMoonSeasonCard(m){
+ m=m||moon();const s=spiritualitySeason(),ml=moonLens(m);
+ return'<div class="card spiritual-season-card floral-card"><div class="section-title"><div><div class="eyebrow">Seasonal wheel</div><h2>'+esc(s.title)+'</h2><div class="muted small">'+esc(s.theme)+'</div></div><button class="btn" onclick="openAstrologySettings()">Moon / astrology</button></div><div class="spiritual-moon"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><span><b>'+esc(m?.[0]||"Moon")+'</b><small>'+esc(ml.phaseAction)+'</small></span></div></div>'
+}
+function spiritualityHistoryCard(){
+ const journals=[...(state.spiritualityJournal||[])].sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||""))).slice(0,16),
+       cards=[...(state.tarotDraws||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,10);
+ return'<div class="card"><div class="eyebrow">History</div><h2>Recent spiritual notes + cards</h2>'+
+   (journals.length?journals.map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+(x.question?' · '+esc(x.question):x.note?' · '+esc(x.note):'')+'</div></span></div>').join(""):'')+
+   (cards.length?'<div class="mini-heading">Daily tarot</div>'+cards.map(x=>{const t=tarotForDate(x.date);return'<button class="row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+'</div></span><span>›</span></button>'}).join(""):'')+
+   (!journals.length&&!cards.length?'<div class="notice">No spiritual history yet.</div>':'')+'</div>'
+}
+function openSpiritualHubSection(section){
+ let title="Spirituality",body="";
+ if(section==="reading"){title="Daily Reading";body=spiritualityReadingCard()}
+ else if(section==="tarot"){title="Tarot";body=spiritualityTarotPanel()}
+ else if(section==="spread"){title="Tarot Spread";body=tarotSpreadChooser()}
+ else if(section==="rituals"){title="Rituals";body=spiritualityRitualsPanel()}
+ else if(section==="journal"){title="Journal";body=spiritualityJournalPanel()}
+ else if(section==="moon"){title="Moon + Season";body=spiritualityMoonSeasonCard(moon())}
+ else if(section==="practice"){title="Daily Practice";body=dailyPracticeCard()}
+ else if(section==="history"){title="History";body=spiritualityHistoryCard()}
+ modal(title,'<div class="spirituality-hub-modal">'+body+'</div>',"Close",closeModal)
+}
 function spiritualityView(m){
- m=m||moon();const body=spiritualityTab==="tarot"?spiritualityTarotPanel():spiritualityTab==="rituals"?spiritualityRitualsPanel():spiritualityTab==="journal"?spiritualityJournalPanel():spiritualityTodayPanel(m);
- return'<div class="card glow spirituality-hero floral-card"><div class="eyebrow">Spirituality</div><div class="spirituality-title">A practice that can stay open</div><div class="muted">Daily reflection, tarot, stillness, seasonal rituals, nature, questions, and meaning—without requiring one fixed doctrine.</div>'+spiritualityTabs()+'</div>'+body
+ m=m||moon();ensureDailyTarotSaved();const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),log=spiritualityLogFor()||{},
+   touched=["reading","tarot","stillness","ritual"].filter(k=>log[k]).length,
+   journalCount=(state.spiritualityJournal||[]).length,
+   segments=[
+    {icon:"✦",title:"Reading",detail:r.lens,section:"reading"},
+    {icon:"☾",title:"Tarot",detail:tarotRevealed()?t.name:"Reveal card",section:"tarot"},
+    {icon:"◇",title:"Spread",detail:"1 · 3 · 5 cards",section:"spread"},
+    {icon:"❧",title:"Rituals",detail:s.title,section:"rituals"},
+    {icon:"▤",title:"Journal",detail:journalCount?journalCount+" entries":"Write",section:"journal"},
+    {icon:m?.[1]||"☾",title:"Moon",detail:m?.[0]||"Moon",section:"moon"},
+    {icon:"○",title:"Practice",detail:touched+"/4 touched",section:"practice"},
+    {icon:"↕",title:"History",detail:"Cards + notes",section:"history"}
+   ],
+   centerTitle=tarotRevealed()?t.name:"Tarot ready",
+   centerDetail=tarotRevealed()?(t.reversed?"Reversed · reflect":"Upright · reflect"):"Tap to reveal + explore";
+ return'<section class="spirituality-one-screen"><div class="spirituality-one-topline"><div><div class="eyebrow">Spirituality at a glance</div><b>Reflection + tarot + season</b></div><button class="btn small primary" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
+   '<div class="life-wheel spirituality-wheel" role="group" aria-label="Spirituality dashboard">'+
+   segments.map((x,i)=>'<button type="button" class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="openSpiritualHubSection(\''+x.section+'\')" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join("")+
+   '<button type="button" class="life-wheel-center spirituality-wheel-center" onclick="event.stopPropagation();openSpiritualHubSection(\'tarot\');return false;"><span class="eyebrow">TODAY\'S CARD</span><b>'+esc(centerTitle)+'</b><strong>'+esc(centerDetail)+'</strong><small>For reflection, not prediction</small></button>'+
+   '</div></section>'
 }
 function spiritualityLaunchCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
