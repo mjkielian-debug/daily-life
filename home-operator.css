@@ -57,3 +57,130 @@
 @media(max-width:350px){
   .home-room-grid{grid-template-columns:1fr}
 }
+
+/* Local-only floor plan + compact house reset */
+.home-floor-plan-card{
+  border-radius:28px!important;
+  overflow:hidden;
+}
+.home-floor-plan-frame{
+  width:100%;
+  aspect-ratio:1.04;
+  border-radius:24px;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.86);
+  background:#eaf0f3;
+  box-shadow:inset 0 0 0 1px rgba(56,46,68,.08);
+  margin:10px 0 12px;
+}
+.home-floor-plan-frame img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center top;
+}
+.home-map-room-links{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.home-map-room-links>button{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  border:1px solid rgba(91,67,91,.15);
+  border-radius:18px;
+  background:color-mix(in srgb,var(--room-tint,#dfe8df) 30%,rgba(255,255,255,.88));
+  color:#271f31;
+  text-align:left;
+  padding:9px 10px;
+  cursor:pointer;
+}
+.home-map-room-links>button i{
+  width:15px;height:15px;border-radius:50%;
+  background:var(--room-tint,#bdeccf);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.76);
+}
+.home-map-room-links>button span:nth-child(2){min-width:0}
+.home-map-room-links>button b{display:block;color:#251e2d;font-size:.9rem;overflow-wrap:anywhere}
+.home-map-room-links>button small{display:block;color:#5d5062;font-size:.62rem;margin-top:1px}
+.home-map-room-links .home-map-add-room{grid-column:1/-1;background:#f5e0eb}
+.home-map-privacy{margin-top:9px;text-align:center}
+.home-map-empty{margin:10px 0}
+.home-room-modal-head{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+}
+.home-room-modal-dot{
+  width:34px;height:34px;flex:0 0 34px;border-radius:50%;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.78);
+}
+.home-room-modal-head span:last-child{display:grid;gap:2px}
+.home-room-modal-head small{color:var(--life-muted,#6d687b)}
+
+.home-operator-collapsible{
+  padding:0!important;
+  overflow:hidden;
+  border-radius:24px!important;
+}
+.home-operator-collapsible>summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:13px 15px;
+}
+.home-operator-collapsible>summary::-webkit-details-marker{display:none}
+.home-operator-collapsible>summary>span:first-child{min-width:0;display:grid;gap:2px}
+.home-operator-collapsible>summary b{font-size:.98rem!important}
+.home-operator-collapsible>summary small{font-size:.68rem!important}
+.home-operator-summary-count{
+  flex:0 0 auto;
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:#5a465d;
+  border:1px solid rgba(82,59,85,.12);
+  padding:5px 8px;
+  font-size:.66rem;
+  font-weight:850;
+}
+.home-operator-collapsible[open] .home-operator-summary-count{font-size:0}
+.home-operator-collapsible[open] .home-operator-summary-count::after{content:"Close";font-size:.66rem}
+.home-operator-body{padding:0 12px 13px}
+.home-operator .home-focus-ring{
+  width:min(40vw,148px)!important;
+  padding:16px!important;
+  margin:8px auto 10px!important;
+}
+.home-operator .home-focus-ring>b{
+  font-size:1.02rem!important;
+  margin:2px 0!important;
+}
+.home-operator .home-focus-ring>small{
+  font-size:.61rem!important;
+  line-height:1.2!important;
+}
+.home-operator .home-focus-ring .actions{margin-top:7px!important;gap:5px!important}
+.home-operator .home-focus-ring .btn{padding:5px 7px!important;font-size:.63rem!important}
+.home-operator .home-room-grid{gap:7px!important;margin-top:7px!important}
+.home-operator .home-room-bubble{border-radius:20px!important;padding:8px!important}
+.home-operator .home-room-color{width:16px;height:16px;margin-bottom:3px}
+.home-operator .home-room-main>b{font-size:.9rem!important}
+.home-operator .home-room-main>small{font-size:.61rem!important;margin:1px 0 4px}
+.home-operator .home-room-main>strong{font-size:1.05rem!important}
+.home-operator .home-room-main>em{font-size:.58rem!important}
+.home-operator .home-room-meta{margin:6px 0;font-size:.58rem}
+.home-operator .home-room-actions .btn{font-size:.6rem!important;padding:5px 6px!important}
+
+@media(max-width:520px){
+  .home-map-room-links{grid-template-columns:1fr 1fr}
+  .home-floor-plan-card .section-title>.actions{width:auto}
+}
+@media(max-width:360px){
+  .home-map-room-links{grid-template-columns:1fr}
+  .home-map-room-links .home-map-add-room{grid-column:auto}
+}
