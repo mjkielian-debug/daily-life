@@ -81,7 +81,7 @@ function cloudPanel(){
   <div class="row"><span>ChatGPT log scan</span><b>${esc(lastLifePullText)}</b></div>
   ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
-  <p class="muted small">Your device keeps its IndexedDB copy. Outfit, meal, pet, plant, and hobby photos remain local while private photo storage is built separately.</p>
+  <p class="muted small"><b>This device remembers your cloud sign-in.</b> Reopening Daily Life can restore the signed-in session automatically; that is expected behavior, not a silent new login. Use Sign out below if you do not want this browser to stay signed in.</p><p class="muted small">Your device keeps its IndexedDB copy. Outfit, meal, pet, plant, and hobby photos remain local while private photo storage is built separately.</p>
   ${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}
   <div class="actions">
     ${cloudNeedsReview?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Use cloud copy</button><button class="btn" onclick="cloudKeepThisDevice()">Keep this device</button>`:`
