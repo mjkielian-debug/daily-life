@@ -22,6 +22,20 @@
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
+    if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<1){
+      p.workMorningRoutine={
+        version:1,
+        leadMinutes:60,
+        commuteMinutes:15,
+        steps:[
+          {key:"hygiene",from:-60,to:-45,title:"Wake + morning hygiene",detail:"Brush teeth · floss · mouthwash · wash face · ponytail · deodorant · perfume",icon:"♡"},
+          {key:"dress",from:-45,to:-30,title:"Get dressed for work",detail:"Shirt · pants · socks · shoes · jacket if needed",icon:"◷"},
+          {key:"stretch",from:-30,to:-25,title:"5-minute stretch",detail:"Stretch for 5 minutes before finishing work prep",icon:"✦"},
+          {key:"gather",from:-25,to:-15,title:"Gather work things + check tire",detail:"Water bottle · earbuds · energy drink · jacket · bag · check tire pressure",icon:"✓"},
+          {key:"commute",from:-15,to:0,title:"Drive · park · clock in",detail:"Leave for UPS · about 12-minute drive · park and clock in by start time",icon:"🚗"}
+        ]
+      };
+    }
     return p;
   }
 
@@ -187,6 +201,7 @@
   const baseRoutineWindow=itineraryRoutineWindow;
   itineraryRoutineWindow=function(x,date){
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
+    if(/^work-(hygiene|dress|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
     if(x.templateKey==="morning-start")return {start:dayStart,end:Math.min(dayEnd,dayStart+90)};
     if(x.templateKey==="home-reset")return {start:Math.max(dayStart,8*60+30),end:Math.min(dayEnd,13*60)};
     if(x.templateKey==="midday-reset")return {start:11*60,end:Math.min(dayEnd,15*60)};
@@ -218,7 +233,8 @@
           (String(e.location||"").trim()||/meeting|conference|appointment|drive|drop off|drop kids/i.test(text));
       }),
       p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
-      if((x.templateKey==="work-morning"||x.templateKey==="after-work")&&!lifeIsWorkday(date)&&!lifeActualWork(date))return false;
+      if(x.templateKey==="work-morning")return false;
+      if(x.templateKey==="after-work"&&!lifeIsWorkday(date)&&!lifeActualWork(date))return false;
       if(x.templateKey==="after-school-launch"&&earlyDinner)return false;
       if(x.templateKey==="homework"&&earlyDinner&&busyEvening)return false;
       return true;
@@ -231,6 +247,16 @@
       if(keys.has(row.templateKey)||overrides.has(row.templateKey))return;
       const finalRow=lifeRoutineApply(date,row,index++);
       if(finalRow){out.push(finalRow);keys.add(finalRow.templateKey)}
+    }
+
+    const workRow=workForDate(date),workStart=hmMinutes(workRow&&(workRow.start||workRow.scheduled)),
+      morningRoutine=p.workMorningRoutine&&Array.isArray(p.workMorningRoutine.steps)?p.workMorningRoutine.steps:[];
+    if(!offDay&&workStart!==null&&morningRoutine.length){
+      morningRoutine.forEach(function(step){
+        const start=Math.max(0,workStart+Number(step.from||0)),end=Math.max(start+5,workStart+Number(step.to||0));
+        add({templateKey:"work-"+String(step.key||"prep"),start:minutesHm(start),end:minutesHm(end),
+          title:String(step.title||"Work prep"),detail:String(step.detail||""),icon:String(step.icon||"")});
+      });
     }
 
     if(offDay){
