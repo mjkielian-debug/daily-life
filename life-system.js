@@ -196,8 +196,16 @@
 
   const baseSuggestedBlocks=itinerarySuggestedBlocks;
   itinerarySuggestedBlocks=function(date){
-    const p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
+    const meal=mealForDate(date),flow=Array.isArray(meal&&meal.dayFlowSteps)?meal.dayFlowSteps:[],
+      flowStarts=flow.map(function(x){return hmMinutes(x.start)}).filter(Number.isFinite),
+      firstMealStart=flowStarts.length?Math.min.apply(null,flowStarts):hmMinutes(meal&&meal.startBy),
+      serve=hmMinutes(meal&&meal.serveTime),
+      earlyDinner=(firstMealStart!==null&&firstMealStart<=17*60)||(serve!==null&&serve<=17*60+30),
+      busyEvening=(state.events||[]).some(function(e){const m=hmMinutes(e.startTime);return e.date===date&&e.status!=="cancelled"&&m!==null&&m>=17*60+30}),
+      p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
       if((x.templateKey==="work-morning"||x.templateKey==="after-work")&&!lifeIsWorkday(date)&&!lifeActualWork(date))return false;
+      if(x.templateKey==="after-school-launch"&&earlyDinner)return false;
+      if(x.templateKey==="homework"&&earlyDinner&&busyEvening)return false;
       return true;
     });
     const out=base.slice(),keys=new Set(out.map(function(x){return x.templateKey})),
