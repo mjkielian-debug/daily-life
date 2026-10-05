@@ -1851,16 +1851,19 @@ function migrateState(s){
     }
     s.settings.giftProgressWeekVersion=1;
   }
-  if(Number(s.settings.fridayHandoffTimeVersion||0)<1){
-    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:[];
+  if(Number(s.settings.fridayHandoffTimeVersion||0)<2){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    let found=false;
     for(const r of rules){
       const text=[r.title,r.notes,r.location].filter(Boolean).join(" ").toLowerCase();
       if(Number(r.weekday)===5&&/handoff|drop.?off|custody|dad/.test(text)){
+        found=true;
         r.startTime="16:30";
         if(!r.endTime||r.endTime<="16:30")r.endTime="17:00";
       }
     }
-    s.settings.fridayHandoffTimeVersion=1;
+    if(!found)rules.push({id:"friday-family-handoff",title:"Kids to Dad's",child:"Kids",weekday:5,startTime:"16:30",endTime:"17:00",type:"family",location:"",notes:"Friday handoff",status:"confirmed"});
+    s.settings.fridayHandoffTimeVersion=2;
   }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
