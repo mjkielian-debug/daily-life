@@ -64,13 +64,13 @@
         excludedLabels:["laundry","dishes","counters","spot mop floor","floor spots","start vacuums"]
       };
     }
-    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<1){
+    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<2){
       p.kidShowerRoutine={
-        version:1,
+        version:2,
         enabled:true,
         durationMinutes:20,
         maxEveningShowers:2,
-        leoMorning:{enabled:true,start:"06:45",weekdays:[1,2,3,4,5]},
+        leoMorning:{enabled:true,start:"06:45",startByWeekday:{"1":"06:30"},weekdays:[1,2,3,4,5]},
         noEveningWeekdays:[2],
         weeklyPlan:{
           "0":[{child:"Ambrose",start:"18:30",note:"Sunday evening shower after dinner"}],
@@ -78,6 +78,16 @@
           "3":[{child:"Demitri",start:"17:00",note:"Before Dolly's dance"},{child:"Dolly",start:"19:00",note:"After dance"}],
           "4":[{child:"Ambrose",start:"18:40",note:"After Food Fort; home around 6:30 PM"}]
         }
+      };
+    }
+    if(!p.hydrationRoutine||Number(p.hydrationRoutine.version||0)<1){
+      p.hydrationRoutine={
+        version:1,
+        enabled:true,
+        targetBottles:3,
+        firstAfterWakeMinutes:225,
+        secondAfterWakeMinutes:465,
+        finalBy:"18:00"
       };
     }
     if(!p.gymRoutine||Number(p.gymRoutine.version||0)<3){
@@ -284,7 +294,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -297,6 +307,10 @@
       return {start:dayStart,end:Math.min(dayEnd,resolved!==null?resolved:dayEnd)};
     }
     if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
+    if(/^water-[123]$/.test(String(x.templateKey||""))){
+      const desired=hmMinutes(x.start)||dayStart;
+      return {start:Math.max(dayStart,desired-45),end:Math.min(dayEnd,desired+60)};
+    }
     if(/^kid-shower-/.test(String(x.templateKey||""))){
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
       if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+20};
@@ -347,7 +361,8 @@
     const wd=lifeWeekday(date),duration=Math.max(20,Number(cfg.durationMinutes||20)),rows=[],
       leo=cfg.leoMorning||{},leoDays=Array.isArray(leo.weekdays)?leo.weekdays.map(Number):[];
     if(leo.enabled!==false&&leoDays.includes(wd)){
-      const start=hmMinutes(leo.start)||405;
+      const weekdayStart=leo.startByWeekday&&leo.startByWeekday[String(wd)],
+        start=hmMinutes(weekdayStart||leo.start)||405;
       rows.push({templateKey:"kid-shower-leo",start:minutesHm(start),end:minutesHm(start+duration),
         title:"Leo · morning shower",detail:"Leo prefers morning showers · "+duration+" minutes",icon:"♡"});
     }
@@ -442,14 +457,32 @@
     }
 
     if(offDay){
+      const monday=lifeWeekday(date)===1;
       add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
-        title:"Morning start + basics",detail:"Bathroom · teeth · water · get dressed · quick look at Day Flow",icon:"☀"});
+        title:"Morning start + basics",
+        detail:monday?"Get everyone moving · fill water bottle · school-morning basics":"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
+        subtasks:monday?["Get up","Get dressed","Go downstairs","Fill water bottle","Check Day Flow"]:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],
+        icon:"☀"});
       const focusStart=Math.max(dayStart,12*60);
       if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
         title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project: deep cleaning, decluttering, organizing, sorting, or another household project. Do not use this block for the kids’ regular laundry, dishes, counters, or spot-mop chores.",icon:"⌂"});
       const mid=Math.max(focusStart+45,12*60+45);
       if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
         title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task before moving on",icon:"◷"});
+    }
+
+    const hydration=p.hydrationRoutine||{};
+    if(hydration.enabled!==false&&Number(hydration.targetBottles||3)>=3){
+      const first=Math.min(dayEnd-30,dayStart+Math.max(120,Number(hydration.firstAfterWakeMinutes||225))),
+        second=Math.min(dayEnd-30,dayStart+Math.max(240,Number(hydration.secondAfterWakeMinutes||465))),
+        configuredFinal=hmMinutes(hydration.finalBy||"18:00"),
+        finalTime=Math.max(second+120,Math.min(dayEnd-60,configuredFinal===null?18*60:configuredFinal)),
+        waterRows=[
+          {templateKey:"water-1",start:minutesHm(first),end:minutesHm(Math.min(dayEnd,first+5)),title:"Water check · 1 of 3 bottles",detail:"By now, aim to have finished bottle 1 of 3.",subtasks:["Finish bottle 1 of 3"],icon:"💧"},
+          {templateKey:"water-2",start:minutesHm(second),end:minutesHm(Math.min(dayEnd,second+5)),title:"Water check · 2 of 3 bottles",detail:"By now, aim to have finished bottle 2 of 3.",subtasks:["Finish bottle 2 of 3"],icon:"💧"},
+          {templateKey:"water-3",start:minutesHm(finalTime),end:minutesHm(Math.min(dayEnd,finalTime+5)),title:"Water check · 3 of 3 bottles",detail:"Finish bottle 3 so today’s water goal is complete.",subtasks:["Finish bottle 3 of 3"],icon:"💧"}
+        ];
+      waterRows.forEach(function(row){add(row)});
     }
 
     lifeKidShowerRows(date).forEach(function(row){add(row)});
