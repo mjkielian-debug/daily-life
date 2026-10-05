@@ -2763,3 +2763,19 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
   .life-task-top b{font-size:.98rem!important}
   .life-task-top em{font-size:.62rem}
 }
+
+
+.life-task-group{display:grid;gap:7px;margin-top:4px}
+.life-task-group+.life-task-group{margin-top:10px}
+.life-task-group-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2px 5px 0;color:#51475d;
+}
+.life-task-group-head b{
+  font-family:var(--font-hand);font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;
+}
+.life-task-group-head span{
+  min-width:24px;height:24px;padding:0 7px;border-radius:999px;
+  display:grid;place-items:center;background:rgba(255,255,255,.72);
+  border:1px solid rgba(64,50,82,.10);font-size:.72rem;font-weight:800;
+}
