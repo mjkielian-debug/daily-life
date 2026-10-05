@@ -304,7 +304,9 @@
     }else{
       bedtime=next&&requiredBedtime!==null?Math.min(offDayGuide,requiredBedtime):offDayGuide;
     }
-    bedtime=Math.min(bedtime,configured);
+    // dayEnd is the end of scheduled tasks, not a forced bedtime. On a night
+    // before a non-work morning, allow the learned/off-day bedtime guide to run later.
+    if(tomorrowWork)bedtime=Math.min(bedtime,configured);
     bedtime=Math.max(840,Math.min(1439,Math.round(bedtime)));
     const wake=next?next.wake:null,
       protectedHours=wake===null?target:Math.max(0,(wake+1440-bedtime)/60);
