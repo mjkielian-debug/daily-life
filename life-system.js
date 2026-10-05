@@ -294,7 +294,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -323,6 +323,10 @@
         return {start:Math.max(dayStart,estimatedEnd),end:Math.min(dayEnd,estimatedEnd+120)};
       }
       return {start:Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),end:Math.min(dayEnd,hmMinutes(care.offdayWindowEnd)||16*60)};
+    }
+    if(/^monday-(kids-ready|water-school|self-ready)$/.test(String(x.templateKey||""))){
+      const desired=hmMinutes(x.start),end=hmMinutes(x.end);
+      if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+15};
     }
     if(x.templateKey==="morning-start")return {start:dayStart,end:Math.min(dayEnd,dayStart+90)};
     if(x.templateKey==="home-reset")return {start:Math.max(dayStart,12*60),end:Math.min(dayEnd,14*60)};
@@ -457,13 +461,25 @@
     }
 
     if(offDay){
-      const monday=lifeWeekday(date)===1,
-        morningEnd=Math.min(dayEnd,dayStart+(monday?15:30));
-      add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(morningEnd),
-        title:"Morning start + basics",
-        detail:monday?"Get everyone moving · fill water bottle · get ready for Leo’s 6:30 shower":"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
-        subtasks:monday?["Get up","Get dressed","Go downstairs","Fill water bottle"]:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],
-        icon:"☀"});
+      const monday=lifeWeekday(date)===1;
+      if(monday){
+        add({templateKey:"monday-kids-ready",start:"06:15",end:"06:30",
+          title:"Get kids up + ready downstairs",
+          detail:"Kids first — you get yourself dressed afterward",
+          subtasks:["Wake kids","Kids get dressed","Kids brush teeth","Kids wash faces","Kids go downstairs"],icon:"☀"});
+        add({templateKey:"monday-water-school",start:"06:30",end:"06:40",
+          title:"Water bottle + school setup",
+          detail:"Do this while Leo starts his 6:30 shower",
+          subtasks:["Fill water bottle","Check school bags / folders","Check jackets / school items"],icon:"💧"});
+        add({templateKey:"monday-self-ready",start:"06:40",end:"06:55",
+          title:"Get yourself ready",
+          detail:"Your getting-dressed block comes after the kids are moving",
+          subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡"});
+      }else{
+        add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
+          title:"Morning start + basics",detail:"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
+          subtasks:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],icon:"☀"});
+      }
       const focusStart=Math.max(dayStart,12*60);
       if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
         title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project: deep cleaning, decluttering, organizing, sorting, or another household project. Do not use this block for the kids’ regular laundry, dishes, counters, or spot-mop chores.",icon:"⌂"});
