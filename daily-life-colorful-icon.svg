@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">Daily Life — pastel rainbow garden</title>
+<defs>
+  <radialGradient id="bg" cx="30%" cy="22%" r="95%"><stop offset="0" stop-color="#fff8fb"/><stop offset=".46" stop-color="#f8f1ff"/><stop offset="1" stop-color="#eefaf3"/></radialGradient>
+  <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9fd7ad"/><stop offset="1" stop-color="#5fa77a"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="118" fill="url(#bg)"/>
+<circle cx="256" cy="258" r="176" fill="#ffffff" fill-opacity=".5" stroke="#ffffff" stroke-width="10"/>
+<path d="M134 305a122 122 0 0 1 244 0" fill="none" stroke="#f3a9c4" stroke-width="38" stroke-linecap="round"/>
+<path d="M155 305a101 101 0 0 1 202 0" fill="none" stroke="#f6c18f" stroke-width="34" stroke-linecap="round"/>
+<path d="M176 305a80 80 0 0 1 160 0" fill="none" stroke="#efd985" stroke-width="30" stroke-linecap="round"/>
+<path d="M197 305a59 59 0 0 1 118 0" fill="none" stroke="#a9d7b4" stroke-width="26" stroke-linecap="round"/>
+<path d="M218 305a38 38 0 0 1 76 0" fill="none" stroke="#b8ccef" stroke-width="22" stroke-linecap="round"/>
+<path d="M256 360c-4-31-3-61 2-89M256 330c-29-2-50-17-63-40 26-4 52 10 63 40M258 314c26-9 44-27 51-49-25 2-46 19-51 49" fill="none" stroke="url(#leaf)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#8ecba0" stroke="#6cad80" stroke-width="4"><ellipse cx="202" cy="294" rx="25" ry="13" transform="rotate(26 202 294)"/><ellipse cx="307" cy="273" rx="25" ry="13" transform="rotate(-31 307 273)"/></g>
+<g transform="translate(256 257)"><g fill="#f1a7c3" stroke="#dc86aa" stroke-width="3"><ellipse cx="0" cy="-26" rx="17" ry="29"/><ellipse cx="25" cy="-8" rx="17" ry="29" transform="rotate(72 25 -8)"/><ellipse cx="15" cy="22" rx="17" ry="29" transform="rotate(144 15 22)"/><ellipse cx="-15" cy="22" rx="17" ry="29" transform="rotate(216 -15 22)"/><ellipse cx="-25" cy="-8" rx="17" ry="29" transform="rotate(288 -25 -8)"/></g><circle r="18" fill="#f6d779" stroke="#e0bc55" stroke-width="3"/></g>
+<g fill="#b798d4"><path d="M119 190l7 19 19 7-19 7-7 19-7-19-19-7 19-7z"/><path d="M389 173l5 14 14 5-14 5-5 14-5-14-14-5 14-5z"/><circle cx="367" cy="332" r="7"/></g>
+<g fill="#f3a9c4"><circle cx="151" cy="351" r="7"/><circle cx="398" cy="266" r="5"/></g>
+</svg>
