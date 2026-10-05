@@ -2668,3 +2668,29 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
 @media(min-width:620px){
   .people-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+
+/* Day Flow schedule conflict audit */
+.dayflow-conflict-card{
+  border:1px solid rgba(166,92,111,.22)!important;
+  background:linear-gradient(180deg,rgba(255,250,252,.96),rgba(255,246,249,.93))!important;
+}
+.dayflow-conflict-row{
+  display:grid;
+  gap:2px;
+  padding:9px 0;
+  border-top:1px solid rgba(128,88,108,.13);
+}
+.dayflow-conflict-row:first-of-type{border-top:0}
+.dayflow-conflict-row b{
+  color:#63384f!important;
+  font-size:.78rem!important;
+}
+.dayflow-conflict-row span{
+  color:#665668!important;
+  font-size:.68rem!important;
+  line-height:1.35!important;
+}
+.dayflow-clear{
+  border:1px solid rgba(86,135,102,.18)!important;
+}
