@@ -470,11 +470,11 @@
         add({templateKey:"monday-water-school",start:"06:30",end:"06:40",
           title:"Water bottle + school setup",
           detail:"Do this while Leo starts his 6:30 shower",
-          subtasks:["Fill water bottle","Check school bags / folders","Check jackets / school items"],icon:"💧"});
+          subtasks:["Fill water bottle","Check school bags / folders","Check jackets / school items"],icon:"💧",allowParallel:true});
         add({templateKey:"monday-self-ready",start:"06:40",end:"06:55",
           title:"Get yourself ready",
           detail:"Your getting-dressed block comes after the kids are moving",
-          subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡"});
+          subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡",allowParallel:true});
       }else{
         add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
           title:"Morning start + basics",detail:"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
