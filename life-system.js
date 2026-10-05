@@ -384,6 +384,7 @@
 
   const baseSuggestedBlocks=itinerarySuggestedBlocks;
   itinerarySuggestedBlocks=function(date){
+    if(typeof ensureFamilyDay==="function")ensureFamilyDay(date);
     const meal=mealForDate(date),flow=Array.isArray(meal&&meal.dayFlowSteps)?meal.dayFlowSteps:[],
       flowStarts=flow.map(function(x){return hmMinutes(x.start)}).filter(Number.isFinite),
       firstMealStart=flowStarts.length?Math.min.apply(null,flowStarts):hmMinutes(meal&&meal.startBy),
