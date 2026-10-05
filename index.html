@@ -1838,6 +1838,19 @@ function migrateState(s){
     });
     s.settings.mondayPlan20261005Version=1;
   }
+  if(Number(s.settings.giftProgressWeekVersion||0)<1){
+    const rows=[
+      ["gift-progress-1006","2026-10-06","Birthday gift · progress session",60],
+      ["gift-progress-1007","2026-10-07","Birthday gift · progress session",60],
+      ["gift-progress-1008","2026-10-08","Birthday gift · progress session",60]
+    ];
+    for(const [id,date,title,minutes] of rows){
+      let t=s.tasks.find(x=>x.id===id);
+      if(!t){t={id,date,title,category:"personal",notes:"Protected project time after work and shower.",done:false,order:18};s.tasks.push(t);}
+      t.date=date;t.title=title;t.category="personal";t.notes="Protected project time after work and shower.";t.itineraryMinutes=minutes;t.itineraryPreference="after-work";t.itineraryStart="";t.paused=false;t.waitingForFunds=false;
+    }
+    s.settings.giftProgressWeekVersion=1;
+  }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
