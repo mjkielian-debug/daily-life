@@ -295,7 +295,16 @@
   itineraryRestBlocks=function(items,date){
     const gaps=itineraryOpenGaps(items,date),out=[],
       placed=new Set((items||[]).filter(function(x){return x.source==="task"}).map(function(x){return x.sourceId})),
-      priorities=(state.tasks||[]).filter(function(t){return !t.done&&!placed.has(t.id)&&String(t.date||date)<=date})
+      seenTitles=new Set(),
+      priorities=(typeof itineraryTaskCandidates==="function"?itineraryTaskCandidates(date):(state.tasks||[]))
+        .filter(function(t){
+          if(!t||t.done||placed.has(t.id))return false;
+          const title=String(t.title||"").trim(),key=title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+          if(!title||/^(ups shift|ups scheduled start|everyone reading)$/.test(key))return false;
+          if(seenTitles.has(key))return false;
+          seenTitles.add(key);
+          return true;
+        })
         .sort(function(a,b){return Number(a.order||100)-Number(b.order||100)||String(a.date||"").localeCompare(String(b.date||""))});
     let priorityIndex=0;
     gaps.forEach(function(g){
