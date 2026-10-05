@@ -417,17 +417,32 @@
     const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0},
       hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length;
-    const rowHtml=rows.map(t=>{
-      const meta=lifeTaskMeta(t),note=lifeTaskCleanNote(t),cat=lifeTaskCategoryLabel(t);
-      return '<div class="life-task-hub-row">'+
-        '<label class="life-task-check"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
-        '<button class="life-task-main" onclick="lifeOpenSource(\''+t.id+'\')">'+
-          '<span class="life-task-top"><b>'+esc(t.title)+'</b><em>'+esc(cat)+'</em></span>'+
-          (meta?'<small class="life-task-meta">'+esc(meta)+'</small>':'')+
-          (note?'<small class="life-task-note">'+esc(note)+'</small>':'')+
-        '</button>'+
-        '<button class="life-task-open" onclick="lifeOpenSource(\''+t.id+'\')" aria-label="Open '+esc(t.title)+'">›</button>'+
-      '</div>';
+    const categoryOrder=["Personal","Home","School","Car","Money","Food","Pets","Garden","Work","Life"],
+      groups=new Map();
+    for(const t of rows){
+      const cat=lifeTaskCategoryLabel(t);
+      if(!groups.has(cat))groups.set(cat,[]);
+      groups.get(cat).push(t);
+    }
+    const groupNames=[...groups.keys()].sort((a,b)=>{
+      const ai=categoryOrder.indexOf(a),bi=categoryOrder.indexOf(b);
+      return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b);
+    });
+    const rowHtml=groupNames.map(cat=>{
+      const items=groups.get(cat)||[];
+      return '<section class="life-task-group"><div class="life-task-group-head"><b>'+esc(cat)+'</b><span>'+items.length+'</span></div>'+
+        items.map(t=>{
+          const meta=lifeTaskMeta(t),note=lifeTaskCleanNote(t);
+          return '<div class="life-task-hub-row">'+
+            '<label class="life-task-check"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
+            '<button class="life-task-main" onclick="lifeOpenSource(\''+t.id+'\')">'+
+              '<span class="life-task-top"><b>'+esc(t.title)+'</b></span>'+
+              (meta?'<small class="life-task-meta">'+esc(meta)+'</small>':'')+
+              (note?'<small class="life-task-note">'+esc(note)+'</small>':'')+
+            '</button>'+
+            '<button class="life-task-open" onclick="lifeOpenSource(\''+t.id+'\')" aria-label="Open '+esc(t.title)+'">›</button>'+
+          '</div>';
+        }).join("")+'</section>';
     }).join("");
     const statusBits=[
       review.unknown?review.unknown+' unanswered daily check'+(review.unknown===1?'':'s'):'',
