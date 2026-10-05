@@ -88,23 +88,24 @@
     }
     if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
     if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Leftover roast";
-    if(!p.nightRoutine||Number(p.nightRoutine.version||0)<3){
+    if(!p.nightRoutine||Number(p.nightRoutine.version||0)<4){
       p.nightRoutine=Object.assign({},p.nightRoutine||{},{
-        version:3,
+        version:4,
         enabled:true,
         durationMinutes:30,
         electronicsSweepTime:"19:30",
         kidsBedtime:"20:30",
         currentFamilySettlePlan:true,
-        familySettleNote:"At 7:30 PM collect electronics, then lie down with Dolly and Ambrose to read and settle. Leo and Tree may join or go to their own beds. Kids' official bedtime is 8:30 PM.",
-        subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"]
+        familySettleNote:"At 7:30 PM collect all kids' electronics and all four kids brush teeth. Dolly and Ambrose then come upstairs to Mom's room. Leo and Tree also wash faces and put on pajamas from 7:30–7:40, then read from 7:40–8:00. Kids' official bedtime is 8:30 PM.",
+        subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · settle"]
       });
     }
-    if(!p.olderKidsReading||Number(p.olderKidsReading.version||0)<1){
+    if(!p.olderKidsReading||Number(p.olderKidsReading.version||0)<2){
       p.olderKidsReading={
-        version:1,enabled:true,start:"19:30",end:"19:50",
+        version:2,enabled:true,start:"19:40",end:"20:00",
+        prepStart:"19:30",prepEnd:"19:40",
         children:["Leo","Demitri"],
-        note:"After the 7:30 PM electronics sweep, Leo and Tree use 20 minutes for their daily reading before the 8:30 kids bedtime."
+        note:"At 7:30 PM electronics are collected and all four kids brush teeth. Dolly and Ambrose go upstairs to Mom's room. Leo and Tree wash faces, put on pajamas, then read from 7:40–8:00 before the 8:30 kids bedtime."
       };
     }
     if(!p.householdFocus||Number(p.householdFocus.version||0)<1){
@@ -310,6 +311,30 @@
           title:"School pickup",detail:"Kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
       }
     }
+    const evening=lifeEnsureSettings().olderKidsReading||{};
+    if(evening.enabled!==false){
+      const prepStart=hmMinutes(evening.prepStart||"19:30"),prepEnd=hmMinutes(evening.prepEnd||"19:40"),
+        readStart=hmMinutes(evening.start||"19:40"),readEnd=hmMinutes(evening.end||"20:00"),
+        readingRows=(state.chores||[]).filter(function(c){
+          const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
+          return c.date===date&&(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
+        }).sort(function(a,b){return String(a.child||"").localeCompare(String(b.child||""))});
+      if(prepStart!==null&&prepEnd!==null){
+        rows.push({id:"kids-night-prep:"+date,start:minutesHm(prepStart),end:minutesHm(prepEnd),
+          title:"Electronics sweep + all kids brush teeth",
+          detail:"Collect all kids' electronics. All four kids brush teeth. Dolly + Ambrose then come upstairs to Mom's room; Leo + Tree wash faces and put on pajamas.",
+          subtasks:["Collect all kids' electronics","Leo: brush teeth","Demitri: brush teeth","Dolly: brush teeth","Ambrose: brush teeth","Leo: wash face + pajamas","Demitri: wash face + pajamas","Dolly + Ambrose: come upstairs"],
+          fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kids-night-prep",sleepCompatible:true,allowParallel:true});
+      }
+      if(readStart!==null&&readEnd!==null){
+        const subtasks=readingRows.length?readingRows.map(function(c){return String(c.child||"Kid")+": Read 20 min"}):["Leo: Read 20 min","Demitri: Read 20 min"],
+          refs=readingRows.map(function(c){return c.id});
+        rows.push({id:"older-kids-reading:"+date,start:minutesHm(readStart),end:minutesHm(readEnd),
+          title:"Leo + Tree · reading time",
+          detail:"Quiet reading after nighttime prep · kids' official bedtime is 8:30 PM",
+          subtasks:subtasks,subtaskRefs:refs,fixed:false,kind:"routine",icon:"📚",source:"suggested",templateKey:"older-kids-reading",sleepCompatible:true,allowParallel:true});
+      }
+    }
     return rows.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
   };
 
@@ -383,7 +408,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["older-kids-reading","Leo + Tree reading"],["recovery-nap","Recovery nap"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["kids-night-prep","Kids nighttime prep"],["older-kids-reading","Leo + Tree reading"],["recovery-nap","Recovery nap"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -410,9 +435,13 @@
         desired=hmMinutes(schoolDay?(cfg.schoolMorningStart||"07:00"):(cfg.nonSchoolMorningStart||"09:00"));
       return {start:desired===null?7*60:desired,end:(desired===null?7*60:desired)+15};
     }
+    if(x.templateKey==="kids-night-prep"){
+      const cfg=p.olderKidsReading||{},start=hmMinutes(cfg.prepStart||"19:30"),end=hmMinutes(cfg.prepEnd||"19:40");
+      return {start:start===null?19*60+30:start,end:end===null?19*60+40:end};
+    }
     if(x.templateKey==="older-kids-reading"){
-      const cfg=p.olderKidsReading||{},start=hmMinutes(cfg.start||"19:30"),end=hmMinutes(cfg.end||"19:50");
-      return {start:start===null?19*60+30:start,end:end===null?19*60+50:end};
+      const cfg=p.olderKidsReading||{},start=hmMinutes(cfg.start||"19:40"),end=hmMinutes(cfg.end||"20:00");
+      return {start:start===null?19*60+40:start,end:end===null?20*60:end};
     }
     if(x.templateKey==="recovery-nap"){
       const cfg=p.napSupport||{},start=hmMinutes(cfg.windowStart||"10:30"),end=hmMinutes(cfg.windowEnd||"16:30");
@@ -454,7 +483,7 @@
     if(row.templateKey==="wind-down"){
       const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
       row.title="Night routine + electronics sweep";
-      row.detail="Finish your night routine · electronics sweep at "+fmtClock(sweep)+" · then lie down with Dolly + Ambrose to read/settle. Leo + Tree can join or use their own beds; kids' official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
+      row.detail="Finish your own night routine before "+fmtClock(sweep)+" · at 7:30 collect all kids' electronics and start the kids' bedtime routine. Dolly + Ambrose come upstairs after brushing teeth; kids' official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
       row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"];
     }
     row.id="suggest:"+date+":"+row.templateKey+":life"+index;
@@ -583,7 +612,7 @@
           refs=todays.map(function(c){return c.id});
         return Object.assign({},x,{
           title:"Kids chores + homework",start:"15:30",end:"16:30",
-          detail:"Right after school: clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:30 PM after electronics are collected.",
+          detail:"Right after school: clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:40–8:00 PM after the 7:30 electronics/teeth routine.",
           subtasks:subtasks,subtaskRefs:refs
         });
       }
@@ -684,21 +713,6 @@
           {templateKey:"water-3",start:minutesHm(finalTime),end:minutesHm(Math.min(dayEnd,finalTime+5)),title:"Water check · 3 of 3 bottles",detail:"Finish bottle 3 so today’s water goal is complete.",subtasks:["Finish bottle 3 of 3"],icon:"💧"}
         ];
       waterRows.forEach(function(row){add(row)});
-    }
-
-    const olderReading=p.olderKidsReading||{};
-    if(olderReading.enabled!==false){
-      const start=hmMinutes(olderReading.start||"19:30"),end=hmMinutes(olderReading.end||"19:50"),
-        readingRows=(state.chores||[]).filter(function(c){
-          const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
-          return c.date===date&&(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
-        }).sort(function(a,b){return String(a.child||"").localeCompare(String(b.child||""))}),
-        subtasks=readingRows.length?readingRows.map(function(c){return String(c.child||"Kid")+": Read 20 min"}):["Leo: Read 20 min","Demitri: Read 20 min"],
-        refs=readingRows.map(function(c){return c.id});
-      if(start!==null&&end!==null)add({templateKey:"older-kids-reading",start:minutesHm(start),end:minutesHm(end),
-        title:"Leo + Tree · reading time",
-        detail:"After the electronics sweep · quiet reading before the 8:30 PM kids bedtime",
-        subtasks:subtasks,subtaskRefs:refs,icon:"📚",allowParallel:true});
     }
 
     const nap=lifeNapSuggestion(date);
