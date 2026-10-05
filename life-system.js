@@ -50,17 +50,27 @@
       p.busySeasonSleepNote="UPS hours are expected to rise sharply toward late November, potentially around 70 hours/week. Protect sleep first and use recovery naps when the schedule makes a full night unrealistic.";
       p.sleepPlanningVersion=1;
     }
-    if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<1){
-      p.personalCareRoutine={
-        version:1,
+    if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<2){
+      p.personalCareRoutine=Object.assign({},p.personalCareRoutine||{},{
+        version:2,
         enabled:true,
-        workdayDurationMinutes:50,
-        offdayDurationMinutes:30,
+        workdayDurationMinutes:Number(p.personalCareRoutine&&p.personalCareRoutine.workdayDurationMinutes||50),
+        offdayDurationMinutes:40,
         offdayWindowStart:"14:00",
-        offdayWindowEnd:"16:00",
-        subtasks:["Drive home","Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"]
+        offdayWindowEnd:"14:40",
+        showerMinutes:25,
+        postShowerMinutes:15,
+        subtasks:["Drive home","Shower","Dry off","Lotion","Face moisturizer","Deodorant","Hair","Put on clean clothes"]
+      });
+    }
+    if(!p.schoolPickupRoutine||Number(p.schoolPickupRoutine.version||0)<1){
+      p.schoolPickupRoutine={
+        version:1,enabled:true,weekdays:[1,2,3,4,5],
+        leaveHome:"14:40",park:"14:45",pickup:"14:52",end:"15:00"
       };
     }
+    if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
+    if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Meatballs + frozen vegetables";
     if(!p.nightRoutine||Number(p.nightRoutine.version||0)<2){
       p.nightRoutine={
         version:2,
@@ -242,6 +252,23 @@
         rows.push({id:"work-est:"+date,start:minutesHm(inferred.minutes),end:minutesHm(end),title:"UPS expected shift",
           detail:"Start estimated from "+inferred.samples+" "+inferred.source+" shift"+(inferred.samples===1?"":"s")+" until the posted schedule is entered.",
           fixed:true,kind:"work",icon:"📦",source:"work",estimatedEnd:true,estimatedMinutes:mins});
+      }
+    }
+    const pickup=lifeEnsureSettings().schoolPickupRoutine||{},wd=lifeWeekday(date),
+      pickupDays=Array.isArray(pickup.weekdays)?pickup.weekdays.map(Number):[];
+    if(pickup.enabled!==false&&pickupDays.includes(wd)){
+      const already=(state.events||[]).some(function(e){
+        return e.date===date&&e.status!=="cancelled"&&/school.*pick.?up|pick.?up.*school/i.test(String(e.title||""));
+      });
+      if(!already){
+        const leave=hmMinutes(pickup.leaveHome||"14:40"),park=hmMinutes(pickup.park||"14:45"),
+          pick=hmMinutes(pickup.pickup||"14:52"),end=hmMinutes(pickup.end||"15:00");
+        if(leave!==null&&park!==null)rows.push({id:"school-pickup-drive:"+date,start:minutesHm(leave),end:minutesHm(park),
+          title:"Drive to school pickup",detail:"Leave home at "+fmtClock(minutesHm(leave)),fixed:true,kind:"event",icon:"🚗",source:"generated"});
+        if(park!==null&&pick!==null)rows.push({id:"school-pickup-wait:"+date,start:minutesHm(park),end:minutesHm(pick),
+          title:"Park + wait for kids",detail:"Park around "+fmtClock(minutesHm(park))+" · kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"◷",source:"generated"});
+        if(pick!==null&&end!==null)rows.push({id:"school-pickup:"+date,start:minutesHm(pick),end:minutesHm(end),
+          title:"School pickup",detail:"Kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
       }
     }
     return rows.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
@@ -443,6 +470,21 @@
     return {reason:reasons.join(" · "),duration:Math.max(20,Math.min(30,Number(cfg.durationMinutes||25)))};
   }
 
+  function lifeLunchChoice(date){
+    const p=lifeEnsureSettings(),planned=p.lunchPlanByDate&&String(p.lunchPlanByDate[date]||"").trim();
+    if(planned)return planned;
+    const meal=(state.meals||[]).find(function(m){return m.date===date&&String(m.type||"").toLowerCase()==="lunch"&&String(m.dish||"").trim()});
+    if(meal)return String(meal.dish).trim();
+    const names=(state.pantry&&Array.isArray(state.pantry.items)?state.pantry.items:[]).map(function(x){
+      return String(typeof x==="string"?x:(x&&x.name)||(x&&x.item)||"").toLowerCase();
+    });
+    const has=function(re){return names.some(function(n){return re.test(n)})};
+    if(has(/meatball/)&&has(/vegetable|vegg|broccoli|green bean|mixed veg/))return"Meatballs + vegetables";
+    if(has(/salmon/)&&has(/vegetable|vegg|broccoli|green bean|mixed veg/))return"Salmon + vegetables";
+    if(has(/yogurt/)&&has(/granola|fruit|berry/))return"Yogurt bowl";
+    return"Choose lunch from verified food on hand";
+  }
+
   const baseSuggestedBlocks=itinerarySuggestedBlocks;
   itinerarySuggestedBlocks=function(date){
     if(typeof ensureFamilyDay==="function")ensureFamilyDay(date);
@@ -526,10 +568,12 @@
           subtasks:Array.isArray(care.subtasks)?care.subtasks.slice():["Drive home","Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"],icon:"♡"});
       }else if(offDay){
         const start=Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),
-          duration=Math.max(20,Number(care.offdayDurationMinutes||30)),end=Math.min(dayEnd,start+duration);
-        if(end-start>=20)add({templateKey:"personal-care",start:minutesHm(start),end:minutesHm(end),
-          title:"Shower + self-care",detail:"Flexible personal-care reset on a non-work day",
-          subtasks:(Array.isArray(care.subtasks)?care.subtasks.slice(1):["Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"]),icon:"♡"});
+          duration=Math.max(40,Number(care.offdayDurationMinutes||40)),end=Math.min(dayEnd,start+duration),
+          showerM=Math.max(20,Number(care.showerMinutes||25)),postM=Math.max(10,Number(care.postShowerMinutes||15));
+        if(end-start>=35)add({templateKey:"personal-care",start:minutesHm(start),end:minutesHm(end),
+          title:"Shower + get ready for school pickup",
+          detail:showerM+" min shower · "+postM+" min dry off, lotion, face moisturizer, deodorant, hair, clean clothes · leave at 2:40 PM",
+          subtasks:["Shower","Dry off","Lotion","Face moisturizer","Deodorant","Hair","Get dressed"],icon:"♡"});
       }
     }
 
@@ -560,9 +604,9 @@
       const focusStart=Math.max(dayStart,12*60);
       if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
         title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project: deep cleaning, decluttering, organizing, sorting, or another household project. Do not use this block for the kids’ regular laundry, dishes, counters, or spot-mop chores.",icon:"⌂"});
-      const mid=Math.max(focusStart+45,12*60+45);
+      const mid=Math.max(focusStart+45,12*60+45),lunch=lifeLunchChoice(date);
       if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
-        title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task before moving on",icon:"◷"});
+        title:"Lunch · "+lunch,detail:"Eat lunch · drink water · check the next commitment before moving on",icon:"◷"});
     }
 
     const hydration=p.hydrationRoutine||{};
@@ -628,6 +672,8 @@
   /* Fill open time with named tasks. Larger home projects wait for the noon–2 home-focus window. */
   itineraryRestBlocks=function(items,date){
     const gaps=itineraryOpenGaps(items,date),out=[],
+      now=date===ymd()?new Date():null,
+      currentFloor=now?Math.ceil((now.getHours()*60+now.getMinutes()+5)/5)*5:null,
       placed=new Set((items||[]).filter(function(x){return x.source==="task"}).map(function(x){return x.sourceId})),
       seenTitles=new Set(),usedTasks=new Set(),
       priorities=(typeof itineraryTaskCandidates==="function"?itineraryTaskCandidates(date):(state.tasks||[]))
@@ -646,12 +692,20 @@
     function nextTask(cursor){
       const inHomeWindow=cursor>=homeStart&&cursor<homeEnd;
       let task=priorities.find(function(t){return !usedTasks.has(t.id)&&lifeIsHouseholdFocusTask(t)===inHomeWindow});
-      if(!task&&inHomeWindow)task=priorities.find(function(t){return !usedTasks.has(t.id)&&!lifeIsHouseholdFocusTask(t)});
+      if(!task)task=priorities.find(function(t){return !usedTasks.has(t.id)});
       return task||null;
+    }
+    function fallbackTask(cursor,minutes){
+      if(cursor<10*60)return {title:"Quick morning reset",detail:"Put away visible clutter · refill what you need · clear one small surface"};
+      if(cursor<12*60)return {title:"Life admin catch-up",detail:"Handle one small school, household, account, form, or message loose end"};
+      if(cursor<15*60)return {title:"Quick home reset",detail:"Put away items that already have a home · clear one visible area"};
+      if(cursor<18*60)return {title:"Prep for the next commitment",detail:"Bags, keys, water, papers, clothes, and anything that needs to leave with you"};
+      return {title:"Evening reset",detail:"Kitchen / living-area pickup · set up the next thing you need"};
     }
 
     gaps.forEach(function(g){
-      let cursor=g.start;
+      let cursor=currentFloor===null?g.start:Math.max(g.start,currentFloor);
+      if(g.end-cursor<15)return;
       while(g.end-cursor>=15){
         const task=nextTask(cursor);
         if(task){
@@ -660,8 +714,9 @@
             const boundary=cursor<homeStart&&g.end>homeStart?homeStart:null;
             if(boundary!==null&&boundary-cursor>=15){
               const chunk=Math.min(60,boundary-cursor);
-              out.push({id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:"Open time",
-                detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+              const fallback=fallbackTask(cursor,chunk);
+              out.push({id:"gap-maint:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:fallback.title,
+                detail:fallback.detail,fixed:false,kind:"routine",icon:"✓",source:"generated",durationMinutes:chunk});
               cursor+=chunk;continue;
             }
           }else{
@@ -682,8 +737,9 @@
         if(cursor<homeStart&&cursor+chunk>homeStart)chunk=homeStart-cursor;
         if(cursor<homeEnd&&cursor>=homeStart&&cursor+chunk>homeEnd)chunk=homeEnd-cursor;
         if(chunk<15)break;
-        out.push({id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:"Open time",
-          detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+        const fallback=fallbackTask(cursor,chunk);
+        out.push({id:"gap-maint:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:fallback.title,
+          detail:fallback.detail,fixed:false,kind:"routine",icon:"✓",source:"generated",durationMinutes:chunk});
         cursor+=chunk;
       }
     });
