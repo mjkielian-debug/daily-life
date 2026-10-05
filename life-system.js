@@ -70,7 +70,7 @@
       };
     }
     if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
-    if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Meatballs + frozen vegetables";
+    if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Leftover roast";
     if(!p.nightRoutine||Number(p.nightRoutine.version||0)<2){
       p.nightRoutine={
         version:2,
