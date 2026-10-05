@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-evening2";
+const APP_BUILD="2026.10.05-mondayplan1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -551,7 +551,7 @@ function itineraryFixedItems(date){
       fixed:true,kind:"work",icon:"📦",source:"work",endUnknown:!confirmed
     });
   }
-  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&e.status!=="cancelled"))){
+  for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&!["cancelled","paused"].includes(String(e.status||""))))){
     if(!e.startTime)continue;
     const startM=hmMinutes(e.startTime),estimatedMinutes=!e.endTime?itineraryEstimatedEventMinutes(e):0,
           estimatedEnd=!e.endTime&&startM!==null?minutesHm(startM+estimatedMinutes):"",
@@ -730,7 +730,7 @@ function itineraryTaskCandidates(date){
   const today=ymd(),oldest=shiftDateString(today,-30),
     raw=(state.tasks||[]).filter(t=>{
       const taskText=(String(t.title||"")+" "+String(t.notes||"")).toLowerCase();
-      if(t.done||/^(ups shift|everyone reading)$/i.test(String(t.title||"")))return false;
+      if(t.done||t.paused||t.waitingForFunds||/^(ups shift|everyone reading)$/i.test(String(t.title||"")))return false;
       // These older generated rows are now represented by the after-school Kids chores block.
       if(/kids? room reset\s*\+?\s*homework|school[- ]night reset/.test(taskText))return false;
       if(date===today)return String(t.date||"")>=oldest&&String(t.date||"")<=today;
@@ -1596,6 +1596,7 @@ function ensureToday(){
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay(),existing=new Set(state.tasks.filter(x=>x.date===date).map(x=>x.title));
   ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();ensureSchoolAssignmentTasks(date);ensureVehicleMaintenanceTasks(date);
   for(const t of state.settings.recurringTasks||[]){
+    if(t.paused||/\bymca\b/i.test([t.title,t.notes].filter(Boolean).join(" ")))continue;
     if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100});existing.add(t.title)}
   }
   sanitizeWorkScheduleData(state);
@@ -1745,6 +1746,91 @@ function migrateState(s){
     if(!Array.isArray(p.wishlist))p.wishlist=[];
     if(!p.birthdayPlan||typeof p.birthdayPlan!=="object")p.birthdayPlan={};
   }
+  if(Number(s.settings.mondayPlan20261005Version||0)<1){
+    const textOf=x=>[x&&x.title,x&&x.notes,x&&x.source].filter(Boolean).join(" ");
+    for(const t of s.tasks||[]){
+      const txt=textOf(t);
+      if(/\bymca\b/i.test(txt)){t.paused=true;t.pausedReason="YMCA items paused for now";}
+      if(/fall\s+product/i.test(txt)){t.done=true;t.completedAt=t.completedAt||new Date().toISOString();t.notes=[String(t.notes||"").trim(),"Completed — Fall Product setup is done."].filter(Boolean).join(" ");}
+      if(/(?:school|student).*meal\s+balance|myschoolbucks/i.test(txt)){
+        t.waitingForFunds=true;
+        t.notes=[String(t.notes||"").trim(),"Waiting until after payday; school lunches are free and this balance is only for extras."].filter(Boolean).join(" ");
+      }
+      if(t.date==="2026-10-05"&&/tire.*(?:appointment|inspection|repair)|(?:appointment|inspection|repair).*tire/i.test(txt)){
+        t.paused=true;t.pausedReason="Move tire appointment to another day";
+      }
+    }
+    for(const r of s.settings.recurringTasks||[])if(/\bymca\b/i.test(textOf(r))){r.paused=true;r.pausedReason="YMCA items paused for now";}
+    for(const e of s.events||[]){
+      const txt=textOf(e);
+      if(/\bymca\b/i.test(txt)&&e.status!=="cancelled"){e.status="paused";e.notes=[String(e.notes||"").trim(),"Paused for now."].filter(Boolean).join(" ");}
+      if(e.date==="2026-10-05"&&/tire.*(?:appointment|inspection|repair)|(?:appointment|inspection|repair).*tire/i.test(txt)&&e.status!=="cancelled"){
+        e.status="paused";e.notes=[String(e.notes||"").trim(),"Move to another day; not planned for Monday."].filter(Boolean).join(" ");
+      }
+    }
+
+    const ensureTask=(id,title,start,minutes,category,notes,matcher)=>{
+      let t=(s.tasks||[]).find(x=>matcher?matcher(x):String(x.id||"")===id);
+      if(!t){t={id,date:"2026-10-05",title,category,notes,done:false,order:40,generated:"monday-plan"};s.tasks.push(t);}
+      t.date="2026-10-05";t.title=title;t.category=category;t.notes=notes;t.itineraryStart=start;t.itineraryMinutes=minutes;t.paused=false;t.waitingForFunds=false;
+      return t;
+    };
+    ensureTask("monday-20261005-litter","Cat litter + pet area reset","08:00",25,"home","Check the robot litter box · scoop both regular litter boxes · sweep/tidy around the litter area.");
+    ensureTask("monday-20261005-bathroom","Bathroom reset","08:25",25,"home","Clean toilets · wipe sink and mirror · empty bathroom trash · refill toilet paper if needed.");
+    ensureTask("monday-20261005-bedroom","Bedroom + linens reset","08:50",25,"home","Make bed · clear surfaces · gather out-of-place items · change sheets if due. Leave the kids’ rotating laundry/dishes/counters/floors to their chore schedule.");
+    ensureTask("monday-20261005-protectors","Order mattress protectors","09:15",20,"home","Order the queen mattress protectors that are still needed.",x=>/mattress\s+protect/i.test(String(x.title||"")));
+    ensureTask("monday-20261005-band-shirt","Order Leo's band T-shirt","09:35",15,"school","Finish Leo’s band T-shirt order.",x=>/leo.*band.*(?:shirt|t-?shirt)|band.*(?:shirt|t-?shirt)/i.test(String(x.title||"")));
+    ensureTask("monday-20261005-grades","Check grades + school paperwork","09:50",20,"school","Check the kids’ current grades/assignments and any school paperwork that needs action.");
+    ensureTask("monday-20261005-house-check","House supply + fridge check","10:10",20,"home","Check leftovers/produce and obvious fridge needs · note low household or pet supplies · refill cat food/water if needed.");
+    ensureTask("monday-20261005-tanner-gift","Work on Tanner's birthday gift","12:50",95,"personal","Protected project time while Tanner is at work and the kids are at school. Decide the actual gift details in the separate Tanner birthday chat.");
+    ensureTask("monday-20261005-gift-cleanup","Hide gift supplies + get ready for pickup","14:25",15,"personal","Put away/hide birthday-gift supplies · bathroom if needed · refill water · grab bag, keys, and what you need for school pickup.");
+
+    if(!(s.itineraryBlocks||[]).some(x=>x.id==="monday-20261005-tanner-window")){
+      s.itineraryBlocks.push({id:"monday-20261005-tanner-window",date:"2026-10-05",start:"10:30",end:"12:30",title:"Tanner time / shared time",notes:"If Tanner is awake, use this for time together or a shared errand. If he is unavailable, use it for the next real house/admin task rather than filler.",kind:"flexible",icon:"♡",templateKey:"monday-tanner-time",done:false});
+    }
+
+    let meal=(s.meals||[]).find(x=>x.date==="2026-10-05"&&x.type==="dinner");
+    if(!meal){meal={id:"meal-20261005-runzas",date:"2026-10-05",type:"dinner",prepDone:[]};s.meals.push(meal);}
+    Object.assign(meal,{
+      dish:"Cheesy crescent-roll Runzas",
+      method:"Stovetop filling + oven",
+      assigned:"Demitri helps",
+      status:"planned",
+      recipeState:"ready",
+      startBy:"17:15",
+      serveTime:"18:20",
+      ingredients:[
+        "1 lb ground beef",
+        "1 onion, diced",
+        "about 4 cups shredded cabbage",
+        "2 tubes crescent-roll dough",
+        "1 package shredded cheddar (use about 1–1½ cups)",
+        "salt",
+        "black pepper",
+        "garlic powder (optional)"
+      ].join("\n"),
+      prepSteps:[
+        "5:15 PM — Preheat oven to 375°F and get ingredients out with Demitri.",
+        "5:20–5:35 — Brown ground beef and diced onion; drain excess grease if needed.",
+        "5:35–5:45 — Add cabbage, salt, pepper, and optional garlic powder; cook until cabbage is tender and filling is not watery.",
+        "5:45–5:55 — Open crescent dough, add filling and shredded cheddar, then fold/pinch closed. Demitri can help scoop and seal.",
+        "5:55–6:10 — Bake 12–15 minutes at 375°F until golden.",
+        "6:10–6:20 — Let Runzas cool a few minutes and set the table.",
+        "About 6:20 PM — Eat dinner."
+      ].join("\n"),
+      notes:"Dolly showers first while the Runzas bake/cool. Demitri helps make dinner, then showers after dinner.",
+      dayFlowSteps:[
+        {start:"17:15",end:"17:20",title:"Runzas · preheat + set up",detail:"Preheat oven to 375°F · get ingredients out with Demitri",icon:"🍳"},
+        {start:"17:20",end:"17:35",title:"Runzas · brown beef + onion",detail:"Brown 1 lb ground beef with diced onion · Demitri can help stir/measure with supervision",icon:"🍳"},
+        {start:"17:35",end:"17:45",title:"Runzas · add cabbage",detail:"Add about 4 cups shredded cabbage · salt + pepper · optional garlic powder · cook until tender and not watery",icon:"🍳"},
+        {start:"17:45",end:"17:55",title:"Runzas · fill + add cheddar",detail:"Fill crescent dough · add shredded cheddar · fold and pinch closed · Demitri helps assemble",icon:"🍳"},
+        {start:"17:55",end:"18:10",title:"Runzas · bake",detail:"Bake at 375°F for 12–15 minutes, until golden",icon:"🍳"},
+        {start:"18:10",end:"18:20",title:"Runzas · cool + set table",detail:"Let them cool a few minutes while finishing dinner setup",icon:"🍽"},
+        {start:"18:20",end:"18:45",title:"Dinner · cheesy crescent-roll Runzas",detail:"Eat together",icon:"🍽"}
+      ]
+    });
+    s.settings.mondayPlan20261005Version=1;
+  }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
@@ -1768,7 +1854,7 @@ function ensureMealPatterns(){
     }
   }
 }
-const todayTasks=()=>state.tasks.filter(x=>x.date===ymd()).sort((a,b)=>(a.order||0)-(b.order||0));
+const todayTasks=()=>state.tasks.filter(x=>x.date===ymd()&&!x.paused&&!x.waitingForFunds).sort((a,b)=>(a.order||0)-(b.order||0));
 const water=()=>state.waterLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.oz||0),0);
 const stretch=()=>state.stretchLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.minutes||0),0);
 const food=()=>state.foodLogs.filter(x=>x.date===ymd());
@@ -1957,7 +2043,7 @@ function dedupeEventList(rows){
 function upcomingEvents(days=14){
   const start=ymd(),endDate=new Date(start+"T12:00:00");endDate.setDate(endDate.getDate()+days);
   const end=ymd(endDate);
-  return dedupeEventList((state.events||[]).filter(x=>x.date>=start&&x.date<=end&&x.status!=="cancelled")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
+  return dedupeEventList((state.events||[]).filter(x=>x.date>=start&&x.date<=end&&!["cancelled","paused"].includes(String(x.status||"")))).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")));
 }
 function eventDayParts(date){const d=new Date(date+"T12:00:00");return{mon:d.toLocaleDateString("en-US",{month:"short"}),day:d.getDate(),weekday:d.toLocaleDateString("en-US",{weekday:"short"})}}
 function latestMealSuggestion(date){
@@ -6137,7 +6223,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-evening2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-mondayplan1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6161,7 +6247,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261005-evening2"></script>
+<script src="life-system.js?v=20261005-mondayplan1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
