@@ -69,13 +69,16 @@
         leaveHome:"14:40",park:"14:45",pickup:"14:52",end:"15:00"
       };
     }
-    if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<2){
+    if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<3){
       p.schoolMorningTransport={
-        version:2,enabled:true,weekdays:[1,2,3,4,5],
+        version:3,enabled:true,weekdays:[1,2,3,4,5],
         youngerBus:"07:15",youngerBusEnd:"07:20",
         leoLeave:"07:20",leoDropoffEnd:"07:35",
         leoTimingApproximate:true,
-        note:"Kids eat breakfast at school. At 7:15 the three younger kids get on the bus; during 7:15–7:20 do Leo's final homework/Chromebook/bookbag check, grab bag/keys/water bottle, and head out to take Leo."
+        workdayCaregiver:"Tanner",
+        workdayCoverageStart:"06:15",
+        workdayCoverageEnd:"08:30",
+        note:"Kids eat breakfast at school. On UPS workdays Tanner handles the kids at home from 6:15–8:30 AM, including morning school prep, the bus, and Leo's school departure. On Monday/off days, Michelle handles the normal morning flow."
       };
     }
     if(!p.dollyHairRoutine||Number(p.dollyHairRoutine.version||0)<2){
@@ -198,6 +201,15 @@
     return !!(w&&w.start);
   }
 
+  function lifeTannerMorningCoverage(date){
+    const cfg=lifeEnsureSettings().schoolMorningTransport||{},workday=lifeIsWorkday(date)||lifeActualWork(date);
+    return workday?{
+      caregiver:String(cfg.workdayCaregiver||"Tanner"),
+      start:hmMinutes(cfg.workdayCoverageStart||"06:15"),
+      end:hmMinutes(cfg.workdayCoverageEnd||"08:30")
+    }:null;
+  }
+
   function lifeResolvedWorkStartMinutes(date){
     if(typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date))return null;
     const w=workForDate(date),exact=hmMinutes(w&&(w.start||w.scheduled));
@@ -262,6 +274,12 @@
       if(date==="2026-10-05"&&x.source==="event"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(x.title||"")))return false;
       return true;
     }).map(function(x){
+      const cover=lifeTannerMorningCoverage(date),start=hmMinutes(x.start),
+        kidMorning=cover&&x.source==="event"&&start!==null&&start>=cover.start&&start<cover.end&&
+          (/demitri|dolly|ambrose|leo|school|musical|rehearsal|club|activity/i.test(String(x.title||"")+" "+String(x.detail||"")));
+      if(kidMorning){
+        x=Object.assign({},x,{detail:[cover.caregiver+" handles this morning/transport while you are at UPS",x.detail].filter(Boolean).join(" · "),responsible:cover.caregiver});
+      }
       if(x.source!=="work"||!x.endUnknown)return x;
       const start=hmMinutes(x.start);
       if(start===null)return x;
@@ -288,13 +306,19 @@
     if(morning.enabled!==false&&morningDays.includes(wd)){
       const bus=hmMinutes(morning.youngerBus||"07:15"),busEnd=hmMinutes(morning.youngerBusEnd||"07:20"),
         leo=hmMinutes(morning.leoLeave||"07:20"),leoEnd=hmMinutes(morning.leoDropoffEnd||"07:35");
+      const cover=lifeTannerMorningCoverage(date),caregiver=cover?cover.caregiver:"";
       if(bus!==null&&busEnd!==null)rows.push({id:"school-bus:"+date,start:minutesHm(bus),end:minutesHm(busEnd),
-        title:"Bus + final leave-the-house check",
-        detail:"Demitri, Dolly + Ambrose get on the bus · check Leo homework, Chromebook + bookbag · grab your bag, keys + water bottle · head out",
-        subtasks:["Demitri, Dolly + Ambrose on bus","Check Leo homework","Check Leo Chromebook","Check Leo bookbag","Grab your bag","Grab keys","Grab water bottle","Head out the door"],
+        title:(caregiver?caregiver+" · ":"")+"Bus + final leave-the-house check",
+        detail:caregiver
+          ?caregiver+" handles: Demitri, Dolly + Ambrose get on the bus · check Leo homework, Chromebook + bookbag · grab keys · head out with Leo"
+          :"Demitri, Dolly + Ambrose get on the bus · check Leo homework, Chromebook + bookbag · grab your bag, keys + water bottle · head out",
+        subtasks:caregiver
+          ?[caregiver+": Demitri, Dolly + Ambrose on bus",caregiver+": Check Leo homework",caregiver+": Check Leo Chromebook",caregiver+": Check Leo bookbag",caregiver+": Grab keys",caregiver+": Head out with Leo"]
+          :["Demitri, Dolly + Ambrose on bus","Check Leo homework","Check Leo Chromebook","Check Leo bookbag","Grab your bag","Grab keys","Grab water bottle","Head out the door"],
         fixed:true,kind:"event",icon:"🚌",source:"generated"});
       if(leo!==null&&leoEnd!==null)rows.push({id:"leo-school-dropoff:"+date,start:minutesHm(leo),end:minutesHm(leoEnd),
-        title:"Take Leo to school",detail:"Leave shortly after the younger kids get on the bus"+(morning.leoTimingApproximate?" · timing approximate until a precise departure is set":""),fixed:true,kind:"event",icon:"🚗",source:"generated"});
+        title:(caregiver?caregiver+" · ":"")+"Take Leo to school",
+        detail:(caregiver?caregiver+" handles Leo's school drop-off while you are at UPS. ":"")+"Leave shortly after the younger kids get on the bus"+(morning.leoTimingApproximate?" · timing approximate until a precise departure is set":""),fixed:true,kind:"event",icon:"🚗",source:"generated"});
     }
 
     const pickup=lifeEnsureSettings().schoolPickupRoutine||{},
@@ -504,6 +528,12 @@
     const duration=Number(saved&&saved.durationMinutes||0),
       end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved&&saved.end?saved.end:row.end);
     row.start=start;row.end=end;row.detail=saved&&saved.detail?saved.detail:row.detail;
+    const cover=lifeTannerMorningCoverage(date),rowStart=hmMinutes(row.start);
+    if(cover&&rowStart!==null&&rowStart>=cover.start&&rowStart<cover.end&&row.templateKey==="kid-shower-leo"){
+      row.title=cover.caregiver+" · "+String(row.title||"Leo morning shower");
+      row.detail=cover.caregiver+" handles Leo's morning shower while you are at UPS"+(row.detail?" · "+row.detail:"");
+      row.subtasks=(Array.isArray(row.subtasks)&&row.subtasks.length?row.subtasks:["Leo shower"]).map(function(x){return cover.caregiver+": "+x});
+    }
     if(row.templateKey==="wind-down"){
       const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
       row.title="Night routine + electronics sweep";
@@ -725,9 +755,13 @@
       const schoolMorning=[1,2,3,4,5].includes(lifeWeekday(date)),
         start=hmMinutes(schoolMorning?(hair.schoolMorningStart||"07:00"):(hair.nonSchoolMorningStart||"09:00")),
         duration=Math.max(5,Math.min(10,Number(hair.durationMinutes||10)));
-      if(start!==null)add({templateKey:"dolly-hair",start:minutesHm(start),end:minutesHm(start+duration),
-        title:"Dolly · hair",detail:"Reserve 5–10 minutes every morning",
-        subtasks:["Do Dolly's hair"],icon:"♡"});
+      if(start!==null){
+        const cover=lifeTannerMorningCoverage(date),covered=cover&&start>=cover.start&&start<cover.end;
+        add({templateKey:"dolly-hair",start:minutesHm(start),end:minutesHm(start+duration),
+          title:(covered?cover.caregiver+" · ":"")+"Dolly · hair",
+          detail:(covered?cover.caregiver+" handles this on UPS work mornings · ":"")+"Reserve 5–10 minutes for Dolly's hair",
+          subtasks:[(covered?cover.caregiver+": ":"")+"Do Dolly's hair"],icon:"♡"});
+      }
     }
 
     const hydration=p.hydrationRoutine||{};
