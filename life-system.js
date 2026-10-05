@@ -100,6 +100,13 @@
         subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"]
       });
     }
+    if(!p.olderKidsReading||Number(p.olderKidsReading.version||0)<1){
+      p.olderKidsReading={
+        version:1,enabled:true,start:"19:30",end:"19:50",
+        children:["Leo","Demitri"],
+        note:"After the 7:30 PM electronics sweep, Leo and Tree use 20 minutes for their daily reading before the 8:30 kids bedtime."
+      };
+    }
     if(!p.householdFocus||Number(p.householdFocus.version||0)<1){
       p.householdFocus={
         version:1,
@@ -376,7 +383,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["recovery-nap","Recovery nap"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["older-kids-reading","Leo + Tree reading"],["recovery-nap","Recovery nap"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -402,6 +409,10 @@
       const cfg=p.dollyHairRoutine||{},schoolDay=[1,2,3,4,5].includes(lifeWeekday(date)),
         desired=hmMinutes(schoolDay?(cfg.schoolMorningStart||"07:00"):(cfg.nonSchoolMorningStart||"09:00"));
       return {start:desired===null?7*60:desired,end:(desired===null?7*60:desired)+15};
+    }
+    if(x.templateKey==="older-kids-reading"){
+      const cfg=p.olderKidsReading||{},start=hmMinutes(cfg.start||"19:30"),end=hmMinutes(cfg.end||"19:50");
+      return {start:start===null?19*60+30:start,end:end===null?19*60+50:end};
     }
     if(x.templateKey==="recovery-nap"){
       const cfg=p.napSupport||{},start=hmMinutes(cfg.windowStart||"10:30"),end=hmMinutes(cfg.windowEnd||"16:30");
@@ -555,7 +566,12 @@
       if(x.templateKey==="chores"){
         const childOrder={leo:0,demitri:1,dolly:2,ambrose:3},
           choreOrder={"clean room":0,"homework":1,"read 20 min":2,"laundry":3,"dishes":3,"counters":3,"floors":3},
-          todays=(state.chores||[]).filter(function(c){return c.date===date}).slice().sort(function(a,b){
+          todays=(state.chores||[]).filter(function(c){
+            if(c.date!==date)return false;
+            const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
+            const olderReading=(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
+            return !olderReading;
+          }).slice().sort(function(a,b){
             const ac=childOrder[String(a.child||"").toLowerCase()]??99,
               bc=childOrder[String(b.child||"").toLowerCase()]??99;
             if(ac!==bc)return ac-bc;
@@ -567,7 +583,7 @@
           refs=todays.map(function(c){return c.id});
         return Object.assign({},x,{
           title:"Kids chores + homework",start:"15:30",end:"16:30",
-          detail:"Right after school: clean rooms, homework, reading, then today’s rotating household jobs. Fixed commitments can move this block later.",
+          detail:"Right after school: clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:30 PM after electronics are collected.",
           subtasks:subtasks,subtaskRefs:refs
         });
       }
@@ -668,6 +684,21 @@
           {templateKey:"water-3",start:minutesHm(finalTime),end:minutesHm(Math.min(dayEnd,finalTime+5)),title:"Water check · 3 of 3 bottles",detail:"Finish bottle 3 so today’s water goal is complete.",subtasks:["Finish bottle 3 of 3"],icon:"💧"}
         ];
       waterRows.forEach(function(row){add(row)});
+    }
+
+    const olderReading=p.olderKidsReading||{};
+    if(olderReading.enabled!==false){
+      const start=hmMinutes(olderReading.start||"19:30"),end=hmMinutes(olderReading.end||"19:50"),
+        readingRows=(state.chores||[]).filter(function(c){
+          const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
+          return c.date===date&&(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
+        }).sort(function(a,b){return String(a.child||"").localeCompare(String(b.child||""))}),
+        subtasks=readingRows.length?readingRows.map(function(c){return String(c.child||"Kid")+": Read 20 min"}):["Leo: Read 20 min","Demitri: Read 20 min"],
+        refs=readingRows.map(function(c){return c.id});
+      if(start!==null&&end!==null)add({templateKey:"older-kids-reading",start:minutesHm(start),end:minutesHm(end),
+        title:"Leo + Tree · reading time",
+        detail:"After the electronics sweep · quiet reading before the 8:30 PM kids bedtime",
+        subtasks:subtasks,subtaskRefs:refs,icon:"📚",allowParallel:true});
     }
 
     const nap=lifeNapSuggestion(date);
