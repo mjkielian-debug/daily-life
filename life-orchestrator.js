@@ -509,6 +509,17 @@
     return rows;
   };
 
+  const baseFixedFriday=itineraryFixedItems;
+  itineraryFixedItems=function(date){
+    const rows=baseFixedFriday(date);
+    if(date==="2026-10-09"){
+      rows.push({id:"focus-1700:"+date,start:"17:00",end:"20:30",title:"Focus block",detail:"Reserved time",fixed:true,kind:"plan",icon:"♡",source:"generated"});
+      rows.push({id:"focus-2030:"+date,start:"20:30",end:"21:00",title:"Wrap-up block",detail:"Reserved time",fixed:true,kind:"plan",icon:"♡",source:"generated"});
+      rows.sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+    }
+    return rows;
+  };
+
   /* Keep generated items current without requiring a manual refresh. */
   const baseRender=render;
   let lifeSyncSaveQueued=false;
