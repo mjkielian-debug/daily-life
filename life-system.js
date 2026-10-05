@@ -88,13 +88,17 @@
     }
     if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
     if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Leftover roast";
-    if(!p.nightRoutine||Number(p.nightRoutine.version||0)<2){
-      p.nightRoutine={
-        version:2,
+    if(!p.nightRoutine||Number(p.nightRoutine.version||0)<3){
+      p.nightRoutine=Object.assign({},p.nightRoutine||{},{
+        version:3,
         enabled:true,
         durationMinutes:30,
-        subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"]
-      };
+        electronicsSweepTime:"19:30",
+        kidsBedtime:"20:30",
+        currentFamilySettlePlan:true,
+        familySettleNote:"At 7:30 PM collect electronics, then lie down with Dolly and Ambrose to read and settle. Leo and Tree may join or go to their own beds. Kids' official bedtime is 8:30 PM.",
+        subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"]
+      });
     }
     if(!p.householdFocus||Number(p.householdFocus.version||0)<1){
       p.householdFocus={
@@ -437,10 +441,10 @@
       end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved&&saved.end?saved.end:row.end);
     row.start=start;row.end=end;row.detail=saved&&saved.detail?saved.detail:row.detail;
     if(row.templateKey==="wind-down"){
-      const night=lifeEnsureSettings().nightRoutine||{};
-      row.title="Night routine";
-      row.detail="Finish the day and get into bed by the planned bedtime";
-      row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"];
+      const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
+      row.title="Night routine + electronics sweep";
+      row.detail="Finish your night routine · electronics sweep at "+fmtClock(sweep)+" · then lie down with Dolly + Ambrose to read/settle. Leo + Tree can join or use their own beds; kids' official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
+      row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"];
     }
     row.id="suggest:"+date+":"+row.templateKey+":life"+index;
     row.fixed=false;row.kind="routine";row.source="suggested";row.learnedRoutine=!!saved;
