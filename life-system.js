@@ -74,7 +74,7 @@
         noEveningWeekdays:[2],
         weeklyPlan:{
           "0":[{child:"Ambrose",start:"18:30",note:"Sunday evening shower after dinner"}],
-          "1":[{child:"Demitri",start:"18:00",note:"Monday shower"},{child:"Dolly",start:"18:20",note:"Monday shower"}],
+          "1":[{child:"Demitri",start:"18:00",note:"Monday evening shower"},{child:"Dolly",start:"18:20",note:"Monday evening shower"}],
           "3":[{child:"Demitri",start:"17:00",note:"Before Dolly's dance"},{child:"Dolly",start:"19:00",note:"After dance"}],
           "4":[{child:"Ambrose",start:"18:40",note:"After Food Fort; home around 6:30 PM"}]
         }
@@ -375,6 +375,10 @@
         });
       }
       if(x.templateKey==="chores"){
+        if(lifeWeekday(date)===1){
+          return Object.assign({},x,{title:"Kids chores",start:"19:00",end:"19:40",
+            detail:itineraryRoutineDetail(date,"chores","Family evening reset")});
+        }
         return Object.assign({},x,{title:"Kids chores"});
       }
       return x;
