@@ -22,6 +22,35 @@
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
+    if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<1){
+      p.personalCareRoutine={
+        version:1,
+        enabled:true,
+        workdayDurationMinutes:50,
+        offdayDurationMinutes:30,
+        offdayWindowStart:"14:00",
+        offdayWindowEnd:"16:00",
+        subtasks:["Drive home","Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"]
+      };
+    }
+    if(!p.nightRoutine||Number(p.nightRoutine.version||0)<2){
+      p.nightRoutine={
+        version:2,
+        enabled:true,
+        durationMinutes:30,
+        subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"]
+      };
+    }
+    if(!p.householdFocus||Number(p.householdFocus.version||0)<1){
+      p.householdFocus={
+        version:1,
+        enabled:true,
+        windowStart:"12:00",
+        windowEnd:"14:00",
+        excludeRegularKidChores:true,
+        excludedLabels:["laundry","dishes","counters","spot mop floor","floor spots","start vacuums"]
+      };
+    }
     if(!p.gymRoutine||Number(p.gymRoutine.version||0)<3){
       p.gymRoutine={
         version:3,
@@ -211,7 +240,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -221,9 +250,18 @@
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
     if(/^work-(hygiene|dress|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
     if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
+    if(x.templateKey==="personal-care"){
+      const care=p.personalCareRoutine||{},work=workForDate(date),actualEnd=hmMinutes(work&&work.end),
+        workStart=hmMinutes(work&&(work.start||work.scheduled)),
+        estimatedEnd=actualEnd!==null?actualEnd:(workStart!==null?workStart+lifeEstimatedWorkMinutes(date):null);
+      if((lifeIsWorkday(date)||lifeActualWork(date))&&estimatedEnd!==null){
+        return {start:Math.max(dayStart,estimatedEnd),end:Math.min(dayEnd,estimatedEnd+120)};
+      }
+      return {start:Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),end:Math.min(dayEnd,hmMinutes(care.offdayWindowEnd)||16*60)};
+    }
     if(x.templateKey==="morning-start")return {start:dayStart,end:Math.min(dayEnd,dayStart+90)};
-    if(x.templateKey==="home-reset")return {start:Math.max(dayStart,8*60+30),end:Math.min(dayEnd,13*60)};
-    if(x.templateKey==="midday-reset")return {start:11*60,end:Math.min(dayEnd,15*60)};
+    if(x.templateKey==="home-reset")return {start:Math.max(dayStart,12*60),end:Math.min(dayEnd,14*60)};
+    if(x.templateKey==="midday-reset")return {start:12*60,end:Math.min(dayEnd,14*60)};
     return baseRoutineWindow(x,date);
   };
 
@@ -234,6 +272,12 @@
       duration=Number(saved&&saved.durationMinutes||0),
       end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved&&saved.end?saved.end:row.end);
     row.start=start;row.end=end;row.detail=saved&&saved.detail?saved.detail:row.detail;
+    if(row.templateKey==="wind-down"){
+      const night=lifeEnsureSettings().nightRoutine||{};
+      row.title="Night routine";
+      row.detail="Finish the day and get into bed by the planned bedtime";
+      row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"];
+    }
     row.id="suggest:"+date+":"+row.templateKey+":life"+index;
     row.fixed=false;row.kind="routine";row.source="suggested";row.learnedRoutine=!!saved;
     return row;
@@ -253,10 +297,23 @@
       }),
       p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
       if(x.templateKey==="work-morning")return false;
-      if(x.templateKey==="after-work"&&!lifeIsWorkday(date)&&!lifeActualWork(date))return false;
+      if(x.templateKey==="after-work")return false;
       if(x.templateKey==="after-school-launch"&&earlyDinner)return false;
       if(x.templateKey==="homework"&&earlyDinner&&busyEvening)return false;
       return true;
+    }).map(function(x){
+      if(x.templateKey==="wind-down"){
+        const night=p.nightRoutine||{};
+        return Object.assign({},x,{
+          title:"Night routine",
+          detail:"Finish the day and get into bed by the planned bedtime",
+          subtasks:Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"]
+        });
+      }
+      if(x.templateKey==="chores"){
+        return Object.assign({},x,{title:"Kids chores + baths / showers"});
+      }
+      return x;
     });
     const out=base.slice(),keys=new Set(out.map(function(x){return x.templateKey})),
       overrides=new Set(itineraryCustomBlocks(date).map(function(x){return x.templateKey}).filter(Boolean)),
@@ -278,15 +335,34 @@
       });
     }
 
+    const care=p.personalCareRoutine||{},actualWorkEnd=hmMinutes(workRow&&workRow.end),
+      estimatedWorkEnd=actualWorkEnd!==null?actualWorkEnd:(workStart!==null?workStart+lifeEstimatedWorkMinutes(date):null);
+    if(care.enabled!==false){
+      if(!offDay&&estimatedWorkEnd!==null){
+        const duration=Math.max(30,Number(care.workdayDurationMinutes||50)),
+          start=Math.max(dayStart,estimatedWorkEnd),end=Math.min(dayEnd,start+duration);
+        if(end-start>=25)add({templateKey:"personal-care",start:minutesHm(start),end:minutesHm(end),
+          title:"Home from UPS · shower + self-care",
+          detail:"Go home after work and shower before the rest of the day whenever possible",
+          subtasks:Array.isArray(care.subtasks)?care.subtasks.slice():["Drive home","Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"],icon:"♡"});
+      }else if(offDay){
+        const start=Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),
+          duration=Math.max(20,Number(care.offdayDurationMinutes||30)),end=Math.min(dayEnd,start+duration);
+        if(end-start>=20)add({templateKey:"personal-care",start:minutesHm(start),end:minutesHm(end),
+          title:"Shower + self-care",detail:"Flexible personal-care reset on a non-work day",
+          subtasks:(Array.isArray(care.subtasks)?care.subtasks.slice(1):["Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"]),icon:"♡"});
+      }
+    }
+
     if(offDay){
       add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
         title:"Morning start + basics",detail:"Bathroom · teeth · water · get dressed · quick look at Day Flow",icon:"☀"});
-      const homeStart=Math.max(dayStart+60,9*60);
-      if(homeStart+30<dayEnd)add({templateKey:"home-reset",start:minutesHm(homeStart),end:minutesHm(homeStart+30),
-        title:"Home reset / declutter one zone",detail:"Choose one visible area · put away what has a home · give homeless items a temporary sort spot",icon:"⌂"});
-      const mid=Math.max(dayStart+120,12*60);
-      if(mid+30<dayEnd)add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
-        title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task · reset one surface before moving on",icon:"◷"});
+      const focusStart=Math.max(dayStart,12*60);
+      if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
+        title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project: deep cleaning, decluttering, organizing, sorting, or another household project. Do not use this block for the kids’ regular laundry, dishes, counters, or spot-mop chores.",icon:"⌂"});
+      const mid=Math.max(focusStart+45,12*60+45);
+      if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
+        title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task before moving on",icon:"◷"});
     }
 
     const gym=p.gymRoutine||{},gymAlreadyScheduled=(state.events||[]).some(function(e){
