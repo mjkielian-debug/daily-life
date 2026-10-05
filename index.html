@@ -1851,6 +1851,17 @@ function migrateState(s){
     }
     s.settings.giftProgressWeekVersion=1;
   }
+  if(Number(s.settings.fridayHandoffTimeVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:[];
+    for(const r of rules){
+      const text=[r.title,r.notes,r.location].filter(Boolean).join(" ").toLowerCase();
+      if(Number(r.weekday)===5&&/handoff|drop.?off|custody|dad/.test(text)){
+        r.startTime="16:30";
+        if(!r.endTime||r.endTime<="16:30")r.endTime="17:00";
+      }
+    }
+    s.settings.fridayHandoffTimeVersion=1;
+  }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
