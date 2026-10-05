@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-water1";
+const APP_BUILD="2026.10.04-mondayfamily1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -655,18 +655,20 @@ function itineraryRoutineWindow(x,date){
 }
 function itineraryFitRoutines(date,blockingItems,routines){
   const {dayStart,dayEnd}=itineraryEffectiveIntervals(blockingItems,date),
-        gaps=itineraryOpenGaps(blockingItems,date).map(g=>({...g})),
+        baseGaps=itineraryOpenGaps(blockingItems,date).map(g=>({...g})),
+        gaps=baseGaps.map(g=>({...g})),
         placed=[];
   const ordered=routines.slice().sort((a,b)=>(a.templateKey==="wind-down"?-1:0)-(b.templateKey==="wind-down"?-1:0)||(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
   for(const x of ordered){
     const desired=hmMinutes(x.start);if(desired===null)continue;
     const rawEnd=hmMinutes(x.end),
-          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||"")))?5:15,
+          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-ready|water-school|self-ready)$/.test(String(x.templateKey||"")))?5:15,
           duration=Math.max(minimum,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
-          window=itineraryRoutineWindow(x,date);
+          window=itineraryRoutineWindow(x,date),
+          candidateGaps=x.allowParallel?baseGaps:gaps;
     let best=null;
-    for(let i=0;i<gaps.length;i++){
-      const g=gaps[i],rangeStart=Math.max(g.start,window.start,dayStart),rangeEnd=Math.min(g.end,window.end,dayEnd);
+    for(let i=0;i<candidateGaps.length;i++){
+      const g=candidateGaps[i],rangeStart=Math.max(g.start,window.start,dayStart),rangeEnd=Math.min(g.end,window.end,dayEnd);
       if(rangeEnd-rangeStart<duration)continue;
       const candidate=Math.max(rangeStart,Math.min(desired,rangeEnd-duration)),
             distance=Math.abs(candidate-desired);
@@ -676,11 +678,13 @@ function itineraryFitRoutines(date,blockingItems,routines){
       placed.push({...x,skippedByConflict:true,originalStart:x.start,originalEnd:x.end});
       continue;
     }
-    const g=gaps[best.i],moved=best.start!==desired,
+    const g=candidateGaps[best.i],moved=best.start!==desired,
           row={...x,start:minutesHm(best.start),end:minutesHm(best.end),movedByPlanner:moved,originalStart:x.start,originalEnd:x.end};
     placed.push(row);
-    const parts=[];if(g.start<best.start)parts.push({start:g.start,end:best.start});if(best.end<g.end)parts.push({start:best.end,end:g.end});
-    gaps.splice(best.i,1,...parts);
+    if(!x.allowParallel){
+      const parts=[];if(g.start<best.start)parts.push({start:g.start,end:best.start});if(best.end<g.end)parts.push({start:best.end,end:g.end});
+      gaps.splice(best.i,1,...parts);
+    }
   }
   return placed;
 }
@@ -6042,7 +6046,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-water1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-mondayfamily1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6066,7 +6070,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261004-water1"></script>
+<script src="life-system.js?v=20261004-mondayfamily1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
