@@ -22,9 +22,9 @@
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
-    if(!p.gymRoutine||Number(p.gymRoutine.version||0)<1){
+    if(!p.gymRoutine||Number(p.gymRoutine.version||0)<2){
       p.gymRoutine={
-        version:1,
+        version:2,
         enabled:true,
         weeklyGoal:2,
         partner:"Yesi",
