@@ -457,11 +457,12 @@
     }
 
     if(offDay){
-      const monday=lifeWeekday(date)===1;
-      add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
+      const monday=lifeWeekday(date)===1,
+        morningEnd=Math.min(dayEnd,dayStart+(monday?15:30));
+      add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(morningEnd),
         title:"Morning start + basics",
-        detail:monday?"Get everyone moving · fill water bottle · school-morning basics":"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
-        subtasks:monday?["Get up","Get dressed","Go downstairs","Fill water bottle","Check Day Flow"]:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],
+        detail:monday?"Get everyone moving · fill water bottle · get ready for Leo’s 6:30 shower":"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
+        subtasks:monday?["Get up","Get dressed","Go downstairs","Fill water bottle"]:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],
         icon:"☀"});
       const focusStart=Math.max(dayStart,12*60);
       if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
