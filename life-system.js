@@ -134,6 +134,17 @@
     return !!(w&&w.start);
   }
 
+  function lifeResolvedWorkStartMinutes(date){
+    if(typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date))return null;
+    const w=workForDate(date),exact=hmMinutes(w&&(w.start||w.scheduled));
+    if(exact!==null)return exact;
+    if(lifeIsWorkday(date)&&typeof inferredWorkStartForDate==="function"){
+      const inferred=inferredWorkStartForDate(date);
+      if(inferred&&Number.isFinite(inferred.minutes))return inferred.minutes;
+    }
+    return null;
+  }
+
   function lifeMinutesBetween(start,end){
     let s=hmMinutes(start),e=hmMinutes(end);
     if(s===null||e===null)return null;
@@ -281,7 +292,10 @@
   const baseRoutineWindow=itineraryRoutineWindow;
   itineraryRoutineWindow=function(x,date){
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
-    if(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
+    if(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))){
+      const resolved=lifeResolvedWorkStartMinutes(date);
+      return {start:dayStart,end:Math.min(dayEnd,resolved!==null?resolved:dayEnd)};
+    }
     if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
     if(/^kid-shower-/.test(String(x.templateKey||""))){
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
@@ -398,7 +412,7 @@
       if(finalRow){out.push(finalRow);keys.add(finalRow.templateKey)}
     }
 
-    const workRow=workForDate(date),workStart=hmMinutes(workRow&&(workRow.start||workRow.scheduled)),
+    const workRow=workForDate(date),workStart=lifeResolvedWorkStartMinutes(date),
       morningRoutine=p.workMorningRoutine&&Array.isArray(p.workMorningRoutine.steps)?p.workMorningRoutine.steps:[];
     if(!offDay&&workStart!==null&&morningRoutine.length){
       morningRoutine.forEach(function(step){
