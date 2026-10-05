@@ -2694,3 +2694,72 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
 .dayflow-clear{
   border:1px solid rgba(86,135,102,.18)!important;
 }
+
+
+/* Oct 5 · readable Today task hub */
+.life-task-hub{gap:10px}
+.life-task-hub-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:2px 0 8px;border-bottom:1px solid rgba(52,43,70,.10);
+}
+.life-task-hub-head h2{
+  margin:2px 0 0!important;color:#2b2134!important;
+  font-family:var(--font-heading)!important;font-size:1.45rem!important;line-height:1.05;
+}
+.life-task-hub-status{
+  margin-top:5px;color:#6a6075;font-family:var(--font-hand);
+  font-size:.84rem;line-height:1.25;
+}
+.life-task-hub-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.life-task-hub-actions .btn{min-width:0!important;padding:8px 12px!important}
+.life-task-hub-list{display:grid;gap:7px}
+.life-task-hub-row{
+  display:grid;grid-template-columns:30px minmax(0,1fr) 34px;gap:8px;align-items:center;
+  min-height:68px;padding:8px 8px 8px 6px;
+  border:1px solid rgba(64,50,82,.10);border-radius:18px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 4px 12px rgba(66,50,80,.035);
+}
+.life-task-check{
+  display:grid!important;place-items:center!important;width:30px;height:40px;margin:0!important;padding:0!important;
+}
+.life-task-check input{
+  width:22px!important;height:22px!important;min-height:0!important;margin:0!important;
+  accent-color:#d8749b;
+}
+.life-task-main{
+  width:100%;min-width:0;border:0;background:transparent;color:#2b2134;
+  text-align:left;padding:0;font:inherit;cursor:pointer;
+}
+.life-task-top{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.life-task-top b{
+  min-width:0;color:#2b2134!important;font-family:var(--font-heading)!important;
+  font-size:1.02rem!important;line-height:1.16!important;overflow-wrap:anywhere;
+}
+.life-task-top em{
+  flex:0 0 auto;border:1px solid rgba(114,83,112,.13);border-radius:999px;
+  padding:3px 7px;background:rgba(255,255,255,.68);color:#735b72;
+  font-family:var(--font-hand);font-size:.66rem;font-style:normal;font-weight:800;
+}
+.life-task-meta,.life-task-note{
+  display:block;margin-top:3px;color:#655d70!important;font-family:var(--font-hand);
+  font-size:.78rem!important;line-height:1.22!important;
+}
+.life-task-note{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+}
+.life-task-open{
+  width:32px;height:38px;min-height:38px!important;padding:0!important;border-radius:12px;
+  border:1px solid rgba(64,50,82,.10);background:rgba(255,255,255,.74);
+  color:#3b3046;font-size:1.35rem;font-weight:800;line-height:1;cursor:pointer;
+}
+.life-task-dayflow{width:100%;margin-top:2px}
+@media(max-width:520px){
+  .life-task-hub-head{display:grid;grid-template-columns:1fr}
+  .life-task-hub-actions{justify-content:stretch}
+  .life-task-hub-actions .btn{flex:1}
+  .life-task-hub-row{grid-template-columns:28px minmax(0,1fr) 32px;padding:8px 6px;gap:7px}
+  .life-task-top{gap:5px}
+  .life-task-top b{font-size:.98rem!important}
+  .life-task-top em{font-size:.62rem}
+}
