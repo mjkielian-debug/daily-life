@@ -50,16 +50,16 @@
       p.busySeasonSleepNote="UPS hours are expected to rise sharply toward late November, potentially around 70 hours/week. Protect sleep first and use recovery naps when the schedule makes a full night unrealistic.";
       p.sleepPlanningVersion=1;
     }
-    if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<2){
+    if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<3){
       p.personalCareRoutine=Object.assign({},p.personalCareRoutine||{},{
-        version:2,
+        version:3,
         enabled:true,
         workdayDurationMinutes:Number(p.personalCareRoutine&&p.personalCareRoutine.workdayDurationMinutes||50),
-        offdayDurationMinutes:40,
-        offdayWindowStart:"14:00",
-        offdayWindowEnd:"14:40",
+        offdayAutoSchedule:false,
         showerMinutes:25,
         postShowerMinutes:15,
+        workdayNote:"On workdays, shower right after getting home from UPS whenever possible.",
+        offdayNote:"Do not automatically schedule a shower on non-work days; add one only when it is actually needed.",
         subtasks:["Drive home","Shower","Dry off","Lotion","Face moisturizer","Deodorant","Hair","Put on clean clothes"]
       });
     }
@@ -69,21 +69,21 @@
         leaveHome:"14:40",park:"14:45",pickup:"14:52",end:"15:00"
       };
     }
-    if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<1){
+    if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<2){
       p.schoolMorningTransport={
-        version:1,enabled:true,weekdays:[1,2,3,4,5],
+        version:2,enabled:true,weekdays:[1,2,3,4,5],
         youngerBus:"07:15",youngerBusEnd:"07:20",
         leoLeave:"07:20",leoDropoffEnd:"07:35",
         leoTimingApproximate:true,
-        note:"Kids eat breakfast at school. The three younger kids take the 7:15 AM bus; Leo is driven shortly afterward."
+        note:"Kids eat breakfast at school. At 7:15 the three younger kids get on the bus; during 7:15–7:20 do Leo's final homework/Chromebook/bookbag check, grab bag/keys/water bottle, and head out to take Leo."
       };
     }
-    if(!p.dollyHairRoutine||Number(p.dollyHairRoutine.version||0)<1){
+    if(!p.dollyHairRoutine||Number(p.dollyHairRoutine.version||0)<2){
       p.dollyHairRoutine={
-        version:1,enabled:true,durationMinutes:10,
-        schoolMorningStart:"06:55",
+        version:2,enabled:true,durationMinutes:15,
+        schoolMorningStart:"06:40",
         nonSchoolMorningStart:"09:00",
-        note:"Reserve 5–10 minutes every morning for Dolly's hair."
+        note:"School mornings reserve 6:40–6:55 for Dolly's hair; the hair itself usually takes about 5–10 minutes."
       };
     }
     if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
@@ -118,9 +118,9 @@
         excludedLabels:["laundry","dishes","counters","spot mop floor","floor spots","start vacuums"]
       };
     }
-    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<2){
+    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<3){
       p.kidShowerRoutine={
-        version:2,
+        version:3,
         enabled:true,
         durationMinutes:20,
         maxEveningShowers:2,
@@ -128,7 +128,7 @@
         noEveningWeekdays:[2],
         weeklyPlan:{
           "0":[{child:"Ambrose",start:"18:30",note:"Sunday evening shower after dinner"}],
-          "1":[{child:"Demitri",start:"18:00",note:"Monday evening shower"},{child:"Dolly",start:"18:20",note:"Monday evening shower"}],
+          "1":[{child:"Dolly",start:"18:00",note:"Monday shower first while dinner bakes/cools"},{child:"Demitri",start:"18:45",note:"Monday shower after dinner"}],
           "3":[{child:"Demitri",start:"17:00",note:"Before Dolly's dance"},{child:"Dolly",start:"19:00",note:"After dance"}],
           "4":[{child:"Ambrose",start:"18:40",note:"After Food Fort; home around 6:30 PM"}]
         }
@@ -289,7 +289,10 @@
       const bus=hmMinutes(morning.youngerBus||"07:15"),busEnd=hmMinutes(morning.youngerBusEnd||"07:20"),
         leo=hmMinutes(morning.leoLeave||"07:20"),leoEnd=hmMinutes(morning.leoDropoffEnd||"07:35");
       if(bus!==null&&busEnd!==null)rows.push({id:"school-bus:"+date,start:minutesHm(bus),end:minutesHm(busEnd),
-        title:"Bus pickup · younger kids",detail:"Three younger kids take the 7:15 AM bus · breakfast is at school",fixed:true,kind:"event",icon:"🚌",source:"generated"});
+        title:"Bus + final leave-the-house check",
+        detail:"Demitri, Dolly + Ambrose get on the bus · check Leo homework, Chromebook + bookbag · grab your bag, keys + water bottle · head out",
+        subtasks:["Demitri, Dolly + Ambrose on bus","Check Leo homework","Check Leo Chromebook","Check Leo bookbag","Grab your bag","Grab keys","Grab water bottle","Head out the door"],
+        fixed:true,kind:"event",icon:"🚌",source:"generated"});
       if(leo!==null&&leoEnd!==null)rows.push({id:"leo-school-dropoff:"+date,start:minutesHm(leo),end:minutesHm(leoEnd),
         title:"Take Leo to school",detail:"Leave shortly after the younger kids get on the bus"+(morning.leoTimingApproximate?" · timing approximate until a precise departure is set":""),fixed:true,kind:"event",icon:"🚗",source:"generated"});
     }
@@ -311,6 +314,27 @@
           title:"School pickup",detail:"Kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
       }
     }
+    if(wd===1){
+      const childKey=c=>String(c.child||"").toLowerCase(),choreKey=c=>String(c.chore||"").toLowerCase(),
+        byChild=names=>(state.chores||[]).filter(function(c){return c.date===date&&names.includes(childKey(c));}),
+        younger=byChild(["dolly","ambrose"]).sort(function(a,b){return childKey(a).localeCompare(childKey(b))||String(a.chore||"").localeCompare(String(b.chore||""));}),
+        older=byChild(["leo","demitri"]).filter(function(c){return !/read\s*20\s*min|reading/.test(choreKey(c));}).sort(function(a,b){return childKey(a).localeCompare(childKey(b))||String(a.chore||"").localeCompare(String(b.chore||""));});
+      rows.push({id:"monday-younger-chores:"+date,start:"15:05",end:"16:00",title:"Dolly + Ambrose · chores + homework",
+        detail:"After school: clean rooms, homework/reading as needed, then their rotating jobs. Keep Leo + Demitri's activity time separate.",
+        subtasks:younger.map(function(c){return c.child+": "+c.chore}),subtaskRefs:younger.map(function(c){return c.id}),
+        fixed:false,kind:"routine",icon:"✓",source:"suggested",templateKey:"monday-younger-chores",allowParallel:true});
+      rows.push({id:"monday-older-chores:"+date,start:"16:30",end:"17:15",title:"Leo + Demitri · chores + homework",
+        detail:"After activities: clean rooms, homework, then their rotating jobs. Their 20-minute reading stays at 7:40 PM.",
+        subtasks:older.map(function(c){return c.child+": "+c.chore}),subtaskRefs:older.map(function(c){return c.id}),
+        fixed:false,kind:"routine",icon:"✓",source:"suggested",templateKey:"monday-older-chores",allowParallel:true});
+      rows.push({id:"monday-dolly-shower:"+date,start:"18:00",end:"18:20",title:"Dolly · shower",
+        detail:"20 minutes · Dolly showers first while the Runzas bake/cool",subtasks:["Dolly shower"],
+        fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kid-shower-dolly",allowParallel:true});
+      rows.push({id:"monday-demitri-shower:"+date,start:"18:45",end:"19:05",title:"Demitri · shower",
+        detail:"20 minutes · after dinner",subtasks:["Demitri shower"],
+        fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kid-shower-demitri",allowParallel:true});
+    }
+
     const evening=lifeEnsureSettings().olderKidsReading||{};
     if(evening.enabled!==false){
       const prepStart=hmMinutes(evening.prepStart||"19:30"),prepEnd=hmMinutes(evening.prepEnd||"19:40"),
@@ -582,6 +606,7 @@
       // schedule a second homework or flexible after-school reset ahead of them.
       if(x.templateKey==="after-school-launch")return false;
       if(x.templateKey==="homework")return false;
+      if(lifeWeekday(date)===1&&x.templateKey==="chores")return false;
       return true;
     }).map(function(x){
       if(x.templateKey==="wind-down"){
@@ -648,13 +673,11 @@
           title:"Home from UPS · shower + self-care",
           detail:"Go home after work and shower before the rest of the day whenever possible",
           subtasks:Array.isArray(care.subtasks)?care.subtasks.slice():["Drive home","Shower","Wash body","Wash face","Lotion","Deodorant","Put on clean clothes"],icon:"♡"});
-      }else if(offDay){
-        const start=Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),
-          duration=Math.max(40,Number(care.offdayDurationMinutes||40)),end=Math.min(dayEnd,start+duration),
-          showerM=Math.max(20,Number(care.showerMinutes||25)),postM=Math.max(10,Number(care.postShowerMinutes||15));
+      }else if(offDay&&care.offdayAutoSchedule===true){
+        const start=Math.max(dayStart,14*60),duration=Math.max(40,Number(care.offdayDurationMinutes||40)),end=Math.min(dayEnd,start+duration);
         if(end-start>=35)add({templateKey:"personal-care",start:minutesHm(start),end:minutesHm(end),
-          title:"Shower + get ready for school pickup",
-          detail:showerM+" min shower · "+postM+" min dry off, lotion, face moisturizer, deodorant, hair, clean clothes · leave at 2:40 PM",
+          title:"Optional off-day shower + self-care",
+          detail:"Only scheduled when off-day shower automation is turned on",
           subtasks:["Shower","Dry off","Lotion","Face moisturizer","Deodorant","Hair","Get dressed"],icon:"♡"});
       }
     }
@@ -668,27 +691,33 @@
           subtasks:["Wake kids","Kids get dressed","Kids brush teeth","Kids wash faces","Kids go downstairs"],icon:"☀"});
         add({templateKey:"monday-water-school",start:"06:30",end:"06:40",
           title:"Water bottle + school setup",
-          detail:"Do this while Leo starts his 6:30 shower",
+          detail:"While Leo showers: fill your water bottle and make sure school things are together",
           subtasks:["Fill water bottle","Check school bags / folders","Check jackets / school items"],icon:"💧",allowParallel:true});
-        add({templateKey:"monday-self-ready",start:"06:40",end:"06:55",
+        add({templateKey:"monday-self-ready",start:"06:55",end:"07:10",
           title:"Get yourself ready",
-          detail:"Your getting-dressed block comes after the kids are moving",
-          subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡",allowParallel:true});
-        add({templateKey:"monday-stretch",start:"07:05",end:"07:10",
-          title:"Stretch + water",
-          detail:"Five-minute stretch after Dolly's hair, before the bus window",
-          subtasks:["Stretch for 5 minutes","Drink some water"],icon:"✦"});
+          detail:"15-minute ready block after Dolly's hair",
+          subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡"});
+        add({templateKey:"monday-stretch",start:"07:10",end:"07:15",
+          title:"Stretch while watching for the bus",
+          detail:"Five-minute stretch while keeping an eye out for the bus",
+          subtasks:["Stretch for 5 minutes","Watch for bus"],icon:"✦"});
       }else{
         add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
           title:"Morning start + basics",detail:"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
           subtasks:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],icon:"☀"});
       }
-      const focusStart=Math.max(dayStart,12*60);
-      if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
-        title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project: deep cleaning, decluttering, organizing, sorting, or another household project. Do not use this block for the kids’ regular laundry, dishes, counters, or spot-mop chores.",icon:"⌂"});
-      const mid=Math.max(focusStart+45,12*60+45),lunch=lifeLunchChoice(date);
-      if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
-        title:"Lunch · "+lunch,detail:"Eat lunch · drink water · check the next commitment before moving on",icon:"◷"});
+      const lunch=lifeLunchChoice(date);
+      if(monday){
+        add({templateKey:"midday-reset",start:"12:30",end:"12:50",
+          title:"Lunch · "+lunch,detail:"Leftover roast + water · then move into the protected birthday-gift project block",icon:"◷"});
+      }else{
+        const focusStart=Math.max(dayStart,12*60);
+        if(focusStart+45<=Math.min(dayEnd,14*60))add({templateKey:"home-reset",start:minutesHm(focusStart),end:minutesHm(focusStart+45),
+          title:"Home focus · deep clean / declutter",detail:"Use this for a bigger home project without taking over the kids’ rotating chores.",icon:"⌂"});
+        const mid=Math.max(focusStart+45,12*60+45);
+        if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
+          title:"Lunch · "+lunch,detail:"Eat lunch · drink water · check the next commitment before moving on",icon:"◷"});
+      }
     }
 
     const hair=p.dollyHairRoutine||{};
@@ -724,7 +753,10 @@
         subtasks:["Rest / nap for "+nap.duration+" minutes"],icon:"☾"});
     }
 
-    lifeKidShowerRows(date).forEach(function(row){add(row)});
+    lifeKidShowerRows(date).forEach(function(row){
+      if(lifeWeekday(date)===1&&row.templateKey!=="kid-shower-leo")return;
+      add(row);
+    });
 
     const gym=p.gymRoutine||{},gymAlreadyScheduled=(state.events||[]).some(function(e){
       return e.date===date&&e.status!=="cancelled"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(e.title||""));
