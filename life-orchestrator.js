@@ -20,8 +20,34 @@
   function lifeDaysBetween(a,b){
     return Math.round((new Date(String(b)+"T12:00:00")-new Date(String(a)+"T12:00:00"))/86400000);
   }
-  function lifeTaskOpen(t){return t&&!t.done}
+  function lifeTaskOpen(t){
+    return !!(t&&!t.done&&!t.paused&&!t.waitingForFunds&&!t.duplicateHidden);
+  }
   function lifeTaskDate(t){return /^\d{4}-\d{2}-\d{2}$/.test(String(t?.date||""))?t.date:ymd()}
+  function lifeTaskDisplayKey(t){
+    const child=String(t?.child||"").trim().toLowerCase();
+    let title=String(t?.title||"").trim().toLowerCase();
+    if(/myschoolbucks|(?:school|student).*meal\s+balance/.test(title+" "+String(t?.notes||"").toLowerCase()))title="school meal balance";
+    title=title.replace(/\b(?:today|tomorrow)\b/g," ")
+      .replace(/\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b/g," ")
+      .replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g," ")
+      .replace(/[^a-z0-9]+/g," ").trim();
+    return child+"|"+title;
+  }
+  function lifeDedupeTasks(rows){
+    const map=new Map();
+    for(const t of rows||[]){
+      const key=lifeTaskDisplayKey(t),prev=map.get(key);
+      if(!prev){map.set(key,Object.assign({},t,{_duplicateCount:1}));continue}
+      const prevDate=lifeTaskDate(prev),nextDate=lifeTaskDate(t),
+        prevToday=prevDate===ymd(),nextToday=nextDate===ymd(),
+        preferNext=nextToday&&!prevToday||nextToday===prevToday&&(Number(t.order||100)<Number(prev.order||100)||nextDate>prevDate);
+      const keep=preferNext?Object.assign({},t):prev;
+      keep._duplicateCount=Number(prev._duplicateCount||1)+1;
+      map.set(key,keep);
+    }
+    return [...map.values()];
+  }
   function lifeDueLabel(date){
     const today=ymd(),d=lifeDaysBetween(today,date);
     if(d<0)return Math.abs(d)+"d overdue";
@@ -224,8 +250,10 @@
 
   function lifeQueue(){
     const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
-      todayRows=tasks.filter(t=>lifeTaskDate(t)<=today&&!(String(t.title||"").trim().toLowerCase()==="ups shift"&&lifeTaskDate(t)<today)).sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
-      soonRows=tasks.filter(t=>lifeTaskDate(t)>today&&lifeTaskDate(t)<=weekEnd).sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100)),
+      todayRows=lifeDedupeTasks(tasks.filter(t=>lifeTaskDate(t)<=today&&!(String(t.title||"").trim().toLowerCase()==="ups shift"&&lifeTaskDate(t)<today)))
+        .sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
+      soonRows=lifeDedupeTasks(tasks.filter(t=>lifeTaskDate(t)>today&&lifeTaskDate(t)<=weekEnd))
+        .sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100)),
       waitingProjects=(state.projects||[]).filter(p=>String(p.status||"").toLowerCase()==="waiting"),
       waitingBills=(state.bills||[]).filter(b=>b.paymentPending),
       waitingDeliveries=(state.deliveries||[]).filter(d=>["expected","in transit","out for delivery","delayed"].includes(String(d.status||"").toLowerCase())),
@@ -366,12 +394,53 @@
   const baseSettingsView=settingsView;
   settingsView=function(){return baseSettingsView()+lifeAutopilotSettingsCard()};
 
+  function lifeTaskCategoryLabel(t){
+    const raw=String(t?.category||"life").toLowerCase();
+    return ({home:"Home",school:"School",money:"Money",car:"Car",pets:"Pets",garden:"Garden",food:"Food",personal:"Personal",work:"Work",life:"Life"})[raw]||raw.replace(/^./,c=>c.toUpperCase());
+  }
+  function lifeTaskMeta(t){
+    const parts=[];
+    if(t.child)parts.push(String(t.child));
+    const d=lifeTaskDate(t),today=ymd();
+    if(d<today)parts.push("carried from "+dl(d));
+    else if(d>today)parts.push(dl(d));
+    if(Number(t._duplicateCount||1)>1)parts.push(Number(t._duplicateCount)+" duplicates collapsed");
+    return parts.join(" · ");
+  }
+  function lifeTaskCleanNote(t){
+    const note=String(t?.notes||"").trim();
+    if(!note)return"";
+    return note.replace(/\s+/g," ").replace(/\s*·\s*Waiting until after payday; school lunches are free and this balance is only for extras\.?/ig,"").trim();
+  }
+
   window.openTodayTasksHub=function(){
     const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
-      review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0};
-    modal("Today · Tasks",'<div class="stack"><div class="section-title"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2><div class="muted small">'+(review.unknown?review.unknown+' daily check'+(review.unknown===1?'':'s')+' still unknown':'Daily review is complete')+'</div></div><div class="actions"><button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add task</button></div></div>'+
-      (rows.length?rows.map(t=>'<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(t.title)+'</b><small>'+esc([t.child,t.notes].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>').join(''):'<div class="notice"><b>Today’s tracked tasks are clear.</b></div>')+
-      '<div class="actions"><button class="btn" onclick="closeModal();openTodayDayFlow()">Open Day Flow</button></div></div>',"Close",closeModal);
+      review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0},
+      hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length;
+    const rowHtml=rows.map(t=>{
+      const meta=lifeTaskMeta(t),note=lifeTaskCleanNote(t),cat=lifeTaskCategoryLabel(t);
+      return '<div class="life-task-hub-row">'+
+        '<label class="life-task-check"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
+        '<button class="life-task-main" onclick="lifeOpenSource(\''+t.id+'\')">'+
+          '<span class="life-task-top"><b>'+esc(t.title)+'</b><em>'+esc(cat)+'</em></span>'+
+          (meta?'<small class="life-task-meta">'+esc(meta)+'</small>':'')+
+          (note?'<small class="life-task-note">'+esc(note)+'</small>':'')+
+        '</button>'+
+        '<button class="life-task-open" onclick="lifeOpenSource(\''+t.id+'\')" aria-label="Open '+esc(t.title)+'">›</button>'+
+      '</div>';
+    }).join("");
+    const statusBits=[
+      review.unknown?review.unknown+' unanswered daily check'+(review.unknown===1?'':'s'):'',
+      hidden?hidden+' waiting / paused hidden':''
+    ].filter(Boolean).join(" · ");
+    modal("Today · Tasks",
+      '<div class="stack life-task-hub">'+
+        '<div class="life-task-hub-head"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2>'+
+          (statusBits?'<div class="life-task-hub-status">'+esc(statusBits)+'</div>':'')+
+        '</div><div class="life-task-hub-actions"><button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add</button></div></div>'+
+        (rows.length?'<div class="life-task-hub-list">'+rowHtml+'</div>':'<div class="notice"><b>Today’s tracked tasks are clear.</b></div>')+
+        '<button class="btn life-task-dayflow" onclick="closeModal();openTodayDayFlow()">Open Day Flow</button>'+
+      '</div>',"Close",closeModal);
   };
 
   window.openHouseholdHub=function(){
