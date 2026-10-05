@@ -274,8 +274,8 @@
       if(date==="2026-10-05"&&x.source==="event"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(x.title||"")))return false;
       return true;
     }).map(function(x){
-      const cover=lifeTannerMorningCoverage(date),start=hmMinutes(x.start),
-        kidMorning=cover&&x.source==="event"&&start!==null&&start>=cover.start&&start<cover.end&&
+      const cover=lifeTannerMorningCoverage(date),rowStart=hmMinutes(x.start),
+        kidMorning=cover&&x.source==="event"&&rowStart!==null&&rowStart>=cover.start&&rowStart<cover.end&&
           (/demitri|dolly|ambrose|leo|school|musical|rehearsal|club|activity/i.test(String(x.title||"")+" "+String(x.detail||"")));
       if(kidMorning){
         x=Object.assign({},x,{detail:[cover.caregiver+" handles this morning/transport while you are at UPS",x.detail].filter(Boolean).join(" · "),responsible:cover.caregiver});
