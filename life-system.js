@@ -93,21 +93,23 @@
         preferredWeekdays:[4,6]
       };
     }
-    if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<2){
+    if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<3){
       p.workMorningRoutine={
-        version:2,
+        version:3,
         leadMinutes:60,
         commuteMinutes:15,
         steps:[
-          {key:"hygiene",from:-60,to:-45,title:"Wake + morning hygiene",detail:"Brush teeth · Floss · Mouthwash · Wash face · Put hair in ponytail · Deodorant · Perfume",
-            subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Put hair in ponytail","Deodorant","Perfume"],icon:"♡"},
-          {key:"dress",from:-45,to:-30,title:"Get dressed for work",detail:"Shirt · Pants · Socks · Shoes · Jacket if needed",
-            subtasks:["Shirt","Pants","Socks","Shoes","Jacket if needed"],icon:"◷"},
+          {key:"dress",from:-60,to:-55,title:"Wake + get dressed + downstairs",detail:"Wake up · Shirt · Pants · Socks · Shoes · Go downstairs",
+            subtasks:["Wake up","Shirt","Pants","Socks","Shoes","Go downstairs"],icon:"◷"},
+          {key:"hygiene",from:-55,to:-45,title:"Morning hygiene + hair",detail:"Brush teeth · Floss · Mouthwash · Wash face · Do hair · Deodorant · Perfume",
+            subtasks:["Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡"},
+          {key:"dayflow",from:-45,to:-30,title:"Check Day Flow",detail:"Review today’s schedule, priorities, travel, meals, and anything that changed overnight",
+            subtasks:["Check Day Flow"],icon:"✦"},
           {key:"stretch",from:-30,to:-25,title:"5-minute stretch",detail:"Stretch for 5 minutes",
             subtasks:["Stretch for 5 minutes"],icon:"✦"},
           {key:"gather",from:-25,to:-15,title:"Gather work things + check tire",detail:"Water bottle · Earbuds · Energy drink · Jacket · Bag · Check tire pressure",
             subtasks:["Water bottle","Earbuds","Energy drink","Jacket","Bag","Check tire pressure"],icon:"✓"},
-          {key:"commute",from:-15,to:0,title:"Drive · park · clock in",detail:"Leave for UPS · Drive to work · Park · Clock in",
+          {key:"commute",from:-15,to:0,title:"Leave for UPS · drive · park · clock in",detail:"Leave at the 15-minute mark · about 12 minutes to UPS plus parking / clock-in buffer",
             subtasks:["Leave for UPS","Drive to work","Park","Clock in"],icon:"🚗"}
         ]
       };
