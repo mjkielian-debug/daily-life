@@ -22,9 +22,9 @@
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
-    if(!p.gymRoutine||Number(p.gymRoutine.version||0)<2){
+    if(!p.gymRoutine||Number(p.gymRoutine.version||0)<3){
       p.gymRoutine={
-        version:2,
+        version:3,
         enabled:true,
         weeklyGoal:2,
         partner:"Yesi",
@@ -32,7 +32,7 @@
         windowStart:"11:30",
         windowEnd:"14:00",
         durationMinutes:60,
-        preferredWeekdays:[1,4]
+        preferredWeekdays:[4,6]
       };
     }
     if(!p.workMorningRoutine||Number(p.workMorningRoutine.version||0)<2){
@@ -289,15 +289,13 @@
         title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task · reset one surface before moving on",icon:"◷"});
     }
 
-    const gym=p.gymRoutine||{};
-    if(gym.enabled&&Array.isArray(gym.preferredWeekdays)&&gym.preferredWeekdays.includes(lifeWeekday(date))){
-      const gStart=hmMinutes(gym.windowStart)||690,gEnd=hmMinutes(gym.windowEnd)||840,dur=Math.max(30,Number(gym.durationMinutes||60)),
-        fixedStarts=(state.events||[]).filter(function(e){return e.date===date&&e.status!=="cancelled"}).map(function(e){return hmMinutes(e.startTime)}).filter(Number.isFinite),
-        fixedEnds=(state.events||[]).filter(function(e){return e.date===date&&e.status!=="cancelled"}).map(function(e){return hmMinutes(e.endTime)}).filter(Number.isFinite);
-      let start=gStart;
-      if(lifeWeekday(date)===1)start=Math.max(gStart,11*60+45);
-      if(start+dur<=gEnd){
-        add({templateKey:"gym-vasa-yesi",start:minutesHm(start),end:minutesHm(start+dur),
+    const gym=p.gymRoutine||{},gymAlreadyScheduled=(state.events||[]).some(function(e){
+      return e.date===date&&e.status!=="cancelled"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(e.title||""));
+    });
+    if(gym.enabled&&!gymAlreadyScheduled&&Array.isArray(gym.preferredWeekdays)&&gym.preferredWeekdays.includes(lifeWeekday(date))){
+      const gStart=hmMinutes(gym.windowStart)||690,gEnd=hmMinutes(gym.windowEnd)||840,dur=Math.max(30,Number(gym.durationMinutes||60));
+      if(gStart+dur<=gEnd){
+        add({templateKey:"gym-vasa-yesi",start:minutesHm(gStart),end:minutesHm(gStart+dur),
           title:"VASA Gym with Yesi",detail:"Weekly gym goal · at least 2 times this week · keep this between 11:30 AM and 2:00 PM",icon:"✦"});
       }
     }
@@ -328,6 +326,7 @@
           if(!t||t.done||placed.has(t.id))return false;
           const title=String(t.title||"").trim(),key=title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
           if(!title||/^(ups shift|ups scheduled start|everyone reading)$/.test(key))return false;
+          if(/tire/.test(key)&&(state.events||[]).some(function(e){return e.status!=="cancelled"&&/tire/i.test(String(e.title||""));}))return false;
           if(seenTitles.has(key))return false;
           seenTitles.add(key);
           return true;
