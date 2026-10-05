@@ -281,7 +281,7 @@
   const baseRoutineWindow=itineraryRoutineWindow;
   itineraryRoutineWindow=function(x,date){
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
-    if(/^work-(hygiene|dress|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
+    if(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
     if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
     if(/^kid-shower-/.test(String(x.templateKey||""))){
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
