@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-kidsflow1";
+const APP_BUILD="2026.10.05-kidsflow2";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -729,7 +729,10 @@ function itineraryTaskScheduleKey(task){
 function itineraryTaskCandidates(date){
   const today=ymd(),oldest=shiftDateString(today,-30),
     raw=(state.tasks||[]).filter(t=>{
+      const taskText=(String(t.title||"")+" "+String(t.notes||"")).toLowerCase();
       if(t.done||/^(ups shift|everyone reading)$/i.test(String(t.title||"")))return false;
+      // These older generated rows are now represented by the after-school Kids chores block.
+      if(/kids? room reset\s*\+?\s*homework|school[- ]night reset/.test(taskText))return false;
       if(date===today)return String(t.date||"")>=oldest&&String(t.date||"")<=today;
       return t.date===date;
     });
@@ -765,8 +768,8 @@ function itineraryTaskPreferredRange(task,date){
   if(pref==="afternoon")return clamp({start:12*60,end:17*60});
   if(pref==="after-school")return clamp({start:15*60,end:18*60+30});
   if(pref==="evening")return clamp({start:18*60,end:dayEnd});
-  const workEnd=hmMinutes(w?.end);
-  return clamp({start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:9*60),end:dayEnd});
+  const workEnd=hmMinutes(w?.end),dayStart=itineraryDayStart(date);
+  return clamp({start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:dayStart),end:dayEnd});
 }
 
 function itineraryEffectiveIntervals(items,date){
@@ -803,7 +806,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
     }else waiting.push(t);
   }
   const occupied=[...baseItems,...explicit],gaps=itineraryOpenGaps(occupied,date).map(g=>({...g})),planned=[...explicit];
-  for(const t of waiting.slice(0,8)){
+  for(const t of waiting.slice(0,20)){
     const mins=itineraryTaskMinutes(t),pref=itineraryTaskPreferredRange(t,date);if(!pref)continue;
     let chosen=-1,startAt=null;
     for(let i=0;i<gaps.length;i++){
@@ -962,7 +965,11 @@ function itineraryDayItems(date){
         base=[...anchors,...visibleRoutines],
         tasks=itineraryAutoTaskBlocks(date,base),
         used=[...base,...tasks],
-        open=itineraryRestBlocks(used,date);
+        finishedBlockers=dayFlowFinishedRows().filter(r=>r.date===date&&hmMinutes(r.start)!==null).map(r=>({
+          start:r.start,end:r.end||minutesHm((hmMinutes(r.start)||0)+Math.max(15,Number(r.durationMinutes||15))),
+          durationMinutes:Math.max(15,Number(r.durationMinutes||15))
+        })),
+        open=itineraryRestBlocks([...used,...finishedBlockers],date);
   return dayFlowOverlayFinished(date,[...used,...open]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
@@ -6086,7 +6093,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-kidsflow1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-kidsflow2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
