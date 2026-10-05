@@ -69,6 +69,15 @@
         leaveHome:"14:40",park:"14:45",pickup:"14:52",end:"15:00"
       };
     }
+    if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<1){
+      p.schoolMorningTransport={
+        version:1,enabled:true,weekdays:[1,2,3,4,5],
+        youngerBus:"07:15",youngerBusEnd:"07:20",
+        leoLeave:"07:20",leoDropoffEnd:"07:35",
+        leoTimingApproximate:true,
+        note:"Kids eat breakfast at school. The three younger kids take the 7:15 AM bus; Leo is driven shortly afterward."
+      };
+    }
     if(!p.lunchPlanByDate||typeof p.lunchPlanByDate!=="object")p.lunchPlanByDate={};
     if(!p.lunchPlanByDate["2026-10-05"])p.lunchPlanByDate["2026-10-05"]="Leftover roast";
     if(!p.nightRoutine||Number(p.nightRoutine.version||0)<2){
@@ -254,7 +263,18 @@
           fixed:true,kind:"work",icon:"📦",source:"work",estimatedEnd:true,estimatedMinutes:mins});
       }
     }
-    const pickup=lifeEnsureSettings().schoolPickupRoutine||{},wd=lifeWeekday(date),
+    const morning=lifeEnsureSettings().schoolMorningTransport||{},wd=lifeWeekday(date),
+      morningDays=Array.isArray(morning.weekdays)?morning.weekdays.map(Number):[];
+    if(morning.enabled!==false&&morningDays.includes(wd)){
+      const bus=hmMinutes(morning.youngerBus||"07:15"),busEnd=hmMinutes(morning.youngerBusEnd||"07:20"),
+        leo=hmMinutes(morning.leoLeave||"07:20"),leoEnd=hmMinutes(morning.leoDropoffEnd||"07:35");
+      if(bus!==null&&busEnd!==null)rows.push({id:"school-bus:"+date,start:minutesHm(bus),end:minutesHm(busEnd),
+        title:"Bus pickup · younger kids",detail:"Three younger kids take the 7:15 AM bus · breakfast is at school",fixed:true,kind:"event",icon:"🚌",source:"generated"});
+      if(leo!==null&&leoEnd!==null)rows.push({id:"leo-school-dropoff:"+date,start:minutesHm(leo),end:minutesHm(leoEnd),
+        title:"Take Leo to school",detail:"Leave shortly after the younger kids get on the bus"+(morning.leoTimingApproximate?" · timing approximate until a precise departure is set":""),fixed:true,kind:"event",icon:"🚗",source:"generated"});
+    }
+
+    const pickup=lifeEnsureSettings().schoolPickupRoutine||{},
       pickupDays=Array.isArray(pickup.weekdays)?pickup.weekdays.map(Number):[];
     if(pickup.enabled!==false&&pickupDays.includes(wd)){
       const already=(state.events||[]).some(function(e){
