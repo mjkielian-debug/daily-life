@@ -21,6 +21,11 @@
     }
     if(!Array.isArray(p.workWeekdays)||!p.workWeekdays.length)p.workWeekdays=[2,3,4,5,6];
     if(!p.nonWorkDayStart)p.nonWorkDayStart="08:00";
+    if(Number(p.mondayStartFixVersion||0)<1){
+      p.wakeByWeekday=p.wakeByWeekday||{};
+      p.wakeByWeekday[1]="06:15";
+      p.mondayStartFixVersion=1;
+    }
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
     if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<1){
       p.personalCareRoutine={
