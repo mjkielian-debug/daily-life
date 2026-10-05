@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-mondayfamily1";
+const APP_BUILD="2026.10.04-familychores1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1575,6 +1575,24 @@ function migrateState(s){
     s.settings.itinerary.workScheduleConfirmedAt="2026-10-04";
     s.settings.itinerary.workScheduleLabel="Tuesday–Saturday";
     s.settings.itinerary.workScheduleOffDayFixVersion=3;
+  }
+  if(Number(s.settings.familyRoutineRotationFixVersion||0)<1){
+    const childNames=["Leo","Demitri","Dolly","Ambrose"],
+      existingFamily=Array.isArray(s.settings.familyMembers)?s.settings.familyMembers:[],
+      existingNames=new Set(existingFamily.map(x=>String(x?.name||x||"").trim().toLowerCase()).filter(Boolean));
+    for(const name of childNames)if(!existingNames.has(name.toLowerCase()))existingFamily.push(name);
+    s.settings.familyMembers=existingFamily;
+    s.settings.dailyKidBasics=["Clean room","Homework","Read 20 min"];
+    const otherRotations=(Array.isArray(s.settings.choreRotations)?s.settings.choreRotations:[]).filter(r=>{
+      const members=(r.members||[]).map(x=>String(x).toLowerCase());
+      return !members.some(m=>["leo","demitri","dolly","ambrose"].includes(m));
+    });
+    s.settings.choreRotations=[
+      ...otherRotations,
+      {id:"older-kids-daily-rotation",label:"Leo + Demitri",members:["Leo","Demitri"],chores:["Laundry","Dishes"],anchorDate:"2026-10-04"},
+      {id:"younger-kids-daily-rotation",label:"Dolly + Ambrose",members:["Dolly","Ambrose"],chores:["Counters","Floors"],anchorDate:"2026-10-04"}
+    ];
+    s.settings.familyRoutineRotationFixVersion=1;
   }
   for(const d of DEFAULT_SELF_CARE_HABITS){
     const existing=s.settings.selfCareHabits.find(h=>h.key===d.key);
@@ -6046,7 +6064,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-mondayfamily1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-familychores1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6070,7 +6088,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261004-mondayfamily1"></script>
+<script src="life-system.js?v=20261004-familychores1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
