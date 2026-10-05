@@ -375,11 +375,14 @@
         });
       }
       if(x.templateKey==="chores"){
+        const todays=(state.chores||[]).filter(function(c){return c.date===date&&!c.done}),
+          subtasks=todays.map(function(c){return (c.child?c.child+": ":"")+String(c.chore||"Chore")}),
+          refs=todays.map(function(c){return c.id});
         if(lifeWeekday(date)===1){
           return Object.assign({},x,{title:"Kids chores",start:"19:00",end:"19:40",
-            detail:itineraryRoutineDetail(date,"chores","Family evening reset")});
+            detail:itineraryRoutineDetail(date,"chores","Family evening reset"),subtasks:subtasks,subtaskRefs:refs});
         }
-        return Object.assign({},x,{title:"Kids chores"});
+        return Object.assign({},x,{title:"Kids chores",subtasks:subtasks,subtaskRefs:refs});
       }
       return x;
     });
