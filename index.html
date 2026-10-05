@@ -724,7 +724,13 @@ function itineraryTaskMinutes(task){
 function itineraryTaskScheduleKey(task){
   const text=(String(task?.title||"")+" "+String(task?.notes||"")).toLowerCase();
   if(/myschoolbucks|(?:school|student) meal balance/.test(text))return"school-meal-balance";
-  return"";
+  const child=String(task?.child||"").trim().toLowerCase(),
+    title=String(task?.title||"").trim().toLowerCase()
+      .replace(/\b(?:today|tomorrow)\b/g," ")
+      .replace(/\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b/g," ")
+      .replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g," ")
+      .replace(/[^a-z0-9]+/g," ").trim();
+  return title?(child+"|"+title):"";
 }
 function itineraryTaskCandidates(date){
   const today=ymd(),oldest=shiftDateString(today,-30),
