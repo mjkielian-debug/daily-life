@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-kidsflow3";
+const APP_BUILD="2026.10.05-sleep1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1641,6 +1641,17 @@ function migrateState(s){
   for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","dailyReviews","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement","savingsGoals"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
+  if(Number(s.settings.sleepLog20261005Version||0)<1){
+    let sleep=(s.sleepLogs||[]).find(x=>x.date==="2026-10-05");
+    if(!sleep){sleep={id:uid(),date:"2026-10-05"};s.sleepLogs.push(sleep)}
+    if(!sleep.bedtime)sleep.bedtime="22:00";
+    if(!sleep.wakeTime)sleep.wakeTime="06:15";
+    sleep.actualSleepHours=8;
+    const sleepNote="Estimated about 8 hours actual sleep. Sleep window about 10:00 PM–6:15 AM; tossed and turned, woke around 1:00 AM, and took a bit to fall back asleep.";
+    if(!String(sleep.notes||"").includes("woke around 1:00 AM"))sleep.notes=[String(sleep.notes||"").trim(),sleepNote].filter(Boolean).join(" ");
+    sleep.source=sleep.source||"Conversation log";
+    s.settings.sleepLog20261005Version=1;
+  }
   for(const log of s.selfCare||[]){
     if(log.count===undefined)log.count=log.done?1:0;
     if(!Array.isArray(log.times))log.times=[];
@@ -2484,8 +2495,15 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   ${todayWeatherCarDrawer(m,ml,tr)}`;
 }
 function sleepForDate(date=ymd()){return (state.sleepLogs||[]).find(x=>x.date===date)||null}
+function sleepWindowHours(log){
+  if(!log?.bedtime||!log?.wakeTime)return 0;
+  const [bh,bm]=log.bedtime.split(":").map(Number),[wh,wm]=log.wakeTime.split(":").map(Number);
+  let mins=wh*60+(wm||0)-(bh*60+(bm||0));if(mins<0)mins+=1440;
+  return mins/60;
+}
 function sleepHours(log){
-  if(!log?.bedtime||!log?.wakeTime)return 0;const [bh,bm]=log.bedtime.split(":").map(Number),[wh,wm]=log.wakeTime.split(":").map(Number);let mins=wh*60+(wm||0)-(bh*60+(bm||0));if(mins<0)mins+=1440;return mins/60;
+  const actual=Number(log?.actualSleepHours);
+  return Number.isFinite(actual)&&actual>0?actual:sleepWindowHours(log);
 }
 const DEFAULT_SELF_CARE_HABITS=[
   {key:"brush",label:"Brush teeth",group:"Essentials",routine:"anytime",builtin:true},
@@ -2832,8 +2850,8 @@ function selfCareCount(key,days=7){
   return new Set((state.selfCare||[]).filter(x=>x.key===key&&x.done&&x.date>=start&&x.date<=ymd()).map(x=>x.date)).size;
 }
 function openSleep(){
-  const x=sleepForDate()||{};
-  modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="2" placeholder="Anything affecting sleep or energy…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
+  const x=sleepForDate()||{},windowHours=sleepWindowHours(x);
+  modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Estimated actual sleep (hours)<input id="slactual" type="number" min="0" max="14" step="0.25" value="${x.actualSleepHours!==undefined&&x.actualSleepHours!==null?esc(x.actualSleepHours):""}" placeholder="${windowHours?windowHours.toFixed(2):"Leave blank to use bedtime–wake time"}"></label><div class="muted small">Use this when you were awake during the night. Daily Life keeps the full sleep window but uses estimated actual sleep in your trends.</div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="3" placeholder="Wake-ups, tossing and turning, how rested you felt…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}const actualRaw=$("#slactual").value.trim(),actual=actualRaw===""?null:Number(actualRaw);Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,actualSleepHours:Number.isFinite(actual)&&actual>0?actual:null,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
 }
 function lastHomeTask(task){
   return [...(state.homeLogs||[])].filter(x=>String(x.task||"").toLowerCase()===String(task||"").toLowerCase()&&x.status==="done").sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")))[0]||null;
@@ -2895,8 +2913,9 @@ function sevenDayTrends(){
   return `<div class="card"><div class="eyebrow">7-day trends</div><h2>Your actual patterns</h2><div class="muted small">A visual history of what you logged — no judgment and no reminder schedule.</div>${row("Water",waterVals,maxWater,v=>Math.round(v)+" oz")}${row("Calories",foodVals,maxFood,v=>Math.round(v)+"")}${row("Protein",proteinVals,maxProtein,v=>Math.round(v)+"g")}${row("Sleep",sleepVals,maxSleep,v=>v?v.toFixed(1)+"h":"—")}</div>`;
 }
 function sleepCard(){
-  const x=sleepForDate(),hours=sleepHours(x);
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
+  const x=sleepForDate(),hours=sleepHours(x),window=sleepWindowHours(x),
+        hasActual=Number(x?.actualSleepHours)>0&&window>0&&Math.abs(Number(x.actualSleepHours)-window)>.04;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${hasActual?` · ${window.toFixed(2)} h sleep window`:""}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
 }
 function activeDeliveries(){
   const today=ymd();
@@ -6096,7 +6115,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-kidsflow3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-sleep1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6120,7 +6139,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261005-kidsflow1"></script>
+<script src="life-system.js?v=20261005-sleep1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
