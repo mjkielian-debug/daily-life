@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-sleep1";
+const APP_BUILD="2026.10.05-schedule1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -950,6 +950,9 @@ function dayFlowOpenButton(x,date){
   return `<button type="button" class="dayflow-open-detail" onclick="event.stopPropagation();${action}" aria-label="Open details">›</button>`;
 }
 function dayFlowRowHtml(x,date){
+  if(x.kind==="sleep"){
+    return `<div class="dayflow-phase-row dayflow-sleep-row"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow"><b class="dayflow-row-title">☾ ${esc(x.title)}</b><small class="dayflow-row-meta">${esc(x.detail||"Protected sleep")}</small></span></div>`;
+  }
   const labels=dayFlowSubtaskLabels(x),itemKey=dayFlowItemKey(x,date),allDone=dayFlowBlockDone(x,date)||!!x.done,
     encoded=encodeURIComponent(itemKey),multi=labels.length>1,
     title=multi?`<b class="dayflow-row-title">${esc(x.title)}</b>`:
@@ -1025,6 +1028,7 @@ function itineraryTypeLabel(x){
   if(x.source==="custom")return"YOUR BLOCK";
   if(x.kind==="gap")return"OPEN";
   if(x.source==="meal")return"MEAL";
+  if(x.source==="sleep")return"SLEEP";
   return"PLAN";
 }
 function itineraryFlowCard(date){
@@ -1120,11 +1124,26 @@ const DAY_FLOW_BUCKETS={
   evening:{title:"Evening",icon:"⌂"},
   tonight:{title:"Tonight",icon:"✦"}
 };
+function dayFlowSleepBlock(date){
+  if(state.settings?.itinerary?.protectSleep===false)return null;
+  const log=sleepForDate(date),previous=shiftDateString(date,-1),plan=itinerarySleepPlan(previous),
+    wake=hmMinutes(log?.wakeTime||plan?.wake||""),
+    bedtime=String(log?.bedtime||plan?.bedtime||"");
+  if(wake===null||wake<=0)return null;
+  const actual=Number(log?.actualSleepHours||0),
+    detail=[bedtime?"Continued from "+fmtClock(bedtime):"",actual>0?"~"+actual.toFixed(actual%1?1:0)+" h actual sleep logged":(plan?.targetHours?plan.targetHours+" h target":"Protected sleep")].filter(Boolean).join(" · ");
+  return {id:"sleep:"+date,start:"00:00",end:minutesHm(wake),title:"Sleep",detail,fixed:true,kind:"sleep",icon:"☾",source:"sleep"};
+}
 function dayFlowBucketItems(date,key){
-  return itineraryDayItems(date).filter(x=>{
+  const rows=itineraryDayItems(date).filter(x=>{
     if(String(x.templateKey||"")==="wind-down")return key==="tonight";
     const m=hmMinutes(x.start);return m!==null&&dayFlowBucketForMinutes(m)===key;
   });
+  if(key==="before"){
+    const sleep=dayFlowSleepBlock(date);
+    if(sleep)rows.unshift(sleep);
+  }
+  return rows;
 }
 function dayFlowItemAction(x,date){
   if(x.source==="custom")return `openItineraryBlock('${date}','${x.sourceId}')`;
@@ -1920,6 +1939,8 @@ function eventDisplayKey(e){
   let title=String(e?.title||"").trim().toLowerCase();
   if(child)title=title.split(child).join(" ");
   title=title.replace(/parent\s*[-–—]?\s*teacher\s+conference.*/,"parent teacher conference")
+             .replace(/\bfull\s*[- ]?cast\b/g," ")
+             .replace(/\beverett\s+musical(?:\s+full\s*[- ]?cast)?\s+rehearsal\b/g,"everett musical rehearsal")
              .replace(/[^a-z0-9]+/g," ").trim();
   return [String(e?.date||""),child,String(e?.startTime||""),title].join("|");
 }
@@ -6115,7 +6136,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-sleep1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-schedule1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6139,7 +6160,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261005-sleep1"></script>
+<script src="life-system.js?v=20261005-schedule1"></script>
 <script src="life-orchestrator.js?v=20261004-household1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
