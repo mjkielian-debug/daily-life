@@ -81,7 +81,7 @@
     if(!p.dollyHairRoutine||Number(p.dollyHairRoutine.version||0)<1){
       p.dollyHairRoutine={
         version:1,enabled:true,durationMinutes:10,
-        schoolMorningStart:"07:00",
+        schoolMorningStart:"06:55",
         nonSchoolMorningStart:"09:00",
         note:"Reserve 5–10 minutes every morning for Dolly's hair."
       };
@@ -625,9 +625,9 @@
           title:"Get yourself ready",
           detail:"Your getting-dressed block comes after the kids are moving",
           subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡",allowParallel:true});
-        add({templateKey:"monday-stretch",start:"06:55",end:"07:00",
+        add({templateKey:"monday-stretch",start:"07:05",end:"07:10",
           title:"Stretch + water",
-          detail:"Five-minute stretch before moving into the rest of the morning",
+          detail:"Five-minute stretch after Dolly's hair, before the bus window",
           subtasks:["Stretch for 5 minutes","Drink some water"],icon:"✦"});
       }else{
         add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
