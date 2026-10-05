@@ -35,6 +35,21 @@
       p.mondayOct5CleanupVersion=1;
     }
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
+    if(Number(p.sleepPlanningVersion||0)<1){
+      p.sleepTargetHours=8;
+      p.offDayBedtimeGuide="22:00";
+      p.napSupport={
+        enabled:true,
+        durationMinutes:25,
+        windowStart:"10:30",
+        windowEnd:"16:30",
+        suggestBelowHours:7.25,
+        earlyWakeBefore:"03:30",
+        heavyWeekHours:50
+      };
+      p.busySeasonSleepNote="UPS hours are expected to rise sharply toward late November, potentially around 70 hours/week. Protect sleep first and use recovery naps when the schedule makes a full night unrealistic.";
+      p.sleepPlanningVersion=1;
+    }
     if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<1){
       p.personalCareRoutine={
         version:1,
@@ -280,9 +295,15 @@
       requiredBedtime=raw<720?raw+1440:raw;
     }
     const configured=hmMinutes(p.dayEnd||"21:30")===null?1290:hmMinutes(p.dayEnd||"21:30"),
-      usualLatest=Math.max(preferredStart,preferredEnd);
-    let bedtime=usualLatest;
-    if(next&&requiredBedtime!==null)bedtime=Math.min(bedtime,requiredBedtime);
+      usualLatest=Math.max(preferredStart,preferredEnd),
+      tomorrowWork=lifeIsWorkday(tomorrow)||lifeActualWork(tomorrow),
+      offDayGuide=hmMinutes(p.offDayBedtimeGuide||"22:00")===null?1320:hmMinutes(p.offDayBedtimeGuide||"22:00");
+    let bedtime;
+    if(tomorrowWork){
+      bedtime=next&&requiredBedtime!==null?requiredBedtime:usualLatest;
+    }else{
+      bedtime=next&&requiredBedtime!==null?Math.min(offDayGuide,requiredBedtime):offDayGuide;
+    }
     bedtime=Math.min(bedtime,configured);
     bedtime=Math.max(840,Math.min(1439,Math.round(bedtime)));
     const wake=next?next.wake:null,
@@ -294,7 +315,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["recovery-nap","Recovery nap"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -316,6 +337,10 @@
       if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+20};
     }
     if(x.templateKey==="chores")return {start:15*60,end:18*60+30};
+    if(x.templateKey==="recovery-nap"){
+      const cfg=p.napSupport||{},start=hmMinutes(cfg.windowStart||"10:30"),end=hmMinutes(cfg.windowEnd||"16:30");
+      return {start:start===null?10*60+30:start,end:end===null?16*60+30:end};
+    }
     if(x.templateKey==="personal-care"){
       const care=p.personalCareRoutine||{},work=workForDate(date),actualEnd=hmMinutes(work&&work.end),
         workStart=hmMinutes(work&&(work.start||work.scheduled)),
@@ -382,6 +407,38 @@
         subtasks:[String(item.child)+" shower"],icon:"♡"});
     });
     return rows;
+  }
+
+  function lifeRecentWorkHours(date){
+    const end=new Date(String(date)+"T12:00:00"),start=new Date(end);start.setDate(end.getDate()-6);
+    const from=ymd(start);
+    return (state.workShifts||[]).filter(function(w){return w.date>=from&&w.date<=date}).reduce(function(sum,w){
+      if(typeof wh==="function")return sum+Number(wh(w)||0);
+      const mins=lifeMinutesBetween(w.start,w.end);return sum+(Number.isFinite(mins)?mins/60:0);
+    },0);
+  }
+
+  function lifeNapSuggestion(date){
+    const p=lifeEnsureSettings(),cfg=p.napSupport||{};
+    if(cfg.enabled===false)return null;
+    const sleep=typeof sleepForDate==="function"?sleepForDate(date):null,
+      actual=typeof sleepHours==="function"?Number(sleepHours(sleep)||0):0,
+      plan=itinerarySleepPlan(date),
+      minSleep=Math.max(5,Number(cfg.suggestBelowHours||7.25)),
+      earlyWake=hmMinutes(cfg.earlyWakeBefore||"03:30"),
+      heavyHours=Math.max(35,Number(cfg.heavyWeekHours||50)),
+      recentHours=lifeRecentWorkHours(date),
+      shortNight=actual>0&&actual<minSleep,
+      compressedTonight=plan.wakeMinutes!==null&&plan.wakeMinutes!==undefined&&Number(plan.protectedHours||0)<minSleep,
+      earlierThanUsual=plan.wakeMinutes!==null&&plan.wakeMinutes!==undefined&&earlyWake!==null&&plan.wakeMinutes<earlyWake,
+      heavyWeek=recentHours>=heavyHours;
+    if(!shortNight&&!compressedTonight&&!earlierThanUsual&&!heavyWeek)return null;
+    const reasons=[];
+    if(shortNight)reasons.push("about "+actual.toFixed(1)+" h actual sleep logged");
+    if(compressedTonight)reasons.push("only "+Number(plan.protectedHours||0).toFixed(1)+" h fit before tomorrow’s wake");
+    if(earlierThanUsual)reasons.push("tomorrow needs an earlier-than-usual wake");
+    if(heavyWeek)reasons.push(recentHours.toFixed(1)+" work hours logged in the last 7 days");
+    return {reason:reasons.join(" · "),duration:Math.max(20,Math.min(30,Number(cfg.durationMinutes||25)))};
   }
 
   const baseSuggestedBlocks=itinerarySuggestedBlocks;
@@ -518,6 +575,15 @@
           {templateKey:"water-3",start:minutesHm(finalTime),end:minutesHm(Math.min(dayEnd,finalTime+5)),title:"Water check · 3 of 3 bottles",detail:"Finish bottle 3 so today’s water goal is complete.",subtasks:["Finish bottle 3 of 3"],icon:"💧"}
         ];
       waterRows.forEach(function(row){add(row)});
+    }
+
+    const nap=lifeNapSuggestion(date);
+    if(nap){
+      const cfg=p.napSupport||{},start=hmMinutes(cfg.windowStart||"10:30"),preferred=Math.max(start===null?10*60+30:start,13*60),
+        end=preferred+nap.duration;
+      add({templateKey:"recovery-nap",start:minutesHm(preferred),end:minutesHm(end),
+        title:"Recovery nap · optional",detail:"Sleep support: "+nap.reason,
+        subtasks:["Rest / nap for "+nap.duration+" minutes"],icon:"☾"});
     }
 
     lifeKidShowerRows(date).forEach(function(row){add(row)});
