@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
-<link rel="stylesheet" href="life-orchestrator.css?v=20261004-inlinechecks1">
+<link rel="stylesheet" href="life-orchestrator.css?v=20261004-conflicts1">
 <link rel="stylesheet" href="home-operator.css?v=20261004-multifloor1">
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.04-carehome1";
+const APP_BUILD="2026.10.04-conflicts1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1106,8 +1106,40 @@ function dayFlowUnscheduledCard(date){
     ${!tasks.length&&!chores.length?`<div class="notice">Everything that needs a time is placed or complete.</div>`:""}
   </div>`;
 }
+function dayFlowConflictAudit(date){
+  const anchors=itineraryFixedItems(date).filter(x=>hmMinutes(x.start)!==null),
+    overlaps=[],seen=new Set(),diagnostics=itineraryPlanningDiagnostics(date);
+  for(let i=0;i<anchors.length;i++){
+    const a=anchors[i],as=hmMinutes(a.start),ae=hmMinutes(a.end);
+    if(as===null||ae===null||ae<=as)continue;
+    for(let j=i+1;j<anchors.length;j++){
+      const b=anchors[j],bs=hmMinutes(b.start),be=hmMinutes(b.end);
+      if(bs===null||be===null||be<=bs)continue;
+      const overlap=Math.min(ae,be)-Math.max(as,bs);
+      if(overlap<=0)continue;
+      if(a.source==="meal"&&b.source==="meal"&&a.sourceId===b.sourceId)continue;
+      const key=[a.id,b.id].sort().join("|");if(seen.has(key))continue;seen.add(key);
+      overlaps.push({a,b,minutes:overlap});
+    }
+  }
+  return{
+    overlaps,
+    skipped:diagnostics.skipped||[],
+    sleepConflicts:diagnostics.sleepConflicts||[],
+    count:overlaps.length+(diagnostics.skipped||[]).length+(diagnostics.sleepConflicts||[]).length
+  };
+}
+function dayFlowConflictCard(date){
+  const audit=dayFlowConflictAudit(date);
+  if(!audit.count)return `<div class="notice dayflow-clear"><b>No schedule conflicts detected.</b> Fixed anchors, routines, meals, and sleep currently fit without an obvious collision.</div>`;
+  return `<div class="card dayflow-conflict-card"><div class="section-title"><div><div class="eyebrow">Schedule check</div><h2>${audit.count} item${audit.count===1?"":"s"} need attention</h2><div class="muted small">These are possible collisions or routines that could not fit. They are not silently moved through a fixed commitment.</div></div></div>
+    ${audit.overlaps.map(({a,b,minutes})=>`<div class="dayflow-conflict-row"><b>Possible overlap · ${minutes} min</b><span>${esc(fmtClock(a.start))} ${esc(a.title)} ↔ ${esc(fmtClock(b.start))} ${esc(b.title)}</span></div>`).join("")}
+    ${audit.skipped.map(x=>`<div class="dayflow-conflict-row"><b>Couldn’t fit · ${esc(x.title)}</b><span>Preferred ${esc(fmtClock(x.originalStart||x.start))}${x.originalEnd?"–"+esc(fmtClock(x.originalEnd)):""} · tap it in the agenda to adjust.</span></div>`).join("")}
+    ${audit.sleepConflicts.map(x=>`<div class="dayflow-conflict-row"><b>Sleep-window conflict · ${esc(x.title)}</b><span>${esc(fmtClock(x.start))}${x.end?"–"+esc(fmtClock(x.end)):""}</span></div>`).join("")}
+  </div>`;
+}
 function dayFlowPlanCard(date){
-  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button>${typeof openWeekPilot==="function"?`<button class="btn" onclick="closeModal();openWeekPilot()">Week Pilot</button>`:""}<button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button>${typeof openCapacityGuardrail==="function"?`<button class="btn" onclick="openCapacityGuardrail('${date}')">Planning capacity</button>`:""}<button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${itineraryFlowCard(date)}${dayFlowFinishedCard(date)}</div>`;
+  return `<div class="stack"><div class="card"><div class="section-title"><div><div class="eyebrow">Plan + settings</div><h2>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))}</h2></div></div><div class="actions"><button class="btn primary" onclick="openItineraryBlock('${date}')">+ Add block</button>${typeof openWeekPilot==="function"?`<button class="btn" onclick="closeModal();openWeekPilot()">Week Pilot</button>`:""}<button class="btn" onclick="openWeeklyRoutine()">Weekly routine</button><button class="btn" onclick="openItinerarySettings()">Planning settings</button>${typeof openCapacityGuardrail==="function"?`<button class="btn" onclick="openCapacityGuardrail('${date}')">Planning capacity</button>`:""}<button class="btn" onclick="printItineraryDay('${date}')">Print day</button><button class="btn" onclick="printItineraryWeek('${date}')">Print week</button></div></div>${dayFlowConflictCard(date)}${itineraryFlowCard(date)}${dayFlowFinishedCard(date)}</div>`;
 }
 function openDayFlowSection(section,date=itineraryDate||ymd()){
   if(DAY_FLOW_BUCKETS[section]){modal(DAY_FLOW_BUCKETS[section].title,`<div class="dayflow-hub-modal">${dayFlowBucketCard(date,section)}</div>`,"Close",closeModal);return}
@@ -1128,6 +1160,7 @@ function itineraryView(){
   const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),
         placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
         unscheduled=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)).length+(state.chores||[]).filter(x=>x.date===date&&!x.done).length,
+        conflicts=dayFlowConflictAudit(date).count,
         buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+rows.length+" block"+(rows.length===1?"":"s"):"Open"}}),
         segments=buckets,
         currentBucket=current&&hmMinutes(current.start)!==null?dayFlowBucketForMinutes(hmMinutes(current.start)):"",
@@ -1141,7 +1174,7 @@ function itineraryView(){
     </div>
     <div class="dayflow-quick-actions">
       <button type="button" onclick="openDayFlowSection('unscheduled','${date}')"><span class="dayflow-mini-icon">?</span><span><b>Loose items</b><small>${unscheduled?unscheduled+" to place":"All placed"}</small></span></button>
-      <button type="button" onclick="openDayFlowSection('plan','${date}')"><span class="dayflow-mini-icon">✦</span><span><b>Plan day</b><small>Week · settings · print</small></span></button>
+      <button type="button" onclick="openDayFlowSection('plan','${date}')"><span class="dayflow-mini-icon">${conflicts?"!":"✦"}</span><span><b>Plan day</b><small>${conflicts?conflicts+" schedule issue"+(conflicts===1?"":"s"):"Week · settings · print"}</small></span></button>
     </div>
   </section>`;
 }
@@ -6001,7 +6034,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-carehome1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261004-conflicts1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
