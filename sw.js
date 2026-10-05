@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261005-colorlogo1";
+const CACHE_NAME="daily-life-shell-20261005-rainbow2";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -35,6 +35,8 @@ const APP_SHELL=[
   "./icon.svg",
   "./daily-life-pastel-icon.svg",
   "./daily-life-colorful-icon.svg",
+  "./daily-life-rainbow-512.png",
+  "./daily-life-rainbow-192.png",
   "./daily-life-rose-192.png",
   "./daily-life-rose-512.png",
   "./botanical-corners.svg",
