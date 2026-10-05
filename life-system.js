@@ -392,11 +392,19 @@
     return out.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
   };
 
-  /* Fill open time with named tasks when possible instead of generic focus labels. */
+  function lifeIsHouseholdFocusTask(task){
+    const text=(String(task&&task.title||"")+" "+String(task&&task.notes||"")+" "+String(task&&task.category||"")).toLowerCase(),
+      regularKidChore=/\b(laundry|dishes|counters?|spot[ -]?mop|floor spots?)\b/.test(text);
+    if(regularKidChore)return false;
+    return /deep clean|declutter|organize|organise|sorting|sort |closet|pantry|fridge|refrigerator|basement|garage|storage|household project|home project|clean (the )?(bathroom|bedroom|room|kitchen)/.test(text)||
+      (/\b(home|household)\b/.test(text)&&/clean|organ|declutter|sort/.test(text));
+  }
+
+  /* Fill open time with named tasks. Larger home projects wait for the noon–2 home-focus window. */
   itineraryRestBlocks=function(items,date){
     const gaps=itineraryOpenGaps(items,date),out=[],
       placed=new Set((items||[]).filter(function(x){return x.source==="task"}).map(function(x){return x.sourceId})),
-      seenTitles=new Set(),
+      seenTitles=new Set(),usedTasks=new Set(),
       priorities=(typeof itineraryTaskCandidates==="function"?itineraryTaskCandidates(date):(state.tasks||[]))
         .filter(function(t){
           if(!t||t.done||placed.has(t.id))return false;
@@ -407,23 +415,51 @@
           seenTitles.add(key);
           return true;
         })
-        .sort(function(a,b){return Number(a.order||100)-Number(b.order||100)||String(a.date||"").localeCompare(String(b.date||""))});
-    let priorityIndex=0;
+        .sort(function(a,b){return Number(a.order||100)-Number(b.order||100)||String(a.date||"").localeCompare(String(b.date||""))}),
+      homeStart=12*60,homeEnd=14*60;
+
+    function nextTask(cursor){
+      const inHomeWindow=cursor>=homeStart&&cursor<homeEnd;
+      let task=priorities.find(function(t){return !usedTasks.has(t.id)&&lifeIsHouseholdFocusTask(t)===inHomeWindow});
+      if(!task&&inHomeWindow)task=priorities.find(function(t){return !usedTasks.has(t.id)&&!lifeIsHouseholdFocusTask(t)});
+      return task||null;
+    }
+
     gaps.forEach(function(g){
       let cursor=g.start;
       while(g.end-cursor>=15){
-        const task=priorities[priorityIndex++]||null,
-          chunk=Math.min(task?Math.max(15,Math.min(60,itineraryTaskMinutes(task))):60,g.end-cursor),
-          end=cursor+chunk;
-        out.push(task?{
-          id:"gap-task:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:task.title,
-          detail:[task.child,task.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",
-          sourceId:task.id,durationMinutes:chunk,done:false,autoPlanned:true
-        }:{
-          id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:"Open time",
-          detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk
-        });
-        cursor=end;
+        const task=nextTask(cursor);
+        if(task){
+          const isHome=lifeIsHouseholdFocusTask(task);
+          if(isHome&&!(cursor>=homeStart&&cursor<homeEnd)){
+            const boundary=cursor<homeStart&&g.end>homeStart?homeStart:null;
+            if(boundary!==null&&boundary-cursor>=15){
+              const chunk=Math.min(60,boundary-cursor);
+              out.push({id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:"Open time",
+                detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+              cursor+=chunk;continue;
+            }
+          }else{
+            let available=g.end-cursor;
+            if(isHome)available=Math.min(available,homeEnd-cursor);
+            const chunk=Math.min(Math.max(15,Math.min(60,itineraryTaskMinutes(task))),available);
+            if(chunk>=15){
+              const end=cursor+chunk;usedTasks.add(task.id);
+              out.push({id:"gap-task:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:task.title,
+                detail:[task.child,task.notes,isHome?"Noon–2 home focus":""].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",
+                sourceId:task.id,durationMinutes:chunk,done:false,autoPlanned:true});
+              cursor=end;continue;
+            }
+          }
+        }
+
+        let chunk=Math.min(60,g.end-cursor);
+        if(cursor<homeStart&&cursor+chunk>homeStart)chunk=homeStart-cursor;
+        if(cursor<homeEnd&&cursor>=homeStart&&cursor+chunk>homeEnd)chunk=homeEnd-cursor;
+        if(chunk<15)break;
+        out.push({id:"gap-open:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(cursor+chunk),title:"Open time",
+          detail:"Nothing specific is assigned here yet.",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+        cursor+=chunk;
       }
     });
     return out;
