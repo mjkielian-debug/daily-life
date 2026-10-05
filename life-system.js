@@ -51,6 +51,22 @@
         excludedLabels:["laundry","dishes","counters","spot mop floor","floor spots","start vacuums"]
       };
     }
+    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<1){
+      p.kidShowerRoutine={
+        version:1,
+        enabled:true,
+        durationMinutes:20,
+        maxEveningShowers:2,
+        leoMorning:{enabled:true,start:"06:45",weekdays:[1,2,3,4,5]},
+        noEveningWeekdays:[2],
+        weeklyPlan:{
+          "0":[{child:"Ambrose",start:"18:30",note:"Sunday evening shower after dinner"}],
+          "1":[{child:"Demitri",start:"18:00",note:"Monday shower"},{child:"Dolly",start:"18:20",note:"Monday shower"}],
+          "3":[{child:"Demitri",start:"17:00",note:"Before Dolly's dance"},{child:"Dolly",start:"19:00",note:"After dance"}],
+          "4":[{child:"Ambrose",start:"18:40",note:"After Food Fort; home around 6:30 PM"}]
+        }
+      };
+    }
     if(!p.gymRoutine||Number(p.gymRoutine.version||0)<3){
       p.gymRoutine={
         version:3,
@@ -240,7 +256,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -283,6 +299,28 @@
     return row;
   }
 
+  function lifeKidShowerRows(date){
+    const cfg=lifeEnsureSettings().kidShowerRoutine||{};
+    if(cfg.enabled===false)return [];
+    const wd=lifeWeekday(date),duration=Math.max(20,Number(cfg.durationMinutes||20)),rows=[],
+      leo=cfg.leoMorning||{},leoDays=Array.isArray(leo.weekdays)?leo.weekdays.map(Number):[];
+    if(leo.enabled!==false&&leoDays.includes(wd)){
+      const start=hmMinutes(leo.start)||405;
+      rows.push({templateKey:"kid-shower-leo",start:minutesHm(start),end:minutesHm(start+duration),
+        title:"Leo · morning shower",detail:"Leo prefers morning showers · "+duration+" minutes",icon:"♡"});
+    }
+    if(Array.isArray(cfg.noEveningWeekdays)&&cfg.noEveningWeekdays.map(Number).includes(wd))return rows;
+    const plan=cfg.weeklyPlan&&Array.isArray(cfg.weeklyPlan[String(wd)])?cfg.weeklyPlan[String(wd)]:[];
+    plan.slice(0,Math.max(1,Number(cfg.maxEveningShowers||2))).forEach(function(item){
+      const start=hmMinutes(item.start);
+      if(start===null||!item.child)return;
+      const key=String(item.child).toLowerCase().replace(/[^a-z0-9]+/g,"-");
+      rows.push({templateKey:"kid-shower-"+key,start:minutesHm(start),end:minutesHm(start+duration),
+        title:String(item.child)+" · shower",detail:[duration+" minutes",item.note].filter(Boolean).join(" · "),icon:"♡"});
+    });
+    return rows;
+  }
+
   const baseSuggestedBlocks=itinerarySuggestedBlocks;
   itinerarySuggestedBlocks=function(date){
     const meal=mealForDate(date),flow=Array.isArray(meal&&meal.dayFlowSteps)?meal.dayFlowSteps:[],
@@ -311,7 +349,7 @@
         });
       }
       if(x.templateKey==="chores"){
-        return Object.assign({},x,{title:"Kids chores + baths / showers"});
+        return Object.assign({},x,{title:"Kids chores"});
       }
       return x;
     });
@@ -364,6 +402,8 @@
       if(mid+30<=Math.min(dayEnd,14*60))add({templateKey:"midday-reset",start:minutesHm(mid),end:minutesHm(mid+30),
         title:"Lunch + midday reset",detail:"Eat · drink water · check the next appointment/task before moving on",icon:"◷"});
     }
+
+    lifeKidShowerRows(date).forEach(function(row){add(row)});
 
     const gym=p.gymRoutine||{},gymAlreadyScheduled=(state.events||[]).some(function(e){
       return e.date===date&&e.status!=="cancelled"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(e.title||""));
