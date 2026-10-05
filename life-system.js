@@ -315,6 +315,7 @@
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
       if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+20};
     }
+    if(x.templateKey==="chores")return {start:15*60,end:18*60+30};
     if(x.templateKey==="personal-care"){
       const care=p.personalCareRoutine||{},work=workForDate(date),actualEnd=hmMinutes(work&&work.end),
         workStart=hmMinutes(work&&(work.start||work.scheduled)),
@@ -368,7 +369,7 @@
       const weekdayStart=leo.startByWeekday&&leo.startByWeekday[String(wd)],
         start=hmMinutes(weekdayStart||leo.start)||405;
       rows.push({templateKey:"kid-shower-leo",start:minutesHm(start),end:minutesHm(start+duration),
-        title:"Leo · morning shower",detail:"Leo prefers morning showers · "+duration+" minutes",icon:"♡"});
+        title:"Leo · morning shower",detail:"Preferred shower time · "+duration+" minutes",subtasks:["Leo shower"],icon:"♡"});
     }
     if(Array.isArray(cfg.noEveningWeekdays)&&cfg.noEveningWeekdays.map(Number).includes(wd))return rows;
     const plan=cfg.weeklyPlan&&Array.isArray(cfg.weeklyPlan[String(wd)])?cfg.weeklyPlan[String(wd)]:[];
@@ -377,7 +378,8 @@
       if(start===null||!item.child)return;
       const key=String(item.child).toLowerCase().replace(/[^a-z0-9]+/g,"-");
       rows.push({templateKey:"kid-shower-"+key,start:minutesHm(start),end:minutesHm(start+duration),
-        title:String(item.child)+" · shower",detail:[duration+" minutes",item.note].filter(Boolean).join(" · "),icon:"♡"});
+        title:String(item.child)+" · shower",detail:[duration+" minutes",item.note].filter(Boolean).join(" · "),
+        subtasks:[String(item.child)+" shower"],icon:"♡"});
     });
     return rows;
   }
@@ -398,8 +400,10 @@
       p=lifeEnsureSettings(),base=baseSuggestedBlocks(date).filter(function(x){
       if(x.templateKey==="work-morning")return false;
       if(x.templateKey==="after-work")return false;
-      if(x.templateKey==="after-school-launch"&&earlyDinner)return false;
-      if(x.templateKey==="homework"&&earlyDinner&&busyEvening)return false;
+      // Daily clean-room/homework/reading items live inside Kids chores, so do not
+      // schedule a second homework or flexible after-school reset ahead of them.
+      if(x.templateKey==="after-school-launch")return false;
+      if(x.templateKey==="homework")return false;
       return true;
     }).map(function(x){
       if(x.templateKey==="wind-down"){
@@ -423,11 +427,11 @@
           }),
           subtasks=todays.map(function(c){return (c.child?c.child+": ":"")+String(c.chore||"Chore")}),
           refs=todays.map(function(c){return c.id});
-        if(lifeWeekday(date)===1){
-          return Object.assign({},x,{title:"Kids chores",start:"19:00",end:"19:40",
-            detail:"Daily basics + today’s rotating household jobs",subtasks:subtasks,subtaskRefs:refs});
-        }
-        return Object.assign({},x,{title:"Kids chores",detail:"Daily basics + today’s rotating household jobs",subtasks:subtasks,subtaskRefs:refs});
+        return Object.assign({},x,{
+          title:"Kids chores + homework",start:"15:30",end:"16:30",
+          detail:"Right after school: clean rooms, homework, reading, then today’s rotating household jobs. Fixed commitments can move this block later.",
+          subtasks:subtasks,subtaskRefs:refs
+        });
       }
       return x;
     });
