@@ -27,7 +27,7 @@
         version:1,
         enabled:true,
         weeklyGoal:2,
-        partner:"Yessie",
+        partner:"Yesi",
         place:"VASA Gym",
         windowStart:"11:30",
         windowEnd:"14:00",
@@ -220,7 +220,7 @@
   itineraryRoutineWindow=function(x,date){
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
     if(/^work-(hygiene|dress|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
-    if(x.templateKey==="gym-vasa-yessie")return {start:11*60+30,end:14*60};
+    if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
     if(x.templateKey==="morning-start")return {start:dayStart,end:Math.min(dayEnd,dayStart+90)};
     if(x.templateKey==="home-reset")return {start:Math.max(dayStart,8*60+30),end:Math.min(dayEnd,13*60)};
     if(x.templateKey==="midday-reset")return {start:11*60,end:Math.min(dayEnd,15*60)};
@@ -297,8 +297,8 @@
       let start=gStart;
       if(lifeWeekday(date)===1)start=Math.max(gStart,11*60+45);
       if(start+dur<=gEnd){
-        add({templateKey:"gym-vasa-yessie",start:minutesHm(start),end:minutesHm(start+dur),
-          title:"VASA Gym with Yessie",detail:"Weekly gym goal · at least 2 times this week · keep this between 11:30 AM and 2:00 PM",icon:"✦"});
+        add({templateKey:"gym-vasa-yesi",start:minutesHm(start),end:minutesHm(start+dur),
+          title:"VASA Gym with Yesi",detail:"Weekly gym goal · at least 2 times this week · keep this between 11:30 AM and 2:00 PM",icon:"✦"});
       }
     }
 
