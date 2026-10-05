@@ -294,7 +294,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
+    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -324,7 +324,7 @@
       }
       return {start:Math.max(dayStart,hmMinutes(care.offdayWindowStart)||14*60),end:Math.min(dayEnd,hmMinutes(care.offdayWindowEnd)||16*60)};
     }
-    if(/^monday-(kids-ready|water-school|self-ready)$/.test(String(x.templateKey||""))){
+    if(/^monday-(kids-ready|water-school|self-ready|stretch)$/.test(String(x.templateKey||""))){
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
       if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+15};
     }
@@ -485,6 +485,10 @@
           title:"Get yourself ready",
           detail:"Your getting-dressed block comes after the kids are moving",
           subtasks:["Get dressed","Brush teeth","Floss","Mouthwash","Wash face","Do hair","Deodorant","Perfume"],icon:"♡",allowParallel:true});
+        add({templateKey:"monday-stretch",start:"06:55",end:"07:00",
+          title:"Stretch + water",
+          detail:"Five-minute stretch before moving into the rest of the morning",
+          subtasks:["Stretch for 5 minutes","Drink some water"],icon:"✦"});
       }else{
         add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
           title:"Morning start + basics",detail:"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
