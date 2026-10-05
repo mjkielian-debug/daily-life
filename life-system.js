@@ -411,14 +411,23 @@
         });
       }
       if(x.templateKey==="chores"){
-        const todays=(state.chores||[]).filter(function(c){return c.date===date&&!c.done}),
+        const childOrder={leo:0,demitri:1,dolly:2,ambrose:3},
+          choreOrder={"clean room":0,"homework":1,"read 20 min":2,"laundry":3,"dishes":3,"counters":3,"floors":3},
+          todays=(state.chores||[]).filter(function(c){return c.date===date}).slice().sort(function(a,b){
+            const ac=childOrder[String(a.child||"").toLowerCase()]??99,
+              bc=childOrder[String(b.child||"").toLowerCase()]??99;
+            if(ac!==bc)return ac-bc;
+            const ao=choreOrder[String(a.chore||"").toLowerCase()]??50,
+              bo=choreOrder[String(b.chore||"").toLowerCase()]??50;
+            return ao-bo||String(a.chore||"").localeCompare(String(b.chore||""));
+          }),
           subtasks=todays.map(function(c){return (c.child?c.child+": ":"")+String(c.chore||"Chore")}),
           refs=todays.map(function(c){return c.id});
         if(lifeWeekday(date)===1){
           return Object.assign({},x,{title:"Kids chores",start:"19:00",end:"19:40",
-            detail:itineraryRoutineDetail(date,"chores","Family evening reset"),subtasks:subtasks,subtaskRefs:refs});
+            detail:"Daily basics + today’s rotating household jobs",subtasks:subtasks,subtaskRefs:refs});
         }
-        return Object.assign({},x,{title:"Kids chores",subtasks:subtasks,subtaskRefs:refs});
+        return Object.assign({},x,{title:"Kids chores",detail:"Daily basics + today’s rotating household jobs",subtasks:subtasks,subtaskRefs:refs});
       }
       return x;
     });
