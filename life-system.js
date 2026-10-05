@@ -26,6 +26,14 @@
       p.wakeByWeekday[1]="06:15";
       p.mondayStartFixVersion=1;
     }
+    if(Number(p.mondayOct5CleanupVersion||0)<1){
+      (state.events||[]).forEach(function(e){
+        if(e&&e.date==="2026-10-05"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(e.title||""))){
+          e.status="cancelled";
+        }
+      });
+      p.mondayOct5CleanupVersion=1;
+    }
     if(p.sleepTargetHours===undefined)p.sleepTargetHours=8;
     if(!p.personalCareRoutine||Number(p.personalCareRoutine.version||0)<1){
       p.personalCareRoutine={
@@ -173,7 +181,9 @@
     const w=workForDate(date),allowed=lifeIsWorkday(date)||lifeActualWork(date),
       confirmedOff=typeof isConfirmedWorkOffDate==="function"&&isConfirmedWorkOffDate(date);
     let rows=baseFixedItems(date).filter(function(x){
-      return x.source!=="work"||allowed;
+      if(x.source==="work"&&!allowed)return false;
+      if(date==="2026-10-05"&&x.source==="event"&&/vasa\s*gym.*yesi|gym.*yesi/i.test(String(x.title||"")))return false;
+      return true;
     }).map(function(x){
       if(x.source!=="work"||!x.endUnknown)return x;
       const start=hmMinutes(x.start);
@@ -271,6 +281,10 @@
     const p=lifeEnsureSettings(),dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date);
     if(/^work-(hygiene|dress|stretch|gather|commute)$/.test(String(x.templateKey||"")))return {start:dayStart,end:Math.min(dayEnd,hmMinutes((workForDate(date)||{}).start||(workForDate(date)||{}).scheduled)||dayEnd)};
     if(x.templateKey==="gym-vasa-yesi")return {start:11*60+30,end:14*60};
+    if(/^kid-shower-/.test(String(x.templateKey||""))){
+      const desired=hmMinutes(x.start),end=hmMinutes(x.end);
+      if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+20};
+    }
     if(x.templateKey==="personal-care"){
       const care=p.personalCareRoutine||{},work=workForDate(date),actualEnd=hmMinutes(work&&work.end),
         workStart=hmMinutes(work&&(work.start||work.scheduled)),
@@ -289,8 +303,15 @@
   function lifeRoutineApply(date,row,index){
     const wd=lifeWeekday(date),saved=(lifeEnsureSettings().routinePreferences||{})[wd+":"+row.templateKey]||null;
     if(saved&&saved.enabled===false)return null;
-    const start=saved&&saved.start?saved.start:row.start,
-      duration=Number(saved&&saved.durationMinutes||0),
+    let start=saved&&saved.start?saved.start:row.start;
+    const isKidShower=/^kid-shower-/.test(String(row.templateKey||"")),
+      isLeoShower=row.templateKey==="kid-shower-leo",
+      startMinutes=hmMinutes(start);
+    if(isKidShower&&wd>=1&&wd<=5&&startMinutes!==null){
+      const schoolHours=startMinutes>=7*60+15&&startMinutes<15*60+30;
+      if((!isLeoShower&&schoolHours)||(isLeoShower&&startMinutes>=7*60+15))start=row.start;
+    }
+    const duration=Number(saved&&saved.durationMinutes||0),
       end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved&&saved.end?saved.end:row.end);
     row.start=start;row.end=end;row.detail=saved&&saved.detail?saved.detail:row.detail;
     if(row.templateKey==="wind-down"){
