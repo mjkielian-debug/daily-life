@@ -67,18 +67,31 @@ function tarotRevealed(date){
  if(saved.revealed===undefined)return true;
  return saved.revealed===true;
 }
+let tarotRevealInFlight=false;
 async function revealTarot(date){
- date=date||ymd();ensureDailyTarotSaved(date);const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
- draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();
- let log=spiritualityLogFor(date);if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log)}
- log.tarot=true;
- // Update the visible card first so the tap never feels ignored.
- if(document.querySelector("#modal"))openSpiritualHubSection("tarot");else render();
- try{await save()}catch(error){
-   draw.revealed=false;draw.revealedAt="";
-   log.tarot=false;
-   if(document.querySelector("#modal"))openSpiritualHubSection("tarot");else render();
+ date=date||ymd();
+ if(tarotRevealInFlight)return;
+ ensureDailyTarotSaved(date);
+ const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
+ const before={revealed:draw.revealed,revealedAt:draw.revealedAt};
+ let log=spiritualityLogFor(date),createdLog=false,oldTarot=log?.tarot;
+ if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log);createdLog=true}
+ draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();log.tarot=true;
+ tarotRevealInFlight=true;
+ // Replace the existing modal body instead of opening a second modal with the same id.
+ const modalBody=document.querySelector("#modal .spirituality-hub-modal");
+ if(modalBody)modalBody.innerHTML=spiritualityTarotPanel();else render();
+ try{
+   await save();
+ }catch(error){
+   draw.revealed=before.revealed;draw.revealedAt=before.revealedAt;
+   if(createdLog)state.spiritualityPracticeLogs=state.spiritualityPracticeLogs.filter(x=>x!==log);
+   else if(log)log.tarot=oldTarot;
+   const body=document.querySelector("#modal .spirituality-hub-modal");
+   if(body)body.innerHTML=spiritualityTarotPanel();else render();
    alert("The card could not be saved on this device. Please try again.");
+ }finally{
+   tarotRevealInFlight=false;
  }
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
