@@ -190,11 +190,11 @@ function spiritualityView(m){
 }
 function spiritualityLaunchCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
- return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" onclick="closeModal();setView(\'spirituality\')">Open</button></div></div>'
+ return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" onclick="openSpiritualityPage()">Open</button></div></div>'
 }
 function todaySpiritualityCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),tarotLabel=tarotRevealed()?t.name:"card ready to reveal";
- return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" onclick="closeModal();setView(\'spirituality\')">Open</button></div><div class="muted small">'+esc(r.body)+'</div></div>'
+ return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" onclick="openSpiritualityPage()">Open</button></div><div class="spiritual-preview-text">'+esc(r.body)+'</div></div>'
 }
 
 function tarotArtwork(t){
