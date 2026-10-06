@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="week-pilot.css?v=20261003-week1">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
-<link rel="stylesheet" href="visual-density.css?v=20261005-clarity1">
+<link rel="stylesheet" href="visual-density.css?v=20261006-work1">
 <title>Daily Life</title>
 <style id="status-bar-root-tint">html{background:#e9b4d0!important;color-scheme:light}body{background-color:#e9b4d0}</style>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-clarity3";
+const APP_BUILD="2026.10.06-work1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -2832,6 +2832,10 @@ function dailyReviewExpected(date=ymd()){
   const rows=[];
   for(const t of (state.tasks||[]).filter(x=>x.date===date)){
     if(String(t.title||"").trim().toLowerCase()==="ups shift"&&typeof isUsualWorkday==="function"&&!isUsualWorkday(date)&&!(typeof workShiftHasActual==="function"&&workShiftHasActual(workForDate(date))))continue;
+    // Daily kid basics are already tracked as concrete per-child chore rows below.
+    // Skip broad duplicate task titles so review asks "Leo · Read 20 min", etc.,
+    // instead of vague catch-alls like "Everyone reading".
+    if(typeof itineraryIsDailyResetTask==="function"&&itineraryIsDailyResetTask(t))continue;
     const taskDetail=[String(t.notes||"").trim(),t.child,t.category].filter(Boolean).join(" · ");
     rows.push({kind:"task",key:t.id,label:t.title||"Task",group:"Tasks",detail:taskDetail,status:dailyReviewStatus("task",t.id,date)});
   }
@@ -4507,7 +4511,7 @@ function readingWheelCard(){
 }
 function readingTodayCard(){
   const rows=reads(),total=rows.reduce((n,x)=>n+Number(x.pages||0),0);
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Today</div><h2>${total} pages logged</h2></div><button class="btn primary" onclick="openReadingChooser()">+ Pages</button></div>${rows.map(x=>`<div class="row"><span><b>${esc(x.reader)}</b><div class="muted small">${x.book?esc(x.book):"Book not entered"}</div></span><b>${Number(x.pages||0)} pages</b></div>`).join("")||`<div class="notice">No reading logged yet today.</div>`}</div>`;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Today</div><h2>${total} pages logged</h2></div><button class="btn primary" onclick="openReadingChooser()">+ Pages</button></div>${rows.map(x=>`<button type="button" class="reading-log-row" onclick="openReading('${esc(String(x.reader||""))}','${esc(String(x.id||""))}')"><span><b>${esc(x.reader)}</b><small>${x.book?esc(x.book):"Book not entered"}</small></span><span class="reading-log-pages"><b>${Number(x.pages||0)} pages</b><small>Edit ›</small></span></button>`).join("")||`<div class="notice">No reading logged yet today.</div>`}</div>`;
 }
 function readingMonthCard(){
   const month=ymd().slice(0,7),logs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
@@ -4527,7 +4531,7 @@ function readingBooksCard(){
 }
 function readingHistoryCard(){
   const rows=[...(state.readingLogs||[])].sort((a,b)=>(String(b.date||"")+String(b.id||"")).localeCompare(String(a.date||"")+String(a.id||""))).slice(0,24);
-  return `<div class="card"><div class="eyebrow">Recent reading</div><h2>Latest logs</h2>${rows.map(x=>`<div class="row"><span><b>${esc(x.reader)}</b><div class="muted small">${esc(dl(x.date))}${x.book?" · "+esc(x.book):""}</div></span><b>${Number(x.pages||0)} pages</b></div>`).join("")||`<div class="notice">No reading logged yet.</div>`}</div>`;
+  return `<div class="card"><div class="eyebrow">Recent reading</div><h2>Latest logs</h2>${rows.map(x=>`<button type="button" class="reading-log-row" onclick="openReading('${esc(String(x.reader||""))}','${esc(String(x.id||""))}')"><span><b>${esc(x.reader)}</b><small>${esc(dl(x.date))}${x.book?" · "+esc(x.book):""}</small></span><span class="reading-log-pages"><b>${Number(x.pages||0)} pages</b><small>Edit ›</small></span></button>`).join("")||`<div class="notice">No reading logged yet.</div>`}</div>`;
 }
 function readingPatternCard(){
   const dates=trendDates(7),rows=dates.map(d=>({date:d,pages:(state.readingLogs||[]).filter(x=>x.date===d).reduce((n,x)=>n+Number(x.pages||0),0)})),
@@ -5742,7 +5746,34 @@ async function removeTireLog(id){
   state.tireLogs=(state.tireLogs||[]).filter(x=>x.id!==id);
   await save();closeModal();render();
 }
-function openReading(reader){modal(`Reading · ${reader}`,`<div class="stack"><label>Book<input id="rb"></label><label>Starting page<input id="rs" type="number"></label><label>Ending page<input id="re" type="number"></label><label>Pages read (optional override)<input id="rp" type="number"></label><label>Minutes<input id="rm" type="number"></label></div>`,"Save",async()=>{const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),pages=manual||(end>start?end-start:0),minutes=Number($("#rm").value||0),book=$("#rb").value.trim(),date=ymd();if(!pages)return;const duplicate=(state.readingLogs||[]).find(x=>x.date===date&&String(x.reader||"").trim().toLowerCase()===String(reader||"").trim().toLowerCase()&&String(x.book||"").trim().toLowerCase()===book.toLowerCase()&&Number(x.start||0)===start&&Number(x.end||0)===end&&Number(x.pages||0)===pages&&Number(x.minutes||0)===minutes);if(!duplicate)state.readingLogs.push({id:uid(),date,reader,book,start,end,pages,minutes});await save();closeModal();render()})}
+function openReading(reader,id=""){
+  const existing=(state.readingLogs||[]).find(x=>String(x.id||"")===String(id||""))||null,
+        x=existing||{id:"",date:ymd(),reader,book:"",start:"",end:"",pages:"",minutes:""};
+  modal(existing?`Edit reading · ${x.reader||reader}`:`Reading · ${reader}`,`<div class="stack reading-editor">
+    <div class="grid2"><label>Date<input id="rdate" type="date" value="${esc(x.date||ymd())}"></label><label>Reader<input id="rreader" value="${esc(x.reader||reader||"")}"></label></div>
+    <label>Book<input id="rb" value="${esc(x.book||"")}"></label>
+    <div class="grid2"><label>Starting page<input id="rs" type="number" value="${esc(x.start??"")}"></label><label>Ending page<input id="re" type="number" value="${esc(x.end??"")}"></label></div>
+    <div class="grid2"><label>Pages read<input id="rp" type="number" min="1" value="${esc(x.pages??"")}"></label><label>Minutes<input id="rm" type="number" min="0" value="${esc(x.minutes??"")}"></label></div>
+    ${existing?`<button type="button" class="btn danger" onclick="removeReadingLog('${x.id}')">Delete this reading log</button>`:""}
+  </div>`,"Save",async()=>{
+    const start=Number($("#rs").value||0),end=Number($("#re").value||0),manual=Number($("#rp").value||0),
+          pages=manual||(end>start?end-start:0),minutes=Number($("#rm").value||0),book=$("#rb").value.trim(),
+          date=$("#rdate").value||ymd(),nextReader=$("#rreader").value.trim()||reader;
+    if(!pages||!nextReader)return;
+    const duplicate=(state.readingLogs||[]).find(v=>String(v.id||"")!==String(id||"")&&v.date===date&&String(v.reader||"").trim().toLowerCase()===nextReader.toLowerCase()&&String(v.book||"").trim().toLowerCase()===book.toLowerCase()&&Number(v.start||0)===start&&Number(v.end||0)===end&&Number(v.pages||0)===pages&&Number(v.minutes||0)===minutes);
+    if(duplicate){alert("That exact reading log is already saved.");return}
+    let row=existing;
+    if(!row){row={id:uid()};state.readingLogs.push(row)}
+    Object.assign(row,{date,reader:nextReader,book,start,end,pages,minutes});
+    await save();closeModal();render();
+  })
+}
+async function removeReadingLog(id){
+  const row=(state.readingLogs||[]).find(x=>String(x.id||"")===String(id||""));if(!row)return;
+  if(!confirm(`Delete ${row.reader||"this reader"} · ${row.book||"reading log"} · ${Number(row.pages||0)} pages?`))return;
+  state.readingLogs=(state.readingLogs||[]).filter(x=>String(x.id||"")!==String(id||""));
+  await save();closeModal();render();
+}
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
 async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(!x)return;x.done=d;if(d)dailyReviewSet("chore",id,x.date||ymd(),"yes",x.chore||"Chore","Chores + routines");else dailyReviewClear("chore",id,x.date||ymd());await save();render()}
 async function requestMealSuggestion(date){
@@ -6579,7 +6610,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-clarity3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
