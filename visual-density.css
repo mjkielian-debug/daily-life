@@ -1327,3 +1327,26 @@ button.food-week-day{
 .life-wheel-center:active{
   transform:scale(.98);
 }
+
+
+/* Oct 6: readable wheel centers on phone */
+.life-wheel-center>strong,
+.life-wheel-center>small{
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical;
+}
+.life-wheel-center>strong{
+  max-width:17ch!important;
+  -webkit-line-clamp:2;
+  line-clamp:2;
+  line-height:1.12!important;
+}
+.life-wheel-center>small{
+  max-width:21ch!important;
+  -webkit-line-clamp:2;
+  line-clamp:2;
+  line-height:1.12!important;
+}
