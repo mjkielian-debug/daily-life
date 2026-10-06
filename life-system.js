@@ -63,11 +63,16 @@
         subtasks:["Drive home","Shower","Dry off","Lotion","Face moisturizer","Deodorant","Hair","Put on clean clothes"]
       });
     }
-    if(!p.schoolPickupRoutine||Number(p.schoolPickupRoutine.version||0)<1){
-      p.schoolPickupRoutine={
-        version:1,enabled:true,weekdays:[1,2,3,4,5],
+    if(!p.schoolPickupRoutine||Number(p.schoolPickupRoutine.version||0)<2){
+      p.schoolPickupRoutine=Object.assign({
+        enabled:true,weekdays:[1,2,3,4,5],
         leaveHome:"14:40",park:"14:45",pickup:"14:52",end:"15:00"
-      };
+      },p.schoolPickupRoutine||{},{
+        version:2,
+        leoPickupAfterYounger:true,
+        leoPickupEnd:(p.schoolPickupRoutine&&p.schoolPickupRoutine.leoPickupEnd)||"15:15",
+        skipLeoForAfterSchoolActivity:true
+      });
     }
     if(!p.schoolMorningTransport||Number(p.schoolMorningTransport.version||0)<3){
       p.schoolMorningTransport={
@@ -333,9 +338,27 @@
         if(leave!==null&&park!==null)rows.push({id:"school-pickup-drive:"+date,start:minutesHm(leave),end:minutesHm(park),
           title:"Drive to school pickup",detail:"Leave home at "+fmtClock(minutesHm(leave)),fixed:true,kind:"event",icon:"🚗",source:"generated"});
         if(park!==null&&pick!==null)rows.push({id:"school-pickup-wait:"+date,start:minutesHm(park),end:minutesHm(pick),
-          title:"Park + wait for kids",detail:"Park around "+fmtClock(minutesHm(park))+" · kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"◷",source:"generated"});
+          title:"Park + wait for younger kids",detail:"Park around "+fmtClock(minutesHm(park))+" · Demitri, Dolly + Ambrose out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"◷",source:"generated"});
         if(pick!==null&&end!==null)rows.push({id:"school-pickup:"+date,start:minutesHm(pick),end:minutesHm(end),
-          title:"School pickup",detail:"Kids out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
+          title:"Pick up Demitri, Dolly + Ambrose",detail:"Younger three out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
+
+        const leoAfterSchool=(state.events||[]).some(function(e){
+          if(!e||e.date!==date||["cancelled","paused"].includes(String(e.status||"")))return false;
+          const text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" "),
+            start=hmMinutes(e.startTime);
+          return /\bleo\b/i.test(text)&&start!==null&&start>=14*60+30&&start<=17*60&&
+            /herpetology|dungeons|d\s*&\s*d|club|after[- ]?school|rehearsal|practice|activity/i.test(text);
+        });
+        if(pickup.leoPickupAfterYounger!==false&&!(pickup.skipLeoForAfterSchoolActivity!==false&&leoAfterSchool)){
+          const leoStart=hmMinutes(pickup.leoPickupStart||pickup.end||"15:00"),
+            leoEnd=hmMinutes(pickup.leoPickupEnd||"15:15");
+          if(leoStart!==null&&leoEnd!==null&&leoEnd>leoStart)rows.push({
+            id:"leo-school-pickup:"+date,start:minutesHm(leoStart),end:minutesHm(leoEnd),
+            title:"Pick up Leo",
+            detail:"After picking up Demitri, Dolly + Ambrose · skipped automatically when Leo has an after-school club/activity",
+            fixed:true,kind:"event",icon:"🚗",source:"generated"
+          });
+        }
       }
     }
     if(wd===1){
