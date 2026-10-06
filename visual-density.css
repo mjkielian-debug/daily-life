@@ -1270,8 +1270,11 @@ button.food-week-day{
 
 
 /* Oct 6: wheel status cues across dashboards */
-.life-wheel-segment{
-  position:relative;
+/* Segments are absolutely positioned wedges in life-orchestrator.css.
+   Do not change their positioning here; doing so collapses the visible wheel. */
+.life-wheel .life-wheel-segment{
+  position:absolute!important;
+  inset:-1px!important;
 }
 .life-wheel-segment.needs-attention::after,
 .life-wheel-segment.is-clear::after,
