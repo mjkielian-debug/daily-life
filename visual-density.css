@@ -744,3 +744,38 @@ button.food-week-day{
 .spirituality-hub-modal .tarot-copy b{
   color:#2d2138!important;
 }
+
+
+/* Compact money-plan modal */
+.budget-hub-modal .budget-income-compact{padding-top:12px!important}
+.budget-income-row{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  border:0;
+  border-top:1px solid #b989a5;
+  background:transparent;
+  color:#292039;
+  text-align:left;
+  padding:9px 0;
+  font:inherit;
+}
+.budget-income-row>span{display:grid;gap:2px;min-width:0}
+.budget-income-row small{color:#4b4059!important;font-size:.7rem!important}
+.budget-income-row>b{white-space:nowrap}
+.budget-hub-modal .savings-lab>summary{
+  color:#292039!important;
+}
+.budget-hub-modal .savings-lab>summary small,
+.budget-hub-modal .savings-lab>summary>span:last-child{
+  color:#4b4059!important;
+  opacity:1!important;
+}
+.budget-hub-modal .money-coach-primary p,
+.budget-hub-modal .coach-mini-warning span,
+.budget-hub-modal .money-coach-snapshot small,
+.budget-hub-modal .money-coach-detail-body{
+  color:#4b4059!important;
+}
