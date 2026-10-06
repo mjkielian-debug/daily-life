@@ -269,54 +269,107 @@ function budgetCoachTransferIssues(x){
   return `<div class="coach-transfer-review"><b>Check before transferring</b>${x.transferIssues.map(issue=>`<div class="muted small">• ${esc(issue)}</div>`).join("")}<button class="btn small" type="button" onclick="setView('more');setMoneyTab('accounts')">Review accounts</button></div>`;
 }
 
+function budgetCoachPrimaryAction(x,goalPlan){
+  const safe=Number(x.safe.safe||0);
+  if(safe<0)return{
+    tone:"stop",kicker:"Protect bills first",title:"Pause optional spending",
+    detail:`The entered plan is short ${money(Math.abs(safe))} after bill reserves and cushion.`,
+    button:"Review bills",action:"closeModal();setView('more');openMoneyHubSection('bills')"
+  };
+
+  const movableSources=(x.sourceRows||[]).filter(r=>r.amount>0),
+        needsFloor=movableSources.find(r=>r.needsFloor),
+        stale=movableSources.find(r=>r.staleSynced||r.missingSyncDate);
+  if(x.target&&x.movable>0&&x.transferConfidence!=="ready"){
+    if(needsFloor)return{
+      tone:"review",kicker:"Do this before any transfer",
+      title:`Set ${needsFloor.account.name||"checking"} minimum balance`,
+      detail:`Then re-check the suggested ${money(x.movable)} move to ${x.target.name||"savings"}.`,
+      button:"Review accounts",action:"closeModal();setView('more');openMoneyHubSection('accounts')"
+    };
+    if(stale)return{
+      tone:"review",kicker:"Do this before any transfer",title:"Refresh checking balances",
+      detail:`Then re-check the suggested ${money(x.movable)} move to ${x.target.name||"savings"}.`,
+      button:"Review accounts",action:"closeModal();setView('more');openMoneyHubSection('accounts')"
+    };
+    return{
+      tone:"review",kicker:"Do this before any transfer",title:"Review account setup",
+      detail:`Do not move the suggested ${money(x.movable)} yet; one or more setup checks are unresolved.`,
+      button:"Review accounts",action:"closeModal();setView('more');openMoneyHubSection('accounts')"
+    };
+  }
+
+  if(x.over?.length){
+    const r=x.over[0];
+    return{tone:"watch",kicker:"Spending",title:`Pause ${r.cat.name} extras`,detail:`This category is ${money(Math.abs(r.left)/100)} over its monthly limit.`,button:"Open categories",action:"closeModal();setView('budget');openBudgetHubSection('categories')"};
+  }
+  if(x.target&&x.movable>0&&x.transferConfidence==="ready"){
+    return{tone:"go",kicker:"Money move",title:`Move up to ${money(x.movable)} → ${x.target.name||"savings"}`,detail:"Checking stays above the entered 45-day bill needs and operating floors.",button:"See transfer details",action:"const d=document.getElementById('moneyCoachTransferDetails');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'nearest'})}"};
+  }
+  if(goalPlan.allocations?.length){
+    const first=goalPlan.allocations[0];
+    return{tone:"go",kicker:"Next dollars",title:`Assign ${money(first.amount)} to ${first.goal.name||"your top savings goal"}`,detail:"This is currently safe and unassigned in the monthly plan.",button:"Open savings goals",action:"closeModal();setView('more');openMoneyHubSection('savings')"};
+  }
+  if(!x.target){
+    return{tone:"review",kicker:"Setup",title:"Choose your preferred savings account",detail:"Then Daily Life can tell you where extra checking cash should live.",button:"Review accounts",action:"closeModal();setView('more');openMoneyHubSection('accounts')"};
+  }
+  return{tone:"clear",kicker:"Right now",title:"No money move needed",detail:"Nothing urgent is showing from the information currently entered.",button:"Review bills",action:"closeModal();setView('more');openMoneyHubSection('bills')"};
+}
+
 function budgetCoachCard(){
-  const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x);
-  const targetName=x.target?esc(x.target.name||"preferred savings"):"your preferred savings account";
-  const setupWarning=x.safe.incomplete
-    ? `<div class="notice"><b>Some bill setup is incomplete.</b><div class="muted small">Treat these recommendations as provisional until missing accounts, balances, amounts, or due dates are fixed.</div></div>`
-    :"";
-  const transferReady=x.transferConfidence==="ready";
-  const transferHeadline=!x.target
-    ?"Choose a preferred savings account"
-    :x.movable>0
-      ?transferReady?`${money(x.movable)} can stay working harder`:`Review before moving ${money(x.movable)}`
-      :"No transfer needed right now";
-  const transferBody=!x.target
-    ?`Mark one savings account as <b>Interest-first savings</b> so Daily Life knows where extra cash should live.`
-    :x.movable>0
-      ?transferReady
-        ?`Based on the balances, entered bills, expected income assigned to each account, and each checking account's operating floor, up to <b>${money(x.movable)}</b> appears movable to <b>${targetName}</b> without draining the checking accounts that need to pay upcoming bills.`
-        :`Daily Life found up to <b>${money(x.movable)}</b> above the entered 45-day checking needs, but it is treating that as a review amount—not a ready-to-transfer amount—until the checks below are resolved.`
-      :`Your checking accounts do not currently show extra cash above their near-term bill needs and operating floors.`;
+  const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x),primary=budgetCoachPrimaryAction(x,goalPlan),
+        transferReady=x.transferConfidence==="ready",
+        transferLabel=x.movable>0?(transferReady?money(x.movable)+" ready":money(x.movable)+" review"):"None",
+        targetName=x.target?x.target.name||"preferred savings":"preferred savings",
+        trim=x.over.length
+          ?`<div class="coach-compact-row"><span>Category over plan</span><b>${esc(x.over[0].cat.name)} · ${money(Math.abs(x.over[0].left)/100)}</b></div>`
+          :"",
+        setupWarning=x.safe.incomplete
+          ?`<div class="coach-mini-warning"><b>Some bill/account setup is incomplete.</b><span>Amounts can change until that setup is finished.</span></div>`
+          :"";
 
-  const guardrailNote=x.guardrailUsesCategories
-    ?`Based on your assigned flexible categories, not every unassigned dollar. ${x.unassignedPlanCash>0?money(x.unassignedPlanCash)+" is still unassigned and stays outside these spending guardrails.":"Unassigned money is kept outside the spending pace."}`
-    :"No flexible category limits are set yet, so the pace falls back to remaining monthly cash after entered bills/spending.";
-  const spendStatus=Number(x.safe.safe||0)<0
-    ?`<div class="warning"><b>Hold optional spending for now.</b> The current entered cash picture is short by ${money(Math.abs(Number(x.safe.safe||0)))} after bill reserves and the budget cushion.</div>`
-    :`<div class="coach-guardrails"><span><small>Flexible plan today</small><b>${money(x.todayGuardrail)}</b></span><span><small>Flexible plan this week</small><b>${money(x.weekGuardrail)}</b></span><span><small>Safe cash ceiling</small><b>${money(Number(x.safe.safe||0))}</b></span></div><div class="muted small coach-guardrail-note">${esc(guardrailNote)}</div>`;
-
-  const trim=x.over.length
-    ?`<div class="coach-subsection"><b>Where the plan is already tight</b>${x.over.slice(0,3).map(r=>`<div class="row"><span>${esc(r.cat.name)}</span><b class="budget-negative">${money(Math.abs(r.left)/100)} over</b></div>`).join("")}</div>`
-    :"";
-
-  const repeat=x.repeats.length
-    ?`<details class="compact-more"><summary>Repeat-purchase savings checks</summary><div class="coach-subsection">${x.repeats.map(r=>`<div class="money-action"><div class="money-action-mark">↻</div><div class="grow"><b>${esc(r.name)}</b><div class="muted small">${esc(budgetCoachRepeatDetail(r))}</div><div class="muted small">${r.cadenceStable?`Cadence looks fairly consistent${r.nextLikelyDate?` · another purchase may be due around ${esc(dl(r.nextLikelyDate))}`:""}. This is a stronger candidate for a subscription/unit-price comparison.`:`There is not enough consistent timing yet to assume a subscription schedule. Compare the math, but keep flexibility.`}</div></div><span class="tag">${r.cadenceStable?"steady":"watch"}</span></div>`).join("")}</div></details>`
-    :`<div class="muted small">As repeat purchases build up in spending history, Daily Life can flag candidates worth comparing for bulk, store-brand, or subscription savings.</div>`;
-
-  return `<div class="card budget-coach-card">
-    <div class="section-title"><div><div class="eyebrow">✦ Money coach</div><h2>What to do with the money next</h2><div class="muted small">Guidance from the information currently entered in Daily Life. It does not move money automatically.</div></div><span class="tag">${x.safe.incomplete?"provisional":"bill-aware"}</span></div>
-    ${spendStatus}
-    <div class="coach-subsection"><div class="eyebrow">Do this next</div><h3>Recommended order</h3>${budgetCoachActionList(x,goalPlan)}</div>
-    ${budgetCoachNextDollars(x,goalPlan)}\n    ${budgetCoachFutureBillsSection(x)}\n    <div class="coach-subsection"><div class="section-title"><div><div class="eyebrow">Move to savings</div><h3>${transferHeadline}</h3></div>${x.target?`<span class="tag">${targetName}</span>`:""}</div>
-      <p class="small">${transferBody}</p>
-      ${x.target?budgetCoachTransferRows(x):`<button class="btn" type="button" onclick="setView('more');setMoneyTab('accounts')">Set account strategy</button>`}
-      ${budgetCoachTransferIssues(x)}
-      ${x.target&&x.movable>0?`<div class="notice"><b>Transfer suggestion, not spendable money.</b><div class="muted small">Moving cash between your own checking and savings does not increase what is safe to spend. Re-check after large purchases, bill payments, or balance updates.</div></div>`:""}
+  return `<div class="card budget-coach-card budget-coach-compact">
+    <div class="money-coach-heading">
+      <div><div class="eyebrow">✦ Money coach</div><h2>What should I do?</h2></div>
+      <span class="tag">${x.safe.incomplete?"needs setup":"bill-aware"}</span>
     </div>
+
+    <div class="money-coach-primary ${primary.tone}">
+      <div class="eyebrow">${esc(primary.kicker)}</div>
+      <h3>${esc(primary.title)}</h3>
+      <p>${esc(primary.detail)}</p>
+      <button class="btn primary" type="button" onclick="${primary.action}">${esc(primary.button)}</button>
+    </div>
+
+    <div class="money-coach-snapshot" aria-label="Money snapshot">
+      <span><small>Flexible today</small><b>${money(x.todayGuardrail)}</b></span>
+      <span><small>This week</small><b>${money(x.weekGuardrail)}</b></span>
+      <span><small>Possible transfer</small><b>${esc(transferLabel)}</b></span>
+    </div>
+
     ${trim}
-    <div class="coach-subsection"><div class="eyebrow">Save on repeat purchases</div><h3>Check the math before subscribing</h3>${repeat}</div>
     ${setupWarning}
+
+    <details class="money-coach-details" id="moneyCoachTransferDetails">
+      <summary>Transfer details</summary>
+      <div class="money-coach-detail-body">
+        ${x.movable>0
+          ?`<p><b>${transferReady?"Transfer looks ready":"Do not transfer yet"}.</b> ${transferReady?`Up to ${money(x.movable)} appears movable to ${esc(targetName)}.`:`Daily Life found ${money(x.movable)} of possible excess checking cash, but the checks below need attention first.`}</p>`
+          :`<p>No checking account currently shows extra cash above its entered near-term bill needs and operating floor.</p>`}
+        ${x.target?budgetCoachTransferRows(x):`<button class="btn small" type="button" onclick="closeModal();setView('more');openMoneyHubSection('accounts')">Set account strategy</button>`}
+        ${budgetCoachTransferIssues(x)}
+      </div>
+    </details>
+
+    <details class="money-coach-details">
+      <summary>Planning details</summary>
+      <div class="money-coach-detail-body">
+        <div class="coach-compact-row"><span>Safe cash ceiling</span><b>${money(Math.max(0,Number(x.safe.safe||0)))}</b></div>
+        <div class="coach-compact-row"><span>Unassigned monthly plan</span><b>${money(Math.max(0,Number(x.unassignedPlanCash||0)))}</b></div>
+        ${goalPlan.allocations?.length?`<div class="coach-compact-row"><span>Next savings goal</span><b>${esc(goalPlan.allocations[0].goal.name||"Savings goal")} · ${money(goalPlan.allocations[0].amount)}</b></div>`:""}
+        ${budgetCoachFutureBillsSection(x)}
+      </div>
+    </details>
   </div>`;
 }
 
@@ -340,6 +393,40 @@ function budgetCoachCard(){
     .coach-plan-row>span{min-width:0}
     .coach-plan-row>b{white-space:nowrap}
     @media(max-width:520px){.coach-guardrails{grid-template-columns:1fr}.coach-guardrails span{display:flex;align-items:center;justify-content:space-between;gap:12px}}
+  `;
+  document.head.appendChild(style);
+})();
+
+(function budgetCoachCompactStyles(){
+  if(document.getElementById("budgetCoachCompactStyles"))return;
+  const style=document.createElement("style");
+  style.id="budgetCoachCompactStyles";
+  style.textContent=`
+    .budget-coach-compact{gap:12px!important}
+    .money-coach-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .money-coach-heading h2{margin:2px 0 0;font-size:1.3rem}
+    .money-coach-primary{display:grid;gap:5px;padding:14px;border:1px solid var(--border);border-radius:20px;background:rgba(255,255,255,.36)}
+    .money-coach-primary h3{margin:0;font-family:var(--font-heading);font-size:1.18rem;line-height:1.18}
+    .money-coach-primary p{margin:2px 0 5px;font-size:.82rem;line-height:1.4;color:var(--muted)}
+    .money-coach-primary .btn{justify-self:start}
+    .money-coach-primary.review{border-color:color-mix(in srgb,var(--accent) 48%,var(--border));background:color-mix(in srgb,var(--accent) 12%,rgba(255,255,255,.35))}
+    .money-coach-primary.go{border-color:color-mix(in srgb,var(--primary) 48%,var(--border));background:color-mix(in srgb,var(--primary) 12%,rgba(255,255,255,.35))}
+    .money-coach-primary.stop{border-color:color-mix(in srgb,var(--danger) 48%,var(--border));background:color-mix(in srgb,var(--danger) 9%,rgba(255,255,255,.35))}
+    .money-coach-snapshot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+    .money-coach-snapshot span{display:grid;gap:3px;padding:9px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.28);min-width:0}
+    .money-coach-snapshot small{font-size:.62rem;color:var(--muted);line-height:1.2}
+    .money-coach-snapshot b{font-size:.9rem;overflow-wrap:anywhere}
+    .coach-compact-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:.76rem}
+    .coach-compact-row b{text-align:right}
+    .coach-mini-warning{display:grid;gap:2px;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.32);font-size:.72rem}
+    .coach-mini-warning span{color:var(--muted)}
+    .money-coach-details{border-top:1px solid var(--border)}
+    .money-coach-details>summary{min-height:42px;display:flex;align-items:center;cursor:pointer;font-weight:850;font-size:.78rem}
+    .money-coach-detail-body{padding:0 0 9px;display:grid;gap:7px}
+    .money-coach-detail-body p{margin:0;font-size:.76rem;line-height:1.4}
+    .money-coach-detail-body .row{font-size:.74rem}
+    @media(max-width:520px){.money-coach-snapshot{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:390px){.money-coach-snapshot{grid-template-columns:1fr}.money-coach-snapshot span{display:flex;justify-content:space-between;align-items:center}}
   `;
   document.head.appendChild(style);
 })();
