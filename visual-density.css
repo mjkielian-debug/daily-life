@@ -695,3 +695,52 @@ button.food-week-day{
     max-width:78px;
   }
 }
+
+
+/* Spirituality modal readability + interactive tarot */
+.spirituality-hub-modal .daily-reading-card{
+  background:linear-gradient(135deg,#f5b7cf 0%,#f7d9df 52%,#cfe5bd 100%)!important;
+  color:#2d2138!important;
+}
+.spirituality-hub-modal .daily-reading-card .eyebrow,
+.spirituality-hub-modal .daily-reading-card h2,
+.spirituality-hub-modal .daily-reading-card .spiritual-reading-text,
+.spirituality-hub-modal .daily-reading-card .spiritual-practice-line b,
+.spirituality-hub-modal .daily-reading-card .spiritual-practice-line span{
+  color:#2d2138!important;
+  text-shadow:none!important;
+}
+.spirituality-hub-modal .daily-reading-card .spiritual-reading-text{
+  font-family:var(--font-body)!important;
+  font-size:1rem!important;
+  line-height:1.55!important;
+  font-weight:700!important;
+  margin:12px 0!important;
+}
+.spirituality-hub-modal .daily-reading-card .spiritual-practice-line{
+  background:rgba(255,255,255,.48)!important;
+  border-color:#ae7a9a!important;
+}
+.spirituality-hub-modal .tarot-card-back{
+  color:#fff8f2!important;
+}
+.spirituality-hub-modal .tarot-card-back b{
+  color:#fff8f2!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.5)!important;
+  font-size:1.12rem!important;
+}
+.spirituality-hub-modal .tarot-card-back small{
+  color:#f3dfe8!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45)!important;
+}
+.spirituality-hub-modal .tarot-card-back .tarot-symbol{
+  color:#fff8f2!important;
+}
+.spirituality-hub-modal .tarot-card-back .tarot-stars{
+  color:#d7e9b5!important;
+}
+.spirituality-hub-modal .tarot-copy,
+.spirituality-hub-modal .tarot-copy p,
+.spirituality-hub-modal .tarot-copy b{
+  color:#2d2138!important;
+}
