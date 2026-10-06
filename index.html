@@ -6563,7 +6563,7 @@ function applyOct6PlanCorrections(){
   return changed;
 }
 
-async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);cleanupNoRecipeMeals();await queueMissingMealRecipes();applyReadingLogCorrections();applyOct6PlanCorrections();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
