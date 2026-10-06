@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.06-work6";
+const APP_BUILD="2026.10.06-work7";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -397,7 +397,7 @@ const ITINERARY_ROUTINES=[
   ["work-morning","Wake + get ready for work"],["after-work","Eat + reset after work"],
   ["after-school-launch","Snack + after-school reset"],["homework","Homework + reading"],
   ["meal-prep","Active meal prep"],["dinner","Dinner + kitchen reset"],
-  ["chores","Chores + showers / baths"],["tomorrow-prep","Set tomorrow up"],["wind-down","Wind down + bedtime"]
+  ["chores","Chores + showers / baths"],["tomorrow-prep","Tomorrow prep · clothes + bags + keys"],["wind-down","Teeth + face + pajamas + electronics"]
 ];
 function itineraryDayStart(date){
   const prefs=state.settings?.itinerary||{},weekday=new Date(date+"T12:00:00").getDay();
@@ -629,9 +629,9 @@ function itinerarySuggestedBlocks(date){
         tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),mealPrep=tomorrowMealPrepOutstanding(tm),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00"),
         prepEnd=windDownStart,prepStart=Math.max(17*60,prepEnd-30);
   if(mealPrep.length||early.length){
-    if(prepEnd-prepStart>=15)add({templateKey:"tomorrow-prep",start:minutesHm(prepStart),end:minutesHm(prepEnd),title:"Set tomorrow up",detail:[mealPrep.join(" · "),early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
+    if(prepEnd-prepStart>=15)add({templateKey:"tomorrow-prep",start:minutesHm(prepStart),end:minutesHm(prepEnd),title:"Tomorrow prep · clothes + bags + keys",detail:[mealPrep.join(" · "),early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
   }
-  if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:"Wind down + get ready for bed",detail:[kids.length?"Settle the house / kids":"Settle the house",sleepPlan.wake?"Bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
+  if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:"Teeth + face + pajamas + electronics",detail:[kids.length?"Collect electronics + settle kids":"Settle the house","Plug in phone + set alarm",sleepPlan.wake?"Bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
   const prefs=state.settings?.itinerary?.routinePreferences||{};
   return out.filter(x=>prefs[weekday+":"+x.templateKey]?.enabled!==false).map((x,i)=>{
     const saved=prefs[weekday+":"+x.templateKey]||null,start=saved?.start||x.start,duration=Number(saved?.durationMinutes||0),end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved?.end||x.end);
@@ -6639,7 +6639,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work6");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work7");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6663,7 +6663,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
-<script src="life-system.js?v=20261006-specific1"></script>
+<script src="life-system.js?v=20261006-specific2"></script>
 <script src="life-orchestrator.js?v=20261006-taskclean1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
