@@ -877,11 +877,12 @@
       return task||null;
     }
     function fallbackTask(cursor,minutes){
-      if(cursor<10*60)return {title:"Quick morning reset",detail:"Put away visible clutter · refill what you need · clear one small surface"};
-      if(cursor<12*60)return {title:"Life admin catch-up",detail:"Handle one small school, household, account, form, or message loose end"};
-      if(cursor<15*60)return {title:"Quick home reset",detail:"Put away items that already have a home · clear one visible area"};
-      if(cursor<18*60)return {title:"Prep for the next commitment",detail:"Bags, keys, water, papers, clothes, and anything that needs to leave with you"};
-      return {title:"Evening reset",detail:"Kitchen / living-area pickup · set up the next thing you need"};
+      // Keep filler blocks concrete enough that the title itself tells you what to do.
+      if(cursor<10*60)return {title:"Put away clutter + clear one surface",detail:"Put away visible clutter · refill what you need · clear one small surface"};
+      if(cursor<12*60)return {title:"Finish one school / house / account loose end",detail:"Choose one real unfinished form, message, order, school item, account check, or household admin item"};
+      if(cursor<15*60)return {title:"Put away out-of-place items + clear one area",detail:"Return items that already have a home · clear one visible area"};
+      if(cursor<18*60)return {title:"Pack what you need for the next stop",detail:"Bags · keys · water · papers · clothes · anything that needs to leave with you"};
+      return {title:"Kitchen + living-area pickup",detail:"Put away visible items · reset the kitchen/living area · stage the next thing you need"};
     }
 
     gaps.forEach(function(g){
