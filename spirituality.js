@@ -71,7 +71,15 @@ async function revealTarot(date){
  date=date||ymd();ensureDailyTarotSaved(date);const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
  draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();
  let log=spiritualityLogFor(date);if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log)}
- log.tarot=true;await save();render();
+ log.tarot=true;await save();
+ // If the card was revealed inside the Tarot modal, rebuild that modal so the face
+ // appears immediately instead of only changing the page hidden behind it.
+ if(document.querySelector("#modal")){
+   closeModal();
+   openSpiritualHubSection("tarot");
+ }else{
+   render();
+ }
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
 async function toggleSpiritualPractice(key){
