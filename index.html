@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-taskui2";
+const APP_BUILD="2026.10.05-oct6plan1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -6335,7 +6335,99 @@ async function refreshAppAfterResume(){
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshAppAfterResume()});
 window.addEventListener("focus",()=>{if(!document.hidden)refreshAppAfterResume()});
-async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
+function applyOct6PlanCorrections(){
+  const date="2026-10-06";
+  state.settings=state.settings||{};
+  if(Number(state.settings.oct6PlanCorrectionsVersion||0)>=1)return false;
+  let changed=false;
+
+  let meal=(state.meals||[]).find(x=>x.date===date&&x.type==="dinner");
+  if(!meal){
+    meal={id:"meal-20261006-flexible",date,type:"dinner",prepDone:[]};
+    state.meals.push(meal);
+  }
+  if(/runza/i.test(String(meal.dish||""))||String(meal.id||"")==="meal-20261006-runzas"){
+    meal.deferredMealIdea={
+      dish:meal.dish||"Cheesy crescent-roll Runzas",
+      method:meal.method||"Stovetop filling + oven",
+      ingredients:meal.ingredients||"",
+      prepSteps:meal.prepSteps||"",
+      notes:meal.notes||"",
+      savedAt:new Date().toISOString()
+    };
+  }
+  Object.assign(meal,{
+    dish:"Flexible dinner · Grandma / leftovers",
+    method:"No cooking scheduled",
+    assigned:"",
+    status:"planned",
+    recipeState:"ready",
+    startBy:"",
+    serveTime:"",
+    ingredients:"No planned ingredients — the kids may eat with Grandma. Use leftovers or another quick backup if dinner is needed at home.",
+    prepSteps:"No cooking scheduled. Runzas are deferred to a less busy day.",
+    tomorrowPrep:"",
+    tomorrowPrepDone:[],
+    notes:"Busy Tuesday: do not make Runzas. The kids may eat with Grandma; use leftovers or an easy backup if needed. Keep Runzas as a future meal idea.",
+    dayFlowSteps:[]
+  });
+  const tuesdayMealKey=typeof mealKey==="function"?mealKey(date,"dinner"):date+"|dinner";
+  state.shopping=(state.shopping||[]).filter(x=>!(x.source==="recipe"&&x.mealKey===tuesdayMealKey));
+  changed=true;
+
+  const removeIds=new Set();
+  state.tasks=(state.tasks||[]).filter(t=>{
+    if(t.date!==date)return true;
+    const text=[t.title,t.notes].filter(Boolean).join(" ");
+    if(/dolly.*shark.*folder|shark.*folder.*dolly/i.test(text)||/head home.*conference/i.test(text)){
+      removeIds.add(String(t.id));changed=true;return false;
+    }
+    return true;
+  });
+  if(removeIds.size){
+    state.dailyReviews=(state.dailyReviews||[]).filter(r=>!(r.date===date&&r.kind==="task"&&removeIds.has(String(r.key))));
+  }
+  for(const e of state.events||[]){
+    if(e.date!==date)continue;
+    const text=[e.title,e.notes].filter(Boolean).join(" ");
+    if(/dolly.*shark.*folder|shark.*folder.*dolly/i.test(text)||/head home.*conference/i.test(text)){
+      e.status="cancelled";changed=true;
+    }
+  }
+  state.itineraryBlocks=(state.itineraryBlocks||[]).filter(x=>{
+    if(x.date!==date)return true;
+    const text=[x.title,x.notes].filter(Boolean).join(" ");
+    if(/dolly.*shark.*folder|shark.*folder.*dolly/i.test(text)||/head home.*conference/i.test(text)){changed=true;return false}
+    return true;
+  });
+
+  const litter=(state.tasks||[]).find(t=>t.date==="2026-10-05"&&!t.done&&!t.paused&&!t.waitingForFunds&&/litter|cat\s*box|robot\s*litter/i.test([t.title,t.notes].filter(Boolean).join(" ")));
+  if(litter){
+    litter.date=date;
+    litter.itineraryStart="11:00";
+    litter.itineraryMinutes=25;
+    litter.itineraryPreference="morning";
+    litter.order=Math.min(Number(litter.order||40),20);
+    if(!/carried over/i.test(String(litter.notes||"")))litter.notes=[String(litter.notes||"").trim(),"Carried over from Monday so the 11:00 life-admin slot handles a real unfinished task."].filter(Boolean).join(" ");
+    changed=true;
+  }
+
+  const upsertBlock=(id,start,end,title,notes,kind="fixed",templateKey="")=>{
+    let x=(state.itineraryBlocks||[]).find(b=>b.id===id);
+    if(!x){x={id,date};state.itineraryBlocks.push(x)}
+    Object.assign(x,{date,start,end,title,notes,kind,icon:"✦",done:false,templateKey});
+    changed=true;
+  };
+  upsertBlock("oct6-return-school-conferences","15:15","15:20","Return to school + park for conferences","After picking up Leo, come right back to the school for Demitri and Ambrose's parent-teacher conferences.");
+  upsertBlock("oct6-book-fair","16:00","16:30","Book fair at school","Spend about 30 minutes at the book fair after the conferences.");
+  upsertBlock("oct6-head-home-book-fair","16:30","16:45","Head home from school","Leave after the book fair.");
+  upsertBlock("oct6-dinner-override","","","Dinner is flexible","Kids may eat with Grandma; no cooking block should be scheduled.","flexible","dinner");
+
+  state.settings.oct6PlanCorrectionsVersion=1;
+  return changed;
+}
+
+async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();await queueMissingMealRecipes();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyOct6PlanCorrections();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
@@ -6348,7 +6440,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-taskui2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-oct6plan1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6372,7 +6464,7 @@ registerAppWorker();
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261003-savingslab1"></script>
-<script src="life-system.js?v=20261005-tannermorning1"></script>
+<script src="life-system.js?v=20261005-leopickup2"></script>
 <script src="life-orchestrator.js?v=20261005-taskgroups1"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261004-radialfix1"></script>
