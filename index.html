@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.06-work9";
+const APP_BUILD="2026.10.06-work10";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1957,18 +1957,18 @@ function migrateState(s){
     });
     s.settings.mealShift20261005Version=1;
   }
-  if(Number(s.settings.giftProgressWeekVersion||0)<1){
+  if(Number(s.settings.giftProgressWeekVersion||0)<2){
     const rows=[
-      ["gift-progress-1006","2026-10-06","Birthday gift · progress session",60],
-      ["gift-progress-1007","2026-10-07","Birthday gift · progress session",60],
-      ["gift-progress-1008","2026-10-08","Birthday gift · progress session",60]
+      ["gift-progress-1006","2026-10-06","Tanner gift · make progress on the six records",60,"Work on whichever record fronts/backs are still unfinished. Stop after the protected hour instead of saving the whole project for Friday."],
+      ["gift-progress-1007","2026-10-07","Tanner gift · song-title backs + small details",60,"Use this block for backs, song-title lettering, sayings, and small pen details that still need finished."],
+      ["gift-progress-1008","2026-10-08","Tanner gift · milk-crate build + record-shop details",60,"Make progress on the milk-crate presentation and any remaining record-shop style details before Friday."]
     ];
-    for(const [id,date,title,minutes] of rows){
+    for(const [id,date,title,minutes,notes] of rows){
       let t=s.tasks.find(x=>x.id===id);
-      if(!t){t={id,date,title,category:"personal",notes:"Protected project time after work and shower.",done:false,order:18};s.tasks.push(t);}
-      t.date=date;t.title=title;t.category="personal";t.notes="Protected project time after work and shower.";t.itineraryMinutes=minutes;t.itineraryPreference="after-work";t.itineraryStart="";t.paused=false;t.waitingForFunds=false;
+      if(!t){t={id,date,title,category:"personal",notes,done:false,order:18};s.tasks.push(t);}
+      t.date=date;t.title=title;t.category="personal";t.notes=notes;t.itineraryMinutes=minutes;t.itineraryPreference="after-work";t.itineraryStart="";t.paused=false;t.waitingForFunds=false;
     }
-    s.settings.giftProgressWeekVersion=1;
+    s.settings.giftProgressWeekVersion=2;
   }
   if(Number(s.settings.fridayHandoffTimeVersion||0)<2){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
@@ -6646,7 +6646,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work9");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work10");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
