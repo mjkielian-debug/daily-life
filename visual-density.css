@@ -1267,3 +1267,60 @@ button.food-week-day{
     font-size:1.55rem;
   }
 }
+
+
+/* Oct 6: wheel status cues across dashboards */
+.life-wheel-segment{
+  position:relative;
+}
+.life-wheel-segment.needs-attention::after,
+.life-wheel-segment.is-clear::after,
+.life-wheel-segment.has-progress::before{
+  position:absolute;
+  z-index:3;
+  pointer-events:none;
+}
+.life-wheel-segment.needs-attention::after{
+  content:"•";
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  right:11%;
+  top:11%;
+  background:rgba(255,255,255,.82);
+  color:#8a3560;
+  font-size:1rem;
+  font-weight:900;
+  box-shadow:0 2px 8px rgba(70,40,60,.14);
+}
+.life-wheel-segment.is-clear::after{
+  content:"✓";
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  right:11%;
+  top:11%;
+  background:rgba(255,255,255,.78);
+  color:#356f50;
+  font-size:.62rem;
+  font-weight:900;
+}
+.life-wheel-segment.has-progress::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  left:13%;
+  bottom:13%;
+  background:rgba(45,33,56,.58);
+}
+.life-wheel-center{
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.life-wheel-center:active{
+  transform:scale(.98);
+}
