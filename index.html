@@ -229,7 +229,7 @@ const money=n=>{const v=Number(n||0);return `${v<0?"-":""}$${Math.abs(v).toLocal
 const dl=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const blankState=()=>({
   version:36,createdAt:new Date().toISOString(),
-  profile:{name:"",location:"",sunSign:""},
+  profile:{name:"",location:"",sunSign:"",moonSign:"",risingSign:""},
   settings:{
     readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.06-work6";
+const APP_BUILD="2026.10.06-work14";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -257,6 +257,58 @@ async function save(){await dbSet("state",state);if(typeof cloudSchedulePush==="
 function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#e9b4d0");return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
 const ZODIAC_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+const ZODIAC_META={
+  Aries:{element:"Fire",modality:"Cardinal"},Taurus:{element:"Earth",modality:"Fixed"},Gemini:{element:"Air",modality:"Mutable"},
+  Cancer:{element:"Water",modality:"Cardinal"},Leo:{element:"Fire",modality:"Fixed"},Virgo:{element:"Earth",modality:"Mutable"},
+  Libra:{element:"Air",modality:"Cardinal"},Scorpio:{element:"Water",modality:"Fixed"},Sagittarius:{element:"Fire",modality:"Mutable"},
+  Capricorn:{element:"Earth",modality:"Cardinal"},Aquarius:{element:"Air",modality:"Fixed"},Pisces:{element:"Water",modality:"Mutable"}
+};
+const MOON_SIGN_READINGS={
+  Aries:"The emotional weather favors directness, movement, and naming what you want without overcomplicating it.",
+  Taurus:"The emotional weather favors steadiness, comfort, sensory grounding, and protecting what feels genuinely sustainable.",
+  Gemini:"The emotional weather favors conversation, curiosity, reframing, and letting more than one idea coexist.",
+  Cancer:"The emotional weather favors home, care, memory, belonging, and noticing what helps you feel safe enough to soften.",
+  Leo:"The emotional weather favors warmth, creativity, play, pride, and letting something heartfelt be visible.",
+  Virgo:"The emotional weather favors practical care, routines, repair, sorting, and small improvements that reduce friction.",
+  Libra:"The emotional weather favors balance, fairness, beauty, relationship awareness, and clearer give-and-take.",
+  Scorpio:"The emotional weather favors honesty, depth, privacy, boundaries, and letting a feeling be real without making it permanent.",
+  Sagittarius:"The emotional weather favors perspective, freedom, humor, learning, and remembering the larger story.",
+  Capricorn:"The emotional weather favors structure, follow-through, responsibility, and doing the next useful thing instead of everything.",
+  Aquarius:"The emotional weather favors independence, fresh perspective, friendship, systems thinking, and stepping outside habit.",
+  Pisces:"The emotional weather favors imagination, empathy, rest, music, dreams, and allowing feelings to move without forcing a solution."
+};
+function astroDeg(v){return ((Number(v)%360)+360)%360}
+function astroSin(v){return Math.sin(v*Math.PI/180)}
+function astroCos(v){return Math.cos(v*Math.PI/180)}
+function currentMoonPlacement(date=new Date()){
+  // Low-precision geocentric tropical lunar longitude. Accurate enough for a reflective
+  // sign-level Moon placement, not for professional chart calculation.
+  const d=(date.getTime()-Date.UTC(1999,11,31,0,0,0))/86400000,
+        N=astroDeg(125.1228-0.0529538083*d),i=5.1454,
+        w=astroDeg(318.0634+0.1643573223*d),a=60.2666,e=.0549,
+        M=astroDeg(115.3654+13.0649929509*d),
+        E=M+e*(180/Math.PI)*astroSin(M)*(1+e*astroCos(M)),
+        xv=a*(astroCos(E)-e),yv=a*Math.sqrt(1-e*e)*astroSin(E),
+        v=Math.atan2(yv,xv)*180/Math.PI,r=Math.sqrt(xv*xv+yv*yv),
+        lon0=astroDeg(v+w),
+        xh=r*(astroCos(N)*astroCos(lon0)-astroSin(N)*astroSin(lon0)*astroCos(i)),
+        yh=r*(astroSin(N)*astroCos(lon0)+astroCos(N)*astroSin(lon0)*astroCos(i));
+  let lon=astroDeg(Math.atan2(yh,xh)*180/Math.PI);
+  const Ms=astroDeg(356.0470+0.9856002585*d),ws=astroDeg(282.9404+4.70935e-5*d),
+        Ls=astroDeg(Ms+ws),Lm=astroDeg(M+w+N),D=astroDeg(Lm-Ls),F=astroDeg(Lm-N);
+  lon=astroDeg(lon
+    -1.274*astroSin(M-2*D)+.658*astroSin(2*D)-.186*astroSin(Ms)
+    -.059*astroSin(2*M-2*D)-.057*astroSin(M-2*D+Ms)+.053*astroSin(M+2*D)
+    +.046*astroSin(2*D-Ms)+.041*astroSin(M-Ms)-.035*astroSin(D)
+    -.031*astroSin(M+Ms)-.015*astroSin(2*F-2*D)+.011*astroSin(M-4*D));
+  const index=Math.floor(lon/30)%12,sign=ZODIAC_SIGNS[index],degree=lon-index*30,meta=ZODIAC_META[sign]||{};
+  return{sign,degree,longitude:lon,element:meta.element||"",modality:meta.modality||"",approximate:true};
+}
+function signLevelRelationship(a,b){
+  const ai=ZODIAC_SIGNS.indexOf(a),bi=ZODIAC_SIGNS.indexOf(b);if(ai<0||bi<0)return"";
+  const gap=Math.min((ai-bi+12)%12,(bi-ai+12)%12);
+  return ["same-sign emphasis","adjacent contrast","sextile-style support","square-style friction","trine-style flow","inconjunct-style adjustment","opposition-style polarity"][gap]||"";
+}
 const MOON_PHASE_ACTIONS={
   "New Moon":"Choose one intention worth protecting for the next few weeks.",
   "Waxing Crescent":"Take one small step toward something you want to grow.",
@@ -282,11 +334,21 @@ const ZODIAC_LENSES={
   Pisces:["intuition, imagination, and rest","What feeling needs space before you try to solve it?"]
 };
 function moonLens(m){
-  const phase=m?.[0]||"Moon",sign=ZODIAC_SIGNS.includes(state.profile?.sunSign)?state.profile.sunSign:"";
-  const phaseAction=MOON_PHASE_ACTIONS[phase]||"Notice what feels most important today.";
-  if(!sign)return{sign:"",theme:"",question:"",phaseAction};
-  const [theme,question]=ZODIAC_LENSES[sign]||["reflection","What deserves your attention today?"];
-  return{sign,theme,question,phaseAction};
+  const phase=m?.[0]||"Moon",placement=currentMoonPlacement(),
+        sun=ZODIAC_SIGNS.includes(state.profile?.sunSign)?state.profile.sunSign:"",
+        natalMoon=ZODIAC_SIGNS.includes(state.profile?.moonSign)?state.profile.moonSign:"",
+        rising=ZODIAC_SIGNS.includes(state.profile?.risingSign)?state.profile.risingSign:"",
+        phaseAction=MOON_PHASE_ACTIONS[phase]||"Notice what feels most important today.",
+        [theme,question]=ZODIAC_LENSES[placement.sign]||["reflection","What deserves your attention today?"],
+        chart=[];
+  if(sun)chart.push({label:"Sun",sign:sun,relationship:signLevelRelationship(placement.sign,sun),prompt:"How does today’s emotional tone support or challenge the way you naturally express yourself?"});
+  if(natalMoon)chart.push({label:"Natal Moon",sign:natalMoon,relationship:signLevelRelationship(placement.sign,natalMoon),prompt:"Notice whether your usual emotional needs feel amplified, challenged, or easier to name today."});
+  if(rising)chart.push({label:"Rising",sign:rising,relationship:signLevelRelationship(placement.sign,rising),prompt:"What would it look like to meet the day in a way that honors both your outer pace and your inner weather?"});
+  return{
+    sign:placement.sign,degree:placement.degree,element:placement.element,modality:placement.modality,
+    theme,question,phaseAction,currentReading:MOON_SIGN_READINGS[placement.sign]||"",
+    sunSign:sun,natalMoonSign:natalMoon,risingSign:rising,chart
+  };
 }
 function weatherText(c){if(c===0)return"Clear";if([1,2].includes(c))return"Partly cloudy";if(c===3)return"Cloudy";if([45,48].includes(c))return"Foggy";if([51,53,55,56,57].includes(c))return"Drizzle";if([61,63,65,66,67,80,81,82].includes(c))return"Rain";if([71,73,75,77,85,86].includes(c))return"Snow";if([95,96,99].includes(c))return"Thunderstorms";return"Mixed conditions"}
 async function getWeather(){
@@ -1650,8 +1712,10 @@ function migrateState(s){
   s=s||b;
   const previousVersion=Number(s.version)||0;
   s.version=Math.max(previousVersion,36);
-  s.profile=s.profile||b.profile;
+  s.profile={...b.profile,...(s.profile||{})};
   if(!ZODIAC_SIGNS.includes(String(s.profile.sunSign||"")))s.profile.sunSign="";
+  if(!ZODIAC_SIGNS.includes(String(s.profile.moonSign||"")))s.profile.moonSign="";
+  if(!ZODIAC_SIGNS.includes(String(s.profile.risingSign||"")))s.profile.risingSign="";
   s.settings={...b.settings,...(s.settings||{})};
   s.settings.readers=Array.isArray(s.settings.readers)?s.settings.readers:b.settings.readers;
   s.settings.recurringTasks=Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[];
@@ -3621,7 +3685,7 @@ function openPetsHubSection(tab){
 }
 function petsView(){
   const pets=(state.pets||[]).filter(p=>p.status!=="Archived"),
-        due=duePetRoutines().length,
+        dueRows=duePetRoutines(),due=dueRows.length,
         today=ymd(),
         horizonDate=new Date(today+"T12:00:00"),
         todayLogs=(state.petLogs||[]).filter(x=>x.date===today).length;
@@ -3648,7 +3712,7 @@ function petsView(){
     </div>
     <div class="life-wheel" role="group" aria-label="Pets dashboard">
       ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center" onclick="openPetsHubSection('overview')">
+      <button type="button" class="life-wheel-center" onclick="${dueRows[0]?`openPetRoutine('${dueRows[0].id}')`:"openPetsHubSection('overview')"}">
         <span class="eyebrow">PET CARE</span>
         <b>${esc(centerTitle)}</b>
         <strong>${healthSoon?healthSoon+" health item"+(healthSoon===1?"":"s")+" in next 14d":"Everyday care"}</strong>
@@ -4515,7 +4579,7 @@ function familyView(){
   return `<section class="people-one-screen"><div class="people-one-topline"><div><div class="eyebrow">People at a glance</div><b>Family + kids</b></div><button class="btn small primary" onclick="openPersonProfile()">＋ Person</button></div>
     <div class="life-wheel people-wheel" role="group" aria-label="People dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openPeopleHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center people-wheel-center" onclick="event.stopPropagation();openPeopleHubSection('profiles');return false;"><span class="eyebrow">PEOPLE</span><b>${profiles.length} profiles</b><strong>${next?esc(next.person.name+" · "+next.title):"Family + connections"}</strong><small>${next?esc(dl(next.date)+(next.time?" · "+fmtClock(next.time):"")):"Tap a section to open it."}</small></button>
+      <button type="button" class="life-wheel-center people-wheel-center" onclick="event.stopPropagation();openPeopleHubSection('${next?"plans":"profiles"}');return false;"><span class="eyebrow">${next?"NEXT PEOPLE THING":"PEOPLE"}</span><b>${next?esc(next.person.name):profiles.length+" profiles"}</b><strong>${next?esc(next.title):"Family + connections"}</strong><small>${next?esc(dl(next.date)+(next.time?" · "+fmtClock(next.time):"")+" · tap for plans"):"Tap to open profiles"}</small></button>
     </div>
   </section>`;
 }
@@ -4574,6 +4638,8 @@ function openReadingHubSection(section){
 }
 function readingView(){
   const ticketRows=monthlyReaderTickets(),todayReads=reads(),todayPages=todayReads.reduce((sum,x)=>sum+Number(x.pages||0),0),
+        readerPages=new Map((state.settings.readers||[]).map(name=>[name,todayReads.filter(x=>x.reader===name).reduce((n,x)=>n+Number(x.pages||0),0)])),
+        nextReader=[...readerPages.entries()].sort((a,b)=>a[1]-b[1])[0]||null,
         month=ymd().slice(0,7),monthLogs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
         monthPages=monthLogs.reduce((sum,x)=>sum+Number(x.pages||0),0),monthDays=new Set(monthLogs.map(x=>x.date)).size,
         bookCount=new Set(monthLogs.map(x=>String(x.book||"").trim()).filter(Boolean)).size,
@@ -4593,7 +4659,7 @@ function readingView(){
   return `<section class="reading-one-screen"><div class="reading-one-topline"><div><div class="eyebrow">Reading at a glance</div><b>Pages + Reader Wheel</b></div><button class="btn small primary" onclick="openReadingChooser()">＋ Pages</button></div>
     <div class="life-wheel reading-wheel" role="group" aria-label="Reading dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openReadingHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center reading-wheel-center" onclick="event.stopPropagation();openReadingHubSection('wheel');return false;"><span class="eyebrow">THIS MONTH</span><b>${monthPages} pages</b><strong>${monthDays} reading day${monthDays===1?"":"s"}</strong><small>Tap for Reader Wheel</small></button>
+      <button type="button" class="life-wheel-center reading-wheel-center" onclick="event.stopPropagation();openReadingChooser();return false;"><span class="eyebrow">${nextReader&&nextReader[1]===0?"READING TO LOG":"TODAY’S READING"}</span><b>${nextReader&&nextReader[1]===0?esc(nextReader[0]):todayPages+" pages"}</b><strong>${nextReader&&nextReader[1]===0?"No pages logged yet":tickets+" wheel ticket"+(tickets===1?"":"s")+" this month"}</strong><small>Tap to log pages</small></button>
     </div>
   </section>`;
 }
@@ -4929,7 +4995,7 @@ function inventoryView(){
     </div>
     <div class="life-wheel" role="group" aria-label="Inventory dashboard">
       ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center" onclick="openInventoryHubSection('items')">
+      <button type="button" class="life-wheel-center" onclick="${low?"openInventoryLowStock()":"openInventoryHubSection('items')"}">
         <span class="eyebrow">HOUSE INVENTORY</span>
         <b>${esc(centerTitle)}</b>
         <strong>${all.length?"Know what you have":"Start mapping"}</strong>
@@ -5521,9 +5587,10 @@ function budgetView(){
   const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
         billCount=t.bills.length,spendCount=t.logs.length,
         categoryCount=BUDGET_CATEGORIES.filter(cat=>budgetCents(t.plan.limits[cat.id])>0).length,
-        centerTitle=t.plan.income===null?"Set expected income":"Left to assign",
-        centerAmount=t.plan.income===null?"Start plan":budgetMoney(t.left),
-        centerDetail=t.plan.income===null?"Tap Plan to enter income and benefits.":(t.daysLeft?`${budgetMoney(t.weekly)} flexible / week · ${t.daysLeft} days left`:"Month ended"),
+        centerTitle=t.plan.income===null?"Set expected income":t.remaining<0?"Budget is short":t.left<0?"Over-assigned":"Flexible this week",
+        centerAmount=t.plan.income===null?"Start plan":t.remaining<0?budgetMoney(t.remaining):t.left<0?budgetMoney(t.left):budgetMoney(t.weekly),
+        centerDetail=t.plan.income===null?"Enter income and benefits first.":t.remaining<0?"Tap to review bills + plan.":t.left<0?"Tap to rebalance categories.":(t.daysLeft?`${budgetMoney(t.left)} left to assign · ${t.daysLeft} days left`:"Month ended"),
+        centerAction=t.plan.income===null?"openBudgetHubSection('plan')":t.remaining<0?"openBudgetHubSection('bills')":t.left<0?"openBudgetHubSection('categories')":"openBudgetHubSection('activity')",
         segments=[
           {icon:"✦",title:"Plan",detail:t.plan.income===null?"Set income":budgetMoney(t.income)+" expected",action:"openBudgetHubSection('plan')"},
           {icon:"▤",title:"Bills",detail:billCount?billCount+" this month":"None due",action:"openBudgetHubSection('bills')"},
@@ -5544,7 +5611,7 @@ function budgetView(){
     </div>
     <div class="life-wheel" role="group" aria-label="Budget dashboard">
       ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center" onclick="openBudgetHubSection('plan')">
+      <button type="button" class="life-wheel-center" onclick="${centerAction}">
         <span class="eyebrow">${esc(centerTitle)}</span>
         <b>${esc(centerAmount)}</b>
         <strong>${t.remaining<0?"Cash plan is short":t.left<0?"Over-assigned":"Monthly plan"}</strong>
@@ -5618,9 +5685,20 @@ function modal(title,body,label,fn){
 function closeModal(){document.querySelector("#modal")?.remove()}
 function manualSetup(){modal("Start blank",`<div class="stack"><label>Your name<input id="name"></label><label>Reader names, comma-separated<input id="readers" placeholder="Me, Child 1, Child 2"></label></div>`,"Start",async()=>{const name=$("#name").value.trim();if(!name)return;state=blankState();state.profile.name=name;state.settings.readers=$("#readers").value.split(",").map(x=>x.trim()).filter(Boolean);if(!state.settings.readers.length)state.settings.readers=[name];await save();closeModal();render()})}
 function openAstrologySettings(){
-  const current=ZODIAC_SIGNS.includes(state.profile?.sunSign)?state.profile.sunSign:"";
-  const options=['<option value="">No personalized sign lens</option>'].concat(ZODIAC_SIGNS.map(sign=>`<option ${sign===current?"selected":""}>${sign}</option>`)).join("");
-  modal("Moon & astrology",`<div class="stack"><label>Sun sign<select id="sunSign">${options}</select></label></div><p class="muted small">The moon phase shown in Daily Life is astronomical. A sun-sign lens is an optional astrology/spiritual reflection tool and is not a scientific prediction.</p>`,"Save",async()=>{state.profile.sunSign=$("#sunSign").value;await save();closeModal();render()});
+  const optionList=(value,label)=>['<option value="">'+label+'</option>'].concat(ZODIAC_SIGNS.map(sign=>`<option ${sign===value?"selected":""}>${sign}</option>`)).join(""),
+        sun=ZODIAC_SIGNS.includes(state.profile?.sunSign)?state.profile.sunSign:"",
+        moonSign=ZODIAC_SIGNS.includes(state.profile?.moonSign)?state.profile.moonSign:"",
+        rising=ZODIAC_SIGNS.includes(state.profile?.risingSign)?state.profile.risingSign:"",
+        now=currentMoonPlacement();
+  modal("Moon & astrology",`<div class="stack astrology-settings">
+    <div class="notice"><b>Moon right now: ${esc(now.sign)} ${now.degree.toFixed(1)}°</b><div class="muted small">${esc(now.element)} · ${esc(now.modality)} · approximate tropical placement</div></div>
+    <div class="grid2"><label>Your Sun sign<select id="sunSign">${optionList(sun,"Not set")}</select></label><label>Your Moon sign<select id="moonSign">${optionList(moonSign,"Not set")}</select></label></div>
+    <label>Your Rising sign<select id="risingSign">${optionList(rising,"Not set")}</select></label>
+    <div class="muted small">If you already know your natal placements, save them here. Daily Life uses them for reflective sign-to-sign readings; it does not pretend sign-only comparisons are precise degree-based aspects.</div>
+  </div><p class="muted small">Moon phase and current Moon sign are based on astronomical cycles. Astrology interpretations are optional spiritual/reflection tools, not scientific predictions.</p>`,"Save",async()=>{
+    state.profile.sunSign=$("#sunSign").value;state.profile.moonSign=$("#moonSign").value;state.profile.risingSign=$("#risingSign").value;
+    await save();closeModal();render();
+  });
 }
 async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(!x)return;x.done=d;if(d)dailyReviewSet("task",id,x.date||ymd(),"yes",x.title||"Task","Tasks");else dailyReviewClear("task",id,x.date||ymd());if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){const ok=await sharingUpsertTask(x);if(!ok){x.done=!d;render();return}}await save();render()}
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
@@ -6646,7 +6724,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work6");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work14");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
