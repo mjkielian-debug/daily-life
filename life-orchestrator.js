@@ -421,15 +421,21 @@
     const parts=[];
     if(t.child)parts.push(String(t.child));
     const d=lifeTaskDate(t),today=ymd();
-    if(d<today)parts.push("carried from "+dl(d));
+    if(d<today)parts.push("from "+dl(d));
     else if(d>today)parts.push(dl(d));
-    if(Number(t._duplicateCount||1)>1)parts.push(Number(t._duplicateCount)+" duplicates collapsed");
+    // Duplicates are already collapsed in the queue; don't add implementation
+    // language to the visible task list.
     return parts.join(" · ");
   }
   function lifeTaskCleanNote(t){
-    const note=String(t?.notes||"").trim();
+    let note=String(t?.notes||"").trim();
     if(!note)return"";
-    return note.replace(/\s+/g," ").replace(/\s*·\s*Waiting until after payday; school lunches are free and this balance is only for extras\.?/ig,"").trim();
+    note=note.replace(/\s+/g," ")
+      .replace(/\s*·\s*Waiting until after payday; school lunches are free and this balance is only for extras\.?/ig,"")
+      .replace(/Split from the old combined ['"]?Dishes\s*\+\s*audition practice['"]? review item so each can be tracked separately\.?/ig,"")
+      .trim();
+    if(/^(quick capture|life autopilot|suggested from (?:your )?task list)$/i.test(note))return"";
+    return note;
   }
 
   window.openTodayTasksHub=function(){
