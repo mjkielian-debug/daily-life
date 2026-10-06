@@ -152,8 +152,17 @@ function spiritualityReadingCard(){
  return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div><button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'
 }
 function spiritualityMoonSeasonCard(m){
- m=m||moon();const s=spiritualitySeason(),ml=moonLens(m);
- return'<div class="card spiritual-season-card floral-card"><div class="section-title"><div><div class="eyebrow">Seasonal wheel</div><h2>'+esc(s.title)+'</h2><div class="muted small">'+esc(s.theme)+'</div></div><button class="btn" onclick="openAstrologySettings()">Moon / astrology</button></div><div class="spiritual-moon"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><span><b>'+esc(m?.[0]||"Moon")+'</b><small>'+esc(ml.phaseAction)+'</small></span></div></div>'
+ m=m||moon();const s=spiritualitySeason(),ml=moonLens(m),
+       placementLabel=ml.sign+(Number.isFinite(ml.degree)?" "+ml.degree.toFixed(1)+"°":""),
+       chartRows=(ml.chart||[]).map(x=>'<div class="astro-chart-row"><span><b>'+esc(x.label)+' · '+esc(x.sign)+'</b><small>'+esc(x.relationship||"personal lens")+'</small></span><p>'+esc(x.prompt)+'</p></div>').join("");
+ return'<div class="card spiritual-season-card floral-card astrology-moon-card">'+
+   '<div class="section-title"><div><div class="eyebrow">Moon right now</div><h2>'+esc(placementLabel)+'</h2><div class="muted small">'+esc([ml.element,ml.modality,m?.[0]].filter(Boolean).join(" · "))+'</div></div><button class="btn" onclick="openAstrologySettings()">My placements</button></div>'+
+   '<div class="astrology-current-reading"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><div><b>'+esc(MOON_SIGN_READINGS?.[ml.sign]||ml.currentReading||"")+'</b><small>'+esc(ml.phaseAction)+'</small></div></div>'+
+   '<div class="astro-focus"><span>Reflection question</span><b>'+esc(ml.question||"What deserves your attention today?")+'</b></div>'+
+   (chartRows?'<div class="astro-chart-lenses"><div class="mini-heading">Current Moon × your chart</div>'+chartRows+'</div>':'<div class="notice"><b>Want a more personal reading?</b><div class="muted small">Add your Sun, Moon, and Rising signs. The app will compare today’s Moon sign with those placements at the sign level.</div><button class="btn small" onclick="openAstrologySettings()">Add placements</button></div>')+
+   '<details class="compact-more"><summary>Seasonal wheel · '+esc(s.title)+'</summary><div class="muted small">'+esc(s.theme)+'</div></details>'+
+   '<div class="muted small astrology-disclaimer">Current Moon sign is an approximate tropical astronomical placement. The interpretation is for reflection, not prediction.</div>'+
+ '</div>'
 }
 function spiritualityHistoryCard(){
  const journals=[...(state.spiritualityJournal||[])].sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||""))).slice(0,16),
@@ -180,25 +189,24 @@ function openSpiritualHubSection(section){
  modal(title,'<div class="spirituality-hub-modal">'+body+'</div>',"Close",closeModal)
 }
 function spiritualityView(m){
- m=m||moon();ensureDailyTarotSaved();const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),log=spiritualityLogFor()||{},
+ m=m||moon();ensureDailyTarotSaved();const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),log=spiritualityLogFor()||{},ml=moonLens(m),
    touched=["reading","tarot","stillness","ritual"].filter(k=>log[k]).length,
    journalCount=(state.spiritualityJournal||[]).length,
+   moonLabel=ml.sign+(Number.isFinite(ml.degree)?" "+ml.degree.toFixed(0)+"°":""),
    segments=[
-    {icon:"✦",title:"Reading",detail:r.lens,section:"reading"},
+    {icon:"✦",title:"Reading",detail:r.title,section:"reading"},
     {icon:"☾",title:"Tarot",detail:tarotRevealed()?t.name:"Reveal card",section:"tarot"},
     {icon:"◇",title:"Spread",detail:"1 · 3 · 5 cards",section:"spread"},
     {icon:"❧",title:"Rituals",detail:s.title,section:"rituals"},
     {icon:"▤",title:"Journal",detail:journalCount?journalCount+" entries":"Write",section:"journal"},
-    {icon:m?.[1]||"☾",title:"Moon",detail:m?.[0]||"Moon",section:"moon"},
+    {icon:m?.[1]||"☾",title:"Moon",detail:moonLabel,section:"moon"},
     {icon:"○",title:"Practice",detail:touched+"/4 touched",section:"practice"},
     {icon:"↕",title:"History",detail:"Cards + notes",section:"history"}
-   ],
-   centerTitle=tarotRevealed()?t.name:"Tarot ready",
-   centerDetail=tarotRevealed()?(t.reversed?"Reversed · reflect":"Upright · reflect"):"Tap to reveal + explore";
- return'<section class="spirituality-one-screen"><div class="spirituality-one-topline"><div><div class="eyebrow">Spirituality at a glance</div><b>Reflection + tarot + season</b></div><button class="btn small primary" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
+   ];
+ return'<section class="spirituality-one-screen"><div class="spirituality-one-topline"><div><div class="eyebrow">Spirituality at a glance</div><b>Reflection + tarot + moon</b></div><button class="btn small primary" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
    '<div class="life-wheel spirituality-wheel" role="group" aria-label="Spirituality dashboard">'+
    segments.map((x,i)=>'<button type="button" class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="openSpiritualHubSection(\''+x.section+'\')" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join("")+
-   '<button type="button" class="life-wheel-center spirituality-wheel-center" onclick="event.stopPropagation();openSpiritualHubSection(\'tarot\');return false;"><span class="eyebrow">TODAY\'S CARD</span><b>'+esc(centerTitle)+'</b><strong>'+esc(centerDetail)+'</strong><small>For reflection, not prediction</small></button>'+
+   '<button type="button" class="life-wheel-center spirituality-wheel-center" onclick="event.stopPropagation();openSpiritualHubSection(\'moon\');return false;"><span class="eyebrow">MOON RIGHT NOW</span><b>'+esc(moonLabel)+'</b><strong>'+esc(m?.[0]||"Moon")+' · '+esc(ml.element||"")+'</strong><small>'+esc(ml.question||"Tap for today’s Moon reading")+'</small></button>'+
    '</div></section>'
 }
 function spiritualityLaunchCard(){
