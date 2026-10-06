@@ -320,18 +320,14 @@ function budgetCoachCard(){
   const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x),primary=budgetCoachPrimaryAction(x,goalPlan),
         transferReady=x.transferConfidence==="ready",
         transferLabel=x.movable>0?(transferReady?money(x.movable)+" ready":money(x.movable)+" review"):"None",
-        targetName=x.target?x.target.name||"preferred savings":"preferred savings",
-        trim=x.over.length
-          ?`<div class="coach-compact-row"><span>Category over plan</span><b>${esc(x.over[0].cat.name)} · ${money(Math.abs(x.over[0].left)/100)}</b></div>`
-          :"",
         setupWarning=x.safe.incomplete
-          ?`<div class="coach-mini-warning"><b>Some bill/account setup is incomplete.</b><span>Amounts can change until that setup is finished.</span></div>`
+          ?`<div class="coach-mini-warning"><b>One setup check is still affecting the answer.</b><button class="btn small" type="button" onclick="closeModal();setView('more');openMoneyHubSection('accounts')">Fix it</button></div>`
           :"";
 
-  return `<div class="card budget-coach-card budget-coach-compact">
+  return `<div class="card budget-coach-card budget-coach-compact money-do-now">
     <div class="money-coach-heading">
-      <div><div class="eyebrow">✦ Money coach</div><h2>What should I do?</h2></div>
-      <span class="tag">${x.safe.incomplete?"needs setup":"bill-aware"}</span>
+      <div><div class="eyebrow">✦ Money coach</div><h2>Do this next</h2></div>
+      <span class="tag">${x.safe.incomplete?"check setup":"bill-aware"}</span>
     </div>
 
     <div class="money-coach-primary ${primary.tone}">
@@ -341,32 +337,21 @@ function budgetCoachCard(){
       <button class="btn primary" type="button" onclick="${primary.action}">${esc(primary.button)}</button>
     </div>
 
-    <div class="money-coach-snapshot" aria-label="Money snapshot">
-      <span><small>Flexible today</small><b>${money(x.todayGuardrail)}</b></span>
-      <span><small>This week</small><b>${money(x.weekGuardrail)}</b></span>
-      <span><small>Possible transfer</small><b>${esc(transferLabel)}</b></span>
-    </div>
-
-    ${trim}
     ${setupWarning}
 
-    <details class="money-coach-details" id="moneyCoachTransferDetails">
-      <summary>Transfer details</summary>
-      <div class="money-coach-detail-body">
-        ${x.movable>0
-          ?`<p><b>${transferReady?"Transfer looks ready":"Do not transfer yet"}.</b> ${transferReady?`Up to ${money(x.movable)} appears movable to ${esc(targetName)}.`:`Daily Life found ${money(x.movable)} of possible excess checking cash, but the checks below need attention first.`}</p>`
-          :`<p>No checking account currently shows extra cash above its entered near-term bill needs and operating floor.</p>`}
-        ${x.target?budgetCoachTransferRows(x):`<button class="btn small" type="button" onclick="closeModal();setView('more');openMoneyHubSection('accounts')">Set account strategy</button>`}
-        ${budgetCoachTransferIssues(x)}
-      </div>
-    </details>
+    <div class="money-coach-snapshot" aria-label="Money snapshot">
+      <span><small>Today</small><b>${money(x.todayGuardrail)}</b></span>
+      <span><small>This week</small><b>${money(x.weekGuardrail)}</b></span>
+      <span><small>To savings</small><b>${esc(transferLabel)}</b></span>
+    </div>
 
     <details class="money-coach-details">
-      <summary>Planning details</summary>
+      <summary>Why this answer?</summary>
       <div class="money-coach-detail-body">
         <div class="coach-compact-row"><span>Safe cash ceiling</span><b>${money(Math.max(0,Number(x.safe.safe||0)))}</b></div>
         <div class="coach-compact-row"><span>Unassigned monthly plan</span><b>${money(Math.max(0,Number(x.unassignedPlanCash||0)))}</b></div>
-        ${goalPlan.allocations?.length?`<div class="coach-compact-row"><span>Next savings goal</span><b>${esc(goalPlan.allocations[0].goal.name||"Savings goal")} · ${money(goalPlan.allocations[0].amount)}</b></div>`:""}
+        ${x.movable>0?`<div class="coach-compact-row"><span>Possible savings move</span><b>${esc(transferLabel)}</b></div>`:""}
+        ${budgetCoachTransferIssues(x)}
         ${budgetCoachFutureBillsSection(x)}
       </div>
     </details>
