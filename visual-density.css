@@ -1552,3 +1552,63 @@ button.food-week-day{
   .life-wheel:not(.dayflow-wheel) .life-wheel-center>strong{font-size:.59rem!important;max-width:19ch!important}
   .life-wheel:not(.dayflow-wheel) .life-wheel-center>small{font-size:.47rem!important;max-width:21ch!important}
 }
+
+
+/* Oct 6: phone-safe dashboard petals.
+   Do not rely on CSS angle multiplication or clip-path; some Android PWAs were
+   rendering the wheel as one blank white circle. */
+.life-wheel:not(.dayflow-wheel){
+  background:#f8edf3!important;
+  background:
+    radial-gradient(circle at 50% 50%,#fff9fb 0 29%,transparent 30%),
+    conic-gradient(from -22.5deg,#f3bfd4 0 45deg,#d9c5ee 45deg 90deg,#f2c6a8 90deg 135deg,#efd99e 135deg 180deg,#d3e8b9 180deg 225deg,#b9dfcf 225deg 270deg,#bfd9ef 270deg 315deg,#dfcef1 315deg 360deg)!important;
+}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(1){--angle:0deg;--counter-angle:0deg;background:linear-gradient(145deg,#f6bfd5,#f1d2df)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(2){--angle:45deg;--counter-angle:-45deg;background:linear-gradient(145deg,#d7c4ef,#eadcf6)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(3){--angle:90deg;--counter-angle:-90deg;background:linear-gradient(145deg,#f2c5a8,#f7ddcb)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(4){--angle:135deg;--counter-angle:-135deg;background:linear-gradient(145deg,#efd99e,#f5e8bf)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(5){--angle:180deg;--counter-angle:-180deg;background:linear-gradient(145deg,#d2e8b8,#e5f1d5)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(6){--angle:225deg;--counter-angle:-225deg;background:linear-gradient(145deg,#b9dfcf,#d9eee5)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(7){--angle:270deg;--counter-angle:-270deg;background:linear-gradient(145deg,#bfd9ef,#dceaf7)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:nth-child(8){--angle:315deg;--counter-angle:-315deg;background:linear-gradient(145deg,#dfcef1,#eee4f7)!important}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+  width:30%!important;
+  height:18%!important;
+  border:2px solid rgba(255,255,255,.88)!important;
+  border-radius:24px!important;
+  box-shadow:0 7px 16px rgba(71,52,82,.10),inset 0 0 0 1px rgba(95,66,92,.05)!important;
+  transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle))!important;
+  overflow:hidden!important;
+}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment>span{
+  transform:none!important;
+  position:static!important;
+}
+.life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+  filter:brightness(.98)!important;
+  transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle)) scale(.96)!important;
+}
+.life-wheel:not(.dayflow-wheel) .life-wheel-center{
+  pointer-events:auto!important;
+  width:40%!important;
+  height:40%!important;
+}
+@media(max-width:420px){
+  .life-wheel:not(.dayflow-wheel){
+    --wheel-size:min(88vw,calc(100dvh - 275px),365px)!important;
+  }
+  .people-wheel{
+    --wheel-size:min(88vw,calc(100dvh - 250px),365px)!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+    width:31%!important;
+    height:19%!important;
+    border-radius:20px!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-190%) rotate(var(--counter-angle))!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-190%) rotate(var(--counter-angle)) scale(.96)!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment b{font-size:.72rem!important}
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment small{font-size:.47rem!important}
+}
