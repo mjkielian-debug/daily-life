@@ -333,29 +333,49 @@
         return e.date===date&&e.status!=="cancelled"&&/school.*pick.?up|pick.?up.*school/i.test(String(e.title||""));
       });
       if(!already){
-        const leave=hmMinutes(pickup.leaveHome||"14:40"),park=hmMinutes(pickup.park||"14:45"),
-          pick=hmMinutes(pickup.pickup||"14:52"),end=hmMinutes(pickup.end||"15:00");
-        if(leave!==null&&park!==null)rows.push({id:"school-pickup-drive:"+date,start:minutesHm(leave),end:minutesHm(park),
-          title:"Drive to school pickup",detail:"Leave home at "+fmtClock(minutesHm(leave)),fixed:true,kind:"event",icon:"🚗",source:"generated"});
-        if(park!==null&&pick!==null)rows.push({id:"school-pickup-wait:"+date,start:minutesHm(park),end:minutesHm(pick),
-          title:"Park + wait for younger kids",detail:"Park around "+fmtClock(minutesHm(park))+" · Demitri, Dolly + Ambrose out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"◷",source:"generated"});
-        if(pick!==null&&end!==null)rows.push({id:"school-pickup:"+date,start:minutesHm(pick),end:minutesHm(end),
-          title:"Pick up Demitri, Dolly + Ambrose",detail:"Younger three out at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
+        const activityPattern=/herpetology|dungeons|d\s*&\s*d|musical|club|after[- ]?school|rehearsal|practice|activity/i,
+          activityEvents=dedupeEventList((state.events||[]).filter(function(e){
+            if(!e||e.date!==date||["cancelled","paused"].includes(String(e.status||"")))return false;
+            const start=hmMinutes(e.startTime),text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" ");
+            return start!==null&&start>=14*60+30&&start<=17*60&&activityPattern.test(text)&&!/pick.?up/i.test(text);
+          })).sort(function(a,b){return String(a.startTime||"").localeCompare(String(b.startTime||""))}),
+          activityFor=function(name){
+            const needle=String(name||"").toLowerCase();
+            return activityEvents.find(function(e){return [e.child,e.title,e.notes].filter(Boolean).join(" ").toLowerCase().includes(needle)})||null;
+          },
+          youngerNames=["Demitri","Dolly","Ambrose"],
+          pickupNames=youngerNames.filter(function(name){return !activityFor(name)}),
+          leave=hmMinutes(pickup.leaveHome||"14:40"),park=hmMinutes(pickup.park||"14:45"),
+          pick=hmMinutes(pickup.pickup||"14:52"),end=hmMinutes(pickup.end||"15:00"),
+          pickupLabel=pickupNames.length===3?"Demitri, Dolly + Ambrose":pickupNames.length===2?pickupNames.join(" + "):pickupNames[0]||"";
 
-        const leoAfterSchool=(state.events||[]).some(function(e){
-          if(!e||e.date!==date||["cancelled","paused"].includes(String(e.status||"")))return false;
-          const text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" "),
-            start=hmMinutes(e.startTime);
-          return /\bleo\b/i.test(text)&&start!==null&&start>=14*60+30&&start<=17*60&&
-            /herpetology|dungeons|d\s*&\s*d|club|after[- ]?school|rehearsal|practice|activity/i.test(text);
-        });
+        if(pickupNames.length&&leave!==null&&park!==null)rows.push({id:"school-pickup-drive:"+date,start:minutesHm(leave),end:minutesHm(park),
+          title:"Drive to school pickup",detail:"Leave home at "+fmtClock(minutesHm(leave))+" · picking up "+pickupLabel,fixed:true,kind:"event",icon:"🚗",source:"generated"});
+        if(pickupNames.length&&park!==null&&pick!==null)rows.push({id:"school-pickup-wait:"+date,start:minutesHm(park),end:minutesHm(pick),
+          title:"Park + wait for "+pickupLabel,detail:"Park around "+fmtClock(minutesHm(park))+" · pickup at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"◷",source:"generated"});
+        if(pickupNames.length&&pick!==null&&end!==null)rows.push({id:"school-pickup:"+date,start:minutesHm(pick),end:minutesHm(end),
+          title:"Pick up "+pickupLabel,detail:"School pickup at "+fmtClock(minutesHm(pick)),fixed:true,kind:"event",icon:"🎒",source:"generated"});
+
+        const leoAfterSchool=activityFor("Leo");
         if(pickup.leoPickupAfterYounger!==false&&!(pickup.skipLeoForAfterSchoolActivity!==false&&leoAfterSchool)){
           const leoStart=hmMinutes(pickup.leoPickupStart||pickup.end||"15:00"),
             leoEnd=hmMinutes(pickup.leoPickupEnd||"15:15");
           if(leoStart!==null&&leoEnd!==null&&leoEnd>leoStart)rows.push({
             id:"leo-school-pickup:"+date,start:minutesHm(leoStart),end:minutesHm(leoEnd),
             title:"Pick up Leo",
-            detail:"After picking up Demitri, Dolly + Ambrose · skipped automatically when Leo has an after-school club/activity",
+            detail:(pickupNames.length?"After picking up "+pickupLabel:"Regular school pickup")+" · skipped automatically when Leo has an after-school club/activity",
+            fixed:true,kind:"event",icon:"🚗",source:"generated"
+          });
+        }
+
+        for(const name of [...youngerNames,"Leo"]){
+          const event=activityFor(name),finish=hmMinutes(event&&event.endTime);
+          if(!event||finish===null||finish<15*60||finish>18*60)continue;
+          const cleanTitle=String(event.title||"after-school activity").replace(name,"").replace(/^[ ·:\-]+/,"").trim();
+          rows.push({
+            id:"activity-pickup:"+name.toLowerCase()+":"+date,start:minutesHm(finish),end:minutesHm(Math.min(finish+15,18*60+15)),
+            title:"Pick up "+name+" after "+(cleanTitle||"activity"),
+            detail:"Activity ends at "+fmtClock(minutesHm(finish))+" · pickup is separate from regular dismissal",
             fixed:true,kind:"event",icon:"🚗",source:"generated"
           });
         }
@@ -375,7 +395,7 @@
         subtasks:older.map(function(c){return c.child+": "+c.chore}),subtaskRefs:older.map(function(c){return c.id}),
         fixed:false,kind:"routine",icon:"✓",source:"suggested",templateKey:"monday-older-chores",allowParallel:true});
       rows.push({id:"monday-dolly-shower:"+date,start:"18:00",end:"18:20",title:"Dolly · shower",
-        detail:"20 minutes · Dolly showers first while the Runzas bake/cool",subtasks:["Dolly shower"],
+        detail:"20 minutes · Monday evening shower before or around dinner as the schedule allows",subtasks:["Dolly shower"],
         fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kid-shower-dolly",allowParallel:true});
       rows.push({id:"monday-demitri-shower:"+date,start:"18:45",end:"19:05",title:"Demitri · shower",
         detail:"20 minutes · after dinner",subtasks:["Demitri shower"],
