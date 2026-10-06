@@ -899,3 +899,94 @@ button.food-week-day{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* Oct 6: scan-friendly Today task list */
+.today-task-scan-list{
+  display:grid;
+  gap:0;
+}
+.task-scan-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:start;
+  padding:10px 0;
+  border-top:1px solid #b989a5;
+}
+.task-scan-row:first-child{border-top:0}
+.task-scan-row .task{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  min-width:0;
+  margin:0;
+}
+.task-scan-row .task>input{
+  flex:0 0 auto;
+  margin-top:3px;
+}
+.task-scan-row .task>span{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.task-scan-row .task b{
+  color:#292039!important;
+  font-size:.9rem!important;
+  line-height:1.2!important;
+}
+.task-scan-row .task small{
+  display:block;
+  color:#4b4059!important;
+  font-size:.71rem!important;
+  line-height:1.32!important;
+}
+.task-scan-note{
+  display:-webkit-box!important;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.task-edit-btn{
+  min-height:34px!important;
+  padding:5px 9px!important;
+  font-size:.68rem!important;
+}
+.task-scan-row.is-done{
+  opacity:.68;
+}
+.task-scan-row.is-done .task b{
+  text-decoration:line-through;
+}
+.today-task-completed{
+  margin-top:8px;
+  border-top:1px solid #b989a5;
+}
+.today-task-completed>summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  min-height:42px;
+  cursor:pointer;
+  color:#4b4059!important;
+  font-size:.74rem!important;
+  font-weight:850;
+}
+.today-task-completed>summary::-webkit-details-marker{display:none}
+.today-task-completed>summary::after{
+  content:"＋";
+  margin-left:auto;
+  font-size:.8rem;
+}
+.today-task-completed[open]>summary::after{content:"−"}
+@media(max-width:390px){
+  .task-scan-row{
+    grid-template-columns:minmax(0,1fr);
+    gap:5px;
+  }
+  .task-edit-btn{
+    justify-self:start;
+    margin-left:34px;
+  }
+}
