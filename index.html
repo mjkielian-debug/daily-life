@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-dailyroutines1";
+const APP_BUILD="2026.10.05-reviewcopy1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -2801,17 +2801,44 @@ function dailyReviewStatus(kind,key,date=ymd()){
   }
   return review?.status||"unknown";
 }
+const SELF_CARE_REVIEW_COPY={
+  brush:{label:"Brushed teeth",detail:"Did you brush your teeth at least once?"},
+  floss:{label:"Flossed teeth",detail:"Did you floss your teeth?"},
+  mouthwash:{label:"Used mouthwash",detail:"Did you use mouthwash?"},
+  shower:{label:"Took a shower",detail:"Did you take a shower? Use N/A if a shower was not expected that day."},
+  deodorant:{label:"Put on deodorant",detail:"Did you put on deodorant?"},
+  wash_face:{label:"Washed face",detail:"Did you wash your face?"},
+  skincare:{label:"Face skincare / moisturizer",detail:"Did you do your face skincare or apply moisturizer?"},
+  body_lotion:{label:"Body lotion",detail:"Did you put on body lotion?"},
+  hair_care:{label:"Hair care",detail:"Did you intentionally brush, style, wash, or otherwise care for your hair?"},
+  fresh_clothes:{label:"Changed into clean clothes",detail:"Did you put on clean clothes?"},
+  outside:{label:"Spent time outside",detail:"Did you intentionally spend any time outside or get fresh air?"},
+  quiet_time:{label:"Intentional quiet / rest time",detail:"Did you take any intentional quiet or rest time for yourself?"},
+  journal:{label:"Journaled",detail:"Did you write anything for reflection or journaling?"},
+  meditate:{label:"Meditated / breathing practice",detail:"Did you intentionally meditate or do a breathing practice?"},
+  wind_down:{label:"Bedtime wind-down",detail:"Composite bedtime routine; its concrete steps are tracked elsewhere.",review:false}
+};
 function dailyReviewExpected(date=ymd()){
   const rows=[];
   for(const t of (state.tasks||[]).filter(x=>x.date===date)){
     if(String(t.title||"").trim().toLowerCase()==="ups shift"&&typeof isUsualWorkday==="function"&&!isUsualWorkday(date)&&!(typeof workShiftHasActual==="function"&&workShiftHasActual(workForDate(date))))continue;
-    rows.push({kind:"task",key:t.id,label:t.title||"Task",group:"Tasks",detail:[t.child,t.category].filter(Boolean).join(" · "),status:dailyReviewStatus("task",t.id,date)});
+    const taskDetail=[String(t.notes||"").trim(),t.child,t.category].filter(Boolean).join(" · ");
+    rows.push({kind:"task",key:t.id,label:t.title||"Task",group:"Tasks",detail:taskDetail,status:dailyReviewStatus("task",t.id,date)});
   }
   for(const c of (state.chores||[]).filter(x=>x.date===date)){
-    rows.push({kind:"chore",key:c.id,label:c.chore||"Chore",group:"Chores + routines",detail:c.child||"",status:dailyReviewStatus("chore",c.id,date)});
+    rows.push({kind:"chore",key:c.id,label:c.chore||"Chore",group:"Chores + routines",detail:[c.child,String(c.notes||"").trim()].filter(Boolean).join(" · "),status:dailyReviewStatus("chore",c.id,date)});
   }
   for(const h of selfCareHabits()){
-    rows.push({kind:"care",key:h.key,label:h.label,group:"Self care",detail:h.group||"",status:dailyReviewStatus("care",h.key,date)});
+    const copy=SELF_CARE_REVIEW_COPY[h.key]||null;
+    if(copy?.review===false)continue;
+    rows.push({
+      kind:"care",
+      key:h.key,
+      label:copy?.label||h.label,
+      group:"Self care",
+      detail:copy?.detail||h.group||"",
+      status:dailyReviewStatus("care",h.key,date)
+    });
   }
   return rows;
 }
@@ -6472,7 +6499,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-dailyroutines1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261005-reviewcopy1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
