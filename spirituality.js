@@ -71,14 +71,14 @@ async function revealTarot(date){
  date=date||ymd();ensureDailyTarotSaved(date);const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
  draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();
  let log=spiritualityLogFor(date);if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log)}
- log.tarot=true;await save();
- // If the card was revealed inside the Tarot modal, rebuild that modal so the face
- // appears immediately instead of only changing the page hidden behind it.
- if(document.querySelector("#modal")){
-   closeModal();
-   openSpiritualHubSection("tarot");
- }else{
-   render();
+ log.tarot=true;
+ // Update the visible card first so the tap never feels ignored.
+ if(document.querySelector("#modal"))openSpiritualHubSection("tarot");else render();
+ try{await save()}catch(error){
+   draw.revealed=false;draw.revealedAt="";
+   log.tarot=false;
+   if(document.querySelector("#modal"))openSpiritualHubSection("tarot");else render();
+   alert("The card could not be saved on this device. Please try again.");
  }
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
@@ -124,7 +124,7 @@ function spiritualityTodayPanel(m){
 }
 function spiritualityTarotPanel(){
  ensureDailyTarotSaved();const rows=[...(state.tarotDraws||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,20);
- return'<div class="card tarot-reading-card floral-card"><div class="eyebrow">Today\'s tarot</div><h2>Major Arcana one-card draw</h2>'+tarotCardMarkup()+'</div><div class="card"><div class="eyebrow">Tarot history</div><h2>Past daily cards</h2>'+(rows.map(x=>{const t=tarotForDate(x.date);return'<div class="row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+(x.note?" · reflection saved":"")+'</div></span><span>›</span></div>'}).join("")||'<div class="notice">Today\'s card will start your history.</div>')+'</div>'
+ return'<div class="card tarot-reading-card floral-card"><div class="eyebrow">Today\'s tarot</div><h2>Major Arcana one-card draw</h2>'+tarotCardMarkup()+'</div><div class="card"><div class="eyebrow">Tarot history</div><h2>Past daily cards</h2>'+(rows.map(x=>{const t=tarotForDate(x.date);return'<button type="button" class="row spiritual-history-row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+(x.note?" · reflection saved":"")+'</div></span><span>›</span></button>'}).join("")||'<div class="notice">Today\'s card will start your history.</div>')+'</div>'
 }
 function spiritualityRitualsPanel(){
  const s=spiritualitySeason();
@@ -149,6 +149,10 @@ function spiritualityHistoryCard(){
    (journals.length?journals.map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+(x.question?' · '+esc(x.question):x.note?' · '+esc(x.note):'')+'</div></span></div>').join(""):'')+
    (cards.length?'<div class="mini-heading">Daily tarot</div>'+cards.map(x=>{const t=tarotForDate(x.date);return'<button class="row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+'</div></span><span>›</span></button>'}).join(""):'')+
    (!journals.length&&!cards.length?'<div class="notice">No spiritual history yet.</div>':'')+'</div>'
+}
+function openSpiritualityPage(){
+ if(document.querySelector("#modal"))closeModal();
+ setView("spirituality");
 }
 function openSpiritualHubSection(section){
  let title="Spirituality",body="";
