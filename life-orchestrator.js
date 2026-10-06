@@ -574,9 +574,8 @@
         if(/\b\d+\s*(?:\/|of)\s*\d+\b|\b\d+\s*(?:done|planned|pages|entries|logs|tickets|profiles|items|rooms|goals)\b/.test(text))btn.classList.add("has-progress");
       });
       const center=wheel.querySelector(".life-wheel-center");
-      if(center){
-        const small=center.querySelector("small"),label=(small?.textContent||"").trim();
-        if(small&&label&&!/^tap\b/i.test(label)&&!label.includes("· tap"))small.textContent=label+" · tap for details";
+      if(center&&!center.getAttribute("title")){
+        center.setAttribute("title",(center.textContent||"").replace(/\s+/g," ").trim());
       }
     }
   }
