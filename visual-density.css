@@ -1156,3 +1156,114 @@ button.food-week-day{
     text-align:left;
   }
 }
+
+
+/* Oct 6: astrology / Moon placement reading */
+.astrology-moon-card{
+  display:grid;
+  gap:12px;
+}
+.astrology-current-reading{
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid color-mix(in srgb,var(--secondary) 44%,var(--border));
+  background:rgba(255,255,255,.38);
+}
+.astrology-current-reading .moon-mark{
+  width:54px;
+  height:54px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  font-size:1.8rem;
+  background:rgba(255,255,255,.5);
+}
+.astrology-current-reading>div{
+  display:grid;
+  gap:5px;
+}
+.astrology-current-reading b{
+  color:#292039!important;
+  font-size:.88rem!important;
+  line-height:1.45!important;
+}
+.astrology-current-reading small{
+  color:#4b4059!important;
+  font-size:.72rem!important;
+  line-height:1.4!important;
+}
+.astro-focus{
+  display:grid;
+  gap:4px;
+  padding:10px 12px;
+  border-left:3px solid color-mix(in srgb,var(--primary) 58%,var(--border));
+  background:rgba(255,255,255,.28);
+  border-radius:0 14px 14px 0;
+}
+.astro-focus span{
+  color:#4b4059!important;
+  font-size:.66rem!important;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.astro-focus b{
+  color:#292039!important;
+  font-size:.88rem!important;
+  line-height:1.35!important;
+}
+.astro-chart-lenses{
+  display:grid;
+  gap:0;
+}
+.astro-chart-row{
+  display:grid;
+  gap:5px;
+  padding:10px 0;
+  border-top:1px solid #b989a5;
+}
+.astro-chart-row:first-of-type{
+  border-top:0;
+}
+.astro-chart-row span{
+  display:grid;
+  gap:2px;
+}
+.astro-chart-row b{
+  color:#292039!important;
+  font-size:.82rem!important;
+}
+.astro-chart-row small{
+  color:#4b4059!important;
+  font-size:.68rem!important;
+}
+.astro-chart-row p{
+  margin:0;
+  color:#372b43!important;
+  font-size:.76rem!important;
+  line-height:1.42!important;
+}
+.astrology-disclaimer{
+  color:#554860!important;
+  font-size:.65rem!important;
+  line-height:1.35!important;
+}
+.astrology-settings .notice{
+  margin-bottom:2px;
+}
+@media(max-width:420px){
+  .astrology-current-reading{
+    grid-template-columns:48px minmax(0,1fr);
+    gap:9px;
+    padding:10px;
+  }
+  .astrology-current-reading .moon-mark{
+    width:46px;
+    height:46px;
+    font-size:1.55rem;
+  }
+}
