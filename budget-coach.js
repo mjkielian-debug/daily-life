@@ -7,7 +7,7 @@ function budgetCoachRepeatPurchases(limit=3){
           const d=String(x?.date||"");
           if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return false;
           const age=(todayTime-new Date(d+"T12:00:00").getTime())/86400000;
-          return age>=0&&age<=windowDays&&String(x.note||"").trim().length>=3&&x.category!=="ebt"&&Number(x.amount||0)>0;
+          return age>=0&&age<=windowDays&&String(x.note||"").trim().length>=3&&["grocery","household","personal"].includes(String(x.category||""))&&Number(x.amount||0)>0;
         }),
         groups=new Map();
   for(const x of rows){
