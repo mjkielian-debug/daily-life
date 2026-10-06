@@ -154,7 +154,7 @@ function spiritualityReadingCard(){
 function spiritualityMoonSeasonCard(m){
  m=m||moon();const s=spiritualitySeason(),ml=moonLens(m),
        placementLabel=ml.sign+(Number.isFinite(ml.degree)?" "+ml.degree.toFixed(1)+"°":""),
-       chartRows=(ml.chart||[]).map(x=>'<div class="astro-chart-row"><span><b>'+esc(x.label)+' · '+esc(x.sign)+'</b><small>'+esc(x.relationship||"personal lens")+'</small></span><p>'+esc(x.prompt)+'</p></div>').join("");
+       chartRows=(ml.chart||[]).map(x=>'<div class="astro-chart-row"><span><b>'+esc(x.label)+' · '+esc(x.sign)+'</b><small>'+esc([x.theme,x.relationship].filter(Boolean).join(" · ")||"personal lens")+'</small></span><p>'+esc(x.prompt)+'</p></div>').join("");
  return'<div class="card spiritual-season-card floral-card astrology-moon-card">'+
    '<div class="section-title"><div><div class="eyebrow">Moon right now</div><h2>'+esc(placementLabel)+'</h2><div class="muted small">'+esc([ml.element,ml.modality,m?.[0]].filter(Boolean).join(" · "))+'</div></div><button class="btn" onclick="openAstrologySettings()">My placements</button></div>'+
    '<div class="astrology-current-reading"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><div><b>'+esc(MOON_SIGN_READINGS?.[ml.sign]||ml.currentReading||"")+'</b><small>'+esc(ml.phaseAction)+'</small></div></div>'+
