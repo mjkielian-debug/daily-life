@@ -561,6 +561,25 @@
   };
 
   /* Keep generated items current without requiring a manual refresh. */
+  function decorateLifeWheels(){
+    const wheels=[...document.querySelectorAll(".life-wheel")];
+    for(const wheel of wheels){
+      const segments=[...wheel.querySelectorAll(".life-wheel-segment")];
+      segments.forEach(btn=>{
+        btn.classList.remove("needs-attention","is-clear","has-progress");
+        const text=(btn.textContent||"").toLowerCase();
+        if(/\b(due|open|needed|short|unknown|unlogged|not logged|action|reveal|add |setup|over-assigned|behind)\b/.test(text)
+          &&!/no bills soon|no spending|no tickets yet/.test(text))btn.classList.add("needs-attention");
+        else if(/\b(clear|caught up|up to date|covered|looks clear|steady|complete|all stocked|no bills soon)\b/.test(text))btn.classList.add("is-clear");
+        if(/\b\d+\s*(?:\/|of)\s*\d+\b|\b\d+\s*(?:done|planned|pages|entries|logs|tickets|profiles|items|rooms|goals)\b/.test(text))btn.classList.add("has-progress");
+      });
+      const center=wheel.querySelector(".life-wheel-center");
+      if(center){
+        const small=center.querySelector("small"),label=(small?.textContent||"").trim();
+        if(small&&label&&!/^tap\b/i.test(label)&&!label.includes("· tap"))small.textContent=label+" · tap for details";
+      }
+    }
+  }
   const baseRender=render;
   let lifeSyncSaveQueued=false;
   render=function(){
@@ -569,7 +588,9 @@
       lifeSyncSaveQueued=true;
       Promise.resolve(save()).catch(()=>{}).finally(()=>{lifeSyncSaveQueued=false});
     }
-    return baseRender.apply(this,arguments);
+    const result=baseRender.apply(this,arguments);
+    requestAnimationFrame(decorateLifeWheels);
+    return result;
   };
 
   lifeSyncGeneratedTasks();
