@@ -479,7 +479,7 @@
 
   /* Add a usable off-day rhythm and make tomorrow-prep an everyday closeout. */
   if(typeof ITINERARY_ROUTINES!=="undefined"){
-    [["morning-start","Morning start + basics"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["kids-night-prep","Kids nighttime prep"],["older-kids-reading","Leo + Tree reading"],["recovery-nap","Recovery nap"]].forEach(function(row){
+    [["morning-start","Bathroom + teeth + water + get dressed"],["monday-kids-ready","Monday · kids up + ready"],["monday-water-school","Monday · water + school setup"],["monday-self-ready","Monday · get yourself ready"],["monday-stretch","Monday · stretch"],["home-reset","Home reset / declutter"],["midday-reset","Lunch + midday reset"],["personal-care","Shower + self-care"],["water-1","Water · bottle 1 of 3"],["water-2","Water · bottle 2 of 3"],["water-3","Water · bottle 3 of 3"],["kid-shower-leo","Leo morning shower"],["kid-shower-demitri","Demitri shower"],["kid-shower-dolly","Dolly shower"],["kid-shower-ambrose","Ambrose shower"],["dolly-hair","Dolly hair"],["kids-night-prep","Kids nighttime prep"],["older-kids-reading","Leo + Tree reading"],["recovery-nap","Recovery nap"]].forEach(function(row){
       if(!ITINERARY_ROUTINES.some(function(x){return x[0]===row[0]}))ITINERARY_ROUTINES.push(row);
     });
   }
@@ -559,8 +559,8 @@
     }
     if(row.templateKey==="wind-down"){
       const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
-      row.title="Night routine + electronics sweep";
-      row.detail="Finish your own night routine before "+fmtClock(sweep)+" · at 7:30 collect all kids' electronics and start the kids' bedtime routine. Dolly + Ambrose come upstairs after brushing teeth; kids' official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
+      row.title="Teeth + face + pajamas + electronics sweep";
+      row.detail="Brush teeth · floss · mouthwash · wash face · pajamas · plug in phone + set alarm · at "+fmtClock(sweep)+" collect all kids’ electronics. Dolly + Ambrose come upstairs after brushing teeth; kids’ official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
       row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"];
     }
     row.id="suggest:"+date+":"+row.templateKey+":life"+index;
