@@ -663,11 +663,11 @@
       return true;
     }).map(function(x){
       if(x.templateKey==="wind-down"){
-        const night=p.nightRoutine||{};
+        const night=p.nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
         return Object.assign({},x,{
-          title:"Night routine",
-          detail:"Finish the day and get into bed by the planned bedtime",
-          subtasks:Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Get in bed"]
+          title:"Teeth + face + pajamas + electronics sweep",
+          detail:"Your night routine first · at "+fmtClock(sweep)+" collect the kids’ electronics and start their bedtime routine · plug in phone + set alarm · get into bed by the planned bedtime.",
+          subtasks:Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep","Get in bed"]
         });
       }
       if(x.templateKey==="chores"){
@@ -756,8 +756,9 @@
           subtasks:["Stretch for 5 minutes","Watch for bus"],icon:"✦"});
       }else{
         add({templateKey:"morning-start",start:minutesHm(dayStart),end:minutesHm(Math.min(dayEnd,dayStart+30)),
-          title:"Morning start + basics",detail:"Bathroom · teeth · fill water bottle · get dressed · quick look at Day Flow",
-          subtasks:["Bathroom","Teeth","Fill water bottle","Get dressed","Check Day Flow"],icon:"☀"});
+          title:"Bathroom + teeth + water + get dressed",
+          detail:"Bathroom · brush teeth · fill water bottle · get dressed · quick look at Day Flow",
+          subtasks:["Bathroom","Brush teeth","Fill water bottle","Get dressed","Check Day Flow"],icon:"☀"});
       }
       const lunch=lifeLunchChoice(date);
       if(monday){
@@ -836,7 +837,8 @@
       else details.push("Check tomorrow’s calendar · stage clothes/bags/keys");
       details.push("5-minute kitchen / house close");
       if(prepEnd-prepStart>=15)add({templateKey:"tomorrow-prep",start:minutesHm(prepStart),end:minutesHm(prepEnd),
-        title:"Set tomorrow up",detail:details.join(" · "),icon:"✦"});
+        title:tomorrowWork?"Stage work clothes + keys + drink/snack":"Check tomorrow + stage clothes / bags / keys",
+        detail:details.join(" · "),icon:"✦"});
     }
 
     return out.sort(function(a,b){return String(a.start).localeCompare(String(b.start))});
