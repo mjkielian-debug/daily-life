@@ -266,7 +266,7 @@ function budgetCoachTransferRows(x){
 
 function budgetCoachTransferIssues(x){
   if(!x.transferIssues?.length)return"";
-  return `<div class="coach-transfer-review"><b>Check before transferring</b>${x.transferIssues.map(issue=>`<div class="muted small">• ${esc(issue)}</div>`).join("")}<button class="btn small" type="button" onclick="setView('more');setMoneyTab('accounts')">Review accounts</button></div>`;
+  return `<div class="coach-transfer-review"><b>Check before transferring</b>${x.transferIssues.map(issue=>`<div class="muted small">• ${esc(issue)}</div>`).join("")}<button class="btn small" type="button" onclick="closeModal();setView('more');openMoneyHubSection('accounts')">Review accounts</button></div>`;
 }
 
 function budgetCoachPrimaryAction(x,goalPlan){
