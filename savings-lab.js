@@ -88,7 +88,7 @@ function savingsLabSection(){
   const rows=[...savingsLabRows()].sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||""))),
         repeats=typeof budgetCoachRepeatPurchases==="function"?budgetCoachRepeatPurchases(3):[];
   return `<details class="savings-lab">
-    <summary><span><b>Subscription + deal savings lab</b><small>Check whether Subscribe & Save actually wins after fees and overbuying</small></span><span>Open</span></summary>
+    <summary><span><b>Optional savings checks</b><small>Compare repeat purchases only when you want to</small></span><span>Open</span></summary>
     <div class="savings-lab-body">
       <div class="section-title"><div><div class="eyebrow">Recurring purchases</div><h3>Compare the real cost</h3></div><button class="btn primary" onclick="openSavingsComparison()">+ Compare</button></div>
       ${rows.length?rows.slice(0,8).map(savingsLabRow).join(""):`<div class="muted small">No comparisons saved yet. Use the same item/pack size on both sides so the math is meaningful.</div>`}
