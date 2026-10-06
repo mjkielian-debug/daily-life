@@ -553,8 +553,8 @@
   itineraryFixedItems=function(date){
     const rows=baseFixedFriday(date);
     if(date==="2026-10-09"){
-      rows.push({id:"focus-1700:"+date,start:"17:00",end:"20:30",title:"Tanner gift · finish anything still incomplete",detail:"Protected Friday work block after the kids go to Dad's · finish the six records, backs/song titles, crate, or whichever pieces are still left.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
-      rows.push({id:"focus-2030:"+date,start:"20:30",end:"21:00",title:"Tanner gift · final check + hide supplies",detail:"Check all six records and the crate · fix any obvious unfinished detail · put tools/supplies away and hide the gift before bed.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
+      rows.push({id:"focus-1700:"+date,start:"17:00",end:"19:30",title:"Tanner gift · finish anything still incomplete",detail:"Protected Friday work block after the kids go to Dad's · finish the six records, backs/song titles, crate, or whichever pieces are still left.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
+      rows.push({id:"focus-2030:"+date,start:"19:30",end:"19:50",title:"Tanner gift · final check + hide supplies",detail:"Check all six records and the crate · fix any obvious unfinished detail · put tools/supplies away and hide the gift before the nighttime routine.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
       rows.sort((a,b)=>String(a.start).localeCompare(String(b.start)));
     }
     return rows;
