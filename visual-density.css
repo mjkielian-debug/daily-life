@@ -779,3 +779,123 @@ button.food-week-day{
 .budget-hub-modal .money-coach-detail-body{
   color:#4b4059!important;
 }
+
+
+/* Oct 6: stronger mobile Week Plan + editable reading rows */
+.reading-log-row{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:11px 0;
+  border:0;
+  border-top:1px solid #b989a5;
+  background:transparent;
+  color:#292039;
+  text-align:left;
+  font:inherit;
+}
+.reading-log-row:first-of-type{border-top:0}
+.reading-log-row>span:first-child{display:grid;gap:2px;min-width:0}
+.reading-log-row>span:first-child b{font-size:.9rem}
+.reading-log-row small{color:#4b4059!important;font-size:.72rem!important;line-height:1.3!important}
+.reading-log-pages{display:grid;gap:2px;text-align:right;flex:0 0 auto}
+.reading-log-pages b{font-family:var(--font-heading);font-size:.9rem}
+.reading-editor .btn.danger{justify-self:start}
+
+@media(max-width:560px){
+  .food-hub-modal .food-week-card{
+    padding:10px 8px!important;
+  }
+  .food-week-summary{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  .food-week-plan-actions{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .food-week-plan-actions .btn{
+    width:100%!important;
+    min-width:0!important;
+    font-size:.66rem!important;
+  }
+  .food-week-day,
+  .food-week-day.open-day{
+    grid-template-columns:74px minmax(0,1fr)!important;
+    grid-template-areas:
+      "date meal"
+      "date meta"!important;
+    gap:3px 10px!important;
+    min-height:76px!important;
+    padding:10px 4px!important;
+    align-items:start!important;
+  }
+  .food-week-date{
+    grid-area:date!important;
+    align-self:start!important;
+    padding-top:2px!important;
+  }
+  .food-week-date>b{
+    font-size:.84rem!important;
+    white-space:nowrap!important;
+  }
+  .food-week-date>small{
+    font-size:.69rem!important;
+    white-space:nowrap!important;
+  }
+  .food-week-meal{
+    grid-area:meal!important;
+    align-self:start!important;
+  }
+  .food-week-meal>b{
+    font-size:.9rem!important;
+    line-height:1.2!important;
+  }
+  .food-week-meal>small{
+    font-size:.7rem!important;
+    line-height:1.3!important;
+  }
+  .food-week-status{
+    grid-area:meta!important;
+    justify-self:start!important;
+    max-width:none!important;
+    width:auto!important;
+    padding:4px 8px!important;
+    font-size:.61rem!important;
+    white-space:nowrap!important;
+  }
+  .food-week-chevron{
+    display:none!important;
+  }
+  .food-week-row-actions{
+    grid-area:meta!important;
+    grid-column:auto!important;
+    justify-content:flex-start!important;
+    flex-wrap:wrap!important;
+  }
+  .food-week-row-actions .btn{
+    min-height:34px!important;
+    padding:6px 9px!important;
+    font-size:.66rem!important;
+  }
+  .food-week-suggestion{
+    grid-column:2!important;
+    grid-area:meal!important;
+    min-width:0!important;
+  }
+  .food-week-day.suggestion-day{
+    grid-template-areas:"date meal"!important;
+  }
+}
+@media(max-width:390px){
+  .food-week-day,
+  .food-week-day.open-day{
+    grid-template-columns:68px minmax(0,1fr)!important;
+  }
+  .food-week-plan-actions{
+    grid-template-columns:1fr!important;
+  }
+}
