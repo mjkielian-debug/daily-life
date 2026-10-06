@@ -990,3 +990,101 @@ button.food-week-day{
     margin-left:34px;
   }
 }
+
+
+/* Oct 6: spirituality readability + action-first Money detail */
+.spirituality-hub-modal .daily-reading-card{
+  border:1px solid rgba(87,48,74,.28)!important;
+  box-shadow:0 10px 28px rgba(68,39,62,.10)!important;
+}
+.spirituality-hub-modal .daily-reading-card .spiritual-reading-text{
+  margin:12px 0!important;
+  padding:12px 13px!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.72)!important;
+  color:#261d2d!important;
+  font-size:1.02rem!important;
+  line-height:1.58!important;
+  font-weight:650!important;
+}
+.spirituality-hub-modal .daily-reading-card .spiritual-practice-line{
+  padding:10px 12px!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.66)!important;
+}
+.spirituality-hub-modal .daily-reading-card .spiritual-practice-line span{
+  font-size:.68rem!important;
+  font-weight:850!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+}
+.spiritual-preview-text{
+  color:#34283b!important;
+  font-size:.79rem!important;
+  line-height:1.45!important;
+  font-weight:650!important;
+}
+.spirituality-hub-modal .tarot-card-back{
+  width:100%!important;
+  min-height:260px!important;
+  cursor:pointer!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent;
+}
+.spirituality-hub-modal .tarot-card-back:active{
+  transform:scale(.99);
+}
+.spiritual-history-row{
+  width:100%!important;
+  border:0!important;
+  border-top:1px solid #b989a5!important;
+  background:transparent!important;
+  color:#292039!important;
+  text-align:left!important;
+  font:inherit!important;
+  cursor:pointer!important;
+}
+.money-more-details{
+  margin-top:10px;
+  border-top:1px solid #b989a5;
+}
+.money-more-details>summary{
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  cursor:pointer;
+  color:#4b4059;
+  font-size:.76rem;
+  font-weight:850;
+}
+.money-more-details>summary::after{
+  content:"＋";
+  margin-left:auto;
+}
+.money-more-details[open]>summary::after{content:"−"}
+.money-more-details-body{
+  display:grid;
+  gap:10px;
+  padding:0 0 8px;
+}
+.money-hub-modal .budget-coach-compact{
+  margin-bottom:0!important;
+}
+.money-hub-modal .money-coach-primary{
+  padding:13px!important;
+}
+.money-hub-modal .money-coach-primary h3{
+  font-size:1.08rem!important;
+}
+.money-hub-modal .money-coach-primary p{
+  font-size:.76rem!important;
+  line-height:1.35!important;
+}
+@media(max-width:420px){
+  .spirituality-hub-modal .daily-reading-card .spiritual-reading-text{
+    font-size:.98rem!important;
+  }
+  .spirituality-hub-modal .tarot-card-back{
+    min-height:230px!important;
+  }
+}
