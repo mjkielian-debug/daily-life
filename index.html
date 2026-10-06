@@ -216,9 +216,9 @@ async function dbClear(){
 <script src="cloud.js?v=20261004-mealflow1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
-<script src="spirituality.js?v=20261005-fix2"></script>
+<script src="spirituality.js?v=20261006-interaction1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
-<script src="budget-coach.js?v=20261005-compact3"></script>
+<script src="budget-coach.js?v=20261006-action1"></script>
 <script>
 
 const $=s=>document.querySelector(s);
@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.06-work5";
+const APP_BUILD="2026.10.06-work6";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -5071,7 +5071,8 @@ function moneyAccountsCard(){
   return accountList+cloudFinancePanel()+netWorthCard();
 }
 function moneyTransfersCard(){
-  return `${accountStrategyCard()}${moneyNextStepsCard()}${safeToSpendCard()}`;
+  const coach=typeof budgetCoachCard==="function"?budgetCoachCard():"";
+  return `${coach}<details class="money-more-details"><summary>More money details</summary><div class="money-more-details-body">${moneyNextStepsCard()}${safeToSpendCard()}${accountStrategyCard()}</div></details>`;
 }
 function moneyIncomeHub(){
   return `${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}`;
@@ -5085,12 +5086,18 @@ function moneySpendingHub(){
 function moneyNextActionSummary(){
   const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due));
   const urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
-  if(!urgent)return{title:"Nothing urgent",detail:"Upcoming bills look covered with current information."};
-  if(urgent.status==="Transfer needed")return{title:"Transfer needed",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
-  if(urgent.status==="Projected short")return{title:"Projected short",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
-  if(urgent.status==="Needs account")return{title:"Choose account",detail:urgent.bill.name,index:urgent.index};
-  if(urgent.status==="Balance unavailable")return{title:"Update balance",detail:urgent.bill.name,index:urgent.index};
-  return{title:"Check bill",detail:urgent.bill.name,index:urgent.index};
+  if(!urgent)return{title:"No money move needed",detail:"Upcoming bills look covered."};
+  if(urgent.status==="Transfer needed"){
+    const instruction=typeof transferInstruction==="function"?transferInstruction(urgent):"";
+    return{title:"Move money for "+urgent.bill.name,detail:instruction||("Due "+dl(urgent.bill.due)),index:urgent.index};
+  }
+  if(urgent.status==="Projected short"){
+    const short=Math.max(0,-Number(urgent.projectedAfter||0))/100;
+    return{title:"Short for "+urgent.bill.name,detail:(short>0?money(short)+" short · ":"")+"due "+dl(urgent.bill.due),index:urgent.index};
+  }
+  if(urgent.status==="Needs account")return{title:"Choose payment account",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+  if(urgent.status==="Balance unavailable")return{title:"Update account balance",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+  return{title:"Fix bill details",detail:urgent.bill.name,index:urgent.index};
 }
 function openMoneyHubSection(section){
   let title="Money",body="";
@@ -5593,7 +5600,14 @@ async function removeBudgetSpending(index){
 }
 
 function setView(v){view=v;if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();render()}
-function modal(title,body,label,fn){const d=document.createElement("div"),closeOnly=(label||"Save")==="Close"&&fn===closeModal;d.className="modal-backdrop";d.id="modal";d.innerHTML=`<div class="modal"><div class="section-title"><h2>${title}</h2><button class="btn" onclick="closeModal()">Close</button></div>${body}${closeOnly?"":`<div class="actions modal-save-actions" style="margin-top:12px"><button class="btn primary" id="saveModal">${label||"Save"}</button></div>`}</div>`;document.body.appendChild(d);const saveBtn=document.querySelector("#saveModal");if(saveBtn)saveBtn.onclick=fn}
+function modal(title,body,label,fn){
+  document.querySelector("#modal")?.remove();
+  const d=document.createElement("div"),closeOnly=(label||"Save")==="Close"&&fn===closeModal;
+  d.className="modal-backdrop";d.id="modal";
+  d.innerHTML=`<div class="modal"><div class="section-title"><h2>${title}</h2><button class="btn" onclick="closeModal()">Close</button></div>${body}${closeOnly?"":`<div class="actions modal-save-actions" style="margin-top:12px"><button class="btn primary" id="saveModal">${label||"Save"}</button></div>`}</div>`;
+  document.body.appendChild(d);
+  const saveBtn=document.querySelector("#saveModal");if(saveBtn)saveBtn.onclick=fn
+}
 function closeModal(){document.querySelector("#modal")?.remove()}
 function manualSetup(){modal("Start blank",`<div class="stack"><label>Your name<input id="name"></label><label>Reader names, comma-separated<input id="readers" placeholder="Me, Child 1, Child 2"></label></div>`,"Start",async()=>{const name=$("#name").value.trim();if(!name)return;state=blankState();state.profile.name=name;state.settings.readers=$("#readers").value.split(",").map(x=>x.trim()).filter(Boolean);if(!state.settings.readers.length)state.settings.readers=[name];await save();closeModal();render()})}
 function openAstrologySettings(){
@@ -6625,7 +6639,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work5");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261006-work6");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
