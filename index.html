@@ -216,7 +216,7 @@ async function dbClear(){
 <script src="cloud.js?v=20261004-mealflow1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
-<script src="spirituality.js?v=20261006-reveal2"></script>
+<script src="spirituality.js?v=20261006-astrology1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
 <script src="budget-coach.js?v=20261006-action1"></script>
 <script>
@@ -341,9 +341,9 @@ function moonLens(m){
         phaseAction=MOON_PHASE_ACTIONS[phase]||"Notice what feels most important today.",
         [theme,question]=ZODIAC_LENSES[placement.sign]||["reflection","What deserves your attention today?"],
         chart=[];
-  if(sun)chart.push({label:"Sun",sign:sun,relationship:signLevelRelationship(placement.sign,sun),prompt:"How does today’s emotional tone support or challenge the way you naturally express yourself?"});
-  if(natalMoon)chart.push({label:"Natal Moon",sign:natalMoon,relationship:signLevelRelationship(placement.sign,natalMoon),prompt:"Notice whether your usual emotional needs feel amplified, challenged, or easier to name today."});
-  if(rising)chart.push({label:"Rising",sign:rising,relationship:signLevelRelationship(placement.sign,rising),prompt:"What would it look like to meet the day in a way that honors both your outer pace and your inner weather?"});
+  if(sun){const z=ZODIAC_LENSES[sun]||["self-expression",""];chart.push({label:"Sun",sign:sun,relationship:signLevelRelationship(placement.sign,sun),theme:z[0],prompt:"Today’s Moon can be used as a lens on how your inner weather meets your usual way of expressing yourself. "+z[1]})}
+  if(natalMoon){const z=ZODIAC_LENSES[natalMoon]||["emotional needs",""];chart.push({label:"Natal Moon",sign:natalMoon,relationship:signLevelRelationship(placement.sign,natalMoon),theme:z[0],prompt:"Your natal Moon lens points toward "+z[0]+". Notice whether those needs feel easier to access, louder, or more complicated today."})}
+  if(rising){const z=ZODIAC_LENSES[rising]||["how you meet the day",""];chart.push({label:"Rising",sign:rising,relationship:signLevelRelationship(placement.sign,rising),theme:z[0],prompt:"Your Rising lens emphasizes "+z[0]+". Ask how you want to move through the day while the Moon emphasizes "+theme+"."})}
   return{
     sign:placement.sign,degree:placement.degree,element:placement.element,modality:placement.modality,
     theme,question,phaseAction,currentReading:MOON_SIGN_READINGS[placement.sign]||"",
