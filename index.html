@@ -241,7 +241,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.05-taskgroups1";
+const APP_BUILD="2026.10.05-mealshift1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -1843,6 +1843,71 @@ function migrateState(s){
       ]
     });
     s.settings.mondayPlan20261005Version=1;
+  }
+  if(Number(s.settings.mealShift20261005Version||0)<1){
+    let mondayMeal=(s.meals||[]).find(x=>x.date==="2026-10-05"&&x.type==="dinner");
+    if(!mondayMeal){
+      mondayMeal={id:"meal-20261005-leftover-roast",date:"2026-10-05",type:"dinner",prepDone:[]};
+      s.meals.push(mondayMeal);
+    }
+    Object.assign(mondayMeal,{
+      dish:"Leftover pot roast",
+      method:"Leftovers · reheat",
+      assigned:"",
+      status:"made",
+      recipeState:"ready",
+      startBy:"",
+      serveTime:"",
+      ingredients:"",
+      prepSteps:"Reheat the leftover roast and sides as needed, then serve.",
+      notes:"Changed from Runzas because there was still plenty of roast left. Runzas moved to Tuesday, October 6.",
+      dayFlowSteps:[]
+    });
+
+    let tuesdayMeal=(s.meals||[]).find(x=>x.date==="2026-10-06"&&x.type==="dinner");
+    if(!tuesdayMeal){
+      tuesdayMeal={id:"meal-20261006-runzas",date:"2026-10-06",type:"dinner",prepDone:[]};
+      s.meals.push(tuesdayMeal);
+    }
+    Object.assign(tuesdayMeal,{
+      dish:"Cheesy crescent-roll Runzas",
+      method:"Stovetop filling + oven",
+      assigned:"Demitri helps",
+      status:"planned",
+      recipeState:"ready",
+      startBy:"17:15",
+      serveTime:"18:20",
+      ingredients:[
+        "1 lb ground beef",
+        "1 onion, diced",
+        "about 4 cups shredded cabbage",
+        "2 tubes crescent-roll dough",
+        "1 package shredded cheddar (use about 1–1½ cups)",
+        "salt",
+        "black pepper",
+        "garlic powder (optional)"
+      ].join("\n"),
+      prepSteps:[
+        "5:15 PM — Preheat oven to 375°F and get ingredients out with Demitri.",
+        "5:20–5:35 — Brown ground beef and diced onion; drain excess grease if needed.",
+        "5:35–5:45 — Add cabbage, salt, pepper, and optional garlic powder; cook until cabbage is tender and filling is not watery.",
+        "5:45–5:55 — Open crescent dough, add filling and shredded cheddar, then fold/pinch closed. Demitri can help scoop and seal.",
+        "5:55–6:10 — Bake 12–15 minutes at 375°F until golden.",
+        "6:10–6:20 — Let Runzas cool a few minutes and set the table.",
+        "About 6:20 PM — Eat dinner."
+      ].join("\n"),
+      notes:"Moved from Monday so the leftover roast would not go to waste. Demitri can help make dinner.",
+      dayFlowSteps:[
+        {start:"17:15",end:"17:20",title:"Runzas · preheat + set up",detail:"Preheat oven to 375°F · get ingredients out with Demitri",icon:"🍳"},
+        {start:"17:20",end:"17:35",title:"Runzas · brown beef + onion",detail:"Brown 1 lb ground beef with diced onion · Demitri can help stir/measure with supervision",icon:"🍳"},
+        {start:"17:35",end:"17:45",title:"Runzas · add cabbage",detail:"Add about 4 cups shredded cabbage · salt + pepper · optional garlic powder · cook until tender and not watery",icon:"🍳"},
+        {start:"17:45",end:"17:55",title:"Runzas · fill + add cheddar",detail:"Fill crescent dough · add shredded cheddar · fold and pinch closed · Demitri helps assemble",icon:"🍳"},
+        {start:"17:55",end:"18:10",title:"Runzas · bake",detail:"Bake at 375°F for 12–15 minutes, until golden",icon:"🍳"},
+        {start:"18:10",end:"18:20",title:"Runzas · cool + set table",detail:"Let them cool a few minutes while finishing dinner setup",icon:"🍽"},
+        {start:"18:20",end:"18:45",title:"Dinner · cheesy crescent-roll Runzas",detail:"Eat together",icon:"🍽"}
+      ]
+    });
+    s.settings.mealShift20261005Version=1;
   }
   if(Number(s.settings.giftProgressWeekVersion||0)<1){
     const rows=[
