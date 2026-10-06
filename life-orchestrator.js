@@ -24,6 +24,19 @@
     return !!(t&&!t.done&&!t.paused&&!t.waitingForFunds&&!t.duplicateHidden);
   }
   function lifeTaskDate(t){return /^\d{4}-\d{2}-\d{2}$/.test(String(t?.date||""))?t.date:ymd()}
+  function lifeIsDailyResetTask(t){
+    const title=String(t?.title||"").trim().toLowerCase().replace(/\s+/g," ");
+    const notes=String(t?.notes||"").trim().toLowerCase();
+    if(title==="everyone reading")return true;
+    if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(title))return true;
+    if(/^school[- ]night reset$/.test(title))return true;
+    if(t?.dailyReset===true||t?.routineCarryover===false)return true;
+    if(t?.generated==="recurring-task"){
+      const rule=(state.settings?.recurringTasks||[]).find(r=>String(r.title||"").trim().toLowerCase()===title);
+      if(rule&&Array.isArray(rule.days)&&rule.days.length===7)return true;
+    }
+    return /daily routine|daily baseline/.test(notes)&&/room|homework|read/.test(title+" "+notes);
+  }
   function lifeTaskDisplayKey(t){
     const child=String(t?.child||"").trim().toLowerCase();
     let title=String(t?.title||"").trim().toLowerCase();
@@ -250,7 +263,13 @@
 
   function lifeQueue(){
     const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
-      todayRows=lifeDedupeTasks(tasks.filter(t=>lifeTaskDate(t)<=today&&!(String(t.title||"").trim().toLowerCase()==="ups shift"&&lifeTaskDate(t)<today)))
+      todayRows=lifeDedupeTasks(tasks.filter(t=>{
+        const d=lifeTaskDate(t);
+        if(d>today)return false;
+        if(String(t.title||"").trim().toLowerCase()==="ups shift"&&d<today)return false;
+        if(d<today&&lifeIsDailyResetTask(t))return false;
+        return true;
+      }))
         .sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
       soonRows=lifeDedupeTasks(tasks.filter(t=>lifeTaskDate(t)>today&&lifeTaskDate(t)<=weekEnd))
         .sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100)),
