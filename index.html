@@ -619,8 +619,18 @@ function itineraryFixedItems(date){
     if(!e.startTime)continue;
     const startM=hmMinutes(e.startTime),estimatedMinutes=!e.endTime?itineraryEstimatedEventMinutes(e):0,
           estimatedEnd=!e.endTime&&startM!==null?minutesHm(startM+estimatedMinutes):"",
-          detail=[e.child,e.location,e.status==="tentative"?"tentative":"",!e.endTime?"end time estimated until you set it":""].filter(Boolean).join(" · ");
-    items.push({id:"event:"+e.id,start:e.startTime,end:e.endTime||estimatedEnd,title:e.title,detail,fixed:e.status!=="tentative",kind:e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
+          eventEnd=e.endTime||estimatedEnd,
+          childOnlyAfterSchool=!!e.child&&/herpetology|everett musical|after-school club|dungeons\s*&\s*dragons|dungeons and dragons/i.test(String(e.title||"")),
+          detail=[e.child,e.location,childOnlyAfterSchool?"child activity · your time stays open until pickup":"",e.status==="tentative"?"tentative":"",!e.endTime?"end time estimated until you set it":""].filter(Boolean).join(" · ");
+    items.push({id:"event:"+e.id,start:e.startTime,end:eventEnd,title:e.title,detail,fixed:childOnlyAfterSchool?false:e.status!=="tentative",nonBlocking:childOnlyAfterSchool,kind:childOnlyAfterSchool?"context":e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
+    if(childOnlyAfterSchool&&eventEnd){
+      const endM=hmMinutes(eventEnd);
+      if(endM!==null)items.push({
+        id:"pickup:"+e.id,start:minutesHm(Math.max(0,endM-15)),end:minutesHm(Math.min(24*60-1,endM+15)),
+        title:"Pick up "+String(e.child||"kid"),detail:[e.title,e.location].filter(Boolean).join(" · "),
+        fixed:true,kind:"family",icon:"🚗",source:"pickup",sourceId:e.id
+      });
+    }
   }
   for(const x of itineraryCustomBlocks(date))if(x.start)items.push({
     id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",
@@ -1012,7 +1022,7 @@ function taskDisplayTitle(t){
 
 function itineraryEffectiveIntervals(items,date){
   const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
-        sorted=items.filter(x=>hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
+        sorted=items.filter(x=>!x.nonBlocking&&hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
   for(let i=0;i<sorted.length;i++){
     const x=sorted[i],s=hmMinutes(x.start);let e=hmMinutes(x.end);
     if(x.endUnknown){
