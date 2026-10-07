@@ -684,6 +684,50 @@ function itinerarySuggestedBlocks(date){
     const m=hmMinutes(w.end);
     if(m!==null)add({templateKey:"after-work",start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat + reset after work",detail:"Food, water, sit down, then decide what comes next",icon:"♡"});
   }
+  if(weekday===1&&kids.length){
+    add({
+      templateKey:"monday-kids-ready",start:"06:15",end:"06:30",
+      title:"Kids up + ready downstairs",
+      detail:"Wake Demitri, Dolly + Ambrose · get dressed · brush teeth + wash faces · socks/shoes + downstairs",
+      subtasks:["Wake Demitri, Dolly + Ambrose","Get dressed","Brush teeth + wash faces","Socks/shoes + downstairs"],
+      icon:"☀"
+    });
+    add({
+      templateKey:"monday-leo-shower",start:"06:30",end:"07:00",
+      title:"Leo shower",
+      detail:"Leo takes his morning shower · about 30 minutes",
+      subtasks:["Leo shower"],
+      icon:"🚿"
+    });
+    add({
+      templateKey:"monday-water-school",start:"06:30",end:"06:55",allowParallel:true,
+      title:"Finish school launch",
+      detail:"Fill water bottles · check homework/jackets/PE shoes/library items · Dolly hair",
+      subtasks:["Fill water bottles","Homework + jacket check","PE shoes + library check","Dolly hair"],
+      icon:"🎒"
+    });
+    add({
+      templateKey:"monday-self-ready",start:"06:55",end:"07:10",allowParallel:true,
+      title:"Get yourself ready",
+      detail:"Get dressed · face/hair basics · deodorant/perfume · make sure your water is filled",
+      subtasks:["Get dressed","Face + hair","Deodorant + perfume","Fill your water bottle"],
+      icon:"♡"
+    });
+    add({
+      templateKey:"monday-stretch",start:"07:10",end:"07:15",
+      title:"5-minute stretch",
+      detail:"Quick whole-body stretch before the school run",
+      subtasks:["Stretch 5 minutes"],
+      icon:"↗"
+    });
+    add({
+      templateKey:"monday-school-launch",start:"07:15",end:"07:35",
+      title:"Bus + Leo school drop-off",
+      detail:"Demitri, Dolly + Ambrose to the bus · drive Leo to Irving right after",
+      subtasks:["Demitri, Dolly + Ambrose to bus","Drive Leo to Irving"],
+      icon:"🎒"
+    });
+  }
   const waterGoal=Math.max(0,Number(state.settings?.waterTarget||0)),
         waterLogged=(state.waterLogs||[]).filter(x=>x.date===date).reduce((sum,x)=>sum+Number(x.oz||0),0);
   if(waterGoal>0&&bedtime-dayStart>=6*60){
@@ -756,6 +800,7 @@ function itineraryRoutineWindow(x,date){
   const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
         desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
   if(x.templateKey==="work-morning"||/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
+  if(/^monday-(kids-ready|leo-shower|water-school|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))return{start:6*60+15,end:8*60};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(/^water-[123]$/.test(String(x.templateKey||"")))return{start:Math.max(dayStart,desired-45),end:Math.min(dayEnd,desired+50)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
@@ -776,7 +821,7 @@ function itineraryFitRoutines(date,blockingItems,routines){
   for(const x of ordered){
     const desired=hmMinutes(x.start);if(desired===null)continue;
     const rawEnd=hmMinutes(x.end),
-          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-ready|water-school|self-ready|stretch)$/.test(String(x.templateKey||"")))?5:15,
+          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-ready|leo-shower|water-school|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))?5:15,
           duration=Math.max(minimum,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
           window=itineraryRoutineWindow(x,date),
           candidateGaps=x.allowParallel?baseGaps:gaps;
@@ -2220,6 +2265,14 @@ function migrateState(s){
     }
     if(!found)rules.push({id:"friday-family-handoff",title:"Kids to Dad's",child:"Kids",weekday:5,startTime:"16:30",endTime:"17:00",type:"family",location:"",notes:"Friday handoff",status:"confirmed"});
     s.settings.fridayHandoffTimeVersion=2;
+  }
+  if(Number(s.settings.mondaySchoolMorningVersion||0)<1){
+    s.settings.itinerary=s.settings.itinerary||{};
+    const wake=s.settings.itinerary.wakeByWeekday&&typeof s.settings.itinerary.wakeByWeekday==="object"
+      ?s.settings.itinerary.wakeByWeekday
+      :(s.settings.itinerary.wakeByWeekday={});
+    wake[1]="06:15";
+    s.settings.mondaySchoolMorningVersion=1;
   }
   if(Number(s.settings.knownFamilyScheduleVersion||0)<1){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
