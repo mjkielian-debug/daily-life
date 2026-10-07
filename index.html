@@ -1955,6 +1955,18 @@ function migrateState(s){
   for(const key of ["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","wellnessLogs","dailyReviews","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","kidsMoneyReconciliations","schoolGrades","schoolAssignments","itineraryBlocks","inventoryItems","houseRooms","inventoryLocations","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","hobbyProjects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","outfits","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality","accounts","bills","retirement","savingsGoals"]){
     if(!Array.isArray(s[key]))s[key]=[];
   }
+  if(Number(s.settings.demitriSpellingFixVersion||0)<1){
+    const fix=v=>typeof v==="string"?v.replace(/\bDimitri\b/g,"Demitri"):v;
+    s.settings.readers=(s.settings.readers||[]).map(fix);
+    s.settings.familyMembers=(s.settings.familyMembers||[]).map(x=>typeof x==="string"?fix(x):x&&typeof x==="object"?{...x,name:fix(x.name)}:x);
+    s.settings.recurringFamilyEvents=(s.settings.recurringFamilyEvents||[]).map(x=>({...x,title:fix(x.title),child:fix(x.child),notes:fix(x.notes)}));
+    for(const p of s.peopleProfiles||[]){p.name=fix(p.name);if(Array.isArray(p.aliases))p.aliases=p.aliases.map(fix)}
+    for(const t of s.tasks||[]){t.title=fix(t.title);t.child=fix(t.child);t.notes=fix(t.notes)}
+    for(const c of s.chores||[]){c.child=fix(c.child);c.chore=fix(c.chore)}
+    for(const e of s.events||[]){e.title=fix(e.title);e.child=fix(e.child);e.notes=fix(e.notes)}
+    for(const r of s.readingLogs||[])r.reader=fix(r.reader);
+    s.settings.demitriSpellingFixVersion=1;
+  }
   if(Number(s.settings.sleepLog20261005Version||0)<1){
     let sleep=(s.sleepLogs||[]).find(x=>x.date==="2026-10-05");
     if(!sleep){sleep={id:uid(),date:"2026-10-05"};s.sleepLogs.push(sleep)}
