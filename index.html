@@ -5336,6 +5336,10 @@ function moneySpendingHub(){
   return html;
 }
 function moneyNextActionSummary(){
+  const likelyBillCount=typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0;
+  if(likelyBillCount){
+    return{title:"Confirm possible bill payment",detail:likelyBillCount+" bank transaction"+(likelyBillCount===1?" may":"s may")+" already cover a bill.",reviewBill:true};
+  }
   const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due));
   const urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
   if(!urgent)return{title:"No money move needed",detail:"Upcoming bills look covered."};
@@ -5350,6 +5354,12 @@ function moneyNextActionSummary(){
   if(urgent.status==="Needs account")return{title:"Choose payment account",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
   if(urgent.status==="Balance unavailable")return{title:"Update account balance",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
   return{title:"Fix bill details",detail:urgent.bill.name,index:urgent.index};
+}
+function moneyRunNextAction(){
+  const next=moneyNextActionSummary();
+  if(next.reviewBill&&typeof openLikelyBillPaymentReview==="function"){openLikelyBillPaymentReview(0);return}
+  if(Number.isInteger(next.index)){openBill(next.index);return}
+  openMoneyHubSection("transfers");
 }
 function openMoneyHubSection(section){
   let title="Money",body="";
@@ -5369,7 +5379,7 @@ function moreView(){
         income=expectedIncomeOccurrences(end30).filter(x=>x.date>=today),
         accounts=(state.accounts||[]).length,
         activeGoals=(state.savingsGoals||[]).filter(g=>!g.done).length,
-        actions=billReadiness().filter(r=>r.bill.status!=="paid"&&["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status)).length,
+        actions=billReadiness().filter(r=>r.bill.status!=="paid"&&["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status)).length+(typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0),
         month=budgetMonth||today.slice(0,7),spend=(state.budget?.spending||[]).filter(x=>String(x.date||"").startsWith(month)).length,
         paychecks=(state.paychecks||[]).filter(p=>p.payDate&&p.payDate>=shiftDateString(today,-60)).length,
         next=moneyNextActionSummary(),
@@ -5386,7 +5396,7 @@ function moreView(){
   return `<section class="money-one-screen"><div class="money-one-topline"><div><div class="eyebrow">Money at a glance</div><b>Plan + bills + income</b></div><button class="btn small primary" onclick="openBill()">＋ Bill</button></div>
     <div class="life-wheel money-wheel" role="group" aria-label="Money dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openMoneyHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
-      <button type="button" class="life-wheel-center money-wheel-center" onclick="event.stopPropagation();${Number.isInteger(next.index)?`openBill(${next.index})`:`openMoneyHubSection('transfers')`};return false;"><span class="eyebrow">NEXT MONEY MOVE</span><b>${esc(next.title)}</b><strong>${esc(next.detail)}</strong><small>Tap for details</small></button>
+      <button type="button" class="life-wheel-center money-wheel-center" onclick="event.stopPropagation();moneyRunNextAction();return false;"><span class="eyebrow">NEXT MONEY MOVE</span><b>${esc(next.title)}</b><strong>${esc(next.detail)}</strong><small>Tap for details</small></button>
     </div>
   </section>`;
 }
