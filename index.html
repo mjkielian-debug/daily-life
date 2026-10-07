@@ -5141,8 +5141,11 @@ function homeView(){
 }
 
 function householdRoomsCard(){
-  const rooms=[...(state.houseRooms||[])].sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||"")));
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Rooms</div><h2>${rooms.length} mapped room${rooms.length===1?"":"s"}</h2></div><button class="btn" onclick="openInventoryRoom()">+ Room</button></div>${rooms.length?`<div class="people-hub-list">${rooms.map(r=>`<button onclick="closeModal();homeOpenRoomInventory(\'${r.id}\')"><span class="home-room-modal-dot" style="background:${esc(r.mapColor||"#bdeccf")}"></span><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Floor not set")}</small></span><span>›</span></button>`).join("")}</div>`:`<div class="notice"><b>No rooms mapped yet.</b><div class="muted small">Start with the floor the room belongs on. You can match the names to your floor-plan image.</div><div class="actions" style="margin-top:9px"><button class="btn primary" onclick="closeModal();openInventoryRoom(\'\',\'First floor\')">+ First floor room</button><button class="btn" onclick="closeModal();openInventoryRoom(\'\',\'Basement\')">+ Basement room</button></div></div>`}</div>`;
+  const floorOrder=["Basement","First floor","Second floor","Third floor"],
+        floorRank=f=>{const i=floorOrder.indexOf(String(f||""));return i>=0?i:50},
+        rooms=[...(state.houseRooms||[])].sort((a,b)=>floorRank(a.floor)-floorRank(b.floor)||String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||""))),
+        floorButtons=floorOrder.map(f=>{const count=rooms.filter(r=>String(r.floor||"")===f).length;return `<button class="btn small" onclick="closeModal();openInventoryRoom('','${f}')">${esc(f)} · ${count}</button>`}).join("");
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Rooms</div><h2>${rooms.length} mapped room${rooms.length===1?"":"s"}</h2><div class="muted small">Four-floor house map · add rooms to the correct level as you identify them.</div></div><button class="btn" onclick="openInventoryRoom()">+ Room</button></div><div class="actions household-floor-actions" style="margin:6px 0 10px">${floorButtons}</div>${rooms.length?`<div class="people-hub-list">${rooms.map(r=>`<button onclick="closeModal();homeOpenRoomInventory('\\${r.id}')"><span class="home-room-modal-dot" style="background:${esc(r.mapColor||"#bdeccf")}"></span><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Floor not set")}</small></span><span>›</span></button>`).join("")}</div>`:`<div class="notice"><b>No rooms mapped yet.</b><div class="muted small">Start with the first-floor robot-vacuum map, then add the basement, second-floor bedrooms/bath, and third-floor bedroom as you map them.</div></div>`}</div>`;
 }
 function householdSuppliesCard(){
   const cats=new Set(["Household","Cleaning","Bathroom","Tools","Seasonal"]),
@@ -5334,7 +5337,7 @@ function openInventoryRoom(id="",prefillFloor=""){
         color=/^#[0-9a-f]{6}$/i.test(String(x.mapColor||""))?x.mapColor:"#82cd9c";
   modal(x.id?"Edit room":"Add room",`<div class="stack">
     <label>Room name<input id="irname" value="${esc(x.name||"")}" placeholder="Kitchen, bedroom, basement…"></label>
-    <div class="grid2"><label>Floor<input id="irfloor" list="roomFloors" value="${esc(x.floor||"")}" placeholder="First floor"><datalist id="roomFloors"><option value="First floor"><option value="Second floor"><option value="Basement"><option value="Garage"><option value="Outside"></datalist></label><label>Map color<input id="ircolor" type="color" value="${esc(color)}"></label></div>
+    <div class="grid2"><label>Floor<input id="irfloor" list="roomFloors" value="${esc(x.floor||"")}" placeholder="First floor"><datalist id="roomFloors"><option value="Basement"><option value="First floor"><option value="Second floor"><option value="Third floor"><option value="Garage"><option value="Outside"></datalist></label><label>Map color<input id="ircolor" type="color" value="${esc(color)}"></label></div>
     <label>Notes<textarea id="irnotes" rows="3">${esc(x.notes||"")}</textarea></label>
   </div>`,"Save",async()=>{
     const name=$("#irname").value.trim();if(!name)return;
