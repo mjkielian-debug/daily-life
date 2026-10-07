@@ -243,7 +243,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.07-life-sync10";
+const APP_BUILD="2026.10.07-life-sync11";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -5155,7 +5155,7 @@ function householdRoomsCard(){
         floorRank=f=>{const i=floorOrder.indexOf(String(f||""));return i>=0?i:50},
         rooms=[...(state.houseRooms||[])].sort((a,b)=>floorRank(a.floor)-floorRank(b.floor)||String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name||"").localeCompare(String(b.name||""))),
         floorButtons=floorOrder.map(f=>{const count=rooms.filter(r=>String(r.floor||"")===f).length;return `<button class="btn small" onclick="closeModal();openInventoryRoom('','${f}')">${esc(f)} · ${count}</button>`}).join("");
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Rooms</div><h2>${rooms.length} mapped room${rooms.length===1?"":"s"}</h2><div class="muted small">Four-floor house map · add rooms to the correct level as you identify them.</div></div><button class="btn" onclick="openInventoryRoom()">+ Room</button></div><div class="actions household-floor-actions" style="margin:6px 0 10px">${floorButtons}</div>${rooms.length?`<div class="people-hub-list">${rooms.map(r=>`<button onclick="closeModal();homeOpenRoomInventory('\\${r.id}')"><span class="home-room-modal-dot" style="background:${esc(r.mapColor||"#bdeccf")}"></span><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Floor not set")}</small></span><span>›</span></button>`).join("")}</div>`:`<div class="notice"><b>No rooms mapped yet.</b><div class="muted small">Start with the first-floor robot-vacuum map, then add the basement, second-floor bedrooms/bath, and third-floor bedroom as you map them.</div></div>`}</div>`;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Rooms</div><h2>${rooms.length} mapped room${rooms.length===1?"":"s"}</h2><div class="muted small">Four-floor house map · add rooms to the correct level as you identify them.</div></div><button class="btn" onclick="openInventoryRoom()">+ Room</button></div><div class="actions household-floor-actions" style="margin:6px 0 10px">${floorButtons}</div>${rooms.length?`<div class="people-hub-list">${rooms.map(r=>`<button onclick="closeModal();homeOpenRoomInventory('${r.id}')"><span class="home-room-modal-dot" style="background:${esc(r.mapColor||"#bdeccf")}"></span><span><b>${esc(r.name)}</b><small>${esc(r.floor||"Floor not set")}</small></span><span>›</span></button>`).join("")}</div>`:`<div class="notice"><b>No rooms mapped yet.</b><div class="muted small">Start with the first-floor robot-vacuum map, then add the basement, second-floor bedrooms/bath, and third-floor bedroom as you map them.</div></div>`}</div>`;
 }
 function householdSuppliesCard(){
   const cats=new Set(["Household","Cleaning","Bathroom","Tools","Seasonal"]),
@@ -7047,7 +7047,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-life-sync10");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-life-sync11");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -7069,7 +7069,7 @@ registerAppWorker();
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261004-mealflow1"></script>
 <script src="daily-coach.js?v=20261004-radialfix1"></script>
-<script src="house-robot.js?v=20261004-housemap4"></script>
+<script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261007-concretegaps3"></script>
 <script src="life-orchestrator.js?v=20261007-taskhub8"></script>
