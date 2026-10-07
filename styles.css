@@ -2164,6 +2164,22 @@ body::before{
   opacity:.84;
   background:rgba(255,255,255,.012);
 }
+.planner-row.planner-context{
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 4%,transparent);
+  opacity:.78;
+  box-shadow:none;
+}
+.planner-row.planner-context .planner-kind{
+  background:color-mix(in srgb,var(--secondary) 9%,transparent);
+}
+.planner-row.planner-family{
+  border-color:color-mix(in srgb,var(--accent) 42%,var(--border));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 76%,white 8%);
+  background:color-mix(in srgb,var(--accent) 5%,rgba(255,255,255,.022));
+}
+
 .planner-row.is-done{opacity:.58}
 .planner-time{
   display:grid;
