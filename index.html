@@ -4640,6 +4640,7 @@ function readingWheelCard(){
   const rows=monthlyReaderTickets();
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Reader Wheel</div><h2>This month</h2><div class="muted small">Tickets reflect reading logged during the current month.</div></div><button class="btn primary" onclick="spinReaderWheel()">Spin</button></div>${rows.map(r=>`<div class="row"><span>${esc(r.reader)} · ${r.days} reading day${r.days===1?"":"s"}</span><b>${r.tickets} tickets</b></div>`).join("")||`<div class="notice">No tickets yet this month.</div>`}</div>`;
 }
+function readingBookKey(value){return String(value||"").trim().toLocaleLowerCase().replace(/[’‘]/g,"'").replace(/\s+/g," ")}
 function readingTodayCard(){
   const rows=reads(),total=rows.reduce((n,x)=>n+Number(x.pages||0),0);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Today</div><h2>${total} pages logged</h2></div><button class="btn primary" onclick="openReadingChooser()">+ Pages</button></div>${rows.map(x=>`<button type="button" class="reading-log-row" onclick="openReading('${esc(String(x.reader||""))}','${esc(String(x.id||""))}')"><span><b>${esc(x.reader)}</b><small>${x.book?esc(x.book):"Book not entered"}</small></span><span class="reading-log-pages"><b>${Number(x.pages||0)} pages</b><small>Edit ›</small></span></button>`).join("")||`<div class="notice">No reading logged yet today.</div>`}</div>`;
@@ -4647,14 +4648,14 @@ function readingTodayCard(){
 function readingMonthCard(){
   const month=ymd().slice(0,7),logs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
         pages=logs.reduce((n,x)=>n+Number(x.pages||0),0),days=new Set(logs.map(x=>x.date)).size,
-        books=new Set(logs.map(x=>String(x.book||"").trim()).filter(Boolean)).size;
+        books=new Set(logs.map(x=>readingBookKey(x.book)).filter(Boolean)).size;
   return `<div class="card"><div class="eyebrow">This month</div><h2>${pages} pages</h2><div class="grid3"><div class="metric"><div class="big">${days}</div><div class="muted small">reading days</div></div><div class="metric"><div class="big">${books}</div><div class="muted small">books named</div></div><div class="metric"><div class="big">${monthlyReaderTickets().reduce((n,x)=>n+Number(x.tickets||0),0)}</div><div class="muted small">wheel tickets</div></div></div></div>`;
 }
 function readingBooksCard(){
   const map=new Map();
   for(const x of state.readingLogs||[]){
     const book=String(x.book||"").trim();if(!book)continue;
-    const key=book.toLowerCase(),row=map.get(key)||{book,pages:0,logs:0,last:""};
+    const key=readingBookKey(book),row=map.get(key)||{book,pages:0,logs:0,last:""};
     row.pages+=Number(x.pages||0);row.logs++;if(String(x.date||"")>row.last)row.last=x.date;map.set(key,row);
   }
   const rows=[...map.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last))).slice(0,20);
@@ -4687,7 +4688,7 @@ function readingView(){
         nextReader=[...readerPages.entries()].sort((a,b)=>a[1]-b[1])[0]||null,
         month=ymd().slice(0,7),monthLogs=(state.readingLogs||[]).filter(x=>String(x.date||"").startsWith(month)),
         monthPages=monthLogs.reduce((sum,x)=>sum+Number(x.pages||0),0),monthDays=new Set(monthLogs.map(x=>x.date)).size,
-        bookCount=new Set(monthLogs.map(x=>String(x.book||"").trim()).filter(Boolean)).size,
+        bookCount=new Set(monthLogs.map(x=>readingBookKey(x.book)).filter(Boolean)).size,
         tickets=ticketRows.reduce((n,x)=>n+Number(x.tickets||0),0),
         readers=(state.settings.readers||[]).length,
         recent=(state.readingLogs||[]).filter(x=>x.date>=shiftDateString(ymd(),-6)).length,
