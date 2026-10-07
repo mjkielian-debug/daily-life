@@ -58,7 +58,8 @@ function tarotForDate(date){
  const row=TAROT_MAJOR[index];return{index:index,reversed:reversed,name:row[0],meaning:reversed?row[2]:row[1],prompt:row[3],saved:saved}
 }
 function ensureDailyTarotSaved(date){
- date=date||ymd();if((state.tarotDraws||[]).some(x=>x.date===date))return;
+ date=date||ymd();state.tarotDraws=state.tarotDraws||[];
+ if(state.tarotDraws.some(x=>x.date===date))return;
  const t=tarotForDate(date);state.tarotDraws.push({id:uid(),date:date,cardIndex:t.index,reversed:t.reversed,note:"",revealed:false,revealedAt:"",createdAt:new Date().toISOString()})
 }
 function tarotRevealed(date){
@@ -140,7 +141,7 @@ function openSpiritualJournal(type){
 function tarotCardMarkup(date,compact){
  date=date||ymd();ensureDailyTarotSaved(date);const t=tarotForDate(date),revealed=tarotRevealed(date);
  if(!revealed){
-   return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" onclick="revealTarot(\''+date+'\')" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
+   return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" data-tarot-reveal="'+date+'" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
  }
  return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-revealed"><button class="tarot-card-face" type="button" onclick="openTarotReflection(\''+date+'\')"><div class="tarot-stars">✦ · ☾ · ✧</div>'+tarotArtwork(t)+'<div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(t.saved?.intention?'<div class="notice"><b>My intention</b><p>'+esc(t.saved.intention)+'</p></div>':'')+(compact?'<div class="actions" style="margin-top:8px"><button class="btn small" onclick="openTarotReflection(\''+date+'\')">Reflect</button></div>':'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
 }
@@ -189,10 +190,13 @@ function spiritualityHistoryCard(){
    (cards.length?'<div class="mini-heading">Daily tarot</div>'+cards.map(x=>{const t=tarotForDate(x.date);return'<button class="row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+'</div></span><span>›</span></button>'}).join(""):'')+
    (!journals.length&&!cards.length?'<div class="notice">No spiritual history yet.</div>':'')+'</div>'
 }
-function openSpiritualityPage(){
+function openSpiritualityPage(event){
+ if(event){event.preventDefault?.();event.stopPropagation?.()}
  if(typeof closeModal==="function"&&document.querySelector("#modal"))closeModal();
- if(typeof setView==="function")setView("spirituality");
- else{view="spirituality";render()}
+ view="spirituality";
+ if(typeof render==="function")render();
+ requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"}));
+ return false;
 }
 function openSpiritualHubSection(section){
  let title="Spirituality",body="";
@@ -229,11 +233,11 @@ function spiritualityView(m){
 }
 function spiritualityLaunchCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
- return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" type="button" onclick="openSpiritualityPage()">Open</button></div></div>'
+ return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" type="button" data-open-spirituality="page">Open</button></div></div>'
 }
 function todaySpiritualityCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),tarotLabel=tarotRevealed()?t.name:"card ready to reveal";
- return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" type="button" onclick="openSpiritualityPage()">Open</button></div><div class="spiritual-preview-text">'+esc(r.body)+'</div></div>'
+ return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" type="button" data-open-spirituality="page">Open</button></div><div class="spiritual-preview-text">'+esc(r.body)+'</div></div>'
 }
 
 // Keep inline controls reliable in the installed Android PWA as well as the browser tab.
@@ -242,11 +246,28 @@ window.openSpiritualHubSection=openSpiritualHubSection;
 window.revealTarot=revealTarot;
 window.openTarotReflection=openTarotReflection;
 
+if(!window.__dailyLifeSpiritualityDelegates){
+ window.__dailyLifeSpiritualityDelegates=true;
+ document.addEventListener("click",event=>{
+   const reveal=event.target.closest?.("[data-tarot-reveal]");
+   if(reveal){
+     event.preventDefault();event.stopPropagation();
+     revealTarot(reveal.getAttribute("data-tarot-reveal")||ymd());
+     return;
+   }
+   const open=event.target.closest?.("[data-open-spirituality]");
+   if(open){
+     event.preventDefault();event.stopPropagation();
+     openSpiritualityPage(event);
+   }
+ },true);
+}
+
 (function installTarotDeepReadingStyles(){
  if(document.getElementById("tarotDeepReadingStyles"))return;
  const style=document.createElement("style");
  style.id="tarotDeepReadingStyles";
- style.textContent=".tarot-deep-reading{display:grid;gap:9px}.tarot-reading-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tarot-reading-grid section{padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,transparent)}.tarot-reading-grid span{display:block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tarot-reading-grid p{margin:5px 0 0;line-height:1.45}@media(max-width:520px){.tarot-reading-grid{grid-template-columns:1fr}}";
+ style.textContent=".tarot-deep-reading{display:grid;gap:9px}.tarot-reading-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tarot-reading-grid section{padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,transparent)}.tarot-reading-grid span{display:block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tarot-reading-grid p{margin:5px 0 0;line-height:1.45}.daily-reading-card,.today-spirituality,.spirituality-launch{background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(255,241,247,.94))!important;color:#3f3140!important;border-color:rgba(198,116,157,.22)!important}.daily-reading-card .muted,.today-spirituality .muted,.spirituality-launch .muted{color:#715f70!important}.daily-reading-card .spiritual-reading-text,.today-spirituality .spiritual-preview-text{color:#3f3140!important;line-height:1.55}.tarot-card-back{touch-action:manipulation;cursor:pointer}.tarot-card-back b{font-size:1rem}@media(max-width:520px){.tarot-reading-grid{grid-template-columns:1fr}}";
  document.head.appendChild(style);
 })();
 
