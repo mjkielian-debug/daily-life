@@ -28,6 +28,7 @@
   }
   function taskUiSpecificTitle(t){
     const title=String(t&&t.title||"Task").trim(),key=title.toLowerCase().replace(/\s+/g," ");
+    if(typeof window.taskDisplayTitle==="function"){const shared=window.taskDisplayTitle(t);if(shared!==title)return shared}
     if(key==="bedtime wind down")return"Night routine · teeth, pajamas, vacuums + settle";
     if(key==="kids nighttime prep")return"Kids · electronics, teeth, pajamas + reading";
     if(key==="tomorrow prep")return"Set out clothes + pack tomorrow";
