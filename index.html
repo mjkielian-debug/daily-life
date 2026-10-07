@@ -2498,6 +2498,23 @@ function migrateState(s){
     s.settings.recurringFamilyEvents=cleaned;
     s.settings.familyScheduleDedupeVersion=2;
   }
+  if(Number(s.settings.homeHistoryBaselineVersion||0)<1){
+    const hasFridgeBaseline=(s.homeLogs||[]).some(x=>
+      String(x.date||"")==="2026-09-27"&&/clean\s+(?:the\s+)?(?:refrigerator|fridge)|(?:refrigerator|fridge)\s+clean/i.test(String(x.task||""))
+    );
+    if(!hasFridgeBaseline){
+      s.homeLogs.push({
+        id:uid(),
+        date:"2026-09-27",
+        time:"",
+        area:"Kitchen",
+        task:"Clean refrigerator",
+        status:"done",
+        notes:"Backfilled from confirmed household history"
+      });
+    }
+    s.settings.homeHistoryBaselineVersion=1;
+  }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
