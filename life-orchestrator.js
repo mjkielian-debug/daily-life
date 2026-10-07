@@ -459,15 +459,17 @@
       const items=groups.get(cat)||[];
       return '<section class="life-task-group"><div class="life-task-group-head"><b>'+esc(cat)+'</b><span>'+items.length+'</span></div>'+
         items.map(t=>{
-          const meta=lifeTaskMeta(t),note=lifeTaskCleanNote(t);
+          const rawTitle=String(t.title||"Task"),displayTitle=typeof window.taskUiDisplayTitle==="function"?window.taskUiDisplayTitle(t):rawTitle,
+            meta=lifeTaskMeta(t),cleanNote=lifeTaskCleanNote(t),
+            note=cleanNote||((displayTitle!==rawTitle&&typeof window.taskUiDisplayNote==="function")?window.taskUiDisplayNote(t):"");
           return '<div class="life-task-hub-row">'+
             '<label class="life-task-check"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
             '<button class="life-task-main" onclick="lifeOpenSource(\''+t.id+'\')">'+
-              '<span class="life-task-top"><b>'+esc(t.title)+'</b></span>'+
+              '<span class="life-task-top"><b>'+esc(displayTitle)+'</b></span>'+
               (meta?'<small class="life-task-meta">'+esc(meta)+'</small>':'')+
               (note?'<small class="life-task-note">'+esc(note)+'</small>':'')+
             '</button>'+
-            '<button class="life-task-open" onclick="lifeOpenSource(\''+t.id+'\')" aria-label="Open '+esc(t.title)+'">›</button>'+
+            '<button class="life-task-open" onclick="lifeOpenSource(\''+t.id+'\')" aria-label="Open '+esc(displayTitle)+'">›</button>'+
           '</div>';
         }).join("")+'</section>';
     }).join("");
