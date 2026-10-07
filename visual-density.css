@@ -1612,3 +1612,114 @@ button.food-week-day{
   .life-wheel:not(.dayflow-wheel) .life-wheel-segment b{font-size:.72rem!important}
   .life-wheel:not(.dayflow-wheel) .life-wheel-segment small{font-size:.47rem!important}
 }
+
+
+/* Oct 6: final phone wheel cleanup — labels belong to the pie, not floating cards */
+@media(max-width:560px){
+  .life-wheel:not(.dayflow-wheel){
+    --wheel-size:min(88vw,calc(100dvh - 285px),365px)!important;
+  }
+  .people-wheel{
+    --wheel-size:min(88vw,calc(100dvh - 255px),365px)!important;
+  }
+
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+    width:27%!important;
+    height:18%!important;
+    padding:2px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-198%) rotate(var(--counter-angle))!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+    background:rgba(255,255,255,.16)!important;
+    border-radius:14px!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-198%) rotate(var(--counter-angle)) scale(.96)!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment>span{
+    width:100%!important;
+    height:100%!important;
+    gap:1px!important;
+    overflow:visible!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment i{
+    width:23px!important;
+    height:23px!important;
+    flex:0 0 23px!important;
+    font-size:.72rem!important;
+    border:1px solid rgba(255,255,255,.82)!important;
+    background:rgba(255,255,255,.72)!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment b{
+    max-width:12ch!important;
+    font-size:.67rem!important;
+    line-height:1.02!important;
+    font-weight:850!important;
+    overflow:visible!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment small{
+    display:block!important;
+    max-width:13ch!important;
+    font-size:.43rem!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center{
+    width:38%!important;
+    height:38%!important;
+    padding:9px!important;
+    overflow:hidden!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>.eyebrow{
+    font-size:.48rem!important;
+    line-height:1.05!important;
+    letter-spacing:.04em!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>b{
+    display:-webkit-box!important;
+    max-width:15ch!important;
+    margin:3px auto!important;
+    font-size:.78rem!important;
+    line-height:1.03!important;
+    overflow:hidden!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:3!important;
+    line-clamp:3!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>strong{
+    display:none!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>small{
+    display:-webkit-box!important;
+    max-width:17ch!important;
+    margin:0 auto!important;
+    font-size:.44rem!important;
+    line-height:1.08!important;
+    overflow:hidden!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    line-clamp:2!important;
+  }
+}
+@media(max-width:380px){
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+    width:26%!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle))!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle)) scale(.96)!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment small{
+    display:none!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center{
+    width:39%!important;
+    height:39%!important;
+  }
+}
