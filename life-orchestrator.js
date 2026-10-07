@@ -503,7 +503,7 @@
             meta=lifeTaskMeta(t),cleanNote=lifeTaskCleanNote(t),
             note=cleanNote||((displayTitle!==rawTitle&&typeof window.taskUiDisplayNote==="function")?window.taskUiDisplayNote(t):"");
           return '<div class="life-task-hub-row">'+
-            '<label class="life-task-check"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
+            '<label class="life-task-check"><input type="checkbox" onchange="lifeToggleHubTask(\''+t.id+'\',this.checked)"><span aria-hidden="true"></span></label>'+
             '<button class="life-task-main" onclick="lifeOpenSource(\''+t.id+'\')">'+
               '<span class="life-task-top"><b>'+esc(displayTitle)+'</b></span>'+
               (meta?'<small class="life-task-meta">'+esc(meta)+'</small>':'')+
