@@ -233,7 +233,7 @@ const blankState=()=>({
   version:36,createdAt:new Date().toISOString(),
   profile:{name:"",location:"",sunSign:"",moonSign:"",risingSign:""},
   settings:{
-    readers:["Me"],calTarget:2100,proteinTarget:100,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
+    readers:["Me"],calTarget:2100,proteinTarget:100,waterTarget:78,appliedCloudEntryIds:[],bankTransactionReviews:{},selfCareHabits:[],petCare:{robotLitterBoxes:0,standardLitterBoxes:0,feedingRoutine:"",carrierLocation:"",emergencyVet:"",sitterNotes:"",notes:"",configured:false},garden:{hardinessZone:"",location:"",notes:""},spirituality:{dailyMinutes:10},itinerary:{dayStart:"03:30",dayEnd:"21:30",showFlexible:true,autoScheduleTasks:true,protectSleep:true,sleepTargetHours:8,preferredBedtimeStart:"20:00",preferredBedtimeEnd:"20:30",morningLeadMinutes:60,inferWorkStartForSleep:true,workWeekdays:[2,3,4,5,6],taskPatterns:{},routinePreferences:{}},
     familyMembers:[],choreRotations:[],dailyKidBasics:[],recurringFamilyEvents:[],
     recurringTasks:[
       {title:"Everyone reading",category:"family",days:[0,1,2,3,4,5,6],order:60,notes:"Reading / pages logged"}
@@ -683,6 +683,22 @@ function itinerarySuggestedBlocks(date){
     const m=hmMinutes(w.end);
     if(m!==null)add({templateKey:"after-work",start:minutesHm(m+15),end:minutesHm(m+45),title:"Eat + reset after work",detail:"Food, water, sit down, then decide what comes next",icon:"♡"});
   }
+  const waterGoal=Math.max(0,Number(state.settings?.waterTarget||0)),
+        waterLogged=(state.waterLogs||[]).filter(x=>x.date===date).reduce((sum,x)=>sum+Number(x.oz||0),0);
+  if(waterGoal>0&&bedtime-dayStart>=6*60){
+    const wakeSpan=bedtime-dayStart,
+      checkpoints=[
+        {key:"water-1",fraction:.32,portion:1,label:"Bottle 1"},
+        {key:"water-2",fraction:.58,portion:2,label:"Bottle 2"},
+        {key:"water-3",fraction:.82,portion:3,label:"Bottle 3"}
+      ];
+    for(const c of checkpoints){
+      const threshold=Math.round(waterGoal*c.portion/3);
+      if(waterLogged>=threshold)continue;
+      const at=Math.min(bedtime-60,Math.max(dayStart+60,Math.round(dayStart+wakeSpan*c.fraction)));
+      add({templateKey:c.key,start:minutesHm(at),end:minutesHm(at+5),title:"Water check · "+c.label+" of 3",detail:"Aim for at least "+threshold+" oz total by now · current log "+Math.round(waterLogged)+" oz",icon:"💧"});
+    }
+  }
   if(kids.length&&weekday!==0&&weekday!==6&&(kidsAwayAt===null||kidsAwayAt>15*60+30)){
     add({templateKey:"after-school-launch",start:"15:30",end:"16:00",title:"Snack + after-school reset",detail:"Snack · unpack bags · check papers · get settled",icon:"🎒"});
     add({templateKey:"homework",start:"16:00",end:"16:45",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
@@ -720,6 +736,7 @@ function itineraryRoutineWindow(x,date){
         desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
   if(x.templateKey==="work-morning"||/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
+  if(/^water-[123]$/.test(String(x.templateKey||"")))return{start:Math.max(dayStart,desired-45),end:Math.min(dayEnd,desired+50)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
   if(x.templateKey==="homework")return{start:15*60,end:19*60+15};
   if(x.templateKey==="meal-prep")return{start:Math.max(dayStart,desired-60),end:Math.min(dayEnd,desired+120)};
