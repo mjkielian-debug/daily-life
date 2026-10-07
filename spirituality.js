@@ -75,6 +75,7 @@ async function revealTarot(date){
  ensureDailyTarotSaved(date);
  const draw=(state.tarotDraws||[]).find(x=>x.date===date);if(!draw)return;
  const before={revealed:draw.revealed,revealedAt:draw.revealedAt};
+ state.spiritualityPracticeLogs=state.spiritualityPracticeLogs||[];
  let log=spiritualityLogFor(date),createdLog=false,oldTarot=log?.tarot;
  if(!log){log={id:uid(),date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log);createdLog=true}
  draw.revealed=true;draw.revealedAt=draw.revealedAt||new Date().toISOString();log.tarot=true;
@@ -97,6 +98,7 @@ async function revealTarot(date){
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
 async function toggleSpiritualPractice(key){
+ state.spiritualityPracticeLogs=state.spiritualityPracticeLogs||[];
  let x=spiritualityLogFor();if(!x){x={id:uid(),date:ymd(),reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(x)}
  x[key]=!x[key];await save();render()
 }
