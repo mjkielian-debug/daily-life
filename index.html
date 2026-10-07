@@ -1904,6 +1904,10 @@ function ensureRecurringFamilyEvents(){
     const d=new Date(today);d.setDate(today.getDate()+offset);const date=ymd(d),wd=d.getDay();
     for(const r of defs){
       if(Number(r.weekday)!==wd)continue;
+      const startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(r.startDate||""))?String(r.startDate):"",
+        endDate=/^\d{4}-\d{2}-\d{2}$/.test(String(r.endDate||""))?String(r.endDate):"";
+      if(startDate&&date<startDate)continue;
+      if(endDate&&date>endDate)continue;
       const title=String(r.title||"").trim();if(!title)continue;
       desired.set(String(r.id)+"|"+date,{rule:r,date});
     }
@@ -2418,6 +2422,25 @@ function migrateState(s){
     upsertRule("wednesday-dolly-dance","Dolly dance","Dolly",3,"","","activity","Wednesday-night dance. Add the exact time when confirmed; Dolly showers after dance.");
     upsertRule("sunday-kids-return","Kids home from Dad's","Kids",0,"17:20","17:45","family","Kids usually return around 5:30 PM and are hungry; have Sunday dinner ready.");
     s.settings.knownFamilyScheduleVersion=2;
+  }
+  if(Number(s.settings.knownFamilyScheduleVersion||0)<3){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    let r=rules.find(x=>String(x.id||"")==="wednesday-prime-time-reading");
+    if(!r){r={id:"wednesday-prime-time-reading"};rules.push(r)}
+    Object.assign(r,{
+      id:"wednesday-prime-time-reading",
+      title:"Prime Time Everett Reading Night",
+      child:"Family",
+      weekday:3,
+      startTime:String(r.startTime||""),
+      endTime:String(r.endTime||""),
+      type:"school",
+      location:String(r.location||""),
+      notes:"Everett Reading Nights · Wednesdays beginning October 14, 2026. Add the exact time when confirmed.",
+      status:"confirmed",
+      startDate:"2026-10-14"
+    });
+    s.settings.knownFamilyScheduleVersion=3;
   }
   if(Number(s.settings.familyScheduleDedupeVersion||0)<1){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
@@ -4866,7 +4889,8 @@ function recurringFamilyEventEditor(r={},originIndex=-1){
     <div class="family-rotation-head"><div><div class="mini-heading">Weekly activity</div><div class="muted small">This creates upcoming calendar items automatically.</div></div><button class="btn small danger" type="button" onclick="this.closest('.family-schedule-editor').remove()">Remove</button></div>
     <label>Activity<input class="fre-title" value="${esc(r.title||"")}" placeholder="Club, rehearsal, dance…"></label>
     <div class="grid2"><label>Person<input class="fre-child" value="${esc(r.child||"")}"></label><label>Day<select class="fre-weekday">${weekdays.map((name,i)=>`<option value="${i}" ${Number(r.weekday)===i?"selected":""}>${name}</option>`).join("")}</select></label></div>
-    <div class="grid2"><label>Start<input class="fre-start" type="time" value="${esc(r.startTime||"")}"></label><label>End<input class="fre-end" type="time" value="${esc(r.endTime||"")}"></label></div>
+    <div class="grid2"><label>Start time<input class="fre-start" type="time" value="${esc(r.startTime||"")}"></label><label>End time<input class="fre-end" type="time" value="${esc(r.endTime||"")}"></label></div>
+    <div class="grid2"><label>Starts on<input class="fre-start-date" type="date" value="${esc(r.startDate||"")}"></label><label>Ends on<input class="fre-end-date" type="date" value="${esc(r.endDate||"")}"></label></div>
     <div class="grid2"><label>Type<select class="fre-type">${["activity","school","family","appointment","other"].map(v=>`<option ${String(r.type||"activity")===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Location<input class="fre-location" value="${esc(r.location||"")}"></label></div>
     <label>Notes<input class="fre-notes" value="${esc(r.notes||"")}"></label>
   </div>`;
@@ -4888,7 +4912,7 @@ function openFamilyScheduleSettings(){
       const title=String(row.querySelector(".fre-title")?.value||"").trim(),child=String(row.querySelector(".fre-child")?.value||"").trim();
       if(!title)continue;
       const origin=Number(row.dataset.originIndex),base=Number.isInteger(origin)&&origin>=0&&old[origin]?old[origin]:{id:uid()};
-      next.push({...base,title,child,weekday:Number(row.querySelector(".fre-weekday")?.value||0),startTime:row.querySelector(".fre-start")?.value||"",endTime:row.querySelector(".fre-end")?.value||"",type:row.querySelector(".fre-type")?.value||"activity",location:String(row.querySelector(".fre-location")?.value||"").trim(),notes:String(row.querySelector(".fre-notes")?.value||"").trim(),status:"confirmed"});
+      next.push({...base,title,child,weekday:Number(row.querySelector(".fre-weekday")?.value||0),startTime:row.querySelector(".fre-start")?.value||"",endTime:row.querySelector(".fre-end")?.value||"",startDate:row.querySelector(".fre-start-date")?.value||"",endDate:row.querySelector(".fre-end-date")?.value||"",type:row.querySelector(".fre-type")?.value||"activity",location:String(row.querySelector(".fre-location")?.value||"").trim(),notes:String(row.querySelector(".fre-notes")?.value||"").trim(),status:"confirmed"});
     }
     settings.recurringFamilyEvents=next;ensureRecurringFamilyEvents();
     await save();closeModal();render();
