@@ -446,8 +446,42 @@
     return note;
   }
 
+  function lifeFamilyRoutinesHtml(){
+    const rows=(state.chores||[]).filter(x=>x.date===ymd());
+    if(!rows.length)return "";
+    const preferred=["Leo","Demitri","Dolly","Ambrose"],groups=new Map();
+    for(const row of rows){
+      const name=String(row.child||"Family").trim()||"Family";
+      if(!groups.has(name))groups.set(name,[]);
+      groups.get(name).push(row);
+    }
+    const people=[...groups.entries()].sort((a,b)=>{
+      const ai=preferred.indexOf(a[0]),bi=preferred.indexOf(b[0]);
+      return (ai<0?99:ai)-(bi<0?99:bi)||a[0].localeCompare(b[0]);
+    });
+    const open=rows.filter(x=>!x.done).length;
+    return '<section class="life-family-routines">'+
+      '<div class="life-task-group-head"><b>Kids + house</b><span>'+open+' open</span></div>'+
+      '<div class="life-family-grid">'+people.map(([name,items])=>{
+        const sorted=items.slice().sort((a,b)=>{
+          const ag=a.generated==="daily-basics"?0:a.generated==="rotation"?1:2,
+                bg=b.generated==="daily-basics"?0:b.generated==="rotation"?1:2;
+          return ag-bg||String(a.chore||"").localeCompare(String(b.chore||""));
+        }),done=sorted.filter(x=>x.done).length;
+        return '<div class="life-family-card">'+
+          '<div class="life-family-head"><b>'+esc(name)+'</b><small>'+done+'/'+sorted.length+'</small></div>'+
+          '<div class="life-family-checks">'+sorted.map(c=>
+            '<label class="'+(c.done?'is-done':'')+'"><input type="checkbox" '+(c.done?'checked':'')+
+            ' onchange="lifeToggleHubChore(\''+c.id+'\',this.checked)"><span>'+esc(c.chore||"Routine")+'</span></label>'
+          ).join("")+'</div></div>';
+      }).join("")+'</div></section>';
+  }
+  window.lifeToggleHubChore=async function(id,done){await toggleChore(id,done);openTodayTasksHub()};
+  window.lifeToggleHubTask=async function(id,done){await toggleTask(id,done);openTodayTasksHub()};
+
   window.openTodayTasksHub=function(){
     const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
+      chores=(state.chores||[]).filter(x=>x.date===ymd()),openChores=chores.filter(x=>!x.done).length,totalOpen=rows.length+openChores,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0},
       hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length;
     const categoryOrder=["Personal","Home","School","Car","Money","Food","Pets","Garden","Work","Life"],
@@ -485,10 +519,10 @@
     ].filter(Boolean).join(" · ");
     modal("Today · Tasks",
       '<div class="stack life-task-hub">'+
-        '<div class="life-task-hub-head"><div><div class="eyebrow">Today</div><h2>'+rows.length+' open task'+(rows.length===1?'':'s')+'</h2>'+
+        '<div class="life-task-hub-head"><div><div class="eyebrow">Today</div><h2>'+totalOpen+' open item'+(totalOpen===1?'':'s')+'</h2>'+
           (statusBits?'<div class="life-task-hub-status">'+esc(statusBits)+'</div>':'')+
         '</div><div class="life-task-hub-actions"><button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add</button></div></div>'+
-        (rows.length?'<div class="life-task-hub-list">'+rowHtml+'</div>':'<div class="notice"><b>Today’s tracked tasks are clear.</b></div>')+
+        (rows.length?'<div class="life-task-hub-list">'+rowHtml+'</div>':'')+lifeFamilyRoutinesHtml()+(totalOpen?'':'<div class="notice"><b>Today’s tracked tasks + routines are clear.</b></div>')+
         '<button class="btn life-task-dayflow" onclick="closeModal();openTodayDayFlow()">Open Day Flow</button>'+
       '</div>',"Close",closeModal);
   };
@@ -515,7 +549,7 @@
       peopleCount=(state.events||[]).filter(e=>e.date>=today&&e.date<=end&&e.status!=="cancelled"&&String(e.child||"").trim()).length,
       homeCount=(state.houseRooms||[]).length,
       petCount=(state.pets||[]).length,
-      openTasks=q.todayRows.length,
+      openTasks=q.todayRows.length+(state.chores||[]).filter(x=>x.date===today&&!x.done).length,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
       centerTitle=String(guide.title||"Today").replace(/^Next\s*·\s*[^·]+\s*·\s*/i,"").replace(/^Prep for\s+/i,"").trim(),
