@@ -921,3 +921,42 @@
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+
+/* 2026-10-07 section launcher mobile scroll hardening */
+.modal-backdrop{
+  overscroll-behavior:contain;
+}
+.modal{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  scrollbar-gutter:stable;
+}
+.modal:has(.section-launcher){
+  padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;
+}
+.modal .section-launcher-tools{
+  position:sticky;
+  top:58px;
+  z-index:2;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  padding:4px 0 8px;
+  background:linear-gradient(180deg,var(--panel) 78%,color-mix(in srgb,var(--panel) 90%,transparent));
+}
+.modal .section-launcher{
+  padding-bottom:12px;
+}
+@media(max-width:520px){
+  .modal:has(.section-launcher){
+    max-height:calc(100dvh - 16px)!important;
+    height:auto!important;
+  }
+  .modal .section-launcher{
+    padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  }
+}
