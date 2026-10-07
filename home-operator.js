@@ -5,31 +5,30 @@
   const HOME_MAP_IMAGE_KEY="dailyLifeLocalHouseMap:firstFloor";
   const HOME_MAP_PREFIX="dailyLifeLocalHouseMap:floor:";
   const HOME_MAP_ACTIVE_KEY="dailyLifeLocalHouseMap:activeFloor";
+  const HOME_MAP_DB_PREFIX="house-floor-plan-v2:";
+  const homeFloorPlanCache=new Map();
+  const homeFloorPlanLoaded=new Set();
 
   function homeFloorList(){
-    const seen=new Set(),rows=[];
+    const core=["Basement","First floor","Second floor","Third floor"],seen=new Set(core),extras=[];
     for(const r of state.houseRooms||[]){
       const floor=String(r.floor||"").trim()||"Unassigned";
-      if(!seen.has(floor)){seen.add(floor);rows.push(floor)}
-    }
-    for(const floor of ["First floor","Basement"]){
-      if(!seen.has(floor)){seen.add(floor);rows.push(floor)}
+      if(!seen.has(floor)){seen.add(floor);extras.push(floor)}
     }
     const rank=floor=>{
       const x=String(floor||"").toLowerCase();
-      if(/first|main/.test(x))return 0;
-      if(/basement/.test(x))return 1;
-      if(/second/.test(x))return 2;
-      if(/third/.test(x))return 3;
-      if(/garage/.test(x))return 4;
-      if(/outside/.test(x))return 5;
+      if(/garage/.test(x))return 10;
+      if(/outside/.test(x))return 11;
       if(/unassigned/.test(x))return 99;
       return 50;
     };
-    return rows.sort((a,b)=>rank(a)-rank(b)||String(a).localeCompare(String(b)));
+    return [...core,...extras.sort((a,b)=>rank(a)-rank(b)||String(a).localeCompare(String(b)))];
   }
   function homeFloorStorageKey(floor){
     return HOME_MAP_PREFIX+encodeURIComponent(String(floor||"First floor").trim()||"First floor");
+  }
+  function homeFloorDbKey(floor){
+    return HOME_MAP_DB_PREFIX+encodeURIComponent(String(floor||"First floor").trim()||"First floor");
   }
   function homeActiveFloor(){
     const floors=homeFloorList();
@@ -43,13 +42,42 @@
     if(!floor)return;
     try{localStorage.setItem(HOME_MAP_ACTIVE_KEY,floor)}catch(e){}
   }
-  function homeLocalMapImage(floor=homeActiveFloor()){
+  function homeLegacyMapImage(floor){
     try{
       const modern=localStorage.getItem(homeFloorStorageKey(floor))||"";
       if(modern)return modern;
       if(String(floor).toLowerCase()==="first floor")return localStorage.getItem(HOME_MAP_IMAGE_KEY)||"";
-      return "";
-    }catch(e){return""}
+    }catch(e){}
+    return "";
+  }
+  function homeLocalMapImage(floor=homeActiveFloor()){
+    floor=String(floor||"").trim()||"First floor";
+    return homeFloorPlanCache.get(floor)||homeLegacyMapImage(floor)||"";
+  }
+  async function homeLoadFloorPlan(floor){
+    floor=String(floor||"").trim()||"First floor";
+    if(homeFloorPlanLoaded.has(floor))return homeFloorPlanCache.get(floor)||"";
+    homeFloorPlanLoaded.add(floor);
+    try{
+      const saved=await dbGet(homeFloorDbKey(floor));
+      const data=typeof saved==="string"?saved:String(saved?.dataUrl||"");
+      if(data.startsWith("data:image/")){homeFloorPlanCache.set(floor,data);return data}
+    }catch(e){}
+    const legacy=homeLegacyMapImage(floor);
+    if(legacy.startsWith("data:image/")){
+      homeFloorPlanCache.set(floor,legacy);
+      try{
+        await dbSet(homeFloorDbKey(floor),{dataUrl:legacy,migratedAt:new Date().toISOString()});
+        localStorage.removeItem(homeFloorStorageKey(floor));
+        if(floor.toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
+      }catch(e){}
+    }
+    return legacy;
+  }
+  async function homeLoadFloorPlans(){
+    const floors=homeFloorList();
+    await Promise.all(floors.map(homeLoadFloorPlan));
+    if(typeof render==="function")render();
   }
   function homeImportedMapReference(floor=homeActiveFloor()){
     const needle=String(floor||"").trim().toLowerCase();
@@ -65,9 +93,30 @@
     }
     render();
   }
+  function homeCompressFloorPlan(file){
+    return new Promise((resolve,reject)=>{
+      const url=URL.createObjectURL(file),img=new Image();
+      img.onload=()=>{
+        try{
+          const max=1800,scale=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),
+            width=Math.max(1,Math.round(img.naturalWidth*scale)),height=Math.max(1,Math.round(img.naturalHeight*scale)),
+            canvas=document.createElement("canvas");
+          canvas.width=width;canvas.height=height;
+          const ctx=canvas.getContext("2d");
+          ctx.fillStyle="#ffffff";ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);
+          let data=canvas.toDataURL("image/webp",.9);
+          if(!data.startsWith("data:image/webp"))data=canvas.toDataURL("image/jpeg",.9);
+          URL.revokeObjectURL(url);resolve({dataUrl:data,width,height});
+        }catch(e){URL.revokeObjectURL(url);reject(e)}
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Image load failed"))};
+      img.src=url;
+    });
+  }
   window.homeSetMapFloor=function(floor){
     homeSetActiveFloorValue(floor);
-    homeRefreshMapSurface();
+    if(!homeFloorPlanLoaded.has(String(floor||"")))homeLoadFloorPlan(floor).then(()=>homeRefreshMapSurface()).catch(()=>{});
+    else homeRefreshMapSurface();
   };
   window.homeChooseFloorPlan=function(floor=homeActiveFloor()){
     homeSetActiveFloorValue(floor);
@@ -77,32 +126,33 @@
     input.onchange=()=>{const file=input.files&&input.files[0];if(file)homeSaveFloorPlan(file,floor)};
     input.click();
   };
-  window.homeSaveFloorPlan=function(file,floor=homeActiveFloor()){
+  window.homeSaveFloorPlan=async function(file,floor=homeActiveFloor()){
     if(!file||!/^image\/(jpeg|png|webp)$/i.test(String(file.type||""))){alert("Choose a JPG, PNG, or WebP image.");return}
-    const reader=new FileReader();
-    reader.onerror=()=>alert("Daily Life could not read that image.");
-    reader.onload=()=>{
-      const data=String(reader.result||"");
-      if(!data.startsWith("data:image/"))return;
+    floor=String(floor||"").trim()||"First floor";
+    try{
+      const compressed=await homeCompressFloorPlan(file),
+        record={...compressed,fileName:String(file.name||"floor-plan"),savedAt:new Date().toISOString()};
+      await dbSet(homeFloorDbKey(floor),record);
+      homeFloorPlanCache.set(floor,compressed.dataUrl);homeFloorPlanLoaded.add(floor);
       try{
-        localStorage.setItem(homeFloorStorageKey(floor),data);
-        homeSetActiveFloorValue(floor);
-        if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
-        homeRefreshMapSurface();
-      }catch(e){
-        alert("That image is too large to keep locally. Try a cropped screenshot of just that floor.");
-      }
-    };
-    reader.readAsDataURL(file);
+        localStorage.removeItem(homeFloorStorageKey(floor));
+        if(floor.toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
+      }catch(e){}
+      homeSetActiveFloorValue(floor);homeRefreshMapSurface();
+    }catch(e){alert("Daily Life could not save that floor-plan image. Try a smaller or cropped screenshot.")}
   };
-  window.homeRemoveFloorPlan=function(floor=homeActiveFloor()){
+  window.homeRemoveFloorPlan=async function(floor=homeActiveFloor()){
     if(!confirm("Remove the saved "+floor+" map from this device? Inventory rooms and items will stay."))return;
+    floor=String(floor||"").trim()||"First floor";
+    try{await dbSet(homeFloorDbKey(floor),null)}catch(e){}
+    homeFloorPlanCache.delete(floor);homeFloorPlanLoaded.add(floor);
     try{
       localStorage.removeItem(homeFloorStorageKey(floor));
-      if(String(floor).toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
+      if(floor.toLowerCase()==="first floor")localStorage.removeItem(HOME_MAP_IMAGE_KEY);
     }catch(e){}
     homeRefreshMapSurface();
   };
+
   window.homeAddInventoryItemToRoom=function(roomId){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
     closeModal();openInventoryItem();
@@ -173,10 +223,7 @@
     if(days===1)return"reset yesterday";
     return"last reset "+days+"d ago";
   }
-  function homeFloorNames(){
-    const rows=[...new Set((state.houseRooms||[]).map(r=>String(r.floor||"Unassigned").trim()||"Unassigned"))];
-    return rows.length?rows:["House"];
-  }
+  function homeFloorNames(){return homeFloorList()}
 
   window.homeLogRoomReset=async function(roomId,minutes){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
@@ -258,5 +305,6 @@
   };
 
   homeEnsure();
+  homeLoadFloorPlans().catch(()=>{});
   if(typeof render==="function")render();
 })();
