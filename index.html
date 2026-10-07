@@ -1918,10 +1918,24 @@ function migrateState(s){
     });
     s.settings.choreRotations=[
       ...otherRotations,
-      {id:"older-kids-daily-rotation",label:"Leo + Demitri",members:["Leo","Demitri"],chores:["Laundry","Dishes"],anchorDate:"2026-10-04"},
+      {id:"older-kids-daily-rotation",label:"Leo + Demitri",members:["Leo","Demitri"],chores:["Laundry","Dishes"],anchorDate:"2026-10-05"},
       {id:"younger-kids-daily-rotation",label:"Dolly + Ambrose",members:["Dolly","Ambrose"],chores:["Counters","Floors"],anchorDate:"2026-10-04"}
     ];
     s.settings.familyRoutineRotationFixVersion=2;
+  }
+  if(Number(s.settings.olderKidsRotationAnchorFixVersion||0)<1){
+    const rotations=Array.isArray(s.settings.choreRotations)?s.settings.choreRotations:[];
+    let older=rotations.find(r=>String(r.id||"")==="older-kids-daily-rotation");
+    if(!older)older=rotations.find(r=>{
+      const members=(r.members||[]).map(x=>String(x).toLowerCase());
+      return members.includes("leo")&&members.includes("demitri");
+    });
+    if(older){
+      older.members=["Leo","Demitri"];
+      older.chores=["Laundry","Dishes"];
+      older.anchorDate="2026-10-05";
+    }
+    s.settings.olderKidsRotationAnchorFixVersion=1;
   }
   for(const d of DEFAULT_SELF_CARE_HABITS){
     const existing=s.settings.selfCareHabits.find(h=>h.key===d.key);
