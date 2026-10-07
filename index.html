@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="week-pilot.css?v=20261007-week2">
 <link rel="stylesheet" href="life-tools.css?v=20261004-fabclean1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
-<link rel="stylesheet" href="visual-density.css?v=20261007-wheelfix1">
+<link rel="stylesheet" href="visual-density.css?v=20261007-interact6">
 <title>Daily Life</title>
 <style id="status-bar-root-tint">html{background:#e9b4d0!important;color-scheme:light}body{background-color:#e9b4d0}</style>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
@@ -168,7 +168,7 @@ dialog,
   .modal .btn{max-width:100%}
 }
 </style>
-<link rel="stylesheet" href="readability-fix.css?v=20261004-mealflow1">
+<link rel="stylesheet" href="readability-fix.css?v=20261007-interact6">
 </head>
 <body>
 <div id="app"></div>
@@ -218,7 +218,7 @@ async function dbClear(){
 <script src="cloud.js?v=20261004-mealflow1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261002-billundo1"></script>
-<script src="spirituality.js?v=20261007-interact5"></script>
+<script src="spirituality.js?v=20261007-interact6"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
 <script src="budget-coach.js?v=20261007-donext3"></script>
 <script>
@@ -6772,7 +6772,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-interactions-money1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-interactions-money2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
