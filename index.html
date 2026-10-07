@@ -2134,6 +2134,22 @@ function migrateState(s){
     if(!found)rules.push({id:"friday-family-handoff",title:"Kids to Dad's",child:"Kids",weekday:5,startTime:"16:30",endTime:"17:00",type:"family",location:"",notes:"Friday handoff",status:"confirmed"});
     s.settings.fridayHandoffTimeVersion=2;
   }
+  if(Number(s.settings.knownFamilyScheduleVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    const upsertRule=(id,title,child,weekday,startTime,endTime,type,notes)=>{
+      const titleKey=String(title||"").toLowerCase();
+      let r=rules.find(x=>String(x.id||"")===id);
+      if(!r)r=rules.find(x=>Number(x.weekday)===Number(weekday)&&String(x.title||"").trim().toLowerCase()===titleKey);
+      if(!r){r={id};rules.push(r)}
+      Object.assign(r,{id,title,child,weekday,startTime,endTime,type:type||"family",location:String(r.location||""),notes,status:"confirmed"});
+    };
+    upsertRule("monday-late-kid-pickups","Late pickups · Leo + Demitri","Leo + Demitri",1,"16:10","16:50","family","Leo pickup after Herpetology around 4:15–4:30 PM · Demitri pickup after Everett musical at 4:30 PM.");
+    upsertRule("wednesday-demitri-club-pickup","Pick up Demitri after club","Demitri",3,"15:50","16:10","school","After-school club ends at 4:00 PM.");
+    upsertRule("thursday-leo-dnd-pickup","Pick up Leo after D&D","Leo",4,"16:05","16:25","school","Dungeons & Dragons pickup is around 4:15 PM.");
+    upsertRule("thursday-food-fort","Food Fort","Family",4,"17:30","18:30","family","Thursday family meal; dinner is covered here.");
+    upsertRule("sunday-kids-return","Kids home from Dad's","Kids",0,"17:20","17:45","family","Kids usually return around 5:30 PM and are hungry; have Sunday dinner ready.");
+    s.settings.knownFamilyScheduleVersion=1;
+  }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
