@@ -762,6 +762,16 @@ function itinerarySuggestedBlocks(date){
     add({templateKey:"after-school-launch",start:"15:30",end:"16:00",title:"Snack + after-school reset",detail:"Snack · unpack bags · check papers · get settled",icon:"🎒"});
     add({templateKey:"homework",start:"16:00",end:"16:45",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
   }
+  if(weekday===0&&kids.length&&!meal?.startBy){
+    const sundayCheck=Math.max(dayStart,8*60),dish=String(meal?.dish||"").trim();
+    add({
+      templateKey:"sunday-dinner-plan",
+      start:minutesHm(sundayCheck),end:minutesHm(sundayCheck+15),
+      title:dish?"Set Sunday dinner timing · "+dish:"Choose Sunday crock-pot dinner",
+      detail:dish?"Kids return around 5:30 hungry · set the start time and make sure dinner will be ready then.":"Kids return around 5:30 hungry · choose the crock-pot meal, check what needs thawed, and set its start time.",
+      icon:"🍲"
+    });
+  }
   const hasDetailedMealFlow=Array.isArray(meal?.dayFlowSteps)&&meal.dayFlowSteps.length>0,
         mealCoveredByFixedEvent=events.some(e=>/\bfood fort\b/i.test([e.title,e.notes,e.location].filter(Boolean).join(" "))),
         requestedDinnerStart=hmMinutes(meal?.serveTime||"17:30")??1050,kidsGoneByDinner=kidsAwayAt!==null&&kidsAwayAt<=requestedDinnerStart,
@@ -1420,6 +1430,7 @@ function dayFlowBucketItems(date,key){
   return rows;
 }
 function dayFlowItemAction(x,date){
+  if(x.templateKey==="sunday-dinner-plan")return `openMeal(\'${date}\')`;
   if(x.source==="custom")return `openItineraryBlock('${date}','${x.sourceId}')`;
   if(x.source==="event")return `openEvent('${date}','${x.sourceId}')`;
   if(x.source==="meal")return `openMeal('${date}')`;
