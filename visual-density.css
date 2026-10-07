@@ -1812,3 +1812,152 @@ button.food-week-day{
     line-height:1.08!important;
   }
 }
+
+
+/* Oct 7: final phone wheel spacing — keep the center clear of segment labels */
+@media(max-width:560px){
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+    width:28%!important;
+    height:18%!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle))!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-205%) rotate(var(--counter-angle)) scale(.96)!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center{
+    width:30%!important;
+    height:30%!important;
+    padding:6px!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center>.eyebrow{
+    font-size:.42rem!important;
+    line-height:1.02!important;
+    letter-spacing:.035em!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center>b{
+    max-width:11ch!important;
+    margin:2px auto!important;
+    font-size:.72rem!important;
+    line-height:1.02!important;
+    -webkit-line-clamp:3!important;
+    line-clamp:3!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center>strong{
+    display:none!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center>small{
+    max-width:15ch!important;
+    font-size:.41rem!important;
+    line-height:1.06!important;
+    -webkit-line-clamp:2!important;
+    line-clamp:2!important;
+  }
+}
+@media(max-width:380px){
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment{
+    width:28%!important;
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-208%) rotate(var(--counter-angle))!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment:active{
+    transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-208%) rotate(var(--counter-angle)) scale(.96)!important;
+  }
+  :is(
+    .today-one-screen-shell,
+    .people-one-screen-shell,
+    .food-one-screen-shell,
+    .money-one-screen-shell,
+    .care-one-screen-shell,
+    .reading-one-screen-shell,
+    .pets-one-screen-shell,
+    .inventory-one-screen-shell,
+    .spirituality-one-screen-shell,
+    .garden-hobbies-one-screen-shell,
+    .household-one-screen-shell,
+    .vault-one-screen-shell,
+    .settings-one-screen-shell,
+    .budget-one-screen-shell
+  ) .life-wheel:not(.dayflow-wheel) .life-wheel-center{
+    width:29%!important;
+    height:29%!important;
+    padding:5px!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-segment b{
+    max-width:12ch!important;
+    font-size:.64rem!important;
+  }
+}
