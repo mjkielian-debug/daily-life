@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261007-flow-tarot-week4";
+const CACHE_NAME="daily-life-shell-20261007-interactions-money1";
 const APP_SHELL=[
   "./",
   "./index.html",
