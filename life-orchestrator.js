@@ -603,9 +603,13 @@
     if(weekday>=1&&weekday<=5&&!noSchool&&!alreadyHasPickup&&typeof childProfiles==="function"&&childProfiles().length){
       const children=childProfiles().map(p=>String(p?.name||"").trim()).filter(Boolean),
         lateEvents=dayEvents.filter(e=>{
-          const at=typeof hmMinutes==="function"?hmMinutes(e.startTime):null,
-            text=[e.title,e.notes,e.type].filter(Boolean).join(" ").toLowerCase();
-          return at!==null&&at>=15*60+15&&at<=17*60+15&&/pickup|club|herpetology|musical|rehearsal|dungeons|d&d|after.?school/.test(text);
+          const start=typeof hmMinutes==="function"?hmMinutes(e.startTime):null,
+            end=typeof hmMinutes==="function"?hmMinutes(e.endTime):null,
+            text=[e.title,e.notes,e.type].filter(Boolean).join(" ").toLowerCase(),
+            lateActivity=/pickup|club|herpetology|musical|rehearsal|dungeons|d&d|after.?school/.test(text),
+            extendsPastPickup=end!==null&&end>15*60+15&&start!==null&&start<17*60+15,
+            explicitLatePickup=start!==null&&start>=15*60+15&&start<=17*60+15&&/pickup|pick.?up/.test(text);
+          return lateActivity&&(extendsPastPickup||explicitLatePickup);
         }),
         lateChildren=children.filter(name=>lateEvents.some(e=>[e.child,e.title,e.notes].filter(Boolean).join(" ").toLowerCase().includes(name.toLowerCase()))),
         regularChildren=children.filter(name=>!lateChildren.includes(name)),
