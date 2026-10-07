@@ -24,19 +24,33 @@
     const bits=[];
     if(t.itineraryStart)bits.push(typeof fmtClock==="function"?fmtClock(t.itineraryStart):t.itineraryStart);
     if(t.child)bits.push(t.child);
-    if(t.sharedEntryId)bits.push("shared");
     return bits;
   }
+  function taskUiSpecificTitle(t){
+    const title=String(t&&t.title||"Task").trim(),key=title.toLowerCase().replace(/\s+/g," ");
+    if(key==="bedtime wind down")return"Teeth + pajamas + reading";
+    if(key==="tomorrow prep")return"Set out clothes + pack tomorrow";
+    if(key==="homework + reading")return"Homework + read 20 minutes";
+    return title;
+  }
+  function taskUiSpecificNote(t){
+    const title=String(t&&t.title||"").trim().toLowerCase().replace(/\s+/g," "),
+          note=String(t&&t.notes||"").trim();
+    if(note&&note.toLowerCase()!==title)return note;
+    if(title==="bedtime wind down")return"Electronics away · teeth · pajamas · reading";
+    if(title==="tomorrow prep")return"Clothes out · bags packed · needed items by the door";
+    return"";
+  }
   function taskUiRow(t){
-    const meta=taskUiMeta(t),note=String(t.notes||"").trim();
+    const meta=taskUiMeta(t),note=taskUiSpecificNote(t),displayTitle=taskUiSpecificTitle(t);
     return '<div class="task-ui-row '+(t.done?'is-done':'')+'">'+
       '<label class="task-ui-check"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask(\''+taskUiEsc(t.id)+'\',this.checked)"><span aria-hidden="true"></span></label>'+
       '<button class="task-ui-main" type="button" onclick="openTask(\'\',\''+taskUiEsc(t.id)+'\')">'+
-        '<b>'+taskUiEsc(t.title||"Task")+'</b>'+
+        '<b>'+taskUiEsc(displayTitle)+'</b>'+
         (meta.length?'<small>'+meta.map(taskUiEsc).join(' · ')+'</small>':'')+
         (note?'<small class="task-ui-note">'+taskUiEsc(note)+'</small>':'')+
       '</button>'+
-      '<button class="task-ui-more" type="button" aria-label="Edit '+taskUiEsc(t.title||"task")+'" onclick="openTask(\'\',\''+taskUiEsc(t.id)+'\')">•••</button>'+
+      '<button class="task-ui-more" type="button" aria-label="Edit '+taskUiEsc(displayTitle)+'" onclick="openTask(\'\',\''+taskUiEsc(t.id)+'\')">•••</button>'+
     '</div>';
   }
   function taskUiGroups(rows){
