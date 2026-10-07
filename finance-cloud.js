@@ -349,7 +349,10 @@ function bankBillMatch(t){
     const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
     if(!Number.isFinite(billAmount)||isNaN(due)||Math.abs(billAmount-amount)>.01)return false;
     const signedDays=(posted-due)/86400000;
-    if(signedDays < -10 || signedDays > 7)return false;
+    // Exact-amount bill payments can legitimately post well before the due
+    // date or a little after it. Keep the automatic window aligned with the
+    // review window while still requiring an exact amount here.
+    if(signedDays < -14 || signedDays > 10)return false;
     const local=(state.accounts||[]).find(a=>a.key&&a.key===b.paymentAccountKey);
     if(local?.cloudAccountId&&String(local.cloudAccountId)!==String(t.account_id||""))return false;
     return true;
@@ -369,12 +372,14 @@ function bankBillMatch(t){
     // Keep this conservative: exact amount is already required above, and an
     // account-based fallback only applies when there is one plausible bill.
     if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
-    if(best.accountMatch&&candidates.length===1&&best.days<=4)return best.bill;
-    if(best.accountMatch&&best.days<=7&&["autopay","scheduled"].includes(setup)&&(!second||best.score-second.score>=2))return best.bill;
+    if(best.accountMatch&&candidates.length===1&&best.days<=7)return best.bill;
+    if(best.accountMatch&&best.days<=10&&["autopay","scheduled"].includes(setup)&&(!second||best.score-second.score>=2))return best.bill;
     return null;
   }
   if(best.accountMatch)return best.bill;
   if(best.nameMatch&&(!second||best.score-second.score>=2))return best.bill;
+  const setup=String(best.bill?.paymentSetup||"").toLowerCase();
+  if(candidates.length===1&&best.days<=5&&["autopay","scheduled"].includes(setup))return best.bill;
   if(candidates.length===1&&best.days<=3)return best.bill;
   return null;
 }
