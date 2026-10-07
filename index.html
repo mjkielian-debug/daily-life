@@ -4227,7 +4227,7 @@ function careSectionIntro(title,detail){
 }
 function careHydrationHub(){
   const now=water(),goal=Number(state.settings.waterTarget||0),pct=goal?Math.min(100,Math.round(now*100/goal)):0;
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Hydration</div><h2>${Math.round(now)} oz today</h2><div class="muted small">${goal?pct+"% of "+Math.round(goal)+" oz goal":"Log what you actually drank."}</div></div><button class="btn" onclick="customWater()">Custom</button></div>${goal?todayProgress(now,goal,"Water logged"):""}<div class="actions"><button class="btn" onclick="addWater(8)">+ 8 oz</button><button class="btn" onclick="addWater(16)">+ 16 oz</button><button class="btn" onclick="addWater(24)">+ 24 oz</button></div><div class="muted small" style="margin-top:8px">No water entry means unknown, not zero, in pattern summaries.</div></div>`;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">Hydration</div><h2>${Math.round(now)} oz today</h2><div class="muted small">${goal?pct+"% of "+Math.round(goal)+" oz goal":"Log what you actually drank."}</div></div><button class="btn" onclick="customWater()">Custom</button></div>${goal?todayProgress(now,goal,"Water logged"):""}<div class="actions"><button class="btn" onclick="addWater(8)">+ 8 oz</button><button class="btn" onclick="addWater(16)">+ 16 oz</button><button class="btn primary" onclick="addWater(26)">+ 26 oz bottle</button></div><div class="muted small" style="margin-top:8px">No water entry means unknown, not zero, in pattern summaries.</div></div>`;
 }
 function careSelfHub(){
   return `${selfCareCard()}${careOutfitCard()}${spiritualityLaunchCard()}`;
