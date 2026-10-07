@@ -601,10 +601,20 @@
       noSchool=dayEvents.some(e=>/\b(no school|school closed|school closure|school holiday|break day)\b/i.test([e.title,e.notes].filter(Boolean).join(" "))),
       alreadyHasPickup=rows.some(x=>/\bschool\s*pickup\b/i.test(String(x.title||"")));
     if(weekday>=1&&weekday<=5&&!noSchool&&!alreadyHasPickup&&typeof childProfiles==="function"&&childProfiles().length){
+      const children=childProfiles().map(p=>String(p?.name||"").trim()).filter(Boolean),
+        lateEvents=dayEvents.filter(e=>{
+          const at=typeof hmMinutes==="function"?hmMinutes(e.startTime):null,
+            text=[e.title,e.notes,e.type].filter(Boolean).join(" ").toLowerCase();
+          return at!==null&&at>=15*60+15&&at<=17*60+15&&/pickup|club|herpetology|musical|rehearsal|dungeons|d&d|after.?school/.test(text);
+        }),
+        lateChildren=children.filter(name=>lateEvents.some(e=>[e.child,e.title,e.notes].filter(Boolean).join(" ").toLowerCase().includes(name.toLowerCase()))),
+        regularChildren=children.filter(name=>!lateChildren.includes(name)),
+        regularText=regularChildren.length?("2:52 pickup · "+regularChildren.join(" + ")):"2:52 regular pickup adjusted for later activities",
+        lateText=lateChildren.length?(" · later pickup · "+lateChildren.join(" + ")):"";
       rows.push({
         id:"school-pickup:"+date,start:"14:40",end:"15:15",
         title:"Leave for school pickup",
-        detail:"Leave home 2:40 · park about 2:45 · school pickup 2:52 · pick up Leo after the younger three when he does not have a club",
+        detail:"Leave home 2:40 · park about 2:45 · "+regularText+lateText,
         fixed:true,kind:"family",icon:"🎒",source:"generated"
       });
     }
