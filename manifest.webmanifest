@@ -10,19 +10,25 @@
   "description": "A calm, private personal and family command center for daily life.",
   "icons": [
     {
-      "src": "daily-life-rainbow-192.png?v=20261005-rainbow3",
+      "src": "daily-life-colorful-icon.svg?v=20261007-rainbow5",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "daily-life-rainbow-192.png?v=20261007-rainbow5",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "daily-life-rainbow-512.png?v=20261005-rainbow3",
+      "src": "daily-life-rainbow-512.png?v=20261007-rainbow5",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "daily-life-rainbow-512.png?v=20261005-rainbow3",
+      "src": "daily-life-rainbow-512.png?v=20261007-rainbow5",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
