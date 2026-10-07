@@ -107,7 +107,7 @@
   function weekPilotCard(){
     const days=wpDates().map(wpDayLoad),prep=wpPrepItems(),moves=wpBalanceSuggestions();
     return '<div class="card week-pilot">'+
-      '<div class="section-title"><div><div class="eyebrow">Week Pilot</div><h2>See the pressure before it becomes today</h2><div class="muted small">Work, fixed commitments, open tasks, dinner, and sleep windows across the next seven days.</div></div><div class="actions"><button class="btn primary" onclick="closeModal();openWeekBalance()">Balance flexible tasks'+(moves.length?" · "+moves.length:"")+'</button></div></div>'+
+      '<div class="section-title"><div><div class="eyebrow">Week Pilot</div><h2>Next 7 days</h2><div class="muted small">Work · events · tasks · dinner · sleep</div></div><div class="actions"><button class="btn primary" onclick="closeModal();openWeekBalance()">Balance flexible tasks'+(moves.length?" · "+moves.length:"")+'</button></div></div>'+
       '<div class="week-orbits">'+days.map(d=>
         '<button class="week-orbit '+(d.date===ymd()?"is-today":"")+'" onclick="weekPilotGoDay(\''+d.date+'\')">'+
           '<span>'+esc(wpDayName(d.date))+'</span><b>'+wpDateNum(d.date)+'</b><strong>'+esc(wpLoadLabel(d))+'</strong>'+
