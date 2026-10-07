@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261007-concretegaps3";
+const CACHE_NAME="daily-life-shell-20261007-reset-consistency4";
 const APP_SHELL=[
   "./",
   "./index.html",
