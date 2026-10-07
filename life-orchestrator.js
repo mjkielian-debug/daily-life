@@ -39,6 +39,11 @@
     }
     return /daily routine|daily baseline/.test(notes)&&/room|homework|read/.test(title+" "+notes);
   }
+  function lifeTaskTitle(t){
+    if(typeof window.taskDisplayTitle==="function")return window.taskDisplayTitle(t);
+    if(typeof window.taskUiDisplayTitle==="function")return window.taskUiDisplayTitle(t);
+    return String(t?.title||"Task");
+  }
   function lifeTaskDisplayKey(t){
     const child=String(t?.child||"").trim().toLowerCase();
     let title=String(t?.title||"").trim().toLowerCase();
@@ -315,9 +320,9 @@
       next=items.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
     if(active&&active.kind!=="gap")return{title:active.title,detail:active.detail||("Until "+fmtClock(active.end)),task:active.source==="task"?(state.tasks||[]).find(t=>t.id===active.sourceId):null,mode:"active"};
     const task=lifeNextTask();
-    if(active&&active.kind==="gap"&&task)return{title:task.title,detail:(task.notes?task.notes+" · ":"")+"Use this open block for it.",task,mode:"open"};
+    if(active&&active.kind==="gap"&&task)return{title:lifeTaskTitle(task),detail:(task.notes?task.notes+" · ":"")+"Use this open block for it.",task,mode:"open"};
     if(next)return{title:"Next · "+fmtClock(next.start)+" · "+next.title,detail:next.detail||"",task:next.source==="task"?(state.tasks||[]).find(t=>t.id===next.sourceId):null,mode:"next"};
-    if(task)return{title:task.title,detail:task.notes||"This is the highest-priority open item Daily Life can see.",task,mode:"task"};
+    if(task)return{title:lifeTaskTitle(task),detail:task.notes||"This is the highest-priority open item Daily Life can see.",task,mode:"task"};
     return{title:"No urgent loose ends",detail:"Use the open time for recovery, a room reset, or something you actually want to do.",task:null,mode:"clear"};
   }
 
@@ -376,7 +381,7 @@
         '<button onclick="setView(\'family\')"><b>'+eventCount+'</b><span>Upcoming</span></button>'+
       '</div>'+
       (top.length?'<div class="life-command-list"><div class="mini-heading">Today’s loose ends</div>'+top.map(t=>
-        '<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(t.title)+'</b><small>'+esc([t.child,t.notes,t.date<ymd()?"carried forward":""].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>'
+        '<div class="life-command-row"><label class="task grow"><input type="checkbox" onchange="toggleTask(\''+t.id+'\',this.checked)"><span><b>'+esc(lifeTaskTitle(t))+'</b><small>'+esc([t.child,t.notes,t.date<ymd()?"carried forward":""].filter(Boolean).join(" · "))+'</small></span></label><button class="btn small" onclick="lifeOpenSource(\''+t.id+'\')">Open</button></div>'
       ).join("")+'</div>':'<div class="life-clear"><b>Today’s tracked loose ends are clear.</b><small>Day Flow can stay light instead of inventing work for you.</small></div>')+
       '<details class="life-tomorrow"><summary><span>Tomorrow check</span><b>'+tomorrowEvents.length+' event'+(tomorrowEvents.length===1?"":"s")+' · '+(tomorrowMeal?.dish?"dinner planned":"dinner open")+' · '+(tomorrowWork?.scheduled||tomorrowWork?.start?"work time known":"work time not entered")+'</b></summary>'+
         '<div class="life-tomorrow-body">'+
@@ -459,7 +464,7 @@
       const items=groups.get(cat)||[];
       return '<section class="life-task-group"><div class="life-task-group-head"><b>'+esc(cat)+'</b><span>'+items.length+'</span></div>'+
         items.map(t=>{
-          const rawTitle=String(t.title||"Task"),displayTitle=typeof window.taskUiDisplayTitle==="function"?window.taskUiDisplayTitle(t):rawTitle,
+          const rawTitle=String(t.title||"Task"),displayTitle=lifeTaskTitle(t),
             meta=lifeTaskMeta(t),cleanNote=lifeTaskCleanNote(t),
             note=cleanNote||((displayTitle!==rawTitle&&typeof window.taskUiDisplayNote==="function")?window.taskUiDisplayNote(t):"");
           return '<div class="life-task-hub-row">'+
