@@ -2284,6 +2284,22 @@ function migrateState(s){
     }
     s.settings.giftProgressWeekVersion=2;
   }
+  if(Number(s.settings.knownFamilyAnchorsVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    const upsert=(seed)=>{
+      let r=rules.find(x=>String(x.id||"")===seed.id);
+      if(!r)r=rules.find(x=>Number(x.weekday)===seed.weekday&&String(x.child||"").trim().toLowerCase()===seed.child.toLowerCase()&&String(x.title||"").trim().toLowerCase()===seed.title.toLowerCase());
+      if(!r){r={id:seed.id};rules.push(r)}
+      Object.assign(r,seed,{status:"confirmed"});
+    };
+    upsert({id:"mon-demitri-everett-musical",title:"Everett musical · full cast",child:"Demitri",weekday:1,startTime:"15:00",endTime:"16:30",type:"school",location:"Everett",notes:"Monday full-cast rehearsal · pickup 4:30 PM"});
+    upsert({id:"mon-leo-herpetology",title:"Herpetology",child:"Leo",weekday:1,startTime:"14:52",endTime:"16:30",type:"activity",location:"Irving",notes:"Monday after-school club · pickup around 4:15–4:30 PM"});
+    upsert({id:"wed-demitri-after-school-club",title:"After-school club",child:"Demitri",weekday:3,startTime:"14:52",endTime:"16:00",type:"school",location:"Everett",notes:"Wednesday club · pickup 4:00 PM"});
+    upsert({id:"thu-leo-dnd",title:"Dungeons & Dragons",child:"Leo",weekday:4,startTime:"14:52",endTime:"16:15",type:"activity",location:"Irving",notes:"Thursday after-school D&D · pickup about 4:15 PM"});
+    upsert({id:"thu-food-fort",title:"Food Fort",child:"Family",weekday:4,startTime:"17:30",endTime:"18:30",type:"family",location:"",notes:"Thursday free meal · snack tray after if needed"});
+    upsert({id:"sun-kids-return-dad",title:"Kids return from Dad's",child:"Kids",weekday:0,startTime:"17:30",endTime:"18:00",type:"family",location:"",notes:"Sunday return around 5:30 PM · plan dinner ready because they usually come back hungry"});
+    s.settings.knownFamilyAnchorsVersion=1;
+  }
   if(Number(s.settings.fridayHandoffTimeVersion||0)<2){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
     let found=false;
