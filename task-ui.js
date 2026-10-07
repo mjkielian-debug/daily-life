@@ -91,6 +91,38 @@
     return '<details class="task-ui-completed"><summary><span>✓ Completed today</span><b>'+doneRows.length+'</b></summary><div>'+doneRows.map(taskUiRow).join("")+'</div></details>';
   }
 
+  function taskUiFamilyRoutines(){
+    const rows=(state.chores||[]).filter(x=>x.date===ymd());
+    if(!rows.length)return "";
+    const preferred=["Leo","Demitri","Dolly","Ambrose"],people=new Map();
+    for(const c of rows){
+      const name=String(c.child||"Family").trim()||"Family";
+      if(!people.has(name))people.set(name,[]);
+      people.get(name).push(c);
+    }
+    const ordered=[...people.entries()].sort((a,b)=>{
+      const ai=preferred.indexOf(a[0]),bi=preferred.indexOf(b[0]);
+      if(ai>=0||bi>=0)return (ai<0?99:ai)-(bi<0?99:bi);
+      return a[0].localeCompare(b[0]);
+    });
+    const open=rows.filter(x=>!x.done).length;
+    return '<section class="task-ui-family">'+
+      '<div class="task-ui-group-head"><span><i>⌂</i><b>Kids + house</b></span><small>'+open+' open</small></div>'+
+      '<div class="task-ui-kid-grid">'+ordered.map(([name,items])=>{
+        const sorted=items.slice().sort((a,b)=>{
+          const ag=a.generated==="daily-basics"?0:a.generated==="rotation"?1:2,
+                bg=b.generated==="daily-basics"?0:b.generated==="rotation"?1:2;
+          return ag-bg||String(a.chore||"").localeCompare(String(b.chore||""));
+        }),done=sorted.filter(x=>x.done).length;
+        return '<div class="task-ui-kid-card">'+
+          '<div class="task-ui-kid-head"><b>'+taskUiEsc(name)+'</b><small>'+done+'/'+sorted.length+'</small></div>'+
+          '<div class="task-ui-kid-checks">'+sorted.map(c=>
+            '<label class="'+(c.done?'done':'')+'"><input type="checkbox" '+(c.done?'checked':'')+
+            ' onchange="toggleChore(\''+taskUiEsc(c.id)+'\',this.checked)"><span>'+taskUiEsc(c.chore||"Routine")+'</span></label>'
+          ).join("")+'</div></div>';
+      }).join("")+'</div></section>';
+  }
+
   if(typeof todayTasksTrackingDrawer==="function"){
     todayTasksTrackingDrawer=function(tk,done,actual,h,w,f,oz){
       const open=tk.filter(x=>!x.done).length,
@@ -100,7 +132,7 @@
         content='<div class="card compact-drawer-card task-ui-card">'+
           '<div class="task-ui-toolbar"><div><div class="eyebrow">Today</div><h2>Tasks</h2><small>'+open+' open · '+done+' done</small></div><div class="task-ui-toolbar-actions"><button class="btn small" onclick="openDailyReview()">Review</button><button class="btn primary small" onclick="openTask()">+ Add</button></div></div>'+
           (tk.length&&typeof todayProgress==="function"?todayProgress(done,tk.length,"Tasks complete"):"")+
-          taskBody+
+          taskBody+taskUiFamilyRoutines()+
         '</div>'+
         '<div class="today-metrics compact-metrics task-ui-metrics">'+
           '<div class="metric"><div class="eyebrow">UPS</div><div class="big">'+taskUiEsc(workSummary)+'</div><div class="muted small">'+taskUiEsc(workStatusText(w))+(actual&&Number(w.rate)>0?' · '+money(h*Number(w.rate))+' est. gross':'')+'</div><button class="btn small" onclick="openWork()">Edit work</button></div>'+
@@ -171,7 +203,7 @@
     const style=document.createElement("style");
     style.id="taskUiStyles";
     style.textContent=
-      '.task-ui-card{padding:12px 2px!important}.task-ui-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 2px 10px}.task-ui-toolbar h2{margin:1px 0}.task-ui-toolbar small{color:var(--muted);font-size:.68rem}.task-ui-toolbar-actions{display:flex;gap:6px;flex:0 0 auto}.task-ui-group{padding:8px 0 1px;border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border))}.task-ui-group-head{display:flex;justify-content:space-between;align-items:center;padding:2px 3px 5px}.task-ui-group-head span{display:flex;align-items:center;gap:7px}.task-ui-group-head i{font-style:normal;font-size:.78rem}.task-ui-group-head b{font-size:.72rem;letter-spacing:.03em}.task-ui-group-head small{font-size:.62rem;color:var(--muted)}.task-ui-row{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;min-height:48px;border-top:1px solid color-mix(in srgb,var(--secondary) 7%,var(--border));gap:3px}.task-ui-check{display:grid;place-items:center}.task-ui-check input{width:20px;height:20px}.task-ui-main{display:grid;gap:2px;min-width:0;padding:8px 3px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit}.task-ui-main b{font-size:.78rem;line-height:1.25;overflow-wrap:anywhere}.task-ui-main small{font-size:.62rem;color:var(--muted);line-height:1.3}.task-ui-note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.task-ui-more{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-weight:900}.task-ui-row.is-done{opacity:.62}.task-ui-row.is-done .task-ui-main b{text-decoration:line-through}.task-ui-completed{border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border));margin-top:7px}.task-ui-completed>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;list-style:none;cursor:pointer;color:var(--muted);font-size:.7rem;padding:0 3px}.task-ui-completed>summary::-webkit-details-marker{display:none}.task-ui-completed>summary b{font-family:var(--font-heading);color:var(--text)}.task-ui-empty{display:grid;gap:3px;padding:18px 6px;text-align:center}.task-ui-empty small{color:var(--muted)}.task-ui-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}.daily-review-v2 .daily-review-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.daily-review-edit{border:0;background:rgba(255,255,255,.55);color:#75536d;border-radius:999px;padding:5px 9px;font:inherit;font-size:.62rem;font-weight:850}.daily-review-detail{color:#685a6c;font-size:.75rem;margin-top:2px}.daily-review-actions-v2{grid-template-columns:1fr 1fr!important}.daily-review-actions-v2 .review-na,.daily-review-actions-v2 .review-unknown{grid-column:auto!important}.daily-review-backlog{width:100%;min-height:42px}.daily-review-v2 label{color:#6c5969!important}@media(max-width:520px){.task-ui-toolbar{align-items:flex-start}.task-ui-toolbar-actions{flex-direction:column}.task-ui-metrics{grid-template-columns:1fr!important}.daily-review-actions-v2{grid-template-columns:1fr 1fr!important}}';
+      '.task-ui-card{padding:12px 2px!important}.task-ui-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 2px 10px}.task-ui-toolbar h2{margin:1px 0}.task-ui-toolbar small{color:var(--muted);font-size:.68rem}.task-ui-toolbar-actions{display:flex;gap:6px;flex:0 0 auto}.task-ui-group{padding:8px 0 1px;border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border))}.task-ui-group-head{display:flex;justify-content:space-between;align-items:center;padding:2px 3px 5px}.task-ui-group-head span{display:flex;align-items:center;gap:7px}.task-ui-group-head i{font-style:normal;font-size:.78rem}.task-ui-group-head b{font-size:.72rem;letter-spacing:.03em}.task-ui-group-head small{font-size:.62rem;color:var(--muted)}.task-ui-row{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;min-height:48px;border-top:1px solid color-mix(in srgb,var(--secondary) 7%,var(--border));gap:3px}.task-ui-check{display:grid;place-items:center}.task-ui-check input{width:20px;height:20px}.task-ui-main{display:grid;gap:2px;min-width:0;padding:8px 3px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit}.task-ui-main b{font-size:.78rem;line-height:1.25;overflow-wrap:anywhere}.task-ui-main small{font-size:.62rem;color:var(--muted);line-height:1.3}.task-ui-note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.task-ui-more{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-weight:900}.task-ui-row.is-done{opacity:.62}.task-ui-row.is-done .task-ui-main b{text-decoration:line-through}.task-ui-completed{border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border));margin-top:7px}.task-ui-completed>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;list-style:none;cursor:pointer;color:var(--muted);font-size:.7rem;padding:0 3px}.task-ui-completed>summary::-webkit-details-marker{display:none}.task-ui-completed>summary b{font-family:var(--font-heading);color:var(--text)}.task-ui-empty{display:grid;gap:3px;padding:18px 6px;text-align:center}.task-ui-empty small{color:var(--muted)}.task-ui-family{border-top:1px solid color-mix(in srgb,var(--secondary) 11%,var(--border));margin-top:8px;padding-top:7px}.task-ui-kid-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:2px 1px 5px}.task-ui-kid-card{border:1px solid color-mix(in srgb,var(--secondary) 13%,var(--border));border-radius:14px;padding:8px;background:color-mix(in srgb,var(--panel) 96%,var(--secondary) 4%)}.task-ui-kid-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px}.task-ui-kid-head b{font-size:.72rem}.task-ui-kid-head small{font-size:.6rem;color:var(--muted)}.task-ui-kid-checks{display:grid;gap:4px}.task-ui-kid-checks label{display:flex;align-items:center;gap:6px;min-height:27px;font-size:.66rem;line-height:1.2}.task-ui-kid-checks input{width:17px;height:17px;flex:0 0 auto}.task-ui-kid-checks label.done span{text-decoration:line-through;opacity:.55}.task-ui-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}.daily-review-v2 .daily-review-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.daily-review-edit{border:0;background:rgba(255,255,255,.55);color:#75536d;border-radius:999px;padding:5px 9px;font:inherit;font-size:.62rem;font-weight:850}.daily-review-detail{color:#685a6c;font-size:.75rem;margin-top:2px}.daily-review-actions-v2{grid-template-columns:1fr 1fr!important}.daily-review-actions-v2 .review-na,.daily-review-actions-v2 .review-unknown{grid-column:auto!important}.daily-review-backlog{width:100%;min-height:42px}.daily-review-v2 label{color:#6c5969!important}@media(max-width:520px){.task-ui-kid-grid{grid-template-columns:1fr 1fr}.task-ui-toolbar{align-items:flex-start}.task-ui-toolbar-actions{flex-direction:column}.task-ui-metrics{grid-template-columns:1fr!important}.daily-review-actions-v2{grid-template-columns:1fr 1fr!important}}';
     document.head.appendChild(style);
   }
 })();
