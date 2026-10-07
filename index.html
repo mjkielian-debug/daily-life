@@ -2442,12 +2442,19 @@ function migrateState(s){
     });
     s.settings.knownFamilyScheduleVersion=3;
   }
-  if(Number(s.settings.familyScheduleDedupeVersion||0)<1){
+  if(Number(s.settings.familyScheduleDedupeVersion||0)<2){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
     const preferIds=new Set(["thursday-food-fort","sunday-kids-return"]);
     const removeIds=new Set(["thu-food-fort","sun-kids-return-dad"]);
-    s.settings.recurringFamilyEvents=rules.filter(r=>!removeIds.has(String(r.id||""))||!rules.some(x=>preferIds.has(String(x.id||""))&&Number(x.weekday)===Number(r.weekday)));
-    s.settings.familyScheduleDedupeVersion=1;
+    let cleaned=rules.filter(r=>!removeIds.has(String(r.id||""))||!rules.some(x=>preferIds.has(String(x.id||""))&&Number(x.weekday)===Number(r.weekday)));
+    const ids=new Set(cleaned.map(r=>String(r.id||"")));
+    const redundant=new Set();
+    if(ids.has("mon-demitri-everett-musical")&&ids.has("mon-leo-herpetology"))redundant.add("monday-late-kid-pickups");
+    if(ids.has("wed-demitri-after-school-club"))redundant.add("wednesday-demitri-club-pickup");
+    if(ids.has("thu-leo-dnd"))redundant.add("thursday-leo-dnd-pickup");
+    cleaned=cleaned.filter(r=>!redundant.has(String(r.id||"")));
+    s.settings.recurringFamilyEvents=cleaned;
+    s.settings.familyScheduleDedupeVersion=2;
   }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
