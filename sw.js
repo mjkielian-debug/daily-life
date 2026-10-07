@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261007-recover-wheel1";
+const CACHE_NAME="daily-life-shell-20261007-ui-fixes2";
 const APP_SHELL=[
   "./",
   "./index.html",
