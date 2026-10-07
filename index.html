@@ -2358,6 +2358,23 @@ function migrateState(s){
     });
     s.settings.mealPlanOct6to8FixVersion=1;
   }
+  if(Number(s.settings.mealNutritionOct7Version||0)<1){
+    const m=(s.meals||[]).find(x=>x.date==="2026-10-07"&&x.type==="dinner");
+    if(m&&/stir\s*[- ]?fry/i.test(String(m.dish||""))&&!m.nutritionEstimate){
+      m.nutritionEstimate={
+        serving:"per serving",
+        calories:"450–600",
+        protein:"28–35",
+        carbs:"50–70",
+        fat:"12–20",
+        fiber:"4–6",
+        notes:"Approximate range for pork + vegetables + rice or noodles + sauce. Oil, sauce, grain amount, and portion size are the biggest variables."
+      };
+      m.yieldCount=m.yieldCount||5;
+      m.yieldLabel=m.yieldLabel||"servings";
+    }
+    s.settings.mealNutritionOct7Version=1;
+  }
   if(Number(s.settings.giftProgressWeekVersion||0)<2){
     const rows=[
       ["gift-progress-1006","2026-10-06","Tanner gift · make progress on the six records",60,"Work on whichever record fronts/backs are still unfinished. Stop after the protected hour instead of saving the whole project for Friday."],
@@ -2546,8 +2563,34 @@ const splitLines=v=>String(v||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean
 const fmtClock=v=>{if(!v)return"";const [h,m]=String(v).split(":").map(Number);if(!Number.isFinite(h))return String(v);return new Date(2000,0,1,h,m||0).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})};
 const todayMeal=()=>state.meals.find(x=>x.date===ymd()&&x.type==="dinner")||null;
 const mealKey=(date,type="dinner")=>`${date}|${type}`;
+function mealNutritionEstimateCard(m){
+  const n=m?.nutritionEstimate;
+  if(!n||typeof n!=="object"||Array.isArray(n))return"";
+  const pick=(...keys)=>{for(const k of keys)if(n[k]!==undefined&&n[k]!==null&&String(n[k]).trim()!=="")return n[k];return""},
+        format=(value,suffix="")=>{
+          if(value===undefined||value===null||String(value).trim()==="")return"";
+          if(typeof value==="number"&&Number.isFinite(value))return Math.round(value*10)/10+suffix;
+          const text=String(value).trim();
+          return text+(suffix&&!/[a-z%]/i.test(text)?suffix:"");
+        },
+        rows=[
+          ["Calories",format(pick("calories","caloriesPerServing","cal")," cal")],
+          ["Protein",format(pick("protein","proteinG","proteinPerServing"),"g")],
+          ["Carbs",format(pick("carbs","carbohydrates","carbsG","carbsPerServing"),"g")],
+          ["Fat",format(pick("fat","fatG","fatPerServing"),"g")],
+          ["Fiber",format(pick("fiber","fiberG","fiberPerServing"),"g")],
+          ["Sodium",format(pick("sodium","sodiumMg")," mg")]
+        ].filter(x=>x[1]),
+        serving=String(pick("serving","servingSize","basis")||"per serving"),
+        note=String(pick("note","notes","disclaimer")||"Estimate only — actual nutrition changes with brands, portions, oil, sauce, and sides."),
+        yieldText=Number(m?.yieldCount)>0?(" · recipe yields "+Number(m.yieldCount)+(m?.yieldLabel?" "+String(m.yieldLabel):" servings")):"";
+  if(!rows.length)return"";
+  return '<div class="recipe-nutrition"><div class="recipe-section-title"><div class="mini-heading">Estimated nutrition</div><span class="tag">≈ '+esc(serving)+'</span></div><div class="recipe-nutrition-grid">'+
+    rows.map(([label,value])=>'<span><b>'+esc(value)+'</b><small>'+esc(label)+'</small></span>').join("")+
+    '</div><div class="recipe-nutrition-note">'+esc(note+yieldText)+'</div></div>';
+}
 function generatedMealDetails(m){
-  const ingredients=splitLines(m?.ingredients),prep=splitLines(m?.prepSteps);
+  const ingredients=splitLines(m?.ingredients),prep=splitLines(m?.prepSteps),nutrition=mealNutritionEstimateCard(m);
   if(m?.dish&&!mealNeedsRecipe(m)){
     return `<div class="notice"><b>No recipe needed.</b><div class="muted small">${esc(m.method||"This meal is already handled outside normal cooking.")}</div></div>`;
   }
@@ -2557,6 +2600,7 @@ function generatedMealDetails(m){
   return `<div class="notice recipe-built"><b>Recipe built for you</b>
     ${ingredients.length?`<div class="mini-heading">Ingredients</div><div class="recipe-ingredients">${ingredients.map((line,i)=>{const p=ingredientParts(line);return `<div class="ingredient-row compact"><span class="grow">${esc(p.text)}</span>${p.state==="check"?`<div class="ingredient-actions"><button class="btn small good" onclick="setIngredientState('${m.id}',${i},'have')">Have</button><button class="btn small" onclick="setIngredientState('${m.id}',${i},'need')">Need</button></div>`:`<span class="state ${p.state}">${p.state}</span>`}</div>`}).join("")}</div>`:""}
     ${prep.length?`<div class="mini-heading">Prep</div><div class="muted small">${prep.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</div>`:""}
+    ${nutrition}
     ${m?.tomorrowPrep?`<div class="mini-heading">Tonight / day-before prep</div><div class="muted small">${esc(m.tomorrowPrep).replace(/\n/g,"<br>")}</div>`:""}
     ${m?.notes?`<div class="mini-heading">Cooking notes</div><div class="muted small">${esc(m.notes).replace(/\n/g,"<br>")}</div>`:""}
   </div>`;
