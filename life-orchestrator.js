@@ -273,7 +273,7 @@
       todayRows=lifeDedupeTasks(tasks.filter(t=>{
         const d=lifeTaskDate(t);
         if(d>today)return false;
-        if(String(t.title||"").trim().toLowerCase()==="ups shift"&&d<today)return false;
+        if(String(t.title||"").trim().toLowerCase()==="ups shift")return false;
         if(d<today&&lifeIsDailyResetTask(t))return false;
         return true;
       }))
