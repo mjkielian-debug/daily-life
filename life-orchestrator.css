@@ -2779,3 +2779,25 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
   display:grid;place-items:center;background:rgba(255,255,255,.72);
   border:1px solid rgba(64,50,82,.10);font-size:.72rem;font-weight:800;
 }
+
+
+/* Oct 7 · compact kids + household checklist in Today Tasks */
+.life-family-routines{display:grid;gap:7px;margin-top:10px}
+.life-family-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.life-family-card{
+  min-width:0;padding:9px;border:1px solid rgba(64,50,82,.10);border-radius:17px;
+  background:rgba(255,255,255,.68);box-shadow:0 4px 12px rgba(66,50,80,.03)
+}
+.life-family-head{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px}
+.life-family-head b{color:#2b2134!important;font-family:var(--font-heading)!important;font-size:.88rem}
+.life-family-head small{color:#72667a!important;font-size:.65rem;font-weight:800}
+.life-family-checks{display:grid;gap:3px}
+.life-family-checks label{
+  display:flex!important;align-items:center;gap:7px;min-height:28px;margin:0!important;
+  color:#463b4e!important;font-size:.72rem;line-height:1.15
+}
+.life-family-checks input{width:18px!important;height:18px!important;min-height:0!important;margin:0!important;accent-color:#d8749b}
+.life-family-checks label.is-done span{text-decoration:line-through;opacity:.56}
+@media(max-width:380px){
+  .life-family-grid{grid-template-columns:1fr}
+}
