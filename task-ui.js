@@ -28,17 +28,29 @@
   }
   function taskUiSpecificTitle(t){
     const title=String(t&&t.title||"Task").trim(),key=title.toLowerCase().replace(/\s+/g," ");
-    if(key==="bedtime wind down")return"Teeth + pajamas + reading";
+    if(key==="bedtime wind down")return"Night routine · teeth, pajamas, vacuums + settle";
+    if(key==="kids nighttime prep")return"Kids · electronics, teeth, pajamas + reading";
     if(key==="tomorrow prep")return"Set out clothes + pack tomorrow";
     if(key==="homework + reading")return"Homework + read 20 minutes";
+    if(key==="morning routine")return"Morning · bathroom, teeth, water + get dressed";
+    if(key==="home reset"||key==="home reset / declutter")return"Home reset · clear surfaces + one problem area";
+    if(key==="personal care")return"Shower + dry off + lotion / self-care";
     return title;
   }
   function taskUiSpecificNote(t){
     const title=String(t&&t.title||"").trim().toLowerCase().replace(/\s+/g," "),
-          note=String(t&&t.notes||"").trim();
+          note=String(t&&t.notes||"").trim(),
+          detail=String(t&&t.detail||"").trim(),
+          subtasks=Array.isArray(t&&t.subtasks)?t.subtasks.filter(Boolean).map(String):[];
+    if(subtasks.length)return subtasks.slice(0,5).join(" · ")+(subtasks.length>5?" · +"+(subtasks.length-5)+" more":"");
     if(note&&note.toLowerCase()!==title)return note;
-    if(title==="bedtime wind down")return"Electronics away · teeth · pajamas · reading";
+    if(detail&&detail.toLowerCase()!==title)return detail;
+    if(title==="bedtime wind down")return"7:30 electronics · teeth/floss/mouthwash · wash face · pajamas · start vacuums · plug in phone/set alarm · settle with Dolly + Ambrose";
+    if(title==="kids nighttime prep")return"7:30 electronics sweep · all four brush teeth · Leo + Demitri wash faces/pajamas · 7:40 reading";
     if(title==="tomorrow prep")return"Clothes out · bags packed · needed items by the door";
+    if(title==="morning routine")return"Bathroom · brush/floss/mouthwash · wash face · hair · deodorant · water · get dressed";
+    if(title==="home reset"||title==="home reset / declutter")return"Clear one visible area · put away loose items · trash/recycling · quick floor pickup";
+    if(title==="personal care")return"Shower · dry/lotion · hair/skin basics · get dressed";
     return"";
   }
   function taskUiRow(t){
