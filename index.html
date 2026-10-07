@@ -1140,6 +1140,9 @@ function dayFlowOpenButton(x,date){
   return `<button type="button" class="dayflow-open-detail" onclick="event.stopPropagation();${action}" aria-label="Open details">›</button>`;
 }
 function dayFlowRowHtml(x,date){
+  if(x.kind==="context"){
+    return `<div class="dayflow-phase-row dayflow-context-row"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow"><b class="dayflow-row-title">${x.icon||"♡"} ${esc(x.title)}</b><small class="dayflow-row-meta">${esc(x.detail||"Household coverage")}</small></span></div>`;
+  }
   if(x.kind==="sleep"){
     return `<div class="dayflow-phase-row dayflow-sleep-row"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow"><b class="dayflow-row-title">☾ ${esc(x.title)}</b><small class="dayflow-row-meta">${esc(x.detail||"Protected sleep")}</small></span></div>`;
   }
@@ -1152,6 +1155,17 @@ function dayFlowRowHtml(x,date){
   return `<div class="dayflow-phase-row dayflow-completable ${allDone?"is-done":""}"><span class="dayflow-phase-time"><b>${esc(fmtClock(x.start))}</b><small>${x.end?esc(fmtClock(x.end)):""}</small></span><span class="grow">${title}${steps}${multi&&itineraryTypeLabel(x)?`<small class="dayflow-row-meta">${esc(itineraryTypeLabel(x))}</small>`:""}</span>${dayFlowOpenButton(x,date)}</div>`;
 }
 
+function itineraryContextItems(date){
+  const weekday=new Date(date+"T12:00:00").getDay();
+  if(!(weekday>=2&&weekday<=6)||typeof isUsualWorkday!=="function"||!isUsualWorkday(date))return[];
+  const schoolDay=weekday>=2&&weekday<=5;
+  return [{
+    id:"context:tanner-home:"+date,start:"06:15",end:"08:30",
+    title:"Tanner home · household coverage",
+    detail:schoolDay?"Tanner handles the kids’ school-morning coverage while you are at UPS.":"Tanner is home covering the house while you are at UPS.",
+    fixed:false,nonBlocking:true,kind:"context",icon:"♡",source:"context"
+  }];
+}
 function itineraryDayItems(date){
   if(typeof ensureFamilyDay==="function")ensureFamilyDay(date);
   const anchors=itineraryFixedItems(date),
@@ -1166,7 +1180,8 @@ function itineraryDayItems(date){
           durationMinutes:Math.max(15,Number(r.durationMinutes||15))
         })),
         open=itineraryRestBlocks([...used,...finishedBlockers],date);
-  return dayFlowOverlayFinished(date,[...used,...open]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
+  const context=itineraryContextItems(date);
+  return dayFlowOverlayFinished(date,[...used,...open,...context]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
 function itineraryPlanningDiagnostics(date){
@@ -1184,7 +1199,7 @@ function itineraryPlanningDiagnostics(date){
 function itineraryStatusForDate(date,items){
   if(date!==ymd())return null;
   const now=new Date(),hm=now.getHours()*60+now.getMinutes();
-  const timed=items.filter(x=>hmMinutes(x.start)!==null);
+  const timed=items.filter(x=>!x.nonBlocking&&hmMinutes(x.start)!==null);
   const active=timed.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return e!==null&&s<=hm&&e>hm});
   const next=timed.find(x=>hmMinutes(x.start)>=hm);
   return active?{title:"Right now · "+active.title,detail:active.end?"Until "+fmtClock(active.end):(active.detail||"")}:
@@ -1220,6 +1235,7 @@ function itineraryTypeLabel(x){
   if(x.kind==="gap")return"OPEN";
   if(x.source==="meal")return"MEAL";
   if(x.source==="sleep")return"SLEEP";
+  if(x.source==="context")return"HOUSEHOLD COVERAGE";
   return"PLAN";
 }
 function itineraryFlowCard(date){
