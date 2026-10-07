@@ -1867,9 +1867,12 @@ function ensureFamilyDay(date=ymd()){
     desired.set(name+"|"+task,{child:name,chore:task,generated});
   };
   const family=(settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean),
-        basics=(settings.dailyKidBasics||[]).map(String).map(x=>x.trim()).filter(Boolean);
-  for(const name of family)for(const basic of basics)addDesired(name,basic,"daily-basics");
+        basics=(settings.dailyKidBasics||[]).map(String).map(x=>x.trim()).filter(Boolean),
+        weekday=new Date(date+"T12:00:00").getDay(),
+        kidsHomeForGeneratedRoutines=weekday!==6;
+  if(kidsHomeForGeneratedRoutines)for(const name of family)for(const basic of basics)addDesired(name,basic,"daily-basics");
   for(const r of settings.choreRotations||[]){
+    if(!kidsHomeForGeneratedRoutines)continue;
     const members=(r.members||[]).map(String).map(x=>x.trim()).filter(Boolean),
           chores=(r.chores||[]).map(String).map(x=>x.trim()).filter(Boolean);
     if(!members.length||!chores.length)continue;
