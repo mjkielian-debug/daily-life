@@ -1787,3 +1787,28 @@ button.food-week-day{
     height:18%!important;
   }
 }
+
+
+/* Oct 7: smaller phone wheel center */
+@media(max-width:560px){
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center{
+    width:36%!important;
+    height:36%!important;
+    padding:8px!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>b{
+    max-width:12ch!important;
+    font-size:.82rem!important;
+    line-height:1.02!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>strong{
+    max-width:17ch!important;
+    font-size:.56rem!important;
+    line-height:1.08!important;
+  }
+  .life-wheel:not(.dayflow-wheel) .life-wheel-center>small{
+    max-width:18ch!important;
+    font-size:.45rem!important;
+    line-height:1.08!important;
+  }
+}
