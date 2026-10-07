@@ -42,5 +42,13 @@
 }
 .week-move span b,.week-move span small{display:block}
 @media(max-width:720px){
-  .week-orbits{grid-template-columns:repeat(7,92px)}
+  .week-orbits{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible;padding:6px 0}
+  .week-orbit{min-height:110px;border-radius:24px;padding:8px 4px}
+  .week-orbit>span{font-size:.6rem}
+  .week-orbit>b{font-size:1.12rem!important}
+  .week-orbit>strong{font-size:.64rem!important}
+  .week-orbit>small,.week-orbit>em{font-size:.52rem!important;line-height:1.12;margin-top:4px}
+}
+@media(max-width:380px){
+  .week-orbits{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
