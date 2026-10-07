@@ -2515,7 +2515,6 @@ function migrateState(s){
         s.chores.push(row);
       }
       row.done=true;
-      row.completedAt=row.completedAt||item.date+"T20:00:00";
     }
     s.settings.knownCompletionHistoryVersion=1;
   }
