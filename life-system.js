@@ -899,12 +899,30 @@
       return task||null;
     }
     function fallbackTask(cursor,minutes){
-      // Keep filler blocks concrete enough that the title itself tells you what to do.
-      if(cursor<10*60)return {title:"Put away clutter + clear one surface",detail:"Put away visible clutter · refill what you need · clear one small surface"};
-      if(cursor<12*60)return {title:"Finish one school / house / account loose end",detail:"Choose one real unfinished form, message, order, school item, account check, or household admin item"};
-      if(cursor<15*60)return {title:"Put away out-of-place items + clear one area",detail:"Return items that already have a home · clear one visible area"};
-      if(cursor<18*60)return {title:"Pack what you need for the next stop",detail:"Bags · keys · water · papers · clothes · anything that needs to leave with you"};
-      return {title:"Kitchen + living-area pickup",detail:"Put away visible items · reset the kitchen/living area · stage the next thing you need"};
+      // When no saved task fits, use a named maintenance action instead of vague "open time."
+      const rooms=(state.houseRooms||[]).filter(r=>String(r.name||"").trim()),
+        resets=Array.isArray(state.homeRoomResets)?state.homeRoomResets:[],
+        lastReset=room=>{
+          const rows=resets.filter(x=>String(x.roomId||"")===String(room.id||"")&&x.date)
+            .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+          return rows[0]?.date||"";
+        },
+        focusRoom=rooms.slice().sort((a,b)=>{
+          const ad=lastReset(a),bd=lastReset(b);
+          if(!ad&&bd)return -1;if(ad&&!bd)return 1;
+          return String(ad).localeCompare(String(bd))||String(a.name).localeCompare(String(b.name));
+        })[0]||null,
+        school=(state.schoolAssignments||[]).filter(x=>!x.done&&String(x.status||"").toLowerCase()!=="complete")
+          .sort((a,b)=>String(a.due||"9999-99-99").localeCompare(String(b.due||"9999-99-99")))[0]||null;
+      if(cursor<10*60)return {title:"Kitchen counter + entryway reset",detail:"Put away dishes / food · clear the main counter · put shoes, bags, papers and keys where they belong"};
+      if(cursor<12*60){
+        if(school)return {title:(school.child?school.child+" · ":"")+String(school.title||school.assignment||"School item"),detail:"Check the school item · handle the next concrete step · update it when done"};
+        return {title:"Check grades + school papers",detail:"Check current grades / assignments · sign or file school papers · put anything that must leave the house by the door"};
+      }
+      if(cursor<15*60&&focusRoom)return {title:String(focusRoom.name)+" · 20-minute reset",detail:"Trash out · return out-of-place items · clear surfaces · quick floor pickup · stop when the block ends"};
+      if(cursor<15*60)return {title:"Bathroom + hallway reset",detail:"Put away toiletries / laundry · wipe the sink and counter · clear hallway clutter · quick floor pickup"};
+      if(cursor<18*60)return {title:"Pack the next-stop bag",detail:"Keys · water · papers · activity items · returns / errands · anything that must leave with you"};
+      return {title:"Kitchen close + living-room pickup",detail:"Dishes / counters · put away visible items · start robot vacuums if needed · stage tomorrow’s first essentials"};
     }
 
     gaps.forEach(function(g){
