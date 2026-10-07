@@ -199,6 +199,9 @@
     };
   }
 
+  window.taskUiDisplayTitle=taskUiSpecificTitle;
+  window.taskUiDisplayNote=taskUiSpecificNote;
+
   if(!document.getElementById("taskUiStyles")){
     const style=document.createElement("style");
     style.id="taskUiStyles";
