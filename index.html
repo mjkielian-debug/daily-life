@@ -1288,6 +1288,8 @@ function itineraryDurationLabel(x){
 }
 function itineraryTypeLabel(x){
   if(x.endUnknown)return"TIME TBD";
+  if(x.nonBlocking&&x.kind==="context"&&x.source==="event")return"KID ACTIVITY";
+  if(x.source==="pickup")return"PICKUP";
   if(x.estimatedEnd)return"ANCHOR · EST.";
   if(x.fixed)return"ANCHOR";
   if(x.source==="task")return x.carriedForward?(x.autoPlanned?"TASK · CARRYOVER":"TASK · CARRYOVER"):x.autoPlanned?"TASK · AUTO":"TASK";
