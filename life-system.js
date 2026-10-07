@@ -126,9 +126,9 @@
         excludedLabels:["laundry","dishes","counters","spot mop floor","floor spots","start vacuums"]
       };
     }
-    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<3){
+    if(!p.kidShowerRoutine||Number(p.kidShowerRoutine.version||0)<4){
       p.kidShowerRoutine={
-        version:3,
+        version:4,
         enabled:true,
         durationMinutes:20,
         maxEveningShowers:2,
@@ -136,8 +136,7 @@
         noEveningWeekdays:[2],
         weeklyPlan:{
           "0":[{child:"Ambrose",start:"18:30",note:"Sunday evening shower after dinner"}],
-          "1":[{child:"Dolly",start:"18:00",note:"Monday shower first while dinner bakes/cools"},{child:"Demitri",start:"18:45",note:"Monday shower after dinner"}],
-          "3":[{child:"Demitri",start:"17:00",note:"Before Dolly's dance"},{child:"Dolly",start:"19:00",note:"After dance"}],
+          "3":[{child:"Dolly",start:"19:00",note:"After dance; use the actual dance end time when it is entered"}],
           "4":[{child:"Ambrose",start:"18:40",note:"After Food Fort; home around 6:30 PM"}]
         }
       };
@@ -602,11 +601,20 @@
     if(Array.isArray(cfg.noEveningWeekdays)&&cfg.noEveningWeekdays.map(Number).includes(wd))return rows;
     const plan=cfg.weeklyPlan&&Array.isArray(cfg.weeklyPlan[String(wd)])?cfg.weeklyPlan[String(wd)]:[];
     plan.slice(0,Math.max(1,Number(cfg.maxEveningShowers||2))).forEach(function(item){
-      const start=hmMinutes(item.start);
+      let start=hmMinutes(item.start),timingNote=String(item.note||"");
+      if(wd===3&&String(item.child||"").toLowerCase()==="dolly"){
+        const dance=(state.events||[]).find(function(e){
+          return e.date===date&&e.status!=="cancelled"&&/dance/i.test([e.title,e.notes].filter(Boolean).join(" "))&&(!e.child||/dolly/i.test(String(e.child||"")));
+        }),danceEnd=hmMinutes(dance&&dance.endTime);
+        if(danceEnd!==null){
+          start=danceEnd+5;
+          timingNote="After dance ends at "+fmtClock(dance.endTime);
+        }
+      }
       if(start===null||!item.child)return;
       const key=String(item.child).toLowerCase().replace(/[^a-z0-9]+/g,"-");
       rows.push({templateKey:"kid-shower-"+key,start:minutesHm(start),end:minutesHm(start+duration),
-        title:String(item.child)+" · shower",detail:[duration+" minutes",item.note].filter(Boolean).join(" · "),
+        title:String(item.child)+" · shower",detail:[duration+" minutes",timingNote].filter(Boolean).join(" · "),
         subtasks:[String(item.child)+" shower"],icon:"♡"});
     });
     return rows;
