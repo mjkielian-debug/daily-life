@@ -1217,18 +1217,21 @@ function itineraryContextItems(date){
 function itineraryDayItems(date){
   if(typeof ensureFamilyDay==="function")ensureFamilyDay(date);
   const anchors=itineraryFixedItems(date),
+        context=itineraryContextItems(date),
+        planningAnchors=[...anchors,...context],
         routinesRaw=itinerarySuggestedBlocks(date),
-        routines=itineraryFitRoutines(date,anchors,routinesRaw),
+        routines=itineraryFitRoutines(date,planningAnchors,routinesRaw),
         visibleRoutines=routines.filter(x=>!x.skippedByConflict),
         base=[...anchors,...visibleRoutines],
-        tasks=itineraryAutoTaskBlocks(date,base),
+        planningBase=[...planningAnchors,...visibleRoutines],
+        tasks=itineraryAutoTaskBlocks(date,planningBase),
         used=[...base,...tasks],
+        planningUsed=[...planningBase,...tasks],
         finishedBlockers=dayFlowFinishedRows().filter(r=>r.date===date&&hmMinutes(r.start)!==null).map(r=>({
           start:r.start,end:r.end||minutesHm((hmMinutes(r.start)||0)+Math.max(15,Number(r.durationMinutes||15))),
           durationMinutes:Math.max(15,Number(r.durationMinutes||15))
         })),
-        open=itineraryRestBlocks([...used,...finishedBlockers],date);
-  const context=itineraryContextItems(date);
+        open=itineraryRestBlocks([...planningUsed,...finishedBlockers],date);
   return dayFlowOverlayFinished(date,[...used,...open,...context]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
