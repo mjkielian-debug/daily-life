@@ -960,3 +960,66 @@
     padding-bottom:calc(24px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* ---------- 12. Mobile header compaction ---------- */
+@media(max-width:520px){
+  #app .app>header{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:start!important;
+    gap:6px!important;
+    padding:6px 8px!important;
+    margin:3px 0 6px!important;
+    border-radius:18px!important;
+  }
+  #app .brand-lockup{
+    min-width:0!important;
+    gap:7px!important;
+    align-items:center!important;
+  }
+  #app .brand-mark{
+    width:38px!important;
+    height:38px!important;
+    flex:0 0 38px!important;
+    border-radius:12px!important;
+  }
+  #app .brand-copy{
+    min-width:0!important;
+  }
+  #app .brand-copy .eyebrow{
+    font-size:.59rem!important;
+    line-height:1.1!important;
+    letter-spacing:.045em!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #app .brand-copy .title{
+    font-size:1.16rem!important;
+    line-height:1.05!important;
+    margin:2px 0!important;
+  }
+  #app .brand-copy .muted.small{
+    display:none!important;
+  }
+  #app .header-tools{
+    display:flex!important;
+    align-items:flex-start!important;
+    gap:4px!important;
+    margin:0!important;
+    max-width:none!important;
+    flex-wrap:nowrap!important;
+  }
+  #app .header-tools .pill{
+    display:none!important;
+  }
+  #app .header-tools .btn{
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    padding:5px!important;
+    border-radius:12px!important;
+  }
+}
