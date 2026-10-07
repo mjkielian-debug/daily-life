@@ -2761,6 +2761,15 @@ body::before{
 .today-agenda-row.is-gap{
   opacity:.72;
 }
+.today-agenda-row.is-context{
+  opacity:.72;
+  padding-left:8px;
+  border-left:2px dashed color-mix(in srgb,var(--secondary) 42%,var(--border));
+  background:color-mix(in srgb,var(--secondary) 4%,transparent);
+}
+.today-agenda-row.is-context>.tag{
+  background:color-mix(in srgb,var(--secondary) 10%,transparent);
+}
 .today-agenda-time{
   display:grid;
   gap:1px;
