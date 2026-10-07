@@ -1508,7 +1508,7 @@ function dayFlowUnscheduledCard(date){
   </div>`;
 }
 function dayFlowConflictAudit(date){
-  const anchors=itineraryFixedItems(date).filter(x=>hmMinutes(x.start)!==null),
+  const anchors=itineraryFixedItems(date).filter(x=>!x.nonBlocking&&hmMinutes(x.start)!==null),
     overlaps=[],seen=new Set(),diagnostics=itineraryPlanningDiagnostics(date);
   for(let i=0;i<anchors.length;i++){
     const a=anchors[i],as=hmMinutes(a.start),ae=hmMinutes(a.end);
