@@ -2498,6 +2498,27 @@ function migrateState(s){
     s.settings.recurringFamilyEvents=cleaned;
     s.settings.familyScheduleDedupeVersion=2;
   }
+  if(Number(s.settings.knownCompletionHistoryVersion||0)<1){
+    const confirmed=[
+      {date:"2026-10-05",child:"Leo",chore:"Laundry"},
+      {date:"2026-10-05",child:"Demitri",chore:"Dishes"},
+      {date:"2026-10-05",child:"Ambrose",chore:"Shower"}
+    ];
+    for(const item of confirmed){
+      let row=(s.chores||[]).find(x=>
+        String(x.date||"")===item.date&&
+        String(x.child||"").trim().toLowerCase()===item.child.toLowerCase()&&
+        String(x.chore||"").trim().toLowerCase()===item.chore.toLowerCase()
+      );
+      if(!row){
+        row={id:uid(),date:item.date,child:item.child,chore:item.chore,generated:"confirmed-history"};
+        s.chores.push(row);
+      }
+      row.done=true;
+      row.completedAt=row.completedAt||item.date+"T20:00:00";
+    }
+    s.settings.knownCompletionHistoryVersion=1;
+  }
   if(Number(s.settings.homeHistoryBaselineVersion||0)<1){
     const hasFridgeBaseline=(s.homeLogs||[]).some(x=>
       String(x.date||"")==="2026-09-27"&&/clean\s+(?:the\s+)?(?:refrigerator|fridge)|(?:refrigerator|fridge)\s+clean/i.test(String(x.task||""))
