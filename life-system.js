@@ -724,10 +724,22 @@
             return ao-bo||String(a.chore||"").localeCompare(String(b.chore||""));
           }),
           subtasks=todays.map(function(c){return (c.child?c.child+": ":"")+String(c.chore||"Chore")}),
-          refs=todays.map(function(c){return c.id});
+          refs=todays.map(function(c){return c.id}),
+          lateActivityEnds=(state.events||[]).filter(function(e){
+            if(e.date!==date||["cancelled","paused"].includes(String(e.status||"")))return false;
+            const text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" "),
+              end=hmMinutes(e.endTime);
+            return end!==null&&end>=15*60&&end<=17*60+15&&
+              /herpetology|dungeons|d\s*&\s*d|musical|club|after[- ]?school|rehearsal|practice|activity/i.test(text)&&
+              !/pick.?up/i.test(text);
+          }).map(function(e){return hmMinutes(e.endTime)}).filter(Number.isFinite),
+          latestActivityEnd=lateActivityEnds.length?Math.max.apply(null,lateActivityEnds):null,
+          startMinutes=Math.max(15*60+30,latestActivityEnd!==null?latestActivityEnd+15:0),
+          endMinutes=startMinutes+60,
+          shifted=startMinutes>15*60+30;
         return Object.assign({},x,{
-          title:"Kids chores + homework",start:"15:30",end:"16:30",
-          detail:"Right after school: clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:40–8:00 PM after the 7:30 electronics/teeth routine.",
+          title:"Kids chores + homework",start:minutesHm(startMinutes),end:minutesHm(endMinutes),
+          detail:(shifted?"After the late activity pickup: ":"Right after school: ")+"clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:40–8:00 PM after the 7:30 electronics/teeth routine.",
           subtasks:subtasks,subtaskRefs:refs
         });
       }
