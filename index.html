@@ -705,6 +705,7 @@ function itinerarySuggestedBlocks(date){
     add({templateKey:"homework",start:"16:00",end:"16:45",title:"Homework + reading",detail:itineraryRoutineDetail(date,"homework","Schoolwork + 20-minute reading rhythm"),icon:"📚"});
   }
   const hasDetailedMealFlow=Array.isArray(meal?.dayFlowSteps)&&meal.dayFlowSteps.length>0,
+        mealCoveredByFixedEvent=events.some(e=>/\bfood fort\b/i.test([e.title,e.notes,e.location].filter(Boolean).join(" "))),
         requestedDinnerStart=hmMinutes(meal?.serveTime||"17:30")??1050,kidsGoneByDinner=kidsAwayAt!==null&&kidsAwayAt<=requestedDinnerStart,
         dinnerStart=meal?.serveTime?requestedDinnerStart:(kidsGoneByDinner?Math.max(requestedDinnerStart,kidsAwayAt+30):requestedDinnerStart),
         dinnerLength=meal?.serveTime?60:45,
@@ -714,7 +715,7 @@ function itinerarySuggestedBlocks(date){
           prepEnd=Math.min(dinnerStart,mealPrepStart+prepMinutes);
     add({templateKey:"meal-prep",start:minutesHm(mealPrepStart),end:minutesHm(prepEnd),title:"Start "+meal.dish,detail:[method,"Active dinner prep"].filter(Boolean).join(" · "),icon:"🍳"});
   }
-  if(!hasDetailedMealFlow)add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
+  if(!hasDetailedMealFlow&&!mealCoveredByFixedEvent)add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
   if(kids.length&&(kidsAwayAt===null||kidsAwayAt>18*60+45)){
     const baseChores=itineraryRoutineDetail(date,"chores","Family evening reset");
     let choreStart="18:15",choreEnd="19:00",choreTitle="Kids chores + evening reset",showerNote="";
@@ -2126,6 +2127,56 @@ function migrateState(s){
       ]
     });
     s.settings.mealShift20261005Version=1;
+  }
+  if(Number(s.settings.mealPlanOct6to8FixVersion||0)<1){
+    const upsertMeal=(date,patch)=>{
+      let m=(s.meals||[]).find(x=>x.date===date&&x.type==="dinner");
+      if(!m){m={id:"meal-"+date,type:"dinner",date,prepDone:[]};s.meals.push(m)}
+      const keepMade=m.status==="made";
+      Object.assign(m,patch);
+      if(keepMade)m.status="made";
+      if(!Array.isArray(m.prepDone))m.prepDone=[];
+    };
+    upsertMeal("2026-10-06",{
+      dish:"BLTs",
+      method:"Quick dinner · stovetop bacon + assemble",
+      assigned:"",
+      status:"planned",
+      recipeState:"ready",
+      startBy:"",
+      serveTime:"",
+      ingredients:"Bacon\nLettuce\nTomatoes\nHoney wheat bread\nAvocado (optional)",
+      prepSteps:"Cook bacon when there is a real opening, then assemble BLTs. Kids may eat with Grandma if the evening runs too tight.",
+      notes:"Busy Tuesday — no Runzas. Keep dinner flexible around Girl Scouts / haircuts / school plans.",
+      dayFlowSteps:[]
+    });
+    upsertMeal("2026-10-07",{
+      dish:"Stir fry",
+      method:"Stovetop",
+      assigned:"",
+      status:"planned",
+      recipeState:"ready",
+      startBy:"17:15",
+      serveTime:"18:00",
+      ingredients:"Pork chunks\nMini sweet peppers / bell pepper\nOnion or cabbage if wanted\nRice or noodles\nStir-fry sauce / seasoning",
+      prepSteps:"Prep vegetables and protein, cook the protein first, add vegetables, then sauce. Serve over rice or noodles.",
+      notes:"Wednesday dinner. Dolly can eat with Grandma or reheat a plate after dance.",
+      dayFlowSteps:[]
+    });
+    upsertMeal("2026-10-08",{
+      dish:"Food Fort",
+      method:"Away · free family meal",
+      assigned:"",
+      status:"planned",
+      recipeState:"ready",
+      startBy:"",
+      serveTime:"17:30",
+      ingredients:"",
+      prepSteps:"",
+      notes:"Food Fort 5:30–6:30 PM covers dinner. Snack tray after if anyone is still hungry.",
+      dayFlowSteps:[]
+    });
+    s.settings.mealPlanOct6to8FixVersion=1;
   }
   if(Number(s.settings.giftProgressWeekVersion||0)<2){
     const rows=[
