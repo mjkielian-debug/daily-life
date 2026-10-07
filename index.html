@@ -897,6 +897,21 @@ function itineraryTaskPreferredRange(task,date){
   return clamp({start:workEnd!==null?Math.min(20*60,workEnd+30):(w?15*60+30:dayStart),end:dayEnd});
 }
 
+function taskDisplayTitle(t){
+  const raw=String(t?.title||"Task").trim(),key=raw.toLowerCase().replace(/\s+/g," ");
+  if(key==="bedtime wind down")return "Night routine · teeth, pajamas, vacuums + settle";
+  if(key==="kids nighttime prep")return "Kids · electronics, teeth, pajamas + reading";
+  if(key==="tomorrow prep")return "Set out clothes + pack tomorrow";
+  if(key==="homework + reading")return "Homework + read 20 minutes";
+  if(key==="morning routine")return "Morning · bathroom, teeth, water + get dressed";
+  if(key==="home reset"||key==="home reset / declutter")return "Home reset · clear surfaces + one problem area";
+  if(key==="personal care")return "Shower + dry off + lotion / self-care";
+  if(key==="everyone reading")return "Everyone · read 20 minutes";
+  if(key==="school-night reset")return "Kids · rooms, homework + read 20 minutes";
+  if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(key))return (t?.child?String(t.child)+" · ":"")+"clean room + homework + read 20 minutes";
+  return raw;
+}
+
 function itineraryEffectiveIntervals(items,date){
   const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
         sorted=items.filter(x=>hmMinutes(x.start)!==null).slice().sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),intervals=[];
@@ -926,7 +941,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
   for(const t of tasks){
     if(t.itineraryStart&&t.date===date){
       const s=hmMinutes(t.itineraryStart),mins=itineraryTaskMinutes(t);
-      if(s!==null&&s>=itineraryDayStart(date)&&s+mins<=itineraryDayEnd(date))explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:t.title,detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:false});
+      if(s!==null&&s>=itineraryDayStart(date)&&s+mins<=itineraryDayEnd(date))explicit.push({id:"task:"+t.id,start:minutesHm(s),end:minutesHm(s+mins),title:taskDisplayTitle(t),detail:[t.child,t.notes].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:false,carriedForward:false});
       else waiting.push(t);
     }else waiting.push(t);
   }
@@ -940,7 +955,7 @@ function itineraryAutoTaskBlocks(date,baseItems){
     }
     if(chosen<0)continue;
     const g=gaps[chosen],endAt=startAt+mins;
-    planned.push({id:"task:"+t.id,start:minutesHm(startAt),end:minutesHm(endAt),title:t.title,detail:[t.child,t.date<date?"Carried forward from "+dl(t.date):"",t.notes,"Suggested from your task list"].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:true,carriedForward:t.date<date});
+    planned.push({id:"task:"+t.id,start:minutesHm(startAt),end:minutesHm(endAt),title:taskDisplayTitle(t),detail:[t.child,t.date<date?"Carried forward from "+dl(t.date):"",t.notes,"Suggested from your task list"].filter(Boolean).join(" · "),fixed:false,kind:"task",icon:"✓",source:"task",sourceId:t.id,durationMinutes:mins,done:!!t.done,autoPlanned:true,carriedForward:t.date<date});
     const parts=[];if(g.start<startAt)parts.push({start:g.start,end:startAt});if(endAt<g.end)parts.push({start:endAt,end:g.end});gaps.splice(chosen,1,...parts);
   }
   return planned;
