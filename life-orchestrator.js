@@ -316,8 +316,9 @@
 
   function lifeCurrentGuidance(){
     const items=itineraryDayItems(ymd()),now=new Date(),m=now.getHours()*60+now.getMinutes(),
-      active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&e!==null&&s<=m&&e>m}),
-      next=items.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
+      actionable=items.filter(x=>!x.nonBlocking&&x.kind!=="context"),
+      active=actionable.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return s!==null&&e!==null&&s<=m&&e>m}),
+      next=actionable.find(x=>{const s=hmMinutes(x.start);return s!==null&&s>=m&&x.kind!=="gap"});
     if(active&&active.kind!=="gap")return{title:active.title,detail:active.detail||("Until "+fmtClock(active.end)),task:active.source==="task"?(state.tasks||[]).find(t=>t.id===active.sourceId):null,mode:"active"};
     const task=lifeNextTask();
     if(active&&active.kind==="gap"&&task)return{title:lifeTaskTitle(task),detail:(task.notes?task.notes+" · ":"")+"Use this open block for it.",task,mode:"open"};
@@ -505,7 +506,7 @@
   function lifeTodayWheel(){
     const q=lifeQueue(),guide=lifeCurrentGuidance(),today=ymd(),now=new Date(),mins=now.getHours()*60+now.getMinutes(),
       agenda=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
-      next=agenda.find(x=>{const m=hmMinutes(x.start);return m!==null&&m>=mins}),
+      next=agenda.find(x=>{const m=hmMinutes(x.start);return !x.nonBlocking&&x.kind!=="context"&&m!==null&&m>=mins}),
       meal=typeof mealForDate==="function"?mealForDate(today):null,
       care=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},
       readingPages=(state.readingLogs||[]).filter(x=>x.date===today).reduce((n,x)=>n+Number(x.pages||0),0),
