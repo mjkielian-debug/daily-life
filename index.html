@@ -5525,7 +5525,7 @@ function moneyRunNextAction(){
 }
 function openMoneyHubSection(section){
   let title="Money",body="";
-  if(section==="bills"){title="Bills";body=`${billCalendarCard()}${dueDateOutlookCard()}${upcomingBillsView()}`}
+  if(section==="bills"){title="Bills";body=`${typeof moneyNextStepsCard==="function"?moneyNextStepsCard():""}${dueDateOutlookCard()}<details class="money-more-details"><summary>Show bill calendar + full list</summary><div class="money-more-details-body">${billCalendarCard()}${upcomingBillsView()}</div></details>`}
   else if(section==="budget"){closeModal();setView("budget");return}
   else if(section==="income"){title="Income";body=moneyIncomeHub()}
   else if(section==="accounts"){title="Accounts";body=moneyAccountsCard()}
