@@ -5938,9 +5938,9 @@ function budgetView(){
   const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
         billCount=t.bills.length,spendCount=t.logs.length,
         categoryCount=BUDGET_CATEGORIES.filter(cat=>budgetCents(t.plan.limits[cat.id])>0).length,
-        centerTitle=t.plan.income===null?"Set expected income":t.remaining<0?"Budget is short":t.left<0?"Over-assigned":"Flexible this week",
-        centerAmount=t.plan.income===null?"Start plan":t.remaining<0?budgetMoney(t.remaining):t.left<0?budgetMoney(t.left):budgetMoney(t.weekly),
-        centerDetail=t.plan.income===null?"Enter income and benefits first.":t.remaining<0?"Tap to review bills + plan.":t.left<0?"Tap to rebalance categories.":(t.daysLeft?`${budgetMoney(t.left)} left to assign · ${t.daysLeft} days left`:"Month ended"),
+        centerTitle=t.plan.income===null?"Set expected income":t.remaining<0?"Budget is short":t.left<0?"Over-assigned":"Flexible spending pace",
+        centerAmount=t.plan.income===null?"Start plan":t.remaining<0?budgetMoney(t.remaining):t.left<0?budgetMoney(t.left):(budgetMoney(t.weekly)+"/week"),
+        centerDetail=t.plan.income===null?"Enter income and benefits first.":t.remaining<0?"Tap to review bills + plan.":t.left<0?"Tap to rebalance categories.":(t.daysLeft?`${budgetMoney(t.left)} still unassigned · ${t.daysLeft} days left`:"Month ended"),
         centerAction=t.plan.income===null?"openBudgetHubSection('plan')":t.remaining<0?"openBudgetHubSection('bills')":t.left<0?"openBudgetHubSection('categories')":"openBudgetHubSection('activity')",
         segments=[
           {icon:"✦",title:"Plan",detail:t.plan.income===null?"Set income":budgetMoney(t.income)+" expected",action:"openBudgetHubSection('plan')"},
@@ -5965,7 +5965,7 @@ function budgetView(){
       <button type="button" class="life-wheel-center" onclick="${centerAction}">
         <span class="eyebrow">${esc(centerTitle)}</span>
         <b>${esc(centerAmount)}</b>
-        <strong>${t.remaining<0?"Cash plan is short":t.left<0?"Over-assigned":"Monthly plan"}</strong>
+        <strong>${t.remaining<0?"Cash plan is short":t.left<0?"Over-assigned":"Bills + categories first"}</strong>
         <small>${esc(centerDetail)}</small>
       </button>
     </div>
