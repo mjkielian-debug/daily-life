@@ -679,9 +679,18 @@
       // schedule a second homework or flexible after-school reset ahead of them.
       if(x.templateKey==="after-school-launch")return false;
       if(x.templateKey==="homework")return false;
+      if(x.templateKey==="monday-school-launch")return false;
       if(lifeWeekday(date)===1&&x.templateKey==="chores")return false;
       return true;
     }).map(function(x){
+      if(x.templateKey==="monday-water-school"){
+        return Object.assign({},x,{
+          start:"06:30",end:"06:40",
+          title:"Water bottle + school checklist",
+          detail:"While Leo showers: fill water bottle · check homework · jacket · PE shoes · library items",
+          subtasks:["Fill water bottle","Check homework","Check jacket","Check PE shoes","Check library items"]
+        });
+      }
       if(x.templateKey==="wind-down"){
         const night=p.nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
         return Object.assign({},x,{
@@ -798,7 +807,7 @@
     if(hair.enabled!==false){
       const schoolMorning=[1,2,3,4,5].includes(lifeWeekday(date)),
         start=hmMinutes(schoolMorning?(hair.schoolMorningStart||"07:00"):(hair.nonSchoolMorningStart||"09:00")),
-        duration=Math.max(5,Math.min(10,Number(hair.durationMinutes||10)));
+        duration=Math.max(5,Math.min(15,Number(hair.durationMinutes||15)));
       if(start!==null){
         const cover=lifeTannerMorningCoverage(date),covered=cover&&start>=cover.start&&start<cover.end;
         add({templateKey:"dolly-hair",start:minutesHm(start),end:minutesHm(start+duration),
@@ -832,7 +841,10 @@
     }
 
     lifeKidShowerRows(date).forEach(function(row){
-      if(lifeWeekday(date)===1&&row.templateKey!=="kid-shower-leo")return;
+      if(lifeWeekday(date)===1){
+        if(row.templateKey==="kid-shower-leo"&&keys.has("monday-leo-shower"))return;
+        if(row.templateKey!=="kid-shower-leo")return;
+      }
       add(row);
     });
 
