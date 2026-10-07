@@ -5278,7 +5278,7 @@ function householdCleaningCard(){
   return `${typeof homeResetDashboard==="function"?homeResetDashboard():""}${householdRoutineCard()}${homeCareCard()}`;
 }
 function openHouseholdSection(section){
-  if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");setView("inventory");openInventoryHubSection("map");return}
+  if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");openInventoryHubSection("map");return}
   if(section==="inventory"){inventoryTab="items";localStorage.setItem("dailyLifeInventoryTab","items");setView("inventory");return}
   if(section==="pets"){setView("pets");return}
   let title="Home + Household",body="";
