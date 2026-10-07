@@ -1092,18 +1092,64 @@ function itineraryAutoTaskBlocks(date,baseItems){
 function itineraryRestBlocks(items,date){
   const gaps=itineraryOpenGaps(items,date),out=[],
     now=date===ymd()?new Date():null,
-    currentFloor=now?Math.ceil((now.getHours()*60+now.getMinutes()+5)/5)*5:null;
+    currentFloor=now?Math.ceil((now.getHours()*60+now.getMinutes()+5)/5)*5:null,
+    alreadyPlaced=new Set(items.filter(x=>x.source==="task"&&x.sourceId).map(x=>String(x.sourceId))),
+    fallbackTasks=itineraryTaskCandidates(date).filter(t=>{
+      if(alreadyPlaced.has(String(t.id))||t.itineraryStart)return false;
+      const cat=String(t.category||"life").toLowerCase();
+      return ["home","life","personal","car","pets","garden"].includes(cat);
+    }),
+    usedFallback=new Set();
+
+  const nextAnchorAfter=minute=>items
+    .filter(x=>!x.nonBlocking&&x.kind!=="gap"&&hmMinutes(x.start)!==null&&hmMinutes(x.start)>=minute)
+    .sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start))[0]||null;
+
   for(const g of gaps){
     let cursor=currentFloor===null?g.start:Math.max(g.start,currentFloor);
     if(g.end-cursor<15)continue;
+
     while(g.end-cursor>=15){
-      const remaining=g.end-cursor,chunk=Math.min(90,remaining),end=cursor+chunk;
-      out.push({id:"gap:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),title:chunk>=60?"Flexible buffer":"Transition / buffer",detail:"Time left after placing today’s known tasks",fixed:false,kind:"gap",icon:"",source:"gap",durationMinutes:chunk});
+      const remaining=g.end-cursor;
+
+      // A second pass can use a real flexible loose end even if its preferred
+      // window kept it out of the first automatic scheduling pass.
+      const fallback=fallbackTasks.find(t=>{
+        if(usedFallback.has(String(t.id)))return false;
+        const mins=itineraryTaskMinutes(t);
+        return mins>=10&&mins<=Math.min(remaining,60);
+      });
+      if(fallback&&remaining>=20){
+        const mins=itineraryTaskMinutes(fallback),endAt=cursor+mins;
+        usedFallback.add(String(fallback.id));
+        out.push({
+          id:"gap-task:"+fallback.id+":"+date,start:minutesHm(cursor),end:minutesHm(endAt),
+          title:taskDisplayTitle(fallback),
+          detail:[fallback.child,fallback.date<date?"Carried forward from "+dl(fallback.date):"",fallback.notes,"Filled into open time from your real task list"].filter(Boolean).join(" · "),
+          fixed:false,kind:"task",icon:"✓",source:"task",sourceId:fallback.id,durationMinutes:mins,done:!!fallback.done,
+          autoPlanned:true,openTimeFallback:true,carriedForward:fallback.date<date
+        });
+        cursor=endAt;
+        continue;
+      }
+
+      const chunk=Math.min(remaining>=60?60:remaining,remaining),end=cursor+chunk,
+            next=nextAnchorAfter(end),
+            short=chunk<30;
+      out.push({
+        id:"gap:"+date+":"+cursor,start:minutesHm(cursor),end:minutesHm(end),
+        title:short?"Transition time":"Open time · nothing else tracked",
+        detail:short
+          ?["Bathroom / water / put away what you were using",next?"Next: "+next.title:""].filter(Boolean).join(" · ")
+          :"Daily Life already placed every real task it can see. Use this block for rest, an unlogged need, or add/capture what actually needs doing.",
+        fixed:false,kind:"gap",icon:short?"↗":"",source:"gap",durationMinutes:chunk
+      });
       cursor=end;
     }
   }
   return out;
 }
+
 function dayFlowCheckRows(){
   if(!Array.isArray(state.dayFlowChecks))state.dayFlowChecks=[];
   return state.dayFlowChecks;
