@@ -1549,12 +1549,12 @@ function openDayFlowSection(section,date=itineraryDate||ymd()){
 }
 function dayFlowCurrentItem(date,items){
   if(date!==ymd()){
-    const memorable=items.find(x=>!x.done&&x.kind!=="gap"&&x.source!=="work"&&(x.source==="event"||x.kind==="event"||x.kind==="tentative"));
-    return memorable||items.find(x=>!x.done&&x.kind!=="gap")||items[0]||null;
+    const memorable=items.find(x=>!x.done&&!x.nonBlocking&&x.kind!=="gap"&&x.source!=="work"&&(x.source==="event"||x.kind==="event"||x.kind==="tentative"));
+    return memorable||items.find(x=>!x.done&&!x.nonBlocking&&x.kind!=="gap")||items.find(x=>!x.nonBlocking)||null;
   }
   const now=new Date(),m=now.getHours()*60+now.getMinutes(),
-        active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return !x.done&&s!==null&&e!==null&&s<=m&&e>m&&x.kind!=="gap"}),
-        next=items.find(x=>{const s=hmMinutes(x.start);return !x.done&&s!==null&&s>=m&&x.kind!=="gap"});
+        active=items.find(x=>{const s=hmMinutes(x.start),e=hmMinutes(x.end);return !x.done&&!x.nonBlocking&&s!==null&&e!==null&&s<=m&&e>m&&x.kind!=="gap"}),
+        next=items.find(x=>{const s=hmMinutes(x.start);return !x.done&&!x.nonBlocking&&s!==null&&s>=m&&x.kind!=="gap"});
   return active||next||null;
 }
 function itineraryView(){
