@@ -461,7 +461,7 @@ const ITINERARY_ROUTINES=[
   ["work-morning","Wake + get ready for work"],["after-work","Eat + reset after work"],
   ["after-school-launch","Snack + after-school reset"],["homework","Homework + reading"],
   ["meal-prep","Active meal prep"],["dinner","Dinner + kitchen reset"],
-  ["chores","Chores + showers / baths"],["tomorrow-prep","Tomorrow prep · clothes + bags + keys"],["wind-down","Teeth + face + pajamas + electronics"]
+  ["chores","Chores + showers / baths"],["tomorrow-prep","Tomorrow prep · clothes + bags + keys"],["wind-down","Night routine · electronics, teeth, reading + settle"]
 ];
 function itineraryDayStart(date){
   const prefs=state.settings?.itinerary||{},weekday=new Date(date+"T12:00:00").getDay();
@@ -837,13 +837,15 @@ function itinerarySuggestedBlocks(date){
     }
     add({templateKey:"chores",start:choreStart,end:choreEnd,title:choreTitle,detail:[baseChores,showerNote].filter(Boolean).join(" · "),icon:"🧺"});
   }
-  const windDownMinutes=30,windDownStart=Math.max(dayStart,bedtime-windDownMinutes),
+  const kidsHomeTonight=kids.length&&weekday!==6&&!(weekday===5&&kidsAwayAt!==null&&kidsAwayAt<=19*60+30),
+        windDownMinutes=30,
+        windDownStart=Math.max(dayStart,kidsHomeTonight?Math.min(19*60+30,bedtime-windDownMinutes):bedtime-windDownMinutes),
         tomorrow=shiftDateString(date,1),tm=mealForDate(tomorrow),mealPrep=tomorrowMealPrepOutstanding(tm),early=(state.events||[]).filter(e=>e.date===tomorrow&&e.status!=="cancelled"&&e.startTime&&e.startTime<"09:00"),
         prepEnd=windDownStart,prepStart=Math.max(17*60,prepEnd-30);
   if(mealPrep.length||early.length){
     if(prepEnd-prepStart>=15)add({templateKey:"tomorrow-prep",start:minutesHm(prepStart),end:minutesHm(prepEnd),title:"Tomorrow prep · clothes + bags + keys",detail:[mealPrep.join(" · "),early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
   }
-  if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:"Teeth + face + pajamas + electronics",detail:[kids.length?"Collect electronics + settle kids":"Settle the house","Plug in phone + set alarm",sleepPlan.wake?"Bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
+  if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:kidsHomeTonight?"Night routine · electronics, teeth/pajamas, reading + settle":"Personal night routine + sleep prep",detail:[kidsHomeTonight?"Electronics sweep · teeth/floss/mouthwash · wash faces · pajamas · reading · start robot vacuums · settle with Dolly + Ambrose":"Wash up · plug in phone · set alarm · settle the house",sleepPlan.wake?"Protect sleep: bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
   const prefs=state.settings?.itinerary?.routinePreferences||{};
   return out.filter(x=>prefs[weekday+":"+x.templateKey]?.enabled!==false).map((x,i)=>{
     const saved=prefs[weekday+":"+x.templateKey]||null,start=saved?.start||x.start,duration=Number(saved?.durationMinutes||0),end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved?.end||x.end);
