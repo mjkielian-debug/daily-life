@@ -628,8 +628,15 @@ function itineraryFixedItems(date){
           detail=[e.child,e.location,childOnlyAfterSchool?"child activity · your time stays open until pickup":"",e.status==="tentative"?"tentative":"",!e.endTime?"end time estimated until you set it":""].filter(Boolean).join(" · ");
     items.push({id:"event:"+e.id,start:e.startTime,end:eventEnd,title:e.title,detail,fixed:childOnlyAfterSchool?false:e.status!=="tentative",nonBlocking:childOnlyAfterSchool,kind:childOnlyAfterSchool?"context":e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
     if(childOnlyAfterSchool&&eventEnd){
-      const endM=hmMinutes(eventEnd);
-      if(endM!==null)items.push({
+      const endM=hmMinutes(eventEnd),
+            childName=String(e.child||"").trim().toLowerCase(),
+            explicitPickup=(state.events||[]).some(p=>{
+              if(p===e||p.date!==date||!p.startTime||!/(?:pick\s*up|pickup|late pickups?)/i.test(String(p.title||"")))return false;
+              const who=String(p.child||"").toLowerCase(),ps=hmMinutes(p.startTime),pe=hmMinutes(p.endTime);
+              if(childName&&who&&!who.includes(childName))return false;
+              return endM!==null&&ps!==null&&ps<=endM+20&&(pe===null||pe>=endM-20);
+            });
+      if(endM!==null&&!explicitPickup)items.push({
         id:"pickup:"+e.id,start:minutesHm(Math.max(0,endM-15)),end:minutesHm(Math.min(24*60-1,endM+15)),
         title:"Pick up "+String(e.child||"kid"),detail:[e.title,e.location].filter(Boolean).join(" · "),
         fixed:true,kind:"family",icon:"🚗",source:"pickup",sourceId:e.id
@@ -2365,6 +2372,13 @@ function migrateState(s){
     upsertRule("wednesday-dolly-dance","Dolly dance","Dolly",3,"","","activity","Wednesday-night dance. Add the exact time when confirmed; Dolly showers after dance.");
     upsertRule("sunday-kids-return","Kids home from Dad's","Kids",0,"17:20","17:45","family","Kids usually return around 5:30 PM and are hungry; have Sunday dinner ready.");
     s.settings.knownFamilyScheduleVersion=2;
+  }
+  if(Number(s.settings.familyScheduleDedupeVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    const preferIds=new Set(["thursday-food-fort","sunday-kids-return"]);
+    const removeIds=new Set(["thu-food-fort","sun-kids-return-dad"]);
+    s.settings.recurringFamilyEvents=rules.filter(r=>!removeIds.has(String(r.id||""))||!rules.some(x=>preferIds.has(String(x.id||""))&&Number(x.weekday)===Number(r.weekday)));
+    s.settings.familyScheduleDedupeVersion=1;
   }
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
