@@ -853,9 +853,10 @@ function itinerarySuggestedBlocks(date){
 
 function itineraryRoutineWindow(x,date){
   const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
-        desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
-  if(x.templateKey==="work-morning"||/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
-  if(/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))return{start:6*60+15,end:8*60};
+        desired=hmMinutes(x.start)??dayStart,requestedEnd=hmMinutes(x.end),work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
+  if(x.templateKey==="work-morning")return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
+  if(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return{start:desired,end:requestedEnd!==null?requestedEnd:Math.min(dayEnd,desired+15)};
+  if(/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))return{start:desired,end:requestedEnd!==null?requestedEnd:Math.min(dayEnd,desired+15)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(/^water-[123]$/.test(String(x.templateKey||"")))return{start:Math.max(dayStart,desired-45),end:Math.min(dayEnd,desired+50)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
