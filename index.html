@@ -707,31 +707,52 @@ function itinerarySuggestedBlocks(date){
   }
   if(weekday===1&&kids.length){
     add({
-      templateKey:"monday-kids-ready",start:"06:15",end:"06:30",
-      title:"Kids up + ready downstairs",
-      detail:"Wake Demitri, Dolly + Ambrose · get dressed · brush teeth + wash faces · socks/shoes + downstairs",
-      subtasks:["Wake Demitri, Dolly + Ambrose","Get dressed","Brush teeth + wash faces","Socks/shoes + downstairs"],
+      templateKey:"monday-kids-dress",start:"06:15",end:"06:20",
+      title:"Kids up + get dressed",
+      detail:"Wake Demitri, Dolly + Ambrose · clothes are already set out · get dressed right away",
+      subtasks:["Wake Demitri, Dolly + Ambrose","Get dressed"],
       icon:"☀"
+    });
+    add({
+      templateKey:"monday-kids-bathroom",start:"06:20",end:"06:25",
+      title:"Teeth + wash faces",
+      detail:"Demitri, Dolly + Ambrose brush teeth and wash faces",
+      subtasks:["Brush teeth","Wash faces"],
+      icon:"🪥"
+    });
+    add({
+      templateKey:"monday-kids-downstairs",start:"06:25",end:"06:30",
+      title:"Socks + shoes + downstairs",
+      detail:"Finish socks and shoes, then get everyone downstairs",
+      subtasks:["Socks","Shoes","Downstairs"],
+      icon:"👟"
     });
     add({
       templateKey:"monday-leo-shower",start:"06:30",end:"07:00",
       title:"Leo shower",
       detail:"Leo takes his morning shower · about 30 minutes",
       subtasks:["Leo shower"],
-      icon:"🚿"
+      icon:"🚿",nonBlocking:true
     });
     add({
-      templateKey:"monday-water-school",start:"06:30",end:"06:55",allowParallel:true,
-      title:"Finish school launch",
-      detail:"Fill water bottles · check homework/jackets/PE shoes/library items · Dolly hair",
-      subtasks:["Fill water bottles","Homework + jacket check","PE shoes + library check","Dolly hair"],
+      templateKey:"monday-school-checklist",start:"06:30",end:"06:40",allowParallel:true,
+      title:"School checklist + water",
+      detail:"Fill water bottle · homework · jackets · PE shoes · library items",
+      subtasks:["Fill water bottle","Homework","Jackets","PE shoes","Library items"],
       icon:"🎒"
+    });
+    add({
+      templateKey:"monday-dolly-hair",start:"06:40",end:"06:55",allowParallel:true,
+      title:"Dolly hair",
+      detail:"Do Dolly’s hair while Leo finishes his shower",
+      subtasks:["Dolly hair"],
+      icon:"♡"
     });
     add({
       templateKey:"monday-self-ready",start:"06:55",end:"07:10",allowParallel:true,
       title:"Get yourself ready",
-      detail:"Get dressed · face/hair basics · deodorant/perfume · make sure your water is filled",
-      subtasks:["Get dressed","Face + hair","Deodorant + perfume","Fill your water bottle"],
+      detail:"Get dressed · face/hair basics · deodorant · perfume · make sure your water is filled",
+      subtasks:["Get dressed","Face + hair","Deodorant","Perfume","Check water bottle"],
       icon:"♡"
     });
     add({
