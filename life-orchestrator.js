@@ -561,6 +561,18 @@
   const baseFixedFriday=itineraryFixedItems;
   itineraryFixedItems=function(date){
     const rows=baseFixedFriday(date);
+    const weekday=new Date(date+"T12:00:00").getDay(),
+      dayEvents=(state.events||[]).filter(e=>e.date===date&&String(e.status||"")!=="cancelled"),
+      noSchool=dayEvents.some(e=>/\b(no school|school closed|school closure|school holiday|break day)\b/i.test([e.title,e.notes].filter(Boolean).join(" "))),
+      alreadyHasPickup=rows.some(x=>/\bschool\s*pickup\b/i.test(String(x.title||"")));
+    if(weekday>=1&&weekday<=5&&!noSchool&&!alreadyHasPickup&&typeof childProfiles==="function"&&childProfiles().length){
+      rows.push({
+        id:"school-pickup:"+date,start:"14:40",end:"15:15",
+        title:"Leave for school pickup",
+        detail:"Leave home 2:40 · park about 2:45 · school pickup 2:52 · pick up Leo after the younger three when he does not have a club",
+        fixed:true,kind:"family",icon:"🎒",source:"generated"
+      });
+    }
     if(date==="2026-10-09"){
       rows.push({id:"focus-1700:"+date,start:"17:00",end:"19:30",title:"Tanner gift · finish anything still incomplete",detail:"Protected Friday work block after the kids go to Dad's · finish the six records, backs/song titles, crate, or whichever pieces are still left.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
       rows.push({id:"focus-2030:"+date,start:"19:30",end:"19:50",title:"Tanner gift · final check + hide supplies",detail:"Check all six records and the crate · fix any obvious unfinished detail · put tools/supplies away and hide the gift before the nighttime routine.",fixed:true,kind:"plan",icon:"♡",source:"generated"});
