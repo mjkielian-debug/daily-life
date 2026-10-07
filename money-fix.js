@@ -77,3 +77,47 @@
   const run=()=>setTimeout(()=>normalizeVehicleServiceDuplicates().catch(()=>{}),0);
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
 })();
+
+
+/* Compact action-first Money surface. Keep explanation available, but out of the way. */
+(function compactMoneyActionSurface(){
+  function actionRows(){
+    const today=ymd(),endObj=new Date(today+"T12:00:00");endObj.setDate(endObj.getDate()+45);const through=ymd(endObj),actions=[];
+    for(const r of billReadiness().filter(x=>x.bill.status!=="paid"&&validBillDate(x.bill.due)&&x.bill.due>=today&&x.bill.due<=through)){
+      const b=r.bill,due=dl(b.due);
+      if(r.status==="Transfer needed")actions.push({kind:"transfer",title:transferInstruction(r)||("Move money for "+b.name),detail:b.name+" · due "+due,index:r.index});
+      else if(r.status==="Projected short"){const short=Math.max(0,-Number(r.projectedAfter||0))/100;actions.push({kind:"short",title:"Short "+money(short)+" for "+b.name,detail:"Needs attention by "+due,index:r.index})}
+      else if(r.status==="Needs account")actions.push({kind:"setup",title:"Choose payment account",detail:b.name+" · due "+due,index:r.index});
+      else if(r.status==="Balance unavailable")actions.push({kind:"setup",title:"Update account balance",detail:b.name+" · due "+due,index:r.index});
+      else if(r.status==="Check bill")actions.push({kind:"setup",title:"Fix bill details",detail:b.name+" · amount or due date needs review",index:r.index});
+    }
+    return actions;
+  }
+  window.moneyNextStepsCard=function(){
+    const actions=actionRows(),first=actions[0];
+    if(!first)return '<div class="card money-do-next"><div class="eyebrow">Do this next</div><h2>No money move needed</h2><div class="money-all-clear">✦ Your entered bills do not need a transfer or setup fix in the next 45 days.</div></div>';
+    const rest=actions.slice(1,5);
+    return '<div class="card money-do-next"><div class="eyebrow">Do this next</div><button class="money-primary-action" type="button" onclick="openBill('+first.index+')"><span><b>'+esc(first.title)+'</b><small>'+esc(first.detail)+'</small></span><strong>Open ›</strong></button>'+
+      (rest.length?'<details class="money-other-actions"><summary>'+rest.length+' more money action'+(rest.length===1?'':'s')+'</summary>'+rest.map(a=>'<button type="button" class="money-action compact" onclick="openBill('+a.index+')"><span><b>'+esc(a.title)+'</b><small>'+esc(a.detail)+'</small></span><span>›</span></button>').join('')+'</details>':'')+
+      '</div>';
+  };
+  window.dueDateOutlookCard=function(){
+    const today=ymd(),rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=today).slice(0,8);
+    if(!rows.length)return "";
+    const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
+          short=rows.filter(r=>r.status==="Projected short").length;
+    return '<div class="card money-outlook-compact"><div class="section-title"><div><div class="eyebrow">Bill outlook</div><h2>'+covered+' of '+rows.length+' covered</h2></div><span class="bill-status '+(short?'short':'covered')+'">'+(short?short+' short':'on track')+'</span></div>'+
+      rows.map(r=>{const b=r.bill,cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown",instruction=typeof transferInstruction==="function"?transferInstruction(r):"";return '<button type="button" class="money-outlook-row" onclick="openBill('+r.index+')"><span><b>'+esc(b.name)+'</b><small>'+esc(dl(b.due))+' · '+money(Number(b.amount||0))+(instruction?' · '+esc(instruction):'')+'</small></span><span class="bill-status '+cls+'">'+esc(r.status)+'</span></button>'}).join('')+
+      '<details class="reading-details"><summary>How this is calculated</summary><p class="muted small">Uses entered balances, earlier unpaid bills, enabled expected income before each due date, and any needed transfer support.</p></details></div>';
+  };
+  window.moneyTransfersCard=function(){
+    const coach=typeof budgetCoachCard==="function"?budgetCoachCard():"";
+    const strategy=typeof accountStrategyCard==="function"?accountStrategyCard():"";
+    return moneyNextStepsCard()+'<details class="money-more-details"><summary>Show balances, budget math + strategy</summary><div class="money-more-details-body">'+safeToSpendCard()+coach+strategy+'</div></details>';
+  };
+  if(!document.getElementById("compactMoneyActionStyles")){
+    const style=document.createElement("style");style.id="compactMoneyActionStyles";
+    style.textContent='.money-do-next{display:grid;gap:9px}.money-primary-action,.money-outlook-row{width:100%;border:1px solid color-mix(in srgb,var(--primary) 22%,var(--border));background:color-mix(in srgb,var(--panel) 94%,var(--primary) 6%);color:var(--text);border-radius:16px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;font:inherit}.money-primary-action span,.money-outlook-row span:first-child{display:grid;gap:3px}.money-primary-action b{font-size:.92rem}.money-primary-action small,.money-outlook-row small{font-size:.66rem;color:var(--muted);line-height:1.35}.money-primary-action strong{white-space:nowrap}.money-other-actions summary,.money-more-details summary{cursor:pointer;font-weight:800;font-size:.72rem;padding:10px 2px}.money-action.compact{width:100%;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);padding:10px 2px;display:flex;justify-content:space-between;text-align:left}.money-action.compact span:first-child{display:grid;gap:2px}.money-action.compact small{font-size:.64rem;color:var(--muted)}.money-outlook-compact{display:grid;gap:7px}.money-outlook-row{padding:9px 10px;border-radius:13px}.money-outlook-row .bill-status{flex:0 0 auto}';
+    document.head.appendChild(style);
+  }
+})();
