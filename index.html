@@ -3329,8 +3329,8 @@ function todayTasksTrackingDrawer(tk,done,actual,h,w,f,oz){
 function todayView(m,f,w,h,tk,done,nt,tr){
   const ml=moonLens(m),actual=!!(w?.start&&workEndConfirmed(w)),oz=water(),meal=todayMeal(),mealNeeds=mealShoppingNeeds(meal);
   const now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes(),agenda=itineraryDayItems(ymd());
-  const activeTimed=agenda.find(i=>{const s=hmMinutes(i.start),e=hmMinutes(i.end);return s!==null&&e!==null&&s<=nowMinutes&&e>nowMinutes});
-  const nextTimed=agenda.find(i=>{const s=hmMinutes(i.start);return s!==null&&s>=nowMinutes});
+  const activeTimed=agenda.find(i=>{const s=hmMinutes(i.start),e=hmMinutes(i.end);return !i.nonBlocking&&i.kind!=="gap"&&s!==null&&e!==null&&s<=nowMinutes&&e>nowMinutes});
+  const nextTimed=agenda.find(i=>{const s=hmMinutes(i.start);return !i.nonBlocking&&i.kind!=="gap"&&s!==null&&s>=nowMinutes});
   const foodNow=meal&&meal.status!=="made"?(mealNeeds.length?`Dinner needs ${mealNeeds.length} grocery item${mealNeeds.length===1?"":"s"}`:mealRecipeStatus(meal)==="ready"&&meal.startBy?`Dinner start-by: ${fmtClock(meal.startBy)}`:mealRecipeStatus(meal)==="building"?"Dinner recipe is being built":""):"",
         adminNow=nextLifeAdminAction();
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
