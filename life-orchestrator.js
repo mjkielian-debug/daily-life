@@ -508,7 +508,7 @@
       openTasks=q.todayRows.length,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
       greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
-      centerDetail=String(guide.detail||"").split("·").map(x=>x.trim()).filter(Boolean)[0]||"Tap for Day Flow.",
+      centerTitle=String(guide.title||"Today").replace(/^Next\s*·\s*[^·]+\s*·\s*/i,"").replace(/^Prep for\s+/i,"").trim(),
       segments=[
         {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"openTodayDayFlow()"},
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
@@ -522,7 +522,7 @@
     return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><div class="life-today-top-actions"><button class="btn small" onclick="openDailyReview()">? Review'+(review.unknown?' '+review.unknown:'')+'</button><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
         segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
-        '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;"><span class="eyebrow">NOW / NEXT</span><b>'+esc(guide.title||"Today")+'</b><strong>'+esc(centerDetail)+'</strong><small>'+esc(greeting)+' · tap for Day Flow</small></button>'+
+        '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;"><span class="eyebrow">NOW / NEXT</span><b>'+esc(centerTitle||"Today")+'</b><small>'+esc(greeting)+' · tap for Day Flow</small></button>'+
       '</div>'+
       '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
   }
