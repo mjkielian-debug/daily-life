@@ -243,7 +243,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.07-concretegaps3";
+const APP_BUILD="2026.10.07-reset-consistency4";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -834,6 +834,8 @@ function itineraryIsDailyResetTask(task){
   if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(title))return true;
   if(/^school[- ]night reset$/.test(title))return true;
   if(task?.dailyReset===true||task?.routineCarryover===false)return true;
+  if(task?.child&&/(?:clean|tidy|reset).*\broom\b|\bhomework\b|\bread(?:ing)?(?:\s+20\s*(?:min|minutes?))?\b/.test(title))return true;
+  if(/(?:daily|every day|each day)/.test(notes)&&/\broom\b|\bhomework\b|\bread(?:ing)?\b/.test(title+" "+notes))return true;
   if(task?.generated==="recurring-task"){
     const rule=(state.settings?.recurringTasks||[]).find(r=>String(r.title||"").trim().toLowerCase()===title);
     if(rule&&Array.isArray(rule.days)&&rule.days.length===7)return true;
@@ -6773,7 +6775,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-concretegaps3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-reset-consistency4");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
