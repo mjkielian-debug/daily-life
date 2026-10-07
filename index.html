@@ -738,12 +738,36 @@ function itineraryFitRoutines(date,blockingItems,routines){
             distance=Math.abs(candidate-desired);
       if(!best||distance<best.distance||(distance===best.distance&&candidate<best.start))best={i,start:candidate,end:candidate+duration,distance};
     }
+    let compressed=false,usedDuration=duration;
+    if(!best){
+      const compactMinutes={
+        "after-work":15,
+        "after-school-launch":15,
+        "homework":25,
+        "meal-prep":15,
+        "dinner":30,
+        "chores":20,
+        "tomorrow-prep":15,
+        "wind-down":20
+      }[String(x.templateKey||"")]||0;
+      if(compactMinutes>0&&compactMinutes<duration){
+        for(let i=0;i<candidateGaps.length;i++){
+          const g=candidateGaps[i],rangeStart=Math.max(g.start,window.start,dayStart),rangeEnd=Math.min(g.end,window.end,dayEnd);
+          if(rangeEnd-rangeStart<compactMinutes)continue;
+          const candidate=Math.max(rangeStart,Math.min(desired,rangeEnd-compactMinutes)),
+                distance=Math.abs(candidate-desired);
+          if(!best||distance<best.distance||(distance===best.distance&&candidate<best.start))best={i,start:candidate,end:candidate+compactMinutes,distance};
+        }
+        if(best){compressed=true;usedDuration=compactMinutes}
+      }
+    }
     if(!best){
       placed.push({...x,skippedByConflict:true,originalStart:x.start,originalEnd:x.end});
       continue;
     }
     const g=candidateGaps[best.i],moved=best.start!==desired,
-          row={...x,start:minutesHm(best.start),end:minutesHm(best.end),movedByPlanner:moved,originalStart:x.start,originalEnd:x.end};
+          compressionNote=compressed?("Shortened to "+usedDuration+" min to fit around fixed commitments"):"",
+          row={...x,start:minutesHm(best.start),end:minutesHm(best.end),detail:[x.detail,compressionNote].filter(Boolean).join(" · "),movedByPlanner:moved,compressedByPlanner:compressed,originalStart:x.start,originalEnd:x.end};
     placed.push(row);
     if(!x.allowParallel){
       const parts=[];if(g.start<best.start)parts.push({start:g.start,end:best.start});if(best.end<g.end)parts.push({start:best.end,end:g.end});
