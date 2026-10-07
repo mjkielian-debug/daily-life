@@ -31,6 +31,8 @@
     if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(title))return true;
     if(/^school[- ]night reset$/.test(title))return true;
     if(t?.dailyReset===true||t?.routineCarryover===false)return true;
+    if(t?.child&&/(?:clean|tidy|reset).*\broom\b|\bhomework\b|\bread(?:ing)?(?:\s+20\s*(?:min|minutes?))?\b/.test(title))return true;
+    if(/(?:daily|every day|each day)/.test(notes)&&/\broom\b|\bhomework\b|\bread(?:ing)?\b/.test(title+" "+notes))return true;
     if(t?.generated==="recurring-task"){
       const rule=(state.settings?.recurringTasks||[]).find(r=>String(r.title||"").trim().toLowerCase()===title);
       if(rule&&Array.isArray(rule.days)&&rule.days.length===7)return true;
