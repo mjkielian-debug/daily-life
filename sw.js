@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261007-ui-fixes2";
+const CACHE_NAME="daily-life-shell-20261007-flow-tarot-week3";
 const APP_SHELL=[
   "./",
   "./index.html",
