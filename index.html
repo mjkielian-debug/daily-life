@@ -6773,7 +6773,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-familytasks-spirit1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-familytasks-spirit2");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -6798,12 +6798,12 @@ registerAppWorker();
 <script src="house-robot.js?v=20261004-housemap4"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261006-pickup2"></script>
-<script src="life-orchestrator.js?v=20261007-dailyreset2"></script>
+<script src="life-orchestrator.js?v=20261007-specific3"></script>
 <script src="home-operator.js?v=20261004-houseref1"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
-<script src="task-ui.js?v=20261007-kidgroups5"></script>
+<script src="task-ui.js?v=20261007-kidgroups6"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 </body>
 </html>
