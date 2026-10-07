@@ -6958,19 +6958,45 @@ function cleanupNoRecipeMeals(){
 
 function applyReadingLogCorrections(){
   state.settings=state.settings||{};
-  if(Number(state.settings.readingDuplicateFix20261005Version||0)>=1)return false;
-  const matches=(state.readingLogs||[]).filter(x=>
-    x.date==="2026-10-05"&&
-    String(x.reader||"").trim().toLowerCase()==="dolly"&&
-    String(x.book||"").trim().toLowerCase()==="sam"&&
-    Number(x.pages||0)===10
-  );
-  if(matches.length>1){
-    const keep=matches[0],removeIds=new Set(matches.slice(1).map(x=>String(x.id)));
-    state.readingLogs=(state.readingLogs||[]).filter(x=>!removeIds.has(String(x.id)));
+  let changed=false;
+
+  // Keep the one known correction from Oct. 5 for installs that have not run it yet.
+  if(Number(state.settings.readingDuplicateFix20261005Version||0)<1){
+    const matches=(state.readingLogs||[]).filter(x=>
+      x.date==="2026-10-05"&&
+      String(x.reader||"").trim().toLowerCase()==="dolly"&&
+      String(x.book||"").trim().toLowerCase()==="sam"&&
+      Number(x.pages||0)===10
+    );
+    if(matches.length>1){
+      const removeIds=new Set(matches.slice(1).map(x=>String(x.id)));
+      state.readingLogs=(state.readingLogs||[]).filter(x=>!removeIds.has(String(x.id)));
+      changed=true;
+    }
+    state.settings.readingDuplicateFix20261005Version=1;
   }
-  state.settings.readingDuplicateFix20261005Version=1;
-  return matches.length>1;
+
+  // One-time exact-dedupe pass. Same book/day is NOT enough to merge:
+  // start/end/pages/minutes must also match so legitimate separate sessions survive.
+  if(Number(state.settings.readingExactDedupeVersion||0)<1){
+    const seen=new Set(),next=[];
+    for(const x of state.readingLogs||[]){
+      const date=String(x.date||"").trim(),
+            reader=String(x.reader||"").trim().toLowerCase(),
+            book=String(x.book||"").trim().toLowerCase().replace(/[’‘]/g,"'").replace(/\s+/g," "),
+            pages=Number(x.pages||0),
+            startPage=Number(x.start||0),
+            endPage=Number(x.end||0),
+            minutes=Number(x.minutes||0);
+      if(!date||!reader||pages<=0){next.push(x);continue}
+      const key=[date,reader,book,startPage,endPage,pages,minutes].join("|");
+      if(seen.has(key)){changed=true;continue}
+      seen.add(key);next.push(x);
+    }
+    state.readingLogs=next;
+    state.settings.readingExactDedupeVersion=1;
+  }
+  return changed;
 }
 
 function applyOct6PlanCorrections(){
