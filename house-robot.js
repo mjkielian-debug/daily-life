@@ -21,9 +21,13 @@
     return state.homeAutomation.robotVacuum;
   }
   function robotFloors(){
-    const rooms=state.houseRooms||[],floors=[...new Set(rooms.map(r=>String(r.floor||"").trim()).filter(Boolean))];
+    const rooms=state.houseRooms||[],
+      core=["Basement","First floor","Second floor","Third floor"],
+      found=[...new Set(rooms.map(r=>String(r.floor||"").trim()).filter(Boolean))],
+      extras=found.filter(f=>!core.includes(f)).sort((a,b)=>a.localeCompare(b)),
+      floors=[...core,...extras];
     if(rooms.some(r=>!String(r.floor||"").trim()))floors.push("Unassigned");
-    return floors.length?floors:["House"];
+    return floors;
   }
   function robotRoomsForFloor(floor){
     const rooms=state.houseRooms||[];
