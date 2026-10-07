@@ -768,9 +768,12 @@ function itinerarySuggestedBlocks(date){
       choreTitle="Kids chores · no showers tonight";
       showerNote="Tuesday stays shower-free because evenings may run late.";
     }else if(weekday===3){
-      choreStart="19:00";choreEnd="19:30";
+      const dance=events.find(e=>/dance/i.test([e.title,e.notes].filter(Boolean).join(" "))&&(!e.child||/dolly/i.test(String(e.child||""))));
+      const danceEnd=hmMinutes(dance?.endTime);
+      const showerStart=danceEnd!==null?Math.min(20*60,Math.max(18*60,danceEnd+5)):19*60;
+      choreStart=minutesHm(showerStart);choreEnd=minutesHm(showerStart+30);
       choreTitle="Kids chores + Dolly shower";
-      showerNote="Dolly · shower after dance · allow at least 20 minutes.";
+      showerNote=(danceEnd!==null?"Dolly · shower after dance ends at "+fmtClock(dance.endTime):"Dolly · shower after dance · exact dance time not entered yet")+" · allow at least 20 minutes.";
     }else if(weekday===4){
       choreStart="18:35";choreEnd="19:15";
       choreTitle="Kids chores + Ambrose shower";
