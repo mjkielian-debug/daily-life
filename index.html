@@ -1133,7 +1133,7 @@ function itineraryRestBlocks(items,date){
         continue;
       }
 
-      const chunk=Math.min(remaining>=60?60:remaining,remaining),end=cursor+chunk,
+      const chunk=remaining,end=g.end,
             next=nextAnchorAfter(end),
             short=chunk<30;
       out.push({
