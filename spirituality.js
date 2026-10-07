@@ -143,7 +143,7 @@ function openSpiritualJournal(type){
 function tarotCardMarkup(date,compact){
  date=date||ymd();ensureDailyTarotSaved(date);const t=tarotForDate(date),revealed=tarotRevealed(date);
  if(!revealed){
-   return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" data-tarot-reveal="'+date+'" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
+   return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-unrevealed"><button class="tarot-card-back" type="button" data-tarot-reveal="'+date+'" onclick="event.preventDefault();event.stopPropagation();revealTarot(\''+date+'\');return false;" aria-label="Reveal today\'s tarot card"><div class="tarot-stars">✦ · ☾ · ✧</div><div class="tarot-back-botanical">❧</div><div class="tarot-symbol">☾</div><b>Tap to reveal</b><small>One card for reflection</small></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>The card stays facedown until you choose to open it.</p><b>Notice your first reaction before reading the meaning.</b></div></div>'
  }
  return'<div class="tarot-card-shell '+(compact?"compact":"")+' tarot-revealed"><button class="tarot-card-face" type="button" onclick="openTarotReflection(\''+date+'\')"><div class="tarot-stars">✦ · ☾ · ✧</div>'+tarotArtwork(t)+'<div class="tarot-name">'+esc(t.name)+'</div><div class="tarot-orientation">'+(t.reversed?"reversed":"upright")+'</div></button><div class="tarot-copy"><div class="eyebrow">For reflection, not prediction</div><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b>'+(t.saved?.intention?'<div class="notice"><b>My intention</b><p>'+esc(t.saved.intention)+'</p></div>':'')+(compact?'<div class="actions" style="margin-top:8px"><button class="btn small" onclick="openTarotReflection(\''+date+'\')">Reflect</button></div>':'<div class="actions" style="margin-top:10px"><button class="btn primary" onclick="openTarotReflection(\''+date+'\')">Reflect / journal</button></div>')+'</div></div>'
 }
@@ -235,11 +235,11 @@ function spiritualityView(m){
 }
 function spiritualityLaunchCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
- return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" type="button" data-open-spirituality="page">Open</button></div></div>'
+ return'<div class="card spirituality-launch floral-card"><div class="section-title"><div><div class="eyebrow">☾ Spirituality</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · '+esc(tarotLabel)+' · '+esc(s.title)+'</div></div><button class="btn primary" type="button" data-open-spirituality="page" onclick="return openSpiritualityPage(event)">Open</button></div></div>'
 }
 function todaySpiritualityCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),tarotLabel=tarotRevealed()?t.name:"card ready to reveal";
- return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" type="button" data-open-spirituality="page">Open</button></div><div class="spiritual-preview-text">'+esc(r.body)+'</div></div>'
+ return'<div class="card today-spirituality floral-card"><div class="section-title"><div><div class="eyebrow">☾ Daily reading</div><h2>'+esc(r.title)+'</h2><div class="muted small">'+esc(r.lens)+' · Tarot: '+esc(tarotLabel)+'</div></div><button class="btn" type="button" data-open-spirituality="page" onclick="return openSpiritualityPage(event)">Open</button></div><div class="spiritual-preview-text">'+esc(r.body)+'</div></div>'
 }
 
 // Keep inline controls reliable in the installed Android PWA as well as the browser tab.
