@@ -1346,14 +1346,17 @@ function dayFlowCurrentItem(date,items){
 function itineraryView(){
   const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),
         placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
-        unscheduled=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)).length+(state.chores||[]).filter(x=>x.date===date&&!x.done).length,
+        looseTasks=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)),
+        looseChores=(state.chores||[]).filter(x=>x.date===date&&!x.done),
+        unscheduled=looseTasks.length+looseChores.length,
+        looseFocus=looseTasks[0]?{title:looseTasks[0].title,detail:"Loose task · choose a time",action:`openTask('','${looseTasks[0].id}')`}:looseChores[0]?{title:[looseChores[0].child,looseChores[0].chore].filter(Boolean).join(" · "),detail:"Chore · choose a time",action:`openDayFlowSection('unscheduled','${date}')`}:null,
         conflicts=dayFlowConflictAudit(date).count,
         buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+rows.length+" block"+(rows.length===1?"":"s"):"Open"}}),
         segments=buckets,
         currentBucket=current&&hmMinutes(current.start)!==null?dayFlowBucketForMinutes(hmMinutes(current.start)):"",
-        centerTitle=current?current.title:(date===ymd()?"Open time":"Day overview"),
-        centerDetail=current?fmtClock(current.start)+(current.end?"–"+fmtClock(current.end):""):(items.length?items.length+" blocks planned":"Nothing timed"),
-        centerAction=current?dayFlowItemAction(current,date):`openDayFlowSection('plan','${date}')`;
+        centerTitle=current?current.title:looseFocus?looseFocus.title:(date===ymd()?"Open time":"Day overview"),
+        centerDetail=current?fmtClock(current.start)+(current.end?"–"+fmtClock(current.end):""):looseFocus?looseFocus.detail:(items.length?items.length+" blocks planned":"Nothing timed"),
+        centerAction=current?dayFlowItemAction(current,date):looseFocus?looseFocus.action:`openDayFlowSection('plan','${date}')`;
   return `<section class="dayflow-one-screen"><div class="dayflow-one-topline"><div class="dayflow-date-nav"><button class="btn small" onclick="shiftItineraryDate(-1)">←</button><span><div class="eyebrow">Day Flow</div><b>${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}))}</b></span><button class="btn small" onclick="shiftItineraryDate(1)">→</button></div><div class="actions"><button class="btn small" onclick="setItineraryDate(ymd())">Today</button><button class="btn small primary" onclick="openItineraryBlock('${date}')">＋ Block</button></div></div>
     <div class="life-wheel dayflow-wheel" role="group" aria-label="Day Flow dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment${x.key===currentBucket?" is-current":""}" style="--i:${i};--seg:${i}" onclick="openDayFlowSection('${x.key}','${date}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
