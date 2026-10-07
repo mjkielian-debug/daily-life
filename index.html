@@ -664,8 +664,20 @@ function itinerarySuggestedBlocks(date){
   const add=x=>{if(!overrides.has(x.templateKey))out.push(x)};
   const workStart=hmMinutes(w?.start||w?.scheduled);
   if(workStart!==null&&workStart>dayStart){
-    const launchStart=Math.max(dayStart,workStart-60);
-    if(workStart-launchStart>=30)add({templateKey:"work-morning",start:minutesHm(launchStart),end:minutesHm(workStart),title:"Wake + get ready for work",detail:"Bathroom · teeth · get dressed · grab what you need · head out",icon:"☕"});
+    const launchStart=Math.max(dayStart,workStart-60),available=workStart-launchStart;
+    if(available>=55){
+      const step=(key,from,to,title,detail,icon)=>add({
+        templateKey:key,start:minutesHm(workStart-from),end:minutesHm(workStart-to),title,detail,icon
+      });
+      step("work-dress",60,55,"Get dressed + downstairs","Wake up · get dressed · go downstairs","👕");
+      step("work-hygiene",55,45,"Teeth + face + hair","Brush teeth · floss · mouthwash · wash face · hair/ponytail or another quick hairstyle · deodorant · perfume","🪥");
+      step("work-dayflow",45,30,"Check Day Flow","Review today’s schedule, changes, Do Next, and anything that needs to leave the house with you","✦");
+      step("work-stretch",30,25,"5-minute stretch","Quick whole-body stretch before work","↗");
+      step("work-gather",25,15,"Water + gather + tire check","Fill water bottle · gather keys/phone/work items · check tire before leaving","💧");
+      step("work-commute",15,0,"Leave for UPS + clock in","Drive to UPS and be ready to clock in at the scheduled start","📦");
+    }else if(available>=30){
+      add({templateKey:"work-morning",start:minutesHm(launchStart),end:minutesHm(workStart),title:"Get ready + leave for UPS",detail:"Dress · teeth/face/hair · check Day Flow · stretch · water/items · tire check · commute",icon:"☕"});
+    }
   }
   if(w?.end){
     const m=hmMinutes(w.end);
@@ -706,7 +718,7 @@ function itinerarySuggestedBlocks(date){
 function itineraryRoutineWindow(x,date){
   const prefs=state.settings?.itinerary||{},dayStart=itineraryDayStart(date),dayEnd=itineraryDayEnd(date),
         desired=hmMinutes(x.start)??dayStart,work=workForDate(date),workStart=hmMinutes(work?.start||work?.scheduled),workEnd=hmMinutes(work?.end);
-  if(x.templateKey==="work-morning")return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
+  if(x.templateKey==="work-morning"||/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||"")))return{start:dayStart,end:workStart??Math.min(dayEnd,desired+90)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
   if(x.templateKey==="homework")return{start:15*60,end:19*60+15};
