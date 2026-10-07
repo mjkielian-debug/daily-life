@@ -333,21 +333,20 @@ function budgetCoachCard(){
     <div class="money-coach-primary ${primary.tone}">
       <div class="eyebrow">${esc(primary.kicker)}</div>
       <h3>${esc(primary.title)}</h3>
-      <p>${esc(primary.detail)}</p>
       <button class="btn primary" type="button" onclick="${primary.action}">${esc(primary.button)}</button>
     </div>
 
     ${setupWarning}
 
     <div class="money-coach-snapshot" aria-label="Money snapshot">
-      <span><small>Today</small><b>${money(x.todayGuardrail)}</b></span>
-      <span><small>This week</small><b>${money(x.weekGuardrail)}</b></span>
-      <span><small>To savings</small><b>${esc(transferLabel)}</b></span>
+      <span><small>Safe today</small><b>${money(x.todayGuardrail)}</b></span>
+      <span><small>Safe this week</small><b>${money(x.weekGuardrail)}</b></span>
+      <span><small>Savings move</small><b>${esc(transferLabel)}</b></span>
     </div>
 
     <details class="money-coach-details">
-      <summary>Why this answer?</summary>
-      <div class="money-coach-detail-body">
+      <summary>Why / more details</summary>
+      <div class="money-coach-detail-body"><div class="muted small money-coach-reason">${esc(primary.detail)}</div>
         <div class="coach-compact-row"><span>Safe cash ceiling</span><b>${money(Math.max(0,Number(x.safe.safe||0)))}</b></div>
         <div class="coach-compact-row"><span>Unassigned monthly plan</span><b>${money(Math.max(0,Number(x.unassignedPlanCash||0)))}</b></div>
         ${x.movable>0?`<div class="coach-compact-row"><span>Possible savings move</span><b>${esc(transferLabel)}</b></div>`:""}
