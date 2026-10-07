@@ -1215,7 +1215,7 @@ function itineraryPrintSection(date){
     <div class="print-flow">${items.map(x=>`<div class="print-row ${x.kind==="gap"?"gap":x.fixed?"fixed":"flex"}"><div class="time">${esc(fmtClock(x.start))}${x.end?"–"+esc(fmtClock(x.end)):""}</div><div><b>${esc(x.title)}</b>${x.detail?`<div class="detail">${esc(x.detail)}</div>`:""}${x.done?`<div class="done">✓ Done</div>`:""}</div></div>`).join("")||"<p>No timed items.</p>"}</div>
     <div class="print-grid">
       <div><h3>Dinner</h3><p>${meal?.dish?esc(meal.dish):"Not planned"}${meal?.startBy?" · start "+esc(fmtClock(meal.startBy)):""}${meal?.serveTime?" · serve "+esc(fmtClock(meal.serveTime)):""}</p>${meal?.tomorrowPrep?`<p class="detail">Prep: ${esc(meal.tomorrowPrep)}</p>`:""}</div>
-      <div><h3>Open tasks</h3>${tasks.length?`<ul>${tasks.map(x=>`<li>${esc(x.title)}${x.child?" · "+esc(x.child):""}</li>`).join("")}</ul>`:"<p>None</p>"}</div>
+      <div><h3>Open tasks</h3>${tasks.length?`<ul>${tasks.map(x=>`<li>${esc(taskDisplayTitle(x))}${x.child?" · "+esc(x.child):""}</li>`).join("")}</ul>`:"<p>None</p>"}</div>
       <div><h3>Family chores</h3>${chores.length?`<ul>${chores.map(x=>`<li>${esc(x.child||"")} — ${esc(x.chore||"")}</li>`).join("")}</ul>`:"<p>None</p>"}</div>
     </div>
     ${note?`<div class="print-note"><h3>Notes</h3><p>${esc(note)}</p></div>`:""}
@@ -1305,7 +1305,7 @@ function dayFlowUnscheduledCard(date){
         tasks=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)),
         chores=(state.chores||[]).filter(x=>x.date===date&&!x.done);
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Unscheduled</div><h2>${tasks.length+chores.length} loose item${tasks.length+chores.length===1?"":"s"}</h2><div class="muted small">Things not currently placed into a time block.</div></div><button class="btn" onclick="openItineraryBlock('${date}')">+ Block</button></div>
-    ${tasks.map(t=>`<button class="dayflow-phase-row" onclick="openItineraryTask('${t.id}')"><span class="dayflow-phase-time"><b>Task</b></span><span class="grow"><b>${esc(t.title)}</b><small>${esc([t.child,t.notes].filter(Boolean).join(" · "))}</small></span><span>›</span></button>`).join("")}
+    ${tasks.map(t=>`<button class="dayflow-phase-row" onclick="openItineraryTask('${t.id}')"><span class="dayflow-phase-time"><b>Task</b></span><span class="grow"><b>${esc(taskDisplayTitle(t))}</b><small>${esc([t.child,t.notes].filter(Boolean).join(" · "))}</small></span><span>›</span></button>`).join("")}
     ${chores.map(c=>`<div class="dayflow-phase-row"><span class="dayflow-phase-time"><b>Chore</b></span><span class="grow"><b>${esc(c.child||"")}</b><small>${esc(c.chore||"")}</small></span><label class="task"><input type="checkbox" onchange="toggleChore('${c.id}',this.checked)"><span>Done</span></label></div>`).join("")}
     ${!tasks.length&&!chores.length?`<div class="notice">Everything that needs a time is placed or complete.</div>`:""}
   </div>`;
