@@ -111,9 +111,26 @@ function spiritualitySeason(){
  const m=new Date().getMonth()+1,rows={1:["Deep winter","rest, tending light, quiet renewal"],2:["Imbolc season","first light, clearing, beginnings"],3:["Spring equinox season","balance, awakening, new growth"],4:["Spring growth","movement, tending, experimentation"],5:["Beltane season","vitality, connection, creativity"],6:["Summer solstice season","fullness, light, celebration"],7:["High summer","tending, patience, embodiment"],8:["First harvest season","gratitude, work, receiving"],9:["Autumn equinox season","balance, harvest, preparation"],10:["Samhain season","harvest, endings, remembrance"],11:["Darkening season","rest, ancestors, home, reflection"],12:["Yule season","light in darkness, warmth, return"]};
  return{title:rows[m][0],theme:rows[m][1]}
 }
+function tarotDeepReading(t){
+ const row=TAROT_MAJOR[Number(t?.index||0)]||TAROT_MAJOR[0],
+       upright=row[1],reversed=row[2],prompt=row[3],
+       core=t?.reversed?reversed:upright,
+       tension=t?.reversed?upright:reversed,
+       orientation=t?.reversed?"Reversed":"Upright";
+ return '<div class="tarot-deep-reading">'+
+   '<div class="eyebrow">'+orientation+' reflection</div>'+
+   '<div class="tarot-reading-grid">'+
+     '<section><span>Core theme</span><p>'+esc(core)+'</p></section>'+
+     '<section><span>Watch for</span><p>'+esc(tension)+'</p></section>'+
+     '<section><span>In daily life</span><p>Look for one place today where this theme is already showing up in a choice, boundary, feeling, relationship, or unfinished task. You do not need to force the card to fit.</p></section>'+
+     '<section><span>Try today</span><p>'+esc(prompt)+' Pick one small action that answers that question in a practical way.</p></section>'+
+   '</div>'+
+   '<div class="muted small">Use this as a reflection lens, not a prediction or instruction.</div>'+
+ '</div>';
+}
 function openTarotReflection(date){
  date=date||ymd();ensureDailyTarotSaved(date);const x=(state.tarotDraws||[]).find(v=>v.date===date),t=tarotForDate(date);
- modal("Tarot reflection · "+t.name,'<div class="stack">'+tarotArtwork(t)+'<details><summary>Explore the meaning</summary><p>'+esc(t.meaning)+'</p><b>'+esc(t.prompt)+'</b></details><label>My first reaction<textarea id="tarotReaction" rows="2" placeholder="Before interpreting it, what stood out?">'+esc(x.reaction||"")+'</textarea></label><label>One small intention for today<textarea id="tarotIntention" rows="2" placeholder="Something kind, practical, and within reach">'+esc(x.intention||"")+'</textarea></label><label>Your reflection<textarea id="tarotNote" rows="4" placeholder="How does the card connect with your day?">'+esc(x.note||"")+'</textarea></label><label>Looking back this evening<textarea id="tarotEvening" rows="3" placeholder="What happened? What would you like to carry into tomorrow?">'+esc(x.evening||"")+'</textarea></label></div>',"Save",async()=>{const before={...x};x.note=$("#tarotNote").value.trim();x.reaction=$("#tarotReaction").value.trim();x.intention=$("#tarotIntention").value.trim();x.evening=$("#tarotEvening").value.trim();try{await save();closeModal();render()}catch(error){Object.assign(x,before);throw error}})
+ modal("Tarot reflection · "+t.name,'<div class="stack">'+tarotArtwork(t)+tarotDeepReading(t)+'<label>My first reaction<textarea id="tarotReaction" rows="2" placeholder="Before interpreting it, what stood out?">'+esc(x.reaction||"")+'</textarea></label><label>One small intention for today<textarea id="tarotIntention" rows="2" placeholder="Something kind, practical, and within reach">'+esc(x.intention||"")+'</textarea></label><label>Your reflection<textarea id="tarotNote" rows="4" placeholder="How does the card connect with your day?">'+esc(x.note||"")+'</textarea></label><label>Looking back this evening<textarea id="tarotEvening" rows="3" placeholder="What happened? What would you like to carry into tomorrow?">'+esc(x.evening||"")+'</textarea></label></div>',"Save",async()=>{const before={...x};x.note=$("#tarotNote").value.trim();x.reaction=$("#tarotReaction").value.trim();x.intention=$("#tarotIntention").value.trim();x.evening=$("#tarotEvening").value.trim();try{await save();closeModal();render()}catch(error){Object.assign(x,before);throw error}})
 }
 function openSpiritualJournal(type){
  type=type||"Reflection";
@@ -224,6 +241,14 @@ window.openSpiritualityPage=openSpiritualityPage;
 window.openSpiritualHubSection=openSpiritualHubSection;
 window.revealTarot=revealTarot;
 window.openTarotReflection=openTarotReflection;
+
+(function installTarotDeepReadingStyles(){
+ if(document.getElementById("tarotDeepReadingStyles"))return;
+ const style=document.createElement("style");
+ style.id="tarotDeepReadingStyles";
+ style.textContent=".tarot-deep-reading{display:grid;gap:9px}.tarot-reading-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tarot-reading-grid section{padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,transparent)}.tarot-reading-grid span{display:block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tarot-reading-grid p{margin:5px 0 0;line-height:1.45}@media(max-width:520px){.tarot-reading-grid{grid-template-columns:1fr}}";
+ document.head.appendChild(style);
+})();
 
 function tarotArtwork(t){
  const motifs=[
