@@ -2,7 +2,7 @@
   "name": "Daily Life",
   "short_name": "Daily Life",
   "id": "./",
-  "start_url": "./?app=rainbow8",
+  "start_url": "./?app=rainbow9",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f8d8e7",
@@ -10,27 +10,27 @@
   "description": "A calm, private personal and family command center for daily life.",
   "icons": [
     {
-      "src": "icon.svg?v=20261007-rainbow8",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "daily-life-rainbow-192.png?v=20261007-rainbow8",
+      "src": "daily-life-rainbow-192.png?v=20261012-rainbow9",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "daily-life-rainbow-512.png?v=20261007-rainbow8",
+      "src": "daily-life-rainbow-512.png?v=20261012-rainbow9",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon.svg?v=20261007-rainbow8",
+      "src": "icon.svg?v=20261012-rainbow9",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "daily-life-rainbow-512.png?v=20261012-rainbow9",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
