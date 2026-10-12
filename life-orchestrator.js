@@ -310,8 +310,10 @@
 
   function lifeNextTask(){
     const q=lifeQueue(),oldest=lifeShift(ymd(),-30),
-      usable=q.todayRows.filter(t=>lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator");
-    return usable.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
+      usable=q.todayRows.filter(t=>lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator"),
+      ready=usable.filter(t=>!(lifeTaskDate(t)<ymd()&&t.itineraryStart));
+    // Old one-day times stay open for deliberate rescheduling, not TODAY's focus.
+    return ready.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
   }
 
   function lifeCurrentGuidance(){
@@ -551,8 +553,11 @@
       petCount=(state.pets||[]).length,
       openTasks=q.todayRows.length+(state.chores||[]).filter(x=>x.date===today&&!x.done).length,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
-      greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening",
       centerTitle=String(guide.title||"Today").replace(/^Next\s*·\s*[^·]+\s*·\s*/i,"").replace(/^Prep for\s+/i,"").trim(),
+      centerLabel=guide.mode==="open"?"SUGGESTED":guide.mode==="next"?"UP NEXT":guide.mode==="active"?"RIGHT NOW":"TODAY",
+      nextTime=guide.mode==="next"?String(guide.title||"").match(/^Next\s*·\s*([^·]+)\s*·/i)?.[1]?.trim():"",
+      centerHint=nextTime||"Open Day Flow",
+      shortCenterTitle=centerTitle.length>46?centerTitle.slice(0,43).trim()+"…":centerTitle,
       segments=[
         {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"openTodayDayFlow()"},
         {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
@@ -563,10 +568,10 @@
         {icon:"⌂",title:"Home",detail:[homeCount?homeCount+" rooms":"house",petCount?petCount+" pets":""].filter(Boolean).join(" · "),action:"openHouseholdHub()"},
         {icon:"◫",title:"Reading",detail:readingPages?readingPages+" pages today":"Pages + wheel",action:"setView('reading')"}
       ];
-    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><div class="life-today-top-actions"><button class="btn small" onclick="openDailyReview()">? Review'+(review.unknown?' '+review.unknown:'')+'</button><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
+    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><div class="life-today-top-actions"><button class="btn small" onclick="openDailyReview()" title="'+review.unknown+' check-ins are still unmarked, not failed">? Check-ins</button><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
         segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
-        '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;"><span class="eyebrow">NOW / NEXT</span><b>'+esc(centerTitle||"Today")+'</b><small>'+esc(greeting)+' · tap for Day Flow</small></button>'+
+        '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;" aria-label="Open Day Flow: '+esc(centerTitle||"Today")+'"><span class="eyebrow">'+centerLabel+'</span><b>'+esc(shortCenterTitle||"Today")+'</b><small>'+esc(centerHint)+'</small></button>'+
       '</div>'+
       '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
   }
