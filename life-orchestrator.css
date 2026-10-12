@@ -2801,3 +2801,52 @@ body:has(.settings-one-screen-shell,.budget-one-screen-shell,.pets-one-screen-sh
 @media(max-width:380px){
   .life-family-grid{grid-template-columns:1fr}
 }
+
+
+/* Oct 12: mobile Today clarity. Keep the original rainbow wheel and its data. */
+.life-today-topline>.life-today-top-actions{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:5px!important;
+  min-width:0;
+}
+.life-today-topline>.life-today-top-actions>.btn{
+  flex:0 0 auto;
+  white-space:nowrap!important;
+  min-height:36px!important;
+  padding:6px 9px!important;
+  border-radius:15px!important;
+}
+.today-one-screen-shell .life-wheel:not(.dayflow-wheel)>.life-wheel-center{
+  width:31%!important;
+  height:31%!important;
+  padding:6px!important;
+}
+.today-one-screen-shell .life-wheel:not(.dayflow-wheel)>.life-wheel-center>b{
+  font-size:.73rem!important;
+  line-height:1.06!important;
+  max-width:96%;
+  max-height:3.25em;
+  overflow:hidden;
+  overflow-wrap:break-word;
+}
+.today-one-screen-shell .life-wheel:not(.dayflow-wheel)>.life-wheel-center>small{
+  font-size:.5rem!important;
+  line-height:1.13!important;
+  white-space:normal!important;
+  max-width:94%!important;
+  max-height:2.3em!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  margin-top:3px!important;
+}
+@media(max-width:380px){
+  .life-today-topline>.life-today-top-actions>.btn{
+    min-height:33px!important;
+    padding:5px 7px!important;
+    font-size:.61rem!important;
+  }
+}
