@@ -9,9 +9,9 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261007-rainbow8">
-<link rel="icon" href="daily-life-rainbow-192.png?v=20261007-rainbow8" type="image/png">
-<link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261007-rainbow8">
+  <link rel="manifest" href="manifest.webmanifest?v=20261012-rainbow9">
+<link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
+<link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261003-carebotanical1">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261003-joy1">
@@ -1839,10 +1839,10 @@ function needsSetup(){return !String(state.profile?.name||"").trim()&&!stateHasM
 
 function renderSetup(){
   const user=cloudUser?.(),hasCloud=!!cloudRemoteUpdatedAt,hadAppBefore=localStorage.getItem("dailyLifeConfiguredOnce")==="1";
-  return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261007-rainbow8" alt="Daily Life rainbow garden"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>${hadAppBefore?"Reconnect Daily Life":"Set up this device"}</h2><p class="muted">${hadAppBefore?"This device is not seeing your usual local profile right now. Reconnect or restore it before starting anything new.":"Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one."}</p><div class="warning"><b>${hadAppBefore?"Do not start blank.":"Already have a Daily Life account?"}</b> ${hadAppBefore?"That can create a separate empty local profile instead of restoring your existing Daily Life data.":"Sign in first so an existing account is not replaced by a new empty setup."}</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private backup</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data.</div>`:""}<details class="setup-new-account"><summary>Brand-new account only</summary><div class="muted small">Use this only if you intentionally want a completely new empty Daily Life profile.</div><button class="btn" onclick="manualSetup()">Start completely blank</button></details><p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`
+  return `<main class="app"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt="Daily Life rainbow garden"><div><div class="eyebrow">Private local-first + optional cloud</div><div class="title">Daily Life</div></div></div></header><div class="setupCard"><h2>${hadAppBefore?"Reconnect Daily Life":"Set up this device"}</h2><p class="muted">${hadAppBefore?"This device is not seeing your usual local profile right now. Reconnect or restore it before starting anything new.":"Sign in to your Daily Life account to load private profile data and connected records onto this device, or restore an encrypted/local backup if you already have one."}</p><div class="warning"><b>${hadAppBefore?"Do not start blank.":"Already have a Daily Life account?"}</b> ${hadAppBefore?"That can create a separate empty local profile instead of restoring your existing Daily Life data.":"Sign in first so an existing account is not replaced by a new empty setup."}</div><div class="actions" style="margin-top:12px">${user?(hasCloud?`<button class="btn primary" onclick="cloudRestoreSnapshot()">Restore full cloud copy</button><button class="btn" onclick="cloudBootstrapThisDevice()">Load account data instead</button>`:`<button class="btn primary" onclick="cloudBootstrapThisDevice()">Load my private account data</button>`):`<button class="btn primary" onclick="openCloudAuth()">Sign in to restore my data</button>`}<button class="btn" onclick="document.querySelector('#restoreFile').click()">Restore private backup</button></div>${user&&!hasCloud?`<div class="notice" style="margin-top:12px"><b>No full snapshot yet.</b> Daily Life can still load your private profile, family, finance, and ChatGPT log data.</div>`:""}<details class="setup-new-account"><summary>Brand-new account only</summary><div class="muted small">Use this only if you intentionally want a completely new empty Daily Life profile.</div><button class="btn" onclick="manualSetup()">Start completely blank</button></details><p class="muted small">Public app code contains no personal records. Private cloud data is protected by your account. The encrypted Vault is stored separately.</p></div></main>`
 }
 
-function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261007-rainbow8" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+function render(){if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#e9b4d0");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?itineraryView():""}${view==="log"?logView(f,w,tr):""}${view==="family"?familyView():""}${view==="reading"?readingView():""}${view==="pets"?petsView():""}${view==="household"?householdView():""}${view==="garden"?gardenView():""}${view==="hobbies"?hobbiesView():""}${view==="gardenhobbies"?gardenHobbiesView():""}${view==="spirituality"?spiritualityView(m):""}${view==="vault"&&typeof vaultView==="function"?vaultView():""}${view==="home"?homeView():""}${view==="inventory"?inventoryView():""}${view==="more"?moreView():""}${view==="budget"?budgetView():""}${view==="settings"?settingsView():""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -1975,6 +1975,7 @@ function ensureBirthdayEvents(){
   }
 }
 function ensureToday(){
+  applyConferencePrepCleanup();
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay();
   // Remove generated broad daily-reset tasks that are now represented by the
   // per-child family chore rows (clean room, homework, read 20 min).
@@ -7276,7 +7277,35 @@ function applyOct6PlanCorrections(){
   return changed;
 }
 
-async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
+function isOutdatedConferencePrep(item){
+  // Old conference preparation was carried forward as if it were still a new task.
+  // Limit this fix to preparation items dated on/before Oct 12; actual conference events remain.
+  const title=String(item?.title||"").trim();
+  const isPrep=/^(?:prep(?:are|aring)?\s+for\s+parent[\s\-–—]*teacher\s+conferences?|parent[\s\-–—]*teacher\s+conferences?\s+prep)\b/i.test(title);
+  const date=String(item?.date||"").trim();
+  return isPrep&&(!date||date<="2026-10-12");
+}
+function applyConferencePrepCleanup(){
+  let changed=false;
+  const removedTaskIds=new Set((state.tasks||[]).filter(x=>!x.done&&isOutdatedConferencePrep(x)).map(x=>String(x.id)));
+  if(removedTaskIds.size){
+    state.tasks=(state.tasks||[]).filter(x=>!removedTaskIds.has(String(x.id)));
+    state.dailyReviews=(state.dailyReviews||[]).filter(x=>!(x.kind==="task"&&removedTaskIds.has(String(x.key))));
+    changed=true;
+  }
+  const drop=(list)=>list.filter(x=>{
+    if(!isOutdatedConferencePrep(x))return true;
+    changed=true;return false;
+  });
+  state.itineraryBlocks=drop(state.itineraryBlocks||[]);
+  state.events=drop(state.events||[]);
+  if(state.settings&&Array.isArray(state.settings.recurringTasks)){
+    state.settings.recurringTasks=drop(state.settings.recurringTasks);
+  }
+  return changed;
+}
+
+async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
@@ -7289,7 +7318,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261007-life-sync20");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261012-rainbow9-conference1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
