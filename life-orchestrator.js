@@ -539,41 +539,113 @@
     setView("gardenhobbies");
   };
 
+
+  // Concept 1: the rings show real progress; the primary actions stay visible.
+  function lifeProgress(done,total){
+    return total>0?Math.max(0,Math.min(100,Math.round(100*done/total))):0;
+  }
+  function lifeRainbowProgressStyle(percent){
+    const colors=["#be90dc","#81c5ed","#f4a6bb","#f1c97d","#9fdac2","#e8b8da"];
+    const fill=3.6*Math.max(0,Math.min(100,percent));
+    const parts=[];
+    for(let i=0;i<6;i++){
+      const from=i*60,to=Math.min((i+1)*60,fill);
+      if(to>from)parts.push(colors[i]+" "+from+"deg "+to+"deg");
+    }
+    if(fill<360)parts.push("#e9dfe9 "+fill+"deg 360deg");
+    return "conic-gradient(from -90deg,"+parts.join(",")+")";
+  }
+  function lifeStatRing(label,value,done,total,color,icon,action,detail){
+    const pct=lifeProgress(done,total);
+    return '<button type="button" class="dl-stat" onclick="'+action+'" aria-label="'+esc(label)+": "+esc(value)+', '+pct+' percent complete">'+
+      '<span class="dl-stat-ring" style="--dl-pct:'+pct+'%;--dl-ring-color:'+color+'"><i aria-hidden="true">'+icon+'</i></span>'+
+      '<span class="dl-stat-copy"><b>'+esc(label)+'</b><strong>'+esc(value)+'</strong><small>'+esc(detail||"")+'</small></span></button>';
+  }
   function lifeTodayWheel(){
-    const q=lifeQueue(),guide=lifeCurrentGuidance(),today=ymd(),now=new Date(),mins=now.getHours()*60+now.getMinutes(),
-      agenda=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
-      next=agenda.find(x=>{const m=hmMinutes(x.start);return !x.nonBlocking&&x.kind!=="context"&&m!==null&&m>=mins}),
-      meal=typeof mealForDate==="function"?mealForDate(today):null,
-      care=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},
-      readingPages=(state.readingLogs||[]).filter(x=>x.date===today).reduce((n,x)=>n+Number(x.pages||0),0),
-      end=lifeShift(today,7),
-      billCount=(state.bills||[]).filter(b=>b.status!=="paid"&&b.due>=today&&b.due<=end).length,
-      peopleCount=(state.events||[]).filter(e=>e.date>=today&&e.date<=end&&e.status!=="cancelled"&&String(e.child||"").trim()).length,
-      homeCount=(state.houseRooms||[]).length,
-      petCount=(state.pets||[]).length,
-      openTasks=q.todayRows.length+(state.chores||[]).filter(x=>x.date===today&&!x.done).length,
+    const today=ymd(),now=new Date(),minutes=now.getHours()*60+now.getMinutes(),
+      allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
+      timed=allBlocks.filter(x=>!x.nonBlocking&&!x.done&&!dayFlowBlockDone(x,today)&&x.kind!=="gap"&&x.kind!=="context"&&x.kind!=="sleep"&&hmMinutes(x.start)!==null),
+      active=timed.find(x=>hmMinutes(x.start)<=minutes&&hmMinutes(x.end)!==null&&hmMinutes(x.end)>minutes),
+      future=timed.filter(x=>hmMinutes(x.start)>=minutes).sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),
+      imminent=future.find(x=>hmMinutes(x.start)-minutes<=45),
+      nextTask=lifeNextTask(),
+      focusBlock=active||imminent||(!nextTask?future[0]:null),
+      taskFocus=!focusBlock?nextTask:null,
+      focusLabel=active?"RIGHT NOW":imminent||focusBlock?"UP NEXT":taskFocus?"DO NEXT":"YOU'RE CAUGHT UP",
+      focusTitle=focusBlock?String(focusBlock.title||"Open Day Flow"):taskFocus?lifeTaskTitle(taskFocus):"Your schedule is clear",
+      focusMeta=focusBlock?(active?"Until "+fmtClock(focusBlock.end):fmtClock(focusBlock.start)):(taskFocus?"Flexible task — open to plan":"Choose something you enjoy"),
+      focusDetail=focusBlock?String(focusBlock.detail||"Open this block for details"):taskFocus?String(taskFocus.notes||"Ready when you are"):"No urgent task is currently scheduled",
+      focusAction=focusBlock?dayFlowItemAction(focusBlock,today):taskFocus?"openTask('', '"+esc(taskFocus.id)+"')":"openTodayDayFlow()",
+      focusTaskId=focusBlock&&focusBlock.source==="task"?focusBlock.sourceId:taskFocus?taskFocus.id:"",
+      tasks=todayTasks().filter(x=>!x.paused&&!x.waitingForFunds&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))),
+      taskDone=tasks.filter(x=>x.done).length,
+      chores=(state.chores||[]).filter(x=>x.date===today),
+      choreDone=chores.filter(x=>x.done).length,
+      waterTarget=Math.max(0,Number(state.settings?.waterTarget||0)),
+      waterOz=Math.max(0,water()),
+      bottleGoal=waterTarget>0?Math.max(1,Math.ceil(waterTarget/26)):3,
+      bottles=Math.min(bottleGoal,Math.floor(waterOz/26)),
+      meal=mealForDate(today),
+      hasMeal=!!String(meal?.dish||"").trim(),
+      mealDone=!!(meal&&["made","done","cooked","served","eaten"].includes(String(meal.status||"").toLowerCase())),
+      mealTitle=hasMeal?String(meal.dish):"Dinner not planned yet",
+      mealTime=meal?.startBy?"Start by "+fmtClock(meal.startBy):meal?.serveTime?"Serve around "+fmtClock(meal.serveTime):"Open the dinner plan",
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
-      centerTitle=String(guide.title||"Today").replace(/^Next\s*·\s*[^·]+\s*·\s*/i,"").replace(/^Prep for\s+/i,"").trim(),
-      centerLabel=guide.mode==="open"?"SUGGESTED":guide.mode==="next"?"UP NEXT":guide.mode==="active"?"RIGHT NOW":"TODAY",
-      nextTime=guide.mode==="next"?String(guide.title||"").match(/^Next\s*·\s*([^·]+)\s*·/i)?.[1]?.trim():"",
-      centerHint=nextTime||"Open Day Flow",
-      shortCenterTitle=centerTitle.length>46?centerTitle.slice(0,43).trim()+"…":centerTitle,
-      segments=[
-        {icon:"◷",title:"Day Flow",detail:next?fmtClock(next.start):"Schedule",action:"openTodayDayFlow()"},
-        {icon:"✓",title:"Tasks",detail:openTasks?openTasks+" open":"Clear",action:"openTodayTasksHub()"},
-        {icon:"◇",title:"Food",detail:meal?.dish?String(meal.dish).split(/[·—–,:]/)[0].trim().slice(0,18):"Dinner open",action:"setView('home')"},
-        {icon:"$",title:"Money",detail:billCount?billCount+" bill"+(billCount===1?"":"s")+" soon":"Bills clear",action:"setView('more')"},
-        {icon:"♡",title:"Care",detail:care.total?(care.done+" done"+(care.unknown?" · ?"+care.unknown:"")):"Self care",action:"setView('log')"},
-        {icon:"♧",title:"People",detail:peopleCount?peopleCount+" upcoming":"Family + kids",action:"setView('family')"},
-        {icon:"⌂",title:"Home",detail:[homeCount?homeCount+" rooms":"house",petCount?petCount+" pets":""].filter(Boolean).join(" · "),action:"openHouseholdHub()"},
-        {icon:"◫",title:"Reading",detail:readingPages?readingPages+" pages today":"Pages + wheel",action:"setView('reading')"}
-      ];
-    return '<section class="life-today-one-screen"><div class="life-today-topline"><div><div class="eyebrow">Today at a glance</div><b>'+esc(new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</b></div><div class="life-today-top-actions"><button class="btn small" onclick="openDailyReview()" title="'+review.unknown+' check-ins are still unmarked, not failed">? Check-ins</button><button class="btn small primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
-      '<div class="life-wheel" role="group" aria-label="Today dashboard">'+
-        segments.map((x,i)=>'<button class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="'+x.action+'" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join('')+
-        '<button type="button" class="life-wheel-center" onclick="event.stopPropagation();openTodayDayFlow();return false;" aria-label="Open Day Flow: '+esc(centerTitle||"Today")+'"><span class="eyebrow">'+centerLabel+'</span><b>'+esc(shortCenterTitle||"Today")+'</b><small>'+esc(centerHint)+'</small></button>'+
-      '</div>'+
-      '<div class="life-today-footer"><button onclick="openGardenHobbiesHub()"><span>⌁</span>Garden + Hobbies</button><button onclick="setView(\'spirituality\')"><span>☾</span>Spirituality</button><button onclick="setView(\'vault\')"><span>▣</span>Vault</button></div></section>';
+      audit=typeof dayFlowConflictAudit==="function"?dayFlowConflictAudit(today):{hardCount:0,routineCount:0},
+      placed=new Set(allBlocks.filter(x=>x.source==="task").map(x=>String(x.sourceId))),
+      looseTasks=itineraryTaskCandidates(today).filter(x=>!placed.has(String(x.id))).length,
+      looseChores=dayFlowUnplacedChores(today,allBlocks).length,
+      looseCount=looseTasks+looseChores,
+      checkpoints=tasks.length+chores.length+(waterTarget>0?bottleGoal:0)+(hasMeal?1:0),
+      completed=taskDone+choreDone+(waterTarget>0?bottles:0)+(mealDone?1:0),
+      percent=lifeProgress(completed,checkpoints),
+      importantFuture=future.filter(x=>x.fixed||x.source==="event"||x.source==="meal"||
+        ["meal-prep","dinner","chores","wind-down","work-commute","tomorrow-prep","after-school-launch"].includes(String(x.templateKey||""))),
+      upcoming=(importantFuture.length?importantFuture:future).slice(0,3),
+      ringDetails=checkpoints?completed+" of "+checkpoints+" tracked steps":"Start your daily progress";
+
+    const cards=[
+      lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
+      lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","setView('log')","Your water log"),
+      lifeStatRing("Kids",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Today's chores"),
+      lifeStatRing("Dinner",!hasMeal?"Choose":mealDone?"Done":"Planned",mealDone?1:0,1,"#efbf6f","♢","openMeal('"+today+"')",mealTime)
+    ];
+    const upcomingRows=upcoming.map(x=>{
+      const action=dayFlowItemAction(x,today);
+      const time=fmtClock(x.start);
+      const detail=x.source==="event"?"Appointment or activity":x.source==="meal"?"Meal plan":x.source==="task"?"Planned task":"Day Flow";
+      return '<button class="dl-upcoming-row" onclick="'+action+'" aria-label="'+esc(time)+" "+esc(x.title)+'">'+
+        '<span class="dl-when">'+esc(time)+'</span><span class="dl-upcoming-dot"></span>'+
+        '<span class="dl-upcoming-title"><b>'+esc(x.title)+'</b><small>'+esc(detail)+'</small></span><span aria-hidden="true">›</span></button>';
+    }).join("");
+
+    return '<section class="dl-command-center life-today-one-screen" aria-label="Today dashboard">'+
+      '<div class="dl-heading"><div><span class="dl-kicker">TODAY AT A GLANCE</span><h1>'+esc(now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</h1></div>'+
+        '<div class="dl-heading-actions"><button onclick="openDailyReview()" aria-label="Open daily check-ins">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
+        '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
+      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+focusLabel+'</span>'+
+        '<h2>'+esc(focusTitle)+'</h2><p>'+esc(focusMeta)+'</p><small>'+esc(focusDetail)+'</small>'+
+        '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+focusAction+'">Open details <span aria-hidden="true">›</span></button>'+
+          (focusTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(focusTaskId)+'\',true)">✓ Done</button>':'')+
+        '</div></div></article>'+
+      '<div class="dl-progress-area" aria-label="Today progress overview">'+
+        '<button type="button" class="dl-total-ring" onclick="openTodayTasksHub()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
+           '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
+        '<div class="dl-stats">'+cards.join("")+'</div></div>'+
+      '<div class="dl-mid-grid">'+
+        '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
+        (upcomingRows||'<p class="dl-empty">Nothing else is timed today. Open Day Flow to plan a block.</p>')+
+        '</section>'+
+        '<section class="dl-panel dl-dinner"><div class="dl-panel-heading"><h2>♢ Dinner plan</h2><button onclick="openMeal(\''+today+'\')">Edit ›</button></div>'+
+         '<div class="dl-dinner-content"><span aria-hidden="true">🍽️</span><div><b>'+esc(mealTitle)+'</b><small>'+esc(mealTime)+'</small></div></div>'+
+         '<button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?"Open recipe + plan":"Choose dinner")+' ›</button></section>'+
+       '</div>'+
+       '<div class="dl-alerts">'+
+        '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
+        '<button onclick="openDayFlowSection(\'plan\',\''+today+'\')"><span>✦</span><b>Plan day</b><small>'+(audit.hardCount?audit.hardCount+" possible overlaps":audit.routineCount?audit.routineCount+" flexible routines to fit":"No detected time conflicts")+'</small></button>'+
+       '</div>'+
+       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openPeopleHubSection(\'kids\')">♡ Kids</button></div>'+
+     '</section>';
   }
 
   const baseToday=todayView;
