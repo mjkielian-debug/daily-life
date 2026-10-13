@@ -215,7 +215,7 @@ async function dbClear(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261004-mealflow1"></script>
+<script src="cloud.js?v=20261013-recovery-safety1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261007-billmatch2"></script>
 <script src="spirituality.js?v=20261007-harden7"></script>
@@ -243,7 +243,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.12-wheel-audit3";
+const APP_BUILD="2026.10.13-recovery-safety1";
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Sage & Pearl","#8fd3a8","#e9c5cf","#ead9a6"],
@@ -7107,7 +7107,7 @@ function stripSharedHouseholdCopies(source){
   return copy;
 }
 function backup(){const safe=stripSharedHouseholdCopies(state),blob=new Blob([JSON.stringify(safe,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();localStorage.setItem("dailyLifeLastExportAt",new Date().toISOString());setTimeout(()=>URL.revokeObjectURL(a.href),1000);render()}
-async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(stripSharedHouseholdCopies(j));await save();if(typeof sharingInit==="function"&&typeof cloudUser==="function"&&cloudUser())await sharingInit();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored. Shared household items were refreshed separately so old shared copies were not restored from the file.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(stripSharedHouseholdCopies(j));await save();if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=false;if(typeof sharingInit==="function"&&typeof cloudUser==="function"&&cloudUser())await sharingInit();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored. Shared household items were refreshed separately so old shared copies were not restored from the file.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
 async function erase(){
   const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
   const warning=hasVault
@@ -7316,7 +7316,7 @@ function applyConferencePrepCleanup(){
   return changed;
 }
 
-async function init(){state=migrateState(await dbGet("state")||blankState());if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
+async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
@@ -7329,7 +7329,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261012-wheel-audit3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261013-recovery-safety1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
