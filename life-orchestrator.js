@@ -657,6 +657,9 @@
   const baseRender=render;
   let lifeSyncSaveQueued=false;
   render=function(){
+    // During startup the IndexedDB state and saved session are not ready yet.
+    // Never persist auto-generated rows created against the temporary blank state.
+    if(typeof appStartupReady!=="undefined"&&!appStartupReady)return baseRender.apply(this,arguments);
     const changed=lifeSyncGeneratedTasks();
     if(changed&&!lifeSyncSaveQueued){
       lifeSyncSaveQueued=true;
@@ -667,6 +670,5 @@
     return result;
   };
 
-  lifeSyncGeneratedTasks();
-  if(typeof render==="function")render();
+  // The main init() performs the first real render after loading saved data.
 })();
