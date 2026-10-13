@@ -1961,3 +1961,53 @@ button.food-week-day{
     font-size:.64rem!important;
   }
 }
+
+
+/* Oct 13: compact readable People wheel preview without hiding event info. */
+.people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center{
+  width:35%!important;
+  height:35%!important;
+  min-height:0!important;
+  padding:7px!important;
+  gap:2px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center > .eyebrow{
+  font-size:.51rem!important;
+  line-height:1.1!important;
+  letter-spacing:.04em!important;
+  white-space:nowrap!important;
+}
+.people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center > b{
+  display:block!important;
+  font-size:.83rem!important;
+  line-height:1.03!important;
+  max-width:96%!important;
+  max-height:2.2em!important;
+  overflow:hidden!important;
+  overflow-wrap:break-word!important;
+  white-space:normal!important;
+  margin:2px 0!important;
+}
+.people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center > small{
+  display:block!important;
+  font-size:.51rem!important;
+  line-height:1.12!important;
+  max-width:97%!important;
+  max-height:2.25em!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  margin:0!important;
+  text-overflow:clip!important;
+}
+@media(max-width:380px){
+  .people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center{
+    width:37%!important;
+    height:37%!important;
+    padding:5px!important;
+  }
+  .people-one-screen-shell .life-wheel.people-wheel > .life-wheel-center.people-wheel-center > b{
+    font-size:.76rem!important;
+  }
+}
