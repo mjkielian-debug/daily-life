@@ -12,6 +12,8 @@ let cloudBusy=false;
 let cloudError="";
 let cloudNeedsReview=false;
 let cloudAutoCanPush=false;
+// Safeguard: previous installs missing a usable local profile cannot replace a cloud snapshot.
+let cloudRecoveryRequired=false;
 let cloudPushTimer=null;
 let cloudEntryPullBusy=false;
 
@@ -521,6 +523,12 @@ async function cloudRefreshMetadata(){
 }
 
 async function cloudPrepareAutoSync(){
+  if(cloudRecoveryRequired){
+    cloudAutoCanPush=false;
+    if(cloudUser())await cloudRefreshMetadata();
+    cloudNeedsReview=!!cloudRemoteUpdatedAt;
+    return;
+  }
   if(!cloudAutoEnabled()||!cloudUser()){cloudAutoCanPush=false;return}
   await cloudRefreshMetadata();
   const last=cloudLastPushed();
@@ -536,6 +544,7 @@ async function cloudPrepareAutoSync(){
 }
 
 async function cloudPushSnapshotInternal(forceOverwrite=false){
+  if(cloudRecoveryRequired)throw new Error("Previous Daily Life data needs recovery. Cloud upload is paused to protect your earlier backup.");
   const user=cloudUser();if(!user||!cloudClient)return false;
   if(!forceOverwrite){
     const {data,error}=await cloudClient.from("app_snapshots")
@@ -631,6 +640,7 @@ async function cloudRestoreSnapshot(){
     await cloudPullLifeEntries(false);
     await cloudPullPetProfiles();
     if(typeof sharingInit==="function")await sharingInit();
+    cloudRecoveryRequired=false;
     render();alert("Cloud copy restored to this device.");
   }catch(error){
     cloudError=error?.message||"Cloud restore failed.";render();
@@ -675,7 +685,7 @@ function cloudDisableAutoSync(){
 }
 
 function cloudSchedulePush(){
-  if(!cloudAutoEnabled()||!cloudAutoCanPush||cloudNeedsReview||!cloudUser())return;
+  if(cloudRecoveryRequired||!cloudAutoEnabled()||!cloudAutoCanPush||cloudNeedsReview||!cloudUser())return;
   if(cloudStateSignature()===cloudLastSignature())return;
   if(cloudPushTimer)clearTimeout(cloudPushTimer);
   cloudPushTimer=setTimeout(async()=>{
