@@ -53,7 +53,7 @@
  aspect-ratio:1;display:grid;place-items:center;
  width:100%;max-width:260px;margin:auto;
  border-radius:50%;padding:8px;border:4px solid rgba(255,255,255,.94);
- background:conic-gradient(from -90deg,#ce89d3 0 19%,#7dc9e8 19% 36%,#eea2ba 36% var(--vh-progress),#e8dfe9 var(--vh-progress) 100%);
+ background:conic-gradient(from -90deg,#c989d5 0 var(--vh-one),#7fcce6 var(--vh-one) var(--vh-two),#eaa2c3 var(--vh-two) var(--vh-progress),#e8dfe9 var(--vh-progress) 100%);
  box-shadow:0 8px 22px rgba(96,55,91,.12),inset 0 0 0 1px rgba(123,79,118,.10);
  color:var(--vh-ink);font:inherit
 }
