@@ -128,6 +128,8 @@ function visualHubView(page){
  const c=visualHubModel(page);if(!c.title)return"";
  const progress=c.progress,usable=!!(progress&&progress.total),percent=usable?Math.min(100,Math.round(100*progress.done/progress.total)):null,main=progress?(usable?percent+"%":"—"):c.mainValue||"—";
  const meterText=progress?(usable?`${progress.done} / ${progress.total} marked`:"No items tracked yet"):c.mainLabel;
+ const meterActions={home:"openFoodHubSection('week')",more:"openMoneyHubSection('bills')",log:"openCareHubSection('water')",reading:"openReadingHubSection('today')",family:"openPeopleHubSection('routines')",household:"openHouseholdSection('cleaning')",pets:"openPetsHubSection('history')",inventory:"openInventoryHubSection('items')",garden:"openGardenHobbySection('tasks')",hobbies:"openGardenHobbySection('tasks')",gardenhobbies:"openGardenHobbySection('tasks')",spirituality:"openSpiritualHubSection('practice')",budget:"openBudgetHubSection('plan')",settings:"openSettingsHubSection('backup')",vault:"openVaultHubSection('all')"};
+ const mainAction=page==="itinerary"?"openDayFlowSection('plan','"+(itineraryDate||ymd())+"')":meterActions[page]||c.focusAction;
  const tiles=(c.metrics||[]).map((x,i)=>`<button type="button" class="vh-orb vh-orb-${i+1}" onclick="${x.action}" aria-label="${esc(x.label)}: ${esc(x.value)}"><span class="vh-orb-icon">${x.icon}</span><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong></button>`).join("");
  const displayedLinks=(c.links||[]).slice(0,4),moreLinks=(c.links||[]).slice(4);
  const allLinks=arr=>arr.map(x=>`<button type="button" onclick="${x.action}" class="vh-link"><span>${x.icon}</span><b>${esc(x.label)}</b><span aria-hidden="true">›</span></button>`).join("");
@@ -138,7 +140,7 @@ function visualHubView(page){
   ${titleSuffix}
   <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button></div>
   <div class="vh-summary">
-   <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${c.focusAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
+   <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${mainAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
     <span class="vh-dial-inner"><small>✧</small><strong>${main}</strong><b>${esc(progress?.label||c.mainLabel)}</b><span>${esc(meterText)}</span></span></button>
    <div class="vh-orbs">${tiles}</div>
   </div>
