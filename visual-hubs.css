@@ -191,3 +191,7 @@
 @media(prefers-reduced-motion:reduce){
  .visual-hub .vh-orb{transition:none}
 }
+
+.visual-hub .vh-month-label{min-width:106px;text-align:center;font-size:.83rem;font-weight:850;color:#5b3659}
+.visual-hub-budget .vh-dial-inner strong{font-size:clamp(1.15rem,4.6vw,2.1rem);overflow-wrap:anywhere}
+.visual-hub-settings .vh-dial-inner strong{font-size:clamp(1.9rem,7vw,2.9rem)}
