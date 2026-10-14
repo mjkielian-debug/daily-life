@@ -1016,9 +1016,12 @@ function itineraryIsDailyResetTask(task){
 }
 function itineraryIsExpiredEventPrepTask(task,date){
   if(!task||!task.date||String(task.date)>=String(date))return false;
-  // A dated pre-event reminder is historical after that day's event.
-  // Keep it in Tasks/history; never reschedule PACER preparation after PACER.
-  return /\bpacer\b/i.test([task.title,task.notes].filter(Boolean).join(" "));
+  // Dated preparation for a completed one-time school event is historical,
+  // while genuine overdue errands remain available as carry-over.
+  const explicitExpiry=String(task.expiresOn||task.eventDate||"");
+  if(/^\d{4}-\d{2}-\d{2}$/.test(explicitExpiry)&&explicitExpiry<date)return true;
+  const text=[task.title,task.notes].filter(Boolean).join(" ");
+  return /\b(pacer|concert|recital)\b/i.test(text);
 }
 function itineraryTaskCandidates(date){
   const today=ymd(),oldest=shiftDateString(today,-30),
@@ -5547,7 +5550,7 @@ function inventoryLocationLabel(item){
   return [room?.name,loc?.name].filter(Boolean).join(" · ");
 }
 function inventoryCategories(){
-  const defaults=["Household","Cleaning","Bathroom","Clothing","Kids","School","Electronics","Tools","Seasonal","Other"];
+  const defaults=["Household","Cleaning","Bathroom","Clothing","Toys","Food","Pantry","Kids","School","Electronics","Tools","Seasonal","Other"];
   return [...new Set([...defaults,...(state.inventoryItems||[]).map(x=>String(x.category||"").trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
 }
 function inventoryEnsureRoom(name){
