@@ -6714,7 +6714,7 @@ function openEventDetails(date=ymd(),id=""){
  if(!event){openEvent(date,id);return;}
  const row=(label,value)=>value?'<div class="event-detail-field"><b>'+esc(label)+'</b><span>'+esc(String(value))+'</span></div>':"";
  const time=value=>value&&typeof fmtClock==="function"?fmtClock(value):value;
- const content='<div class="stack event-detail-sheet"><h2>'+esc(event.title||"Event")+'</h2>'+row("Date",event.date||date)+row("Start",time(event.startTime))+row("End",time(event.endTime))+row("People",event.child)+row("Location",event.location)+row("Notes",event.notes)+row("Status",event.status||"confirmed")+'<button class="btn primary" id="editEventDetails">Edit details</button></div>';
+ const content='<div class="stack event-detail-sheet"><h2>'+esc(event.title||"Event")+'</h2>'+row("Date",new Date((event.date||date)+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}))+row("Start",time(event.startTime))+row("End",time(event.endTime))+row("People",event.child)+row("Location",event.location)+row("Notes",event.notes)+row("Status",event.status||"confirmed")+'<button class="btn primary" id="editEventDetails">Edit details</button></div>';
  modal("Upcoming details",content,"Close",closeModal);
  document.getElementById("editEventDetails")?.addEventListener("click",()=>{closeModal();openEvent(date,id)});
 }
