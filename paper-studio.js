@@ -63,19 +63,28 @@ window.openPaperStudio=function(){
   '<div class="ps-warning"><b>Do not recycle from a photo alone.</b> Check that the information is captured and readable. Keep originals where legally or practically required; photographs inside ChatGPT do not guarantee a permanent backup.</div></div>',
  "Close",closeModal);
 };
+window.paperStudioDecisionChanged=function(){
+ const decision=document.getElementById("psType")?.value;
+ const details=document.getElementById("psExtra");
+ if(details&&decision==="practice")details.open=true;
+};
 window.openPaperBatch=function(id=""){
  const old=papers().find(x=>x.id===id),x=old||{title:"",type:"review",child:"",level:"",subject:"",pages:1,notes:"",reference:"",physicallyFinished:false};
  const types=Object.keys(TYPE).map(t=>'<option value="'+t+'" '+(x.type===t?"selected":"")+'>'+TYPE[t][1]+'</option>').join("");
  const kids='<option value="">Unassigned</option>'+KIDS.map(c=>'<option value="'+c+'" '+(x.child===c?"selected":"")+'>'+c+'</option>').join("");
  modal(old?"Paper batch":"Add paper batch",'<div class="ps-editor stack">'+
   '<label>Paper or stack<input id="psTitle" value="'+esc(x.title)+'" placeholder="e.g. first-grade addition worksheets"></label>'+
-  '<label>Decision<select id="psType">'+types+'</select></label>'+
-  '<div class="grid2"><label>Child for extra practice<select id="psChild">'+kids+'</select></label><label>Approximate grade level<input id="psLevel" value="'+esc(x.level||"")+'" placeholder="K–1, grade 3"></label></div>'+
-  '<div class="grid2"><label>Subject<input id="psSubject" value="'+esc(x.subject||"")+'" placeholder="Math / reading"></label><label>Pages in this batch<input type="number" id="psPages" min="1" max="10000" value="'+pageCount(x.pages)+'"></label></div>'+
-  '<label>Notes + physical location<textarea id="psNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
-  '<label class="ps-side-check"><input id="psDouble" type="checkbox" '+(x.doubleSided?"checked":"")+' > This is one physical sheet with work on both sides</label>'+
-  '<label>Picture / document reference (optional)<input id="psRef" value="'+esc(x.reference||"")+'" placeholder="ChatGPT photo or secure file location"></label>'+
-  '<small class="ps-muted">A reference is not an actual uploaded image. Art books below store the actual artwork photo on this device.</small>'+
+  '<label>Decision<select id="psType" onchange="paperStudioDecisionChanged()">'+types+'</select></label>'+
+  '<label>Pages in this batch<input type="number" id="psPages" min="1" max="10000" value="'+pageCount(x.pages)+'"></label>'+
+  '<label>Notes + where the paper is kept<textarea id="psNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
+  '<details class="ps-extra" id="psExtra" '+(x.type==="practice"?"open":"")+'><summary>Optional details · child, subject, photos</summary>'+
+   '<div class="ps-extra-fields">'+
+    '<div class="grid2"><label>Child for extra practice<select id="psChild">'+kids+'</select></label><label>Approximate grade level<input id="psLevel" value="'+esc(x.level||"")+'" placeholder="K–1, grade 3"></label></div>'+
+    '<label>Subject<input id="psSubject" value="'+esc(x.subject||"")+'" placeholder="Math / reading"></label>'+
+    '<label class="ps-side-check"><input id="psDouble" type="checkbox" '+(x.doubleSided?"checked":"")+' > One physical sheet with work on both sides</label>'+
+    '<label>Picture / document reference<input id="psRef" value="'+esc(x.reference||"")+'" placeholder="ChatGPT photo or secure file location"></label>'+
+   '</div></details>'+
+  '<small class="ps-muted">ChatGPT picture references are not actual uploaded files or verified backups. Keep important originals until safely captured.</small>'+
   (old&&x.type!=="review"?'<button onclick="paperFinishHandling(\''+qid(x.id)+'\')">'+(x.physicallyFinished?"Undo physical completion":"Confirm physically filed / recycled / handled")+'</button>':"")+
   '</div>',"Save",async()=>{
    const get=id=>document.getElementById(id),title=get("psTitle")?.value.trim(),pages=Number(get("psPages")?.value);
