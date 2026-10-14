@@ -1,0 +1,174 @@
+/* 2026-10-14: screenshot-based form repair. Only the Time Block and Paper Batch
+   editors use this treatment; other dark-themed dialogs are unchanged. */
+#modal .modal:has(:is(#ibtitle,#psTitle)){
+  --editor-ink:#33273b;
+  --editor-muted:#63546b;
+  color:var(--editor-ink)!important;
+  background:linear-gradient(155deg,#fffbfd 0%,#fdf6f9 62%,#f1f7f2 100%)!important;
+  border:1px solid #dcbdd0!important;
+  box-shadow:0 14px 45px rgba(54,29,56,.24)!important;
+  scrollbar-gutter:auto!important;
+  scroll-padding-top:78px;
+  scroll-padding-bottom:90px;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle))>.section-title:first-child{
+  background:linear-gradient(180deg,#fffbfd 83%,rgba(255,251,253,.96))!important;
+  border-bottom:1px solid #eddee7!important;
+  margin-bottom:9px!important;
+  padding-top:10px!important;
+  padding-bottom:10px!important;
+  gap:8px!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle))>.section-title:first-child h2{
+  color:#302438!important;
+  text-shadow:none!important;
+  font-size:1.3rem!important;
+  line-height:1.18!important;
+  opacity:1!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle))>.section-title:first-child .btn{
+  background:#fffafd!important;
+  color:#352942!important;
+  border:1px solid #dccbd6!important;
+  border-radius:16px!important;
+  min-height:43px!important;
+  box-shadow:0 2px 5px rgba(65,37,61,.06)!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .stack{
+  gap:11px!important;
+  padding:0 1px 3px!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .stack>.grid2{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .stack>label:not(.task):not(.ps-side-check),
+#modal .modal:has(:is(#ibtitle,#psTitle)) .grid2>label{
+  display:grid!important;
+  gap:5px!important;
+  min-width:0!important;
+  color:#47364e!important;
+  -webkit-text-fill-color:#47364e!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-size:.83rem!important;
+  font-weight:800!important;
+  letter-spacing:0!important;
+  line-height:1.28!important;
+  text-transform:none!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:46px!important;
+  padding:10px 12px!important;
+  border-radius:15px!important;
+  border:1px solid #bea6ba!important;
+  background:#fffdfd!important;
+  color:#2b2536!important;
+  -webkit-text-fill-color:#2b2536!important;
+  color-scheme:light!important;
+  font-size:.96rem!important;
+  font-weight:600!important;
+  line-height:1.35!important;
+  box-shadow:0 2px 6px rgba(80,48,73,.06)!important;
+  text-shadow:none!important;
+  opacity:1!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(input,textarea)::placeholder{
+  color:#73667c!important;
+  -webkit-text-fill-color:#73667c!important;
+  opacity:1!important;
+  font-weight:500!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) select option{
+  background:#fffdfd!important;
+  color:#2b2536!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(input:not([type="checkbox"]),select,textarea):focus{
+  background:#fff!important;
+  border-color:#ad4d82!important;
+  outline:2px solid #b04d83!important;
+  outline-offset:1px!important;
+  box-shadow:0 0 0 3px rgba(229,143,188,.15)!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) textarea{
+  min-height:82px!important;
+  resize:vertical;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(.task,.ps-side-check){
+  display:flex!important;
+  align-items:flex-start!important;
+  gap:10px!important;
+  color:#43344d!important;
+  -webkit-text-fill-color:#43344d!important;
+  text-shadow:none!important;
+  opacity:1!important;
+  font-size:.81rem!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  line-height:1.38!important;
+  text-transform:none!important;
+  cursor:pointer;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(.task,.ps-side-check)>input[type="checkbox"]{
+  flex:none!important;
+  width:21px!important;
+  height:21px!important;
+  min-height:21px!important;
+  margin:0!important;
+  accent-color:#af447b!important;
+  opacity:1!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(.task,.ps-side-check) :is(span,b,strong,.small,.muted){
+  color:#49394f!important;
+  -webkit-text-fill-color:#49394f!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  font-size:inherit;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .ps-muted{
+  color:#62556a!important;
+  -webkit-text-fill-color:#62556a!important;
+  opacity:1!important;
+  font-size:.77rem!important;
+  line-height:1.38!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle))>.modal-save-actions:last-child{
+  position:sticky!important;
+  bottom:-17px!important;
+  z-index:4!important;
+  margin-top:8px!important;
+  padding:9px 13px calc(10px + env(safe-area-inset-bottom))!important;
+  border-top:1px solid #e8d6e2!important;
+  background:linear-gradient(0deg,#fffbfd 87%,rgba(255,251,253,.97))!important;
+  backdrop-filter:none!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle))>.modal-save-actions:last-child #saveModal{
+  min-height:49px!important;
+  width:100%!important;
+  max-height:55px!important;
+  padding:9px 16px!important;
+  border-radius:17px!important;
+  border:1px solid #e5a7b2!important;
+  background:linear-gradient(105deg,#ff92b7,#ffd0a2)!important;
+  color:#31243c!important;
+  -webkit-text-fill-color:#31243c!important;
+  font-size:1.04rem!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+  box-shadow:0 3px 9px rgba(106,57,85,.10)!important;
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) #psPages{
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:370px){
+  #modal .modal:has(:is(#ibtitle,#psTitle)) .stack>.grid2{
+    grid-template-columns:1fr!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #modal .modal:has(:is(#ibtitle,#psTitle)) :is(input,select,textarea,.btn){transition:none!important}
+}
