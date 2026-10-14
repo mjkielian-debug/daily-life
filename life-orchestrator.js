@@ -586,6 +586,8 @@
       bottleGoal=waterTarget>0?Math.max(1,Math.ceil(waterTarget/26)):3,
       bottles=Math.min(bottleGoal,Math.floor(waterOz/26)),
       meal=mealForDate(today),
+      cookingBatch=typeof runzaCookingBatch==="function"?runzaCookingBatch():null,
+      showCookingBatch=cookingBatch&&String(cookingBatch.status||"").toLowerCase()!=="made"&&today>="2026-10-13",
       hasMeal=!!String(meal?.dish||"").trim(),
       mealDone=!!(meal&&["made","done","cooked","served","eaten"].includes(String(meal.status||"").toLowerCase())),
       mealTitle=hasMeal?String(meal.dish):"Dinner not planned yet",
@@ -638,9 +640,11 @@
         '</section>'+
         '<section class="dl-panel dl-dinner"><div class="dl-panel-heading"><h2>♢ Dinner plan</h2><button onclick="openMeal(\''+today+'\')">Edit ›</button></div>'+
          '<div class="dl-dinner-content"><span aria-hidden="true">🍽️</span><div><b>'+esc(mealTitle)+'</b><small>'+esc(mealTime)+'</small></div></div>'+
-         '<div class="dl-dinner-actions"><button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?"Recipe":"Choose dinner")+' ›</button>'+
-         (hasMeal&&!mealDone?'<button class="dl-dinner-done" onclick="setMealStatus('+esc(JSON.stringify(String(meal.id)))+',\'made\')">✓ Made</button>':'')+
-         '</div></section>'+
+         '<div class="dl-dinner-actions"><button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?(typeof mealNeedsRecipe==="function"&&mealNeedsRecipe(meal)?"Recipe":"Details"):"Choose dinner")+' ›</button>'+
+         (hasMeal&&!mealDone?'<button class="dl-dinner-done" onclick="setMealStatus('+esc(JSON.stringify(String(meal.id)))+',\'made\')">'+(mealNeedsRecipe(meal)?"✓ Made":"✓ Ate")+'</button>':'')+
+         '</div>'+
+         (showCookingBatch?'<button class="dl-cook-ahead" onclick="openRunzaCookingBatch()">🥟 Runzas: finish baking later ›</button>':'')+
+         '</section>'+
        '</div>'+
        '<div class="dl-alerts">'+
         '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
