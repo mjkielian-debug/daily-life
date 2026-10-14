@@ -1550,10 +1550,10 @@ function dayFlowBucketItems(date,key){
 }
 function dayFlowItemAction(x,date){
   if(x.templateKey==="sunday-dinner-plan")return `openMeal(\'${date}\')`;
-  if(x.source==="custom")return `openItineraryBlock('${date}','${x.sourceId}')`;
+  if(x.source==="custom")return `openTimeBlockDetails('${date}','${x.sourceId}')`;
   if(x.source==="event")return `openEventDetails('${date}','${x.sourceId}')`;
   if(x.source==="meal")return `openMeal('${date}')`;
-  if(x.source==="suggested")return `openSuggestedItineraryBlock('${date}','${x.templateKey}')`;
+  if(x.source==="suggested")return `openTimeBlockDetails('${date}','','${x.templateKey}')`;
   if(x.source==="task")return `openTaskDetails('${x.sourceId}')`;
   return `openDayFlowSection('plan','${date}')`;
 }
@@ -1670,6 +1670,18 @@ function itineraryView(){
       <button type="button" onclick="openDayFlowSection('plan','${date}')"><span class="dayflow-mini-icon">${conflicts.hardCount?"!":"✦"}</span><span><b>Plan day</b><small>${conflicts.hardCount?conflicts.hardCount+" possible overlaps":conflicts.routineCount?conflicts.routineCount+" routines to fit":"Schedule looks clear"}</small></span></button>
     </div>
   </section>`;
+}
+function openTimeBlockDetails(date,id="",templateKey=""){
+ const x=id?(state.itineraryBlocks||[]).find(v=>String(v.id)===String(id)):itinerarySuggestedBlocks(date).find(v=>v.templateKey===templateKey);
+ if(!x)return;
+ const saved=!!id;
+ const note=saved?x.notes:(x.detail||x.notes||"");
+ const row=(label,value)=>value?'<div class="event-detail-field"><b>'+esc(label)+'</b><span>'+esc(String(value))+'</span></div>':"";
+ const dateLabel=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+ const html='<div class="stack event-detail-sheet"><h2>'+esc(x.title||"Time block")+'</h2>'+row("Date",dateLabel)+row("Start",x.start?fmtClock(x.start):"")+row("End",x.end?fmtClock(x.end):"")+row("Type",x.kind==="fixed"?"Fixed commitment":"Flexible block")+row("What to do",note)+row("Status",saved?(x.done?"Completed":"Planned"):"Suggested · not yet added")+'<button type="button" class="btn primary" id="timeBlockEdit">'+(saved?"Edit time block":"Add to my day")+'</button>'+(saved?'<button type="button" class="btn" id="timeBlockDone">'+(x.done?"Mark not done":"Mark complete")+'</button>':"")+'</div>';
+ modal("Time block details",html,"Close",closeModal);
+ document.getElementById("timeBlockEdit")?.addEventListener("click",()=>{closeModal();openItineraryBlock(date,saved?id:"",saved?null:{start:x.start,end:x.end,title:x.title,kind:x.kind||"flexible",notes:note,templateKey:x.templateKey||templateKey,icon:x.icon})});
+ document.getElementById("timeBlockDone")?.addEventListener("click",async()=>{x.done=!x.done;await save();render();openTimeBlockDetails(date,id)});
 }
 function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
