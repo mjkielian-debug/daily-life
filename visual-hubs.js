@@ -96,9 +96,9 @@ function visualHubModel(page){
  }else if(page==="inventory"){
   const all=s.inventoryItems||[],rooms=s.houseRooms||[],low=all.filter(x=>["Low","Need"].includes(x.status)).length;
   Object.assign(base,{title:"Inventory",subtitle:"Know what you have and where",addLabel:"+ Item",addAction:"openInventoryItem()",
-   focusLabel:"STOCK ATTENTION",focusTitle:low?`${low} item${low===1?"":"s"} marked low / needed`:"Find something in your home",
-   focusNote:low?"Open the flagged items and restock only what is needed.":"Choose Papers or Art Books below; ordinary inventory items are tracked separately.",
-   focusAction:low?"openInventoryLowStock()":"openInventoryHubSection('items')",mainValue:String(all.length),mainLabel:"Items tracked",
+   focusLabel:low?"STOCK ATTENTION":"ORGANIZING START",focusTitle:low?`${low} item${low===1?"":"s"} marked low / needed`:all.length?"Find something in your home":"Sort your first paper stack",
+   focusNote:low?"Open the flagged items and restock only what is needed.":"Use Paper Studio to organize and decide what to keep; Art Books preserve children's work.",
+   focusAction:low?"openInventoryLowStock()":all.length?"openInventoryHubSection('items')":"openPaperStudio()",focusButton:low?"Review stock":all.length?"View inventory":"Open Paper Studio",mainValue:String(all.length),mainLabel:"Items tracked",
    metrics:[m("!","Low / need",low+" flagged","openInventoryLowStock()"),m("⌂","Rooms",rooms.length+" mapped","openInventoryHubSection('map')"),m("◇","Storage",(s.inventoryLocations||[]).length+" spots","openInventoryHubSection('map')"),m("◫","Categories",new Set(all.map(x=>x.category).filter(Boolean)).size+" used","openInventoryHubSection('items')")],
    links:[vhLink("Papers","✎","openPaperStudio()"),vhLink("Art Books","🎨","openArtLibrary()"),vhLink("All items","▦","openInventoryHubSection('items')"),vhLink("House map","⌂","openInventoryHubSection('map')"),vhLink("Low stock","!","openInventoryLowStock()"),vhLink("Add item","＋","openInventoryItem()"),vhLink("Add room","◫","openInventoryRoom()"),vhLink("Location","◇","openInventoryLocation()"),vhLink("Supplies","▤","openHouseholdSection('supplies')"),vhLink("Household","⌂","setView('household')")],
    bottomTitle:"Your mapped home",bottomDetail:`${rooms.length} rooms · ${(s.inventoryLocations||[]).length} storage spots. Open map to find items faster.`});
