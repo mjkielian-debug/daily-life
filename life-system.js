@@ -382,7 +382,7 @@
     }
     if(wd===1){
       const childKey=c=>String(c.child||"").toLowerCase(),choreKey=c=>String(c.chore||"").toLowerCase(),
-        byChild=names=>(state.chores||[]).filter(function(c){return c.date===date&&names.includes(childKey(c));}),
+        byChild=names=>displayChoresForDate(date).filter(function(c){return names.includes(childKey(c));}),
         younger=byChild(["dolly","ambrose"]).sort(function(a,b){return childKey(a).localeCompare(childKey(b))||String(a.chore||"").localeCompare(String(b.chore||""));}),
         older=byChild(["leo","demitri"]).filter(function(c){return !/read\s*20\s*min|reading/.test(choreKey(c));}).sort(function(a,b){return childKey(a).localeCompare(childKey(b))||String(a.chore||"").localeCompare(String(b.chore||""));});
       rows.push({id:"monday-younger-chores:"+date,start:"15:05",end:"16:00",title:"Dolly + Ambrose · chores + homework",
@@ -405,7 +405,7 @@
     if(evening.enabled!==false){
       const prepStart=hmMinutes(evening.prepStart||"19:30"),prepEnd=hmMinutes(evening.prepEnd||"19:40"),
         readStart=hmMinutes(evening.start||"19:40"),readEnd=hmMinutes(evening.end||"20:00"),
-        readingRows=(state.chores||[]).filter(function(c){
+        readingRows=displayChoresForDate(date).filter(function(c){
           const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
           return c.date===date&&(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
         }).sort(function(a,b){return String(a.child||"").localeCompare(String(b.child||""))});
@@ -710,8 +710,7 @@
       if(x.templateKey==="chores"){
         const childOrder={leo:0,demitri:1,dolly:2,ambrose:3},
           choreOrder={"clean room":0,"homework":1,"read 20 min":2,"laundry":3,"dishes":3,"counters":3,"floors":3},
-          todays=(state.chores||[]).filter(function(c){
-            if(c.date!==date)return false;
+          todays=displayChoresForDate(date).filter(function(c){
             const child=String(c.child||"").toLowerCase(),chore=String(c.chore||"").toLowerCase();
             const olderReading=(child==="leo"||child==="demitri")&&/read\s*20\s*min|reading/.test(chore);
             return !olderReading;
@@ -1035,7 +1034,7 @@
       }).length,
       flowScore=itinerary.length?lifeClampScore(completedFlow/itinerary.length*100):0;
 
-    const chores=(state.chores||[]).filter(function(x){return x.date===today}),
+    const chores=displayChoresForDate(today),
       homeTasks=(state.tasks||[]).filter(function(t){
         return t.date===today&&/home|house|clean|declutter|laundry|dishes|litter|organ/i.test(String(t.category||"")+" "+String(t.title||""));
       }),
