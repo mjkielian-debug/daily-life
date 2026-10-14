@@ -2210,3 +2210,41 @@ body:has(.today-one-screen-shell .dl-command-center){background:#f3c5da!importan
 @media(prefers-reduced-motion:reduce){
   #app .dl-command-center button{transition:none}
 }
+
+
+/* Oct 13: Concept 1 must scroll. The old single-wheel page intentionally
+   locked both body and .app to one viewport; Concept 1 is a full dashboard. */
+html:has(.today-one-screen-shell .dl-command-center){
+  height:auto!important;
+  overflow-y:auto!important;
+}
+body:has(.today-one-screen-shell .dl-command-center){
+  height:auto!important;
+  min-height:100dvh!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  touch-action:pan-y;
+}
+#app .today-one-screen-shell:has(.dl-command-center){
+  display:block!important;
+  height:auto!important;
+  min-height:100dvh!important;
+  max-height:none!important;
+  overflow:visible!important;
+  padding-bottom:calc(142px + env(safe-area-inset-bottom))!important;
+}
+#app .today-one-screen-shell .dl-command-center.life-today-one-screen{
+  display:flex!important;
+  flex:initial!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  padding-bottom:16px!important;
+  touch-action:pan-y;
+}
+/* Keep the navigation available without obscuring the final dashboard action. */
+body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
+  position:fixed!important;
+  bottom:0!important;
+}
