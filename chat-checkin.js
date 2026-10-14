@@ -156,10 +156,11 @@
    '</div></div>';
  }
  function chatCheckinNudge(){
-  const p=prompts()[0];
-  return '<div class="dl-chat-checkin-wrap"><button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="Start a guided ChatGPT check-in">'+
+  const p=prompts()[0],part=dayPart(),
+    title=part==="early"?"Morning check-in":part==="after"?"After-work check-in":part==="afternoon"?"Afternoon update":"Evening recap";
+  return '<div class="dl-chat-checkin-wrap"><button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="'+esc(title)+' in ChatGPT">'+
    '<span class="dl-chat-nudge-icon" aria-hidden="true">🎙️</span>'+
-   '<span class="dl-chat-nudge-copy"><b>Tell me about your day</b><small>'+esc(p)+'</small></span>'+
+   '<span class="dl-chat-nudge-copy"><b>'+esc(title)+'</b><small>'+esc(p)+'</small></span>'+
    '<span class="dl-chat-nudge-arrow" aria-hidden="true">›</span></button>'+quickReviewNudge()+'</div>';
  }
  window.openChatCheckin=function(){promptIndex=0;show()};
