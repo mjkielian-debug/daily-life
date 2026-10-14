@@ -601,8 +601,8 @@
       percent=lifeProgress(completed,checkpoints),
       importantFuture=future.filter(x=>x.fixed||x.source==="event"||x.source==="meal"||
         ["meal-prep","dinner","chores","wind-down","work-commute","tomorrow-prep","after-school-launch"].includes(String(x.templateKey||""))),
-      upcoming=(importantFuture.length?importantFuture:future).slice(0,3),
-      ringDetails=checkpoints?completed+" of "+checkpoints+" tracked steps":"Start your daily progress";
+      upcoming=(importantFuture.length?importantFuture:future).slice(0,2),
+      ringDetails=checkpoints?completed+" / "+checkpoints+" marked done":"Nothing scheduled to track yet";
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
