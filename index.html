@@ -7388,7 +7388,125 @@ function applyOct13RunzaDinner(){
   return true;
 }
 
-async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
+
+/* Oct 13 revised food plan. Idempotent, additive, and never automatically marks
+   pizza eaten or the Runzas baked. Keep the cooked filling as a separate
+   preparation recipe, rather than misrepresenting it as tonight's dinner. */
+function applyOct13To15MealCorrections(){
+  state.settings=state.settings||{};
+  if(Number(state.settings.oct13To15MealCorrectionVersion||0)>=1)return false;
+  state.meals=Array.isArray(state.meals)?state.meals:[];
+  const dinnerFor=date=>state.meals.find(m=>m.date===date&&m.type==="dinner");
+  const upsertDinner=(date,fields)=>{
+    let m=dinnerFor(date);
+    if(!m){m={id:"dinner-"+date+"-corrected",date,type:"dinner",prepDone:[]};state.meals.push(m);}
+    else if(String(m.status||"").toLowerCase()==="made"&&!/runza/i.test(m.dish||""))return m; // Respect separately confirmed completions.
+    if(m.dish&&String(m.dish).trim().toLowerCase()!==String(fields.dish).toLowerCase()&&!m.previousDinnerPlan){
+      m.previousDinnerPlan={dish:m.dish,method:m.method||"",notes:m.notes||"",status:m.status||"",ingredients:m.ingredients||"",prepSteps:m.prepSteps||""};
+    }
+    Object.assign(m,{
+      dish:fields.dish,method:fields.method,status:"planned",recipeRequired:false,
+      recipeState:"not-needed",ingredients:"",prepSteps:"",startBy:"",serveTime:fields.serveTime||"",
+      prepDone:[],notes:fields.notes,updatedAt:new Date().toISOString()
+    });
+    delete m.nutritionEstimate;
+    delete m.dayFlowSteps;
+    return m;
+  };
+  let runza=state.meals.find(m=>m.type==="prep"&&m.date==="2026-10-13"&&/runza/i.test(m.dish||""));
+  if(!runza){
+    runza=state.meals.find(m=>m.type==="dinner"&&m.date==="2026-10-13"&&/runza/i.test(m.dish||""));
+    if(runza){
+      runza.type="prep"; // Retain exact ingredients, instructions, notes and ID from the former meal.
+      runza.status="prepping";
+    }else{
+      runza={
+        id:"prep-20261013-runzas",date:"2026-10-13",type:"prep",
+        dish:"Homemade beef + cabbage Runzas",status:"prepping",
+        method:"Browned beef-onion-cabbage filling · refrigerated French bread dough · bake",
+        recipeState:"ready",recipeSource:"oct13-user-cooking-notes",
+        ingredients:[
+          "2 lb ground beef",
+          "1 medium onion, diced",
+          "about 6–8 cups chopped cabbage",
+          "2 tubes refrigerated French bread dough",
+          "salt, black pepper, garlic powder (about 1 tsp each, adjust to taste)",
+          "about 1 Tbsp beef drippings left in the skillet"
+        ].join("\n"),
+        prepSteps:[
+          "Brown ground beef and drain most grease, reserving around 1 Tbsp. Add diced onion and soften for about 5 minutes.",
+          "Add chopped cabbage in batches and season with salt, pepper and garlic powder. Cover and cook until tender (about 15–20 minutes), then uncover to reduce moisture.",
+          "If stopping here, cool promptly in shallow containers and refrigerate; cooked meat filling keeps about 3–4 days refrigerated, or freeze it.",
+          "When ready, let filling cool enough to handle, divide into portions of French bread dough, wrap and pinch shut.",
+          "Follow the French bread dough package's baking temperature/time instructions. Bake until the bread is fully cooked and golden.",
+          "Cool briefly and serve when the family wants Runzas, or cool and refrigerate baked Runzas for another meal."
+        ].join("\n"),
+        notes:"October 13: beef, onion and cabbage filling prepared; two French bread dough tubes available. Baking/serving still unconfirmed. Optional cheddar was discussed but not confirmed used."
+      };
+      state.meals.push(runza);
+    }
+  }
+  if(runza){
+    runza.status=runza.status==="made"?"made":"prepping";
+    runza.plannedFinishDate=runza.plannedFinishDate||"2026-10-14";
+    runza.flexibleFinish=true;
+    runza.isDinner=false;
+    runza.prepDone=Array.isArray(runza.prepDone)?runza.prepDone:[];
+    runza.recipeState="ready";
+    runza.notes=[String(runza.notes||"").trim(),"Plan updated Oct 13: Runzas are NOT tonight's dinner. Tanner may bake them tonight, or someone may finish on Wednesday; the date they will actually be eaten is not set."].filter(Boolean).join("\n");
+  }
+  upsertDinner("2026-10-13",{
+    dish:"Domino's pizza",
+    method:"Takeout / delivery",
+    notes:"Changed after Leo's band concert. Pizza is planned/ordered for dinner; eating has not been logged. Runza filling is a separate make-ahead cooking project."
+  });
+  upsertDinner("2026-10-14",{
+    dish:"Dinner provided at Everett Prime Time",
+    method:"Everett Prime Time Reading Night · dinner provided",
+    notes:"Wednesday evening Prime Time at Everett provides dinner. No separate home dinner or Runza dinner required. Time for the event is not confirmed."
+  });
+  upsertDinner("2026-10-15",{
+    dish:"Food Fort",
+    method:"Away · free family meal",
+    serveTime:"17:30",
+    notes:"Thursday Food Fort meal, 5:30–6:30 PM; a snack tray afterwards if the kids need more food. No home dinner cooking required."
+  });
+  // Existing recurring Reading Night event has no verified clock time.
+  // Clarify that dinner is included, without inventing arrival or start times.
+  const primeRule=(state.settings.recurringFamilyEvents||[]).find(r=>r.id==="wednesday-prime-time-reading");
+  if(primeRule&&!/dinner (?:is )?provided/i.test(String(primeRule.notes||""))){
+    primeRule.notes=String(primeRule.notes||"").trim()+" Dinner provided at the Everett event; no separate home dinner.";
+  }
+  for(const e of state.events||[]){
+    if(e.date==="2026-10-14"&&/prime time.*everett|everett.*prime time/i.test(String(e.title||""))&&!/dinner/i.test(String(e.notes||""))){
+      e.notes=[String(e.notes||"").trim(),"Dinner provided at the event."].filter(Boolean).join(" ");
+    }
+  }
+  state.settings.oct13To15MealCorrectionVersion=1;
+  return true;
+}
+function runzaCookingBatch(){
+  return (state.meals||[]).find(m=>m.date==="2026-10-13"&&m.type==="prep"&&/runza/i.test(String(m.dish||"")))||null;
+}
+function openRunzaCookingBatch(){
+  const m=runzaCookingBatch();
+  if(!m)return;
+  modal("Runzas · cook ahead",'<div class="stack">'+
+    '<div class="notice"><b>Cooking ahead, not dinner tonight</b><div class="muted small">The filling was prepared October 13. Bake tonight if Tanner chooses, or finish another day. Wednesday dinner is covered at Everett and Thursday at Food Fort.</div></div>'+
+    generatedMealDetails(m)+
+    '<div class="notice"><b>Food safety</b><div class="muted small">Cool cooked filling in shallow containers and refrigerate within two hours. Use refrigerated filling within 3–4 days, or freeze it. Do not leave meat filling out overnight.</div></div>'+
+    '<div class="actions"><button class="btn '+(m.status==="made"?"good":"primary")+'" onclick="setRunzaCookingComplete('+String(m.status==="made"?"false":"true")+')">'+(m.status==="made"?"↶ Mark unfinished":"✓ Runzas baked")+'</button></div>'+
+    '</div>',"Close",closeModal);
+}
+async function setRunzaCookingComplete(done){
+  const m=runzaCookingBatch();if(!m)return;
+  m.status=done?"made":"prepping";
+  m.bakedAt=done?new Date().toISOString():"";
+  m.updatedAt=new Date().toISOString();
+  await save();closeModal();render();
+}
+
+async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
