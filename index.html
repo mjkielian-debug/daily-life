@@ -7531,7 +7531,63 @@ function applyOptionalLifeInterests(){
   return added>0;
 }
 
-async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();applyOptionalLifeInterests();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
+
+/* User-confirmed finished Tanner gift (reported October 13). This closes the
+   outcome, not unverified sessions or gifting/hand-off. Preserve saved edits. */
+function applyTannerGiftFinished(){
+  state.settings=state.settings||{};
+  if(Number(state.settings.tannerBirthdayGiftFinishedVersion||0)>=1)return false;
+  const reportedOn="2026-10-13";
+  const note="Finished six miniature album-cover magnets with a handmade milk-crate-style holder for Tanner's birthday. The gift-making project is complete; whether or when it was given has not been recorded.";
+  state.hobbyProjects=Array.isArray(state.hobbyProjects)?state.hobbyProjects:[];
+  let project=state.hobbyProjects.find(p=>p.id==="tanner-six-mini-album-magnets"||
+    (/tanner/i.test(String(p.name||""))&&/gift|record|album|magnet|milk.crate/i.test(String(p.name||""))));
+  if(!project){
+    project={id:"tanner-six-mini-album-magnets",name:"Tanner's six mini album magnets + milk crate",category:"Craft",status:"Finished",
+      notes:note,materials:"Mini album covers / magnet supplies\nPopsicle sticks for milk-crate-style holder\nBlack coloring and fine-tip/gold markers",
+      nextStep:"",reportedFinishedOn:reportedOn,createdAt:new Date().toISOString(),source:"user-confirmed"};
+    state.hobbyProjects.push(project);
+  }else{
+    project.status="Finished";
+    project.nextStep="";
+    project.reportedFinishedOn=reportedOn;
+    if(!/finished|complete/i.test(String(project.notes||"")))project.notes=[String(project.notes||"").trim(),note].filter(Boolean).join("\n");
+    // Do not overwrite actual costs, photos, or any verified earlier completion date.
+  }
+  for(const task of state.tasks||[]){
+    if(task.done)continue;
+    const title=String(task.title||"");
+    const knownId=/^gift-progress-100[678]$|^monday-20261005-tanner-gift$/i.test(String(task.id||""));
+    const giftWork=/\btanner.?s?\s+(?:birthday\s+)?gift\b/i.test(title)||
+      (/six records?|milk.crate|album magnets?/i.test(title)&&/\bgift|tanner\b/i.test([task.notes,title].join(" ")));
+    if(!knownId&&!giftWork)continue;
+    // Archive unfinished session reminders: project result is verified,
+    // but we do not assert a specific earlier work session happened.
+    task.paused=true;
+    task.pausedReason="Tanner gift-making project reported finished";
+    task.projectOutcome="finished";
+    task.projectOutcomeReportedOn=reportedOn;
+  }
+  for(const p of state.projects||[]){
+    if(/tanner/i.test(String(p.title||""))&&/birthday|gift|six records?|album|magnets?|milk.crate/i.test(String(p.title||""))){
+      p.status="done";p.nextAction="";
+      p.projectOutcomeReportedOn=reportedOn;
+    }
+  }
+  const tanner=(state.peopleProfiles||[]).find(p=>String(p.name||"").trim().toLowerCase()==="tanner");
+  if(tanner){
+    tanner.personNotes=Array.isArray(tanner.personNotes)?tanner.personNotes:[];
+    if(!tanner.personNotes.some(n=>String(n.id||"")==="tanner-gift-finished-20261013"||
+      /six mini.*(?:album|record).*milk.crate|six.*album.*magnets/i.test(String(n.text||"")))){
+      tanner.personNotes.push({id:"tanner-gift-finished-20261013",date:reportedOn,category:"Memory",
+        text:note,reportedDate:true,source:"user-confirmed"});
+    }
+  }
+  state.settings.tannerBirthdayGiftFinishedVersion=1;
+  return true;
+}
+
+async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
