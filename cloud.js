@@ -1101,9 +1101,11 @@ function cloudApplyLifeEntry(row){
       let existing=state.settings.bankExitPlans.find(x=>x.cloudEntryId===row.id||
         x.institution.toLowerCase()===institution.toLowerCase());
       if(!existing){existing={id:uid(),institution};state.settings.bankExitPlans.push(existing)}
-      Object.assign(existing,{institution,status:String(p.status||existing.status||"planning"),
+      const confirmedClosed=existing.status==="closed",
+        confirmedRenewal=["cancelled","not_renewing","renewing"].includes(String(existing.subscriptionStatus||""));
+      Object.assign(existing,{institution,status:confirmedClosed?"closed":String(p.status||existing.status||"planning"),
         renewalName:String(p.renewalName||existing.renewalName||""),renewalDate:String(p.renewalDate||existing.renewalDate||""),
-        subscriptionStatus:String(p.subscriptionStatus||existing.subscriptionStatus||"decision_pending"),
+        subscriptionStatus:confirmedRenewal?existing.subscriptionStatus:String(p.subscriptionStatus||existing.subscriptionStatus||"decision_pending"),
         priority:Boolean(p.priority??true),notes:String(p.notes||existing.notes||""),
         cloudEntryId:row.id,updatedAt:new Date().toISOString()});
       return true;
