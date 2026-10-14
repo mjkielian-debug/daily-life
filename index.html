@@ -3473,6 +3473,9 @@ function dailyReviewStatus(kind,key,date=ymd()){
   }else if(kind==="care"){
     if(selfCareDone(key,date))return"yes";
   }
+  // Standalone daily routine reviews are explicit answers, not inferred
+  // checkbox state. They remain attached to the day on which they happened.
+  if(kind==="routine")return review?.status||"unknown";
   // An explicit uncheck after an earlier "Yes" is a correction, not a
   // completed habit. Leave it unknown until the user confirms what happened.
   if(review?.status==="yes")return"unknown";
@@ -3532,6 +3535,19 @@ function dailyReviewExpected(date=ymd()){
           label=child?`${child} · ${chore}`:chore,
           group=c.generated==="daily-basics"?"Kids daily routine":c.generated==="rotation"?"Kids rotating chore":"Chores + routines";
     rows.push({kind:"chore",key:c.id,label,group,detail:String(c.notes||"").trim(),status:dailyReviewStatus("chore",c.id,date)});
+  }
+  // Record today's named care routines independently of yesterday's tasks.
+  // A missed hair/shower routine is reviewable as "No" on that date; it never
+  // becomes an unfinished task on the next date.
+  const dailyRoutines=typeof itinerarySuggestedBlocks==="function"?itinerarySuggestedBlocks(date):[];
+  const trackedRoutineKeys=new Set();
+  for(const routine of dailyRoutines){
+    const key=String(routine.templateKey||"");
+    if(!(key==="dolly-hair"||/^kid-shower-/.test(key))||trackedRoutineKeys.has(key))continue;
+    trackedRoutineKeys.add(key);
+    rows.push({kind:"routine",key,label:String(routine.title||key),group:"Daily family care",
+      detail:String(routine.detail||"Only for this date"),
+      status:dailyReviewStatus("routine",key,date)});
   }
   for(const h of selfCareHabits()){
     const copy=SELF_CARE_REVIEW_COPY[h.key]||null;
