@@ -6419,6 +6419,14 @@ function modal(title,body,label,fn){
   document.body.appendChild(d);
   const saveBtn=document.querySelector("#saveModal");if(saveBtn)saveBtn.onclick=fn
 }
+
+<style id="rainbow-task-form-fix">
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor :is(input:not([type=checkbox]),select,textarea){background:#fff8fd!important;background-color:#fff8fd!important;color:#34273e!important;-webkit-text-fill-color:#34273e!important;border:1px solid #d9bbd2!important;border-radius:15px!important;box-shadow:none!important;color-scheme:light!important;width:100%!important;min-width:0!important;min-height:47px!important;padding:10px 14px!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor select option{background:#fff8fd!important;color:#34273e!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor .grid2{grid-template-columns:1fr!important;gap:12px!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label.task{display:flex!important}
+</style>
 function closeModal(){document.querySelector("#modal")?.remove()}
 function manualSetup(){
   if(stateHasMeaningfulLocalData(state)){alert("Daily Life found existing local records, so Start blank is blocked. Restore or reconnect instead.");return}
@@ -6456,11 +6464,11 @@ function openTask(person="",id="",shareDefault=false){
   ensurePeopleProfiles();
   const existing=(state.tasks||[]).find(x=>x.id===id)||null,
         x=existing||{date:ymd(),title:"",child:person||"",category:"life",notes:"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
-  modal(existing?"Edit task":"Add task",`<div class="stack">
+  modal(existing?"Edit task":"Add task",`<div class="stack rainbow-task-editor">
     <label>Task<input id="task" value="${esc(x.title||"")}"></label>
     <div class="grid2"><label>Date<input id="taskdate" type="date" value="${esc(x.date||ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
     <label>Category<input id="cat" value="${esc(x.category||"life")}"></label>
-    <div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${Number(x.itineraryMinutes)===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="" ${!x.itineraryPreference?"selected":""}>Use remembered preference / fit where it works</option><option value="morning" ${x.itineraryPreference==="morning"?"selected":""}>Morning</option><option value="afternoon" ${x.itineraryPreference==="afternoon"?"selected":""}>Afternoon</option><option value="after-school" ${x.itineraryPreference==="after-school"?"selected":""}>After school</option><option value="evening" ${x.itineraryPreference==="evening"?"selected":""}>Evening</option><option value="any" ${x.itineraryPreference==="any"?"selected":""}>Anywhere</option></select></label></div>
+    <div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${Number(x.itineraryMinutes)===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="" ${!x.itineraryPreference?"selected":""}>Auto · fit my day</option><option value="morning" ${x.itineraryPreference==="morning"?"selected":""}>Morning</option><option value="afternoon" ${x.itineraryPreference==="afternoon"?"selected":""}>Afternoon</option><option value="after-school" ${x.itineraryPreference==="after-school"?"selected":""}>After school</option><option value="evening" ${x.itineraryPreference==="evening"?"selected":""}>Evening</option><option value="any" ${x.itineraryPreference==="any"?"selected":""}>Anywhere</option></select></label></div>
     <label>Exact start (optional)<input id="taskstart" type="time" value="${esc(x.itineraryStart||"")}"></label>
     <label>Notes<input id="notes" value="${esc(x.notes||"")}"></label>
     <label class="task"><input id="taskdone" type="checkbox" ${x.done?"checked":""}><span>Done</span></label>
