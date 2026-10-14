@@ -2394,3 +2394,51 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
   border-radius:99px;padding:4px 8px;font-size:.66rem;font-weight:900;min-height:31px;
   flex:1 1 57px;
 }
+
+
+/* Separate dinner from a make-ahead batch without another oversized card. */
+#app .dl-cook-ahead{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:rgba(223,244,231,.72)!important;
+  color:#3c6a56!important;
+  border:1px solid #b8dcc8!important;
+  border-radius:14px!important;
+  padding:6px 8px!important;
+  margin-top:5px;
+  font-size:.65rem!important;
+  line-height:1.17!important;
+  font-weight:850!important;
+}
+#app .food-cooking-ahead{
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  border:1px solid rgba(145,194,163,.70);
+  border-radius:22px;
+  padding:9px;
+  background:linear-gradient(125deg,rgba(224,248,230,.85),rgba(255,247,223,.82));
+}
+#app .food-cook-ring{
+  display:grid;place-items:center;
+  width:38px;height:38px;
+  border-radius:50%;
+  background:#fffaf0;border:3px solid #c3dfc8;
+  font-size:1.25rem;
+}
+#app .food-cook-summary{min-width:0;display:flex;flex-direction:column;gap:2px}
+#app .food-cook-summary b{font-size:.81rem}
+#app .food-cook-summary small{font-size:.68rem;color:#587260;line-height:1.2}
+#app .food-cooking-ahead>.btn{
+  border-radius:99px!important;
+  font-size:.68rem!important;
+  padding:6px 8px!important;
+  min-height:34px!important;
+  white-space:normal!important;
+}
+@media(max-width:380px){
+  #app .food-cooking-ahead{grid-template-columns:34px minmax(0,1fr);gap:6px}
+  #app .food-cooking-ahead>.btn{grid-column:2;justify-self:start}
+}
