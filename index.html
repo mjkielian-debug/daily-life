@@ -1544,7 +1544,7 @@ function dayFlowBucketItems(date,key){
 function dayFlowItemAction(x,date){
   if(x.templateKey==="sunday-dinner-plan")return `openMeal(\'${date}\')`;
   if(x.source==="custom")return `openItineraryBlock('${date}','${x.sourceId}')`;
-  if(x.source==="event")return `openEvent('${date}','${x.sourceId}')`;
+  if(x.source==="event")return `openEventDetails('${date}','${x.sourceId}')`;
   if(x.source==="meal")return `openMeal('${date}')`;
   if(x.source==="suggested")return `openSuggestedItineraryBlock('${date}','${x.templateKey}')`;
   if(x.source==="task")return `openItineraryTask('${x.sourceId}')`;
@@ -6709,6 +6709,15 @@ function openMeal(date){
 }
 async function toggleMealPrep(id,index,checked){const m=state.meals.find(x=>x.id===id);if(!m)return;const set=new Set((m.prepDone||[]).map(Number));checked?set.add(index):set.delete(index);m.prepDone=[...set].sort((a,b)=>a-b);if(checked&&m.status==="planned")m.status="prepping";await save();render()}
 async function setMealStatus(id,status){const m=state.meals.find(x=>x.id===id);if(!m)return;m.status=status;await save();render()}
+function openEventDetails(date=ymd(),id=""){
+ const event=(state.events||[]).find(e=>String(e.id)===String(id));
+ if(!event){openEvent(date,id);return;}
+ const row=(label,value)=>value?'<div class="event-detail-field"><b>'+esc(label)+'</b><span>'+esc(String(value))+'</span></div>':"";
+ const time=value=>value&&typeof fmtClock==="function"?fmtClock(value):value;
+ const content='<div class="stack event-detail-sheet"><h2>'+esc(event.title||"Event")+'</h2>'+row("Date",event.date||date)+row("Start",time(event.startTime))+row("End",time(event.endTime))+row("People",event.child)+row("Location",event.location)+row("Notes",event.notes)+row("Status",event.status||"confirmed")+'<button class="btn primary" id="editEventDetails">Edit details</button></div>';
+ modal("Upcoming details",content,"Close",closeModal);
+ document.getElementById("editEventDetails")?.addEventListener("click",()=>{closeModal();openEvent(date,id)});
+}
 function openEvent(date=ymd(),id="",person=""){
   const x=state.events.find(e=>e.id===id)||{},recurringLinked=!!x.recurringRuleId&&(x.generated==="recurring"||x.recurringException===true||x.generated==="recurring-exception");
   modal(x.id?"Edit upcoming item":"Add upcoming item",`<div class="stack">
