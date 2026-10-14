@@ -2385,3 +2385,12 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
 #app .today-one-screen-shell:has(.dl-command-center){
   padding-bottom:calc(102px + env(safe-area-inset-bottom))!important;
 }
+
+
+#app .dl-dinner-actions{display:flex;gap:4px;align-items:stretch;flex-wrap:wrap}
+#app .dl-dinner-actions .dl-dinner-button{flex:1 1 68px;width:auto!important;min-width:0!important}
+#app .dl-dinner-actions .dl-dinner-done{
+  border:1px solid #a9cda2;background:#e5f6df!important;color:#326242!important;
+  border-radius:99px;padding:4px 8px;font-size:.66rem;font-weight:900;min-height:31px;
+  flex:1 1 57px;
+}
