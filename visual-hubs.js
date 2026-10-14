@@ -5,40 +5,45 @@ function vhProgress(done,total,label){return {done:Math.max(0,Number(done)||0),t
 
 function visualHubModel(page){
  const s=state,day=ymd(),seven=shiftDateString(day,7),kids=(s.settings?.familyMembers||[]).length;
- const base={page,title:"",subtitle:"",addLabel:"",addAction:"",focusLabel:"DO NEXT",focusTitle:"",focusNote:"",focusAction:"",focusButton:"Open details",progress:null,mainValue:null,mainLabel:"",metrics:[],links:[],bottomTitle:"Explore",bottomDetail:"Choose an area to open details.",bars:[],barTitle:""};
+ const base={page,title:"",subtitle:"",addLabel:"",addAction:"",focusLabel:"DO NEXT",focusTitle:"",focusNote:"",focusAction:"",focusButton:"Open details",focusExtra:null,progress:null,mainValue:null,mainLabel:"",metrics:[],links:[],bottomTitle:"Explore",bottomDetail:"Choose an area to open details.",bars:[],barTitle:""};
  const m=(icon,label,value,action)=>({icon,label,value:String(value),action});
  const b=(date,value,known=true)=>({date,value:Math.max(0,Number(value)||0),known});
  if(page==="family"){
   const chores=(s.chores||[]).filter(x=>x.date===day),done=chores.filter(x=>x.done).length,events=(s.events||[]).filter(x=>x.date>=day&&x.date<=seven&&x.status!=="cancelled");
   const plans=typeof peopleAgendaItems==="function"?peopleAgendaItems().filter(x=>x.date>=day):[];
   const next=plans[0],profiles=s.peopleProfiles||[],family=typeof childProfiles==="function"?childProfiles():[];
+  const soonSchool=events.filter(x=>x.date<=shiftDateString(day,2)&&typeof isSchoolEvent==="function"&&isSchoolEvent(x)).length;
+  const birthdays=profiles.map(x=>typeof nextBirthdayInfo==="function"?nextBirthdayInfo(x):null).filter(Boolean).sort((a,b)=>a.days-b.days);
+  const nextLabel=next?[next.date===day?"Today":next.date===shiftDateString(day,1)?"Tomorrow":typeof dl==="function"?dl(next.date):next.date,next.time&&typeof fmtClock==="function"?fmtClock(next.time):""].filter(Boolean).join(" · "):"";
   Object.assign(base,{title:"People + family",subtitle:"Chores, school and everyone's plans",addLabel:"+ Plan",addAction:"openPeopleHubSection('plans')",
-   focusLabel:chores.length?"FAMILY TODAY":"UP NEXT",focusTitle:chores.length?`${chores.length-done} chores still open`:next?.title||"See family plans",
-   focusNote:chores.length?`${done} of ${chores.length} marked done today; unmarked does not mean skipped.`:next?[next.date,next.time].filter(Boolean).join(" · "):"Open your family's calendar and check-ins.",
-   focusAction:chores.length?"openPeopleHubSection('routines')":"openPeopleHubSection('plans')",progress:vhProgress(done,chores.length,"Kids' chores marked"),
-   metrics:[m("♡","Kids",family.length,"openPeopleHubSection('kids')"),m("🎒","School",events.filter(x=>typeof isSchoolEvent==="function"&&isSchoolEvent(x)).length+" soon","openPeopleHubSection('school')"),m("✦","Plans",plans.length+" ahead","openPeopleHubSection('plans')"),m("🎂","Birthdays",profiles.filter(x=>{const v=typeof nextBirthdayInfo==="function"?nextBirthdayInfo(x):null;return v&&v.days<=90}).length+" soon","openPeopleHubSection('birthdays')")],
+   focusLabel:next?"COMING UP":"FAMILY TODAY",focusTitle:next?.title||"Family routines at a glance",
+   focusNote:next?nextLabel:`${done} of ${chores.length} chores marked. Unmarked means not reported.`,
+   focusAction:next?"openPeopleHubSection('plans')":"openPeopleHubSection('routines')",progress:vhProgress(done,chores.length,"Chores today"),
+   metrics:[m("♡","Kids",family.length,"openPeopleHubSection('kids')"),m("🎒","School",soonSchool?soonSchool+" next 2d":"View","openPeopleHubSection('school')"),m("✦","Next plan",next?next.date.slice(5):"None","openPeopleHubSection('plans')"),m("🎂","Birthday",birthdays.length?birthdays[0].label:"Not set","openPeopleHubSection('birthdays')")],
    links:[vhLink("Kids","♡","openPeopleHubSection('kids')"),vhLink("School","🎒","openPeopleHubSection('school')"),vhLink("Plans","✦","openPeopleHubSection('plans')"),vhLink("Chores","✓","openPeopleHubSection('routines')"),vhLink("Birthdays","🎂","openPeopleHubSection('birthdays')"),vhLink("Activities","◷","openPeopleHubSection('activities')"),vhLink("Kids money","◇","openPeopleHubSection('money')"),vhLink("All people","♡","openPeopleHubSection('profiles')")],
-   bottomTitle:"Family rhythm",bottomDetail:next?`${next.title} · ${next.date}`:"Open the family agenda to plan ahead.",barTitle:"Chores marked · last 7 days"});
+   bottomTitle:"Family rhythm",bottomDetail:next?nextLabel:"Today's family routines",barTitle:"Chores · last 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i-6),r=(s.chores||[]).filter(x=>x.date===dt);return b(dt,r.length?Math.round(100*r.filter(x=>x.done).length/r.length):0,r.length>0)});
  }else if(page==="home"){
   const dates=typeof week==="function"?week().filter(d=>d>=day):[day],planned=dates.filter(d=>!!(s.meals||[]).find(x=>x.date===d&&x.type==="dinner"&&x.dish)).length;
   const meal=typeof todayMeal==="function"?todayMeal():null,shop=typeof neededShoppingGroups==="function"?neededShoppingGroups():[],runzas=typeof runzaCookingBatch==="function"?runzaCookingBatch():null;
   const cookAhead=runzas&&String(runzas.status||"").toLowerCase()!=="made",ready=(s.meals||[]).filter(x=>x.date>=day&&x.dish&&typeof mealRecipeStatus==="function"&&mealRecipeStatus(x)==="ready").length;
-  Object.assign(base,{title:"Food + kitchen",subtitle:"Dinner, groceries and prep",addLabel:"+ Log food",addAction:"openFood()",focusLabel:cookAhead?"COOK AHEAD":"TONIGHT'S DINNER",focusTitle:cookAhead?"Finish Runzas when convenient":meal?.dish||"Choose tonight's dinner",
-   focusNote:cookAhead?"Cooked filling recorded; wrapping and baking are not yet marked finished.":meal?.startBy?"Start by "+fmtClock(meal.startBy):meal?.dish?"Open the recipe and dinner plan.":"Nothing chosen yet.",
-   focusAction:cookAhead?"openRunzaCookingBatch()":`openMeal('${day}')`,progress:vhProgress(planned,dates.length,"Dinners planned · remaining week"),
+  Object.assign(base,{title:"Food + kitchen",subtitle:"Dinner, groceries and prep",addLabel:"+ Log food",addAction:"openFood()",focusLabel:"TONIGHT'S DINNER",focusTitle:meal?.dish||"Choose tonight's dinner",
+   focusNote:meal?.startBy?"Start by "+fmtClock(meal.startBy):meal?.dish?"See the dinner plan.":"Nothing chosen yet.",
+   focusAction:`openMeal('${day}')`,focusExtra:cookAhead?{label:"🥟 Runzas · update cooking status",action:"openRunzaCookingBatch()"}:null,
+   progress:vhProgress(planned,dates.length,"Dinners planned"),
    metrics:[m("🛒","Grocery",shop.length+" needed","openFoodHubSection('grocery')"),m("▤","Recipes",ready+" ready","openFoodHubSection('recipes')"),m("◇","Pantry",(s.pantry?.items||[]).length+" items","openFoodHubSection('pantry')"),m("💧","Water",Math.round(typeof water==="function"?water():0)+" / 78 oz","openCareHubSection('water')")],
    links:[vhLink("Week plan","◫","openFoodHubSection('week')"),vhLink("Groceries","🛒","openFoodHubSection('grocery')"),vhLink("Recipes","▤","openFoodHubSection('recipes')"),vhLink("Pantry","◇","openFoodHubSection('pantry')"),vhLink("Intake","＋","openFoodHubSection('intake')"),vhLink("Trends","↗","openFoodHubSection('trends')"),vhLink("Orders","⌂","openFoodHubSection('orders')"),vhLink("Favorites","♡","openFoodHubSection('favorites')")],
-   bottomTitle:"Next meals",bottomDetail:dates.slice(0,3).map(d=>{const x=mealForDate(d);return `${d.slice(5)} ${x?.dish||"not set"}`}).join(" · "),barTitle:"Dinners planned · this week"});
+   bottomTitle:"Next meals",bottomDetail:`${planned} of ${dates.length} remaining days planned`,barTitle:"Dinner plan · this week"});
   base.bars=dates.map(d=>b(d,mealForDate(d)?.dish?100:0));
  }else if(page==="more"){
   const bills=(s.bills||[]).filter(x=>x.due>=day&&x.due<=shiftDateString(day,30)),paid=bills.filter(x=>x.status==="paid").length,actions=typeof moneyNextActionSummary==="function"?moneyNextActionSummary():null;
-  const urgent=typeof billReadiness==="function"?billReadiness().filter(x=>x.bill?.status!=="paid"&&/Transfer needed|Projected short|Needs account|Balance unavailable|Check bill/.test(x.status)):[],goals=(s.savingsGoals||[]).filter(x=>!x.done).length;
+  const urgent=typeof billReadiness==="function"?billReadiness().filter(x=>x.bill?.status!=="paid"&&x.bill?.due>=shiftDateString(day,-7)&&x.bill?.due<=seven&&/Transfer needed|Projected short|Needs account|Balance unavailable|Check bill/.test(x.status)):[],goals=(s.savingsGoals||[]).filter(x=>!x.done).length;
+  const outstanding=bills.filter(x=>x.status!=="paid").length;
   Object.assign(base,{title:"Money",subtitle:"Bills, budget and accounts",addLabel:"+ Bill",addAction:"openBill()",focusLabel:"NEXT MONEY MOVE",focusTitle:actions?.title||"Check your bill plan",focusNote:actions?.detail||"Review upcoming payments and account readiness.",
-   focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills marked paid · next 30 days"),
-   metrics:[m("▤","Bills",bills.length+" due","openMoneyHubSection('bills')"),m("!","Review",urgent.length+" to check","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("✦","Savings",goals+" goals","openMoneyHubSection('savings')")],
+   focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills paid"),
+   metrics:[m("▤","Bills",outstanding+" unpaid","openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("✦","Savings",goals+" goals","openMoneyHubSection('savings')")],
    links:[vhLink("Bills","▤","openMoneyHubSection('bills')"),vhLink("Budget","◫","openMoneyHubSection('budget')"),vhLink("Transfers","↔","openMoneyHubSection('transfers')"),vhLink("Accounts","◇","openMoneyHubSection('accounts')"),vhLink("Income","↥","openMoneyHubSection('income')"),vhLink("Savings","✦","openMoneyHubSection('savings')"),vhLink("UPS pay","▣","openMoneyHubSection('pay')"),vhLink("Spending","↕","openMoneyHubSection('spending')")],
-   bottomTitle:"Bills ahead",bottomDetail:bills.length?`${bills.length} recorded with due dates in the next 30 days. Review readiness before paying.`:"No bills dated in the next 30 days in this view.",barTitle:"Bill due dates · next 7 days"});
+   bottomTitle:"Bills ahead",bottomDetail:`${paid} of ${bills.length} marked paid in next 30 days`,barTitle:"Bills due · next 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i);return b(dt,bills.filter(x=>x.due===dt).length)});
  }else if(page==="log"){
   const oz=Math.round(typeof water==="function"?water():0),self=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},review=typeof dailyReviewSummary==="function"?dailyReviewSummary(day):{unknown:0},sleep=typeof sleepForDate==="function"?sleepForDate(day):null;
@@ -127,18 +132,18 @@ function visualHubModel(page){
 function visualHubView(page){
  const c=visualHubModel(page);if(!c.title)return"";
  const progress=c.progress,usable=!!(progress&&progress.total),percent=usable?Math.min(100,Math.round(100*progress.done/progress.total)):null,main=progress?(usable?percent+"%":"—"):c.mainValue||"—";
- const meterText=progress?(usable?`${progress.done} / ${progress.total} marked`:"No items tracked yet"):c.mainLabel;
+ const meterText=progress?(usable?`${progress.done} / ${progress.total} ${page==="more"?"in next 30d":page==="home"?"planned":"marked"}`:"No items tracked yet"):c.mainLabel;
  const meterActions={home:"openFoodHubSection('week')",more:"openMoneyHubSection('bills')",log:"openCareHubSection('water')",reading:"openReadingHubSection('today')",family:"openPeopleHubSection('routines')",household:"openHouseholdSection('cleaning')",pets:"openPetsHubSection('history')",inventory:"openInventoryHubSection('items')",garden:"openGardenHobbySection('tasks')",hobbies:"openGardenHobbySection('tasks')",gardenhobbies:"openGardenHobbySection('tasks')",spirituality:"openSpiritualHubSection('practice')",budget:"openBudgetHubSection('plan')",settings:"openSettingsHubSection('backup')",vault:"openVaultHubSection('all')"};
  const mainAction=page==="itinerary"?"openDayFlowSection('plan','"+(itineraryDate||ymd())+"')":meterActions[page]||c.focusAction;
  const tiles=(c.metrics||[]).map((x,i)=>`<button type="button" class="vh-orb vh-orb-${i+1}" onclick="${x.action}" aria-label="${esc(x.label)}: ${esc(x.value)}"><span class="vh-orb-icon">${x.icon}</span><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong></button>`).join("");
  const displayedLinks=(c.links||[]).slice(0,4),moreLinks=(c.links||[]).slice(4);
  const allLinks=arr=>arr.map(x=>`<button type="button" onclick="${x.action}" class="vh-link"><span>${x.icon}</span><b>${esc(x.label)}</b><span aria-hidden="true">›</span></button>`).join("");
- const bars=c.bars||[],max=Math.max(1,...bars.map(x=>x.value)),graph=bars.length?`<div class="vh-graph" role="img" aria-label="${esc(c.barTitle)}">${bars.map(x=>`<div class="vh-bar-column ${x.known===false?"vh-untracked":""}" title="${esc(x.date)}: ${x.known===false?"no record":x.value+" logged"}"><div class="vh-bar-track"><span style="height:${Math.max(0,Math.min(100,Math.round(100*x.value/max)))}%"></span></div><small>${esc(new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"}))}</small></div>`).join("")}</div>`:"";
+ const bars=c.bars||[],max=Math.max(1,...bars.map(x=>x.value)),graph=bars.length?`<div class="vh-graph" role="img" aria-label="${esc(c.barTitle)}">${bars.map(x=>`<div class="vh-bar-column ${x.known===false?"vh-untracked":""}" title="${esc(x.date)}: ${x.known===false?"no record":x.value+" logged"}"><div class="vh-bar-track"><span style="height:${Math.max(0,Math.min(100,Math.round(100*x.value/max)))}%"></span></div><small>${esc(new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}).slice(0,2))}</small></div>`).join("")}</div>`:"";
  const titleSuffix=page==="budget"?`<div class="vh-day-picker"><button type="button" onclick="changeBudgetMonth(-1)" aria-label="Previous month">←</button><span class="vh-month-label">${esc(new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"short",year:"numeric"}))}</span><button type="button" onclick="changeBudgetMonth(1)" aria-label="Next month">→</button></div>`:page==="itinerary"?`<div class="vh-day-picker"><button type="button" onclick="shiftItineraryDate(-1)" aria-label="Previous day">←</button><button type="button" onclick="setItineraryDate(ymd())">Today</button><button type="button" onclick="shiftItineraryDate(1)" aria-label="Next day">→</button></div>`:"";
  return `<section class="visual-hub visual-hub-${esc(page)}" aria-label="${esc(c.title)} dashboard">
   <div class="vh-heading"><div><div class="eyebrow">${esc(c.title.toUpperCase())} AT A GLANCE</div><h1>${esc(c.title)}</h1><p>${esc(c.subtitle)}</p></div><button type="button" class="btn primary vh-add" onclick="${c.addAction}">${esc(c.addLabel)}</button></div>
   ${titleSuffix}
-  <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button></div>
+  <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><div class="vh-focus-actions"><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button>${c.focusExtra?`<button type="button" class="vh-focus-extra" onclick="${c.focusExtra.action}">${esc(c.focusExtra.label)}</button>`:""}</div></div>
   <div class="vh-summary">
    <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${mainAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
     <span class="vh-dial-inner"><small>✧</small><strong>${main}</strong><b>${esc(progress?.label||c.mainLabel)}</b><span>${esc(meterText)}</span></span></button>
