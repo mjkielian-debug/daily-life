@@ -43,7 +43,7 @@ function visualHubModel(page){
    focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills paid"),
    metrics:[m("▤","Bills",outstanding+" unpaid","openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("◇","Chase",typeof chaseBalanceMetric==="function"?chaseBalanceMetric():"Select card","openMoneyHubSection('bills')")],
    links:[vhLink("Bills","▤","openMoneyHubSection('bills')"),vhLink("Budget","◫","openMoneyHubSection('budget')"),vhLink("Transfers","↔","openMoneyHubSection('transfers')"),vhLink("Accounts","◇","openMoneyHubSection('accounts')"),vhLink("Income","↥","openMoneyHubSection('income')"),vhLink("Savings","✦","openMoneyHubSection('savings')"),vhLink("UPS pay","▣","openMoneyHubSection('pay')"),vhLink("Spending","↕","openMoneyHubSection('spending')")],
-   bottomTitle:"Bills ahead",bottomDetail:`${paid} of ${bills.length} marked paid in next 30 days`,barTitle:"Bills due · next 7 days"});
+   bottomTitle:"Bills ahead",bottomDetail:`${bills.filter(x=>x.status!=="paid").length} upcoming bills in next 30 days · paid history is tracked separately`,barTitle:"Bills due · next 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i);return b(dt,bills.filter(x=>x.due===dt).length)});
  }else if(page==="log"){
   const oz=Math.round(typeof water==="function"?water():0),self=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},review=typeof dailyReviewSummary==="function"?dailyReviewSummary(day):{unknown:0},sleep=typeof sleepForDate==="function"?sleepForDate(day):null;
