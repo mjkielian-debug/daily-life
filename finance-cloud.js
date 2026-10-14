@@ -309,7 +309,7 @@ function bankBillReviewCandidates(t){
         posted=new Date(String(t?.posted_date||"")+"T12:00:00");
   if(review?.action==="not_bill"||review?.action==="ignored"||!Number.isFinite(amount)||amount<=0||isNaN(posted))return[];
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
-  return (state.bills||[]).map(b=>{
+  return (state.bills||[]).filter(b=>billForecastIncluded(b)).map(b=>{
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
     if((b.status==="paid"&&!awaitingPost)||!b.due)return null;
     const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
@@ -344,6 +344,7 @@ function bankBillMatch(t){
   if(rejected||!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
   const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
   const candidates=(state.bills||[]).filter(b=>{
+    if(!billForecastIncluded(b))return false;
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
     if((b.status==="paid"&&!awaitingPost)||!b.due)return false;
     const billAmount=Number(b.amount||0),due=new Date(String(b.due||"")+"T12:00:00");
