@@ -7522,7 +7522,8 @@ function applyOptionalLifeInterests(){
   let added=0;
   for(const idea of ideas){
     const key=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-    if(state.hobbyProjects.some(x=>x.id===idea.id||key(x.name)===key(idea.name)))continue;
+    const match=idea.id.includes("yoga")?/\byoga\b/:idea.id.includes("kombucha")?/\bkombucha\b/:idea.id.includes("crafts")?/\bcraft(?:s|ing)?\b|\bDIY\b/i:/\bparenting\b|\bemotional skills\b/i;
+    if(state.hobbyProjects.some(x=>x.id===idea.id||key(x.name)===key(idea.name)||match.test(String(x.name||""))))continue;
     state.hobbyProjects.push({...idea,createdAt:new Date().toISOString(),personalizationSeed:true});
     added++;
   }
