@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261014-mobile-polish1";
+const CACHE_NAME="daily-life-shell-20261014-talk-checkin1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -13,6 +13,8 @@ const APP_SHELL=[
   "./capacity-planner.css",
   "./visual-density.css",
   "./visual-hubs.css",
+  "./chat-checkin.css",
+  "./chat-checkin.js",
   "./visual-hubs.js",
   "./readability-fix.css",
   "./cloud.js",
