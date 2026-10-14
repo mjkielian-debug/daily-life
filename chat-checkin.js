@@ -33,10 +33,46 @@
   if(part==="afternoon")return [kidsQuestion,foodQuestion,waterQuestion,dinnerQuestion,updatesQuestion];
   return [dinnerQuestion,kidsQuestion,waterQuestion,updatesQuestion,sleepQuestion];
  }
+
+ // A voluntary clipboard handoff gives ChatGPT current on-device context.
+ // Never interpret an absent entry as a missed activity, and never include bank
+ // balances or private account details in the copied check-in.
+ function checkinSnapshot(){
+  const date=typeof ymd==="function"?ymd():new Date().toLocaleDateString("en-CA"),
+   all=(name)=>Array.isArray(state[name])?state[name].filter(x=>x.date===date):[],
+   waters=all("waterLogs"),
+   waterOz=waters.reduce((n,x)=>n+(Number(x.oz)||0),0),
+   foods=all("foodLogs"),
+   sleep=all("sleepLogs")[0],
+   work=all("workShifts"),
+   dinner=typeof mealForDate==="function"?mealForDate(date):null,
+   review=typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[],
+   done=review.filter(x=>x.status==="yes"),
+   unknown=review.filter(x=>x.status==="unknown"),
+   doneKids=done.filter(x=>x.kind==="chore"),
+   doneTasks=done.filter(x=>x.kind==="task");
+  const list=(items,limit=7)=>items.length?items.slice(0,limit).join("; ")+(items.length>limit?"; +"+(items.length-limit)+" more":""):"not recorded";
+  const foodNames=foods.map(x=>String(x.food||x.name||x.item||x.description||x.label||"food/drink entry").trim()).filter(Boolean);
+  const sleepAmount=sleep&&typeof sleepHours==="function"?sleepHours(sleep):null;
+  const sleepLine=sleep?(sleepAmount>0?sleepAmount.toFixed(1)+" hours logged":"sleep entry recorded (hours unspecified)"):"not recorded";
+  const planned=dinner?.dish?String(dinner.dish)+" ("+String(dinner.status||"status unconfirmed")+")":"not recorded";
+  return [
+   "CURRENT APP SNAPSHOT FOR "+date+" (on this device; may be incomplete):",
+   "Sleep: "+sleepLine,
+   "UPS/work: "+(work.length?work.length+" work record(s) for today; confirm actual shift details with me":"not recorded for today"),
+   "Water: "+(waters.length?Math.round(waterOz)+" oz logged":"not recorded (not zero)"),
+   "Food/drinks: "+list(foodNames),
+   "Dinner plan: "+planned,
+   "Confirmed kids' chores: "+list(doneKids.map(x=>x.label)),
+   "Confirmed tasks: "+list(doneTasks.map(x=>x.label)),
+   "Still unknown: "+unknown.length+" checkmarks. Examples: "+list(unknown.slice(0,4).map(x=>x.label),4),
+   "IMPORTANT: 'Not recorded' and 'unknown' do not mean 'no'. Ask me before marking anything incomplete."
+  ].join("\n");
+ }
  function checkinStarter(){
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   const questions=prompts(),question=questions[promptIndex%questions.length];
-  return "Daily Life check-in for "+date+". Please ask me one question at a time about what happened today, including work/sleep, food/drinks/water, children/chores, plans and anything I finished. I'm going to tell you naturally. Organize confirmed facts into the correct Daily Life sections and write supported entries to my connected Daily Life cloud when access is available. Confirm what actually synced. Don't assume an unlogged task was skipped; leave unknowns unknown. Start with: "+question;
+  return "Daily Life check-in for "+date+". Please ask me ONE question at a time about what happened today: work/sleep, food/drinks/water, children/chores, dinner, plans and completed tasks. Use the app snapshot below to avoid repeating things already logged. I will tell you updates naturally. Only write records through a connection you can actually access, and tell me exactly what synced; speaking alone does not update the app. If you cannot save directly, clearly say so and organize the confirmed updates for later entry. Never mark unlogged tasks as missed.\\n\\n"+checkinSnapshot()+"\\n\\nStart with this question: "+question;
  }
  function content(){
   const list=prompts(),question=list[promptIndex%list.length];
@@ -46,11 +82,11 @@
    '<div class="chat-checkin-counters"><span>💧 '+Math.round(oz)+' oz logged</span><span>♡ '+marked+'/'+chores.length+' chores marked</span></div>'+
    '<div class="chat-checkin-question"><span class="eyebrow">QUESTION '+(promptIndex%list.length+1)+' / '+list.length+'</span><h3>'+esc(question)+'</h3></div>'+
    '<div class="chat-checkin-actions">'+
-    '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy starter for ChatGPT</button>'+
+    '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy check-in + today's status</button>'+
     '<button type="button" class="btn" onclick="chatCheckinNext()">Next question ›</button>'+
     '<button type="button" class="btn" onclick="chatCheckinOpenChat()">Open ChatGPT ↗</button>'+
    '</div>'+
-   '<p class="chat-checkin-help">You can speak freely in your existing Daily Life ChatGPT conversation. The phone microphone works there. Copy the starter only if you want a guided check-in; you don’t need to fill out a form here.</p>'+
+   '<p class="chat-checkin-help">You can speak freely in your existing Daily Life ChatGPT conversation. The phone microphone works there. Copy the starter with today's logged status so ChatGPT can ask about what's missing. No form needed.</p>'+
    '<div class="chat-checkin-secondary"><button type="button" onclick="closeModal();openDailyReview()">Review missing checkmarks</button>'+
    (typeof cloudUser==="function"&&cloudUser()?'<button type="button" onclick="chatCheckinSync()">Pull saved ChatGPT logs</button>':"")+'</div>'+
    '<p class="chat-checkin-footnote">Talking does not itself save a record to the app. Only imported or confirmed entries are marked as logged; everything else stays unknown.</p>'+
@@ -70,7 +106,7 @@
     const el=document.createElement("textarea");el.value=text;el.style.position="fixed";el.style.opacity="0";document.body.appendChild(el);el.select();
     if(!document.execCommand("copy"))throw new Error("Clipboard unavailable");el.remove();
    }
-   alert("Check-in starter copied. Paste it into your existing Daily Life ChatGPT conversation and talk naturally.");
+   alert("Check-in and today's app snapshot copied. Paste into your Daily Life ChatGPT conversation, then talk naturally.");
   }catch(e){alert("Could not copy automatically. Open ChatGPT and say: Daily Life check-in, ask me one question at a time.")}
  }
  function chatCheckinOpenChat(){
