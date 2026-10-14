@@ -42,7 +42,9 @@
 }
 
 /* Keep radial one-screen hubs visually clean: Search/Capture live in the hamburger launcher there. */
-body:has(#app .life-wheel) .life-tools-fab{
+body:has(#app .life-wheel) .life-tools-fab,
+body:has(#app .today-one-screen-shell .dl-command-center) .life-tools-fab{
+  /* Today's command center has its own Capture, Task, Water and Search actions. */
   display:none!important;
 }
 .section-launcher-tools{
