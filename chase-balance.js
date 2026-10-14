@@ -46,8 +46,9 @@ function chaseBalancePanel(){
     choose='<button type="button" class="btn small" onclick="openChaseCardPicker()">Choose Chase card</button>';
   if(!x.cards.length){
     return '<section class="card chase-balance-panel"><div class="eyebrow">Chase card balance</div>'+
-      '<h2>Connect Chase to see what you owe</h2><p class="muted small">Daily Life cannot see a current balance without a connected card.</p>'+
-      '<button type="button" class="btn primary" onclick="startPlaidLink(\'bank\')">Connect card</button></section>';
+      '<h2>No synced Chase balance available</h2><p class="muted small">Daily Life will not reuse an old bill amount. Refresh your connected accounts or connect Chase if it is not linked.</p>'+
+      '<div class="actions"><button type="button" class="btn primary" onclick="cloudSyncBanks(true)">Refresh balances</button>'+
+      '<button type="button" class="btn" onclick="startPlaidLink(\'bank\')">Connect card</button></div></section>';
   }
   if(!x.card){
     return '<section class="card chase-balance-panel"><div class="eyebrow">Chase credit card</div>'+
