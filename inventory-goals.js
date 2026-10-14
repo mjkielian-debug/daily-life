@@ -64,7 +64,7 @@
      '<span class="hg-group-text"><b>'+g.icon+' '+esc(g.label)+'</b><small>'+(configured?d.done+' / '+d.total+' areas reviewed':'Set number of areas')+'</small>'+
      '<small>'+esc(target)+' · '+d.tracked+' item types entered</small></span><span aria-hidden="true">›</span></button>'+
      (configured?'<div class="hg-actions"><button type="button" onclick="homeLogOrganizedArea(\''+g.key+'\')">+ 1 area organized</button>'+
-       (d.done>0?'<button type="button" onclick="homeUndoOrganizedArea(\''+g.key+'\')">Undo</button>':'')+'</div>':'')+'</div>';
+       (settings().sessions.some(x=>x.key===g.key&&x.date===ymd())?'<button type="button" onclick="homeUndoOrganizedArea(\''+g.key+'\')">Undo today</button>':'')+'</div>':'')+'</div>';
   }).join("");
   return '<div class="hg-modal">'+
     '<div class="hg-summary"><span class="hg-large-ring" style="--hg-fill:'+(x.percent??0)+'%"><b>'+(x.percent===null?"—":x.percent+"%")+'</b><small>organized</small></span>'+
@@ -120,9 +120,10 @@
  };
  window.homeUndoOrganizedArea=async function(key){
   const g=settings(),x=g.groups[key];if(!x||Number(x.areasDone||0)<=0)return;
-  x.areasDone=Math.max(0,Number(x.areasDone)-1);
   const index=g.sessions.findLastIndex(v=>v.key===key&&v.date===ymd());
-  if(index>=0)g.sessions.splice(index,1);
+  if(index<0)return;
+  x.areasDone=Math.max(0,Number(x.areasDone)-1);
+  g.sessions.splice(index,1);
   await save();render();window.openHomeGoals();
  };
  window.homeOrganizationSummary=progress;
