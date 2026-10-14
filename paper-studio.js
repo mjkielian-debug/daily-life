@@ -172,7 +172,7 @@ window.openArtEntry=function(child="",id=""){
  '<label>Artwork name<input id="psArtTitle" value="'+esc(x.title||"")+'" placeholder="Rainbow dragon, October pumpkin…"></label>'+
  '<div class="grid2"><label>Artwork date (optional)<input id="psArtDate" type="date" value="'+esc(x.artDate||"")+'"></label>'+
  '<label>Age at the time (optional)<input id="psArtAge" value="'+esc(x.age||"")+'" placeholder="e.g. 6"></label></div>'+
- '<label>Photograph / choose picture<input id="psArtFile" type="file" accept="image/*" capture="environment"></label>'+
+ '<label>Take photo or choose from gallery<input id="psArtFile" type="file" accept="image/*"></label>'+
  '<label>Story or memory<textarea id="psArtNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
  '<p class="ps-muted">Save will store the actual compressed picture in this phone’s Daily Life IndexedDB. A ChatGPT photo is not imported automatically. Keep the original until you have separately backed up and verified the image.</p>'+
  (found?'<div class="ps-nav"><button onclick="paperExportSingleArt(\''+qid(id)+'\')">↓ Save image copy</button></div>':"")+
