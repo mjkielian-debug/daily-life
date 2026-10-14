@@ -177,6 +177,13 @@ dialog,
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
 <link rel="stylesheet" href="mobile-layout-repair.css?v=20261014-mobile-repair1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261014-forms5">
+<style id="rainbow-task-form-fix">
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor :is(input:not([type=checkbox]),select,textarea){background:#fff8fd!important;background-color:#fff8fd!important;color:#34273e!important;-webkit-text-fill-color:#34273e!important;border:1px solid #d9bbd2!important;border-radius:15px!important;box-shadow:none!important;color-scheme:light!important;width:100%!important;min-width:0!important;min-height:47px!important;padding:10px 14px!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor select option{background:#fff8fd!important;color:#34273e!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor .grid2{grid-template-columns:1fr!important;gap:12px!important}
+#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label.task{display:flex!important}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -6420,13 +6427,7 @@ function modal(title,body,label,fn){
   const saveBtn=document.querySelector("#saveModal");if(saveBtn)saveBtn.onclick=fn
 }
 
-<style id="rainbow-task-form-fix">
-#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
-#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor :is(input:not([type=checkbox]),select,textarea){background:#fff8fd!important;background-color:#fff8fd!important;color:#34273e!important;-webkit-text-fill-color:#34273e!important;border:1px solid #d9bbd2!important;border-radius:15px!important;box-shadow:none!important;color-scheme:light!important;width:100%!important;min-width:0!important;min-height:47px!important;padding:10px 14px!important}
-#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor select option{background:#fff8fd!important;color:#34273e!important}
-#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor .grid2{grid-template-columns:1fr!important;gap:12px!important}
-#modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label.task{display:flex!important}
-</style>
+
 function closeModal(){document.querySelector("#modal")?.remove()}
 function manualSetup(){
   if(stateHasMeaningfulLocalData(state)){alert("Daily Life found existing local records, so Start blank is blocked. Restore or reconnect instead.");return}
