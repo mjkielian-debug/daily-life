@@ -36,12 +36,12 @@ function visualHubModel(page){
    bottomTitle:"Next meals",bottomDetail:`${planned} of ${dates.length} remaining days planned`,barTitle:"Dinner plan · this week"});
   base.bars=dates.map(d=>b(d,mealForDate(d)?.dish?100:0));
  }else if(page==="more"){
-  const bills=(s.bills||[]).filter(x=>x.due>=day&&x.due<=shiftDateString(day,30)),paid=bills.filter(x=>x.status==="paid").length,actions=typeof moneyNextActionSummary==="function"?moneyNextActionSummary():null;
+  const bills=(s.bills||[]).filter(x=>billForecastIncluded(x)&&x.due>=day&&x.due<=shiftDateString(day,30)),paid=bills.filter(x=>x.status==="paid").length,actions=typeof moneyNextActionSummary==="function"?moneyNextActionSummary():null;
   const urgent=typeof billReadiness==="function"?billReadiness().filter(x=>x.bill?.status!=="paid"&&x.bill?.due>=shiftDateString(day,-7)&&x.bill?.due<=seven&&/Transfer needed|Projected short|Needs account|Balance unavailable|Check bill/.test(x.status)):[],goals=(s.savingsGoals||[]).filter(x=>!x.done).length;
   const outstanding=bills.filter(x=>x.status!=="paid").length;
   Object.assign(base,{title:"Money",subtitle:"Bills, budget and accounts",addLabel:"+ Bill",addAction:"openBill()",focusLabel:"NEXT MONEY MOVE",focusTitle:actions?.title||"Check your bill plan",focusNote:actions?.detail||"Review upcoming payments and account readiness.",
    focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills paid"),
-   metrics:[m("▤","Bills",outstanding+" unpaid","openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("✦","Savings",goals+" goals","openMoneyHubSection('savings')")],
+   metrics:[m("▤","Bills",outstanding+" unpaid","openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("◇","Chase",typeof chaseBalanceMetric==="function"?chaseBalanceMetric():"Select card","openMoneyHubSection('bills')")],
    links:[vhLink("Bills","▤","openMoneyHubSection('bills')"),vhLink("Budget","◫","openMoneyHubSection('budget')"),vhLink("Transfers","↔","openMoneyHubSection('transfers')"),vhLink("Accounts","◇","openMoneyHubSection('accounts')"),vhLink("Income","↥","openMoneyHubSection('income')"),vhLink("Savings","✦","openMoneyHubSection('savings')"),vhLink("UPS pay","▣","openMoneyHubSection('pay')"),vhLink("Spending","↕","openMoneyHubSection('spending')")],
    bottomTitle:"Bills ahead",bottomDetail:`${paid} of ${bills.length} marked paid in next 30 days`,barTitle:"Bills due · next 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i);return b(dt,bills.filter(x=>x.due===dt).length)});
