@@ -2379,3 +2379,9 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
   #app .dl-stat-copy b{font-size:.61rem!important}
   #app .dl-stat-copy strong{font-size:.62rem!important}
 }
+
+
+/* Leave one navigation-height of breathing room, not a full blank panel. */
+#app .today-one-screen-shell:has(.dl-command-center){
+  padding-bottom:calc(102px + env(safe-area-inset-bottom))!important;
+}
