@@ -76,21 +76,30 @@
   return "Daily Life check-in for "+date+". Please ask me ONE question at a time about what happened today: work/sleep, food/drinks/water, children/chores, dinner, plans and completed tasks. Use the app snapshot below to avoid repeating things already logged. I will tell you updates naturally. Only write records through a connection you can actually access, and tell me exactly what synced; speaking alone does not update the app. If you cannot save directly, clearly say so and organize the confirmed updates for later entry. Never mark unlogged tasks as missed.\n\n"+checkinSnapshot()+"\n\nStart with this question: "+question;
  }
  function content(){
-  const list=prompts(),question=list[promptIndex%list.length];
-  const date=typeof ymd==="function"?ymd():"",waters=(state.waterLogs||[]).filter(x=>x.date===date),oz=waters.reduce((n,x)=>n+Number(x.oz||0),0);
-  const chores=displayChoresForDate(date),marked=chores.filter(x=>x.done).length;
-  return '<div class="chat-checkin-modal">'+
-   '<div class="chat-checkin-counters"><span>💧 '+(waters.length?Math.round(oz)+' oz logged':'Water not logged')+'</span><span>♡ '+marked+'/'+chores.length+' chores marked</span></div>'+
-   '<div class="chat-checkin-question"><span class="eyebrow">QUESTION '+(promptIndex%list.length+1)+' / '+list.length+'</span><h3>'+esc(question)+'</h3></div>'+
+  const date=typeof ymd==="function"?ymd():"",
+   entries=(name)=>(state[name]||[]).filter(x=>x.date===date),
+   waters=entries("waterLogs"),waterOz=waters.reduce((n,x)=>n+(Number(x.oz)||0),0),
+   foods=entries("foodLogs"),sleep=entries("sleepLogs"),work=entries("workShifts"),
+   review=typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[],
+   confirmed=review.filter(x=>x.status==="yes").length,
+   unknown=review.filter(x=>x.status==="unknown").length;
+  const metric=(label,value)=>'<div class="chat-checkin-metric"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>';
+  return '<div class="chat-checkin-modal chat-checkin-summary">'+
+   '<p class="chat-checkin-help">Tell ChatGPT about your day as usual. This screen shows what is actually recorded in Daily Life, not a list of questions you must answer.</p>'+
+   '<div class="chat-checkin-counters">'+
+    metric("Water",waters.length?Math.round(waterOz)+" oz recorded":"Not recorded")+
+    metric("Food / drinks",foods.length?foods.length+" entries":"Not recorded")+
+    metric("Sleep",sleep.length?"Recorded":"Not recorded")+
+    metric("Work",work.length?"Recorded":"Not recorded")+
+   '</div>'+
+   '<p class="chat-checkin-help"><strong>'+confirmed+' confirmed activities</strong> · '+unknown+' still unknown. Unknown never means you failed or skipped something.</p>'+
    '<div class="chat-checkin-actions">'+
-    '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy check-in + today’s status</button>'+
-    '<button type="button" class="btn" onclick="chatCheckinNext()">Next question ›</button>'+
+    '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy app status for ChatGPT</button>'+
     '<button type="button" class="btn" onclick="chatCheckinOpenChat()">Open ChatGPT ↗</button>'+
    '</div>'+
-   '<p class="chat-checkin-help">You can speak freely in your existing Daily Life ChatGPT conversation. The phone microphone works there. Copy the starter with today’s logged status so ChatGPT can ask about what is missing. No form needed.</p>'+
-   '<div class="chat-checkin-secondary"><button type="button" onclick="closeModal();openDailyReview()">Review missing checkmarks</button>'+
-   (typeof cloudUser==="function"&&cloudUser()?'<button type="button" onclick="chatCheckinSync()">Pull saved ChatGPT logs</button>':"")+'</div>'+
-   '<p class="chat-checkin-footnote">Talking does not itself save a record to the app. Only imported or confirmed entries are marked as logged; everything else stays unknown.</p>'+
+   '<div class="chat-checkin-secondary"><button type="button" onclick="closeModal();openDailyReview()">Optional: review unknown activities</button>'+
+   (typeof cloudUser==="function"&&cloudUser()?'<button type="button" onclick="chatCheckinSync()">Import connected life logs</button>':"")+'</div>'+
+   '<p class="chat-checkin-footnote">ChatGPT conversations do not automatically sync to the app. Only saved or imported entries appear as recorded. You can always enter information manually.</p>'+
    '</div>';
  }
  function show(){
