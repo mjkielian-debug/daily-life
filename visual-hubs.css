@@ -195,3 +195,7 @@
 .visual-hub .vh-month-label{min-width:106px;text-align:center;font-size:.83rem;font-weight:850;color:#5b3659}
 .visual-hub-budget .vh-dial-inner strong{font-size:clamp(1.15rem,4.6vw,2.1rem);overflow-wrap:anywhere}
 .visual-hub-settings .vh-dial-inner strong{font-size:clamp(1.9rem,7vw,2.9rem)}
+
+/* Past days without a recorded chore list are not treated as missed chores. */
+.visual-hub .vh-untracked .vh-bar-track{background:repeating-linear-gradient(135deg,rgba(143,123,152,.11) 0 4px,rgba(143,123,152,.28) 4px 8px)}
+.visual-hub .vh-untracked .vh-bar-track::after{content:"?";align-self:center;display:block;width:100%;font-size:.75rem;text-align:center;color:#795e78}
