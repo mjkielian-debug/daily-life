@@ -7448,7 +7448,9 @@ function applyOct13To15MealCorrections(){
   }
   if(runza){
     runza.status=runza.status==="made"?"made":"prepping";
-    runza.plannedFinishDate=runza.plannedFinishDate||"2026-10-14";
+    // The user has not chosen a serving date; Wednesday and Thursday dinner are covered.
+    if(runza.plannedFinishDate==="2026-10-14")delete runza.plannedFinishDate;
+    runza.finishWindow="Maybe Oct 13 or Oct 14; no firm time or dinner date";
     runza.flexibleFinish=true;
     runza.isDinner=false;
     runza.prepDone=Array.isArray(runza.prepDone)?runza.prepDone:[];
