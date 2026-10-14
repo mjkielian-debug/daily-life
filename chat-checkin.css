@@ -1,0 +1,39 @@
+/* Small invitation, one question at a time; not another dashboard card. */
+.dl-chat-nudge{
+ width:100%;display:flex;align-items:center;gap:10px;text-align:left;min-height:59px;
+ border:2px solid rgba(255,255,255,.91);border-radius:22px;
+ background:linear-gradient(100deg,rgba(235,246,255,.83),rgba(253,245,252,.87));
+ box-shadow:0 5px 13px rgba(78,56,91,.09);padding:9px 13px;
+ color:#423146;font:inherit;cursor:pointer;
+}
+.dl-chat-nudge-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;
+ background:rgba(192,156,205,.19);flex-shrink:0;font-size:1.15rem}
+.dl-chat-nudge-copy{display:grid;gap:2px;flex:1;min-width:0}
+.dl-chat-nudge-copy b{font-size:.89rem;line-height:1.12}
+.dl-chat-nudge-copy small{font-size:.73rem;line-height:1.25;color:#6f566e;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-chat-nudge-arrow{font-size:1.45rem;color:#a14a78}
+.chat-checkin-modal{display:grid;gap:13px}
+.chat-checkin-counters{display:flex;flex-wrap:wrap;gap:7px}
+.chat-checkin-counters span{border-radius:999px;background:rgba(202,219,241,.4);border:1px solid rgba(101,85,136,.18);
+ padding:6px 10px;font-size:.75rem;color:#4f3a59;font-weight:750}
+.chat-checkin-question{border:2px solid rgba(255,255,255,.9);border-radius:23px;
+ padding:18px 15px;background:linear-gradient(110deg,#f5e9f4,#e9f4f5)}
+.chat-checkin-question h3{margin:6px 0 0;font-size:1.25rem;line-height:1.28;
+ font-family:var(--font-heading,Georgia,serif);color:#352842}
+.chat-checkin-question .eyebrow{font-weight:800;color:#9a456f}
+.chat-checkin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chat-checkin-actions button{min-height:43px;white-space:normal;font-size:.78rem}
+.chat-checkin-actions .primary{grid-column:1/-1}
+.chat-checkin-help,.chat-checkin-footnote{font-size:.79rem;line-height:1.45;margin:0;color:#5e4c60}
+.chat-checkin-secondary{display:flex;gap:9px;flex-wrap:wrap}
+.chat-checkin-secondary button{border:1px solid rgba(132,91,128,.3);background:rgba(255,255,255,.7);
+ border-radius:12px;padding:9px 11px;font:inherit;color:#60395d;font-size:.75rem;font-weight:800;cursor:pointer}
+.chat-checkin-footnote{font-size:.71rem}
+@media(max-width:370px){.dl-chat-nudge{min-height:53px;padding:8px 9px}
+ .dl-chat-nudge-icon{width:30px;height:30px}
+ .dl-chat-nudge-copy b{font-size:.78rem}
+ .dl-chat-nudge-copy small{font-size:.67rem}
+ .chat-checkin-actions{grid-template-columns:1fr}
+ .chat-checkin-actions .primary{grid-column:auto}
+}
