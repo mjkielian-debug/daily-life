@@ -83,7 +83,7 @@ window.openPaperBatch=function(id=""){
    const type=paperType(get("psType").value);let row=old;
    if(!row){row={id:uid(),createdAt:new Date().toISOString(),completedPages:0,physicallyFinished:false};papers().push(row)}
    Object.assign(row,{title,type,child:type==="practice"?get("psChild").value:"",level:get("psLevel").value.trim(),
-    subject:get("psSubject").value.trim(),pages,completedPages:Math.min(donePages(row),pages),
+    subject:get("psSubject").value.trim(),pages,completedPages:Math.min(pages,Math.max(0,Number(row.completedPages)||0)),
     notes:get("psNotes").value.trim(),reference:get("psRef").value.trim(),doubleSided:!!get("psDouble")?.checked,updatedAt:new Date().toISOString()});
    if(type==="review")row.physicallyFinished=false;
    await save();render();window.openPaperStudio();
