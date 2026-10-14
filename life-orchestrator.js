@@ -242,7 +242,7 @@
     if(type==="schoolAssignment"){setView("family");return}
     if(type==="tire"&&typeof openTire==="function")return openTire();
     if(type==="vehicle"&&typeof openVehicle==="function")return openVehicle();
-    if(typeof openTask==="function")return openTask("",task.id);
+    if(typeof openTaskDetails==="function")return openTaskDetails(task.id);
   }
   window.lifeOpenSource=function(id){
     const t=(state.tasks||[]).find(x=>x.id===id);lifeOpenSource(t);
@@ -608,7 +608,7 @@
       focusTitle=focusBlock?String(focusBlock.title||"Open Day Flow"):taskFocus?lifeTaskTitle(taskFocus):"Your schedule is clear",
       focusMeta=focusBlock?(active?"Until "+fmtClock(focusBlock.end):fmtClock(focusBlock.start)):(taskFocus?"Flexible task — open to plan":"Choose something you enjoy"),
       focusDetail=focusBlock?String(focusBlock.detail||"Open this block for details"):taskFocus?String(taskFocus.notes||"Ready when you are"):"No urgent task is currently scheduled",
-      focusAction=focusBlock?dayFlowItemAction(focusBlock,today):taskFocus?"openTask('', '"+esc(taskFocus.id)+"')":"openTodayDayFlow()",
+      focusAction=focusBlock?dayFlowItemAction(focusBlock,today):taskFocus?"openTaskDetails('"+esc(taskFocus.id)+"')":"openTodayDayFlow()",
       focusTaskId=focusBlock&&focusBlock.source==="task"?focusBlock.sourceId:taskFocus?taskFocus.id:"",
       tasks=todayTasks().filter(x=>!x.paused&&!x.waitingForFunds&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))),
       taskDone=tasks.filter(x=>x.done).length,
