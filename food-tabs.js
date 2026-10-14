@@ -55,8 +55,17 @@ function compactFoodShopping(){
   </section>`;
 }
 
+
+function compactFoodCookingAhead(){
+  const batch=typeof runzaCookingBatch==="function"?runzaCookingBatch():null;
+  if(!batch)return"";
+  const baked=String(batch.status||"").toLowerCase()==="made";
+  return '<section class="food-inline-section food-cooking-ahead"><div class="food-cook-ring" aria-hidden="true">🥟</div>'+
+    '<div class="food-cook-summary"><b>Runzas · cooked separately</b><small>'+ (baked?"Marked baked · serving date is still flexible":"Beef + cabbage filling prepared Oct 13 · bake when convenient")+'</small></div>'+
+    '<button class="btn" onclick="openRunzaCookingBatch()">'+(baked?"View recipe":"Recipe + status")+' ›</button></section>';
+}
 function compactFoodToday(){
-  return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${todayNutritionCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
+  return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${compactFoodCookingAhead()}${todayNutritionCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
 }
 
 function compactFoodMeals(){
