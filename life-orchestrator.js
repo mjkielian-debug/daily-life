@@ -638,7 +638,9 @@
         '</section>'+
         '<section class="dl-panel dl-dinner"><div class="dl-panel-heading"><h2>♢ Dinner plan</h2><button onclick="openMeal(\''+today+'\')">Edit ›</button></div>'+
          '<div class="dl-dinner-content"><span aria-hidden="true">🍽️</span><div><b>'+esc(mealTitle)+'</b><small>'+esc(mealTime)+'</small></div></div>'+
-         '<button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?"Open recipe + plan":"Choose dinner")+' ›</button></section>'+
+         '<div class="dl-dinner-actions"><button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?"Recipe":"Choose dinner")+' ›</button>'+
+         (hasMeal&&!mealDone?'<button class="dl-dinner-done" onclick="setMealStatus('+esc(JSON.stringify(String(meal.id)))+',\'made\')">✓ Made</button>':'')+
+         '</div></section>'+
        '</div>'+
        '<div class="dl-alerts">'+
         '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
