@@ -22,7 +22,7 @@ function bar(n,d){return '<div class="ps-bar" role="progressbar" aria-valuemin="
 function paperType(x){return TYPE[x] ? x:"review"}
 function pageCount(x){return Math.max(1,Math.floor(Number(x)||1))}
 function donePages(x){return Math.min(pageCount(x.pages),Math.max(0,Math.floor(Number(x.completedPages)||0)))}
-function earned(child){return papers().filter(x=>x.type==="practice"&&x.child===child).reduce((n,x)=>n+donePages(x),0)*settings().pointsPerPage}
+function earned(child){return practiceSessions().filter(x=>x.child===child).reduce((n,x)=>n+Math.max(0,Number(x.points)||0),0)}
 function spent(child){return rewards().filter(x=>x.child===child).reduce((n,x)=>n+Math.max(0,Number(x.points)||0),0)}
 function remaining(child){return Math.max(0,earned(child)-spent(child))}
 function paperCounts(){
