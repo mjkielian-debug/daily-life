@@ -449,7 +449,7 @@
   }
 
   function lifeFamilyRoutinesHtml(){
-    const rows=(state.chores||[]).filter(x=>x.date===ymd());
+    const rows=displayChoresForDate(ymd());
     if(!rows.length)return "";
     const preferred=["Leo","Demitri","Dolly","Ambrose"],groups=new Map();
     for(const row of rows){
@@ -483,7 +483,7 @@
 
   window.openTodayTasksHub=function(){
     const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
-      chores=(state.chores||[]).filter(x=>x.date===ymd()),openChores=chores.filter(x=>!x.done).length,totalOpen=rows.length+openChores,
+      chores=displayChoresForDate(ymd()),openChores=chores.filter(x=>!x.done).length,totalOpen=rows.length+openChores,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0},
       hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length;
     const categoryOrder=["Personal","Home","School","Car","Money","Food","Pets","Garden","Work","Life"],
@@ -579,7 +579,7 @@
       focusTaskId=focusBlock&&focusBlock.source==="task"?focusBlock.sourceId:taskFocus?taskFocus.id:"",
       tasks=todayTasks().filter(x=>!x.paused&&!x.waitingForFunds&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))),
       taskDone=tasks.filter(x=>x.done).length,
-      chores=(state.chores||[]).filter(x=>x.date===today),
+      chores=displayChoresForDate(today),
       choreDone=chores.filter(x=>x.done).length,
       waterTarget=Math.max(0,Number(state.settings?.waterTarget||0)),
       waterOz=Math.max(0,water()),
