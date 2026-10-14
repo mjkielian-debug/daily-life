@@ -485,3 +485,12 @@ progress,
 .dl-breakdown-track{grid-column:1/-1;height:11px;background:#f1e6ee;border-radius:20px;overflow:hidden}
 .dl-breakdown-track>div{height:100%;background:linear-gradient(90deg,#ee91b1,#f8ca8b,#9adbc7,#9bc9f3);border-radius:20px}
 .dl-water-quick .btn,.dl-breakdown .btn{min-height:48px}
+
+/* Individual answers for grouped Daily Review routines */
+.daily-review-step-list{display:grid;gap:12px;text-align:left}
+.daily-review-step-list>p{margin:0;color:#705b72}
+.daily-review-step{padding:12px;border:1px solid #e9dce8;border-radius:18px;background:linear-gradient(120deg,#fff8fb,#f4f8ff)}
+.daily-review-step>b{display:block;margin-bottom:9px;color:#34283b}
+.daily-review-step>div{display:flex;flex-wrap:wrap;gap:7px}
+.daily-review-step button{border:1px solid #d9c8d9;border-radius:14px;background:white;padding:9px 11px;color:#423449;font:inherit;min-height:42px}
+.daily-review-step button.selected{border-color:#aa6797;background:#f6dceb;font-weight:700}
