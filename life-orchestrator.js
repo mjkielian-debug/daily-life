@@ -630,11 +630,11 @@
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+focusAction+'">Open details <span aria-hidden="true">›</span></button>'+
           (focusTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(focusTaskId)+'\',true)">✓ Done</button>':'')+
         '</div></div></article>'+
-      (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       '<div class="dl-progress-area" aria-label="Today progress overview">'+
         '<button type="button" class="dl-total-ring" onclick="openTodayTasksHub()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
            '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
         '<div class="dl-stats">'+cards.join("")+'</div></div>'+
+      (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       '<div class="dl-mid-grid">'+
         '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
         (upcomingRows||'<p class="dl-empty">Nothing else is timed today. Open Day Flow to plan a block.</p>')+
