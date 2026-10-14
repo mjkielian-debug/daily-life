@@ -4,6 +4,7 @@
 (function(){
  "use strict";
  let promptIndex=0;
+ let quickCursor=0,quickBusy=false;
  function dayPart(){
   const h=new Date().getHours();
   if(h<8)return "early";
@@ -81,12 +82,49 @@
   if(typeof cloudPullLifeEntries!=="function"){alert("ChatGPT import isn't available in this version of the app.");return}
   await cloudPullLifeEntries(true);
  }
+ function quickReviewRows(){
+  if(typeof dailyReviewExpected!=="function")return [];
+  return dailyReviewExpected(ymd()).filter(x=>x.status==="unknown"&&(x.kind==="chore"||x.kind==="task"));
+ }
+ function quickReviewItem(){
+  const rows=quickReviewRows();
+  if(!rows.length)return null;
+  return rows[quickCursor%rows.length];
+ }
+ async function chatCheckinQuickAnswer(status){
+  if(quickBusy||!["yes","no","later"].includes(status))return;
+  const item=quickReviewItem();if(!item)return;
+  if(status==="later"){quickCursor++;render();return}
+  if(typeof applyDailyReview!=="function")return;
+  quickBusy=true;
+  try{
+   await applyDailyReview(item.kind,item.key,ymd(),status,false);
+   // The answered item falls out of the unresolved list automatically.
+   // Nothing was inferred for items not explicitly answered.
+  }catch(error){alert("Could not save that answer. Please try again.")}
+  finally{quickBusy=false}
+ }
+ function quickReviewNudge(){
+  // Ask about actual daily tasks only during the evening, after there's been
+  // an opportunity to complete them. During early UPS hours don't nag about
+  // activities that have not happened yet.
+  if(new Date().getHours()<18)return "";
+  const rows=quickReviewRows(),item=quickReviewItem();
+  if(!item)return "";
+  return '<div class="dl-quick-review" role="group" aria-label="Quick Daily Life review">'+
+   '<div class="dl-quick-review-label"><span>ONE QUICK CHECK-IN · '+rows.length+' still unknown</span><b>'+esc(item.label)+'</b></div>'+
+   '<div class="dl-quick-review-buttons">'+
+    '<button type="button" onclick="chatCheckinQuickAnswer(\'yes\')">✓ Yes</button>'+
+    '<button type="button" onclick="chatCheckinQuickAnswer(\'no\')">No</button>'+
+    '<button type="button" onclick="chatCheckinQuickAnswer(\'later\')">Later ›</button>'+
+   '</div></div>';
+ }
  function chatCheckinNudge(){
   const p=prompts()[0];
-  return '<button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="Start a guided ChatGPT check-in">'+
+  return '<div class="dl-chat-checkin-wrap"><button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="Start a guided ChatGPT check-in">'+
    '<span class="dl-chat-nudge-icon" aria-hidden="true">🎙️</span>'+
    '<span class="dl-chat-nudge-copy"><b>Tell me about your day</b><small>'+esc(p)+'</small></span>'+
-   '<span class="dl-chat-nudge-arrow" aria-hidden="true">›</span></button>';
+   '<span class="dl-chat-nudge-arrow" aria-hidden="true">›</span></button>'+quickReviewNudge()+'</div>';
  }
  window.openChatCheckin=function(){promptIndex=0;show()};
  window.chatCheckinNext=chatCheckinNext;
@@ -94,4 +132,5 @@
  window.chatCheckinOpenChat=chatCheckinOpenChat;
  window.chatCheckinSync=chatCheckinSync;
  window.chatCheckinNudge=chatCheckinNudge;
+ window.chatCheckinQuickAnswer=chatCheckinQuickAnswer;
 })();
