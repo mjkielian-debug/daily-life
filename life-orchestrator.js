@@ -644,7 +644,7 @@
         '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
         '<button onclick="openDayFlowSection(\'plan\',\''+today+'\')"><span>✦</span><b>Plan day</b><small>'+(audit.hardCount?audit.hardCount+" possible overlaps":audit.routineCount?audit.routineCount+" flexible routines to fit":"No detected time conflicts")+'</small></button>'+
        '</div>'+
-       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openPeopleHubSection(\'kids\')">♡ Kids</button></div>'+
+       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openLifeSearch()">⌕ Search</button></div>'+
      '</section>';
   }
 
