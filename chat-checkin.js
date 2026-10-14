@@ -16,19 +16,20 @@
   const part=dayPart(),workday=typeof isUsualWorkday==="function"?isUsualWorkday(ymd()):[2,3,4,5,6].includes(new Date().getDay()),
    date=typeof ymd==="function"?ymd():"",
    shift=(state.workShifts||[]).find(x=>x.date===date),
+   finishedShift=!!shift&&(typeof workEndConfirmed==="function"?workEndConfirmed(shift):!!shift.end),
    sleep=(state.sleepLogs||[]).find(x=>x.date===date),
    foodCount=(state.foodLogs||[]).filter(x=>x.date===date).length,
    waterOz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0),
    chores=displayChoresForDate(date),
    dinner=typeof mealForDate==="function"?mealForDate(date):null;
-  const sleepQuestion=sleep?"Your sleep was logged. How is your energy now, and has anything changed since then?":part==="early"?"How did you sleep, and how are you feeling before today starts?":"How was your sleep last night, and how is your energy now?";
-  const workQuestion=workday?(shift?.end?"How did your UPS shift go, and was anything different?":"How did UPS go today? No need to remember exact punch times unless you have them."):"What have you been doing today?";
+  const sleepQuestion=sleep?"Your sleep was logged. How is your energy now, and has anything changed since then?":part==="early"?"How did you sleep, and how is your energy so far?":"How was your sleep last night, and how is your energy now?";
+  const workQuestion=workday?(finishedShift?"How did your UPS shift go, and was anything different?":shift?.start?"How is your UPS shift going so far? Anything important to record?":"Are you finished with UPS for today, still working, or heading in later? Anything important to record?"):"What have you been doing today?";
   const foodQuestion=foodCount?"You have "+foodCount+" food or drink entries logged today. Anything else you've had since then?":"What have you eaten or had to drink so far? Approximate amounts are fine; I'll ask about anything important that is unclear.";
   const waterQuestion=waterOz>0?"You have "+waterOz+" oz of water logged today. Have you had any more?":"Have you had any water today, and roughly how much?";
   const kidsQuestion=chores.length?"What's happened with the kids today? Any chores, homework, reading, school updates, or plans to record?":"Any news about the kids, school, family plans, or the house?";
   const dinnerQuestion=dinner?.dish?"The dinner plan says "+dinner.dish+". Did that happen, or has anything changed?":"What is dinner tonight? Is it planned, cooking, or already eaten?";
   const updatesQuestion="What else happened, changed, got finished, or needs to be remembered? You can just talk naturally.";
-  if(part==="early")return [sleepQuestion,"Anything important on today’s schedule or things you'd like me to remember?",foodQuestion,updatesQuestion];
+  if(part==="early")return [sleepQuestion,workday?"Any changes to your UPS shift, family schedule, or plans today?":"Anything important on today’s schedule or things you'd like me to remember?",foodQuestion,updatesQuestion];
   if(part==="after")return [workQuestion,sleepQuestion,foodQuestion,waterQuestion,updatesQuestion];
   if(part==="afternoon")return [kidsQuestion,foodQuestion,waterQuestion,dinnerQuestion,updatesQuestion];
   return [dinnerQuestion,kidsQuestion,waterQuestion,updatesQuestion,sleepQuestion];
@@ -76,10 +77,10 @@
  }
  function content(){
   const list=prompts(),question=list[promptIndex%list.length];
-  const date=typeof ymd==="function"?ymd():"",oz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0);
+  const date=typeof ymd==="function"?ymd():"",waters=(state.waterLogs||[]).filter(x=>x.date===date),oz=waters.reduce((n,x)=>n+Number(x.oz||0),0);
   const chores=displayChoresForDate(date),marked=chores.filter(x=>x.done).length;
   return '<div class="chat-checkin-modal">'+
-   '<div class="chat-checkin-counters"><span>💧 '+Math.round(oz)+' oz logged</span><span>♡ '+marked+'/'+chores.length+' chores marked</span></div>'+
+   '<div class="chat-checkin-counters"><span>💧 '+(waters.length?Math.round(oz)+' oz logged':'Water not logged')+'</span><span>♡ '+marked+'/'+chores.length+' chores marked</span></div>'+
    '<div class="chat-checkin-question"><span class="eyebrow">QUESTION '+(promptIndex%list.length+1)+' / '+list.length+'</span><h3>'+esc(question)+'</h3></div>'+
    '<div class="chat-checkin-actions">'+
     '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy check-in + today’s status</button>'+
@@ -135,6 +136,7 @@
   quickBusy=true;
   try{
    await applyDailyReview(item.kind,item.key,ymd(),status,false);
+   quickCursor=0; // Always show the first remaining unknown after an answer.
    // The answered item falls out of the unresolved list automatically.
    // Nothing was inferred for items not explicitly answered.
   }catch(error){alert("Could not save that answer. Please try again.")}
@@ -156,8 +158,9 @@
    '</div></div>';
  }
  function chatCheckinNudge(){
-  const p=prompts()[0],part=dayPart(),
-    title=part==="early"?"Morning check-in":part==="after"?"After-work check-in":part==="afternoon"?"Afternoon update":"Evening recap";
+  const p=prompts()[0],part=dayPart(),date=ymd(),shift=(state.workShifts||[]).find(x=>x.date===date),
+    finished=!!shift&&(typeof workEndConfirmed==="function"?workEndConfirmed(shift):!!shift.end),
+    title=part==="early"?"Morning check-in":part==="after"?(finished?"After-work check-in":"Morning update"):part==="afternoon"?"Afternoon update":"Evening recap";
   return '<div class="dl-chat-checkin-wrap"><button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="'+esc(title)+' in ChatGPT">'+
    '<span class="dl-chat-nudge-icon" aria-hidden="true">🎙️</span>'+
    '<span class="dl-chat-nudge-copy"><b>'+esc(title)+'</b><small>'+esc(p)+'</small></span>'+
