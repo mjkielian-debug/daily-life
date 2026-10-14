@@ -3681,7 +3681,7 @@ function dailyReviewStepsHtml(item,date){
   const steps=dailyReviewSteps(item),record=state.settings?.reviewSteps?.[date+"|"+item.key]||{};
   return '<div class="daily-review-step-list"><p>Mark each step separately. Unmarked stays unknown.</p>'+
    steps.map((step,i)=>'<div class="daily-review-step"><b>'+esc(step)+'</b><div>'+
-    ["yes","no","unknown"].map(status=>'<button type="button" class="'+((record[i]||"unknown")===status?"selected ":"")+'" onclick="dailyReviewStepAnswer('+JSON.stringify(String(item.key))+','+JSON.stringify(date)+','+i+','+JSON.stringify(status)+')">'+({yes:"✓ Done",no:"Not done",unknown:"?"}[status])+'</button>').join("")+
+    ["yes","no","unknown"].map(status=>'<button type="button" class="'+((record[i]||"unknown")===status?"selected ":"")+'" onclick="dailyReviewStepAnswer(\''+esc(String(item.key))+'\',\''+esc(date)+'\','+i+',\''+status+'\')">'+({yes:"✓ Done",no:"Not done",unknown:"?"}[status])+'</button>').join("")+
    '</div></div>').join("")+'</div>';
 }
 function openDailyReview(date=ymd(),cursor=0){
