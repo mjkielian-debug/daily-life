@@ -12,15 +12,17 @@
   return "evening";
  }
  function prompts(){
-  const part=dayPart(),workday=[2,3,4,5,6].includes(new Date().getDay()),
+  const part=dayPart(),workday=typeof isUsualWorkday==="function"?isUsualWorkday(ymd()):[2,3,4,5,6].includes(new Date().getDay()),
    date=typeof ymd==="function"?ymd():"",
    shift=(state.workShifts||[]).find(x=>x.date===date),
+   sleep=(state.sleepLogs||[]).find(x=>x.date===date),
+   foodCount=(state.foodLogs||[]).filter(x=>x.date===date).length,
    waterOz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0),
    chores=(state.chores||[]).filter(x=>x.date===date),
    dinner=typeof mealForDate==="function"?mealForDate(date):null;
-  const sleepQuestion=part==="early"?"How did you sleep, and how are you feeling before today starts?":"How was your sleep last night, and how is your energy now?";
+  const sleepQuestion=sleep?"Your sleep was logged. How is your energy now, and has anything changed since then?":part==="early"?"How did you sleep, and how are you feeling before today starts?":"How was your sleep last night, and how is your energy now?";
   const workQuestion=workday?(shift?.end?"How did your UPS shift go, and was anything different?":"How did UPS go today? No need to remember exact punch times unless you have them."):"What have you been doing today?";
-  const foodQuestion="What have you eaten or had to drink so far? Approximate amounts are fine; I'll ask about anything important that is unclear.";
+  const foodQuestion=foodCount?"You have "+foodCount+" food or drink entries logged today. Anything else you've had since then?":"What have you eaten or had to drink so far? Approximate amounts are fine; I'll ask about anything important that is unclear.";
   const waterQuestion=waterOz>0?"You have "+waterOz+" oz of water logged today. Have you had any more?":"Have you had any water today, and roughly how much?";
   const kidsQuestion=chores.length?"What's happened with the kids today? Any chores, homework, reading, school updates, or plans to record?":"Any news about the kids, school, family plans, or the house?";
   const dinnerQuestion=dinner?.dish?"The dinner plan says "+dinner.dish+". Did that happen, or has anything changed?":"What is dinner tonight? Is it planned, cooking, or already eaten?";
@@ -32,7 +34,8 @@
  }
  function checkinStarter(){
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  return "Daily Life check-in for "+date+". Please ask me one question at a time about what happened today, including work/sleep, food/drinks/water, children/chores, plans and anything I finished. I'm going to tell you naturally. Organize confirmed facts into the correct Daily Life sections and write supported entries to my connected Daily Life cloud when access is available. Confirm what actually synced. Don't assume an unlogged task was skipped; leave unknowns unknown. Start with: "+prompts()[0];
+  const questions=prompts(),question=questions[promptIndex%questions.length];
+  return "Daily Life check-in for "+date+". Please ask me one question at a time about what happened today, including work/sleep, food/drinks/water, children/chores, plans and anything I finished. I'm going to tell you naturally. Organize confirmed facts into the correct Daily Life sections and write supported entries to my connected Daily Life cloud when access is available. Confirm what actually synced. Don't assume an unlogged task was skipped; leave unknowns unknown. Start with: "+question;
  }
  function content(){
   const list=prompts(),question=list[promptIndex%list.length];
