@@ -237,3 +237,14 @@
 #modal .modal:has(#tasktitle) :is(input,select):focus{outline:2px solid #be78a5!important;outline-offset:1px!important}
 #modal .modal:has(#tasktitle) .grid2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:520px){#modal .modal:has(#tasktitle) .grid2{grid-template-columns:1fr}}
+
+/* Calendar event editor and readable event details */
+#modal .modal:has(#etitle){color:#392a43!important;background:linear-gradient(140deg,#fffafc,#fff7ef,#f0f8ff)!important}
+#modal .modal:has(#etitle) label{color:#47364e!important;-webkit-text-fill-color:#47364e!important;opacity:1!important;font-weight:750!important}
+#modal .modal:has(#etitle) :is(input:not([type=checkbox]),select,textarea){width:100%!important;min-width:0!important;min-height:46px!important;border:1px solid #d6b8d1!important;border-radius:16px!important;background:#fff9fd!important;color:#34293c!important;-webkit-text-fill-color:#34293c!important;color-scheme:light!important;padding:10px 13px!important}
+#modal .modal:has(#etitle) select option{background:#fff9fd;color:#34293c}
+.event-detail-sheet{color:#35283d}
+.event-detail-sheet h2{margin:0 0 10px}
+.event-detail-field{display:grid;grid-template-columns:90px 1fr;gap:10px;padding:12px 4px;border-bottom:1px solid #ebdce8}
+.event-detail-field b{color:#855073}
+.event-detail-field span{overflow-wrap:anywhere}
