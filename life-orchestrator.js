@@ -31,6 +31,7 @@
     if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(title))return true;
     if(/^school[- ]night reset$/.test(title))return true;
     if(t?.dailyReset===true||t?.routineCarryover===false)return true;
+    if(typeof itineraryIsDailyResetTask==="function"&&itineraryIsDailyResetTask(t))return true;
     if(t?.child&&/(?:clean|tidy|reset).*\broom\b|\bhomework\b|\bread(?:ing)?(?:\s+20\s*(?:min|minutes?))?\b/.test(title))return true;
     if(/(?:daily|every day|each day)/.test(notes)&&/\broom\b|\bhomework\b|\bread(?:ing)?\b/.test(title+" "+notes))return true;
     if(t?.generated==="recurring-task"){
@@ -274,7 +275,7 @@
         const d=lifeTaskDate(t);
         if(d>today)return false;
         if(String(t.title||"").trim().toLowerCase()==="ups shift")return false;
-        if(d<today&&lifeIsDailyResetTask(t))return false;
+        if(d<today&&(lifeIsDailyResetTask(t)||(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(t,today))))return false;
         return true;
       }))
         .sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
