@@ -1092,10 +1092,35 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{carrier:String(p.carrier||x.carrier||""),sender:String(p.sender||x.sender||""),status:String(p.status||x.status||"expected"),expectedDate:String(p.expectedDate||p.date||x.expectedDate||date),notes:String(p.notes||x.notes||"")});
       return true;
     }
+    case "bank_exit_plan":{
+      // User's stated account-closing intention; do not close accounts, cancel
+      // subscriptions, or change bill payment statuses automatically.
+      if(!state.settings)state.settings={};
+      if(!Array.isArray(state.settings.bankExitPlans))state.settings.bankExitPlans=[];
+      const institution=String(p.institution||"").trim();if(!institution)return false;
+      let existing=state.settings.bankExitPlans.find(x=>x.cloudEntryId===row.id||
+        x.institution.toLowerCase()===institution.toLowerCase());
+      if(!existing){existing={id:uid(),institution};state.settings.bankExitPlans.push(existing)}
+      Object.assign(existing,{institution,status:String(p.status||existing.status||"planning"),
+        renewalName:String(p.renewalName||existing.renewalName||""),renewalDate:String(p.renewalDate||existing.renewalDate||""),
+        subscriptionStatus:String(p.subscriptionStatus||existing.subscriptionStatus||"decision_pending"),
+        priority:Boolean(p.priority??true),notes:String(p.notes||existing.notes||""),
+        cloudEntryId:row.id,updatedAt:new Date().toISOString()});
+      return true;
+    }
     case "relationship_checkin":{
       if(!Array.isArray(state.relationshipCheckins))state.relationshipCheckins=[];
-      if(state.relationshipCheckins.some(x=>x.cloudEntryId===row.id))return true;
-      state.relationshipCheckins.push({id:uid(),cloudEntryId:row.id,personName:String(p.personName||p.person||""),date:String(p.date||date),summary:String(p.summary||""),wentWell:String(p.wentWell||""),needsAttention:String(p.needsAttention||""),agreements:String(p.agreements||""),nextStep:String(p.nextStep||""),updatedAt:String(row.created_at||new Date().toISOString())});
+      const who=String(p.personName||p.person||"").trim(),when=String(p.date||date);
+      let existing=state.relationshipCheckins.find(x=>x.cloudEntryId===row.id||
+        (x.date===when&&String(x.personName||"").trim().toLowerCase()===who.toLowerCase()&&
+         (String(x.summary||"").trim().toLowerCase()===String(p.summary||"").trim().toLowerCase()||
+          String(x.externalId||"")===String(row.external_id||""))));
+      if(!existing){existing={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.relationshipCheckins.push(existing)}
+      Object.assign(existing,{personName:who,date:when,summary:String(p.summary||existing.summary||""),
+        wentWell:String(p.wentWell||existing.wentWell||""),needsAttention:String(p.needsAttention||existing.needsAttention||""),
+        agreements:String(p.agreements||existing.agreements||""),nextStep:String(p.nextStep||existing.nextStep||""),
+        status:["completed","missed","rescheduled"].includes(String(p.status||""))?p.status:(existing.status||"completed"),
+        updatedAt:String(row.created_at||new Date().toISOString())});
       return true;
     }
     case "workout":{
