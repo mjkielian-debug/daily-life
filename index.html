@@ -622,7 +622,7 @@ function itineraryFixedItems(date){
     if(start)items.push({
       id:"work:"+date,start,end:confirmed?w.end:"",title:w.start?"UPS work":"UPS scheduled start",
       detail:confirmed?("Worked until "+fmtClock(w.end)):(w.endedUnknown?"Shift ended · punch-out time still needs confirmation":"End time not confirmed yet"),
-      fixed:true,kind:"work",icon:"📦",source:"work",endUnknown:!confirmed
+      fixed:true,kind:"work",icon:"📦",source:"work",actor:"me",endUnknown:!confirmed
     });
   }
   for(const e of dedupeEventList((state.events||[]).filter(e=>e.date===date&&!["cancelled","paused"].includes(String(e.status||""))))){
@@ -632,7 +632,8 @@ function itineraryFixedItems(date){
           eventEnd=e.endTime||estimatedEnd,
           childOnlyAfterSchool=!!e.child&&/herpetology|everett musical|after-school club|dungeons\s*&\s*dragons|dungeons and dragons/i.test(String(e.title||"")),
           detail=[e.child,e.location,childOnlyAfterSchool?"child activity · your time stays open until pickup":"",e.status==="tentative"?"tentative":"",!e.endTime?"end time estimated until you set it":""].filter(Boolean).join(" · ");
-    items.push({id:"event:"+e.id,start:e.startTime,end:eventEnd,title:e.title,detail,fixed:childOnlyAfterSchool?false:e.status!=="tentative",nonBlocking:childOnlyAfterSchool,kind:childOnlyAfterSchool?"context":e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
+    const assignedTanner=/^tanner\s*[·:–-]\s*/i.test(String(e.title||""))||/^tanner$/i.test(String(e.assigned||e.responsible||""));
+    items.push({id:"event:"+e.id,start:e.startTime,end:eventEnd,title:e.title,detail,fixed:childOnlyAfterSchool?false:e.status!=="tentative",nonBlocking:childOnlyAfterSchool||assignedTanner,actor:assignedTanner?"tanner":"",kind:childOnlyAfterSchool?"context":e.status==="tentative"?"tentative":"event",icon:isSchoolEvent(e)?"🎒":"✦",source:"event",sourceId:e.id,shared:!!e.sharedEntryId,estimatedEnd:!e.endTime,estimatedMinutes});
     if(childOnlyAfterSchool&&eventEnd){
       const endM=hmMinutes(eventEnd),
             childName=String(e.child||"").trim().toLowerCase(),
@@ -652,6 +653,7 @@ function itineraryFixedItems(date){
   for(const x of itineraryCustomBlocks(date))if(x.start)items.push({
     id:x.id,start:x.start,end:x.end||"",title:x.title||"Time block",detail:x.notes||"",fixed:x.kind==="fixed",
     kind:x.kind||"flexible",icon:x.icon||"◷",source:"custom",sourceId:x.id,done:!!x.done,shared:!!x.sharedEntryId,
+    actor:/^tanner\s*[·:–-]\s*/i.test(String(x.title||""))?"tanner":"",nonBlocking:/^tanner\s*[·:–-]\s*/i.test(String(x.title||"")),
     templateKey:x.templateKey||""
   });
   const meal=mealForDate(date);
@@ -884,6 +886,12 @@ function itineraryFitRoutines(date,blockingItems,routines){
   const ordered=routines.slice().sort((a,b)=>(a.templateKey==="wind-down"?-1:0)-(b.templateKey==="wind-down"?-1:0)||(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
   for(const x of ordered){
     const desired=hmMinutes(x.start);if(desired===null)continue;
+    if(/^tanner\s*[·:–-]\s*/i.test(String(x.title||""))){
+      // Caregiver's school-morning routine does not consume the user's
+      // workday. Retain the actual preferred slot and show it in Day Flow.
+      placed.push({...x,actor:"tanner",nonBlocking:true,movedByPlanner:false});
+      continue;
+    }
     const rawEnd=hmMinutes(x.end),
           minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))?5:15,
           duration=Math.max(minimum,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
@@ -993,6 +1001,10 @@ function itineraryIsDailyResetTask(task){
   if(/^(?:kids? )?room reset\s*\+\s*homework$/.test(title))return true;
   if(/^school[- ]night reset$/.test(title))return true;
   if(task?.dailyReset===true||task?.routineCarryover===false)return true;
+  // Everyday hygiene and getting-ready tasks belong to their own day, even
+  // when recorded as unfinished. Do not move yesterday's brush/hair/shower
+  // check into tomorrow's agenda.
+  if(/\b(?:brush(?:ing)?|comb|style|wash|do|fix)\b.*\b(?:teeth|hair|face)\b|\b(?:floss|mouthwash|deodorant|shower|morning (?:personal )?care|morning routine|bedtime routine|night routine|fill water bottle|stretch(?:ing)?)\b|\bdolly\s*(?:[·:-]\s*)?hair\b/i.test(title))return true;
   if(task?.child&&/(?:clean|tidy|reset).*\broom\b|\bhomework\b|\bread(?:ing)?(?:\s+20\s*(?:min|minutes?))?\b/.test(title))return true;
   if(/(?:daily|every day|each day)/.test(notes)&&/\broom\b|\bhomework\b|\bread(?:ing)?\b/.test(title+" "+notes))return true;
   if(task?.generated==="recurring-task"){
@@ -1001,13 +1013,19 @@ function itineraryIsDailyResetTask(task){
   }
   return /daily routine|daily baseline/.test(notes)&&/room|homework|read/.test(title+" "+notes);
 }
+function itineraryIsExpiredEventPrepTask(task,date){
+  if(!task||!task.date||String(task.date)>=String(date))return false;
+  // A dated pre-event reminder is historical after that day's event.
+  // Keep it in Tasks/history; never reschedule PACER preparation after PACER.
+  return /\bpacer\b/i.test([task.title,task.notes].filter(Boolean).join(" "));
+}
 function itineraryTaskCandidates(date){
   const today=ymd(),oldest=shiftDateString(today,-30),
     raw=(state.tasks||[]).filter(t=>{
       const taskText=(String(t.title||"")+" "+String(t.notes||"")).toLowerCase();
       if(t.done||t.paused||t.waitingForFunds||/^ups shift$/i.test(String(t.title||"")))return false;
       // Daily kid routines reset each day. Yesterday's room/homework/reading check does not become today's task.
-      if(String(t.date||"")<date&&itineraryIsDailyResetTask(t))return false;
+      if(String(t.date||"")<date&&(itineraryIsDailyResetTask(t)||itineraryIsExpiredEventPrepTask(t,date)))return false;
       // These legacy combined routine rows are represented by today's family chores block.
       if(/kids? room reset\s*\+?\s*homework|school[- ]night reset/.test(taskText))return false;
       if(date===today)return String(t.date||"")>=oldest&&String(t.date||"")<=today;
@@ -1546,6 +1564,21 @@ function dayFlowUnscheduledCard(date){
     ${!tasks.length&&!chores.length?`<div class="notice">Everything that needs a time is placed or complete.</div>`:""}
   </div>`;
 }
+function dayFlowActor(x){
+  if(!x)return "";
+  if(x.source==="work")return "me";
+  const owner=String(x.actor||x.person||x.responsible||"").trim().toLowerCase();
+  if(owner)return owner;
+  const title=String(x.title||"").trim();
+  // Explicitly assigned Tanner actions run in parallel with the UPS shift.
+  if(/^tanner\s*[·:–-]\s*/i.test(title))return "tanner";
+  return "";
+}
+function dayFlowDifferentPeople(a,b){
+  const aa=dayFlowActor(a),bb=dayFlowActor(b);
+  // Unknown ownership is not proof that two appointments can overlap.
+  return !!(aa&&bb&&aa!==bb);
+}
 function dayFlowConflictAudit(date){
   const anchors=itineraryFixedItems(date).filter(x=>!x.nonBlocking&&hmMinutes(x.start)!==null),
     overlaps=[],seen=new Set(),diagnostics=itineraryPlanningDiagnostics(date);
@@ -1556,7 +1589,7 @@ function dayFlowConflictAudit(date){
       const b=anchors[j],bs=hmMinutes(b.start),be=hmMinutes(b.end);
       if(bs===null||be===null||be<=bs)continue;
       const overlap=Math.min(ae,be)-Math.max(as,bs);
-      if(overlap<=0)continue;
+      if(overlap<=0||dayFlowDifferentPeople(a,b))continue;
       if(a.source==="meal"&&b.source==="meal"&&a.sourceId===b.sourceId)continue;
       const key=[a.id,b.id].sort().join("|");if(seen.has(key))continue;seen.add(key);
       overlaps.push({a,b,minutes:overlap});
