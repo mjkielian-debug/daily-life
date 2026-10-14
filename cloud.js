@@ -697,7 +697,7 @@ function cloudSchedulePush(){
 
 function cloudEntryAlreadyApplied(id){
   if((state.settings?.appliedCloudEntryIds||[]).includes(id))return true;
-  const arrays=["tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","schoolGrades","schoolAssignments","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
+  const arrays=["utilityBillHistory","paperItems","tasks","workShifts","sleepLogs","waterLogs","stretchLogs","selfCare","selfCareActivities","tarotDraws","spiritualityPracticeLogs","spiritualityJournal","foodLogs","readingLogs","chores","peopleProfiles","birthdaySuggestions","kidsMoneyAccounts","kidsMoneyTransactions","schoolGrades","schoolAssignments","pets","petLogs","petRecords","petCareRoutines","plants","plantLogs","plantCareRoutines","gardenTasks","gardenJournal","gardenSeeds","projects","vehicles","vehicleServices","orders","deliveries","workouts","relationshipCheckins","meals","mealSuggestions","mealFeedback","pantryScans","shopping","homeLogs","tireLogs","events","paychecks","expectedIncome","employmentProfiles","incomeSeasonality"];
   return arrays.some(key=>Array.isArray(state[key])&&state[key].some(x=>x.cloudEntryId===id));
 }
 function cloudMarkEntryApplied(id){
@@ -1159,6 +1159,24 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{child,course,grade:String(p.grade||""),percent:Number.isFinite(percent)?percent:null,term:String(p.term||p.period||""),asOf,source:String(p.source||"ChatGPT / ParentVUE snapshot"),notes:String(p.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
       return true;
     }
+    case "utility_bill":{
+      const month=String(p.month||p.billMonth||"").slice(0,7),total=p.total===null||p.total===undefined||p.total===""?null:Number(p.total);
+      if(!/^\d{4}-\d{2}$/.test(month)||total===null||!Number.isFinite(total)||total<0)return false;
+      if(!Array.isArray(state.utilityBillHistory))state.utilityBillHistory=[];
+      const provider=String(p.provider||"").trim();
+      let bill=state.utilityBillHistory.find(x=>x.cloudEntryId===row.id||(row.external_id&&x.externalId===row.external_id));
+      if(!bill)bill=state.utilityBillHistory.find(x=>x.month===month&&x.provider===provider);
+      if(!bill){bill={id:uid(),createdAt:new Date().toISOString()};state.utilityBillHistory.push(bill)}
+      const kwh=p.kwh===null||p.kwh===undefined||p.kwh===""?null:Number(p.kwh);
+      const days=p.billingDays===null||p.billingDays===undefined||p.billingDays===""?null:Number(p.billingDays);
+      Object.assign(bill,{month,provider,total,kwh:Number.isFinite(kwh)&&kwh>=0?kwh:null,
+        billingDays:Number.isInteger(days)&&days>0&&days<=62?days:null,
+        cloudEntryId:row.id,externalId:String(row.external_id||""),updatedAt:new Date().toISOString(),
+        notes:String(p.notes||"").slice(0,1000)});
+      // Historical utility entries are NOT new recurring payment obligations.
+      // Never put account numbers, bank details, or full bill images here.
+      return true;
+    }
     case "paper_item":{
       const title=String(p.title||"").trim(),type=String(p.type||"review");
       if(!title)return false;
@@ -1177,6 +1195,7 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{title,type:canonicalType,child:canonicalType==="practice"?validChild:"",
         level:String(p.level||x.level||""),subject:String(p.subject||x.subject||""),
         pages,notes:String(p.notes||x.notes||""),reference:ref||String(x.reference||""),
+        doubleSided:x.doubleSided??(p.doubleSided===true||/front and back|double.sided/i.test(String(p.notes||""))),
         cloudEntryId:row.id,externalId:String(row.external_id||""),
         updatedAt:String(row.created_at||new Date().toISOString())});
       // A scanned paper is NOT physically thrown away, filed or completed.
