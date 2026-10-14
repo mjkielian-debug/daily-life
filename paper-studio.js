@@ -21,19 +21,21 @@ function pct(n,d){return d>0?Math.min(100,Math.max(0,Math.round(n/d*100))):0}
 function bar(n,d){return '<div class="ps-bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+Math.max(0,d)+'" aria-valuenow="'+Math.max(0,Math.min(n,d))+'"><span style="width:'+pct(n,d)+'%"></span></div>'}
 function paperType(x){return TYPE[x] ? x:"review"}
 function pageCount(x){return Math.max(1,Math.floor(Number(x)||1))}
-function donePages(x){return Math.min(pageCount(x.pages),Math.max(0,Math.floor(Number(x.completedPages)||0)))}
+function donePages(x){const proof=typeof window.practiceProofCounts==="function"?window.practiceProofCounts(x.id):null;
+ return proof?proof.approved:Math.min(pageCount(x.pages),Math.max(0,Math.floor(Number(x.completedPages)||0)))}
 function earned(child){return practiceSessions().filter(x=>x.child===child).reduce((n,x)=>n+Math.max(0,Number(x.points)||0),0)}
 function spent(child){return rewards().filter(x=>x.child===child).reduce((n,x)=>n+Math.max(0,Number(x.points)||0),0)}
 function remaining(child){return Math.max(0,earned(child)-spent(child))}
 function paperCounts(){
  const data=papers(),decided=data.filter(x=>x.type!=="review").length,finished=data.filter(x=>x.physicallyFinished).length,practice=data.filter(x=>x.type==="practice");
- return{total:data.length,decided,finished,pending:data.length-finished,practicePages:practice.reduce((n,x)=>n+pageCount(x.pages),0),practiceDone:practice.reduce((n,x)=>n+donePages(x),0),percent:data.length?pct(decided,data.length):null};
+ return{total:data.length,decided,finished,pending:data.length-finished,practicePages:practice.reduce((n,x)=>n+pageCount(x.pages),0),practiceDone:practice.reduce((n,x)=>n+donePages(x),0),practiceReview:practice.reduce((n,x)=>n+(typeof window.practiceProofCounts==="function"?(window.practiceProofCounts(x.id)?.waiting||0):0),0),percent:data.length?pct(decided,data.length):null};
 }
 function paperRow(x){
  const id=qid(x.id),type=paperType(x.type),practice=type==="practice",dp=donePages(x),max=pageCount(x.pages);
- const status=practice?dp+" / "+max+" pages done"+(x.physicallyFinished?" · paper cleared":""):type==="review"?"Decision pending":x.physicallyFinished?"Physically handled":"Still needs handling";
+ const review=practice&&typeof window.practiceProofCounts==="function"?(window.practiceProofCounts(x.id)?.waiting||0):0;
+ const status=practice?dp+" / "+max+" sheets approved"+(review?" · "+review+" awaiting review":"")+(x.physicallyFinished?" · paper cleared":""):type==="review"?"Decision pending":x.physicallyFinished?"Physically handled":"Still needs handling";
  return '<div class="ps-paper-row"><button onclick="openPaperBatch(\''+id+'\')"><b>'+esc(x.title||"Untitled paper")+'</b><small>'+TYPE[type][0]+" "+TYPE[type][1]+(x.child?" · "+esc(x.child):"")+(x.level?" · "+esc(x.level):"")+'</small><small>'+status+'</small></button>'+
-  (practice&&x.child&&dp<max?'<button class="ps-small-action" onclick="paperPageComplete(\''+id+'\')">+ 1 page</button>':"")+'</div>';
+  (practice&&x.child?'<button class="ps-small-action" onclick="openPracticeProof(\''+id+'\')">📷 '+(review?"Review":"Photo proof")+'</button>':"")+'</div>';
 }
 function section(type){
  const list=papers().filter(x=>paperType(x.type)===type);
@@ -55,8 +57,8 @@ window.openPaperStudio=function(){
   '<div class="ps-studio"><div class="ps-top"><div class="ps-big-ring" style="--ps-pct:'+(n.percent??0)+'%"><b>'+(n.percent===null?"—":n.percent+"%")+'</b><small>sorted</small></div>'+
   '<div><b>'+n.decided+' / '+n.total+' batches categorized</b><small>'+n.finished+' physically handled · '+n.pending+' not finished</small><small>Only batches you enter count.</small></div></div>'+
   '<div class="ps-nav"><button onclick="openPaperBatch()">+ Paper</button><button onclick="openArtLibrary()">🎨 Art books</button></div>'+
-  '<div class="ps-practice"><strong>✏ Extra learning (optional)</strong><span>'+n.practiceDone+' / '+n.practicePages+' pages</span>'+bar(n.practiceDone,n.practicePages)+
-  '<small>Never required school homework. These pages have no automatic deadlines.</small></div>'+
+  '<div class="ps-practice"><strong>✏ Extra learning (optional)</strong><span>'+n.practiceDone+' approved / '+n.practicePages+' sheets · '+n.practiceReview+' awaiting review</span>'+bar(n.practiceDone,n.practicePages)+
+  '<small>Photo proof + parent approval required for new rewards. Optional practice has no deadlines.</small></div>'+
   rewardsHtml()+'<div class="ps-groups">'+Object.keys(TYPE).map(section).join("")+'</div>'+
   '<div class="ps-warning"><b>Do not recycle from a photo alone.</b> Check that the information is captured and readable. Keep originals where legally or practically required; photographs inside ChatGPT do not guarantee a permanent backup.</div></div>',
  "Close",closeModal);
@@ -71,6 +73,7 @@ window.openPaperBatch=function(id=""){
   '<div class="grid2"><label>Child for extra practice<select id="psChild">'+kids+'</select></label><label>Approximate grade level<input id="psLevel" value="'+esc(x.level||"")+'" placeholder="K–1, grade 3"></label></div>'+
   '<div class="grid2"><label>Subject<input id="psSubject" value="'+esc(x.subject||"")+'" placeholder="Math / reading"></label><label>Pages in this batch<input type="number" id="psPages" min="1" max="10000" value="'+pageCount(x.pages)+'"></label></div>'+
   '<label>Notes + physical location<textarea id="psNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
+  '<label class="ps-side-check"><input id="psDouble" type="checkbox" '+(x.doubleSided?"checked":"")+' > This is one physical sheet with work on both sides</label>'+
   '<label>Picture / document reference (optional)<input id="psRef" value="'+esc(x.reference||"")+'" placeholder="ChatGPT photo or secure file location"></label>'+
   '<small class="ps-muted">A reference is not an actual uploaded image. Art books below store the actual artwork photo on this device.</small>'+
   (old&&x.type!=="review"?'<button onclick="paperFinishHandling(\''+qid(x.id)+'\')">'+(x.physicallyFinished?"Undo physical completion":"Confirm physically filed / recycled / handled")+'</button>':"")+
@@ -81,7 +84,7 @@ window.openPaperBatch=function(id=""){
    if(!row){row={id:uid(),createdAt:new Date().toISOString(),completedPages:0,physicallyFinished:false};papers().push(row)}
    Object.assign(row,{title,type,child:type==="practice"?get("psChild").value:"",level:get("psLevel").value.trim(),
     subject:get("psSubject").value.trim(),pages,completedPages:Math.min(donePages(row),pages),
-    notes:get("psNotes").value.trim(),reference:get("psRef").value.trim(),updatedAt:new Date().toISOString()});
+    notes:get("psNotes").value.trim(),reference:get("psRef").value.trim(),doubleSided:!!get("psDouble")?.checked,updatedAt:new Date().toISOString()});
    if(type==="review")row.physicallyFinished=false;
    await save();render();window.openPaperStudio();
   });
@@ -96,11 +99,7 @@ window.paperFinishHandling=async function(id){
  }
  x.physicallyFinished=!x.physicallyFinished;x.updatedAt=new Date().toISOString();await save();render();window.openPaperStudio();
 };
-window.paperPageComplete=async function(id){
- const x=papers().find(v=>v.id===id);if(!x||x.type!=="practice"||!KIDS.includes(x.child))return;
- if(donePages(x)>=pageCount(x.pages))return;
- x.completedPages=donePages(x)+1;x.updatedAt=new Date().toISOString();practiceSessions().push({id:uid(),date:ymd(),child:x.child,paperId:x.id,pages:1,points:settings().pointsPerPage,createdAt:new Date().toISOString()});await save();render();window.openPaperStudio();
-};
+window.paperPageComplete=function(id){if(typeof window.openPracticeProof==="function")window.openPracticeProof(id)};
 window.paperRedeem=async function(child){
  const s=settings();if(!KIDS.includes(child)||remaining(child)<s.cost)return;
  if(!confirm("Record "+s.cost+" points redeemed for "+child+"? Confirm the reward was actually given."))return;
