@@ -1041,7 +1041,7 @@
       homeRows=chores.concat(homeTasks),homeDone=homeRows.filter(function(x){return !!x.done}).length,
       homeScore=homeRows.length?lifeClampScore(homeDone/homeRows.length*100):((state.houseRooms||[]).length?55:20);
 
-    const unpaid=(state.bills||[]).filter(function(b){return b.status!=="paid"}),
+    const unpaid=(state.bills||[]).filter(function(b){return b.status!=="paid"&&(typeof billForecastIncluded!=="function"||billForecastIncluded(b))}),
       overdue=unpaid.filter(function(b){return b.due&&b.due<today}).length,
       moneyScore=lifeClampScore(overdue?100-overdue*25:100);
 
