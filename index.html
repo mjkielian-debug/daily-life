@@ -7328,7 +7328,67 @@ function applyConferencePrepCleanup(){
   return changed;
 }
 
-async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
+
+/* Confirmed Oct 13 Runza dinner; added to PRIVATE device data only after loading
+   existing records. Do not infer that the meal was served or that baking finished.
+   This is intentionally date-scoped and idempotent. */
+function applyOct13RunzaDinner(){
+  state.settings=state.settings||{};
+  if(Number(state.settings.oct13RunzaDinnerVersion||0)>=1)return false;
+  const date="2026-10-13";
+  state.meals=state.meals||[];
+  let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
+  if(m&&String(m.status||"").toLowerCase()==="made"){
+    state.settings.oct13RunzaDinnerVersion=1;
+    return true; // Respect a confirmed finished dinner entry.
+  }
+  if(!m){m={id:"dinner-20261013-homemade-runzas",date,type:"dinner",prepDone:[]};state.meals.push(m);}
+  // Preserve a different previously planned meal rather than silently lose it.
+  if(m.dish&&!/runza/i.test(String(m.dish))){
+    m.previousDinnerPlan={
+      dish:m.dish,method:m.method||"",ingredients:m.ingredients||"",
+      prepSteps:m.prepSteps||"",notes:m.notes||"",status:m.status||"planned"
+    };
+  }
+  Object.assign(m,{
+    dish:"Homemade beef + cabbage Runzas",
+    method:"Skillet filling · French bread dough · oven",
+    status:"prepping",
+    recipeState:"ready",
+    ingredients:[
+      "2 lb ground beef, browned and excess grease drained",
+      "1 medium onion, diced",
+      "about 6–8 cups chopped cabbage (whole cabbage plus leftover firm pieces, finely chopped)",
+      "2 tubes refrigerated French bread dough (not cornbread swirls)",
+      "1 tsp salt, adjust to taste",
+      "1 tsp black pepper, adjust to taste",
+      "1 tsp garlic powder",
+      "about 1 Tbsp beef drippings kept in the skillet during filling"
+    ].join("\n"),
+    prepSteps:[
+      "Brown the 2 lb ground beef in a large skillet (about 8–12 minutes), breaking it apart. Drain excess grease, leaving about 1 Tbsp for the vegetables.",
+      "Add the diced onion; cook around 5 minutes until softened.",
+      "Chop cabbage, including the crunchy ribs; finely dice tougher pieces. Add the cabbage in batches to the beef and onion.",
+      "Season with about 1 tsp each of salt, pepper, and garlic powder. Cover and cook on medium-low for about 15–20 minutes, stirring as needed, until the cabbage softens.",
+      "Uncover and cook away extra moisture so the filling will not soak the dough. Allow to cool slightly before filling.",
+      "If assembling now, divide the filling between portions of the 2 French bread dough tubes, fold around the filling and seal the edges. Follow the dough package's oven-temperature guidance, and bake until the bread is fully cooked and golden.",
+      "Let cool briefly before serving. If postponing assembly, refrigerate the cooked filling promptly in shallow containers."
+    ].join("\n"),
+    yieldCount:0,
+    yieldLabel:"",
+    notes:"October 13 batch: beef, onion, and cabbage filling was started and seasoned. Two French bread dough tubes were set aside for wrapping; three cornbread swirls were also available but not selected. Cheddar was discussed as optional but has NOT been recorded as used. Final assembly, baking temperature/time, exact yield, and serving are not confirmed. Recipe includes next steps, not a claim those steps were completed.",
+    cookNotes:"October 13: brown beef, drain fat to roughly 1 Tbsp; soften diced onion; add lots of cabbage, including finely chopped crunchy ribs; season; cook covered then uncover to dry filling.",
+    prepDone:Array.isArray(m.prepDone)?m.prepDone:[],
+    startBy:"",
+    serveTime:"",
+    updatedAt:new Date().toISOString(),
+    recipeSource:"oct13-user-cooking-notes"
+  });
+  state.settings.oct13RunzaDinnerVersion=1;
+  return true;
+}
+
+async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
