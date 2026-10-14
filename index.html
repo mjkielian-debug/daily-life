@@ -7506,7 +7506,31 @@ async function setRunzaCookingComplete(done){
   await save();closeModal();render();
 }
 
-async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
+
+/* Add enjoyable ideas the user has mentioned without turning them into
+   appointments, overdue to-dos, streaks, or mandatory habits. */
+function applyOptionalLifeInterests(){
+  state.settings=state.settings||{};
+  if(Number(state.settings.optionalLifeInterestsVersion||0)>=1)return false;
+  state.hobbyProjects=Array.isArray(state.hobbyProjects)?state.hobbyProjects:[];
+  const ideas=[
+    {id:"known-idea-beginner-yoga",name:"Beginner yoga practice",category:"Wellness",status:"Idea",notes:"Optional 8–10-minute beginner sessions for mobility, strength, balance and relaxation. No streaks, deadlines or pressure; do not push through pain."},
+    {id:"known-idea-kombucha",name:"First homemade kombucha experiment",category:"Kitchen hobby",status:"Idea",notes:"Try a small first fermentation experiment, record ingredients, timing and tasting notes. Keep alcohol limited rather than pursuing its effects."},
+    {id:"known-idea-crafts",name:"Crafting and DIY ideas",category:"Craft",status:"Idea",notes:"Space for making saved craft ideas into enjoyable projects when time allows. This is fun, not another required chore."},
+    {id:"known-idea-parenting-psychology",name:"Learn practical parenting psychology",category:"Learning",status:"Idea",notes:"Short, evidence-informed lessons and family emotional-skills practice. Keep it curious, collaborative and pressure-free."}
+  ];
+  let added=0;
+  for(const idea of ideas){
+    const key=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    if(state.hobbyProjects.some(x=>x.id===idea.id||key(x.name)===key(idea.name)))continue;
+    state.hobbyProjects.push({...idea,createdAt:new Date().toISOString(),personalizationSeed:true});
+    added++;
+  }
+  state.settings.optionalLifeInterestsVersion=1;
+  return added>0;
+}
+
+async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();applyOptionalLifeInterests();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
