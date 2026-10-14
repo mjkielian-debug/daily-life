@@ -6464,7 +6464,7 @@ function openTaskDetails(id){
  const t=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!t)return;
  const row=(label,value)=>value?'<div class="event-detail-field"><b>'+esc(label)+'</b><span>'+esc(String(value))+'</span></div>':"";
  const date=t.date?new Date(t.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}):"";
- const steps=String(t.notes||"").split(/[·•;\n]/).map(v=>v.trim()).filter(Boolean);
+ const steps=String(t.notes||"").split(/[·•;\\n]/).map(v=>v.trim()).filter(Boolean);
  const html='<div class="stack event-detail-sheet"><h2>'+esc(t.title||"Task")+'</h2>'+
  row("Date",date)+row("Person",t.child)+row("Category",t.category)+row("Status",t.done?"Completed":"Not yet completed")+
  (t.itineraryMinutes?row("Estimated time",t.itineraryMinutes+" minutes"):"")+
