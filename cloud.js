@@ -1159,6 +1159,30 @@ function cloudApplyLifeEntry(row){
       Object.assign(x,{child,course,grade:String(p.grade||""),percent:Number.isFinite(percent)?percent:null,term:String(p.term||p.period||""),asOf,source:String(p.source||"ChatGPT / ParentVUE snapshot"),notes:String(p.notes||""),updatedAt:String(row.created_at||new Date().toISOString())});
       return true;
     }
+    case "paper_item":{
+      const title=String(p.title||"").trim(),type=String(p.type||"review");
+      if(!title)return false;
+      if(!Array.isArray(state.paperItems))state.paperItems=[];
+      const canonicalType=["review","recycle","file","action","practice"].includes(type)?type:"review";
+      const child=String(p.child||"").trim();
+      const validChild=["Leo","Demitri","Dolly","Ambrose"].includes(child)?child:"";
+      const ref=String(p.reference||p.sourceRef||"").trim();
+      let x=state.paperItems.find(v=>v.cloudEntryId===row.id||row.external_id&&v.externalId===row.external_id);
+      if(!x)x=state.paperItems.find(v=>String(v.title||"").trim().toLowerCase()===title.toLowerCase()&&String(v.reference||"")===ref);
+      if(!x){
+        x={id:uid(),createdAt:String(row.created_at||new Date().toISOString()),completedPages:0,physicallyFinished:false};
+        state.paperItems.push(x);
+      }
+      const pages=Math.max(1,Math.min(10000,Math.floor(Number(p.pages)||1)));
+      Object.assign(x,{title,type:canonicalType,child:canonicalType==="practice"?validChild:"",
+        level:String(p.level||x.level||""),subject:String(p.subject||x.subject||""),
+        pages,notes:String(p.notes||x.notes||""),reference:ref||String(x.reference||""),
+        cloudEntryId:row.id,externalId:String(row.external_id||""),
+        updatedAt:String(row.created_at||new Date().toISOString())});
+      // A scanned paper is NOT physically thrown away, filed or completed.
+      // Don't change confirmed local progress from an informational import.
+      return true;
+    }
     case "school_assignment":{
       if(!Array.isArray(state.schoolAssignments))state.schoolAssignments=[];
       const childRaw=String(p.child||p.person||p.student||"").trim(),title=String(p.title||p.assignment||"").trim();
