@@ -65,7 +65,7 @@
    "Dinner plan: "+planned,
    "Confirmed kids' chores: "+list(doneKids.map(x=>x.label)),
    "Confirmed tasks: "+list(doneTasks.map(x=>x.label)),
-   "Still unknown: "+unknown.length+" checkmarks. Examples: "+list(unknown.slice(0,4).map(x=>x.label),4),
+   "Still unknown: "+unknown.length+" checkmark"+(unknown.length===1?"":"s")+". Examples: "+list(unknown.slice(0,4).map(x=>x.label),4),
    "IMPORTANT: 'Not recorded' and 'unknown' do not mean 'no'. Ask me before marking anything incomplete."
   ].join("\n");
  }
