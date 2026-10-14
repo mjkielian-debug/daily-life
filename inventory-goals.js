@@ -87,7 +87,7 @@
    "Save",async()=>{
     const d=Number(document.querySelector("#hgDay")?.value),w=Number(document.querySelector("#hgWeek")?.value);
     if(!Number.isInteger(d)||!Number.isInteger(w)||d<1||w<1||d>100||w>500){alert("Choose whole numbers in the allowed range.");return}
-    g.dailyZones=d;g.weeklyZones=w;await save();render();openHomeGoals();
+    g.dailyZones=d;g.weeklyZones=w;await save();render();window.openHomeGoals();
    });
  };
  window.openHomeGoalCategory=function(key){
@@ -108,7 +108,7 @@
      alert("Enter whole numbers, with organized areas no greater than total areas.");return
     }
     settings().groups[key]={areasTotal:total,areasDone:done,keepMax:keep};
-    await save();render();openHomeGoals();
+    await save();render();window.openHomeGoals();
    });
  };
  window.homeLogOrganizedArea=async function(key){
@@ -116,14 +116,14 @@
   if(!x||!(Number(x.areasTotal)>Number(x.areasDone||0)))return;
   x.areasDone=Number(x.areasDone||0)+1;
   g.sessions.push({date:ymd(),key,zones:1,id:uid(),createdAt:new Date().toISOString()});
-  await save();render();openHomeGoals();
+  await save();render();window.openHomeGoals();
  };
  window.homeUndoOrganizedArea=async function(key){
   const g=settings(),x=g.groups[key];if(!x||Number(x.areasDone||0)<=0)return;
   x.areasDone=Math.max(0,Number(x.areasDone)-1);
   const index=g.sessions.findLastIndex(v=>v.key===key&&v.date===ymd());
   if(index>=0)g.sessions.splice(index,1);
-  await save();render();openHomeGoals();
+  await save();render();window.openHomeGoals();
  };
  window.homeOrganizationSummary=progress;
  window.openDailyWeeklyProgress=function(){
