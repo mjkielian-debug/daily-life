@@ -636,6 +636,7 @@
            '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
         '<div class="dl-stats">'+cards.join("")+'</div></div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
+      (typeof window.lifeInsightNudge==="function"?window.lifeInsightNudge():"")+
       (typeof window.homeOrganizationSummary==="function"?(function(){const p=window.homeOrganizationSummary();return '<button class="hg-goal-launch" onclick="openDailyWeeklyProgress()">◉ This week: '+p.week+' / '+p.weeklyGoal+' organizing areas · '+(p.percent===null?'Set house goals':p.percent+'% of mapped areas')+' ›</button>'})():"")+
       '<div class="dl-mid-grid">'+
         '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
