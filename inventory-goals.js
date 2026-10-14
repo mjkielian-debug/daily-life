@@ -133,7 +133,11 @@
     done=x=>x.filter(v=>v.status==="yes").length,
     waterGoal=Math.max(1,Number(state.settings?.waterTarget||78)),
     water=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+(Number(x.oz)||0),0),
-    groups=[["Kids' chores",done(chores),chores.length],["Tasks",done(tasks),tasks.length],["Water (oz)",Math.round(water),waterGoal],["Organizing today",p.today,p.dailyGoal],["Organizing this week",p.week,p.weeklyGoal]];
+    weeklyTasks=(state.tasks||[]).filter(x=>x.date>=p.weekStart&&x.date<=date&&!x.paused&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))&&!(typeof itineraryIsBroadFamilyRoutineTask==="function"&&itineraryIsBroadFamilyRoutineTask(x))&&!(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(x,date))),
+    weeklyChores=(state.chores||[]).filter(x=>x.date>=p.weekStart&&x.date<=date),
+    groups=[["Kids' chores today",done(chores),chores.length],["Tasks today",done(tasks),tasks.length],["Water today (oz)",Math.round(water),waterGoal],
+      ["Organizing today",p.today,p.dailyGoal],["Tasks this week",weeklyTasks.filter(x=>x.done).length,weeklyTasks.length],
+      ["Kids' chores this week",weeklyChores.filter(x=>x.done).length,weeklyChores.length],["Organizing this week",p.week,p.weeklyGoal]];
   modal("Daily + weekly progress",'<div class="hg-modal"><div class="hg-short-goals">'+
     groups.map(x=>'<div><b>'+esc(x[0])+' · '+x[1]+' / '+x[2]+'</b>'+meter(x[1],x[2],x[0])+'</div>').join("")+
     '</div><p class="hg-note">Progress uses only confirmed checkmarks and logged amounts. Unknown is not a failure. More weekly goals can be added later.</p>'+
