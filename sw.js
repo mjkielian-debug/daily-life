@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261014-talk-checkin2";
+const CACHE_NAME="daily-life-shell-20261014-chase-balance1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -16,6 +16,8 @@ const APP_SHELL=[
   "./chat-checkin.css",
   "./chat-checkin.js",
   "./visual-hubs.js",
+  "./chase-balance.js",
+  "./chase-balance.css",
   "./readability-fix.css",
   "./cloud.js",
   "./sharing.js",
