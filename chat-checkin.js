@@ -121,7 +121,7 @@
  }
  function quickReviewRows(){
   if(typeof dailyReviewExpected!=="function")return [];
-  return dailyReviewExpected(ymd()).filter(x=>x.status==="unknown"&&(x.kind==="chore"||x.kind==="task"));
+  return dailyReviewExpected(ymd()).filter(x=>x.status==="unknown"&&(x.kind==="chore"||x.kind==="task"||x.kind==="routine"));
  }
  function quickReviewItem(){
   const rows=quickReviewRows();
