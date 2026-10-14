@@ -636,6 +636,7 @@
            '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
         '<div class="dl-stats">'+cards.join("")+'</div></div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
+      (typeof window.homeOrganizationSummary==="function"?(function(){const p=window.homeOrganizationSummary();return '<button class="hg-goal-launch" onclick="openDailyWeeklyProgress()">◉ This week: '+p.week+' / '+p.weeklyGoal+' organizing areas · '+(p.percent===null?'Set house goals':p.percent+'% of mapped areas')+' ›</button>'})():"")+
       '<div class="dl-mid-grid">'+
         '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
         (upcomingRows||'<p class="dl-empty">Nothing else is timed today. Open Day Flow to plan a block.</p>')+
@@ -652,7 +653,7 @@
         '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
         '<button onclick="openDayFlowSection(\'plan\',\''+today+'\')"><span>✦</span><b>Plan day</b><small>'+(audit.hardCount?audit.hardCount+" possible overlaps":audit.routineCount?audit.routineCount+" flexible routines to fit":"No detected time conflicts")+'</small></button>'+
        '</div>'+
-       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openLifeSearch()">⌕ Search</button></div>'+
+       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openDailyWeeklyProgress()">◉ Goals + progress</button></div>'+
      '</section>';
   }
 
