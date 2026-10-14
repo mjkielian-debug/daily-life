@@ -199,3 +199,36 @@
 /* Past days without a recorded chore list are not treated as missed chores. */
 .visual-hub .vh-untracked .vh-bar-track{background:repeating-linear-gradient(135deg,rgba(143,123,152,.11) 0 4px,rgba(143,123,152,.28) 4px 8px)}
 .visual-hub .vh-untracked .vh-bar-track::after{content:"?";align-self:center;display:block;width:100%;font-size:.75rem;text-align:center;color:#795e78}
+
+/* Essential: legacy eight-slice-wheel screens suppressed scrolling globally.
+   New compact dashboards must remain fully reachable on short Android displays. */
+body:has(.visual-hub){
+ height:auto!important;
+ min-height:100dvh!important;
+ overflow-x:hidden!important;
+ overflow-y:auto!important;
+ touch-action:pan-y!important;
+ overscroll-behavior-y:auto;
+}
+body:has(.visual-hub):has(#modal){overflow:hidden!important}
+.app:has(> .visual-hub){
+ display:block!important;
+ height:auto!important;
+ min-height:100dvh!important;
+ max-height:none!important;
+ overflow:visible!important;
+ padding-top:8px!important;
+ padding-bottom:calc(128px + env(safe-area-inset-bottom))!important;
+ touch-action:pan-y!important;
+}
+.app:has(> .visual-hub)>header{
+ position:relative!important;
+ flex:none!important;
+ height:auto!important;
+ max-height:none!important;
+}
+.app:has(> .visual-hub)>.visual-hub{
+ height:auto!important;
+ max-height:none!important;
+ overflow:visible!important;
+}
