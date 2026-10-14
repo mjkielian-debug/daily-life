@@ -229,14 +229,14 @@
 }
 
 /* Rainbow Add Task editor: replace legacy dark green controls */
-#modal .modal:has(#tasktitle){color:#392a43!important;background:linear-gradient(145deg,#fffafc,#fff8ef 60%,#f1f9ff)!important}
-#modal .modal:has(#tasktitle) .stack>label,
-#modal .modal:has(#tasktitle) .grid2>label{color:#48364e!important;-webkit-text-fill-color:#48364e!important;opacity:1!important;font-weight:750!important}
-#modal .modal:has(#tasktitle) :is(input:not([type=checkbox]),select,textarea){background:linear-gradient(110deg,#fff9fc,#f4f8ff)!important;color:#342a3e!important;-webkit-text-fill-color:#342a3e!important;border:1px solid #d9b8d2!important;border-radius:16px!important;min-width:0!important;width:100%!important;min-height:46px!important;padding:10px 13px!important;color-scheme:light!important;box-shadow:0 2px 8px #67436612!important}
-#modal .modal:has(#tasktitle) select option{background:#fff9fc!important;color:#342a3e!important}
-#modal .modal:has(#tasktitle) :is(input,select):focus{outline:2px solid #be78a5!important;outline-offset:1px!important}
-#modal .modal:has(#tasktitle) .grid2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media(max-width:520px){#modal .modal:has(#tasktitle) .grid2{grid-template-columns:1fr}}
+#modal .modal:has(#task){color:#392a43!important;background:linear-gradient(145deg,#fffafc,#fff8ef 60%,#f1f9ff)!important}
+#modal .modal:has(#task) .stack>label,
+#modal .modal:has(#task) .grid2>label{color:#48364e!important;-webkit-text-fill-color:#48364e!important;opacity:1!important;font-weight:750!important}
+#modal .modal:has(#task) :is(input:not([type=checkbox]),select,textarea){background:linear-gradient(110deg,#fff9fc,#f4f8ff)!important;color:#342a3e!important;-webkit-text-fill-color:#342a3e!important;border:1px solid #d9b8d2!important;border-radius:16px!important;min-width:0!important;width:100%!important;min-height:46px!important;padding:10px 13px!important;color-scheme:light!important;box-shadow:0 2px 8px #67436612!important}
+#modal .modal:has(#task) select option{background:#fff9fc!important;color:#342a3e!important}
+#modal .modal:has(#task) :is(input,select):focus{outline:2px solid #be78a5!important;outline-offset:1px!important}
+#modal .modal:has(#task) .grid2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:520px){#modal .modal:has(#task) .grid2{grid-template-columns:1fr}}
 
 /* Calendar event editor and readable event details */
 #modal .modal:has(#etitle){color:#392a43!important;background:linear-gradient(140deg,#fffafc,#fff7ef,#f0f8ff)!important}
