@@ -37,3 +37,32 @@
  .chat-checkin-actions{grid-template-columns:1fr}
  .chat-checkin-actions .primary{grid-column:auto}
 }
+
+/* One answer at a time on Today's dashboard, only after 6 PM.
+   Use a single compact strip, not another oversized card. */
+.dl-chat-checkin-wrap{display:grid;gap:6px;min-width:0}
+.dl-quick-review{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;
+ min-height:50px;padding:7px 10px;border-radius:17px;
+ background:rgba(255,250,253,.83);border:1px solid rgba(168,132,158,.3);
+ color:#3e2b41;
+}
+.dl-quick-review-label{display:grid;gap:3px;min-width:0;flex:1}
+.dl-quick-review-label span{font-size:.59rem;letter-spacing:.045em;font-weight:850;color:#875472;line-height:1.2}
+.dl-quick-review-label b{font-size:.79rem;line-height:1.18;overflow-wrap:anywhere}
+.dl-quick-review-buttons{display:flex;flex-shrink:0;gap:4px;align-items:center}
+.dl-quick-review-buttons button{
+ min-width:39px;min-height:38px;padding:6px 7px;border-radius:12px;
+ background:#fff;border:1px solid #d6bccc;color:#4f3150;
+ font:inherit;font-size:.7rem;font-weight:800;cursor:pointer;
+}
+.dl-quick-review-buttons button:first-child{background:#e8f4e9;border-color:#9fc3a7;color:#295e43}
+.dl-quick-review-buttons button:last-child{background:#f3edf7}
+.dl-quick-review-buttons button:focus-visible{outline:3px solid #9c4f7b;outline-offset:2px}
+@media(max-width:380px){
+ .dl-quick-review{padding:7px 8px;gap:5px}
+ .dl-quick-review-label b{font-size:.72rem}
+ .dl-quick-review-label span{font-size:.56rem}
+ .dl-quick-review-buttons{gap:3px}
+ .dl-quick-review-buttons button{min-width:33px;padding:5px 5px;font-size:.66rem}
+}
