@@ -19,7 +19,7 @@
    sleep=(state.sleepLogs||[]).find(x=>x.date===date),
    foodCount=(state.foodLogs||[]).filter(x=>x.date===date).length,
    waterOz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0),
-   chores=(state.chores||[]).filter(x=>x.date===date),
+   chores=displayChoresForDate(date),
    dinner=typeof mealForDate==="function"?mealForDate(date):null;
   const sleepQuestion=sleep?"Your sleep was logged. How is your energy now, and has anything changed since then?":part==="early"?"How did you sleep, and how are you feeling before today starts?":"How was your sleep last night, and how is your energy now?";
   const workQuestion=workday?(shift?.end?"How did your UPS shift go, and was anything different?":"How did UPS go today? No need to remember exact punch times unless you have them."):"What have you been doing today?";
@@ -41,7 +41,7 @@
  function content(){
   const list=prompts(),question=list[promptIndex%list.length];
   const date=typeof ymd==="function"?ymd():"",oz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0);
-  const chores=(state.chores||[]).filter(x=>x.date===date),marked=chores.filter(x=>x.done).length;
+  const chores=displayChoresForDate(date),marked=chores.filter(x=>x.done).length;
   return '<div class="chat-checkin-modal">'+
    '<div class="chat-checkin-counters"><span>💧 '+Math.round(oz)+' oz logged</span><span>♡ '+marked+'/'+chores.length+' chores marked</span></div>'+
    '<div class="chat-checkin-question"><span class="eyebrow">QUESTION '+(promptIndex%list.length+1)+' / '+list.length+'</span><h3>'+esc(question)+'</h3></div>'+
