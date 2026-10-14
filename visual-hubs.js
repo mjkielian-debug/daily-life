@@ -36,7 +36,7 @@ function visualHubModel(page){
   const urgent=typeof billReadiness==="function"?billReadiness().filter(x=>x.bill?.status!=="paid"&&/Transfer needed|Projected short|Needs account|Balance unavailable|Check bill/.test(x.status)):[],goals=(s.savingsGoals||[]).filter(x=>!x.done).length;
   Object.assign(base,{title:"Money",subtitle:"Bills, budget and accounts",addLabel:"+ Bill",addAction:"openBill()",focusLabel:"NEXT MONEY MOVE",focusTitle:actions?.title||"Check your bill plan",focusNote:actions?.detail||"Review upcoming payments and account readiness.",
    focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills marked paid · next 30 days"),
-   metrics:[m("▤","Bills",bills.length+" due","openMoneyHubSection('bills')"),m("!","Review",urgent.length+" to check","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" linked/tracked","openMoneyHubSection('accounts')"),m("✦","Savings",goals+" goals","openMoneyHubSection('savings')")],
+   metrics:[m("▤","Bills",bills.length+" due","openMoneyHubSection('bills')"),m("!","Review",urgent.length+" to check","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("✦","Savings",goals+" goals","openMoneyHubSection('savings')")],
    links:[vhLink("Bills","▤","openMoneyHubSection('bills')"),vhLink("Budget","◫","openMoneyHubSection('budget')"),vhLink("Transfers","↔","openMoneyHubSection('transfers')"),vhLink("Accounts","◇","openMoneyHubSection('accounts')"),vhLink("Income","↥","openMoneyHubSection('income')"),vhLink("Savings","✦","openMoneyHubSection('savings')"),vhLink("UPS pay","▣","openMoneyHubSection('pay')"),vhLink("Spending","↕","openMoneyHubSection('spending')")],
    bottomTitle:"Bills ahead",bottomDetail:bills.length?`${bills.length} recorded with due dates in the next 30 days. Review readiness before paying.`:"No bills dated in the next 30 days in this view.",barTitle:"Bill due dates · next 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i);return b(dt,bills.filter(x=>x.due===dt).length)});
@@ -102,7 +102,7 @@ function visualHubModel(page){
   Object.assign(base,{title:"Garden + hobbies",subtitle:"Grow, make and enjoy",addLabel:"+ Project",addAction:"openHobbyProject()",
    focusLabel:due.length?"PLANTS TO CHECK":"CREATIVE TIME",focusTitle:due.length?due[0].name:projects[0]?.name||"Pick something enjoyable",
    focusNote:due.length?"Plant care is due.":projects[0]?.nextStep||"Hobbies are optional, never another required chore.",
-   focusAction:due.length?`openPlant('${due[0].id}')`:"openGardenHobbySection('projects')",progress:vhProgress(done,tasks.length,"Garden tasks marked"),
+   focusAction:due.length?"openGardenHobbySection('plants')":"openGardenHobbySection('projects')",progress:vhProgress(done,tasks.length,"Garden tasks marked"),
    metrics:[m("❧","Plants",plants.length+" active","openGardenHobbySection('plants')"),m("💧","Care",due.length+" due","openGardenHobbySection('plants')"),m("✂","Projects",projects.length+" active","openGardenHobbySection('projects')"),m("◇","Supplies",supplies+" needed","openGardenHobbySection('shopping')")],
    links:[vhLink("Plants","❧","openGardenHobbySection('plants')"),vhLink("Projects","✂","openGardenHobbySection('projects')"),vhLink("Garden tasks","✓","openGardenHobbySection('tasks')"),vhLink("Seeds","✦","openGardenHobbySection('seeds')"),vhLink("Season","☀","openGardenHobbySection('season')"),vhLink("Journal","▤","openGardenHobbySection('journal')"),vhLink("Supplies","◇","openGardenHobbySection('supplies')"),vhLink("Shopping","🛒","openGardenHobbySection('shopping')")],
    bottomTitle:"Things you're growing",bottomDetail:`${plants.length} plants · ${projects.length} creative projects. Only logged work counts as done.`});
@@ -132,7 +132,7 @@ function visualHubView(page){
   ${titleSuffix}
   <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button></div>
   <div class="vh-summary">
-   <button type="button" class="vh-main-dial" style="--vh-progress:${percent===null?0:percent}%" onclick="${c.focusAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
+   <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${c.focusAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
     <span class="vh-dial-inner"><small>✧</small><strong>${main}</strong><b>${esc(progress?.label||c.mainLabel)}</b><span>${esc(meterText)}</span></span></button>
    <div class="vh-orbs">${tiles}</div>
   </div>
