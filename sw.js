@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261014-paper-books2";
+const CACHE_NAME="daily-life-shell-20261014-proof-insights2";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -18,6 +18,10 @@ const APP_SHELL=[
   "./inventory-goals.js",
   "./paper-studio.js",
   "./paper-studio.css",
+  "./practice-proof.js",
+  "./life-insights.js",
+  "./electricity-insights.js",
+  "./life-insights.css",
   "./inventory-goals.css",
   "./visual-hubs.js",
   "./chase-balance.js",
