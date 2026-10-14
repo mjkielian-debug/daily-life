@@ -171,6 +171,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261007-headercompact8">
 <link rel="stylesheet" href="visual-hubs.css?v=20261014-mobile1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-talk1">
+<link rel="stylesheet" href="chase-balance.css?v=20261014-card1">
 </head>
 <body>
 <div id="app"></div>
@@ -3271,7 +3272,7 @@ function todayProgress(value,target,label){const max=Number(target),raw=Number(v
   const checking=(state.accounts||[]).filter(x=>x.type==="checking").reduce((sum,x)=>sum+Number(x.balance||0),0),
         month=ymd().slice(0,7),bt=typeof budgetTotals==="function"?budgetTotals(month):null,
         horizon=new Date();horizon.setDate(horizon.getDate()+7);const end=ymd(horizon),
-        bills=(state.bills||[]).filter(b=>b.status!=="paid"&&b.due>=ymd()&&b.due<=end).sort((a,b)=>a.due.localeCompare(b.due)),
+        bills=(state.bills||[]).filter(b=>billForecastIncluded(b)&&b.status!=="paid"&&b.due>=ymd()&&b.due<=end).sort((a,b)=>a.due.localeCompare(b.due)),
         upcomingIncome=expectedIncomeOccurrences(end),pay=upcomingIncome[0]||null,
         hasBudget=bt&&Number(bt.income)>0;
   return `<div class="card today-money"><div class="section-title"><div><div class="eyebrow">💚 Money snapshot</div><h2>${money(checking)} checking</h2></div><button class="btn" onclick="setView('more')">Open Money</button></div><div class="grid3"><div class="metric"><div class="muted small">Budget remaining</div><div class="big">${hasBudget?budgetMoney(bt.remaining):"—"}</div></div><div class="metric"><div class="muted small">Bills next 7 days</div><div class="big">${bills.length}</div><div class="muted small">${bills.length?money(bills.reduce((sum,b)=>sum+Number(b.amount||0),0)):"none logged"}</div></div><div class="metric"><div class="muted small">Next expected income</div><div class="big">${pay?money(pay.amount):"—"}</div><div class="muted small">${pay?`${esc(pay.name)} · ${esc(dl(pay.date))}`:"Nothing scheduled yet"}</div></div></div></div>`;
@@ -5737,7 +5738,7 @@ function moneyRunNextAction(){
 }
 function openMoneyHubSection(section){
   let title="Money",body="";
-  if(section==="bills"){title="Bills";body=`${typeof moneyNextStepsCard==="function"?moneyNextStepsCard():""}${dueDateOutlookCard()}<details class="money-more-details"><summary>Show bill calendar + full list</summary><div class="money-more-details-body">${billCalendarCard()}${upcomingBillsView()}</div></details>`}
+  if(section==="bills"){title="Bills";body=`${typeof chaseBalancePanel==="function"?chaseBalancePanel():""}${typeof moneyNextStepsCard==="function"?moneyNextStepsCard():""}${dueDateOutlookCard()}<details class="money-more-details"><summary>Show bill calendar + full list</summary><div class="money-more-details-body">${billCalendarCard()}${upcomingBillsView()}</div></details>`}
   else if(section==="budget"){closeModal();setView("budget");return}
   else if(section==="income"){title="Income";body=moneyIncomeHub()}
   else if(section==="accounts"){title="Accounts";body=moneyAccountsCard()}
@@ -5749,7 +5750,7 @@ function openMoneyHubSection(section){
 }
 function moreView(){
   const today=ymd(),end30=shiftDateString(today,30),
-        bills=(state.bills||[]).filter(b=>b.status!=="paid"&&validBillDate(b.due)&&b.due>=today&&b.due<=end30),
+        bills=(state.bills||[]).filter(b=>billForecastIncluded(b)&&b.status!=="paid"&&validBillDate(b.due)&&b.due>=today&&b.due<=end30),
         income=expectedIncomeOccurrences(end30).filter(x=>x.date>=today),
         accounts=(state.accounts||[]).length,
         activeGoals=(state.savingsGoals||[]).filter(g=>!g.done).length,
@@ -6064,7 +6065,7 @@ function budgetPlan(month=budgetMonth){
   return {...saved,income:saved.income??null,ebt:saved.ebt??null,ebtStart:saved.ebtStart??null,limits:{...(saved.limits||{})}};
 }
 function budgetTotals(month=budgetMonth){
-  const plan=budgetPlan(month),bills=state.bills.filter(b=>String(b.due||"").slice(0,7)===month);
+  const plan=budgetPlan(month),bills=state.bills.filter(b=>billForecastIncluded(b)&&String(b.due||"").slice(0,7)===month);
   const logs=state.budget.spending.filter(x=>String(x.date||"").slice(0,7)===month);
   const billTotal=bills.reduce((sum,b)=>sum+budgetCents(b.amount),0);
   const income=budgetCents(plan.income),ebt=budgetCents(plan.ebt),ebtStart=budgetCents(plan.ebtStart);
@@ -6657,7 +6658,7 @@ function accountStrategyNote(a){
 }
 function accountBillsDueSoon(accountKey,days=30){
   const end=new Date(ymd()+"T12:00:00");end.setDate(end.getDate()+days);const until=ymd(end);
-  return (state.bills||[]).filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=until&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0);
+  return (state.bills||[]).filter(b=>billForecastIncluded(b)&&b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=until&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0);
 }
 function accountSweepPlan(a,days=45){
   const today=ymd(),endDate=new Date(today+"T12:00:00");endDate.setDate(endDate.getDate()+Math.max(1,Number(days)||45));const until=ymd(endDate),
@@ -6666,7 +6667,7 @@ function accountSweepPlan(a,days=45){
     if(x.accountKey===a.key)events.push({date:x.date,kind:"income",amount:Number(x.amount||0),name:x.name});
   }
   for(const b of state.bills||[]){
-    if(b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due<today||b.due>until)continue;
+    if(!billForecastIncluded(b)||b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due<today||b.due>until)continue;
     const amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0)continue;
     events.push({date:b.due,kind:"bill",amount:-amount,name:b.name});
   }
@@ -6918,9 +6919,9 @@ function expectedIncomeCard(){
 }
 function billReadiness(){
   const spentByAccount=new Map(),transferOutByAccount=new Map(),transferInByAccount=new Map(),
-        sorted=state.bills.map((bill,index)=>({bill,index})).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
+        sorted=state.bills.map((bill,index)=>({bill,index})).filter(r=>billForecastIncluded(r.bill)).sort((a,b)=>String(a.bill.due||"9999-12-31").localeCompare(String(b.bill.due||"9999-12-31"))||a.index-b.index);
   const spendableAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&!a.protectFromSpending&&a.key!=="house_fund"&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance)));
-  const billsDueThrough=(accountKey,date)=>state.bills.filter(b=>b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=date&&b.amount!==null&&b.amount!==""&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0).reduce((sum,b)=>sum+Math.round(Number(b.amount)*100),0);
+  const billsDueThrough=(accountKey,date)=>state.bills.filter(b=>billForecastIncluded(b)&&b.status!=="paid"&&b.paymentAccountKey===accountKey&&validBillDate(b.due)&&b.due<=date&&b.amount!==null&&b.amount!==""&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0).reduce((sum,b)=>sum+Math.round(Number(b.amount)*100),0);
   const transferCapacity=(source,date)=>{
     const starting=Math.round(Number(source.balance||0)*100),
           allIncome=incomeBefore(date,source.key),
@@ -6978,7 +6979,7 @@ function transferInstruction(r){
 }
 // Each occurrence remains a separate bill; paid history is never recycled.
 const BILL_REPEATS=[[0,"Does not repeat"],[1,"Monthly"],[3,"Every 3 months"],[12,"Yearly"]];
-function billRepeat(b){return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
+function billRepeat(b){if(chaseBalanceOnlyBill(b))return 0;return BILL_REPEATS.some(([n])=>n===Number(b.repeatMonths))?Number(b.repeatMonths):0}
 function validBillDate(value){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return false;
   const d=new Date(value+"T12:00:00");return !isNaN(d)&&ymd(d)===value;
@@ -6996,9 +6997,9 @@ function nextBillIndex(b){
   const due=nextBillDate(b),name=String(b.name||"").trim().toLowerCase();
   return due?state.bills.findIndex(x=>x!==b&&x.due===due&&String(x.name||"").trim().toLowerCase()===name):-1;
 }
-function nextBillDraft(b){return {name:b.name,amount:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",desiredAccountKey:b.desiredAccountKey||"",paymentSetup:recordedBillSetup(b),amountType:recordedBillAmountType(b),frequency:recordedBillFrequency(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
+function nextBillDraft(b){return {name:b.name,amount:chaseBalanceOnlyBill(b)?null:b.amount,due:nextBillDate(b),paymentAccountKey:b.paymentAccountKey||"",desiredAccountKey:b.desiredAccountKey||"",paymentSetup:recordedBillSetup(b),amountType:recordedBillAmountType(b),frequency:recordedBillFrequency(b),repeatMonths:billRepeat(b),repeatDay:Number(b.repeatDay)||Number(String(b.due).slice(8,10)),previousBillId:b.id}}
 function appendNextBill(b){
-  if(nextBillIndex(b)>=0||!validBillDate(b.due))return;
+  if(chaseBalanceOnlyBill(b)||nextBillIndex(b)>=0||!validBillDate(b.due))return;
   state.bills.push({...nextBillDraft(b),id:uid(),status:"upcoming"});
 }
 function openNextBill(index){
@@ -7049,7 +7050,7 @@ function billRowView(r){
   ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
   <div class="actions">${pendingPayment?`<span class="bill-status unknown">Bank payment pending</span>`:bankMatched?`<span class="bill-status covered">Bank matched</span>`:paid?`<span class="tag">Paid manually</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></details></div>
   <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${pendingPayment?"View bank payment":bankMatched?"View bank match":paid?"Edit paid bill":"Edit"}</button>
-  ${paid&&!pendingPayment?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
+  ${paid&&!pendingPayment&&!chaseBalanceOnlyBill(b)?`<button class="btn" aria-label="Next bill for ${esc(b.name)}" onclick="openNextBill(${r.index})">${nextBillIndex(b)>=0?"View next bill":"Create next bill"}</button>`:""}</div></div>`;
 }
 function upcomingBillsView(){
   const rows=billReadiness(),unpaid=rows.filter(r=>r.bill.status!=="paid"||r.bill.paymentPending),paid=rows.filter(r=>r.bill.status==="paid"&&!r.bill.paymentPending);
@@ -7074,7 +7075,7 @@ function openBill(index=-1,sourceIndex=-1){
   <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
   <label>Amount type<select id="billAmountType">${BILL_AMOUNT_TYPES.map(type=>`<option ${recordedBillAmountType(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
   <label>Bill frequency / status<select id="billFrequency" onchange="syncBillFrequencyRepeat()">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
-  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat" onchange="syncBillRepeatFrequency()">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">When marked paid, a repeating bill creates one unpaid next occurrence with the same amount, account and setup. Short months use their last day, then return to the original day. Review variable bill amounts each cycle. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
+  ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat" onchange="syncBillRepeatFrequency()">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">Fixed bills can create the next occurrence when marked paid. Chase autopay is tracked with its linked current credit-card balance, not a repeated bill amount. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
   <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
     for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
     const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
@@ -7654,5 +7655,6 @@ registerAppWorker();
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
 <script src="task-ui.js?v=20261007-kidgroups6"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
+<script src="chase-balance.js?v=20261014-card1"></script>
 </body>
 </html>
