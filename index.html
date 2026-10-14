@@ -5812,8 +5812,10 @@ function moneyAccountsCard(){
   return accountList+cloudFinancePanel()+netWorthCard();
 }
 function moneyTransfersCard(){
-  const coach=typeof budgetCoachCard==="function"?budgetCoachCard():"";
-  return `${coach}<details class="money-more-details"><summary>More money details</summary><div class="money-more-details-body">${moneyNextStepsCard()}${safeToSpendCard()}${accountStrategyCard()}</div></details>`;
+  const bankExit=typeof window.bankExitCard==="function"?window.bankExitCard():"";
+  // If an account is being closed, don't lead with a transfer INTO it.
+  const coach=!bankExit&&typeof budgetCoachCard==="function"?budgetCoachCard():"";
+  return `${bankExit}${coach}<details class="money-more-details"><summary>Show balances, budget math + strategy</summary><div class="money-more-details-body">${bankExit?"":moneyNextStepsCard()}${safeToSpendCard()}${accountStrategyCard()}</div></details>`;
 }
 function moneyIncomeHub(){
   return `${expectedIncomeCard()}${incomePatternCard()}${seasonalIncomeCard()}`;
@@ -5825,6 +5827,10 @@ function moneySpendingHub(){
   return html;
 }
 function moneyNextActionSummary(){
+  const closure=Array.isArray(state.settings?.bankExitPlans)?state.settings.bankExitPlans.find(x=>x.priority&&x.status!=="closed"):null;
+  if(closure)return {title:"Review "+closure.institution+" closure and "+(closure.renewalName||"linked payments"),
+    detail:"Decide before "+(closure.renewalDate||"next bill")+". No transfer or closure is confirmed.",
+    bankExit:true};
   const likelyBillCount=typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0;
   if(likelyBillCount){
     return{title:"Confirm possible bill payment",detail:likelyBillCount+" bank transaction"+(likelyBillCount===1?" may":"s may")+" already cover a bill.",reviewBill:true};
@@ -5846,6 +5852,7 @@ function moneyNextActionSummary(){
 }
 function moneyRunNextAction(){
   const next=moneyNextActionSummary();
+  if(next.bankExit&&typeof window.openBankExitPlan==="function"){window.openBankExitPlan();return}
   if(next.reviewBill&&typeof openLikelyBillPaymentReview==="function"){openLikelyBillPaymentReview(0);return}
   if(Number.isInteger(next.index)){openBill(next.index);return}
   openMoneyHubSection("transfers");
