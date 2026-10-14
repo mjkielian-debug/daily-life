@@ -812,7 +812,7 @@ function itinerarySuggestedBlocks(date){
           prepEnd=Math.min(dinnerStart,mealPrepStart+prepMinutes);
     add({templateKey:"meal-prep",start:minutesHm(mealPrepStart),end:minutesHm(prepEnd),title:"Start "+meal.dish,detail:[method,"Active dinner prep"].filter(Boolean).join(" · "),icon:"🍳"});
   }
-  if(!hasDetailedMealFlow&&!mealCoveredByFixedEvent)add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
+  if(!hasDetailedMealFlow&&!mealCoveredByFixedEvent&&!(meal?.recipeRequired===false&&/(food fort|prime time|provided|takeout|delivery|away)/i.test([meal.dish,meal.method,meal.notes].join(" "))))add({templateKey:"dinner",start:minutesHm(dinnerStart),end:minutesHm(dinnerStart+dinnerLength),title:kidsGoneByDinner?"Dinner / kitchen reset":"Dinner + kitchen reset",detail:itineraryRoutineDetail(date,"dinner",meal?.dish||(kidsGoneByDinner?"Your dinner + quick kitchen reset":"Eat dinner + quick kitchen reset")),icon:"🍽️"});
   if(kids.length&&(kidsAwayAt===null||kidsAwayAt>18*60+45)){
     const baseChores=itineraryRoutineDetail(date,"chores","Family evening reset");
     let choreStart="18:15",choreEnd="19:00",choreTitle="Kids chores + evening reset",showerNote="";
