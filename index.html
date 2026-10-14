@@ -1547,7 +1547,7 @@ function dayFlowItemAction(x,date){
   if(x.source==="event")return `openEventDetails('${date}','${x.sourceId}')`;
   if(x.source==="meal")return `openMeal('${date}')`;
   if(x.source==="suggested")return `openSuggestedItineraryBlock('${date}','${x.templateKey}')`;
-  if(x.source==="task")return `openItineraryTask('${x.sourceId}')`;
+  if(x.source==="task")return `openTaskDetails('${x.sourceId}')`;
   return `openDayFlowSection('plan','${date}')`;
 }
 function dayFlowBucketCard(date,key){
@@ -1645,7 +1645,7 @@ function itineraryView(){
         looseTasks=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)),
         looseChores=dayFlowUnplacedChores(date,items),
         unscheduled=looseTasks.length+looseChores.length,
-        looseFocus=looseTasks[0]?{title:looseTasks[0].title,detail:"Loose task · choose a time",action:`openTask('','${looseTasks[0].id}')`}:looseChores[0]?{title:[looseChores[0].child,looseChores[0].chore].filter(Boolean).join(" · "),detail:"Chore · choose a time",action:`openDayFlowSection('unscheduled','${date}')`}:null,
+        looseFocus=looseTasks[0]?{title:looseTasks[0].title,detail:"Loose task · choose a time",action:`openTaskDetails('${looseTasks[0].id}')`}:looseChores[0]?{title:[looseChores[0].child,looseChores[0].chore].filter(Boolean).join(" · "),detail:"Chore · choose a time",action:`openDayFlowSection('unscheduled','${date}')`}:null,
         conflicts=dayFlowConflictAudit(date),
         buckets=Object.keys(DAY_FLOW_BUCKETS).map(key=>{const rows=dayFlowBucketItems(date,key),first=rows.find(x=>!x.done)||rows[0];return{key,...DAY_FLOW_BUCKETS[key],count:rows.length,detail:first?fmtClock(first.start)+" · "+rows.length:"Open",fullDetail:first?fmtClock(first.start)+" · "+rows.length+" block"+(rows.length===1?"":"s"):"Open"}}),
         segments=buckets,
@@ -6460,6 +6460,22 @@ async function toggleCare(key){
   await save();render();
 }
 async function monster(){state.foodLogs.push({id:uid(),date:ymd(),name:"Monster Zero Ultra",category:"monster",quantity:1,calories:10,protein:0});await save();render()}
+function openTaskDetails(id){
+ const t=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!t)return;
+ const row=(label,value)=>value?'<div class="event-detail-field"><b>'+esc(label)+'</b><span>'+esc(String(value))+'</span></div>':"";
+ const date=t.date?new Date(t.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}):"";
+ const steps=String(t.notes||"").split(/[·•;\n]/).map(v=>v.trim()).filter(Boolean);
+ const html='<div class="stack event-detail-sheet"><h2>'+esc(t.title||"Task")+'</h2>'+
+ row("Date",date)+row("Person",t.child)+row("Category",t.category)+row("Status",t.done?"Completed":"Not yet completed")+
+ (t.itineraryMinutes?row("Estimated time",t.itineraryMinutes+" minutes"):"")+
+ (t.itineraryStart?row("Start",t.itineraryStart):"")+
+ row("Notes",t.notes)+
+ (steps.length>1?'<p class="muted small">This task has multiple steps. Use Daily Review to record partial completion.</p>':"")+
+ '<div class="actions"><button type="button" class="btn primary" id="taskDetailToggle">'+(t.done?"Mark not done":"Mark complete")+'</button><button type="button" class="btn" id="taskDetailEdit">Edit task</button></div></div>';
+ modal("Task details",html,"Close",closeModal);
+ document.getElementById("taskDetailEdit")?.addEventListener("click",()=>{closeModal();openTask("",id)});
+ document.getElementById("taskDetailToggle")?.addEventListener("click",async()=>{t.done=!t.done;await save();render();openTaskDetails(id)});
+}
 function openTask(person="",id="",shareDefault=false){
   ensurePeopleProfiles();
   const existing=(state.tasks||[]).find(x=>x.id===id)||null,
