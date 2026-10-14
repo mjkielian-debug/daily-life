@@ -1988,6 +1988,7 @@ function ensureFamilyDay(date=ymd()){
 }
 function ensureRecurringFamilyEvents(){
   const defs=state.settings?.recurringFamilyEvents||[],today=new Date(),desired=new Map();
+  // Stopped recurring rules must never regenerate after the quarter ends.
   for(const r of defs)if(!r.id)r.id=uid();
   for(let offset=-1;offset<=35;offset++){
     const d=new Date(today);d.setDate(today.getDate()+offset);const date=ymd(d),wd=d.getDay();
@@ -2562,6 +2563,26 @@ function migrateState(s){
     cleaned=cleaned.filter(r=>!redundant.has(String(r.id||"")));
     s.settings.recurringFamilyEvents=cleaned;
     s.settings.familyScheduleDedupeVersion=2;
+  }
+  // Quarter-one Everett club ended October 9. Retire BOTH generations of
+  // Wednesday rules and pending generated events; preserve historical records.
+  if(Number(s.settings.demitriClubQuarterEndVersion||0)<1){
+    const ended="2026-10-09",ids=new Set(["wed-demitri-after-school-club","wednesday-demitri-club-pickup"]);
+    for(const rule of s.settings.recurringFamilyEvents||[]){
+      const text=[rule.title,rule.notes].filter(Boolean).join(" ");
+      if(ids.has(String(rule.id||""))||(String(rule.child||"").toLowerCase()==="demitri"&&
+        /after.school club|big gumdrop outdoors|pick up demitri after club/i.test(text)&&Number(rule.weekday)===3)){
+        rule.endDate=ended;rule.retired=true;
+      }
+    }
+    for(const event of s.events||[]){
+      if(String(event.date||"")<=ended)continue;
+      const child=String(event.child||"").toLowerCase(),text=[event.title,event.notes].filter(Boolean).join(" ");
+      if(ids.has(String(event.recurringRuleId||""))||(child==="demitri"&&
+        /after.school club|big gumdrop outdoors|pick up demitri after club/i.test(text)&&
+        !/musical|new quarter/i.test(text)))event.status="cancelled";
+    }
+    s.settings.demitriClubQuarterEndVersion=1;
   }
   if(Number(s.settings.knownCompletionHistoryVersion||0)<1){
     const confirmed=[
@@ -5015,11 +5036,14 @@ function peopleAgendaItems(){
   const profileByName=new Map((state.peopleProfiles||[]).map(p=>[String(p.name||"").trim().toLowerCase(),p])),rows=[];
   for(const e of state.events||[]){
     if(!e.date||e.date<ymd()||e.status==="cancelled")continue;
+    if(String(e.child||"").toLowerCase()==="demitri"&&e.date>"2026-10-09"&&
+      /after.school club|big gumdrop outdoors|pick up demitri after club/i.test(String(e.title||"")))continue;
     const p=profileByName.get(String(e.child||"").trim().toLowerCase());if(!p)continue;
     rows.push({kind:"event",person:p,date:e.date,title:e.title||"Event",time:e.startTime||"",location:e.location||"",id:e.id});
   }
   for(const p of state.peopleProfiles||[])for(const plan of p.sharedPlans||[]){
     if(!plan||typeof plan==="string"||!plan.date||plan.date<ymd())continue;
+    if(String(p.name||"").toLowerCase()==="demitri"&&plan.date>"2026-10-09"&&/after.school club|big gumdrop outdoors/i.test(String(plan.title||"")))continue;
     rows.push({kind:"plan",person:p,date:plan.date,title:plan.title||"Plan",time:plan.time||"",location:plan.location||"",id:plan.id||""});
   }
   return rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
