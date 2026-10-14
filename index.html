@@ -2786,7 +2786,7 @@ function recipeNeedSummary(m){
   if(!needs.length)return"";
   return `<div class="tomorrow-prep"><b>🛒 Need for this meal</b><div class="muted small">${needs.map(x=>esc(x.item)+(x.qty?` · ${esc(x.qty)}`:"")).join("<br>")}</div><button class="btn small" style="margin-top:8px" onclick="setView('home')">Open grocery list</button></div>`;
 }
-const todayChores=()=>state.chores.filter(x=>x.date===ymd());
+const todayChores=()=>displayChoresForDate(ymd());
 function ingredientParts(line){const m=String(line).match(/^\s*(?:\[)?(need|check|have)(?:\])?\s*[:\-]?\s*(.*)$/i);return m?{state:m[1].toLowerCase(),text:m[2]||line}:{state:"check",text:line}}
 function eventDisplayKey(e){
   const child=String(e?.child||"").trim().toLowerCase();
@@ -3455,6 +3455,26 @@ const SELF_CARE_REVIEW_COPY={
   meditate:{label:"Meditated / breathing practice",detail:"Did you intentionally meditate or do a breathing practice?"},
   wind_down:{label:"Bedtime wind-down",detail:"Composite bedtime routine; its concrete steps are tracked elsewhere.",review:false}
 };
+/* Choose one visible daily chore when an imported confirmation overlaps a
+   generated chore. Never delete a stored record or erase completed history. */
+function displayChoresForDate(date=ymd()){
+  const rows=(state.chores||[]).filter(x=>x.date===date),out=[],indices=new Map();
+  const norm=x=>String(x||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
+  const dedupEligible=x=>!!(x.generated||x.cloudEntryId||x.source==="chatgpt");
+  for(const row of rows){
+    const key=norm(row.child)+"|"+norm(row.chore);
+    const pos=indices.get(key);
+    if(pos===undefined){indices.set(key,out.length);out.push(row);continue}
+    const previous=out[pos];
+    if(!dedupEligible(row)&&!dedupEligible(previous)){
+      // Explicitly entered identical chores may be separate occurrences.
+      out.push(row);continue;
+    }
+    if((row.done&&!previous.done)||
+      (row.done===previous.done&&!!row.generated&&!previous.generated))out[pos]=row;
+  }
+  return out;
+}
 function dailyReviewExpected(date=ymd()){
   const rows=[];
   for(const t of (state.tasks||[]).filter(x=>x.date===date)){
@@ -3467,7 +3487,7 @@ function dailyReviewExpected(date=ymd()){
           taskLabel=t.child?`${t.child} · ${t.title||"Task"}`:(t.title||"Task");
     rows.push({kind:"task",key:t.id,label:taskLabel,group:"Tasks",detail:taskDetail,status:dailyReviewStatus("task",t.id,date)});
   }
-  for(const c of (state.chores||[]).filter(x=>x.date===date)){
+  for(const c of displayChoresForDate(date)){
     const child=String(c.child||"").trim(),chore=String(c.chore||"Chore").trim(),
           label=child?`${child} · ${chore}`:chore,
           group=c.generated==="daily-basics"?"Kids daily routine":c.generated==="rotation"?"Kids rotating chore":"Chores + routines";
