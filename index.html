@@ -3421,12 +3421,14 @@ function dailyReviewClear(kind,key,date=ymd()){
 }
 function dailyReviewStatus(kind,key,date=ymd()){
   const review=dailyReviewEntry(kind,key,date);
-  if(review&&["no","na"].includes(String(review.status||"")))return review.status;
+  // Actual confirmed completion always wins over an older review answer.
+  // This lets a later ChatGPT update correct an earlier "No" without making
+  // the dashboard and the daily-review count disagree.
   if(kind==="task"){
-    const x=(state.tasks||[]).find(v=>String(v.id)===String(key));
+    const x=(state.tasks||[]).find(v=>String(v.id)===String(key)&&v.date===date);
     if(x?.done)return"yes";
   }else if(kind==="chore"){
-    const x=(state.chores||[]).find(v=>String(v.id)===String(key));
+    const x=(state.chores||[]).find(v=>String(v.id)===String(key)&&v.date===date);
     if(x?.done)return"yes";
   }else if(kind==="care"){
     if(selfCareDone(key,date))return"yes";
@@ -3512,7 +3514,7 @@ function selfCarePatternStats(key,days=7){
   out.percent=out.known?Math.round(out.yes*100/out.known):0;
   return out;
 }
-async function applyDailyReview(kind,key,date,status){
+async function applyDailyReview(kind,key,date,status,openReviewAfter=true){
   const item=dailyReviewExpected(date).find(x=>x.kind===kind&&String(x.key)===String(key));
   if(!item)return;
   if(kind==="task"){
@@ -3538,7 +3540,8 @@ async function applyDailyReview(kind,key,date,status){
   }
   dailyReviewSet(kind,key,date,status,item.label,item.group);
   await save();
-  render();openDailyReview(date);
+  render();
+  if(openReviewAfter)openDailyReview(date);
 }
 function openDailyReview(date=ymd(),cursor=0){
   date=/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))?date:ymd();
