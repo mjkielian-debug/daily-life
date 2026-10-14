@@ -475,3 +475,13 @@ progress,
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;transition:none!important}
 }
+
+/* Dedicated Today progress and hydration sheets */
+.dl-breakdown,.dl-water-quick{display:grid;gap:12px;padding:12px 4px;color:#35263d}
+.dl-breakdown h2,.dl-water-quick h2{text-align:center;margin:4px 0;color:#6b315e}
+.dl-breakdown>p,.dl-water-quick>p{text-align:center;margin:2px 0;color:#705a72}
+.dl-breakdown-row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:8px 4px}
+.dl-breakdown-row b{font-variant-numeric:tabular-nums}
+.dl-breakdown-track{grid-column:1/-1;height:11px;background:#f1e6ee;border-radius:20px;overflow:hidden}
+.dl-breakdown-track>div{height:100%;background:linear-gradient(90deg,#ee91b1,#f8ca8b,#9adbc7,#9bc9f3);border-radius:20px}
+.dl-water-quick .btn,.dl-breakdown .btn{min-height:48px}
