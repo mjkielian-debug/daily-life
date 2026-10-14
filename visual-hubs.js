@@ -9,7 +9,7 @@ function visualHubModel(page){
  const m=(icon,label,value,action)=>({icon,label,value:String(value),action});
  const b=(date,value,known=true)=>({date,value:Math.max(0,Number(value)||0),known});
  if(page==="family"){
-  const chores=(s.chores||[]).filter(x=>x.date===day),done=chores.filter(x=>x.done).length,events=(s.events||[]).filter(x=>x.date>=day&&x.date<=seven&&x.status!=="cancelled");
+  const chores=displayChoresForDate(day),done=chores.filter(x=>x.done).length,events=(s.events||[]).filter(x=>x.date>=day&&x.date<=seven&&x.status!=="cancelled");
   const plans=typeof peopleAgendaItems==="function"?peopleAgendaItems().filter(x=>x.date>=day):[];
   const next=plans[0],profiles=s.peopleProfiles||[],family=typeof childProfiles==="function"?childProfiles():[];
   const soonSchool=events.filter(x=>x.date<=shiftDateString(day,2)&&typeof isSchoolEvent==="function"&&isSchoolEvent(x)).length;
@@ -22,7 +22,7 @@ function visualHubModel(page){
    metrics:[m("♡","Kids",family.length,"openPeopleHubSection('kids')"),m("🎒","School",soonSchool?soonSchool+" next 2d":"View","openPeopleHubSection('school')"),m("✦","Next plan",next?next.date.slice(5):"None","openPeopleHubSection('plans')"),m("🎂","Birthday",birthdays.length?birthdays[0].label:"Not set","openPeopleHubSection('birthdays')")],
    links:[vhLink("Kids","♡","openPeopleHubSection('kids')"),vhLink("School","🎒","openPeopleHubSection('school')"),vhLink("Plans","✦","openPeopleHubSection('plans')"),vhLink("Chores","✓","openPeopleHubSection('routines')"),vhLink("Birthdays","🎂","openPeopleHubSection('birthdays')"),vhLink("Activities","◷","openPeopleHubSection('activities')"),vhLink("Kids money","◇","openPeopleHubSection('money')"),vhLink("All people","♡","openPeopleHubSection('profiles')")],
    bottomTitle:"Family rhythm",bottomDetail:next?nextLabel:"Today's family routines",barTitle:"Chores · last 7 days"});
-  base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i-6),r=(s.chores||[]).filter(x=>x.date===dt);return b(dt,r.length?Math.round(100*r.filter(x=>x.done).length/r.length):0,r.length>0)});
+  base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i-6),r=displayChoresForDate(dt);return b(dt,r.length?Math.round(100*r.filter(x=>x.done).length/r.length):0,r.length>0)});
  }else if(page==="home"){
   const dates=typeof week==="function"?week().filter(d=>d>=day):[day],planned=dates.filter(d=>!!(s.meals||[]).find(x=>x.date===d&&x.type==="dinner"&&x.dish)).length;
   const meal=typeof todayMeal==="function"?todayMeal():null,shop=typeof neededShoppingGroups==="function"?neededShoppingGroups():[],runzas=typeof runzaCookingBatch==="function"?runzaCookingBatch():null;
