@@ -819,8 +819,8 @@ function cloudApplyLifeEntry(row){
       // second copy of "Demitri · dishes" when ChatGPT confirms it was done.
       const key=v=>String(v||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
       const matches=(state.chores||[]).filter(x=>x.date===date&&key(x.child)===key(child)&&key(x.chore)===key(chore));
-      if(matches.length===1){
-        const existing=matches[0];
+      if(matches.length){
+        const existing=matches.find(x=>x.generated)||matches[0];
         if(p.done===true)existing.done=true;
         // Silence / a false or missing completion flag must not undo a checkmark.
         if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))
@@ -1050,10 +1050,10 @@ function cloudApplyLifeEntry(row){
       const child=typeof canonicalPersonName==="function"?canonicalPersonName(p.child):String(p.child||"");
       const key=v=>String(v||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
       const matches=(state.tasks||[]).filter(x=>x.date===date&&key(x.title)===key(title)&&key(x.child)===key(child));
-      if(matches.length===1){
+      if(matches.length){
         // A conversational update should check off an existing task, not
         // duplicate the scheduled row or overwrite a true value with unknown.
-        const existing=matches[0];
+        const existing=matches.find(x=>x.generated)||matches[0];
         if(p.done===true)existing.done=true;
         if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))
           existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
