@@ -8,7 +8,8 @@
   {key:"toys",label:"Toys",icon:"🧸",hint:"Toy bins, games, craft toys"},
   {key:"food",label:"Food",icon:"🥫",hint:"Pantry, fridge, freezer"},
   {key:"supplies",label:"Supplies",icon:"🧹",hint:"Bathroom, cleaning, tools, household"},
-  {key:"other",label:"Everything else",icon:"⌂",hint:"Books, papers, storage and other areas"}
+  {key:"papers",label:"Papers + documents",icon:"📄",hint:"School papers, workbooks, notices, artwork and file cabinet"},
+  {key:"other",label:"Everything else",icon:"⌂",hint:"Books, storage and other areas"}
  ];
  function settings(){
   if(!state.settings)state.settings={};
@@ -22,6 +23,7 @@
  }
  function groupFor(item){
   const c=String(item?.category||"").toLowerCase(),n=String(item?.name||"").toLowerCase();
+  if(/paper|document|schoolwork|filing|bookwork/.test(c))return "papers";
   if(/clothing|clothes|apparel|wardrobe/.test(c))return "clothes";
   if(/toys?|games?/.test(c)||(/\bkids?\b/.test(c)&&/\b(toy|doll|lego|puzzle|game|stuffed)\b/.test(n)))return "toys";
   if(/food|pantry|grocery|groceries/.test(c))return "food";
@@ -66,7 +68,11 @@
      (configured?'<div class="hg-actions"><button type="button" onclick="homeLogOrganizedArea(\''+g.key+'\')">+ 1 area organized</button>'+
        (settings().sessions.some(x=>x.key===g.key&&x.date===ymd())?'<button type="button" onclick="homeUndoOrganizedArea(\''+g.key+'\')">Undo today</button>':'')+'</div>':'')+'</div>';
   }).join("");
-  return '<div class="hg-modal">'+
+  const paper=typeof window.paperStudioSummary==="function"?window.paperStudioSummary():null;
+  const paperPanel=paper?'<div class="hg-short-goals"><b>📄 Paper sorting</b><small>'+paper.decided+' / '+paper.total+' batches categorized · '+paper.finished+' physically handled</small>'+
+      meter(paper.decided,paper.total,"Paper batches categorized")+
+      '<div class="hg-actions"><button onclick="openPaperStudio()">Sort papers ›</button><button onclick="openArtLibrary()">🎨 Kids’ art books ›</button></div></div>':"";
+  return '<div class="hg-modal">'+paperPanel+
     '<div class="hg-summary"><span class="hg-large-ring" style="--hg-fill:'+(x.percent??0)+'%"><b>'+(x.percent===null?"—":x.percent+"%")+'</b><small>organized</small></span>'+
     '<div><b>'+x.done+' / '+x.zones+' areas confirmed</b><p>Only areas you mark reviewed count. Untracked areas stay unknown.</p></div></div>'+
     '<div class="hg-short-goals">'+
@@ -136,8 +142,8 @@
     weeklyTasks=(state.tasks||[]).filter(x=>x.date>=p.weekStart&&x.date<=date&&!x.paused&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))&&!(typeof itineraryIsBroadFamilyRoutineTask==="function"&&itineraryIsBroadFamilyRoutineTask(x))&&!(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(x,date))),
     weeklyChores=(state.chores||[]).filter(x=>x.date>=p.weekStart&&x.date<=date),
     groups=[["Kids' chores today",done(chores),chores.length],["Tasks today",done(tasks),tasks.length],["Water today (oz)",Math.round(water),waterGoal],
-      ["Organizing today",p.today,p.dailyGoal],["Tasks this week",weeklyTasks.filter(x=>x.done).length,weeklyTasks.length],
-      ["Kids' chores this week",weeklyChores.filter(x=>x.done).length,weeklyChores.length],["Organizing this week",p.week,p.weeklyGoal]];
+      ["Organizing today",p.today,p.dailyGoal],["Extra practice today", (state.optionalPracticeSessions||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.pages||0),0),Math.max(1,Number(state.settings?.optionalPracticeDailyGoal||1))],["Tasks this week",weeklyTasks.filter(x=>x.done).length,weeklyTasks.length],
+      ["Kids' chores this week",weeklyChores.filter(x=>x.done).length,weeklyChores.length],["Organizing this week",p.week,p.weeklyGoal],["Extra practice this week",(state.optionalPracticeSessions||[]).filter(x=>x.date>=p.weekStart&&x.date<=date).reduce((n,x)=>n+Number(x.pages||0),0),Math.max(1,Number(state.settings?.optionalPracticeWeeklyGoal||5))]];
   modal("Daily + weekly progress",'<div class="hg-modal"><div class="hg-short-goals">'+
     groups.map(x=>'<div><b>'+esc(x[0])+' · '+x[1]+' / '+x[2]+'</b>'+meter(x[1],x[2],x[0])+'</div>').join("")+
     '</div><p class="hg-note">Progress uses only confirmed checkmarks and logged amounts. Unknown is not a failure. More weekly goals can be added later.</p>'+
