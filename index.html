@@ -3650,6 +3650,40 @@ async function applyDailyReview(kind,key,date,status,openReviewAfter=true){
   render();
   if(openReviewAfter)openDailyReview(date);
 }
+function dailyReviewSteps(item){
+  if(item.kind!=="task")return [];
+  const t=(state.tasks||[]).find(x=>String(x.id)===String(item.key));
+  const raw=String(t?.notes||"");
+  if(/morning personal care/i.test(item.label))return ["Brush teeth","Floss","Mouthwash","Wash face","Style hair","Deodorant","Perfume","Stretch"];
+  const segments=raw.split(/\\s*[·•;\\n]\\s*/).map(x=>x.trim()).filter(x=>x.length>2&&x.length<110);
+  return segments.length>=2&&segments.length<=12?segments:[];
+}
+async function dailyReviewStepAnswer(key,date,index,status){
+  const item=dailyReviewExpected(date).find(x=>x.kind==="task"&&String(x.key)===String(key));
+  if(!item||!["yes","no","unknown"].includes(status))return;
+  const steps=dailyReviewSteps(item);
+  if(index<0||index>=steps.length)return;
+  if(!state.settings)state.settings={};
+  if(!state.settings.reviewSteps)state.settings.reviewSteps={};
+  const id=date+"|"+key,record=state.settings.reviewSteps[id]||{};
+  record[index]=status;state.settings.reviewSteps[id]=record;
+  const values=steps.map((_,i)=>record[i]||"unknown");
+  if(values.every(x=>x==="yes"))await applyDailyReview("task",key,date,"yes",false);
+  else {
+    const task=(state.tasks||[]).find(x=>String(x.id)===String(key));
+    if(task&&task.done)task.done=false;
+    dailyReviewSet("task",key,date,"unknown",item.label,item.group);
+    await save();render();
+  }
+  openDailyReview(date);
+}
+function dailyReviewStepsHtml(item,date){
+  const steps=dailyReviewSteps(item),record=state.settings?.reviewSteps?.[date+"|"+item.key]||{};
+  return '<div class="daily-review-step-list"><p>Mark each step separately. Unmarked stays unknown.</p>'+
+   steps.map((step,i)=>'<div class="daily-review-step"><b>'+esc(step)+'</b><div>'+
+    ["yes","no","unknown"].map(status=>'<button type="button" class="'+((record[i]||"unknown")===status?"selected ":"")+'" onclick="dailyReviewStepAnswer('+JSON.stringify(String(item.key))+','+JSON.stringify(date)+','+i+','+JSON.stringify(status)+')">'+({yes:"✓ Done",no:"Not done",unknown:"?"}[status])+'</button>').join("")+
+   '</div></div>').join("")+'</div>';
+}
 function openDailyReview(date=ymd(),cursor=0){
   date=/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))?date:ymd();
   const all=dailyReviewExpected(date),unknown=all.filter(x=>x.status==="unknown"),summary=dailyReviewSummary(date),backlog=dailyReviewBacklog(7),backlogUnknown=backlog.reduce((n,x)=>n+x.unknown,0),position=Math.max(0,Math.trunc(Number(cursor)||0))%(unknown.length||1),item=unknown[position];
@@ -3658,7 +3692,7 @@ function openDailyReview(date=ymd(),cursor=0){
     modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-complete"><div class="eyebrow">${esc(dateLabel)}</div><h2>Review complete</h2><div class="muted">Nothing is being silently treated as “no.”</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>0</b><small>unknown</small></span></div>${backlogUnknown?`<div class="notice"><b>${backlogUnknown} unknown check${backlogUnknown===1?"":"s"} remain across the last 7 days.</b><div class="actions" style="margin-top:8px"><button class="btn primary" onclick="openDailyReviewCatchup(7)">Catch up earlier days</button></div></div>`:""}<label>Review another day<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Done",closeModal);
     return;
   }
-  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button>${item.kind==="care"?`<button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button>`:""}<button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div><div class="muted small">Skipped items stay unknown. You can come back to them later.</div>${backlogUnknown>summary.unknown?`<div class="actions" style="margin-top:9px"><button class="btn small" onclick="openDailyReviewCatchup(7)">Catch up ${backlogUnknown-summary.unknown} earlier unknown${backlogUnknown-summary.unknown===1?"":"s"}</button></div>`:""}</div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div><label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
+  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${dailyReviewSteps(item).length?dailyReviewStepsHtml(item,date):`${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button>${item.kind==="care"?`<button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button>`:""}<button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div>`}<div class="muted small">Skipped items stay unknown. You can come back to them later.</div>${backlogUnknown>summary.unknown?`<div class="actions" style="margin-top:9px"><button class="btn small" onclick="openDailyReviewCatchup(7)">Catch up ${backlogUnknown-summary.unknown} earlier unknown${backlogUnknown-summary.unknown===1?"":"s"}</button></div>`:""}</div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div><label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
 }
 function selfCareHabits(){
   const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[],
