@@ -8,6 +8,7 @@ const IMG_PREFIX="kid-art-photo:";
 function papers(){return state.paperItems||(state.paperItems=[])}
 function arts(){return state.kidArtworks||(state.kidArtworks=[])}
 function rewards(){return state.paperRewardsRedeemed||(state.paperRewardsRedeemed=[])}
+function practiceSessions(){return state.optionalPracticeSessions||(state.optionalPracticeSessions=[])}
 function settings(){
  if(!state.settings)state.settings={};
  const x=state.settings.optionalPracticeRewards||(state.settings.optionalPracticeRewards={pointsPerPage:1,cost:10,prize:"Choose a small reward together"});
@@ -97,7 +98,7 @@ window.paperFinishHandling=async function(id){
 window.paperPageComplete=async function(id){
  const x=papers().find(v=>v.id===id);if(!x||x.type!=="practice"||!KIDS.includes(x.child))return;
  if(donePages(x)>=pageCount(x.pages))return;
- x.completedPages=donePages(x)+1;x.updatedAt=new Date().toISOString();await save();render();window.openPaperStudio();
+ x.completedPages=donePages(x)+1;x.updatedAt=new Date().toISOString();practiceSessions().push({id:uid(),date:ymd(),child:x.child,paperId:x.id,pages:1,points:settings().pointsPerPage,createdAt:new Date().toISOString()});await save();render();window.openPaperStudio();
 };
 window.paperRedeem=async function(child){
  const s=settings();if(!KIDS.includes(child)||remaining(child)<s.cost)return;
@@ -132,7 +133,7 @@ function bookGrid(){
 window.openArtLibrary=function(){
  const count=arts().length;
  modal("🎨 Children's art library",'<div class="ps-studio"><p class="ps-muted">Little memory books with real artwork photos. Pick a child to flip through their pages.</p>'+bookGrid()+
- '<div class="ps-nav"><button onclick="openArtEntry()">+ Photograph artwork</button><button onclick="paperExportArtBackup()">↓ Export photo backup</button></div>'+
+ '<div class="ps-nav"><button onclick="openArtEntry()">+ Photograph artwork</button><button onclick="paperExportArtBackup()">↓ Export photo backup</button><button onclick="paperImportArtBackup()">↑ Restore backup</button></div>'+
  '<div class="ps-warning"><b>Image storage:</b> '+count+' artwork record'+(count===1?"":"s")+'. Actual photos live in this phone’s Daily Life storage, not in cloud sync. Before recycling drawings, export a backup and verify it was saved somewhere safe. Removing app storage or changing phones may lose local-only pictures.</div>'+
  '</div>',"Close",closeModal);
 };
@@ -204,6 +205,28 @@ window.paperExportSingleArt=async function(id){
  const data=await dbGet(imageKey(id));
  if(!data){alert("This image is unavailable on this device.");return}
  const a=document.createElement("a");a.href=data;a.download="DailyLife-"+x.child+"-art-"+id+".jpg";document.body.appendChild(a);a.click();a.remove();
+};
+window.paperImportArtBackup=function(){
+ modal("Restore art photo backup",
+  '<div class="stack"><p class="ps-muted">Choose a Daily Life artwork JSON backup you downloaded earlier. This adds any missing images and restores book entries by their original IDs without deleting existing photos.</p><label>Artwork backup<input id="psImportArt" type="file" accept="application/json,.json"></label></div>',
+ "Import",async()=>{
+  const file=document.getElementById("psImportArt")?.files?.[0];
+  if(!file||file.size>150*1024*1024){alert("Choose an artwork backup under 150 MB.");return}
+  let backup;try{backup=JSON.parse(await file.text())}catch(e){alert("The file is not readable JSON.");return}
+  if(backup?.format!=="daily-life-art-v1"||!Array.isArray(backup.artworks)){alert("This is not a recognized Daily Life artwork backup.");return}
+  if(backup.artworks.length>1500){alert("This backup has too many entries. Contact support before importing.");return}
+  let restored=0;
+  for(const entry of backup.artworks){
+   const x=entry?.metadata||{},photo=entry?.photo,id=String(x.id||"");
+   if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)||!KIDS.includes(x.child)||typeof photo!=="string"||!/^data:image\/(?:jpeg|png|webp);base64,/.test(photo)||photo.length>12*1024*1024)continue;
+   if(!await dbGet(imageKey(id)))await dbSet(imageKey(id),photo);
+   if(!arts().some(a=>a.id===id))arts().push({id,child:x.child,title:String(x.title||"Untitled masterpiece").slice(0,160),
+    artDate:String(x.artDate||"").slice(0,10),age:String(x.age||"").slice(0,20),notes:String(x.notes||"").slice(0,2000),
+    hasLocalPhoto:true,createdAt:x.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
+   restored++;
+  }
+  await save();render();window.openArtLibrary();alert("Checked "+restored+" artwork images from the backup. Open a book to confirm pictures display correctly.");
+ });
 };
 window.paperExportArtBackup=async function(){
  const rows=[];for(const x of arts()){const photo=await dbGet(imageKey(x.id));if(photo)rows.push({metadata:x,photo})}
