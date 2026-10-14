@@ -530,6 +530,38 @@
       '</div>',"Close",closeModal);
   };
 
+
+  window.openDailyProgressBreakdown=function(){
+    const date=ymd(),tasks=lifeQueue().todayRows,chores=displayChoresForDate(date),
+      td=tasks.filter(x=>x.done).length,cd=chores.filter(x=>x.done).length,
+      water=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+(Number(x.oz)||0),0),
+      bottles=Math.min(3,Math.floor(water/26)),
+      meal=typeof mealForDate==="function"?mealForDate(date):null,
+      mealDone=!!meal&&["done","eaten","cooked"].includes(String(meal.status||"").toLowerCase()),
+      total=tasks.length+chores.length+3+(meal?1:0),
+      done=td+cd+bottles+(mealDone?1:0),
+      review=typeof dailyReviewSummary==="function"?dailyReviewSummary(date):{unknown:0};
+    const bar=(label,n,max)=>'<div class="dl-breakdown-row"><span>'+esc(label)+'</span><b>'+n+' / '+max+'</b><div class="dl-breakdown-track"><div style="width:'+(max?Math.round(n/max*100):0)+'%"></div></div></div>';
+    modal("Today's progress",
+      '<div class="dl-breakdown"><h2>'+lifeProgress(done,total)+'% complete</h2><p>'+done+' of '+total+' checkpoints confirmed</p>'+
+      bar("Tasks",td,tasks.length)+bar("Kids",cd,chores.length)+bar("Water bottles",bottles,3)+
+      (meal?bar("Dinner",mealDone?1:0,1):"")+
+      '<p>'+Number(review.unknown||0)+' unanswered activities remain unknown, not failed.</p>'+
+      '<button class="btn" onclick="closeModal();openDailyReview()">Optional review</button></div>',
+      "Close",closeModal);
+  };
+  window.openQuickHydration=function(){
+    const date=ymd(),entries=(state.waterLogs||[]).filter(x=>x.date===date),
+      oz=entries.reduce((n,x)=>n+(Number(x.oz)||0),0);
+    modal("Water · Today",
+      '<div class="dl-water-quick"><h2>💧 '+Math.round(oz)+' / 78 oz</h2>'+
+      '<p>'+entries.length+' water entries recorded today</p>'+
+      '<button class="btn primary" onclick="addWater(26);openQuickHydration()">+ 26 oz bottle</button>'+
+      '<button class="btn" onclick="closeModal();setView(&quot;log&quot;)">Hydration history</button>'+
+      '<p>Only confirmed entries count toward your goal.</p></div>',
+      "Close",closeModal);
+  };
+
   window.openHouseholdHub=function(){
     closeModal();
     setView("household");
@@ -609,7 +641,7 @@
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
-      lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","setView('log')","Your water log"),
+      lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","openQuickHydration()","Your water log"),
       lifeStatRing("Kids",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Today's chores"),
       lifeStatRing("Dinner",!hasMeal?"Choose":mealDone?"Done":"Planned",mealDone?1:0,1,"#efbf6f","♢","openMeal('"+today+"')",mealTime)
     ];
@@ -624,7 +656,7 @@
 
     return '<section class="dl-command-center life-today-one-screen" aria-label="Today dashboard">'+
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY AT A GLANCE</span><h1>'+esc(now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</h1></div>'+
-        '<div class="dl-heading-actions"><button onclick="openDailyReview()" aria-label="Open daily check-ins">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
+        '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+focusLabel+'</span>'+
         '<h2>'+esc(focusTitle)+'</h2><p>'+esc(focusMeta)+'</p><small>'+esc(focusDetail)+'</small>'+
@@ -632,7 +664,7 @@
           (focusTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(focusTaskId)+'\',true)">✓ Done</button>':'')+
         '</div></div></article>'+
       '<div class="dl-progress-area" aria-label="Today progress overview">'+
-        '<button type="button" class="dl-total-ring" onclick="openTodayTasksHub()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
+        '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
            '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
         '<div class="dl-stats">'+cards.join("")+'</div></div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
