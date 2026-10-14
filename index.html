@@ -3433,6 +3433,9 @@ function dailyReviewStatus(kind,key,date=ymd()){
   }else if(kind==="care"){
     if(selfCareDone(key,date))return"yes";
   }
+  // An explicit uncheck after an earlier "Yes" is a correction, not a
+  // completed habit. Leave it unknown until the user confirms what happened.
+  if(review?.status==="yes")return"unknown";
   return review?.status||"unknown";
 }
 const SELF_CARE_REVIEW_COPY={
