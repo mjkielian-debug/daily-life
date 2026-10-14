@@ -172,6 +172,7 @@ dialog,
 <link rel="stylesheet" href="visual-hubs.css?v=20261014-mobile1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
+<link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 </head>
 <body>
 <div id="app"></div>
@@ -248,7 +249,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.14-money-chase4";
+const APP_BUILD="2026.10.14-home-progress1";
 let appStartupReady=false;
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
@@ -5557,7 +5558,7 @@ function inventoryVisibleItems(){
 function inventoryDetailedView(){
   const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
   const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
-  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button></div>`;
+  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Organizing goals</button></div>`;
   if(inventoryTab==="map"){
     return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
     <div class="card inventory-storage-card"><div class="section-title"><div><h2>Rooms + storage</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
@@ -5574,7 +5575,7 @@ function inventoryDetailedView(){
   return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
   <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
   <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
-  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.</div>`}
+  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}${x.targetQty!==null&&x.targetQty!==undefined?" · goal "+Number(x.targetQty):""}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.</div>`}
   </div>`;
 }
 function inventoryHubDetailHtml(tab){
@@ -5597,12 +5598,13 @@ function inventoryView(){
         low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length,
         categories=new Set(all.map(x=>String(x.category||"Other")).filter(Boolean)).size,
         centerTitle=low?low+" low / needed":all.length+" items tracked",
-        centerDetail=rooms.length?rooms.length+" rooms · "+locations.length+" storage spots":"Add rooms to build your house map",
+        homeProgress=typeof homeOrganizationSummary==="function"?homeOrganizationSummary():null,
+        centerDetail=(rooms.length?rooms.length+" rooms · "+locations.length+" storage spots":"Add rooms to build your house map")+(homeProgress?.percent!==null&&homeProgress?.percent!==undefined?" · "+homeProgress.percent+"% organized":""),
         segments=[
           {icon:"▦",title:"Items",detail:all.length?all.length+" tracked":"Add inventory",action:"openInventoryHubSection('items')"},
           {icon:"⌂",title:"House Map",detail:rooms.length?rooms.length+" rooms":"Build map",action:"openInventoryHubSection('map')"},
           {icon:"◫",title:"Rooms",detail:rooms.length?rooms.length+" mapped":"Add room",action:"openHouseholdSection('rooms')"},
-          {icon:"◇",title:"Locations",detail:locations.length?locations.length+" storage spots":"Shelves + bins",action:"openInventoryHubSection('map')"},
+          {icon:"◉",title:"Organize",detail:homeProgress?.percent===null||homeProgress?.percent===undefined?"Set goals":homeProgress.percent+"% done",action:"openHomeGoals()"},
           {icon:"!",title:"Low / Need",detail:low?low+" items":"All stocked",action:"openInventoryLowStock()"},
           {icon:"+",title:"Add Item",detail:"Track something",action:"openInventoryItem()"},
           {icon:"＋",title:"Add Location",detail:"Shelf, bin + more",action:"openInventoryLocation()"},
@@ -5625,7 +5627,7 @@ function inventoryView(){
     <div class="life-today-footer inventory-hub-footer">
       <button onclick="setView('household')"><span>‹</span>Household</button>
       <button onclick="openInventoryItem()"><span>＋</span>Add item</button>
-      <button onclick="openInventoryHubSection('map')"><span>⌂</span>House map</button>
+      <button onclick="openHomeGoals()"><span>◉</span>Goals</button>
     </div>
   </section>`;
 }
@@ -5635,7 +5637,8 @@ function openInventoryItem(id=""){
   const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
   modal(x.id?"Inventory item":"Add inventory item",`<div class="stack">
     <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
-    <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
+    <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity on hand<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
+    <label>Ideal quantity to keep (optional)<input id="invgoal" type="number" min="0" step="1" value="${x.targetQty===null||x.targetQty===undefined?"":Number(x.targetQty)}" placeholder="Your goal, not a required number"></label>
     <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
     <label>Status<select id="invstatus">${["Have","Low","Need","Stored","Lent out","Donate / sell","Gone"].map(v=>`<option ${String(x.status||"Have")===v?"selected":""}>${v}</option>`).join("")}</select></label>
     <label>Notes<textarea id="invnotes" rows="3">${esc(x.notes||"")}</textarea></label>
@@ -5644,7 +5647,7 @@ function openInventoryItem(id=""){
     const name=$("#invname").value.trim();if(!name)return;
     const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
     let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
-    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),updatedAt:new Date().toISOString()});
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),updatedAt:new Date().toISOString()});
     await save();closeModal();render();
   });
 }
@@ -7720,6 +7723,7 @@ registerAppWorker();
 <script src="life-tools.js?v=20261003-tools2"></script>
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
 <script src="task-ui.js?v=20261007-kidgroups6"></script>
+<script src="inventory-goals.js?v=20261014-home-goals1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 
 </body>
