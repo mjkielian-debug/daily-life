@@ -106,6 +106,8 @@ function visualHubModel(page){
    metrics:[m("❧","Plants",plants.length+" active","openGardenHobbySection('plants')"),m("💧","Care",due.length+" due","openGardenHobbySection('plants')"),m("✂","Projects",projects.length+" active","openGardenHobbySection('projects')"),m("◇","Supplies",supplies+" needed","openGardenHobbySection('shopping')")],
    links:[vhLink("Plants","❧","openGardenHobbySection('plants')"),vhLink("Projects","✂","openGardenHobbySection('projects')"),vhLink("Garden tasks","✓","openGardenHobbySection('tasks')"),vhLink("Seeds","✦","openGardenHobbySection('seeds')"),vhLink("Season","☀","openGardenHobbySection('season')"),vhLink("Journal","▤","openGardenHobbySection('journal')"),vhLink("Supplies","◇","openGardenHobbySection('supplies')"),vhLink("Shopping","🛒","openGardenHobbySection('shopping')")],
    bottomTitle:"Things you're growing",bottomDetail:`${plants.length} plants · ${projects.length} creative projects. Only logged work counts as done.`});
+ }else if(page==="vault"){
+  return visualVaultHubModel(base);
  }else if(page==="budget"){
   return visualBudgetHubModel(base);
  }else if(page==="settings"){
@@ -178,6 +180,25 @@ function visualSettingsHubModel(base){
  {icon:"✓",label:"System",value:health.issues.length+" issues",action:"openSettingsHubSection('system')"}],
  links:[vhLink("Routines","↻","openSettingsHubSection('routines')"),vhLink("Preferences","✦","openSettingsHubSection('preferences')"),vhLink("Cloud","☁","openSettingsHubSection('cloud')"),vhLink("Backups","⇩","openSettingsHubSection('backup')"),vhLink("Connections","⌁","openSettingsHubSection('connections')"),vhLink("Sharing","♡","openSettingsHubSection('sharing')"),vhLink("Meal patterns","◇","openSettingsHubSection('meals')"),vhLink("System check","✓","openSettingsHubSection('system')")],
  bottomTitle:"Private data",bottomDetail:"Cloud status and local export history are separate; one does not replace the other."});
+ return base;
+}
+
+function visualVaultHubModel(base){
+ if(typeof vaultUnlocked==="undefined"||!vaultUnlocked)return base;
+ if(typeof vaultTouch==="function")vaultTouch();
+ const items=Array.isArray(vaultData?.items)?vaultData.items:[],
+ count=key=>typeof vaultHubItems==="function"?vaultHubItems(key).length:0,
+ cloud=typeof vaultCloudUpdatedAt!=="undefined"&&!!vaultCloudUpdatedAt;
+ Object.assign(base,{title:"Private Vault",subtitle:"Encrypted records · you and children",addLabel:"🔒 Lock",addAction:"vaultLock()",
+ focusLabel:"PRIVATE + UNLOCKED",focusTitle:`${items.length} encrypted record${items.length===1?"":"s"}`,
+ focusNote:"Open your records or add a document. Lock when you're finished.",focusAction:"openVaultHubSection('all')",
+ focusButton:"Open records",mainValue:String(items.length),mainLabel:"Records saved",
+ metrics:[{icon:"●",label:"Logins",value:count("logins")+" saved",action:"openVaultHubSection('logins')"},
+ {icon:"◇",label:"Identity",value:count("identity")+" saved",action:"openVaultHubSection('identity')"},
+ {icon:"▤",label:"School",value:count("school")+" saved",action:"openVaultHubSection('school')"},
+ {icon:"▣",label:"Documents",value:count("documents")+" files",action:"openVaultHubSection('documents')"}],
+ links:[vhLink("All records","▦","openVaultHubSection('all')"),vhLink("Add record","＋","openVaultItem()"),vhLink("Medical","♡","openVaultHubSection('medical')"),vhLink("Insurance","▣","openVaultHubSection('insurance')"),vhLink("Backups","↥","openVaultHubSection('backup')"),vhLink("Security","⌾","openVaultHubSection('security')"),vhLink("Identity","◇","openVaultHubSection('identity')"),vhLink("Lock now","🔒","vaultLock()")],
+ bottomTitle:"Encrypted storage",bottomDetail:cloud?"Encrypted cloud backup status is available under Backups.":"Open Backups to review your encrypted copy options."});
  return base;
 }
 
