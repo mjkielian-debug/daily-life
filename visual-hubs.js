@@ -97,10 +97,10 @@ function visualHubModel(page){
   const all=s.inventoryItems||[],rooms=s.houseRooms||[],low=all.filter(x=>["Low","Need"].includes(x.status)).length;
   Object.assign(base,{title:"Inventory",subtitle:"Know what you have and where",addLabel:"+ Item",addAction:"openInventoryItem()",
    focusLabel:"STOCK ATTENTION",focusTitle:low?`${low} item${low===1?"":"s"} marked low / needed`:"Find something in your home",
-   focusNote:low?"Open the flagged items and restock only what is needed.":"Open tracked items or the room map.",
+   focusNote:low?"Open the flagged items and restock only what is needed.":"Choose Papers or Art Books below; ordinary inventory items are tracked separately.",
    focusAction:low?"openInventoryLowStock()":"openInventoryHubSection('items')",mainValue:String(all.length),mainLabel:"Items tracked",
    metrics:[m("!","Low / need",low+" flagged","openInventoryLowStock()"),m("⌂","Rooms",rooms.length+" mapped","openInventoryHubSection('map')"),m("◇","Storage",(s.inventoryLocations||[]).length+" spots","openInventoryHubSection('map')"),m("◫","Categories",new Set(all.map(x=>x.category).filter(Boolean)).size+" used","openInventoryHubSection('items')")],
-   links:[vhLink("All items","▦","openInventoryHubSection('items')"),vhLink("House map","⌂","openInventoryHubSection('map')"),vhLink("Low stock","!","openInventoryLowStock()"),vhLink("Add item","＋","openInventoryItem()"),vhLink("Add room","◫","openInventoryRoom()"),vhLink("Location","◇","openInventoryLocation()"),vhLink("Supplies","▤","openHouseholdSection('supplies')"),vhLink("Household","⌂","setView('household')")],
+   links:[vhLink("Papers","✎","openPaperStudio()"),vhLink("Art Books","🎨","openArtLibrary()"),vhLink("All items","▦","openInventoryHubSection('items')"),vhLink("House map","⌂","openInventoryHubSection('map')"),vhLink("Low stock","!","openInventoryLowStock()"),vhLink("Add item","＋","openInventoryItem()"),vhLink("Add room","◫","openInventoryRoom()"),vhLink("Location","◇","openInventoryLocation()"),vhLink("Supplies","▤","openHouseholdSection('supplies')"),vhLink("Household","⌂","setView('household')")],
    bottomTitle:"Your mapped home",bottomDetail:`${rooms.length} rooms · ${(s.inventoryLocations||[]).length} storage spots. Open map to find items faster.`});
  }else if(["gardenhobbies","garden","hobbies"].includes(page)){
   const plants=(s.plants||[]).filter(x=>x.status!=="Finished"),due=plants.filter(x=>typeof plantCareState==="function"&&plantCareState(x).due),tasks=s.gardenTasks||[],done=tasks.filter(x=>x.done).length,projects=(s.hobbyProjects||[]).filter(x=>!["Finished","Paused"].includes(x.status)),supplies=(s.shopping||[]).filter(x=>x.status==="needed"&&["garden","hobby"].includes(x.source)).length;
@@ -129,6 +129,19 @@ function visualHubModel(page){
  return base;
 }
 
+function visualPaperArtShortcuts(page){
+ if(page!=="inventory"&&page!=="household")return "";
+ const papers=state.paperItems||[],art=state.kidArtworks||[];
+ const review=papers.filter(x=>x.type==="review").length;
+ const books=new Set(art.map(x=>x.child).filter(Boolean)).size;
+ const paperDesc=papers.length?papers.length+" saved batch"+(papers.length===1?"":"es")+(review?" · "+review+" to sort":""):"Sort photos + documents";
+ const artDesc=art.length?art.length+" saved piece"+(art.length===1?"":"s")+" · "+books+" child book"+(books===1?"":"s"):"4 children’s memory books";
+ const importHint=page==="inventory"&&papers.length===0?'<div class="vh-paper-sync"><span>Already sent paper photos in ChatGPT? Import saved paper records to this phone.</span><button type="button" onclick="cloudPullLifeEntries(true)">Pull saved records ↻</button></div>':"";
+ return '<section class="vh-paper-art" aria-label="Organize paper and art"><div class="vh-paper-art-heading"><b>Organize + remember</b><small>Papers and art count separately from regular inventory.</small></div><div class="vh-paper-art-links">'+
+ '<button type="button" class="vh-paper-card" onclick="openPaperStudio()"><span class="vh-paper-icon">✎</span><span><b>Paper Studio</b><small>'+esc(paperDesc)+'</small></span><span aria-hidden="true">›</span></button>'+
+ '<button type="button" class="vh-art-card" onclick="openArtLibrary()"><span class="vh-paper-icon">🎨</span><span><b>Art Books</b><small>'+esc(artDesc)+'</small></span><span aria-hidden="true">›</span></button></div>'+importHint+'</section>';
+}
+
 function visualHubView(page){
  const c=visualHubModel(page);if(!c.title)return"";
  const progress=c.progress,usable=!!(progress&&progress.total),percent=usable?Math.min(100,Math.round(100*progress.done/progress.total)):null,main=progress?(usable?percent+"%":"—"):c.mainValue||"—";
@@ -144,6 +157,7 @@ function visualHubView(page){
   <div class="vh-heading"><div><div class="eyebrow">${esc(c.title.toUpperCase())} AT A GLANCE</div><h1>${esc(c.title)}</h1><p>${esc(c.subtitle)}</p></div><button type="button" class="btn primary vh-add" onclick="${c.addAction}">${esc(c.addLabel)}</button></div>
   ${titleSuffix}
   <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><div class="vh-focus-actions"><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button>${c.focusExtra?`<button type="button" class="vh-focus-extra" onclick="${c.focusExtra.action}">${esc(c.focusExtra.label)}</button>`:""}</div></div>
+  ${visualPaperArtShortcuts(page)}
   <div class="vh-summary">
    <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${mainAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
     <span class="vh-dial-inner"><small>✧</small><strong>${main}</strong><b>${esc(progress?.label||c.mainLabel)}</b><span>${esc(meterText)}</span></span></button>
