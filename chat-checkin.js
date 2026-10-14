@@ -70,8 +70,9 @@
   }catch(e){alert("Could not copy automatically. Open ChatGPT and say: Daily Life check-in, ask me one question at a time.")}
  }
  function chatCheckinOpenChat(){
-  const newTab=window.open("https://chatgpt.com/","_blank","noopener,noreferrer");
-  if(!newTab&&document.visibilityState==="visible")alert("Open ChatGPT and return to your existing Daily Life conversation.");
+  // A new tab may intentionally return null when opened with noopener.
+  // Do not mistake that for an error or claim that the chat received the prompt.
+  window.open("https://chatgpt.com/","_blank","noopener,noreferrer");
  }
  async function chatCheckinSync(){
   if(typeof cloudPullLifeEntries!=="function"){alert("ChatGPT import isn't available in this version of the app.");return}
