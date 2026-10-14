@@ -31,7 +31,7 @@ function paperCounts(){
 }
 function paperRow(x){
  const id=qid(x.id),type=paperType(x.type),practice=type==="practice",dp=donePages(x),max=pageCount(x.pages);
- const status=practice?dp+" / "+max+" pages done":type==="review"?"Decision pending":x.physicallyFinished?"Physically handled":"Still needs handling";
+ const status=practice?dp+" / "+max+" pages done"+(x.physicallyFinished?" · paper cleared":""):type==="review"?"Decision pending":x.physicallyFinished?"Physically handled":"Still needs handling";
  return '<div class="ps-paper-row"><button onclick="openPaperBatch(\''+id+'\')"><b>'+esc(x.title||"Untitled paper")+'</b><small>'+TYPE[type][0]+" "+TYPE[type][1]+(x.child?" · "+esc(x.child):"")+(x.level?" · "+esc(x.level):"")+'</small><small>'+status+'</small></button>'+
   (practice&&x.child&&dp<max?'<button class="ps-small-action" onclick="paperPageComplete(\''+id+'\')">+ 1 page</button>':"")+'</div>';
 }
@@ -73,7 +73,7 @@ window.openPaperBatch=function(id=""){
   '<label>Notes + physical location<textarea id="psNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
   '<label>Picture / document reference (optional)<input id="psRef" value="'+esc(x.reference||"")+'" placeholder="ChatGPT photo or secure file location"></label>'+
   '<small class="ps-muted">A reference is not an actual uploaded image. Art books below store the actual artwork photo on this device.</small>'+
-  (old&&x.type!=="practice"&&x.type!=="review"?'<button onclick="paperFinishHandling(\''+qid(x.id)+'\')">'+(x.physicallyFinished?"Undo physical completion":"Confirm physically filed / recycled / handled")+'</button>':"")+
+  (old&&x.type!=="review"?'<button onclick="paperFinishHandling(\''+qid(x.id)+'\')">'+(x.physicallyFinished?"Undo physical completion":"Confirm physically filed / recycled / handled")+'</button>':"")+
   '</div>',"Save",async()=>{
    const get=id=>document.getElementById(id),title=get("psTitle")?.value.trim(),pages=Number(get("psPages")?.value);
    if(!title||!Number.isInteger(pages)||pages<1||pages>10000){alert("Add a title and between 1 and 10,000 pages.");return}
@@ -82,14 +82,15 @@ window.openPaperBatch=function(id=""){
    Object.assign(row,{title,type,child:type==="practice"?get("psChild").value:"",level:get("psLevel").value.trim(),
     subject:get("psSubject").value.trim(),pages,completedPages:Math.min(donePages(row),pages),
     notes:get("psNotes").value.trim(),reference:get("psRef").value.trim(),updatedAt:new Date().toISOString()});
-   if(type==="review"||type==="practice")row.physicallyFinished=false;
+   if(type==="review")row.physicallyFinished=false;
    await save();render();window.openPaperStudio();
   });
 };
 window.paperFinishHandling=async function(id){
- const x=papers().find(v=>v.id===id);if(!x||["practice","review"].includes(x.type))return;
+ const x=papers().find(v=>v.id===id);if(!x||x.type==="review")return;
+ if(x.type==="practice"&&donePages(x)<pageCount(x.pages)){alert("This batch still has unfinished optional practice. Finish it, or reclassify sheets you no longer want to use.");return}
  if(!x.physicallyFinished){
-  const m=x.type==="recycle"?"Have you checked this is safe to discard AND physically recycled the original?":
+  const m=x.type==="practice"?"Are these completed practice pages now physically filed or recycled? (Your practice progress and points will remain recorded.)":x.type==="recycle"?"Have you checked this is safe to discard AND physically recycled the original?":
    x.type==="file"?"Have you physically placed this original in its permanent file?":"Has the action actually been completed?";
   if(!confirm(m))return;
  }
