@@ -3,7 +3,7 @@
    No bank figures or card identifiers are hardcoded in the public source. */
 
 function chaseBalanceOnlyBill(b){
-  return /^chase\s+(?:credit\s+card\s+)?autopay\b/i.test(String(b?.name||"").trim());
+  return /^chase\s+(?:(?:credit\s+)?card\s+)?auto[\s-]?pay\b/i.test(String(b?.name||"").trim());
 }
 function chaseBillIsUnconfirmed(b){
   return chaseBalanceOnlyBill(b)&&b?.status!=="paid";
@@ -21,7 +21,13 @@ function chaseLinkedCreditCards(){
 function chaseSelectedCreditCard(){
   const cards=chaseLinkedCreditCards();
   const selected=String(state?.settings?.chaseCreditAccountId||"");
-  if(selected)return cards.find(r=>String(r.id)===selected)||null;
+  if(selected){
+    const match=cards.find(r=>String(r.id)===selected);
+    if(match)return match;
+    // A bank reconnect may replace the account ID. If there is exactly one
+    // Chase credit card available, follow it rather than a dead selection.
+    // Never guess when multiple Chase cards remain available.
+  }
   return cards.length===1?cards[0]:null;
 }
 function chaseBalanceSnapshot(){
