@@ -173,6 +173,7 @@ dialog,
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
+<link rel="stylesheet" href="paper-studio.css?v=20261014-paper-studio1">
 </head>
 <body>
 <div id="app"></div>
@@ -247,7 +248,7 @@ const blankState=()=>({
     mealPatterns:[]
   },
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
-  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
+  peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],paperRewardsRedeemed:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
 const APP_BUILD="2026.10.14-home-progress3";
 let appStartupReady=false;
@@ -5577,7 +5578,7 @@ function inventoryVisibleItems(){
 function inventoryDetailedView(){
   const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
   const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
-  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Organizing goals</button></div>`;
+  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Goals</button><button onclick="openPaperStudio()">✎ Papers</button><button onclick="openArtLibrary()">🎨 Art</button></div>`;
   if(inventoryTab==="map"){
     return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
     <div class="card inventory-storage-card"><div class="section-title"><div><h2>Rooms + storage</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
@@ -5626,13 +5627,13 @@ function inventoryView(){
           {icon:"◉",title:"Organize",detail:homeProgress?.percent===null||homeProgress?.percent===undefined?"Set goals":homeProgress.percent+"% done",action:"openHomeGoals()"},
           {icon:"!",title:"Low / Need",detail:low?low+" items":"All stocked",action:"openInventoryLowStock()"},
           {icon:"+",title:"Add Item",detail:"Track something",action:"openInventoryItem()"},
-          {icon:"＋",title:"Add Location",detail:"Shelf, bin + more",action:"openInventoryLocation()"},
+          {icon:"✎",title:"Papers",detail:typeof paperStudioSummary==="function"?(paperStudioSummary().total+" batches"):"Sort + file",action:"openPaperStudio()"},
           {icon:"⌂",title:"Household",detail:"Back to home",action:"setView('household')"}
         ];
   return `<section class="life-today-one-screen inventory-hub-one-screen">
     <div class="life-today-topline inventory-hub-topline">
       <div><div class="eyebrow">Inventory</div><b>${categories?categories+" categor"+(categories===1?"y":"ies"):"Use what you already have"}</b></div>
-      <div class="life-today-top-actions"><button class="btn small primary" onclick="openInventoryItem()">＋ Item</button></div>
+      <div class="life-today-top-actions"><button class="btn small primary" onclick="openPaperStudio()">✎ Papers</button></div>
     </div>
     <div class="life-wheel" role="group" aria-label="Inventory dashboard">
       ${segments.map((x,i)=>`<button class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="${x.action}" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
@@ -5646,7 +5647,7 @@ function inventoryView(){
     <div class="life-today-footer inventory-hub-footer">
       <button onclick="setView('household')"><span>‹</span>Household</button>
       <button onclick="openInventoryItem()"><span>＋</span>Add item</button>
-      <button onclick="openHomeGoals()"><span>◉</span>Goals</button>
+      <button onclick="openArtLibrary()"><span>🎨</span>Art books</button>
     </div>
   </section>`;
 }
@@ -7743,6 +7744,7 @@ registerAppWorker();
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
 <script src="task-ui.js?v=20261007-kidgroups6"></script>
 <script src="inventory-goals.js?v=20261014-home-goals3"></script>
+<script src="paper-studio.js?v=20261014-paper-studio1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 
 </body>
