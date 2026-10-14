@@ -248,3 +248,9 @@
 .event-detail-field{display:grid;grid-template-columns:90px 1fr;gap:10px;padding:12px 4px;border-bottom:1px solid #ebdce8}
 .event-detail-field b{color:#855073}
 .event-detail-field span{overflow-wrap:anywhere}
+
+/* Details sheet: explicit layout rather than relying on inherited grid rules */
+#modal .event-detail-sheet .event-detail-field{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;padding:10px 0!important;border-bottom:1px solid #eadce7!important}
+#modal .event-detail-sheet .event-detail-field b{display:block!important;font-size:.83rem!important;color:#945b80!important}
+#modal .event-detail-sheet .event-detail-field span{display:block!important;line-height:1.45!important;color:#392b42!important;overflow-wrap:anywhere!important}
+#modal .event-detail-sheet h2{font-size:clamp(1.35rem,5vw,2rem)!important;line-height:1.2!important}
