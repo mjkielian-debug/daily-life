@@ -6235,7 +6235,23 @@ async function removeBudgetSpending(index){
   const before=structuredClone(state.budget);state.budget.spending.splice(index,1);await persistBudgetEdit(before);
 }
 
-function setView(v){view=v;if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();render()}
+function setView(v){
+  view=v;
+  if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();
+  render();
+  // The page scroll position otherwise carries over between tabs on Android.
+  // Only reset on section navigation; editing/checking items can stay in place.
+  const resetTop=()=>{
+    const scroller=document.scrollingElement||document.documentElement;
+    if(scroller)scroller.scrollTop=0;
+    document.body.scrollTop=0;
+    const root=document.getElementById("app");
+    if(root)root.scrollTop=0;
+    window.scrollTo(0,0);
+  };
+  resetTop();
+  requestAnimationFrame(resetTop);
+}
 function modal(title,body,label,fn){
   document.querySelector("#modal")?.remove();
   const d=document.createElement("div"),closeOnly=(label||"Save")==="Close"&&fn===closeModal;
