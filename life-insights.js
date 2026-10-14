@@ -39,6 +39,29 @@ function insights(){
  const unknown=reviews.filter(x=>x.status==="unknown").length;
  if(unknown>=5)add("Time","review-unknown","◌","Fill a few tracking gaps",unknown+" daily checks are still unknown.",
    "A quick review improves insights. Unknown does not count against your progress.","Check-ins");
+ // Only compare household tasks when there are enough completed entries to learn a cadence.
+ const byTask=new Map();
+ for(const log of entries("homeLogs").filter(x=>x.status==="done"&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||"")))){
+  const label=String(log.task||"").trim();if(!label)continue;
+  const set=byTask.get(label)||new Set();set.add(log.date);byTask.set(label,set);
+ }
+ for(const [task,set] of byTask){
+  const dates=[...set].sort();if(dates.length<3)continue;
+  const intervals=[];
+  for(let i=1;i<dates.length;i++){
+   const gap=Math.round((new Date(dates[i]+"T12:00:00")-new Date(dates[i-1]+"T12:00:00"))/86400000);
+   if(gap>0)intervals.push(gap);
+  }
+  if(intervals.length<2)continue;
+  const recent=intervals.slice(-5).sort((a,b)=>a-b),typical=recent[Math.floor(recent.length/2)],
+   since=Math.round((new Date(today+"T12:00:00")-new Date(dates[dates.length-1]+"T12:00:00"))/86400000);
+  if(since>Math.max(3,typical*1.6)&&since<50){
+   add("Home","cadence-"+task.toLowerCase().replace(/[^a-z0-9]/g,"-"),"🧹","Check on "+task,
+    "Latest completion logged "+since+" days ago; last intervals were typically about "+typical+" days.",
+    "This could be a missing checkmark rather than missed cleaning. Check the area and record what actually happened.","Home care");
+   break;
+  }
+ }
  const house=typeof homeOrganizationSummary==="function"?homeOrganizationSummary():null;
  if(house?.configured===0)add("Home","map-house","📦","Start with a small area","No organizing category has a total area goal yet.",
    "Set a goal for one drawer, shelf or paper stack. Progress should count what you confirm.","Organize");
@@ -69,7 +92,7 @@ function insights(){
    add("Money","electric-trend","⚡","Compare actual electricity costs",
     old.month+": "+money(oldTotal)+" → "+now.month+": "+money(newTotal)+" ("+(delta>=0?"+":"")+delta+"%)."+
       (usage===null?" kWh comparison missing.":" Usage change "+(usage>=0?"+":"")+usage+"%."),
-    "Check kWh, billing days, fees and rates. If usage rose, review HVAC settings and always-on devices before spending on new equipment.","Electricity");
+    "If usage increased, check thermostat schedules, HVAC filters, weather and always-on appliances. If kWh stayed similar but the bill grew, check billing days, fixed fees and rates before buying anything.","Electricity");
   }
  }
  return out;
@@ -98,7 +121,7 @@ window.lifeInsightAction=function(id){
  switch(x.action){
   case "Food":openFood();break;case "Water":addWater(26);break;case "Sleep":openSleep();break;
   case "Day Flow":setView("today");break;case "Check-ins":openDailyReview();break;
-  case "Organize":openHomeGoals();break;case "Papers":openPaperStudio();break;
+  case "Organize":openHomeGoals();break;case "Home care":openHome();break;case "Papers":openPaperStudio();break;
   case "Money":setView("more");break;case "Electricity":openElectricityHistory();break;
  }
 };
