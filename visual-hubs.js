@@ -106,6 +106,10 @@ function visualHubModel(page){
    metrics:[m("❧","Plants",plants.length+" active","openGardenHobbySection('plants')"),m("💧","Care",due.length+" due","openGardenHobbySection('plants')"),m("✂","Projects",projects.length+" active","openGardenHobbySection('projects')"),m("◇","Supplies",supplies+" needed","openGardenHobbySection('shopping')")],
    links:[vhLink("Plants","❧","openGardenHobbySection('plants')"),vhLink("Projects","✂","openGardenHobbySection('projects')"),vhLink("Garden tasks","✓","openGardenHobbySection('tasks')"),vhLink("Seeds","✦","openGardenHobbySection('seeds')"),vhLink("Season","☀","openGardenHobbySection('season')"),vhLink("Journal","▤","openGardenHobbySection('journal')"),vhLink("Supplies","◇","openGardenHobbySection('supplies')"),vhLink("Shopping","🛒","openGardenHobbySection('shopping')")],
    bottomTitle:"Things you're growing",bottomDetail:`${plants.length} plants · ${projects.length} creative projects. Only logged work counts as done.`});
+ }else if(page==="budget"){
+  return visualBudgetHubModel(base);
+ }else if(page==="settings"){
+  return visualSettingsHubModel(base);
  }else if(page==="spirituality"){
   const log=typeof spiritualityLogFor==="function"?spiritualityLogFor()||{}:{},steps=["reading","tarot","stillness","ritual"],done=steps.filter(k=>log[k]).length,revealed=typeof tarotRevealed==="function"?tarotRevealed():false,card=typeof tarotForDate==="function"?tarotForDate():null;
   Object.assign(base,{title:"Spirituality",subtitle:"Tarot, moon and reflection",addLabel:"+ Journal",addAction:"openSpiritualJournal()",
@@ -126,7 +130,7 @@ function visualHubView(page){
  const displayedLinks=(c.links||[]).slice(0,4),moreLinks=(c.links||[]).slice(4);
  const allLinks=arr=>arr.map(x=>`<button type="button" onclick="${x.action}" class="vh-link"><span>${x.icon}</span><b>${esc(x.label)}</b><span aria-hidden="true">›</span></button>`).join("");
  const bars=c.bars||[],max=Math.max(1,...bars.map(x=>x.value)),graph=bars.length?`<div class="vh-graph" role="img" aria-label="${esc(c.barTitle)}">${bars.map(x=>`<div class="vh-bar-column"><div class="vh-bar-track"><span style="height:${Math.max(0,Math.min(100,Math.round(100*x.value/max)))}%"></span></div><small>${esc(new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"narrow"}))}</small></div>`).join("")}</div>`:"";
- const titleSuffix=page==="itinerary"?`<div class="vh-day-picker"><button type="button" onclick="shiftItineraryDate(-1)" aria-label="Previous day">←</button><button type="button" onclick="setItineraryDate(ymd())">Today</button><button type="button" onclick="shiftItineraryDate(1)" aria-label="Next day">→</button></div>`:"";
+ const titleSuffix=page==="budget"?`<div class="vh-day-picker"><button type="button" onclick="changeBudgetMonth(-1)" aria-label="Previous month">←</button><span class="vh-month-label">${esc(new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"short",year:"numeric"}))}</span><button type="button" onclick="changeBudgetMonth(1)" aria-label="Next month">→</button></div>`:page==="itinerary"?`<div class="vh-day-picker"><button type="button" onclick="shiftItineraryDate(-1)" aria-label="Previous day">←</button><button type="button" onclick="setItineraryDate(ymd())">Today</button><button type="button" onclick="shiftItineraryDate(1)" aria-label="Next day">→</button></div>`:"";
  return `<section class="visual-hub visual-hub-${esc(page)}" aria-label="${esc(c.title)} dashboard">
   <div class="vh-heading"><div><div class="eyebrow">${esc(c.title.toUpperCase())} AT A GLANCE</div><h1>${esc(c.title)}</h1><p>${esc(c.subtitle)}</p></div><button type="button" class="btn primary vh-add" onclick="${c.addAction}">${esc(c.addLabel)}</button></div>
   ${titleSuffix}
@@ -140,4 +144,41 @@ function visualHubView(page){
   ${moreLinks.length?`<details class="vh-more"><summary>More tools <span>⌄</span></summary><div class="vh-links">${allLinks(moreLinks)}</div></details>`:""}
  </section>`;
 }
+function visualBudgetHubModel(base){
+ const t=budgetTotals(),month=budgetMonth||ymd().slice(0,7),
+       monthLabel=new Date(month+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
+       categoryCount=BUDGET_CATEGORIES.filter(cat=>budgetCents(t.plan.limits[cat.id])>0).length,
+       focusTitle=t.plan.income===null?"Set expected income":t.remaining<0?"Review money shortfall":t.left<0?"Rebalance category limits":"Review spending pace",
+       focusNote=t.plan.income===null?"Add income before planning flexible spending.":t.remaining<0?"Your current plan needs attention; check upcoming bills.":t.left<0?"More is assigned than planned.":"See the budget plan and what remains unassigned.",
+       focusAction=t.plan.income===null?"openBudgetHubSection('plan')":t.remaining<0?"openBudgetHubSection('bills')":t.left<0?"openBudgetHubSection('categories')":"openBudgetHubSection('activity')";
+ Object.assign(base,{title:"Budget",subtitle:monthLabel+" · Plan without the clutter",addLabel:"+ Spending",addAction:"openBudgetSpending()",
+ focusLabel:"BUDGET FOCUS",focusTitle,focusNote,focusAction,mainValue:t.plan.income===null?"—":budgetMoney(t.left),mainLabel:"Left to assign",
+ metrics:[{icon:"↥",label:"Income",value:t.plan.income===null?"Not set":budgetMoney(t.income),action:"openBudgetHubSection('plan')"},
+ {icon:"▤",label:"Bills",value:t.bills.length+" recorded",action:"openBudgetHubSection('bills')"},
+ {icon:"◫",label:"Categories",value:categoryCount+" funded",action:"openBudgetHubSection('categories')"},
+ {icon:"↕",label:"Activity",value:t.logs.length+" entries",action:"openBudgetHubSection('activity')"}],
+ links:[vhLink("Plan","✦","openBudgetHubSection('plan')"),vhLink("Bills","▤","openBudgetHubSection('bills')"),vhLink("Categories","◫","openBudgetHubSection('categories')"),vhLink("Activity","↕","openBudgetHubSection('activity')"),vhLink("Expected income","↥","openBudgetIncome()"),vhLink("Log spending","＋","openBudgetSpending()"),vhLink("Previous month","←","changeBudgetMonth(-1)"),vhLink("Next month","→","changeBudgetMonth(1)")],
+ bottomTitle:"Monthly plan",bottomDetail:"Amounts come from your saved budget. Open Plan to review income, benefits and transfers."});
+ return base;
+}
+
+function visualSettingsHubModel(base){
+ const s=state,user=typeof cloudUser==="function"?cloudUser():null,remote=typeof cloudRemoteUpdatedAt!=="undefined"&&!!cloudRemoteUpdatedAt,
+ exportAt=localStorage.getItem("dailyLifeLastExportAt"),copies=Number(!!remote)+Number(!!exportAt),
+ health=typeof systemHealthChecks==="function"?systemHealthChecks():{issues:[]},
+ recurring=(s.settings?.recurringTasks||[]).length,shared=typeof sharingConnected==="function"&&sharingConnected();
+ Object.assign(base,{title:"Settings",subtitle:"Make Daily Life work for you",addLabel:"✓ Today",addAction:"setView('today')",
+ focusLabel:"DATA SAFETY",focusTitle:health.issues.length?`${health.issues.length} checks worth reviewing`:copies?"Review your recovery options":"Protect your Daily Life data",
+ focusNote:copies?`${copies} recorded recovery path${copies===1?"":"s"}; check dates and make a fresh backup when needed.`:"No recorded cloud snapshot or manual backup in the app's current status.",
+ focusAction:health.issues.length?"openSettingsHubSection('system')":"openSettingsHubSection('backup')",
+ mainValue:String(copies),mainLabel:"Recovery paths",
+ metrics:[{icon:"☁",label:"Cloud",value:user?"Signed in":"Not signed in",action:"openSettingsHubSection('cloud')"},
+ {icon:"↻",label:"Routines",value:recurring+" recurring",action:"openSettingsHubSection('routines')"},
+ {icon:"♡",label:"Sharing",value:shared?"On":"Optional",action:"openSettingsHubSection('sharing')"},
+ {icon:"✓",label:"System",value:health.issues.length+" issues",action:"openSettingsHubSection('system')"}],
+ links:[vhLink("Routines","↻","openSettingsHubSection('routines')"),vhLink("Preferences","✦","openSettingsHubSection('preferences')"),vhLink("Cloud","☁","openSettingsHubSection('cloud')"),vhLink("Backups","⇩","openSettingsHubSection('backup')"),vhLink("Connections","⌁","openSettingsHubSection('connections')"),vhLink("Sharing","♡","openSettingsHubSection('sharing')"),vhLink("Meal patterns","◇","openSettingsHubSection('meals')"),vhLink("System check","✓","openSettingsHubSection('system')")],
+ bottomTitle:"Private data",bottomDetail:"Cloud status and local export history are separate; one does not replace the other."});
+ return base;
+}
+
 window.visualHubView=visualHubView;
