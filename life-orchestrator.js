@@ -630,6 +630,7 @@
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+focusAction+'">Open details <span aria-hidden="true">›</span></button>'+
           (focusTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(focusTaskId)+'\',true)">✓ Done</button>':'')+
         '</div></div></article>'+
+      (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       '<div class="dl-progress-area" aria-label="Today progress overview">'+
         '<button type="button" class="dl-total-ring" onclick="openTodayTasksHub()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
            '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
