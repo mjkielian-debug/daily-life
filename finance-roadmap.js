@@ -37,16 +37,40 @@ function tile(g){
 }
 function card(){
  ensure();
- var t=totals(),exit=bankExit();
- return '<section class="finance-roadmap"><div class="finance-roadmap-heading"><div><span class="eyebrow">Money priorities</span><h3>Progress, not more paperwork</h3></div>'+
- '<div class="finance-roadmap-ring" role="img" aria-label="'+t.pct+'% of personal financial steps done" style="--finance-pct:'+t.pct+'"><b>'+t.pct+'%</b></div></div>'+
+ var all=rows(),t=totals(),exit=bankExit();
+ var focus=all.find(function(g){return Array.isArray(g.steps)&&g.steps.some(function(s){return !s.done;});});
+ var idx=focus?focus.steps.findIndex(function(s){return !s.done;}):-1;
+ var step=focus&&idx>=0?focus.steps[idx]:null;
+ var checkedLabel=t.total?t.done+" of "+t.total+" checklist steps confirmed":"No checklist steps saved";
+ var focusHtml=focus&&step?'<div class="finance-roadmap-focus"><span class="finance-roadmap-kicker">NEXT FINANCIAL GOAL STEP</span>'+
+  '<h3>'+e(focus.name)+'</h3><p>'+e(step.text)+'</p>'+
+  '<div class="finance-roadmap-next-actions"><button type="button" class="btn primary" onclick="openFinancePriority(\''+e(safeId(focus.id))+'\')">Open checklist ›</button>'+
+  '<button type="button" class="btn" onclick="financeRoadmapNextStepDone(\''+e(safeId(focus.id))+'\','+idx+')">✓ I completed this step</button></div></div>':
+  '<div class="finance-roadmap-focus"><span class="finance-roadmap-kicker">ALL TRACKED STEPS CHECKED</span>'+
+  '<h3>Everything recorded here is marked complete</h3><p>Review your next goal when you are ready; this does not mean every financial obligation is settled.</p>'+
+  '<button type="button" class="btn" onclick="openFinancePriority(\'new\')">+ Add another goal</button></div>';
+ return '<section class="finance-roadmap">'+
+ focusHtml+
+ '<div class="finance-roadmap-count"><b>'+e(checkedLabel)+'</b>'+
+ (t.total?'<div class="finance-roadmap-meter" role="progressbar" aria-label="Completed roadmap checklist steps" aria-valuemin="0" aria-valuemax="'+t.total+'" aria-valuenow="'+t.done+'"><i style="width:'+t.pct+'%"></i></div>':'')+
+ '<small>Only steps you actually marked complete count. This does not represent bank balance or available money.</small></div>'+
  (exit?'<button type="button" class="finance-exit-shortcut" onclick="openBankExitPlan()"><b>Account exit needs review</b><small>'+e(exit.institution)+' · check linked payments and renewal decisions first</small><span>Open ›</span></button>':'')+
- '<div class="finance-roadmap-grid">'+rows().map(tile).join("")+'</div>'+
- '<div class="finance-roadmap-actions"><button type="button" class="btn small" onclick="openFinanceHomePlanner()">⌂ Home cost + assistance</button>'+
- '<button type="button" class="btn small" onclick="openFinancePriority(\'new\')">＋ Personal goal</button></div>'+
- '<button type="button" class="finance-savings-shortcut" onclick="openMoneyHubSection(\'savings\')"><span><b>♡ Savings buckets</b><small>Track amounts set aside separately</small></span><strong>Open ›</strong></button>'+
- '<details class="finance-roadmap-info"><summary>How these goals work</summary><p>These are private checklists, not bank transfers. Actual saved amounts belong in Savings Goals. Grants, FSS escrow and refunds never count as available cash without verification.</p></details></section>';
+ '<details class="finance-roadmap-other"><summary>All money goals + full checklists <b>'+all.length+'</b></summary>'+
+ '<div class="finance-roadmap-grid">'+all.map(tile).join("")+'</div>'+
+ '<div class="finance-roadmap-actions"><button type="button" class="btn small" onclick="openFinanceHomePlanner()">⌂ Home costs + assistance</button>'+
+ '<button type="button" class="btn small" onclick="openFinancePriority(\'new\')">＋ Personal goal</button>'+
+ '<button type="button" class="btn small" onclick="openMoneyHubSection(\'savings\')">♡ Savings buckets</button></div>'+
+ '<p class="finance-roadmap-note">Roadmap checkmarks record confirmed actions, not hypothetical grant money, FSS escrow or tax refunds.</p></details></section>';
 }
+window.financeRoadmapNextStepDone=async function(id,index){
+ var g=byId(id),s=g&&g.steps&&g.steps[index];if(!s||s.done)return;
+ s.done=true;
+ try{
+  await save();
+  if(typeof render==="function")render();
+  if(typeof openMoneyHubSection==="function")openMoneyHubSection("goals");
+ }catch(err){s.done=false;alert("Could not save this completed step. Please try again.")}
+};
 function byId(id){return rows().find(function(g){return String(g.id)===String(id);});}
 function openPriority(id){
  ensure();
