@@ -1906,7 +1906,7 @@ function openSectionLauncher(){
     ["▣","Vault","Encrypted documents + logins","setView('vault')"],
     ["⚙","Settings","Routines, cloud + backup","setView('settings')"]
   ];
-  modal("Daily Life sections",`<div class="section-launcher-tools"><button class="btn primary" onclick="closeModal();openLifeCapture()">＋ Quick capture</button><button class="btn" onclick="closeModal();openLifeSearch()">⌕ Search everything</button></div><div class="section-launcher">${sections.map(([icon,title,detail,action])=>`<button onclick="closeModal();${action}"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
+  modal("Daily Life sections",`<div class="section-launcher-tools"><button class="btn primary" onclick="closeModal();openLifeCapture()">＋ Quick capture</button><button class="btn" onclick="closeModal();openLifeSearch()">⌕ Search everything</button><button class="btn" onclick="closeModal();openAppUpdateTools()">↻ Check app version</button></div><div class="section-launcher">${sections.map(([icon,title,detail,action])=>`<button onclick="closeModal();${action}"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
 }
 
 function nav(id,icon,label){return`<button class="navbtn ${(view===id||(id==="more"&&view==="budget"))?"active":""}" onclick="setView('${id}')"><div style="font-size:1.1rem">${icon}</div>${label}</button>`}
@@ -3489,7 +3489,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
         adminNow=nextLifeAdminAction();
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
-  return `<div class="today-action-layout">${typeof actionFirstTodayCard==="function"?actionFirstTodayCard():`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>`}
+  return `<div class="today-action-layout"><div class="dl-build-row"><span>GUIDED LAYOUT · OCT 15</span><button type="button" onclick="openAppUpdateTools()">Check update ↻</button></div>${typeof actionFirstTodayCard==="function"?actionFirstTodayCard():`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>`}
   <details class="action-first-today-section"><summary>Dinner + family checklists</summary><div class="action-first-today-body"><div class="today-section-grid">${todayMealCard()}${todayChoresCard()}</div></div></details>
   <details class="action-first-today-section"><summary>All of today · schedule, records + advice</summary><div class="action-first-today-body">
   ${dailyAdviceCard()}
@@ -7892,19 +7892,62 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
+const DAILY_LIFE_BUILD="20261015-guided7";
+function openAppUpdateTools(){
+ const controlled=!!navigator.serviceWorker?.controller;
+ modal("App version + update",'<div class="stack dl-update-panel">'+
+  '<p><b>Running layout:</b> '+esc(DAILY_LIFE_BUILD)+'</p>'+
+  '<p class="muted small">This checks the published version and refreshes only app files. It will not delete tasks, photos saved on this device, inventory, or your local database.</p>'+
+  '<p><b>Offline app worker:</b> '+(controlled?"Active":"Not controlling this screen")+'</p>'+
+  '<div id="dailyLifeRefreshStatus" role="status" aria-live="polite"></div>'+
+  '<button type="button" class="btn primary" onclick="dailyLifeRefreshShell()">Check for latest version + reload</button></div>',
+ "Close",closeModal);
+}
+async function dailyLifeRefreshShell(){
+ const status=document.getElementById("dailyLifeRefreshStatus");
+ function say(s){if(status)status.textContent=s}
+ if(!navigator.onLine){say("You appear to be offline. Connect to the internet before checking for updates.");return}
+ say("Checking published Daily Life version…");
+ try{
+  const resp=await fetch("./release.json?check="+Date.now(),{cache:"no-store",credentials:"same-origin"});
+  if(!resp.ok)throw new Error("The published version cannot be verified (HTTP "+resp.status+").");
+  const data=await resp.json();
+  if(!data||data.build!==DAILY_LIFE_BUILD){
+   say("The live website has not published the latest build yet, or this shortcut opens another copy of Daily Life. No data or caches were changed. Tell ChatGPT the version shown here.");
+   return;
+  }
+  say("Latest build confirmed. Refreshing only the app files; your personal records stay intact…");
+  if("serviceWorker" in navigator){
+   const registrations=await navigator.serviceWorker.getRegistrations();
+   await Promise.all(registrations.filter(reg=>{
+    try{
+     const sw=reg.active||reg.waiting||reg.installing;
+     return !!sw&&new URL(sw.scriptURL).pathname===new URL("./sw.js",location.href).pathname&&reg.scope===new URL("./",location.href).href;
+    }catch(_){return false}
+   }).map(reg=>reg.unregister()));
+  }
+  if("caches" in window){
+   const names=await caches.keys();
+   await Promise.all(names.filter(k=>k.startsWith("daily-life-shell-")).map(k=>caches.delete(k)));
+  }
+  const url=new URL(location.href);
+  url.searchParams.set("dl_refresh",String(Date.now()));
+  location.replace(url.href);
+ }catch(err){say("Could not safely verify the update: "+String(err.message||err)+". Your saved data and app caches were not changed.")}
+}
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
   const el=document.createElement("div");
   el.id="appUpdateNotice";el.className="app-update-notice";
   el.innerHTML='<div><b>Daily Life update ready</b><div class="small">Reload when you are ready to use the newest fixes and features.</div></div><button class="btn primary" type="button">Reload now</button>';
-  el.querySelector("button").addEventListener("click",()=>location.reload());
+  el.querySelector("button").addEventListener("click",()=>openAppUpdateTools());
   document.body.appendChild(el);
 }
 async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-grounded-progress4");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-guided7");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
