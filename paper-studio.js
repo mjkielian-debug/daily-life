@@ -211,6 +211,77 @@ window.openChildArtBook=function(child,index=0,kind="art"){
   else load.textContent="Image unavailable on this device. Import or restore its photo backup.";
  });
 };
+
+/* Meaning, evidence and a manageable next step for dated school snapshots.
+   These interpretations are inferred from the saved paper, never a new grade. */
+function schoolAnalysis(x){
+ const title=String(x.title||""),notes=String(x.notes||"");
+ const combined=(title+" "+notes+" "+String(x.value||"")).toLowerCase();
+ const result=(meaning,focus,next,caution="This interpretation uses a dated school paper, not current school-system data.")=>({meaning,focus,next,caution});
+ if(/\bdibels\b|\bmclass\b/i.test(combined)){
+  const score=Number(String(x.value||"").match(/^\s*(\d{3})/)?.[1]||notes.match(/composite(?: score)?[:\s]+(\d{3})/i)?.[1]||0);
+  const gradeThree=schoolPortfolio().some(y=>y.child===x.child&&/\b(?:grade\s*3|3rd grade)\b/i.test([y.title,y.term,y.notes].join(" ")));
+  const atStart=/beginning.of.year|beginning of year|2026-08|2026-09/i.test([x.term,x.title,x.asOf].join(" "));
+  let meaning=score?"The composite score "+score+" is an overall reading screening measure, not a percentage or report-card grade.":"DIBELS is a reading skills screener, not a report-card grade.";
+  if(score&&gradeThree&&atStart&&String(x.asOf||"").startsWith("2026")){
+   meaning+=" Nebraska's 2026–27 beginning-of-third-grade benchmark is 332, so this result "+(score>=332?"meets":"does not meet")+" that benchmark"+(score>=332?" ("+(score-332)+" points above it).":".");
+  }else if(/met goal/i.test(notes+" "+String(x.value||""))){meaning+=" The school report labels the result as meeting its goal.";}
+  const flu=notes.match(/(?:oral reading fluency|fluency)[:\s]+(\d{2,3})\s*(?:WCPM|words correct per minute)?/i);
+  const acc=notes.match(/(?:oral reading accuracy|accuracy)[:\s]+(\d{2,3})%/i);
+  if(flu)meaning+=" The reading sample shows "+flu[1]+" correct words per minute"+(acc?" with "+acc[1]+"% accuracy":"")+".";
+  const sounds=notes.match(/decoding letter sounds[:\s]+(\d+)/i),recoded=notes.match(/whole.word recoding[:\s]+(\d+)/i);
+  const focus=sounds?"Sounding out unfamiliar words is worth continued practice: the recorded phonics measures are "+sounds[1]+" letter sounds"+(recoded?" and "+recoded[1]+" complete words":"")+". Even a student meeting the overall goal can have individual skills to strengthen.":"Check word decoding and reading accuracy, not just overall speed.";
+  return result(meaning,focus,"Try 5 minutes of reading together: sound out two unfamiliar words, reread the sentence smoothly, and talk about its meaning. Compare with the next school screening, rather than treating one test as a growth trend.","DIBELS is a screener, not a diagnosis. Benchmark source: Nebraska Department of Education, 2026–27, third-grade beginning-of-year cutoff 332.");
+ }
+ if(/pre.sounds|letter.baseline|kindergarten.*dibels/i.test(combined)){
+  return result("This kindergarten starting-point sheet reports 0 pre-sounds, 6 uppercase letters and 4 lowercase letters. These are skills demonstrated at that moment, not a fixed limit on future learning.","Connect letter names to their sounds, gradually adding familiar letters.","Play a two-letter sound hunt for 3–5 minutes using books, names and signs.","A follow-up assessment is needed to establish actual growth.");
+ }
+ if(/school work habits|teacher work habits|teacher feedback|teacher work/i.test(combined)){
+  return result("The teacher praised completing work and potential peer leadership. Attention, participation and listening were also positive observations.","Responding respectfully when frustrated and following directions promptly are the specific reported growth goals.","Practice a short role-play: 'I am frustrated. Can you explain what I should do first?' Praise a respectful retry.","This is classroom feedback from one period, not a label or an explanation of what caused a difficult moment.");
+ }
+ if(/reading.*q1 overview/i.test(combined)){
+  return result("Reading has a reported 3 on the teacher's 1–4 scale. The units cover classic tales and animal classification.","A score of 3 cannot be translated into 75% or a particular proficiency label without the school's rubric.","Ask the teacher how the 1–4 rubric works. At home, read a short animal fact and have the child retell it.");
+ }
+ if(/spelling.*q1/i.test(combined)){
+  return result("The sheet lists 24 correct of 32 on a spelling lesson. That is a single score, not an overall reading grade.","Review spelling patterns and check whether mistakes cluster around a particular word ending.","Try five y-to-ies plurals together, including puppy → puppies and bunny → bunnies.");
+ }
+ if(/math.*q1 assessments/i.test(combined)){
+  return result("The school marked 3 in each of three multiplication/division areas: what the operations mean, writing equations for stories and using strategies. The repeated scores suggest a consistent classroom snapshot.","We don't have the grading rubric, so a 3 should not be called 75% or treated as a diagnosis.","Have the child invent a multiplication or sharing story and explain the matching equation.");
+ }
+ if(/differentiated math|probability|sudoku/i.test(combined)){
+  return result("This is evidence of enrichment activities: logic, Sudoku, probability and reasoning. Next-quarter plans mention Roman numerals and historical mathematicians.","Enrichment participation doesn't tell us that every listed topic has already been mastered.","Choose a fun Sudoku or probability game and ask the child to explain one strategy.");
+ }
+ if(/spelling pattern|change y to ies/i.test(combined)){
+  return result("The listed lesson is about changing a word ending in consonant + y into its -ies form, such as study → studies.","Apply the pattern to new words instead of only memorizing the worksheet.","Play a 5-word plural challenge using puppy, penny, baby, bunny and lady.","The photographed list does not show a filled-in test date.");
+ }
+ if(/classic tales|animal classification/i.test(combined)){
+  return result("The units include fiction and nonfiction: retelling classic tales and learning how animals are classified.","Reading accurately and explaining a passage's meaning are different skills worth practicing.","Read an animal-fact paragraph and ask for two details and one new question.");
+ }
+ if(/my body systems journal|skeletal.*muscular.*digestive/i.test(combined)){
+  return result("The saved work demonstrates drawing, labeling and writing simple explanations of five body systems—evidence of engaging with science vocabulary.","Match each system to what it does, not just whether its name is spelled perfectly.","Let the child teach you how bones, muscles and nerves help us move.","A creative science project is not a standardized test score.");
+ }
+ if(/subtraction|math.*current/i.test(combined)){
+  return result("The work samples show subtraction with objects, crossing out pictures and writing equations. A mix of correct and inconsistent answers suggests this process is still being practiced.","Count the starting objects, remove the stated number, count what remains, then write the matching number sentence.","Use eight toys. Remove five, count the three left and write 8 − 5 = 3. Repeat with one playful example.","These practice sheets do not provide a formal math grade.");
+ }
+ if(/fall kindergarten conference/i.test(combined)){
+  return result("The teacher checked following directions, participating, staying on task, taking pride in work and kindness toward others—real classroom strengths.","Keep positive classroom behaviors separate from the new letter-sound skills being developed.","Celebrate one of those strengths and play one brief letter-sound game.");
+ }
+ if(/kindergarten skills|quarter 2|q2.learning/i.test(combined)){
+  return result("The quarter-two plan includes beginning sounds, blending speech sounds, numbers 1–10, sets up to five, shapes, plants and other classroom themes.","These are upcoming learning objectives, not evidence that every item is already mastered.","Try a letter-sound hunt, count five objects or find circles and rectangles around the house.");
+ }
+ if(x.isGrade)return result("This is a dated score, not an IQ score, diagnosis or prediction of eventual achievement.","Look up the school's benchmark or grading rubric before deciding what this number signifies.","Practice one example problem or reading task related to the skill.");
+ if(x.kind==="work")return result("This page documents what was practiced, but not necessarily what has been mastered.","Notice what the student solved independently versus what still requires help.","Ask the child to explain one answer, then try one similar problem.");
+ if(x.kind==="learning")return result("This page describes material being taught or planned, not a completed mastery assessment.","Look for a later work sample or teacher note showing what the child can do.","Ask the child to teach you one interesting thing from the lesson.");
+ return null;
+}
+function schoolAnalysisHTML(x){
+ const guide=schoolAnalysis(x);if(!guide)return"";
+ const meaning=String(x.insight||guide.meaning||""),focus=String(x.focus||guide.focus||""),practice=String(x.tryNext||guide.next||"");
+ const block=(label,value,extra)=>value?'<div class="ps-school-analysis-block'+(extra?' '+extra:'')+'"><b>'+label+'</b><p>'+esc(value)+'</p></div>':"";
+ return '<section class="ps-school-analysis">'+
+  block("What this means",meaning)+block("What to focus on",focus)+block("Try next",practice,"ps-school-practice")+
+  '<p class="ps-school-caution">'+esc(String(x.caution||guide.caution||""))+'</p></section>';
+}
 window.openChildSchoolBook=function(child,index=0){
  if(!KIDS.includes(child))return;
  const pages=schoolPages(child);
@@ -227,7 +298,7 @@ window.openChildSchoolBook=function(child,index=0){
  (x.value?'<div class="ps-school-score">'+esc(x.value)+'</div>':"")+
  '<p class="ps-school-date">'+esc(x.term||"")+(x.term&&date?" · ":"")+esc(date||"Date not entered")+'</p>'+
  (x.photoId?'<div class="ps-school-photo"><img id="psSchoolPhoto" alt="Schoolwork sample" hidden><span id="psSchoolLoading">Loading schoolwork photo…</span></div>':"")+
- '<p class="ps-school-notes">'+esc(x.notes||x.summary||"")+'</p>'+
+ '<p class="ps-school-notes">'+esc(x.notes||x.summary||"")+'</p>'+schoolAnalysisHTML(x)+
  (x.source?'<p class="ps-muted">Source: '+esc(x.source)+'</p>':"")+
  (hasDoc?'<button class="ps-school-doc" onclick="paperDownloadDigitalDoc(\''+qid(x.sourcePdfId)+'\')">↓ Save supporting school PDF</button>':"")+
  '</div><div class="ps-page-controls"><button '+(!n?"disabled":"")+' onclick="openChildSchoolBook(\''+child+'\','+(n-1)+')">‹ Previous</button>'+
