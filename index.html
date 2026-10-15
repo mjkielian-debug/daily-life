@@ -172,7 +172,7 @@ dialog,
 </style>
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261015-rainbow-cleanup2">
-<link rel="stylesheet" href="photo-inbox.css?v=20261015-current-rooms-thirdstairs6">
+<link rel="stylesheet" href="photo-inbox.css?v=20261015-followthrough3">
 <link rel="stylesheet" href="house-visual-map.css?v=20261015-current-rooms-thirdstairs6">
 <link rel="stylesheet" href="visual-hubs.css?v=20261015-money-goals1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
@@ -189,8 +189,8 @@ dialog,
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor .grid2{grid-template-columns:1fr!important;gap:12px!important}
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label.task{display:flex!important}
 </style>
-<link rel="stylesheet" href="finance-roadmap.css?v=20261015-compact-goals2">
-<link rel="stylesheet" href="action-first.css?v=20261015-action-progress2">
+<link rel="stylesheet" href="finance-roadmap.css?v=20261015-followthrough3">
+<link rel="stylesheet" href="action-first.css?v=20261015-followthrough3">
 </head>
 <body>
 <div id="app"></div>
@@ -7885,7 +7885,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-action-progress2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-followthrough3");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -7922,7 +7922,7 @@ registerAppWorker();
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="house-visual-map.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="photo-inbox.js?v=20261015-current-rooms-thirdstairs6"></script>
-<script src="home-area-projects.js?v=20261015-current-rooms-thirdstairs6"></script>
+<script src="home-area-projects.js?v=20261015-followthrough3"></script>
 <script src="inventory-photo-review.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
@@ -7930,8 +7930,8 @@ registerAppWorker();
 <script src="bank-exit-plan.js?v=20261014-bank-exit1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 <script src="budget-forecast-2026.js?v=20261015-2"></script>
-<script src="finance-roadmap.js?v=20261015-compact-goals2"></script>
-<script src="action-first.js?v=20261015-action-progress2"></script>
+<script src="finance-roadmap.js?v=20261015-followthrough3"></script>
+<script src="action-first.js?v=20261015-followthrough3"></script>
 
 </body>
 </html>
