@@ -297,22 +297,26 @@ window.paperExportSingleArt=async function(id){
  const a=document.createElement("a");a.href=data;a.download="DailyLife-"+x.child+"-art-"+id+".jpg";document.body.appendChild(a);a.click();a.remove();
 };
 window.paperImportArtBackup=function(){
- modal("Import saved artwork photos",
-  '<div class="stack"><p class="ps-muted"><b>Have art pictures in ChatGPT but empty books?</b> Choose the small DailyLife Artwork Photos Restore JSON file to add the actual images to the correct child’s book. You can also choose a full Paper Sort JSON or a previously exported art backup.</p>'+
-  '<label>Saved artwork file<input id="psImportArt" type="file" accept="application/json,.json"></label>'+
-  '<p class="ps-muted">Your existing book entries are kept. Images live on this device only; after import, back up the art book before discarding any original artwork.</p></div>',
- "Import photos",async()=>{
+ modal("Import saved children's memory books",
+  '<div class="stack"><p class="ps-muted">Choose the <b>Daily Life Children’s Memory Books</b> JSON file. It restores photos, properly assigns certificates to Achievement Books, and adds school scores, work samples and learning notes. You can also use the full Paper Sort JSON or an older Art Book backup.</p>'+
+  '<label>Saved books file<input id="psImportArt" type="file" accept="application/json,.json"></label>'+
+  '<p class="ps-muted">This is additive and re-importable. Existing records stay; verified corrected ownership and book categories can be repaired. Photos remain stored locally on this device, so keep an external backup too.</p></div>',
+ "Import books",async()=>{
   const file=document.getElementById("psImportArt")?.files?.[0];
-  if(!file||file.size>150*1024*1024){alert("Choose your saved artwork JSON file (up to 150 MB).");return}
+  if(!file||file.size>150*1024*1024){alert("Choose the JSON memory-books file, up to 150 MB.");return}
   let backup;try{backup=JSON.parse(await file.text())}catch(e){alert("The selected file is not readable JSON.");return}
-  if(!["daily-life-art-v1","daily-life-paper-batch-v1"].includes(backup?.format)||!Array.isArray(backup.artworks)){
-   alert("This file does not contain a recognized Daily Life artwork collection.");return;
+  const accepted=["daily-life-art-v1","daily-life-paper-batch-v1","daily-life-kids-books-v1"];
+  if(!accepted.includes(backup?.format)||!Array.isArray(backup.artworks)||backup.artworks.length>1500){
+   alert("This file does not contain a recognized Daily Life memory collection.");return;
   }
-  if(backup.artworks.length>1500){alert("This file has too many artwork records.");return}
-  let checked=0,added=0,failed=0,updated=0;
+  const list=backup.schoolPortfolio||[],grades=backup.schoolGrades||(backup.format==="daily-life-paper-batch-v1"?backup.records?.schoolGrades:[])||[];
+  if(!Array.isArray(list)||list.length>400||!Array.isArray(grades)||grades.length>1000){
+   alert("Too many school entries, or school records are invalid.");return;
+  }
+  let checked=0,added=0,failed=0,updated=0,schoolAdded=0,gradeAdded=0,schoolPhotos=0;
   for(const entry of backup.artworks){
-   const x=backup.format==="daily-life-paper-batch-v1"?entry:entry?.metadata;
-   const photo=backup.format==="daily-life-paper-batch-v1"?entry?.photoData:entry?.photo;
+   const x=backup.format==="daily-life-art-v1"?entry?.metadata:entry;
+   const photo=backup.format==="daily-life-art-v1"?entry?.photo:entry?.photoData;
    const id=String(x?.id||"");
    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)||!KIDS.includes(x?.child)||typeof photo!=="string"||
       !/^data:image\/(?:jpeg|png|webp);base64,/.test(photo)||photo.length>12*1024*1024){failed++;continue}
@@ -321,22 +325,56 @@ window.paperImportArtBackup=function(){
     if(typeof stored!=="string"||stored.length<100){await dbSet(key,photo);stored=await dbGet(key)}
     if(typeof stored!=="string"||stored.length<100){failed++;continue}
     const existing=arts().find(a=>a.id===id);
+    const kind=x.kind==="achievement"?"achievement":"art";
     if(!existing){
-     arts().push({id,child:x.child,title:String(x.title||"Untitled masterpiece").slice(0,160),
+     arts().push({id,child:x.child,kind,title:String(x.title||"Untitled masterpiece").slice(0,160),
        artDate:String(x.artDate||"").slice(0,10),age:String(x.age||"").slice(0,20),notes:String(x.notes||"").slice(0,2000),
-       hasLocalPhoto:true,createdAt:x.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});added++;
+       hasLocalPhoto:true,confirmationVersion:Number(x.confirmationVersion||0),
+       createdAt:x.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});added++;
     }else{
-     // Repeated imports repair missing photo metadata and confirmed child attribution
-     // without replacing the parent’s own caption edits.
-     if(existing.child!==x.child){existing.child=x.child;updated++}
+     const confirmed=Number(x.confirmationVersion||0)>Number(existing.confirmationVersion||0);
+     // Explicitly confirmed corrections supersede old import metadata.
+     if(confirmed){
+      existing.child=x.child;existing.kind=kind;
+      existing.title=String(x.title||existing.title||"").slice(0,160);
+      existing.notes=String(x.notes||existing.notes||"").slice(0,2000);
+      existing.confirmationVersion=Number(x.confirmationVersion||0);
+      updated++;
+     }else if(!existing.kind&&x.kind==="achievement"){existing.kind="achievement";updated++}
      if(!existing.hasLocalPhoto)existing.hasLocalPhoto=true;
     }
     checked++;
    }catch(err){failed++}
   }
-  try{await save()}catch(e){alert("Some photos may be stored, but the artwork index could not be saved. Keep the import file and try again.");return}
+  if(!Array.isArray(state.schoolGrades))state.schoolGrades=[];
+  for(const x of grades){
+   if(!x||!KIDS.includes(x.child)||!/^[a-zA-Z0-9_-]{3,120}$/.test(String(x.id||"")))continue;
+   if(state.schoolGrades.some(v=>v.id===x.id||(x.sourceKey&&v.sourceKey===x.sourceKey)))continue;
+   state.schoolGrades.push(Object.assign({},x));gradeAdded++;
+  }
+  for(const x of list){
+   const id=String(x?.id||"");
+   if(!KIDS.includes(x?.child)||!/^[a-zA-Z0-9_-]{3,100}$/.test(id)){failed++;continue}
+   const photo=x.photoData;
+   if(photo!==undefined){
+    if(typeof photo!=="string"||!/^data:image\/(?:jpeg|png|webp);base64,/.test(photo)||photo.length>12*1024*1024){failed++;continue}
+    try{
+     const key=SCHOOL_PHOTO+id;
+     let saved=await dbGet(key);
+     if(typeof saved!=="string"||saved.length<100){await dbSet(key,photo);saved=await dbGet(key)}
+     if(typeof saved!=="string"||saved.length<100)throw Error("School photo not stored");
+     schoolPhotos++;
+    }catch(e){failed++;continue}
+   }
+   const existing=schoolPortfolio().find(v=>v.id===id||(x.sourceKey&&x.sourceKey===v.sourceKey));
+   if(!existing){
+    const item=Object.assign({},x);delete item.photoData;item.photoId=photo?id:(x.photoId||"");
+    schoolPortfolio().push(item);schoolAdded++;
+   }else if(photo&&!existing.photoId){existing.photoId=id;updated++}
+  }
+  try{await save()}catch(e){alert("Photos may be stored, but the book index could not be saved. Keep the import file and retry.");return}
   render();window.openArtLibrary();
-  alert("Art books updated. "+checked+" photo"+(checked===1?"":"s")+" verified on this device · "+added+" new page"+(added===1?"":"s")+(updated?" · "+updated+" child attribution"+(updated===1?"":"s")+" corrected":"")+(failed?" · "+failed+" not imported":"")+". Open a child's book to see the pictures.");
+  alert("Books updated! "+checked+" art/award photos checked, "+schoolPhotos+" schoolwork photos, "+gradeAdded+" scores and "+schoolAdded+" school notes added."+(updated?" "+updated+" confirmed corrections applied.":"")+(failed?" "+failed+" records could not be imported.":""));
  });
 };
 window.paperExportArtBackup=async function(){
