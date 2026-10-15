@@ -59,11 +59,11 @@ window.openPaperImport=function(){
   if(data?.format!==FORMAT||!/^[A-Za-z0-9_-]{3,120}$/.test(String(data.batchId||""))||!data.records||typeof data.records!=="object"||!Array.isArray(data.documents)||!Array.isArray(data.artworks)){
    alert("This isn't a recognized Daily Life paper-sort import.");return
   }
-  if(data.documents.length>20||data.artworks.length>200||ALLOWED.some(k=>data.records[k]&&!Array.isArray(data.records[k])||Array.isArray(data.records[k])&&data.records[k].length>300)){
+  if(data.documents.length>20||data.artworks.length>200||(data.schoolPortfolio!==undefined&&(!Array.isArray(data.schoolPortfolio)||data.schoolPortfolio.length>400))||ALLOWED.some(k=>data.records[k]&&!Array.isArray(data.records[k])||Array.isArray(data.records[k])&&data.records[k].length>300)){
    alert("Import file contains too many records.");return
   }
   // Validate before changing records. Save actual PDF/photo bytes in IndexedDB.
-  let storedDocs=0,storedArt=0;
+  let storedDocs=0,storedArt=0,storedSchool=0;
   try{
    for(const doc of data.documents){
     if(!/^[a-zA-Z0-9_-]{3,100}$/.test(String(doc?.id||""))||doc.mimeType!=="application/pdf"||!String(doc.data||"").match(/^[A-Za-z0-9+/=\r\n]+$/))throw Error("Invalid PDF");
@@ -84,6 +84,18 @@ window.openPaperImport=function(){
     }
     storedArt++;
    }
+   for(const x of data.schoolPortfolio||[]){
+    if(!/^[a-zA-Z0-9_-]{3,100}$/.test(String(x?.id||""))||!["Leo","Demitri","Dolly","Ambrose"].includes(x.child))throw Error("Invalid school record");
+    if(!x.photoData)continue;
+    if(typeof x.photoData!=="string"||!/^data:image\/(?:jpeg|png|webp);base64,/.test(x.photoData)||x.photoData.length>12*1024*1024)throw Error("Invalid school photo");
+    const key="kid-school-photo:"+x.id;let existing=await dbGet(key);
+    if(typeof existing!=="string"||existing.length<100){
+     status.textContent="Saving schoolwork photo "+(storedSchool+1)+"…";
+     await dbSet(key,x.photoData);existing=await dbGet(key);
+     if(typeof existing!=="string"||existing.length<100)throw Error("School photo verification failed");
+    }
+    storedSchool++;
+   }
   }catch(error){
    status.textContent="Could not finish saving PDFs or photos. Your existing app records were not replaced.";
    alert("Import stopped while verifying local file storage. Keep originals and try again when storage is available.");return;
@@ -98,9 +110,31 @@ window.openPaperImport=function(){
   }
   const book=rows("kidArtworks");
   for(const art of data.artworks){
-   if(!book.some(x=>x.id===art.id||x.child===art.child&&clean(x.title)===clean(art.title))){
-    book.push({id:art.id,child:art.child,title:String(art.title||"Artwork").slice(0,160),artDate:String(art.artDate||"").slice(0,10),age:String(art.age||"").slice(0,20),notes:String(art.notes||"").slice(0,2000),hasLocalPhoto:true,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+   const kind=art.kind==="achievement"?"achievement":"art";
+   const old=book.find(x=>x.id===art.id);
+   if(!old){
+    if(!book.some(x=>x.child===art.child&&clean(x.title)===clean(art.title))){
+     book.push({id:art.id,child:art.child,kind,title:String(art.title||"Artwork").slice(0,160),
+      artDate:String(art.artDate||"").slice(0,10),age:String(art.age||"").slice(0,20),notes:String(art.notes||"").slice(0,2000),
+      hasLocalPhoto:true,confirmationVersion:Number(art.confirmationVersion||0),
+      createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    }
+   }else{
+    const confirmed=Number(art.confirmationVersion||0)>Number(old.confirmationVersion||0);
+    if(confirmed){
+     old.child=art.child;old.kind=kind;old.title=String(art.title||old.title||"").slice(0,160);
+     old.notes=String(art.notes||old.notes||"").slice(0,2000);old.confirmationVersion=Number(art.confirmationVersion||0);
+    }else if(!old.kind&&art.kind==="achievement")old.kind="achievement";
+    old.hasLocalPhoto=true;
    }
+  }
+  if(!Array.isArray(state.kidSchoolPortfolio))state.kidSchoolPortfolio=[];
+  for(const x of data.schoolPortfolio||[]){
+   if(state.kidSchoolPortfolio.some(v=>v.id===x.id||(x.sourceKey&&v.sourceKey===x.sourceKey)))continue;
+   const record=Object.assign({},x);
+   delete record.photoData;
+   record.photoId=x.photoData?x.id:String(x.photoId||"");
+   state.kidSchoolPortfolio.push(record);
   }
   state.settings=state.settings||{};
   const done=state.settings.importedPaperBatches||(state.settings.importedPaperBatches=[]);
@@ -108,7 +142,7 @@ window.openPaperImport=function(){
   try{await save()}catch(error){alert("Photos/PDFs saved, but app record saving failed. Keep the import file and try again.");return}
   render();
   if(typeof window.openPaperStudio==="function")window.openPaperStudio();
-  alert("Paper Sort imported: "+Object.values(count).reduce((a,b)=>a+b,0)+" new entries; "+storedDocs+" PDF archives and "+storedArt+" artwork photos verified on this device. Your existing data was preserved.");
+  alert("Paper Sort imported: "+Object.values(count).reduce((a,b)=>a+b,0)+" new entries; "+storedDocs+" PDF archives and "+storedArt+" artwork photos and "+storedSchool+" schoolwork photos verified on this device. Your existing data was preserved.");
  });
 };
 window.openPaperDigitalArchive=function(){
