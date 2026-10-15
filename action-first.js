@@ -103,7 +103,16 @@ function choices(page,model){
   if(due.length)add("household:pet","Check "+String(due[0].title||"pet care"),"This routine is flagged due; confirm before marking care complete.","Open pet care",()=>call("openHouseholdSection",["petcare"]),89);
   const t=(s.tasks||[]).find(x=>x.date===d&&!x.done&&String(x.category||"").toLowerCase()==="home");
   if(t)add("household:task:"+t.id,"Work on "+t.title,"This is a home task saved for today.","Open task",()=>call("openTaskDetails",[t.id]),76);
-  if(!due.length&&!t)add("household:reset","Choose one small home reset","Only do what helps today; the room maps and inventory are reference tools.","Open cleaning",()=>call("openHouseholdSection",["cleaning"]),50,true);
+  if(!due.length&&!t){
+    const suggested=typeof homeNextResetPlan==="function"?homeNextResetPlan():null;
+    if(suggested&&suggested.roomId){
+      add("household:reset:"+suggested.roomId,suggested.title,suggested.detail,
+        "Start a 10-minute reset",()=>call("homeScheduleRoomReset",[suggested.roomId,10]),55,true);
+    }else{
+      add("household:reset","Choose one small home reset","Only do what helps today; room maps and inventory are reference tools.",
+        "Open cleaning",()=>call("openHouseholdSection",["cleaning"]),50,true);
+    }
+  }
  }
  if(safePage==="pets"){
   const due=typeof duePetRoutines==="function"?duePetRoutines():[];
