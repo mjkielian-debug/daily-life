@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided8",
+  "build": "20261015-guided9",
   "released": "2026-10-15",
-  "ui": "Guided home resets from confirmed tasks",
+  "ui": "Action first Today; confirmed separate progress",
   "data_version": "local-first data unchanged"
 }
