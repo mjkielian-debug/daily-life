@@ -27,7 +27,13 @@ function choices(page,model){
    const hm=String(current.start||"").match(/^([0-9]{1,2}):([0-9]{2})$/),startMins=hm?Number(hm[1])*60+Number(hm[2]):null;
    const nowDate=new Date(),until=startMins===null?null:startMins-(nowDate.getHours()*60+nowDate.getMinutes());
    const rank=safePage==="today"&&until!==null&&until>90?32:100;
-   add("block:"+dt+":"+(current.sourceId||current.id||current.start||current.title),"Open "+String(current.title||"your scheduled block"),when+" · Check the plan and record progress only when you have done it.","Open this block",()=>call("openDayFlowSection",["plan",dt]),rank);
+   const label=String(current.title||"your scheduled block");
+   const isNow=until!==null&&until<=0&&(!current.end||typeof hmMinutes!=="function"||hmMinutes(current.end)>nowDate.getHours()*60+nowDate.getMinutes());
+   const isFoodFort=/food fort/i.test(label);
+   const title=isNow?(isFoodFort?"Food Fort is happening now":"Now · "+label):"Upcoming · "+label;
+   const note=isFoodFort?(isNow?"Dinner is scheduled here until 6:30 PM. If you're there, enjoy the meal; no extra step is required.":"Food Fort covers dinner. Check the time and location before leaving."):
+     (isNow?"On your schedule now. Follow the plan if it is still relevant; you don't need to mark it complete just for opening this card.":when+" · Check any preparation before it starts.");
+   add("block:"+dt+":"+(current.sourceId||current.id||current.start||current.title),title,note,"View event or block",()=>call("openDayFlowSection",["plan",dt]),rank);
   }
   const loose=safePage==="itinerary"&&typeof itineraryTaskCandidates==="function"?itineraryTaskCandidates(dt):[];
   if(loose.length)add("loose:"+dt,"Place an unscheduled task",loose.length+" possible tasks still need a place in your day.","Review loose tasks",()=>call("openDayFlowSection",["unscheduled",dt]),62);
@@ -183,12 +189,17 @@ function progressMarkup(page,model){
   return '<div class="directive-meter-row"><div class="directive-meter-label"><b>'+clean(m.label)+'</b><span>'+m.done+' / '+m.total+' '+clean(m.note)+'</span></div>'+
   '<div class="directive-meter-track" role="progressbar" aria-valuenow="'+m.done+'" aria-valuemin="0" aria-valuemax="'+m.total+'" aria-label="'+clean(m.label)+'"><span style="width:'+percent+'%"></span></div></div>';
  }).join("");
- const total=metrics.reduce((sum,m)=>sum+m.total,0),done=metrics.reduce((sum,m)=>sum+m.done,0);
- const pct=Math.min(100,Math.round(100*done/total));
- const progressName=page==="today"?"confirmed tasks and chores":metrics[0].label;
+ // Today's main ring reports actual personal tasks only. Children's unreported
+ // chore check-ins appear separately instead of depressing a made-up "day score".
+ const dialMetrics=page==="today"?metrics.filter(m=>m.label==="Your tasks"):metrics;
+ const summed=dialMetrics.length?dialMetrics:metrics;
+ const total=summed.reduce((sum,m)=>sum+m.total,0),done=summed.reduce((sum,m)=>sum+m.done,0);
+ const pct=total?Math.min(100,Math.round(100*done/total)):0;
+ const progressName=page==="today"?"personal tasks marked complete":metrics[0].label;
  const wins=data.wins.length?'<div class="directive-wins"><span>✓ Already done</span>'+data.wins.map(x=>'<span class="directive-win">'+clean(x.name)+'</span>').join("")+'</div>':"";
  return '<div class="directive-progress" aria-label="Progress from recorded tasks"><div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' · '+clean(progressName)+'"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>'+
- '<div class="directive-progress-text"><b>Progress you can see</b>'+bars+'</div></div>'+wins;
+ '<div class="directive-progress-text"><b>'+ (page==="today"?"Tasks confirmed · not a day score":"Progress you can see") +'</b>'+bars+
+ (page==="today"&&metrics.some(m=>m.label==="Kids\' chores")?'<small class="directive-unknown-note">Unreported chores are unknown, not failed.</small>':"")+'</div></div>'+wins;
 }
 window.actionFirstConfirmDone=async function(page){
  const model=page==="today"?null:typeof visualHubModel==="function"?visualHubModel(page):null;
