@@ -146,7 +146,7 @@ function bookGrid(){
 window.openArtLibrary=function(){
  const count=arts().length;
  modal("🎨 Children's art library",'<div class="ps-studio"><p class="ps-muted">Little memory books with real artwork photos. Pick a child to flip through their pages.</p>'+bookGrid()+
- '<div class="ps-nav"><button onclick="openArtEntry()">+ Photograph artwork</button><button onclick="paperExportArtBackup()">↓ Export photo backup</button><button onclick="paperImportArtBackup()">↑ Restore backup</button></div>'+
+ '<div class="ps-nav"><button onclick="openArtEntry()">+ Photograph artwork</button><button onclick="paperExportArtBackup()">↓ Export photo backup</button><button onclick="paperImportArtBackup()">↑ Import saved art photos</button></div>'+
  '<div class="ps-warning"><b>Image storage:</b> '+count+' artwork record'+(count===1?"":"s")+'. Actual photos live in this phone’s Daily Life storage, not in cloud sync. Before recycling drawings, export a backup and verify it was saved somewhere safe. Removing app storage or changing phones may lose local-only pictures.</div>'+
  '</div>',"Close",closeModal);
 };
@@ -154,7 +154,7 @@ window.openChildArtBook=function(child,index=0){
  if(!KIDS.includes(child))return;
  const rows=byChild(child);
  if(!rows.length){
-  modal(child+"'s Art Book",'<div class="ps-empty-book">📖<b>Every picture starts a story.</b><p>No artwork photographed yet for '+esc(child)+'.</p><button onclick="openArtEntry(\''+child+'\')">+ First artwork</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
+  modal(child+"'s Art Book",'<div class="ps-empty-book">📖<b>Every picture starts a story.</b><p>No artwork photos have been saved here for '+esc(child)+'. Pictures from ChatGPT must be imported once.</p><button onclick="paperImportArtBackup()">↑ Import saved art photos</button><button onclick="openArtEntry(\''+child+'\')">+ Add a new photo</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
  }
  currentBook=child;currentPage=Math.max(0,Math.min(rows.length-1,Number(index)||0));
  const x=rows[currentPage],id=qid(x.id);
@@ -220,25 +220,46 @@ window.paperExportSingleArt=async function(id){
  const a=document.createElement("a");a.href=data;a.download="DailyLife-"+x.child+"-art-"+id+".jpg";document.body.appendChild(a);a.click();a.remove();
 };
 window.paperImportArtBackup=function(){
- modal("Restore art photo backup",
-  '<div class="stack"><p class="ps-muted">Choose a Daily Life artwork JSON backup you downloaded earlier. This adds any missing images and restores book entries by their original IDs without deleting existing photos.</p><label>Artwork backup<input id="psImportArt" type="file" accept="application/json,.json"></label></div>',
- "Import",async()=>{
+ modal("Import saved artwork photos",
+  '<div class="stack"><p class="ps-muted"><b>Have art pictures in ChatGPT but empty books?</b> Choose the small DailyLife Artwork Photos Restore JSON file to add the actual images to the correct child’s book. You can also choose a full Paper Sort JSON or a previously exported art backup.</p>'+
+  '<label>Saved artwork file<input id="psImportArt" type="file" accept="application/json,.json"></label>'+
+  '<p class="ps-muted">Your existing book entries are kept. Images live on this device only; after import, back up the art book before discarding any original artwork.</p></div>',
+ "Import photos",async()=>{
   const file=document.getElementById("psImportArt")?.files?.[0];
-  if(!file||file.size>150*1024*1024){alert("Choose an artwork backup under 150 MB.");return}
-  let backup;try{backup=JSON.parse(await file.text())}catch(e){alert("The file is not readable JSON.");return}
-  if(backup?.format!=="daily-life-art-v1"||!Array.isArray(backup.artworks)){alert("This is not a recognized Daily Life artwork backup.");return}
-  if(backup.artworks.length>1500){alert("This backup has too many entries. Contact support before importing.");return}
-  let restored=0;
-  for(const entry of backup.artworks){
-   const x=entry?.metadata||{},photo=entry?.photo,id=String(x.id||"");
-   if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)||!KIDS.includes(x.child)||typeof photo!=="string"||!/^data:image\/(?:jpeg|png|webp);base64,/.test(photo)||photo.length>12*1024*1024)continue;
-   if(!await dbGet(imageKey(id)))await dbSet(imageKey(id),photo);
-   if(!arts().some(a=>a.id===id))arts().push({id,child:x.child,title:String(x.title||"Untitled masterpiece").slice(0,160),
-    artDate:String(x.artDate||"").slice(0,10),age:String(x.age||"").slice(0,20),notes:String(x.notes||"").slice(0,2000),
-    hasLocalPhoto:true,createdAt:x.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
-   restored++;
+  if(!file||file.size>150*1024*1024){alert("Choose your saved artwork JSON file (up to 150 MB).");return}
+  let backup;try{backup=JSON.parse(await file.text())}catch(e){alert("The selected file is not readable JSON.");return}
+  if(!["daily-life-art-v1","daily-life-paper-batch-v1"].includes(backup?.format)||!Array.isArray(backup.artworks)){
+   alert("This file does not contain a recognized Daily Life artwork collection.");return;
   }
-  await save();render();window.openArtLibrary();alert("Checked "+restored+" artwork images from the backup. Open a book to confirm pictures display correctly.");
+  if(backup.artworks.length>1500){alert("This file has too many artwork records.");return}
+  let checked=0,added=0,failed=0,updated=0;
+  for(const entry of backup.artworks){
+   const x=backup.format==="daily-life-paper-batch-v1"?entry:entry?.metadata;
+   const photo=backup.format==="daily-life-paper-batch-v1"?entry?.photoData:entry?.photo;
+   const id=String(x?.id||"");
+   if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)||!KIDS.includes(x?.child)||typeof photo!=="string"||
+      !/^data:image\/(?:jpeg|png|webp);base64,/.test(photo)||photo.length>12*1024*1024){failed++;continue}
+   try{
+    const key=imageKey(id);let stored=await dbGet(key);
+    if(typeof stored!=="string"||stored.length<100){await dbSet(key,photo);stored=await dbGet(key)}
+    if(typeof stored!=="string"||stored.length<100){failed++;continue}
+    const existing=arts().find(a=>a.id===id);
+    if(!existing){
+     arts().push({id,child:x.child,title:String(x.title||"Untitled masterpiece").slice(0,160),
+       artDate:String(x.artDate||"").slice(0,10),age:String(x.age||"").slice(0,20),notes:String(x.notes||"").slice(0,2000),
+       hasLocalPhoto:true,createdAt:x.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});added++;
+    }else{
+     // Repeated imports repair missing photo metadata and confirmed child attribution
+     // without replacing the parent’s own caption edits.
+     if(existing.child!==x.child){existing.child=x.child;updated++}
+     if(!existing.hasLocalPhoto)existing.hasLocalPhoto=true;
+    }
+    checked++;
+   }catch(err){failed++}
+  }
+  try{await save()}catch(e){alert("Some photos may be stored, but the artwork index could not be saved. Keep the import file and try again.");return}
+  render();window.openArtLibrary();
+  alert("Art books updated. "+checked+" photo"+(checked===1?"":"s")+" verified on this device · "+added+" new page"+(added===1?"":"s")+(updated?" · "+updated+" child attribution"+(updated===1?"":"s")+" corrected":"")+(failed?" · "+failed+" not imported":"")+". Open a child's book to see the pictures.");
  });
 };
 window.paperExportArtBackup=async function(){
