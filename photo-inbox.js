@@ -155,13 +155,21 @@ window.photoInboxSelectFloor=function(f){
  floorView=f;
  window.openHouseFloorMap(f);
 };
+async function canonicalFloorReference(f){
+ // A room picture must not silently replace an already-known robot-vacuum floor plan.
+ if(f==="First floor"){
+  const canonical=await cloudClient.from("photo_inbox").select("id,title,image_data,created_at")
+   .eq("category","house_map").eq("floor_label",f).eq("title","Main floor robovac layout").limit(1);
+  if(canonical.error)return canonical;
+  if(canonical.data?.length)return canonical;
+ }
+ return await cloudClient.from("photo_inbox").select("id,title,image_data,created_at")
+  .eq("category","house_map").eq("floor_label",f).order("created_at",{ascending:false}).limit(1);
+}
 window.photoInboxLoadFloor=async function(f){
  const el=document.getElementById("piMapPhoto");if(!el)return;
  if(!cloudReady()){el.innerHTML='<div class="pi-map-placeholder">Sign in to Daily Life cloud to view or add a floor-plan image. Your existing rooms are still shown below.</div>';return}
- const {data,error}=await cloudClient.from("photo_inbox")
-  .select("id,title,image_data,created_at")
-  .eq("category","house_map").eq("floor_label",f)
-  .order("created_at",{ascending:false}).limit(1);
+ const {data,error}=await canonicalFloorReference(f);
  const current=document.getElementById("piMapPhoto");
  if(!current||floorView!==f)return;
  if(error){current.textContent="Could not load floor photo: "+error.message;return}
@@ -183,9 +191,7 @@ window.houseMapInlineHtml=function(){
 };
 window.photoInboxLoadInlineMap=async function(){
  const el=document.getElementById("piInlineReference");if(!el||!cloudReady())return;
- const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title")
-  .eq("category","house_map").eq("floor_label","First floor")
-  .order("created_at",{ascending:false}).limit(1);
+ const {data,error}=await canonicalFloorReference("First floor");
  const current=document.getElementById("piInlineReference");if(!current)return;
  if(error){current.textContent="Unable to load the first-floor reference.";return}
  if(!data?.length){current.innerHTML='<span class="pi-muted">No first-floor image yet. Upload the robot-vacuum map or a sketch to show it here.</span>';return}
