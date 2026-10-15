@@ -224,8 +224,30 @@
   function homeFocusRoom(){
     const rooms=(state.houseRooms||[]).filter(r=>String(r.name||"").trim());
     if(!rooms.length)return null;
-    return rooms.slice().sort((a,b)=>homeRoomScore(b)-homeRoomScore(a)||String(a.name).localeCompare(String(b.name)))[0];
+    // A saved task for today is actionable; inventory counts and absent logs
+    // are not evidence that a particular room needs cleaning.
+    const withTasks=rooms.filter(r=>homeRoomOpenItems(r.id).some(t=>t.date===ymd()));
+    const pool=withTasks.length?withTasks:rooms.filter(r=>homeLastReset(r.id)?.date!==ymd());
+    const list=pool.length?pool:rooms;
+    return list.slice().sort((a,b)=>{
+      if(withTasks.length){
+        const aCount=homeRoomOpenItems(a.id).filter(t=>t.date===ymd()).length;
+        const bCount=homeRoomOpenItems(b.id).filter(t=>t.date===ymd()).length;
+        if(aCount!==bCount)return bCount-aCount;
+      }
+      const aDate=homeLastReset(a.id)?.date||"",bDate=homeLastReset(b.id)?.date||"";
+      return aDate.localeCompare(bDate)||String(a.name).localeCompare(String(b.name));
+    })[0];
   }
+  window.homeNextResetPlan=function(){
+    const room=homeFocusRoom();if(!room)return null;
+    const saved=homeRoomOpenItems(room.id).find(t=>t.date===ymd());
+    return {roomId:room.id,roomName:room.name,
+      title:saved?String(saved.title||"Finish the room task"):"Try a 10-minute "+room.name+" reset",
+      detail:saved?"This is a real task saved for today. Open it and confirm progress when finished.":
+        "Optional suggestion, not a cleanliness assessment: clear one visible spot, put away what already has a home, then stop.",
+      savedTaskId:saved?String(saved.id):""};
+  };
   function homeResetLabel(room){
     const last=homeLastReset(room.id),days=last?homeDaysSince(last.date):null;
     if(days===null)return"not reset yet";
@@ -283,12 +305,12 @@
       resets=homeEnsure().filter(x=>x.date===ymd()).length,openRooms=rooms.filter(r=>homeRoomOpenItems(r.id).length).length;
     if(!rooms.length)return '<details class="card home-operator home-operator-collapsible"><summary><span><span class="eyebrow">House reset tools</span><b>Room reset dashboard</b><small>Add rooms to track resets, storage, and maintenance by area.</small></span><span class="home-operator-summary-count">0 rooms</span></summary><div class="home-operator-body"><button class="btn primary" onclick="openInventoryRoom()">+ Add room</button></div></details>';
     return '<details class="card home-operator home-operator-collapsible">'+
-      '<summary><span><span class="eyebrow">House reset tools</span><b>'+(focus?'Focus · '+esc(focus.name):'House reset dashboard')+'</b><small>'+rooms.length+' rooms · '+resets+' reset'+(resets===1?'':'s')+' today · '+openRooms+' with open tasks</small></span><span class="home-operator-summary-count">Open</span></summary>'+
+      '<summary><span><span class="eyebrow">House reset tools</span><b>'+(focus?'Suggested spot · '+esc(focus.name):'House reset dashboard')+'</b><small>'+rooms.length+' rooms · '+resets+' reset'+(resets===1?'':'s')+' today · '+openRooms+' with open tasks</small></span><span class="home-operator-summary-count">Open</span></summary>'+
       '<div class="home-operator-body">'+
-      (focus?'<div class="home-focus-ring" style="--room-tint:'+esc(focus.mapColor||"#bdeccf")+'"><span>FOCUS</span><b>'+esc(focus.name)+'</b><small>'+esc(homeResetLabel(focus))+' · '+homeRoomItemCount(focus.id)+' items</small><div class="actions"><button class="btn small primary" onclick="homeLogRoomReset(\''+focus.id+'\',20)">Done</button><button class="btn small" onclick="homeScheduleRoomReset(\''+focus.id+'\',20)">20 min</button></div></div>':'')+
+      (focus?'<div class="home-focus-ring" style="--room-tint:'+esc(focus.mapColor||"#bdeccf")+'"><span>OPTIONAL RESET</span><b>'+esc(focus.name)+'</b><small>'+esc(homeResetLabel(focus))+' · '+homeRoomItemCount(focus.id)+' items</small><div class="actions"><button class="btn small primary" onclick="homeLogRoomReset(\''+focus.id+'\',20)">Done</button><button class="btn small" onclick="homeScheduleRoomReset(\''+focus.id+'\',20)">20 min</button></div></div>':'')+
       '<div class="home-floor-pills">'+floors.map(f=>'<span>'+esc(f)+'</span>').join("")+'</div>'+
       '<div class="home-room-grid">'+rooms.slice().sort((a,b)=>String(a.floor||"").localeCompare(String(b.floor||""))||String(a.name).localeCompare(String(b.name))).map(homeRoomBubble).join("")+'</div>'+
-      '<div class="muted small home-operator-note">Short resets stay intentionally small: one visible zone, obvious put-away, one trash/donate decision, then stop.</div>'+
+      '<div class="muted small home-operator-note">Suggested rooms are not cleanliness ratings. Start with one visible zone; log a reset only when it happened.</div>'+
       '</div></details>';
   }
 
