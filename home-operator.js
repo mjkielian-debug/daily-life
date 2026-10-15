@@ -175,20 +175,20 @@
           importedOnly=!localSrc&&!!imported.src,src=localSrc||imported.src,
           rooms=[...(state.houseRooms||[])].filter(r=>(String(r.floor||"").trim()||"Unassigned")===active&&String(r.name||"").trim()).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))),
           floorHint=active==="First floor"
-            ?"Use the robot-vacuum screenshot as the starting visual for this level."
+            ?"Private diagram is based on the robot map; room details load from cloud."
             :active==="Basement"
-              ?"Add a simple basement screenshot or sketch when you have one."
-              :"Add a simple floor-plan screenshot or sketch for this level when you are ready.",
-          mappedLabel=rooms.length?rooms.length+" room"+(rooms.length===1?"":"s")+" mapped":"No rooms mapped yet";
-    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · working sketch</div><h2>${esc(active)} layout</h2><div class="muted small">${esc(mappedLabel)} · ${esc(floorHint)}</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick='homeChooseFloorPlan(${JSON.stringify(active)})'>${localSrc?"Replace map":importedOnly?"Use different image":"Add map image"}</button>${localSrc?`<button class="btn small" type="button" onclick='homeRemoveFloorPlan(${JSON.stringify(active)})'>Remove</button>`:""}</div></div>
+              ?"Basement stair access is identified; room positions need photos."
+              :"Known rooms are listed without guessing their positions.",
+          mappedLabel=rooms.length?rooms.length+" room inventory record"+(rooms.length===1?"":"s")+" linked":"Room inventory can be linked as you go";
+    return `<div class="card home-floor-plan-card"><div class="section-title"><div><div class="eyebrow">⌂ House map · working sketch</div><h2>${esc(active)} layout</h2><div class="muted small">${esc(mappedLabel)} · ${esc(floorHint)}</div></div><div class="actions"><button class="btn ${src?"":"primary"}" type="button" onclick='homeChooseFloorPlan(${JSON.stringify(active)})'>${localSrc?"Replace local image":importedOnly?"Use local image instead":"Add on-device floor image"}</button>${localSrc?`<button class="btn small" type="button" onclick='homeRemoveFloorPlan(${JSON.stringify(active)})'>Remove</button>`:""}</div></div>
       <div class="home-map-floor-tabs" role="tablist" aria-label="House floors">${floors.map(f=>{const count=(state.houseRooms||[]).filter(r=>(String(r.floor||"").trim()||"Unassigned")===f&&String(r.name||"").trim()).length;return `<button type="button" role="tab" aria-selected="${f===active?"true":"false"}" class="${f===active?"active":""}" onclick='homeSetMapFloor(${JSON.stringify(f)})'><span>${esc(f)}</span><small>${count}</small></button>`}).join("")}</div>
       ${typeof houseVisualMapHtml==="function"?houseVisualMapHtml(active):""}
       <div class="actions"><button class="btn primary" type="button" onclick='openHouseFloorMap(${JSON.stringify(active)})'>📷 Open floor photos + map details</button></div>
       <details class="hvm-reference-disclosure"><summary>View original floor reference or robot screenshot</summary>
       ${src?`<div class="home-floor-plan-frame"><img src="${esc(src)}" alt="${esc(active)} house layout reference"></div>${importedOnly?`<div class="muted small home-map-source">Using the reviewed map reference from ${esc(imported.title)}.</div>`:""}`:`<div class="notice home-map-empty"><b>${esc(floorHint)}</b><div class="small">Floor-plan images stay on this device and are kept out of normal cloud snapshots.</div></div>`}
       </details>
-      <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(active)}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick='openInventoryRoom("",${JSON.stringify(active)})'><span><b>+ Add a room on ${esc(active)}</b><small>Add only the room name; layout details can stay in the local image</small></span><span>›</span></button>`}</div>
-      <div class="muted small home-map-privacy">Floor-plan pictures stay on this device and are excluded from normal cloud snapshots. Room names and inventory continue using your normal Daily Life data.</div>
+      <div class="home-map-room-links">${rooms.length?rooms.map(r=>`<button type="button" style="--room-tint:${esc(r.mapColor||"#bdeccf")}" onclick="homeOpenRoomInventory('${r.id}')"><i></i><span><b>${esc(r.name)}</b><small>${esc(active)}</small></span><span>›</span></button>`).join(""):`<button type="button" class="home-map-add-room" onclick='openInventoryRoom("",${JSON.stringify(active)})'><span><b>+ Link a room inventory</b><small>Use this to store items by room; it does not change the cloud house diagram.</small></span><span>›</span></button>`}</div>
+      <div class="muted small home-map-privacy">Optional floor-plan images stay on this device. Reviewed map details and Photo Inbox references are private in Daily Life cloud; inventory records keep their existing local-first storage.</div>
     </div>`;
   }
 
