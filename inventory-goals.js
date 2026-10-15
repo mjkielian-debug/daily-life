@@ -19,6 +19,11 @@
   if(!Array.isArray(g.sessions))g.sessions=[];
   if(!Number.isFinite(Number(g.dailyZones))||Number(g.dailyZones)<1)g.dailyZones=1;
   if(!Number.isFinite(Number(g.weeklyZones))||Number(g.weeklyZones)<1)g.weeklyZones=4;
+  // These have always been suggested starting values. Only an explicitly saved
+  // choice (or a clearly customized earlier value) should display as a goal.
+  if(typeof g.goalTargetsConfirmed!=="boolean"){
+    g.goalTargetsConfirmed=Number(g.dailyZones)!==1||Number(g.weeklyZones)!==4;
+  }
   return g;
  }
  function groupFor(item){
@@ -50,6 +55,7 @@
     zones=valid.reduce((n,x)=>n+x.total,0),done=valid.reduce((n,x)=>n+x.done,0);
   return {groups:counts,zones,done,percent:zones?Math.round(done*100/zones):null,
     today:todayCount,week:weekCount,dailyGoal:Number(prefs.dailyZones),weeklyGoal:Number(prefs.weeklyZones),
+    goalsConfirmed:prefs.goalTargetsConfirmed===true,
     weekStart:week,configured:valid.length};
  }
  function pct(n,total){return total>0?Math.min(100,Math.round(100*n/total)):0}
@@ -76,9 +82,11 @@
     '<div class="hg-summary"><span class="hg-large-ring" style="--hg-fill:'+(x.percent??0)+'%"><b>'+(x.percent===null?"—":x.percent+"%")+'</b><small>organized</small></span>'+
     '<div><b>'+x.done+' / '+x.zones+' areas confirmed</b><p>Only areas you mark reviewed count. Untracked areas stay unknown.</p></div></div>'+
     '<div class="hg-short-goals">'+
-      '<div><b>Today · '+x.today+' / '+x.dailyGoal+'</b>'+meter(x.today,x.dailyGoal,"Organizing areas done today")+'</div>'+
-      '<div><b>This week · '+x.week+' / '+x.weeklyGoal+'</b>'+meter(x.week,x.weeklyGoal,"Organizing areas done this week")+'</div>'+
-    '</div><div class="hg-actions"><button type="button" onclick="openHomeGoalTargets()">Edit daily + weekly goals</button></div>'+
+      (x.goalsConfirmed?
+        '<div><b>Today · '+x.today+' / '+x.dailyGoal+'</b>'+meter(x.today,x.dailyGoal,"Organizing areas done today")+'</div>'+
+        '<div><b>This week · '+x.week+' / '+x.weeklyGoal+'</b>'+meter(x.week,x.weeklyGoal,"Organizing areas done this week")+'</div>':
+        '<div><b>'+x.week+' organizing areas logged this week</b><small>No weekly target chosen yet. The suggested numbers are not a requirement.</small></div>')+
+    '</div><div class="hg-actions"><button type="button" onclick="openHomeGoalTargets()">'+(x.goalsConfirmed?'Edit':'Choose')+' daily + weekly goals</button></div>'+
     '<div class="hg-groups">'+rows+'</div>'+
     '<p class="hg-note">Keep limits are optional, not a rule about how much your family should own. Counts include only the inventory you entered and do not measure how much is in the whole house. For food, pantry scans may have more items than this inventory list.</p></div>';
  }
@@ -87,13 +95,13 @@
  };
  window.openHomeGoalTargets=function(){
   const g=settings();
-  modal("Daily + weekly home goals",'<div class="stack"><p class="muted small">Suggested starting point: one small area a day, four a week. Choose what is realistic for you.</p>'+
+  modal("Daily + weekly home goals",'<div class="stack"><p class="muted small">Example only: one small area a day and four a week. These do not become your goals until you save your choices.</p>'+
     '<label>Areas to organize each day<input id="hgDay" type="number" min="1" max="100" step="1" value="'+esc(g.dailyZones)+'"></label>'+
     '<label>Areas to organize each week<input id="hgWeek" type="number" min="1" max="500" step="1" value="'+esc(g.weeklyZones)+'"></label></div>',
    "Save",async()=>{
     const d=Number(document.querySelector("#hgDay")?.value),w=Number(document.querySelector("#hgWeek")?.value);
     if(!Number.isInteger(d)||!Number.isInteger(w)||d<1||w<1||d>100||w>500){alert("Choose whole numbers in the allowed range.");return}
-    g.dailyZones=d;g.weeklyZones=w;await save();render();window.openHomeGoals();
+    g.dailyZones=d;g.weeklyZones=w;g.goalTargetsConfirmed=true;await save();render();window.openHomeGoals();
    });
  };
  window.openHomeGoalCategory=function(key){
@@ -142,8 +150,10 @@
     weeklyTasks=(state.tasks||[]).filter(x=>x.date>=p.weekStart&&x.date<=date&&!x.paused&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))&&!(typeof itineraryIsBroadFamilyRoutineTask==="function"&&itineraryIsBroadFamilyRoutineTask(x))&&!(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(x,date))),
     weeklyChores=(state.chores||[]).filter(x=>x.date>=p.weekStart&&x.date<=date),
     groups=[["Kids' chores today",done(chores),chores.length],["Tasks today",done(tasks),tasks.length],["Water today (oz)",Math.round(water),waterGoal],
-      ["Organizing today",p.today,p.dailyGoal],["Tasks this week",weeklyTasks.filter(x=>x.done).length,weeklyTasks.length],
-      ["Kids' chores this week",weeklyChores.filter(x=>x.done).length,weeklyChores.length],["Organizing this week",p.week,p.weeklyGoal]];
+      ...(p.goalsConfirmed?[["Organizing today",p.today,p.dailyGoal]]:[]),
+      ["Tasks this week",weeklyTasks.filter(x=>x.done).length,weeklyTasks.length],
+      ["Kids' chores this week",weeklyChores.filter(x=>x.done).length,weeklyChores.length],
+      ...(p.goalsConfirmed?[["Organizing this week",p.week,p.weeklyGoal]]:[])];
   modal("Daily + weekly progress",'<div class="hg-modal"><div class="hg-short-goals">'+
     groups.map(x=>'<div><b>'+esc(x[0])+' · '+x[1]+' / '+x[2]+'</b>'+meter(x[1],x[2],x[0])+'</div>').join("")+
     '</div><p class="hg-note">✏ Optional extra practice: '+(state.optionalPracticeSessions||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.pages||0),0)+' page(s) today · '+(state.optionalPracticeSessions||[]).filter(x=>x.date>=p.weekStart&&x.date<=date).reduce((n,x)=>n+Number(x.pages||0),0)+' this week. No required quota.</p><p class="hg-note">Progress uses only confirmed checkmarks and logged amounts. Unknown is not a failure.</p>'+
