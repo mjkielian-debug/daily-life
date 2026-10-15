@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261015-money-goals-compact1";
+const CACHE_NAME="daily-life-shell-20261015-action-first1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -25,6 +25,8 @@ const APP_SHELL=[
   "./bank-exit-plan.js",
   "./finance-roadmap.js",
   "./finance-roadmap.css",
+  "./action-first.js",
+  "./action-first.css",
   "./budget-forecast-2026.js",
   "./mobile-layout-repair.css",
   "./modal-form-readability.css",
