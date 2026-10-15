@@ -216,7 +216,7 @@ input,select,textarea{min-height:42px!important}
 :root{
  --text:#292039;--muted:#4b4059;--cream:#292039;--joy-ink:#292039;--joy-muted:#4b4059;
  --panel:#f8c5d7;--panel2:#c7e4bc;--bg:#e7bad5;--border:#ac7899;
- --success:#23653d;--danger:#99264b;--vd-ink:#292039;
+ --success:#523f60;--danger:#99264b;--vd-ink:#292039;
 }
 body{color:#292039;background:linear-gradient(145deg,#e8b4d0 0%,#aed9ba 38%,#c5bae7 70%,#edbdca 100%)!important}
 body::before{opacity:.6}
@@ -241,7 +241,7 @@ body::before{opacity:.6}
 #app :is(.btn,.navbtn,summary){min-height:44px!important}
 #app .btn{background:#f8e0eb!important;color:#35213d!important;border:1px solid #95617f!important;border-radius:999px!important;box-shadow:none!important}
 #app .btn.primary{background:#a6376b!important;color:#fff!important;border-color:#892757!important}
-#app .btn.good{background:#b6dcad!important;color:#244c31!important}
+#app .btn.good{background:#b6dcad!important;color:#523f60!important}
 #app .btn.danger{background:#f8ced4!important;color:#8a2442!important}
 #app :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea),#app select option{background:#fff3f7!important;color:#292039!important;border-color:#95617f!important;color-scheme:light!important}
 #app input::placeholder,#app textarea::placeholder{color:#68566d!important;opacity:1}
@@ -253,8 +253,8 @@ body::before{opacity:.6}
 #app .navbtn{color:#4b3654!important}
 #app .navbtn.active{background:#a6376b!important;color:white!important}
 #app :is(.people-tabs,.self-care-tabs) button{color:#49354f!important}
-#app :is(.people-tabs,.self-care-tabs) button.active{background:#bbdba9!important;color:#293b2b!important}
-#app :is(.bill-status.covered,.state.have){color:#23653d!important;background:#d6e9c9!important}
+#app :is(.people-tabs,.self-care-tabs) button.active{background:#bbdba9!important;color:#523f60!important}
+#app :is(.bill-status.covered,.state.have){color:#523f60!important;background:#d6e9c9!important}
 #app :is(.bill-status.short,.state.need,.budget-negative){color:#99264b!important;background:#fbe0e7!important}
 #app :is(.bill-status.unknown,.state.check){color:#6b4a13!important;background:#f5dfa8!important}
 #app :is(.today-drawer,.bill-calendar-week,.bill-history,.today-moon,.reading-details,.bill-details){background:#eed4e5!important;border:1px solid #b989a5!important;border-radius:22px!important}
@@ -1308,7 +1308,7 @@ button.food-week-day{
   right:11%;
   top:11%;
   background:rgba(255,255,255,.78);
-  color:#356f50;
+  color:#523f60;
   font-size:.62rem;
   font-weight:900;
 }
@@ -2390,7 +2390,7 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
 #app .dl-dinner-actions{display:flex;gap:4px;align-items:stretch;flex-wrap:wrap}
 #app .dl-dinner-actions .dl-dinner-button{flex:1 1 68px;width:auto!important;min-width:0!important}
 #app .dl-dinner-actions .dl-dinner-done{
-  border:1px solid #a9cda2;background:#e5f6df!important;color:#326242!important;
+  border:1px solid #a9cda2;background:#e5f6df!important;color:#523f60!important;
   border-radius:99px;padding:4px 8px;font-size:.66rem;font-weight:900;min-height:31px;
   flex:1 1 57px;
 }
@@ -2402,7 +2402,7 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
   width:100%;
   text-align:left;
   background:rgba(223,244,231,.72)!important;
-  color:#3c6a56!important;
+  color:#523f60!important;
   border:1px solid #b8dcc8!important;
   border-radius:14px!important;
   padding:6px 8px!important;
@@ -2430,7 +2430,7 @@ body:has(.today-one-screen-shell .dl-command-center) .bottom-nav{
 }
 #app .food-cook-summary{min-width:0;display:flex;flex-direction:column;gap:2px}
 #app .food-cook-summary b{font-size:.81rem}
-#app .food-cook-summary small{font-size:.68rem;color:#587260;line-height:1.2}
+#app .food-cook-summary small{font-size:.68rem;color:#523f60;line-height:1.2}
 #app .food-cooking-ahead>.btn{
   border-radius:99px!important;
   font-size:.68rem!important;
