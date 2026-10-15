@@ -378,10 +378,28 @@ window.paperImportArtBackup=function(){
  });
 };
 window.paperExportArtBackup=async function(){
- const rows=[];for(const x of arts()){const photo=await dbGet(imageKey(x.id));if(photo)rows.push({metadata:x,photo})}
- if(!rows.length){alert("No locally stored artwork photos are available to export.");return}
- downloadBlob(new Blob([JSON.stringify({format:"daily-life-art-v1",exportedAt:new Date().toISOString(),artworks:rows})],{type:"application/json"}),
- "DailyLife-Children-Art-"+ymd()+".json");
- alert("Backup download requested for "+rows.length+" artwork photo(s). Verify the downloaded file is stored somewhere safe before recycling irreplaceable originals.");
+ const artRows=[];for(const x of arts()){
+  const photo=await dbGet(imageKey(x.id));if(typeof photo==="string"&&photo.startsWith("data:image/"))artRows.push({metadata:x,photo});
+ }
+ const schoolRows=[];for(const x of schoolPortfolio()){
+  const row=Object.assign({},x);delete row.photoData;
+  if(x.photoId){
+   const photo=await dbGet(SCHOOL_PHOTO+x.photoId);
+   if(typeof photo==="string"&&photo.startsWith("data:image/"))row.photoData=photo;
+  }
+  schoolRows.push(row);
+ }
+ const scores=state.schoolGrades||[];
+ if(!artRows.length&&!schoolRows.length&&!scores.length){
+  alert("There are no saved art, award or school records to back up yet.");return
+ }
+ // The standard Art Book backup format is extended additively for School Books.
+ // A verified, reusable local file now includes artwork + school photos and scores.
+ const file={format:"daily-life-kids-books-v1",version:2,exportedAt:new Date().toISOString(),
+  artworks:artRows.map(x=>Object.assign({},x.metadata,{photoData:x.photo})),
+  schoolGrades:scores,schoolPortfolio:schoolRows};
+ downloadBlob(new Blob([JSON.stringify(file)],{type:"application/json"}),
+  "DailyLife-Children-Memory-Books-"+ymd()+".json");
+ alert("Backup download requested for "+artRows.length+" art/award photos, "+schoolRows.length+" school notes and "+scores.length+" scores. Check the downloaded file exists before recycling originals.");
 };
 })();
