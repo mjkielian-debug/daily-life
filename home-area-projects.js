@@ -77,13 +77,13 @@ window.homeAreaPhotos=async function(id){
  const {data:area,error:areaError}=await cloudClient.from("home_area_projects").select("area_name").eq("id",id).single();
  if(areaError||!area)return;
  modal("📷 "+String(area.area_name||"Cleanup").slice(0,70)+" · photo timeline",
-  '<div class="pi-main"><p class="pi-muted">Before and progress pictures are compared to suggest next steps. Completion percentages and time remaining are estimates, not automatic measurements.</p>'+
+  '<div class="pi-main"><p class="pi-muted">Room reference photos and later before/progress pictures appear here together. Progress percentages and time estimates are never automatically measured.</p>'+
   '<div id="piAreaTimeline"><p class="pi-muted">Loading photo history…</p></div>'+
   '<button class="btn primary" onclick="openPhotoInbox(\'home_progress\',\''+id+'\')">+ Add new progress photo</button>'+
   '<button class="btn" onclick="openHomeAreaProjects()">← Back to all areas</button></div>',"Close",closeModal);
  const {data,error}=await cloudClient.from("photo_inbox")
   .select("id,phase,title,created_at,image_data")
-  .eq("category","home_progress").eq("area_id",id)
+  .eq("area_id",id)
   .order("created_at",{ascending:true}).limit(25);
  const container=document.getElementById("piAreaTimeline");if(!container)return;
  if(error){container.textContent="Could not load pictures: "+error.message;return}
