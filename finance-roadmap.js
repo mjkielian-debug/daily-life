@@ -41,7 +41,7 @@ function card(){
  var focus=all.find(function(g){return Array.isArray(g.steps)&&g.steps.some(function(s){return !s.done;});});
  var idx=focus?focus.steps.findIndex(function(s){return !s.done;}):-1;
  var step=focus&&idx>=0?focus.steps[idx]:null;
- var checkedLabel=t.total?t.done+" of "+t.total+" checklist steps confirmed":"No checklist steps saved";
+ var checkedLabel=t.total?t.done+" of "+t.total+" steps checked in this new roadmap":"No checklist steps saved";
  var focusHtml=focus&&step?'<div class="finance-roadmap-focus"><span class="finance-roadmap-kicker">NEXT FINANCIAL GOAL STEP</span>'+
   '<h3>'+e(focus.name)+'</h3><p>'+e(step.text)+'</p>'+
   '<div class="finance-roadmap-next-actions"><button type="button" class="btn primary" onclick="openFinancePriority(\''+e(safeId(focus.id))+'\')">Open checklist ›</button>'+
@@ -51,9 +51,9 @@ function card(){
   '<button type="button" class="btn" onclick="openFinancePriority(\'new\')">+ Add another goal</button></div>';
  return '<section class="finance-roadmap">'+
  focusHtml+
- '<div class="finance-roadmap-count"><b>'+e(checkedLabel)+'</b>'+
+ '<details class="finance-roadmap-count"><summary>Roadmap check-ins · '+e(checkedLabel)+'</summary>'+
  (t.total?'<div class="finance-roadmap-meter" role="progressbar" aria-label="Completed roadmap checklist steps" aria-valuemin="0" aria-valuemax="'+t.total+'" aria-valuenow="'+t.done+'"><i style="width:'+t.pct+'%"></i></div>':'')+
- '<small>Only steps you actually marked complete count. This does not represent bank balance or available money.</small></div>'+
+ '<small>These starter checklists may not include things you completed before using this feature. They do not measure your overall financial progress or available cash.</small></details>'+
  (exit?'<button type="button" class="finance-exit-shortcut" onclick="openBankExitPlan()"><b>Account exit needs review</b><small>'+e(exit.institution)+' · check linked payments and renewal decisions first</small><span>Open ›</span></button>':'')+
  '<details class="finance-roadmap-other"><summary>All money goals + full checklists <b>'+all.length+'</b></summary>'+
  '<div class="finance-roadmap-grid">'+all.map(tile).join("")+'</div>'+
