@@ -112,14 +112,18 @@ window.photoInboxLoadList=async function(showLoading=true){
  '<div class="pi-item-actions"><button class="btn small" onclick="photoInboxView(\''+row.id+'\')">View</button>'+
  '<button class="btn small" onclick="photoInboxDelete(\''+row.id+'\')">Delete</button></div></div>').join("")||'<p class="pi-muted">No photos sent yet. Upload a few above.</p>';
 };
-window.photoInboxView=async function(id){
+window.photoInboxView=async function(id,returnTo="inbox"){
  if(!cloudReady()||!/^[a-f0-9-]{36}$/i.test(id))return;
  const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title,notes,category,floor_label").eq("id",id).single();
  if(error||!data){alert("Could not open private picture.");return}
+ const backToFloor=returnTo==="map"&&FLOORS.includes(data.floor_label);
+ const backButton=backToFloor?
+  '<button class="btn" onclick="openHouseFloorMap(\\''+data.floor_label+'\\')">‹ Back to floor map</button>':
+  '<button class="btn" onclick="openPhotoInbox(\\''+(CATEGORIES[data.category]?data.category:"paper")+'\\')">‹ Inbox</button>';
  modal("Private photo · "+String(data.title||"").slice(0,70),
  '<div class="pi-preview"><div id="piPrivateImage"></div>'+
  '<p>'+esc(data.notes||"")+'</p><p class="pi-muted">'+esc(CATEGORIES[data.category]||data.category)+(data.floor_label?" · "+esc(data.floor_label):"")+'</p>'+
- '<button class="btn" onclick="openPhotoInbox(\''+(CATEGORIES[data.category]?data.category:"paper")+'\')">‹ Inbox</button></div>',"Close",closeModal);
+ backButton+'</div>',"Close",closeModal);
  const box=document.getElementById("piPrivateImage");
  if(box&&typeof data.image_data==="string"&&/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data)){
   const img=document.createElement("img");img.alt="Your private uploaded picture";img.src=data.image_data;box.appendChild(img);
@@ -140,7 +144,9 @@ function mapMarkup(f){
  return '<div class="pi-map"><div class="pi-floor-tabs">'+FLOORS.map(x=>
  '<button class="btn small '+(x===f?"primary":"")+'" onclick="photoInboxSelectFloor(\''+x+'\')">'+esc(x)+'</button>').join("")+'</div>'+
  '<div id="piMapPhoto" class="pi-map-image"><span>Loading '+esc(f)+' reference…</span></div>'+
- '<p class="pi-muted">This is a photo reference, not a measured floor plan. We will trace room boundaries together after reviewing your images.</p>'+
+ (f==="First floor"?'<p class="pi-map-confirmed">✓ Robovac map orientation confirmed. Front door: bottom living-room edge near playroom. “Basement” label: stairs going down. Wood-trimmed living-room opening has full-height wall sections on both sides.</p>':"")+
+ '<p class="pi-muted">Reference only; precise walls, room boundaries and measurements still need confirmation.</p>'+
+ '<div class="pi-gallery"><b>Room photos on this floor</b><div id="piFloorGallery" class="pi-gallery-list"><span class="pi-muted">Loading room references…</span></div></div>'+
  '<div class="pi-rooms"><h3>'+esc(f)+' rooms</h3>'+floorRooms(f)+'</div>'+
  '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'house_map\')">+ Add map / room photo</button>'+
  '<button class="btn" onclick="openInventoryRoom(\'\',\''+f+'\')">+ Room on this floor</button></div></div>';
@@ -166,7 +172,22 @@ async function canonicalFloorReference(f){
  return await cloudClient.from("photo_inbox").select("id,title,image_data,created_at")
   .eq("category","house_map").eq("floor_label",f).order("created_at",{ascending:false}).limit(1);
 }
+window.photoInboxLoadFloorGallery=async function(f){
+ const holder=document.getElementById("piFloorGallery");if(!holder)return;
+ if(!cloudReady()){holder.textContent="Sign in to see your private room photos.";return}
+ const {data,error}=await cloudClient.from("photo_inbox")
+  .select("id,title,created_at").eq("category","house_map").eq("floor_label",f)
+  .order("created_at",{ascending:true}).limit(80);
+ const current=document.getElementById("piFloorGallery");if(!current||floorView!==f)return;
+ if(error){current.textContent="Unable to load room photos: "+error.message;return}
+ const photos=(data||[]).filter(x=>x.title!=="Main floor robovac layout"&&/^[a-f0-9-]{36}$/i.test(x.id));
+ if(!photos.length){current.innerHTML='<span class="pi-muted">No extra room photos yet. Add photos of doorways, storage or rooms to build a visual map.</span>';return}
+ current.innerHTML=photos.map((x,i)=>
+  '<button class="pi-gallery-button" type="button" onclick="photoInboxView(\\''+x.id+'\\',\\'map\\')"><span class="pi-gallery-icon">📷</span><span>'+esc(x.title||("Room view "+(i+1)))+'</span><span aria-hidden="true">›</span></button>'
+ ).join("");
+};
 window.photoInboxLoadFloor=async function(f){
+ window.photoInboxLoadFloorGallery(f);
  const el=document.getElementById("piMapPhoto");if(!el)return;
  if(!cloudReady()){el.innerHTML='<div class="pi-map-placeholder">Sign in to Daily Life cloud to view or add a floor-plan image. Your existing rooms are still shown below.</div>';return}
  const {data,error}=await canonicalFloorReference(f);
