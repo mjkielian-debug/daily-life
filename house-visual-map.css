@@ -89,3 +89,11 @@
 .hvm-route-step{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;align-items:start;font-size:.78rem;line-height:1.5;color:#484056;padding:2px 7px}
 .hvm-step-rail{text-align:center;font-weight:800;color:#6d5994}
 @media(max-width:370px){.hvm-connections{padding:8px}.hvm-route-end{padding:8px}}
+
+/* User-verified inter-floor stair links overlaid on historical robovac zone tracing. */
+.hvm-annotation{cursor:pointer}
+.hvm-annotation text{pointer-events:none}
+.hvm-annotation-label{font-size:14px;font-weight:900;fill:#593378;letter-spacing:.2px}
+.hvm-annotation:hover rect{fill:#efdefd;stroke:#593378}
+.hvm-annotation:focus-visible{outline:none;filter:drop-shadow(0 0 4px #6f439c)}
+.hvm-annotation:focus-visible rect{stroke-width:4}
