@@ -35,7 +35,8 @@ window.inventoryReviewEdit=async function(id){
  if(error||!x){alert("Could not load suggestion.");return}
  const existing=(state.inventoryItems||[]).find(i=>i.sourceSuggestionId===id);
  const candidates=(state.inventoryItems||[]).filter(i=>clean(i.name)===clean(x.item_name));
- const dupe=candidates.length?'<div class="pi-help"><b>Possible existing match</b><p>'+candidates.map(i=>esc(i.name||"")+' ('+Number(i.quantity||0)+' already recorded)').join(" · ")+'</p><p>Choose "Already counted" instead of adding another copy when these photos show the same belongings.</p></div>':"";
+  const dupe=candidates.length?'<div class="pi-help"><b>Possible existing match</b><p>Do these photos show an item you already counted?</p>'+
+ candidates.slice(0,8).map(i=>'<button class="btn small" type="button" onclick="inventoryMarkAlreadyCounted(\''+id+'\',\''+String(i.id||"").replace(/[^a-z0-9_-]/gi,"")+'\')">Already counted: '+esc(i.name||"")+' (×'+Number(i.quantity||0)+')</button>').join(" ")+'</div>':"";
  modal("Check before adding",'<div class="stack pi-form">'+dupe+
  '<label>Item name<input id="irName" value="'+esc(x.item_name)+'"></label>'+
  '<div class="grid2"><label>Confirmed quantity<input id="irQty" type="number" min="0" step="1" value="'+(x.quantity_estimate===null?"1":Math.max(0,Math.floor(Number(x.quantity_estimate)||1)))+'"></label>'+
@@ -65,6 +66,18 @@ window.inventoryReviewEdit=async function(id){
   if(err)alert("Item saved locally; the cloud review badge could not update. Check it before confirming again.");
   render();window.openInventoryPhotoReview();
  });
+};
+window.inventoryMarkAlreadyCounted=async function(id,itemId){
+ if(!signed()||!digits(id))return;
+ const item=(state.inventoryItems||[]).find(x=>String(x.id)===itemId);if(!item)return;
+ if(!confirm("Use the existing "+item.name+" entry without adding to its count?"))return;
+ const photos=Array.isArray(item.sourceSuggestionIds)?item.sourceSuggestionIds:[];
+ if(!photos.includes(id))photos.push(id);
+ item.sourceSuggestionIds=photos;
+ try{await save()}catch(e){alert("Could not save this match locally.");return}
+ const {error}=await cloudClient.from("inventory_photo_suggestions").update({review_status:"confirmed",app_item_id:String(item.id),updated_at:new Date().toISOString()}).eq("id",id);
+ if(error){alert("Matched locally; the cloud review entry couldn't be updated.");return}
+ render();window.openInventoryPhotoReview();
 };
 window.inventoryIgnoreSuggestion=async function(id){
  if(!signed()||!digits(id)||!confirm("Dismiss this proposed item? It will not be added to your inventory."))return;
