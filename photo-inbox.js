@@ -115,9 +115,14 @@ window.photoInboxView=async function(id){
  if(!cloudReady()||!/^[a-f0-9-]{36}$/i.test(id))return;
  const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title,notes,category,floor_label").eq("id",id).single();
  if(error||!data){alert("Could not open private picture.");return}
- modal("Private photo · "+String(data.title||"").slice(0,70),'<div class="pi-preview"><img alt="Your private uploaded photo" src="'+data.image_data+'">'+
+ modal("Private photo · "+String(data.title||"").slice(0,70),
+ '<div class="pi-preview"><div id="piPrivateImage"></div>'+
  '<p>'+esc(data.notes||"")+'</p><p class="pi-muted">'+esc(CATEGORIES[data.category]||data.category)+(data.floor_label?" · "+esc(data.floor_label):"")+'</p>'+
- '<button class="btn" onclick="openPhotoInbox(\''+data.category+'\')">‹ Inbox</button></div>',"Close",closeModal);
+ '<button class="btn" onclick="openPhotoInbox(\''+(CATEGORIES[data.category]?data.category:"paper")+'\')">‹ Inbox</button></div>',"Close",closeModal);
+ const box=document.getElementById("piPrivateImage");
+ if(box&&typeof data.image_data==="string"&&/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data)){
+  const img=document.createElement("img");img.alt="Your private uploaded picture";img.src=data.image_data;box.appendChild(img);
+ }else if(box){box.textContent="The picture cannot be displayed."; }
 };
 window.photoInboxDelete=async function(id){
  if(!cloudReady()||!/^[a-f0-9-]{36}$/i.test(id)||!confirm("Permanently delete this photo from your private cloud inbox?"))return;
