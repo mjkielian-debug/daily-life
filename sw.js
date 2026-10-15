@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261015-school-insights7";
+const CACHE_NAME="daily-life-shell-20261015-rainbow-cleanup1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -36,6 +36,7 @@ const APP_SHELL=[
   "./chase-balance.js",
   "./chase-balance.css",
   "./readability-fix.css",
+  "./rainbow-theme-cleanup.css",
   "./cloud.js",
   "./sharing.js",
   "./finance-cloud.js",
