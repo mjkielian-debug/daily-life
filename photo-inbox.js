@@ -149,7 +149,8 @@ function mapMarkup(f){
  '<div class="pi-gallery"><b>Room photos on this floor</b><div id="piFloorGallery" class="pi-gallery-list"><span class="pi-muted">Loading room references…</span></div></div>'+
  '<div class="pi-rooms"><h3>'+esc(f)+' rooms</h3>'+floorRooms(f)+'</div>'+
  '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'house_map\')">+ Add map / room photo</button>'+
- '<button class="btn" onclick="openInventoryRoom(\'\',\''+f+'\')">+ Room on this floor</button></div></div>';
+ '<button class="btn" onclick="openInventoryRoom(\'\',\''+f+'\')">+ Room on this floor</button>'+
+ '<button class="btn" onclick="openHomeAreaProjects()">🧹 Work on an area</button></div></div>';
 }
 window.openHouseFloorMap=function(f){
  floorView=FLOORS.includes(f)?f:floorView;
