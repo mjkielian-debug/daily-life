@@ -6358,6 +6358,7 @@ function budgetView(){
         <small>${esc(centerDetail)}</small>
       </button>
     </div>
+    ${window.dailyLifeBudgetForecastHtml?window.dailyLifeBudgetForecastHtml():""}
     <div class="life-today-footer budget-hub-footer">
       <button onclick="setView('more')"><span>‹</span>Money</button>
       <button onclick="openBudgetIncome()"><span>↥</span>Edit income</button>
@@ -7875,6 +7876,7 @@ registerAppWorker();
 <script src="life-insights.js?v=20261014-insights3"></script>
 <script src="bank-exit-plan.js?v=20261014-bank-exit1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
+<script src="budget-forecast-2026.js?v=20261015-1"></script>
 
 </body>
 </html>
