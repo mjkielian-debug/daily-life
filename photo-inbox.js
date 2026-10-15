@@ -32,18 +32,21 @@ function authMessage(){
 function floorSelect(value){
  return '<label>Floor (for maps)<select id="piFloor">'+FLOORS.map(f=>'<option '+(f===value?"selected":"")+'>'+f+'</option>').join("")+'</select></label>';
 }
-window.openPhotoInbox=function(mode="paper",areaId=""){
- inboxMode=CATEGORIES[mode]?mode:"paper";prefillAreaId=/^[a-f\d-]{36}$/i.test(String(areaId||""))?areaId:"";
+window.openPhotoInbox=function(mode="inventory",areaId=""){
+ inboxMode=CATEGORIES[mode]?mode:"inventory";prefillAreaId=/^[a-f\d-]{36}$/i.test(String(areaId||""))?areaId:"";
  const signed=cloudReady();
  modal("📷 Private photo inbox",'<div class="pi-main">'+
  (signed?'<div class="pi-help"><b>Photograph → send → ask me to review</b><p>Send paper stacks, room contents, labels, shelves or your robot-vacuum map. Photos are private, not published or automatically analyzed. After uploading, return to ChatGPT and say <b>“Check my Daily Life Photo Inbox.”</b></p></div>'+
- '<div class="pi-form"><label>What are these pictures for?<select id="piMode">'+Object.entries(CATEGORIES).map(([k,v])=>'<option value="'+k+'" '+(k===inboxMode?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
+ '<div class="pi-form"><div class="pi-quick-upload"><p class="pi-review-guidance"><b>Just send the photos.</b> No need to identify every room or stage first. When you ask ChatGPT to check your inbox, I will review what is visible and ask only about things I cannot confirm.</p>'+
+ '<label>📷 Take a picture<input id="piCamera" type="file" accept="image/*" capture="environment"></label>'+
+ '<label>🖼 Choose several photos<input id="piFiles" type="file" accept="image/*" multiple></label></div>'+
+ '<details class="pi-form-optional" '+(prefillAreaId?"open":"")+'><summary>Optional details · skip unless you want</summary><div class="pi-form-optional-fields">'+
+ '<label>What kind of pictures?<select id="piMode">'+Object.entries(CATEGORIES).map(([k,v])=>'<option value="'+k+'" '+(k===inboxMode?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
  floorSelect(floorView)+
- '<div class="pi-area-fields"><label>Area (for before/progress photos)<select id="piArea"><option value="">General inbox / choose later</option></select></label><label>Photo stage<select id="piPhase"><option value="before">Before</option><option value="progress">Progress / during</option><option value="after">After</option><option value="reference">Reference</option></select></label></div>'+ '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="e.g. living room shelves, school folder"></label>'+
- '<label>Notes / what you want help with (optional)<textarea id="piNotes" rows="2" maxlength="1500" placeholder="What should I identify or organize?"></textarea></label>'+
- '<label>Take a new picture<input id="piCamera" type="file" accept="image/*" capture="environment"></label>'+ 
- '<label>Or choose several from gallery<input id="piFiles" type="file" accept="image/*" multiple></label>'+
- '<p class="pi-muted">Up to 10 images per batch. Pictures are compressed for upload; check that small handwriting remains readable before recycling paper.</p>'+
+ '<div class="pi-area-fields"><label>Cleanup area (optional)<select id="piArea"><option value="">I’ll sort these after review</option></select></label><label>Stage (optional)<select id="piPhase"><option value="reference">Let ChatGPT identify it</option><option value="before">Before</option><option value="progress">During / progress</option><option value="after">After</option></select></label></div>'+
+ '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="Leave blank if unsure"></label>'+
+ '<label>Notes (optional)<textarea id="piNotes" rows="2" maxlength="1500" placeholder="Tell me anything that is not obvious from the pictures"></textarea></label></div></details>'+
+  '<p class="pi-muted">Up to 10 images per batch. Pictures are compressed for upload; check that small handwriting remains readable before recycling paper.</p>'+
  '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button><p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
  '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" onclick="openHomeAreaProjects()">🧹 Cleanup areas</button><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
  '<div id="photoInboxList">'+(signed?'<p class="pi-muted">Loading private photos…</p>':'<p class="pi-muted">Sign in to view your private inbox.</p>')+'</div>'+
@@ -62,7 +65,7 @@ window.photoInboxSubmit=async function(){
  const title=sanitized(document.getElementById("piTitle")?.value);
  const notes=sanitized(document.getElementById("piNotes")?.value,1500);
  const areaId=document.getElementById("piArea")?.value||null;
- const phase=category==="home_progress"?(document.getElementById("piPhase")?.value||"before"):"reference";
+ const phase=category==="home_progress"?(document.getElementById("piPhase")?.value||"reference"):"reference";
  inboxBusy=true;let done=0;
  const btn=document.querySelector(".pi-submit");if(btn)btn.disabled=true;
  try{
@@ -143,7 +146,8 @@ function floorRooms(f){
 function mapMarkup(f){
  return '<div class="pi-map"><div class="pi-floor-tabs">'+FLOORS.map(x=>
  '<button class="btn small '+(x===f?"primary":"")+'" onclick="photoInboxSelectFloor(\''+x+'\')">'+esc(x)+'</button>').join("")+'</div>'+
- '<div id="piMapPhoto" class="pi-map-image"><span>Loading '+esc(f)+' reference…</span></div>'+
+ (typeof houseVisualMapHtml==="function"?houseVisualMapHtml(f):"")+
+ '<details class="hvm-reference-disclosure"><summary>Original robot map / floor reference</summary><div id="piMapPhoto" class="pi-map-image"><span>Loading '+esc(f)+' reference…</span></div></details>'+
  (f==="First floor"?'<p class="pi-map-confirmed">✓ Robovac map orientation confirmed. Front door: bottom living-room edge near playroom. “Basement” label: stairs going down. Wood-trimmed living-room opening has full-height wall sections on both sides.</p>':"")+
  '<p class="pi-muted">Reference only; precise walls, room boundaries and measurements still need confirmation.</p>'+
  '<div class="pi-gallery"><b>Room photos on this floor</b><div id="piFloorGallery" class="pi-gallery-list"><span class="pi-muted">Loading room references…</span></div></div>'+
@@ -177,7 +181,7 @@ window.photoInboxLoadFloorGallery=async function(f){
  const holder=document.getElementById("piFloorGallery");if(!holder)return;
  if(!cloudReady()){holder.textContent="Sign in to see your private room photos.";return}
  const {data,error}=await cloudClient.from("photo_inbox")
-  .select("id,title,created_at").eq("category","house_map").eq("floor_label",f)
+  .select("id,title,created_at").in("category",["house_map","home_progress"]).eq("floor_label",f)
   .order("created_at",{ascending:true}).limit(80);
  const current=document.getElementById("piFloorGallery");if(!current||floorView!==f)return;
  if(error){current.textContent="Unable to load room photos: "+error.message;return}
