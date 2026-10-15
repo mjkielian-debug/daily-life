@@ -1,0 +1,41 @@
+/* Private Money priorities — visual-first, mobile-sized. */
+.finance-roadmap{display:grid;gap:12px;min-width:0;padding:12px 2px;color:var(--text)}
+.finance-roadmap-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.finance-roadmap-heading h3{font-size:1.1rem;margin:4px 0 0;line-height:1.2}
+.finance-roadmap-ring{--finance-pct:0;position:relative;isolation:isolate;flex:0 0 75px;width:75px;height:75px;display:grid;place-items:center;border-radius:50%;background:conic-gradient(#3a996c calc(var(--finance-pct)*1%),#e6ecf0 0)}
+.finance-roadmap-ring:before{content:"";position:absolute;z-index:-1;inset:9px;border-radius:50%;background:var(--panel,#fff)}
+.finance-roadmap-ring b{font-size:1.08rem;color:var(--text);font-variant-numeric:tabular-nums}
+.finance-roadmap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.finance-roadmap-tile{font:inherit;color:var(--text);background:color-mix(in srgb,var(--panel,#fff) 92%,#9ddfca 8%);border:1px solid var(--border,#d9dbe2);border-radius:17px;min-width:0;text-align:left;padding:13px 11px;display:grid;gap:8px;cursor:pointer}
+.finance-roadmap-tile-title{display:flex;align-items:start;justify-content:space-between;gap:5px}
+.finance-roadmap-tile-title b{font-size:.83rem;line-height:1.25;overflow-wrap:anywhere}
+.finance-roadmap-tile-title strong{font-size:.68rem;color:#286e51;flex:0 0 auto}
+.finance-roadmap-tile small{font-size:.67rem;color:var(--muted);line-height:1.25}
+.finance-roadmap-meter{display:block;width:100%;height:7px;background:#e4e9ed;border-radius:99px;overflow:hidden}
+.finance-roadmap-meter i{display:block;background:#4fa885;height:100%;border-radius:99px;transition:width .2s}
+.finance-roadmap-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.finance-roadmap-help{margin:0;line-height:1.45}
+.finance-exit-shortcut{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 10px;padding:11px 13px;border-radius:14px;border:1px solid #dcaa72;background:#fff3df;text-align:left;font:inherit;color:#533719;cursor:pointer}
+.finance-exit-shortcut b{font-size:.88rem}
+.finance-exit-shortcut small{grid-column:1;color:#755632;font-size:.71rem;line-height:1.4}
+.finance-exit-shortcut span{grid-column:2;grid-row:1/3;font-weight:800;white-space:nowrap}
+.finance-roadmap-modal{display:grid;gap:12px;min-width:0}
+.finance-roadmap-modal label{display:grid;gap:5px;min-width:0;font-weight:700;font-size:.79rem;color:var(--text)}
+.finance-roadmap-modal label input,.finance-roadmap-modal label textarea,.finance-new-step input{width:100%;min-width:0;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border,#ccc);background:#fff;color:#252b35;font:inherit}
+.finance-roadmap-step-title{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--border);padding-top:12px;font-size:.8rem}
+.finance-roadmap-step-title span{color:var(--muted)}
+.finance-roadmap-step{font:inherit;width:100%;min-height:44px;display:flex;align-items:start;gap:11px;text-align:left;background:#fff;border:1px solid var(--border,#ddd);border-radius:12px;padding:10px 11px;color:#30343c;cursor:pointer;font-size:.8rem}
+.finance-roadmap-step>span:first-child{font-size:1.12rem;line-height:1;color:#266d52}
+.finance-roadmap-step.is-done>span:last-child{text-decoration:line-through;opacity:.62}
+.finance-new-step{display:flex;align-items:center;gap:7px;min-width:0}
+.finance-new-step input{flex:1}
+.finance-home-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.finance-home-fields label{font-size:.73rem}
+.finance-home-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.finance-home-preview>div{padding:11px;border-radius:13px;background:#eaf5f0;min-width:0;display:grid;gap:4px}
+.finance-home-preview>div:nth-child(2){background:#fff1e3}
+.finance-home-preview small{font-size:.69rem;line-height:1.3;color:#40584e}
+.finance-home-preview b{font-size:.89rem;color:#244735;overflow-wrap:anywhere}
+.finance-grant-check{display:flex!important;align-items:flex-start;gap:9px;font-weight:600!important}
+.finance-grant-check input{width:auto!important;flex:none;margin-top:3px}
+@media(max-width:350px){.finance-roadmap-grid,.finance-home-preview{grid-template-columns:1fr}.finance-home-fields{grid-template-columns:1fr 1fr}.finance-roadmap-ring{width:62px;height:62px;flex-basis:62px}}
