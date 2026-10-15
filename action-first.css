@@ -157,3 +157,31 @@
 .directive-coming-row{display:grid;grid-template-columns:minmax(55px,auto) minmax(0,1fr);align-items:start;gap:11px;font-size:.79rem;line-height:1.36}
 .directive-coming-row strong{font-size:.73rem;font-weight:900;color:#73578a}
 .directive-coming-row span{color:#40384e;overflow-wrap:anywhere}
+
+/* Cleaning + resets: one optional action; no wall of rhythm-learning labels. */
+.cadence-directive{display:grid;gap:12px}
+.cadence-directive .section-title{margin:0;align-items:center}
+.cadence-directive .section-title h2{font-size:1.05rem}
+.cadence-next{display:grid;gap:9px;padding:14px;border-radius:17px;background:linear-gradient(125deg,#faf3ff,#f0fbf5);border:1px solid #d8cadd}
+.cadence-next>.eyebrow{font-size:.7rem;color:#805477;font-weight:900}
+.cadence-next h2{margin:0;font-size:1.22rem;color:#3b3050}
+.cadence-next p{margin:0;font-size:.85rem;line-height:1.4;color:#594d60}
+.cadence-next .btn{min-height:43px;justify-self:start}
+.cadence-wins{display:grid;gap:3px;border:1px solid #c8e4d2;background:#eff9f1;padding:10px;border-radius:13px;font-size:.78rem;color:#3e6250}
+.cadence-wins>span{font-size:.75rem;line-height:1.4}
+.cadence-more{border-top:1px solid #dccedc;padding-top:7px}
+.cadence-more>summary{cursor:pointer;padding:9px 0;font-size:.81rem;color:#594867;font-weight:900;list-style:none}
+.cadence-more>summary::-webkit-details-marker{display:none}
+.cadence-more>summary span{float:right}
+.cadence-more>div{display:grid;gap:6px;padding-top:8px}
+.cadence-compact-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 8px;background:#fffdff;border:1px solid #e4dce5;border-radius:12px}
+.cadence-compact-row>div{flex:1 1 145px;display:grid;gap:3px}
+.cadence-compact-row>div>b{font-size:.8rem}
+.cadence-compact-row small{color:#71677d;font-size:.68rem}
+.cadence-compact-row .cadence-pattern{flex-basis:100%}
+.cadence-completed{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#c4ead2;color:#2d6a4d}
+.household-extra-diagnostics{padding:12px;border:1px solid #e1d5e3;background:#fff7ff;border-radius:16px}
+.household-extra-diagnostics>summary{cursor:pointer;font-size:.79rem;font-weight:900;color:#63486e}
+.household-extra-diagnostics>div{display:grid;gap:10px;padding-top:10px}
+.home-care-compact{display:grid;gap:8px}
+.home-care-compact details>summary{padding:9px;font-size:.78rem;cursor:pointer}
