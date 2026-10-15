@@ -153,16 +153,90 @@ window.actionFirstLater=function(page){
 function button(page,index,label,cls){
  return '<button type="button" class="'+cls+'" onclick="actionFirstRun(\''+clean(page)+'\','+index+')">'+clean(label)+'</button>';
 }
+
+function metric(label,done,total,note){
+ const d=Math.max(0,Math.min(Number(done)||0,Number(total)||0)),t=Math.max(0,Number(total)||0);
+ return {label,done:d,total:t,note:String(note||"")};
+}
+function measured(page,model){
+ const s=typeof state==="object"&&state?state:{},d=today();
+ if(page==="today"){
+  const rows=typeof todayTasks==="function"?todayTasks():((s.tasks||[]).filter(t=>t.date===d&&!t.paused&&!t.duplicateHidden));
+  const tasks=(rows||[]).filter(t=>t&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&String(t.title||"").trim()&&!/^(ups shift|bedtime wind.?down|everyone reading|kids? room reset \+ homework)$/i.test(String(t.title||"").trim()));
+  const chores=typeof displayChoresForDate==="function"?displayChoresForDate(d):[];
+  return {metrics:[metric("Your tasks",tasks.filter(t=>t.done).length,tasks.length,"Checked off"),metric("Kids' chores",chores.filter(t=>t.done).length,chores.length,"Confirmed")],
+   wins:[...tasks.filter(t=>t.done).map(t=>({name:t.title||"Task",type:"task"})),
+         ...chores.filter(t=>t.done).map(t=>({name:[t.child,t.chore].filter(Boolean).join(" · "),type:"chore"}))].slice(-3).reverse()};
+ }
+ if(model?.progress&&model.progress.total>0){
+  return {metrics:[metric(String(model.progress.label||"Recorded progress"),model.progress.done,model.progress.total,"Based on saved entries")],wins:[]};
+ }
+ return {metrics:[],wins:[]};
+}
+function progressMarkup(page,model){
+ const data=measured(page,model),metrics=data.metrics.filter(x=>x.total>0);
+ if(!metrics.length){
+  return '<div class="directive-progress-unknown"><span aria-hidden="true">◌</span><div><strong>Progress starts with a confirmed action</strong><small>No measured completion total for this view yet; unknown is not zero.</small></div></div>';
+ }
+ const bars=metrics.map((m,i)=>{
+  const percent=Math.round(100*m.done/m.total);
+  return '<div class="directive-meter-row"><div class="directive-meter-label"><b>'+clean(m.label)+'</b><span>'+m.done+' / '+m.total+' '+clean(m.note)+'</span></div>'+
+  '<div class="directive-meter-track" role="progressbar" aria-valuenow="'+m.done+'" aria-valuemin="0" aria-valuemax="'+m.total+'" aria-label="'+clean(m.label)+'"><span style="width:'+percent+'%"></span></div></div>';
+ }).join("");
+ const total=metrics.reduce((sum,m)=>sum+m.total,0),done=metrics.reduce((sum,m)=>sum+m.done,0);
+ const pct=Math.min(100,Math.round(100*done/total));
+ const wins=data.wins.length?'<div class="directive-wins"><span>✓ Already done</span>'+data.wins.map(x=>'<span class="directive-win">'+clean(x.name)+'</span>').join("")+'</div>':"";
+ return '<div class="directive-progress" aria-label="Progress from recorded tasks"><div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' recorded items complete"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>'+
+ '<div class="directive-progress-text"><b>Progress you can see</b>'+bars+'</div></div>'+wins;
+}
+window.actionFirstConfirmDone=async function(page){
+ const model=page==="today"?null:typeof visualHubModel==="function"?visualHubModel(page):null;
+ const first=presented(page,model)[0];
+ if(!first)return;
+ const d=today();
+ let row=null,kind="";
+ if(first.id.startsWith("task:")||first.id.startsWith("household:task:")){
+  const id=first.id.replace(/^household:task:|^task:/,"");
+  row=(state.tasks||[]).find(t=>String(t.id)===id&&t.date===d&&!t.paused&&!t.done);
+  kind="task";
+ }else if(first.id.startsWith("chore:")||first.id.startsWith("family:chore:")){
+  const id=first.id.replace(/^family:chore:|^chore:/,"");
+  row=(state.chores||[]).find(t=>String(t.id)===id&&t.date===d&&!t.done);
+  kind="chore";
+ }
+ if(!row)return;
+ if(kind==="task"&&typeof toggleTask==="function")await toggleTask(row.id,true);
+ else if(kind==="chore"&&typeof toggleChore==="function")await toggleChore(row.id,true);
+};
+function canConfirm(first){
+ if(!first)return false;
+ const id=String(first.id||""),d=today();
+ if(id.startsWith("task:")||id.startsWith("household:task:")){
+  const key=id.replace(/^household:task:|^task:/,"");
+  return (state.tasks||[]).some(t=>String(t.id)===key&&t.date===d&&!t.done&&!t.paused);
+ }
+ if(id.startsWith("chore:")||id.startsWith("family:chore:")){
+  const key=id.replace(/^family:chore:|^chore:/,"");
+  return (state.chores||[]).some(t=>String(t.id)===key&&t.date===d&&!t.done);
+ }
+ return false;
+}
 function widget(page,model){
  const all=presented(page,model),first=all[0],others=all.slice(1,3);
- const alternative=others.length?'<div class="directive-after"><div class="directive-after-title">After that · or instead</div>'+
- others.map(function(x,i){return '<button type="button" class="directive-mini" onclick="actionFirstRun(\''+clean(page)+'\','+(i+1)+')"><span><b>'+clean(x.title)+'</b><small>'+clean(x.why)+'</small></span><span aria-hidden="true">›</span></button>'}).join("")+'</div>':"";
- return '<section class="directive-focus" aria-label="Recommended next action"><div class="directive-kicker">'+(first.optional?"IF IT HELPS":"DO THIS NEXT")+'</div>'+
- '<h2>'+clean(first.title)+'</h2><p>'+clean(first.why)+'</p>'+
- '<div class="directive-buttons">'+button(page,0,first.button+' ›',"directive-primary")+
- (first.id!=="overview"?'<button type="button" class="directive-later" onclick="actionFirstLater(\''+clean(page)+'\')" aria-label="Show another suggestion for today">Not now</button>':"")+'</div>'+
- alternative+'<small class="directive-disclaimer">Suggestions use saved records; opening a step does not mark it complete. “Not now” only changes today’s suggestions.</small></section>';
+ const alternative=others.length?'<details class="directive-other"><summary>Another option <span>('+others.length+')</span></summary>'+
+ '<div class="directive-after">'+others.map(function(x,i){return '<button type="button" class="directive-mini" onclick="actionFirstRun(\''+clean(page)+'\','+(i+1)+')"><span><b>'+clean(x.title)+'</b><small>'+clean(x.why)+'</small></span><span aria-hidden="true">›</span></button>'}).join("")+'</div></details>':"";
+ const doneButton=canConfirm(first)?'<button type="button" class="directive-confirm" onclick="actionFirstConfirmDone(\''+clean(page)+'\')">✓ I finished this</button>':"";
+ const label=first.id==="overview"?"CHOOSE A STEP":first.optional?"IF IT HELPS":"YOUR NEXT STEP";
+ return '<section class="directive-focus" aria-label="Recommended next action">'+
+ '<div class="directive-kicker"><span class="directive-pulse" aria-hidden="true">●</span>'+label+'</div>'+
+ '<h2>'+clean(first.title)+'</h2><p class="directive-reason">'+clean(first.why)+'</p>'+
+ '<div class="directive-buttons">'+button(page,0,first.button+' ›',"directive-primary")+doneButton+
+ (first.id!=="overview"?'<button type="button" class="directive-later" onclick="actionFirstLater(\''+clean(page)+'\')" aria-label="Show another recommendation for today">Not now</button>':"")+'</div>'+
+ progressMarkup(page,model)+
+ alternative+
+ '<small class="directive-disclaimer">Progress only counts what is recorded. Opening a step or choosing “Not now” does not mark it completed.</small></section>';
 }
+
 window.actionFirstMarkup=widget;
 window.actionFirstTodayCard=function(){return widget("today",null)};
 window.actionFirstRememberOverview=function(page,isOpen){
