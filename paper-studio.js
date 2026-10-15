@@ -131,82 +131,159 @@ window.openPaperRewardSettings=function(){
   await save();render();window.openPaperStudio();
  });
 };
-/* Four little photo books; image bytes are independent IndexedDB records.
-   Book metadata may sync with app snapshots but images DO NOT sync to cloud. */
-function byChild(c){return arts().filter(x=>x.child===c).sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")))}
+/* Each child's memories are separated into three little books.
+   Photos live only in IndexedDB; private records are not embedded in public app source. */
+const BOOK_KIND={art:{name:"Art Book",icon:"🎨"},achievement:{name:"Achievement Book",icon:"🏅"},school:{name:"School Book",icon:"📚"}};
+const SCHOOL_PHOTO="kid-school-photo:";
+function schoolPortfolio(){return state.kidSchoolPortfolio||(state.kidSchoolPortfolio=[])}
+function kindOf(x){if(x?.kind==="achievement")return"achievement";if(x?.kind==="art")return"art";return /\b(certificate|achievement|award|recognition|medal)\b/i.test(String(x?.title||""))?"achievement":"art"}
+function byChild(c,k="art"){return arts().filter(x=>x.child===c&&kindOf(x)===k).sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")))}
 function imageKey(id){return IMG_PREFIX+String(id)}
-let currentBook=null,currentPage=0;
+function schoolPages(child){
+ const grades=(state.schoolGrades||[]).filter(x=>x.child===child).map(x=>({
+  id:x.id,child,kind:"assessment",title:x.course||"Assessment",value:String(x.grade||"").trim()||(x.percent!==null&&x.percent!==undefined?String(x.percent)+"%":""),
+  notes:x.notes||"",asOf:x.asOf||x.date||"",term:x.term||"",source:x.source||"",sourcePdfId:x.sourcePdfId||"",photoId:"",isGrade:true
+ }));
+ const rest=schoolPortfolio().filter(x=>x.child===child).map(x=>Object.assign({kind:"learning"},x));
+ return grades.concat(rest).sort((a,b)=>String(b.asOf||"").localeCompare(String(a.asOf||""))||String(a.title||"").localeCompare(String(b.title||"")));
+}
 function bookGrid(){
- return '<div class="ps-books">'+KIDS.map((child,i)=>{
- const count=byChild(child).length;return '<button class="ps-book ps-book-'+i+'" onclick="openChildArtBook(\''+child+'\')">'+
- '<span class="ps-book-sparkle">✧</span><b>'+child+"'s<br>Art Book"+'</b><small>'+count+' piece'+(count===1?"":"s")+'</small>'+
- '<span class="ps-book-binding"></span></button>';
+ return '<div class="ps-book-shelves">'+KIDS.map((child,i)=>{
+ const types=["art","achievement","school"];
+ return '<section class="ps-child-shelf"><h3>'+esc(child)+'</h3><div class="ps-shelf-books">'+types.map((kind,j)=>{
+  const book=BOOK_KIND[kind],num=kind==="school"?schoolPages(child).length:byChild(child,kind).length;
+  const go=kind==="school"?"openChildSchoolBook('"+child+"')":"openChildArtBook('"+child+"',0,'"+kind+"')";
+  return '<button class="ps-book ps-book-'+i+' ps-book-kind-'+kind+'" onclick="'+go+'"><span class="ps-book-sparkle">'+book.icon+'</span><b>'+book.name+'</b><small>'+num+' '+(num===1?"entry":"entries")+'</small><span class="ps-book-binding"></span></button>';
+ }).join("")+'</div></section>';
  }).join("")+'</div>';
 }
 window.openArtLibrary=function(){
  const count=arts().length;
- modal("🎨 Children's art library",'<div class="ps-studio"><p class="ps-muted">Little memory books with real artwork photos. Pick a child to flip through their pages.</p>'+bookGrid()+
- '<div class="ps-nav"><button onclick="openArtEntry()">+ Photograph artwork</button><button onclick="paperExportArtBackup()">↓ Export photo backup</button><button onclick="paperImportArtBackup()">↑ Import saved art photos</button></div>'+
- '<div class="ps-warning"><b>Image storage:</b> '+count+' artwork record'+(count===1?"":"s")+'. Actual photos live in this phone’s Daily Life storage, not in cloud sync. Before recycling drawings, export a backup and verify it was saved somewhere safe. Removing app storage or changing phones may lose local-only pictures.</div>'+
- '</div>',"Close",closeModal);
+ modal("📚 Children's memory books",
+  '<div class="ps-studio"><p class="ps-muted">Each child has an Art Book, an Achievement Book for certificates and awards, and a School Book for scores, work samples and learning progress.</p>'+
+  bookGrid()+
+  '<div class="ps-nav"><button onclick="openArtEntry()">+ Add art or certificate</button><button onclick="paperExportArtBackup()">↓ Back up photo books</button><button onclick="paperImportArtBackup()">↑ Import saved books</button></div>'+
+  '<div class="ps-warning"><b>Keep a separate backup.</b> Photos are stored on this device, not in cloud sync. '+count+' photo record'+(count===1?"":"s")+' indexed. Import your private Paper Sort file to see pictures and school samples. Do not discard irreplaceable originals until the backup is verified.</div></div>',
+  "Close",closeModal);
 };
-window.openChildArtBook=function(child,index=0){
+let currentBook=null,currentPage=0;
+window.openChildArtBook=function(child,index=0,kind="art"){
  if(!KIDS.includes(child))return;
- const rows=byChild(child);
+ if(kind==="school"){window.openChildSchoolBook(child,index);return}
+ kind=kind==="achievement"?"achievement":"art";
+ const rows=byChild(child,kind),caption=BOOK_KIND[kind].name;
  if(!rows.length){
-  modal(child+"'s Art Book",'<div class="ps-empty-book">📖<b>Every picture starts a story.</b><p>No artwork photos have been saved here for '+esc(child)+'. Pictures from ChatGPT must be imported once.</p><button onclick="paperImportArtBackup()">↑ Import saved art photos</button><button onclick="openArtEntry(\''+child+'\')">+ Add a new photo</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
+  modal(child+"'s "+caption,'<div class="ps-empty-book">📖<b>A place for '+(kind==="achievement"?"awards and milestones":"creativity")+'.</b><p>No '+(kind==="achievement"?"certificates or awards":"artwork")+' photos saved here yet. Photos sent in ChatGPT need a one-time private import.</p><button onclick="paperImportArtBackup()">↑ Import saved books</button><button onclick="openArtEntry(\''+child+'\',\'\',\''+kind+'\')">+ Add a page</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
  }
- currentBook=child;currentPage=Math.max(0,Math.min(rows.length-1,Number(index)||0));
- const x=rows[currentPage],id=qid(x.id);
- modal(child+"'s Art Book",'<div class="ps-album"><div class="ps-album-heading"><span>✧ '+esc(child)+"’s gallery"+'</span><small>Page '+(currentPage+1)+' of '+rows.length+'</small></div>'+
-  '<div class="ps-artpage"><div class="ps-art-photo"><img id="psCurrentArtwork" alt="Artwork by '+esc(child)+'" hidden><span id="psArtLoading">Loading saved artwork…</span></div>'+
-  '<div class="ps-art-caption"><b>'+esc(x.title||"Untitled masterpiece")+'</b><small>'+esc(x.artDate||"Date not entered")+(x.age?" · age "+esc(x.age):"")+'</small><p>'+esc(x.notes||"")+'</p></div></div>'+
-  '<div class="ps-page-controls"><button '+(!currentPage?"disabled":"")+' onclick="openChildArtBook(\''+child+'\','+(currentPage-1)+')">‹ Previous</button>'+
-  '<button onclick="openArtEntry(\''+child+'\',\''+id+'\')">Edit</button>'+
-  '<button '+(currentPage>=rows.length-1?"disabled":"")+' onclick="openChildArtBook(\''+child+'\','+(currentPage+1)+')">Next ›</button></div>'+
-  '<div class="ps-nav"><button onclick="openArtEntry(\''+child+'\')">+ Another picture</button><button onclick="openArtLibrary()">All books</button></div>'+
-  '<p class="ps-muted">Images are currently stored on this device only. Backup before parting with irreplaceable originals.</p></div>',"Close",closeModal);
+ currentBook=child+"|"+kind;currentPage=Math.max(0,Math.min(rows.length-1,Number(index)||0));
+ const x=rows[currentPage],id=qid(x.id),next=(n)=>"openChildArtBook('"+child+"',"+n+",'"+kind+"')";
+ modal(child+"'s "+caption,
+ '<div class="ps-album"><div class="ps-album-heading"><span>'+BOOK_KIND[kind].icon+' '+esc(child)+"’s "+caption+'</span><small>Page '+(currentPage+1)+' of '+rows.length+'</small></div>'+
+ '<div class="ps-artpage"><div class="ps-art-photo"><img id="psCurrentArtwork" alt="'+(kind==="achievement"?"Achievement certificate":"Artwork")+' by '+esc(child)+'" hidden><span id="psArtLoading">Loading saved picture…</span></div>'+
+ '<div class="ps-art-caption"><b>'+esc(x.title||"Untitled")+'</b><small>'+esc(x.artDate||"Date not entered")+(x.age?" · age "+esc(x.age):"")+'</small><p>'+esc(x.notes||"")+'</p></div></div>'+
+ '<div class="ps-page-controls"><button '+(!currentPage?"disabled":"")+' onclick="'+next(currentPage-1)+'">‹ Previous</button>'+
+ '<button onclick="openArtEntry(\''+child+'\',\''+id+'\',\''+kind+'\')">Edit</button>'+
+ '<button '+(currentPage>=rows.length-1?"disabled":"")+' onclick="'+next(currentPage+1)+'">Next ›</button></div>'+
+ '<div class="ps-nav"><button onclick="openArtEntry(\''+child+'\',\'\',\''+kind+'\')">+ Another page</button><button onclick="openArtLibrary()">All books</button></div>'+
+ '<p class="ps-muted">Save a separate backup before parting with a one-of-a-kind original.</p></div>',"Close",closeModal);
  Promise.resolve().then(async()=>{
-  let img=null;
-  try{img=await dbGet(imageKey(id))}catch(e){}
-  if(currentBook!==child||byChild(child)[currentPage]?.id!==id)return;
+  let img=null;try{img=await dbGet(imageKey(id))}catch(e){}
+  if(currentBook!==child+"|"+kind||byChild(child,kind)[currentPage]?.id!==id)return;
   const el=document.getElementById("psCurrentArtwork"),load=document.getElementById("psArtLoading");
   if(!el||!load)return;
   if(typeof img==="string"&&img.startsWith("data:image/")){el.src=img;el.hidden=false;load.hidden=true}
-  else load.textContent="Image unavailable on this device. Restore a backup before discarding the original.";
+  else load.textContent="Image unavailable on this device. Import or restore its photo backup.";
  });
 };
-window.openArtEntry=function(child="",id=""){
- const found=arts().find(x=>x.id===id),x=found||{},kid=KIDS.includes(child)?child:x.child||"";
+window.openChildSchoolBook=function(child,index=0){
+ if(!KIDS.includes(child))return;
+ const pages=schoolPages(child);
+ if(!pages.length){
+  modal(child+"'s School Book",'<div class="ps-empty-book">📚<b>Learning and growing</b><p>No school snapshots here yet. Import the Paper Sort file or add a learning note.</p><button onclick="paperImportArtBackup()">↑ Import saved books</button><button onclick="openSchoolMemoryEntry(\''+child+'\')">+ Add a school memory</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
+ }
+ const n=Math.max(0,Math.min(pages.length-1,Number(index)||0)),x=pages[n],id=qid(x.id),date=String(x.asOf||"");
+ const type=x.isGrade?"🧮 Test score / school report":x.kind==="work"?"✏ Schoolwork sample":x.kind==="feedback"?"💬 Teacher feedback":"🌱 Learning right now";
+ const hasDoc=x.sourcePdfId&&(state.paperDigitalDocs||[]).some(v=>v.id===x.sourcePdfId);
+ const canEdit=!x.isGrade;
+ modal(child+"'s School Book",
+ '<div class="ps-album"><div class="ps-album-heading"><span>📚 '+esc(child)+' · school memories</span><small>Page '+(n+1)+' of '+pages.length+'</small></div>'+
+ '<div class="ps-school-page"><span class="ps-school-type">'+type+'</span><h3>'+esc(x.title||"Learning update")+'</h3>'+
+ (x.value?'<div class="ps-school-score">'+esc(x.value)+'</div>':"")+
+ '<p class="ps-school-date">'+esc(x.term||"")+(x.term&&date?" · ":"")+esc(date||"Date not entered")+'</p>'+
+ (x.photoId?'<div class="ps-school-photo"><img id="psSchoolPhoto" alt="Schoolwork sample" hidden><span id="psSchoolLoading">Loading schoolwork photo…</span></div>':"")+
+ '<p class="ps-school-notes">'+esc(x.notes||x.summary||"")+'</p>'+
+ (x.source?'<p class="ps-muted">Source: '+esc(x.source)+'</p>':"")+
+ (hasDoc?'<button class="ps-school-doc" onclick="paperDownloadDigitalDoc(\''+qid(x.sourcePdfId)+'\')">↓ Save supporting school PDF</button>':x.sourcePdfId?'<p class="ps-muted">Supporting PDF: import the full Paper Sort archive to open it here.</p>':"")+
+ '</div><div class="ps-page-controls"><button '+(!n?"disabled":"")+' onclick="openChildSchoolBook(\''+child+'\','+(n-1)+')">‹ Previous</button>'+
+ (canEdit?'<button onclick="openSchoolMemoryEntry(\''+child+'\',\''+id+'\')">Edit</button>':'<button onclick="openSchoolGrade(\''+id+'\',\''+child+'\')">Edit score</button>')+
+ '<button '+(n>=pages.length-1?"disabled":"")+' onclick="openChildSchoolBook(\''+child+'\','+(n+1)+')">Next ›</button></div>'+
+ '<div class="ps-nav"><button onclick="openSchoolMemoryEntry(\''+child+'\')">+ School note/work</button><button onclick="openSchoolGrade(\'\',\''+child+'\')">+ Score</button><button onclick="openArtLibrary()">All books</button></div>'+
+ '<p class="ps-muted">This book stores dated snapshots and what the school is working on, not live school-system results.</p></div>',"Close",closeModal);
+ if(x.photoId)Promise.resolve().then(async()=>{
+  let img;try{img=await dbGet(SCHOOL_PHOTO+x.photoId)}catch(e){}
+  const el=document.getElementById("psSchoolPhoto"),loading=document.getElementById("psSchoolLoading");
+  if(!el||!loading||schoolPages(child)[n]?.id!==id)return;
+  if(typeof img==="string"&&img.startsWith("data:image/")){el.src=img;el.hidden=false;loading.hidden=true}
+  else loading.textContent="Work sample image is not on this device. Import the saved School Book file.";
+ });
+};
+window.openSchoolMemoryEntry=function(child,id=""){
+ if(!KIDS.includes(child))return;
+ const old=schoolPortfolio().find(v=>v.id===id),x=old||{child,title:"",kind:"learning",asOf:"",notes:"",term:""};
+ modal(old?"Edit school memory":"Add school memory",'<div class="stack ps-art-editor">'+
+ '<label>What is this?<select id="psSchoolKind">'+[["learning","Learning right now"],["work","Schoolwork sample"],["feedback","Teacher feedback"]].map(([k,name])=>'<option value="'+k+'" '+(x.kind===k?"selected":"")+'>'+name+'</option>').join("")+'</select></label>'+
+ '<label>Subject / title<input id="psSchoolTitle" value="'+esc(x.title||"")+'" placeholder="Subtraction, reading skills, science…"></label>'+
+ '<label>As of<input type="date" id="psSchoolDate" value="'+esc(x.asOf||"")+'"></label>'+
+ '<label>What they learned, practiced, scored or need to revisit<textarea id="psSchoolNotes" rows="5">'+esc(x.notes||"")+'</textarea></label>'+
+ '<label>Work sample photo (optional)<input type="file" id="psSchoolFile" accept="image/*"></label>'+
+ '<small class="ps-muted">Only log what actually happened. Photos are saved on this device; keep an additional backup.</small></div>',
+ "Save",async()=>{
+  const get=id=>document.getElementById(id),title=get("psSchoolTitle").value.trim(),f=get("psSchoolFile")?.files?.[0];
+  if(!title){alert("Add the subject or title first.");return}
+  if(f&&(!f.type.startsWith("image/")||f.size>30*1024*1024)){alert("Choose an image under 30 MB.");return}
+  const rid=old?.id||uid();
+  if(f){try{
+   const img=await compressImage(f,1800,.86);
+   await dbSet(SCHOOL_PHOTO+rid,img);
+   const chk=await dbGet(SCHOOL_PHOTO+rid);
+   if(typeof chk!=="string"||chk.length<100)throw Error("not stored");
+  }catch(e){alert("Could not save the work photo. Keep the original and retry.");return}}
+  const record={id:rid,child,kind:get("psSchoolKind").value,title,asOf:get("psSchoolDate").value,notes:get("psSchoolNotes").value.trim(),
+   photoId:f?rid:(old?.photoId||""),source:old?.source||"Parent",sourcePdfId:old?.sourcePdfId||"",createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  if(old)Object.assign(old,record);else schoolPortfolio().push(record);
+  await save();render();window.openChildSchoolBook(child,schoolPages(child).findIndex(v=>v.id===rid));
+ });
+};
+window.openArtEntry=function(child="",id="",kind="art"){
+ const found=arts().find(x=>x.id===id),x=found||{},kid=KIDS.includes(child)?child:x.child||"",bookKind=found?kindOf(found):kind==="achievement"?"achievement":"art";
  const choices=KIDS.map(c=>'<option '+(c===kid?"selected":"")+' value="'+c+'">'+c+'</option>').join("");
- modal(found?"Edit artwork":"Add a masterpiece",'<div class="stack ps-art-editor">'+
+ modal(found?"Edit memory photo":"Add to a memory book",'<div class="stack ps-art-editor">'+
  '<label>Child<select id="psArtChild">'+choices+'</select></label>'+
- '<label>Artwork name<input id="psArtTitle" value="'+esc(x.title||"")+'" placeholder="Rainbow dragon, October pumpkin…"></label>'+
- '<div class="grid2"><label>Artwork date (optional)<input id="psArtDate" type="date" value="'+esc(x.artDate||"")+'"></label>'+
- '<label>Age at the time (optional)<input id="psArtAge" value="'+esc(x.age||"")+'" placeholder="e.g. 6"></label></div>'+
+ '<label>Book<select id="psArtKind"><option value="art" '+(bookKind==="art"?"selected":"")+'>🎨 Art Book</option><option value="achievement" '+(bookKind==="achievement"?"selected":"")+'>🏅 Achievement Book</option></select></label>'+
+ '<label>Artwork / award name<input id="psArtTitle" value="'+esc(x.title||"")+'" placeholder="Rainbow dragon, scout certificate…"></label>'+
+ '<div class="grid2"><label>Date (optional)<input id="psArtDate" type="date" value="'+esc(x.artDate||"")+'"></label>'+
+ '<label>Age (optional)<input id="psArtAge" value="'+esc(x.age||"")+'"></label></div>'+
  '<label>Take photo or choose from gallery<input id="psArtFile" type="file" accept="image/*"></label>'+
  '<label>Story or memory<textarea id="psArtNotes" rows="3">'+esc(x.notes||"")+'</textarea></label>'+
- '<p class="ps-muted">Save will store the actual compressed picture in this phone’s Daily Life IndexedDB. A ChatGPT photo is not imported automatically. Keep the original until you have separately backed up and verified the image.</p>'+
- (found?'<div class="ps-nav"><button onclick="paperExportSingleArt(\''+qid(id)+'\')">↓ Save image copy</button></div>':"")+
+ '<p class="ps-muted">The photo is stored on this device. Pictures sent in ChatGPT need a one-time import; keep a separate backup.</p>'+
+ (found?'<div class="ps-nav"><button onclick="paperExportSingleArt(\''+qid(id)+'\')">↓ Save photo</button></div>':"")+
  '</div>',"Save",async()=>{
-  const e=id=>document.getElementById(id),who=e("psArtChild").value,photo=e("psArtFile")?.files?.[0],title=e("psArtTitle").value.trim();
+  const e=id=>document.getElementById(id),who=e("psArtChild").value,photo=e("psArtFile")?.files?.[0],title=e("psArtTitle").value.trim(),selected=e("psArtKind").value;
   if(!KIDS.includes(who)){alert("Choose a child.");return}
-  if(!found&&!photo){alert("Choose or photograph the artwork first.");return}
+  if(!found&&!photo){alert("Choose or photograph the page first.");return}
   if(photo&&(!photo.type.startsWith("image/")||photo.size>30*1024*1024)){alert("Select an image smaller than 30 MB.");return}
   const aid=found?.id||uid();
   if(photo){
-   let img;
-   try{img=await compressImage(photo,1800,.86)}catch(error){alert("That photo could not be prepared.");return}
-   try{await dbSet(imageKey(aid),img);
-      const saved=await dbGet(imageKey(aid));if(!saved||saved.length<100)throw Error("image did not persist");
-   }catch(error){alert("The artwork photo could not be saved. Please keep the paper and try again.");return}
+   let img;try{img=await compressImage(photo,1800,.86)}catch(error){alert("That photo could not be prepared.");return}
+   try{await dbSet(imageKey(aid),img);const saved=await dbGet(imageKey(aid));if(!saved||saved.length<100)throw Error("image did not persist")}
+   catch(error){alert("The photo could not be saved. Please keep the paper and try again.");return}
   }
-  const meta={id:aid,child:who,title:title||"Untitled masterpiece",artDate:e("psArtDate").value,
-   age:e("psArtAge").value.trim(),notes:e("psArtNotes").value.trim(),hasLocalPhoto:true,
-   createdAt:found?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const meta={id:aid,child:who,kind:selected==="achievement"?"achievement":"art",title:title||"Untitled",
+   artDate:e("psArtDate").value,age:e("psArtAge").value.trim(),notes:e("psArtNotes").value.trim(),
+   hasLocalPhoto:true,createdAt:found?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(found)Object.assign(found,meta);else arts().push(meta);
-  try{await save()}catch(error){alert("The picture was saved locally, but the gallery record could not be saved. Try again without clearing app data.");return}
-  render();window.openChildArtBook(who,byChild(who).findIndex(v=>v.id===aid));
+  try{await save()}catch(error){alert("Photo saved locally but the book entry could not be saved.");return}
+  render();window.openChildArtBook(who,byChild(who,meta.kind).findIndex(v=>v.id===aid),meta.kind);
  });
 };
 function downloadBlob(blob,name){
