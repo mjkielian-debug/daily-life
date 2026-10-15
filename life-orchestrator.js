@@ -532,21 +532,23 @@
 
 
   window.openDailyProgressBreakdown=function(){
-    const date=ymd(),tasks=lifeQueue().todayRows,chores=displayChoresForDate(date),
+    const date=ymd(),
+      tasks=todayTasks().filter(x=>!x.paused&&!x.waitingForFunds&&!x.duplicateHidden&&!/^ups shift$/i.test(String(x.title||""))),
+      chores=displayChoresForDate(date),
       td=tasks.filter(x=>x.done).length,cd=chores.filter(x=>x.done).length,
-      water=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+(Number(x.oz)||0),0),
-      bottles=Math.min(3,Math.floor(water/26)),
+      waterOz=Math.max(0,Number(water())),
+      waterTarget=Math.max(0,Number(state.settings?.waterTarget||0)),
       meal=typeof mealForDate==="function"?mealForDate(date):null,
-      mealDone=!!meal&&["done","eaten","cooked"].includes(String(meal.status||"").toLowerCase()),
-      total=tasks.length+chores.length+3+(meal?1:0),
-      done=td+cd+bottles+(mealDone?1:0),
+      mealDone=!!meal&&["made","done","eaten","cooked","served"].includes(String(meal.status||"").toLowerCase()),
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(date):{unknown:0};
     const bar=(label,n,max)=>'<div class="dl-breakdown-row"><span>'+esc(label)+'</span><b>'+n+' / '+max+'</b><div class="dl-breakdown-track"><div style="width:'+(max?Math.round(n/max*100):0)+'%"></div></div></div>';
     modal("Today's progress",
-      '<div class="dl-breakdown"><h2>'+lifeProgress(done,total)+'% complete</h2><p>'+done+' of '+total+' checkpoints confirmed</p>'+
-      bar("Tasks",td,tasks.length)+bar("Kids",cd,chores.length)+bar("Water bottles",bottles,3)+
-      (meal?bar("Dinner",mealDone?1:0,1):"")+
-      '<p>'+Number(review.unknown||0)+' unanswered activities remain unknown, not failed.</p>'+
+      '<div class="dl-breakdown"><h2>'+td+' / '+tasks.length+' personal tasks recorded</h2><p>These are separate checkpoints, not a score for your day.</p>'+
+      (tasks.length?bar("Your tasks",td,tasks.length):"")+
+      (chores.length?bar("Kids' chores confirmed",cd,chores.length):"")+
+      (waterTarget?bar("Water logged (oz)",Math.min(waterOz,waterTarget),waterTarget):'<p>'+waterOz+' oz water recorded.</p>')+
+      (meal?'<p>Dinner: '+(mealDone?"Recorded as made or eaten":"Planned or not yet confirmed")+'</p>':"")+
+      '<p>'+Number(review.unknown||0)+' optional check-ins have no answer. Unanswered does not mean incomplete.</p>'+
       '<button class="btn" onclick="closeModal();openDailyReview()">Optional review</button></div>',
       "Close",closeModal);
   };
@@ -637,7 +639,15 @@
       importantFuture=future.filter(x=>x.fixed||x.source==="event"||x.source==="meal"||
         ["meal-prep","dinner","chores","wind-down","work-commute","tomorrow-prep","after-school-launch"].includes(String(x.templateKey||""))),
       upcoming=(importantFuture.length?importantFuture:future).slice(0,2),
-      ringDetails=checkpoints?completed+" / "+checkpoints+" marked done":"Nothing scheduled to track yet";
+      taskPercent=lifeProgress(taskDone,tasks.length),
+      ringDetails=tasks.length?taskDone+" / "+tasks.length+" recorded tasks":"No tasks recorded yet",
+      pendingToday=tasks.find(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today),
+      guideTitle=active&&pendingToday?lifeTaskTitle(pendingToday):focusTitle,
+      guideLabel=active&&pendingToday?"AFTER YOUR CURRENT ACTIVITY":focusLabel,
+      guideMeta=active&&pendingToday?"When you're ready — a saved task":focusMeta,
+      guideDetail=active&&pendingToday?"This task is saved for today. You can do it after the current activity.":focusDetail,
+      guideAction=active&&pendingToday?"openTaskDetails('"+esc(pendingToday.id)+"')":focusAction,
+      guideTaskId=active&&pendingToday?pendingToday.id:focusTaskId;
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
@@ -658,17 +668,20 @@
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY AT A GLANCE</span><h1>'+esc(now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
-      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+focusLabel+'</span>'+
-        '<h2>'+esc(focusTitle)+'</h2><p>'+esc(focusMeta)+'</p><small>'+esc(focusDetail)+'</small>'+
-        '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+focusAction+'">Open details <span aria-hidden="true">›</span></button>'+
-          (focusTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(focusTaskId)+'\',true)">✓ Done</button>':'')+
+      (active?'<div class="dl-now-strip"><span>RIGHT NOW</span><strong>'+esc(active.title)+'</strong><small>Until '+esc(fmtClock(active.end))+'</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
+      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+guideLabel+'</span>'+
+        '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
+        '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
+          (guideTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
         '</div></div></article>'+
-      '<div class="dl-progress-area" aria-label="Today progress overview">'+
-        '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+percent+' percent daily progress: '+esc(ringDetails)+'" style="background:'+lifeRainbowProgressStyle(percent)+'">'+
-           '<span class="dl-total-inner"><span>✧</span><b>'+percent+'%</b><strong>Today</strong><small>'+esc(ringDetails)+'</small></span></button>'+
-        '<div class="dl-stats">'+cards.join("")+'</div></div>'+
+      '<div class="dl-progress-area dl-guided-progress" aria-label="Separate progress from confirmed records">'+
+        '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+esc(ringDetails)+'; open progress details" style="background:'+lifeRainbowProgressStyle(taskPercent)+'">'+
+           '<span class="dl-total-inner"><span>✓</span><b>'+taskDone+' / '+tasks.length+'</b><strong>Your tasks</strong><small>Confirmed only</small></span></button>'+
+        '<div class="dl-stats">'+cards.slice(1).join("")+'</div></div>'+
+      '<details class="dl-optional-review"><summary>Optional check-ins and insights <span aria-hidden="true">›</span></summary><div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       (typeof window.lifeInsightNudge==="function"?window.lifeInsightNudge():"")+
+      '</div></details>'+
       (typeof window.homeOrganizationSummary==="function"?(function(){const p=window.homeOrganizationSummary();return '<button class="hg-goal-launch" onclick="openDailyWeeklyProgress()">◉ This week: '+p.week+' / '+p.weeklyGoal+' organizing areas · '+(p.percent===null?'Set house goals':p.percent+'% of mapped areas')+' ›</button>'})():"")+
       '<div class="dl-mid-grid">'+
         '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
