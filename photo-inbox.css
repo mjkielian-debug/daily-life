@@ -1,0 +1,57 @@
+/* Shared private Photo Inbox, home areas, inventory review and house reference maps. */
+.pi-main{display:grid;gap:14px;min-width:0;color:#382b45}
+.pi-help{padding:13px 15px;background:linear-gradient(130deg,#fff0f8,#edf5ff);border:1px solid #e6cbe7;border-radius:18px}
+.pi-help b{font-size:1rem;color:#49345b}
+.pi-help p{font-size:.9rem;line-height:1.45;margin:5px 0 8px}
+.pi-form{display:grid;gap:11px;padding:12px;border:1px solid #e0d2df;border-radius:15px;background:#fffafd}
+.pi-form label{display:grid;gap:6px;font-size:.85rem;font-weight:750;color:#493953}
+.pi-form :is(input,textarea,select){width:100%;min-width:0;color:#34273e;background:#fff;border:1px solid #bca9c1;border-radius:11px;padding:10px}
+.pi-form input[type=file]{font-size:.83rem}
+.pi-form .pi-submit{padding:13px 12px;font-weight:850}
+.pi-muted{color:#61556a;font-size:.81rem;line-height:1.45;margin:3px 0}
+.pi-main .pi-muted{color:#61556a!important}
+.pi-form #photoInboxStatus{font-size:.85rem;color:#533c6b;font-weight:800}
+.pi-list-head{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;border-bottom:1px solid #e5d9e3;padding-bottom:9px}
+.pi-list-head b{margin-right:auto}
+.pi-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #e5d6e4;padding:11px 0}
+.pi-item>span{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.pi-item b{font-size:.81rem}
+.pi-item small{font-size:.7rem;color:#69576b}
+.pi-item-actions{display:flex;gap:5px;flex-wrap:wrap}
+.pi-preview{display:grid;gap:11px}
+.pi-preview img{max-width:100%;max-height:60dvh;object-fit:contain;border:1px solid #e4cede;border-radius:13px}
+.pi-area-card{padding:14px;border:1px solid #e3cce0;border-radius:20px;background:linear-gradient(135deg,#fff0f7,#f1f5ff);display:grid;gap:10px}
+.pi-area-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.pi-area-head>div{display:grid;gap:4px}
+.pi-area-head b{font-size:1.04rem;color:#40314c}
+.pi-area-head small{font-size:.75rem;color:#675a71}
+.pi-area-head strong{color:#624a91;font-size:1.2rem}
+.pi-meter{height:12px;border-radius:14px;background:#e6dbe9;overflow:hidden}
+.pi-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#eba3c9,#cfb7eb,#a3cff5)}
+.pi-area-next{display:grid;gap:3px;padding:9px;border-radius:11px;background:#ffffffb6}
+.pi-area-next b{font-size:.77rem;color:#664a80}
+.pi-area-next span{font-size:.9rem;line-height:1.4}
+.pi-map-actions{display:flex;gap:8px;flex-wrap:wrap}
+.pi-map-actions .btn{flex:1 1 140px;white-space:normal}
+.pi-area-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pi-floor-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:6px 0}
+.pi-map{display:grid;gap:10px}
+.pi-map-image{min-height:185px;display:grid;place-items:center;background:#f2e9f4;border:1px dashed #b89ac3;border-radius:18px;overflow:hidden}
+.pi-map-image img{width:100%;height:auto;max-height:58dvh;object-fit:contain}
+.pi-map-placeholder{padding:25px 18px;max-width:350px;text-align:center;color:#675b75}
+.pi-rooms{display:grid;gap:8px}
+.pi-rooms h3{margin:0;color:#443251}
+.pi-room-btn{border:1px solid #d9bdd8;padding:10px 12px;border-radius:16px;background:#ffedf6;color:#483850;min-height:44px;text-align:left}
+.pi-room-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.pi-useup-group{display:grid;gap:5px}
+.pi-useup-group h3{margin:5px 0;color:#463751;font-size:1rem}
+.pi-house-inline{display:grid;gap:12px;padding:11px 12px;margin-bottom:12px;border:1px solid #dfc7e0;border-radius:20px;background:linear-gradient(145deg,#ffedf7,#eaf5ff)}
+.pi-house-inline h3{margin:2px;color:#47324c;font-size:1.08rem}
+.pi-house-inline .pi-inline-floor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pi-house-inline .pi-inline-floor-grid button{display:grid;gap:3px;align-items:center;justify-items:center;padding:12px 8px;border:1px solid #c9b6d3;border-radius:15px;background:#fffafd;color:#43334f;min-height:94px}
+.pi-inline-floor-grid .pi-floor-glyph{font-size:1.7rem}
+.pi-inline-floor-grid button small{color:#655976;font-size:.75rem}
+.pi-inline-reference{display:grid;place-items:center;min-height:130px;border-radius:15px;border:1px solid #dfc8dd;background:#f8ecf5;overflow:hidden}
+.pi-inline-reference img{width:100%;max-height:350px;object-fit:contain}
+.pi-inline-reference .pi-muted{padding:15px;text-align:center}
+@media(max-width:355px){.pi-area-fields{grid-template-columns:1fr}.pi-item{flex-direction:column;align-items:stretch}}
