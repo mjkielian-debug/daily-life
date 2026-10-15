@@ -5698,7 +5698,7 @@ function inventoryVisibleItems(){
 function inventoryDetailedView(){
   const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
   const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
-  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Goals</button><button onclick="openPaperStudio()">✎ Papers</button><button onclick="openArtLibrary()">🎨 Art</button></div>`;
+  const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Goals</button><button onclick="openPaperStudio()">✎ Papers</button><button onclick="openArtLibrary()">📚 Kids' books</button></div>`;
   if(inventoryTab==="map"){
     return `<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
     <div class="card inventory-storage-card"><div class="section-title"><div><h2>Rooms + storage</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
@@ -5767,7 +5767,7 @@ function inventoryView(){
     <div class="life-today-footer inventory-hub-footer">
       <button onclick="setView('household')"><span>‹</span>Household</button>
       <button onclick="openInventoryItem()"><span>＋</span>Add item</button>
-      <button onclick="openArtLibrary()"><span>🎨</span>Art books</button>
+      <button onclick="openArtLibrary()"><span>📚</span>Kids' books</button>
     </div>
   </section>`;
 }
