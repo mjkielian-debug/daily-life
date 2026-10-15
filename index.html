@@ -262,7 +262,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.15-money-goals-readable1";
+const APP_BUILD="2026.10.15-money-goals-compact1";
 let appStartupReady=false;
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
@@ -5921,7 +5921,7 @@ function openMoneyHubSection(section){
   else if(section==="income"){title="Income";body=moneyIncomeHub()}
   else if(section==="accounts"){title="Accounts";body=moneyAccountsCard()}
   else if(section==="transfers"){title="Transfers + Next Steps";body=moneyTransfersCard()}
-  else if(section==="goals"){title="Money Goals";body=(typeof financeRoadmapCard==="function"?financeRoadmapCard():"")+savingsGoalsCard()}
+  else if(section==="goals"){title="Money Goals";body=typeof financeRoadmapCard==="function"?financeRoadmapCard():""}
   else if(section==="savings"){title="Savings Goals";body=savingsGoalsCard()}
   else if(section==="pay"){title="UPS Pay";body=upsPayrollCard()}
   else if(section==="spending"){closeModal();setView("budget");openBudgetHubSection("activity");return}
@@ -6904,7 +6904,7 @@ function savingsGoalsCard(){
     ${open.length?`<div class="savings-goal-summary"><span><small>Open goals</small><b>${open.length}</b></span><span><small>Earmarked</small><b>${money(allocated)}</b></span><span><small>Total targets</small><b>${money(target)}</b></span></div>`:""}
     ${safe.incomplete?`<div class="notice"><b>Bill setup is incomplete.</b><div class="muted small">Savings buckets can still track goals, but don’t use them as proof that cash is safe to move.</div></div>`:""}
     ${goals.length?`<div class="savings-goal-list">${goals.slice(0,8).map(savingsGoalRow).join("")}</div>${goals.length>8?`<details class="compact-more"><summary>Show ${goals.length-8} more goal${goals.length-8===1?"":"s"}</summary><div class="savings-goal-list">${goals.slice(8).map(savingsGoalRow).join("")}</div></details>`:""}`:`<div class="notice">Examples: emergency cushion, holidays, car repair, kids’ birthdays, trip, furniture, or something just for you.</div>`}
-    <div class="muted small">Current safe-to-spend estimate: <b>${money(safe.safe)}</b>. That number is calculated separately from these buckets using recorded cash, entered bills, expected income timing, and the budget cushion.</div>
+    <div class="muted small">Savings buckets do not establish spendable cash. Before moving money, review account freshness, remaining bills and the budget cushion in Transfers.</div>
   </div>`;
 }
 function savingsGoalRow(x){
@@ -7840,7 +7840,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-money-goals-readable1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-money-goals-compact1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
