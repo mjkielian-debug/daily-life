@@ -137,6 +137,20 @@ const BOOK_KIND={art:{name:"Art Book",icon:"🎨"},achievement:{name:"Achievemen
 const SCHOOL_PHOTO="kid-school-photo:";
 function schoolPortfolio(){return state.kidSchoolPortfolio||(state.kidSchoolPortfolio=[])}
 function kindOf(x){if(x?.kind==="achievement")return"achievement";if(x?.kind==="art")return"art";return /\b(certificate|achievement|award|recognition|medal)\b/i.test(String(x?.title||""))?"achievement":"art"}
+/* Move confirmed caterpillar artwork in older on-device data without deleting its photo. */
+function fixConfirmedArtworkOwnership(){
+ let updated=0;
+ for(const x of arts()){
+  if(x?.child!=="Dolly"||kindOf(x)!=="art")continue;
+  if(x.id==="art-70"||/^caterpillar(?:\s+portrait)?(?:\s+craft)?$/i.test(String(x.title||"").trim())){
+   x.child="Ambrose";x.confirmationVersion=Math.max(3,Number(x.confirmationVersion)||0);
+   x.updatedAt=new Date().toISOString();updated++;
+  }
+ }
+ if(updated)Promise.resolve().then(()=>save()).catch(()=>alert("The corrected owner was shown but saving failed. Reopen and retry."));
+ return updated;
+}
+window.paperFixArtworkAttributions=fixConfirmedArtworkOwnership;
 function byChild(c,k="art"){return arts().filter(x=>x.child===c&&kindOf(x)===k).sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")))}
 function imageKey(id){return IMG_PREFIX+String(id)}
 function schoolPages(child){
@@ -158,6 +172,7 @@ function bookGrid(){
  }).join("")+'</div>';
 }
 window.openArtLibrary=function(){
+ fixConfirmedArtworkOwnership();
  const count=arts().length;
  modal("📚 Children's memory books",
   '<div class="ps-studio"><p class="ps-muted">Each child has an Art Book, an Achievement Book for certificates and awards, and a School Book for scores, work samples and learning progress.</p>'+
@@ -168,6 +183,7 @@ window.openArtLibrary=function(){
 };
 let currentBook=null,currentPage=0;
 window.openChildArtBook=function(child,index=0,kind="art"){
+ fixConfirmedArtworkOwnership();
  if(!KIDS.includes(child))return;
  if(kind==="school"){window.openChildSchoolBook(child,index);return}
  kind=kind==="achievement"?"achievement":"art";
@@ -372,6 +388,7 @@ window.paperImportArtBackup=function(){
     schoolPortfolio().push(item);schoolAdded++;
    }else if(photo&&!existing.photoId){existing.photoId=id;updated++}
   }
+  fixConfirmedArtworkOwnership();
   try{await save()}catch(e){alert("Photos may be stored, but the book index could not be saved. Keep the import file and retry.");return}
   render();window.openArtLibrary();
   alert("Books updated! "+checked+" art/award photos checked, "+schoolPhotos+" schoolwork photos, "+gradeAdded+" scores and "+schoolAdded+" school notes added."+(updated?" "+updated+" confirmed corrections applied.":"")+(failed?" "+failed+" records could not be imported.":""));
