@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261015-name-alias1";
+const CACHE_NAME="daily-life-shell-20261015-paper-import1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const APP_SHELL=[
   "./chat-checkin.js",
   "./inventory-goals.js",
   "./paper-studio.js",
+  "./paper-import.js",
   "./paper-studio.css",
   "./practice-proof.js",
   "./life-insights.js",
