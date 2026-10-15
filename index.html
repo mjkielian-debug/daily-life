@@ -191,7 +191,7 @@ dialog,
 </style>
 <link rel="stylesheet" href="finance-roadmap.css?v=20261015-grounded-progress4">
 <link rel="stylesheet" href="action-first.css?v=20261015-guided7">
-<link rel="stylesheet" href="today-guidance.css?v=20261015-guided9">
+<link rel="stylesheet" href="today-guidance.css?v=20261015-guided10">
 </head>
 <body>
 <div id="app"></div>
@@ -7893,7 +7893,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261015-guided9";
+const DAILY_LIFE_BUILD="20261015-guided10";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -7948,7 +7948,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-guided9");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-guided10");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -7973,14 +7973,14 @@ registerAppWorker();
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261014-review4"></script>
-<script src="life-orchestrator.js?v=20261015-guided9"></script>
+<script src="life-orchestrator.js?v=20261015-guided10"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261015-room-next8"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
 <script src="task-ui.js?v=20261007-kidgroups6"></script>
-<script src="inventory-goals.js?v=20261014-paper-books2"></script>
+<script src="inventory-goals.js?v=20261015-guided10"></script>
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="house-visual-map.js?v=20261015-current-rooms-thirdstairs6"></script>
@@ -7989,7 +7989,7 @@ registerAppWorker();
 <script src="inventory-photo-review.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
-<script src="life-insights.js?v=20261014-insights3"></script>
+<script src="life-insights.js?v=20261015-guided10"></script>
 <script src="bank-exit-plan.js?v=20261014-bank-exit1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 <script src="budget-forecast-2026.js?v=20261015-2"></script>
