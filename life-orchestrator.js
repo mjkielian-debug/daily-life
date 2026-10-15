@@ -641,13 +641,21 @@
       upcoming=(importantFuture.length?importantFuture:future).slice(0,2),
       taskPercent=lifeProgress(taskDone,tasks.length),
       ringDetails=tasks.length?taskDone+" / "+tasks.length+" recorded tasks":"No tasks recorded yet",
-      pendingToday=tasks.find(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today),
+      pendingToday=tasks.filter(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today)
+        .sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||null,
       guideTitle=active&&pendingToday?lifeTaskTitle(pendingToday):focusTitle,
-      guideLabel=active&&pendingToday?"AFTER YOUR CURRENT ACTIVITY":focusLabel,
-      guideMeta=active&&pendingToday?"When you're ready — a saved task":focusMeta,
-      guideDetail=active&&pendingToday?"This task is saved for today. You can do it after the current activity.":focusDetail,
+      guideLabel=active&&pendingToday?"AFTER "+String(active.title||"THIS ACTIVITY").toUpperCase().slice(0,45):focusLabel,
+      guideMeta=active&&pendingToday?"Open the task for its checklist":focusMeta,
+      guideDetail=active&&pendingToday?(String(pendingToday.notes||"").trim().slice(0,180)||
+        "Check the details before confirming this task is finished."):focusDetail,
       guideAction=active&&pendingToday?"openTaskDetails('"+esc(pendingToday.id)+"')":focusAction,
-      guideTaskId=active&&pendingToday?pendingToday.id:focusTaskId;
+      guideTaskId=active&&pendingToday?pendingToday.id:focusTaskId,
+      guideTask=guideTaskId?(tasks.find(x=>String(x.id)===String(guideTaskId))||
+        (state.tasks||[]).find(x=>String(x.id)===String(guideTaskId))):null,
+      guideSensitive=!!guideTask&&(/^(money|finance|bank|car)$/i.test(String(guideTask.category||""))||
+        /\b(autopay|payment|pay bill|transfer|account clos|statement balance|credit card|insurance|registration|tire repair)\b/i
+          .test([guideTask.title,guideTask.notes].join(" "))),
+      otherTaskCount=tasks.filter(x=>!x.done&&String(x.id)!==String(guideTaskId)).length;
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
@@ -665,24 +673,32 @@
     }).join("");
 
     return '<section class="dl-command-center life-today-one-screen" aria-label="Today dashboard">'+
-      '<div class="dl-heading"><div><span class="dl-kicker">TODAY AT A GLANCE</span><h1>'+esc(now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}))+'</h1></div>'+
+      '<div class="dl-heading"><div><span class="dl-kicker">TODAY</span><h1>What’s next?</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       (active?'<div class="dl-now-strip"><span>RIGHT NOW</span><strong>'+esc(active.title)+'</strong><small>Until '+esc(fmtClock(active.end))+'</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
       '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+guideLabel+'</span>'+
         '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
-          (guideTaskId?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
+          (guideTaskId&&!guideSensitive?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
+          (guideSensitive?'<span class="dl-verification-note">Verify before marking done</span>':'')+
+          (otherTaskCount?'<button class="dl-other-tasks" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+'</button>':'')+
         '</div></div></article>'+
       '<div class="dl-progress-area dl-guided-progress" aria-label="Separate progress from confirmed records">'+
         '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+esc(ringDetails)+'; open progress details" style="background:'+lifeRainbowProgressStyle(taskPercent)+'">'+
            '<span class="dl-total-inner"><span>✓</span><b>'+taskDone+' / '+tasks.length+'</b><strong>Your tasks</strong><small>Confirmed only</small></span></button>'+
         '<div class="dl-stats">'+cards.slice(1).join("")+'</div></div>'+
-      '<details class="dl-optional-review"><summary>Optional check-ins and insights <span aria-hidden="true">›</span></summary><div>'+
+      '<details class="dl-optional-review"><summary>Check-ins, insights and goals <span aria-hidden="true">›</span></summary><div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       (typeof window.lifeInsightNudge==="function"?window.lifeInsightNudge():"")+
+      (typeof window.homeOrganizationSummary==="function"?(function(){
+        const p=window.homeOrganizationSummary();
+        const caption=p.configured>0
+          ?p.week+" organizing spots recorded this week · "+p.done+" of "+p.zones+" areas reviewed"
+          :"No house organizing area goal has been set by you yet.";
+        return '<button class="dl-home-goal-link" onclick="openDailyWeeklyProgress()">⌂ '+esc(caption)+' <span aria-hidden="true">›</span></button>';
+      })():"")+
       '</div></details>'+
-      (typeof window.homeOrganizationSummary==="function"?(function(){const p=window.homeOrganizationSummary();return '<button class="hg-goal-launch" onclick="openDailyWeeklyProgress()">◉ This week: '+p.week+' / '+p.weeklyGoal+' organizing areas · '+(p.percent===null?'Set house goals':p.percent+'% of mapped areas')+' ›</button>'})():"")+
       '<div class="dl-mid-grid">'+
         '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
         (upcomingRows||'<p class="dl-empty">Nothing else is timed today. Open Day Flow to plan a block.</p>')+
