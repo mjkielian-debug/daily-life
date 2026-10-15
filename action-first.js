@@ -36,7 +36,7 @@ function choices(page,model){
   const projects=typeof nextLifeAdminAction==="function"?nextLifeAdminAction():null;
   if(projects&&projects.projectId)add("admin:"+projects.projectId,projects.title,projects.notes||"A next step saved with your project.","Open the project",()=>call("openProject",[projects.projectId]),48);
   const pending=(s.tasks||[]).filter(x=>x.date===d&&!x.done&&!x.paused&&String(x.title||"").trim()&&!/^(ups shift|bedtime wind.?down)$/i.test(String(x.title||"")));
-  if(pending.length){const t=pending[0];add("task:"+t.id,"Work on "+t.title,(t.child?t.child+" · ":"")+String(t.notes||"Your saved task for today."),"Open task details",()=>call("openTaskDetails",[t.id]),64);}
+  if(pending.length){const t=pending[0];add("task:"+t.id,t.title,(t.child?t.child+" · ":"")+((Array.isArray(t.subtasks)&&t.subtasks.length)?"Start with: "+String(t.subtasks[0]):String(t.notes||"This task is on your list for today. Mark it done when you finish.")),"Show task steps",()=>call("openTaskDetails",[t.id]),64);}
   const chore=typeof displayChoresForDate==="function"?displayChoresForDate(d).find(x=>!x.done):null;
   if(chore)add("chore:"+chore.id,"Check "+[chore.child,chore.chore].filter(Boolean).join(" · "),"Today's family chore is not marked complete. Ask/check before recording it.","Open family checklist",()=>call("openPeopleHubSection",["routines"]),35);
   const financial=typeof moneyNextActionSummary==="function"?moneyNextActionSummary():null;
@@ -185,8 +185,9 @@ function progressMarkup(page,model){
  }).join("");
  const total=metrics.reduce((sum,m)=>sum+m.total,0),done=metrics.reduce((sum,m)=>sum+m.done,0);
  const pct=Math.min(100,Math.round(100*done/total));
+ const progressName=page==="today"?"confirmed tasks and chores":metrics[0].label;
  const wins=data.wins.length?'<div class="directive-wins"><span>✓ Already done</span>'+data.wins.map(x=>'<span class="directive-win">'+clean(x.name)+'</span>').join("")+'</div>':"";
- return '<div class="directive-progress" aria-label="Progress from recorded tasks"><div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' recorded items complete"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>'+
+ return '<div class="directive-progress" aria-label="Progress from recorded tasks"><div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' · '+clean(progressName)+'"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>'+
  '<div class="directive-progress-text"><b>Progress you can see</b>'+bars+'</div></div>'+wins;
 }
 window.actionFirstConfirmDone=async function(page){
