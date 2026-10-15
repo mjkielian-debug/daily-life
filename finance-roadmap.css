@@ -332,3 +332,10 @@
 .finance-roadmap-other>.finance-roadmap-actions{padding:10px;display:flex;gap:8px;flex-wrap:wrap}
 .finance-roadmap-other>.finance-roadmap-actions .btn{flex:1 1 130px}
 .finance-roadmap-note{font-size:.72rem;line-height:1.43;color:#746979;padding:0 12px 12px;margin:0}
+
+/* Starter checklists are not an overall financial-success score. */
+details.finance-roadmap-count{display:block!important}
+details.finance-roadmap-count>summary{cursor:pointer;display:list-item;font-size:.81rem;font-weight:800;color:#51405c;padding:5px 0;line-height:1.4}
+details.finance-roadmap-count[open]>.finance-roadmap-meter{margin:10px 0}
+details.finance-roadmap-count>small{display:block;margin-top:8px}
+.finance-roadmap-focus>small{font-size:.72rem;color:#716379}
