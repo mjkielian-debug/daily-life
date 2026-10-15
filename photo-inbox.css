@@ -55,3 +55,14 @@
 .pi-inline-reference img{width:100%;max-height:350px;object-fit:contain}
 .pi-inline-reference .pi-muted{padding:15px;text-align:center}
 @media(max-width:355px){.pi-area-fields{grid-template-columns:1fr}.pi-item{flex-direction:column;align-items:stretch}}
+
+/* Distinguish the fixed reference map from its supporting room photographs. */
+.pi-map-confirmed{margin:0;padding:10px 12px;border-radius:13px;border:1px solid #badbcb;background:#edf8f1;color:#285341;font-size:.83rem;line-height:1.48}
+.pi-gallery{display:grid;gap:8px;padding:11px;border:1px solid #dbc5dc;border-radius:16px;background:#fff9fd}
+.pi-gallery>b{font-size:.92rem;color:#3c304b}
+.pi-gallery-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pi-gallery-button{display:flex;align-items:center;gap:8px;text-align:left;min-height:59px;width:100%;border:1px solid #d9c6da;background:#fff;color:#40354a;padding:9px 10px;border-radius:13px;font:inherit;font-size:.78rem;font-weight:750;cursor:pointer;overflow-wrap:anywhere}
+.pi-gallery-button span:nth-child(2){flex:1;min-width:0}
+.pi-gallery-icon{font-size:1.25rem;flex:0 0 auto}
+.pi-gallery-button:focus-visible{outline:3px solid #9361b5;outline-offset:2px}
+@media(max-width:460px){.pi-gallery-list{grid-template-columns:1fr}}
