@@ -118,8 +118,8 @@ window.photoInboxView=async function(id,returnTo="inbox"){
  if(error||!data){alert("Could not open private picture.");return}
  const backToFloor=returnTo==="map"&&FLOORS.includes(data.floor_label);
  const backButton=backToFloor?
-  '<button class="btn" onclick="openHouseFloorMap(\\''+data.floor_label+'\\')">‹ Back to floor map</button>':
-  '<button class="btn" onclick="openPhotoInbox(\\''+(CATEGORIES[data.category]?data.category:"paper")+'\\')">‹ Inbox</button>';
+  '<button class="btn" onclick="openHouseFloorMap(\''+data.floor_label+'\')">‹ Back to floor map</button>':
+  '<button class="btn" onclick="openPhotoInbox(\''+(CATEGORIES[data.category]?data.category:"paper")+'\')">‹ Inbox</button>';
  modal("Private photo · "+String(data.title||"").slice(0,70),
  '<div class="pi-preview"><div id="piPrivateImage"></div>'+
  '<p>'+esc(data.notes||"")+'</p><p class="pi-muted">'+esc(CATEGORIES[data.category]||data.category)+(data.floor_label?" · "+esc(data.floor_label):"")+'</p>'+
@@ -183,7 +183,7 @@ window.photoInboxLoadFloorGallery=async function(f){
  const photos=(data||[]).filter(x=>x.title!=="Main floor robovac layout"&&/^[a-f0-9-]{36}$/i.test(x.id));
  if(!photos.length){current.innerHTML='<span class="pi-muted">No extra room photos yet. Add photos of doorways, storage or rooms to build a visual map.</span>';return}
  current.innerHTML=photos.map((x,i)=>
-  '<button class="pi-gallery-button" type="button" onclick="photoInboxView(\\''+x.id+'\\',\\'map\\')"><span class="pi-gallery-icon">📷</span><span>'+esc(x.title||("Room view "+(i+1)))+'</span><span aria-hidden="true">›</span></button>'
+  '<button class="pi-gallery-button" type="button" onclick="photoInboxView(\''+x.id+'\',\'map\')"><span class="pi-gallery-icon">📷</span><span>'+esc(x.title||("Room view "+(i+1)))+'</span><span aria-hidden="true">›</span></button>'
  ).join("");
 };
 window.photoInboxLoadFloor=async function(f){
