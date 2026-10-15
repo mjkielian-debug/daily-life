@@ -29,6 +29,7 @@ window.openHomeAreaProjects=async function(){
    '<div class="pi-area-next"><b>Do next</b><span>'+esc(x.next_step||"Take a before photo and ask me to make a small, specific cleanup plan.")+'</span></div>'+
    (x.destination_notes?'<div class="pi-muted">Where things belong: '+esc(x.destination_notes)+'</div>':"")+
    '<div class="pi-map-actions"><button class="btn small primary" onclick="openPhotoInbox(\'home_progress\',\''+id+'\')">📸 Add progress</button>'+
+   '<button class="btn small" onclick="homeAreaPhotos(\''+id+'\')">Photo timeline</button>'+ 
    '<button class="btn small" onclick="homeAreaEdit(\''+id+'\')">Edit plan</button></div></div>';
  }).join("")||'<p class="pi-muted">No cleanup projects yet. Start with one area, even a single counter or shelf.</p>';
 };
@@ -70,5 +71,31 @@ window.homeAreaEdit=async function(id=""){
   if(error){alert("Could not save area: "+error.message);return}
   window.openHomeAreaProjects();
  });
+};
+window.homeAreaPhotos=async function(id){
+ if(!online()||!uidOk(id))return;
+ const {data:area,error:areaError}=await cloudClient.from("home_area_projects").select("area_name").eq("id",id).single();
+ if(areaError||!area)return;
+ modal("📷 "+String(area.area_name||"Cleanup").slice(0,70)+" · photo timeline",
+  '<div class="pi-main"><p class="pi-muted">Before and progress pictures are compared to suggest next steps. Completion percentages and time remaining are estimates, not automatic measurements.</p>'+
+  '<div id="piAreaTimeline"><p class="pi-muted">Loading photo history…</p></div>'+
+  '<button class="btn primary" onclick="openPhotoInbox(\'home_progress\',\''+id+'\')">+ Add new progress photo</button>'+
+  '<button class="btn" onclick="openHomeAreaProjects()">← Back to all areas</button></div>',"Close",closeModal);
+ const {data,error}=await cloudClient.from("photo_inbox")
+  .select("id,phase,title,created_at,image_data")
+  .eq("category","home_progress").eq("area_id",id)
+  .order("created_at",{ascending:true}).limit(25);
+ const container=document.getElementById("piAreaTimeline");if(!container)return;
+ if(error){container.textContent="Could not load pictures: "+error.message;return}
+ if(!data?.length){container.textContent="No photos yet. Start with a before photo to establish the baseline.";return}
+ container.replaceChildren();
+ for(const [index,record] of data.entries()){
+  const card=document.createElement("div");card.className="pi-area-card";
+  const title=document.createElement("b");title.textContent=(index+1)+". "+({before:"Before",progress:"Progress",after:"After",reference:"Reference"}[record.phase]||"Photo")+" · "+new Date(record.created_at).toLocaleString();card.appendChild(title);
+  if(typeof record.image_data==="string"&&/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(record.image_data)){
+   const img=document.createElement("img");img.alt="Cleanup area progress photo";img.src=record.image_data;img.style.cssText="max-width:100%;max-height:450px;object-fit:contain;border-radius:12px";card.appendChild(img);
+  }
+  container.appendChild(card);
+ }
 };
 })();
