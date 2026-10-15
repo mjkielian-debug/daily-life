@@ -44,7 +44,7 @@ function card(){
  '<div class="finance-roadmap-grid">'+rows().map(tile).join("")+'</div>'+
  '<div class="finance-roadmap-actions"><button type="button" class="btn small" onclick="openFinanceHomePlanner()">⌂ Home cost + assistance</button>'+
  '<button type="button" class="btn small" onclick="openFinancePriority(\'new\')">＋ Personal goal</button></div>'+
- '<p class="muted small finance-roadmap-help">These are private checklists, not bank transfers. Actual savings amounts belong in Savings Goals; grants, FSS escrow and refunds never count as available cash without verification.</p></section>';
+ '<details class="finance-roadmap-info"><summary>How these goals work</summary><p>These are private checklists, not bank transfers. Actual saved amounts belong in Savings Goals. Grants, FSS escrow and refunds never count as available cash without verification.</p></details></section>';
 }
 function byId(id){return rows().find(function(g){return String(g.id)===String(id);});}
 function openPriority(id){
@@ -96,7 +96,7 @@ window.financeRoadmapSave=async function(id){
  g.intro=String(document.getElementById("financeGoalIntro")?.value||"").slice(0,1200);
  g.notes=String(document.getElementById("financeGoalNotes")?.value||"").slice(0,6000);
  g.targetDate=String(document.getElementById("financeGoalTarget")?.value||"");
- try{await persist();closeModal();openMoneyHubSection("savings");}
+ try{await persist();closeModal();openMoneyHubSection("goals");}
  catch(err){if(isNew)state.settings.financialRoadmap=rows().filter(function(x){return x!==g;});else Object.assign(g,prior);alert("Could not save the goal.");}
 };
 function homeInputs(){
@@ -160,7 +160,7 @@ window.openFinanceHomePlanner=function(){
 window.financeHomeSave=async function(){
  var before=homeInputs(),next=homeReadForm();
  state.settings.financeHomePlanner=next;
- try{await persist();closeModal();openMoneyHubSection("savings");}
+ try{await persist();closeModal();openMoneyHubSection("goals");}
  catch(err){state.settings.financeHomePlanner=before;alert("Could not save home estimates.");}
 };
 })();
