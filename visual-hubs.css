@@ -397,3 +397,41 @@ body:has(#app .visual-hub) .life-tools-fab{
  .visual-hub .vh-paper-art-links button b{font-size:.78rem}
  .visual-hub .vh-paper-art-links button small{font-size:.68rem}
 }
+
+/* Money screen refinement: keep the weekly preview readable instead of stretching
+   an almost empty graph to match a long stack of shortcut buttons. */
+@media(max-width:759px){
+ .visual-hub-more .vh-lower{
+  grid-template-columns:minmax(0,1fr);
+  gap:8px;
+ }
+ .visual-hub-more .vh-brief{
+  padding:11px 14px 10px;
+ }
+ .visual-hub-more .vh-brief .vh-graph{
+  height:58px;
+  margin-top:6px;
+ }
+ .visual-hub-more .vh-brief .vh-bar-track{height:43px}
+ .visual-hub-more .vh-brief p{
+  display:block;
+  -webkit-line-clamp:unset;
+  line-clamp:unset;
+  overflow:visible;
+  margin-top:5px;
+  font-size:.76rem;
+ }
+ .visual-hub-more .vh-shortcuts{padding:11px 12px}
+ .visual-hub-more .vh-shortcuts .vh-links{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin-top:8px;
+ }
+ .visual-hub-more .vh-shortcuts .vh-link{min-height:44px}
+ .visual-hub-more .vh-shortcuts .vh-link b{
+  font-size:.78rem;
+  white-space:normal;
+  text-overflow:clip;
+  overflow:visible;
+ }
+}
