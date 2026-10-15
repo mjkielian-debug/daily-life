@@ -2608,6 +2608,40 @@ function migrateState(s){
     }
     s.settings.demitriClubQuarterEndVersion=1;
   }
+  // Oct 29 Everett Goodie Hunt flyer. Add once to existing private device data,
+  // preserving manually edited events and never replacing an existing schedule.
+  if(Number(s.settings.everettGoodieHuntOct29Version||0)<1){
+    const date="2026-10-29",title="Everett Goodie Hunt",id="everett-goodie-hunt-20261029";
+    const match=e=>String(e.date||"")===date&&(
+      String(e.id||"")===id||
+      /goodie\\s*[- ]?hunt|everett.*(?:candy|costume)/i.test([e.title,e.notes].filter(Boolean).join(" "))
+    );
+    let event=(s.events||[]).find(match);
+    if(!event){
+      event={id,date,title,child:"Family",type:"school",startTime:"18:00",
+        endTime:"19:00",location:"Everett Elementary School, 1123 C St., Lincoln, NE",
+        status:"confirmed",source:"Everett Elementary flyer",
+        notes:"Come in costume and collect candy. Enter at Door 4. This overlaps the usual Thursday Food Fort meal (5:30–6:30 PM); choose a dinner plan."};
+      s.events.push(event);
+    }else{
+      // Fill only missing flyer facts; respect user changes, including cancellations.
+      if(!event.startTime)event.startTime="18:00";
+      if(!event.endTime)event.endTime="19:00";
+      if(!event.location)event.location="Everett Elementary School, 1123 C St., Lincoln, NE";
+      if(!event.type)event.type="school";
+      if(!event.notes)event.notes="Come in costume and collect candy. Enter at Door 4.";
+    }
+    const prepDate="2026-10-28",prepId="everett-goodie-hunt-costumes-20261028";
+    const alreadyPrepared=(s.tasks||[]).some(t=>String(t.id||"")===prepId||
+      (String(t.date||"")===prepDate&&/goodie\\s*[- ]?hunt|costume.*everett/i.test([t.title,t.notes].filter(Boolean).join(" "))));
+    if(!alreadyPrepared){
+      s.tasks.push({id:prepId,date:prepDate,title:"Set out costumes + candy bags for Everett Goodie Hunt",
+        category:"family",done:false,order:27,generated:"confirmed-event-prep",
+        notes:"Thursday, Oct 29, 6:00–7:00 PM at Everett Elementary, Door 4. Decide how to handle dinner because Food Fort overlaps (5:30–6:30 PM).",
+        itineraryMinutes:15,itineraryPreference:"evening",itineraryStart:""});
+    }
+    s.settings.everettGoodieHuntOct29Version=1;
+  }
   if(Number(s.settings.knownCompletionHistoryVersion||0)<1){
     const confirmed=[
       {date:"2026-10-05",child:"Leo",chore:"Laundry"},
