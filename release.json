@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided7",
+  "build": "20261015-guided8",
   "released": "2026-10-15",
-  "ui": "Today guided layout",
+  "ui": "Guided home resets from confirmed tasks",
   "data_version": "local-first data unchanged"
 }
