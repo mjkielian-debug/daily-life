@@ -35,13 +35,21 @@ function mapSketch(f,m){
   '<path d="'+h(z.path)+'" fill="'+color(z.color)+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
   '<text class="hvm-room-name" text-anchor="middle" x="'+Math.max(limits[0],Math.min(limits[0]+limits[2],x))+'" y="'+Math.max(limits[1],Math.min(limits[1]+limits[3],y))+'">'+h(z.short||z.name)+'</text></g>';
  }).join("");
+ const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
+  const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
+  if(x<limits[0]||x>limits[0]+limits[2]||y<limits[1]||y>limits[1]+limits[3])return "";
+  return '<g class="hvm-annotation" role="button" tabindex="0" aria-label="'+h(a.note||a.label||"Open linked floor")+'" onclick="'+on+
+   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+on+'}">'+
+   '<rect x="'+(x-39)+'" y="'+(y-15)+'" width="78" height="30" rx="14" fill="#fff9e8" stroke="#8053a7" stroke-width="2"/>'+
+   '<text x="'+x+'" y="'+(y+5)+'" class="hvm-annotation-label" text-anchor="middle">'+h(a.label||"↑ next")+'</text></g>';
+ }).join("");
  const backing=isFirst?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#faf7fb" stroke="#d7cede" stroke-width="2"/>':
  '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
  const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
  '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
  return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>Tap a colored area</span></div>'+
  '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram based on the original robot-vacuum screenshot. Not measured.">'+
- backing+paths+entry+'</svg>'+
+ backing+paths+pins+entry+'</svg>'+
  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
 }
 function directory(f,m){
@@ -122,6 +130,11 @@ function localRoom(f,z){
   return a===b||(a.includes(short)&&short.length>3)||(b.includes(a)&&a.length>5);
  });
 }
+window.houseVisualFollowLink=function(target){
+ if(!floors.includes(target))return;
+ if(typeof openHouseFloorMap==="function"){openHouseFloorMap(target);return}
+ if(typeof homeSetMapFloor==="function"){homeSetMapFloor(target)}
+};
 window.houseVisualInventoryOpen=function(f,id){
  const z=zone(f,id);if(!z)return;
  const room=localRoom(f,z);
