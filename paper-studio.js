@@ -145,7 +145,7 @@ function schoolPages(child){
   notes:x.notes||"",asOf:x.asOf||x.date||"",term:x.term||"",source:x.source||"",sourcePdfId:x.sourcePdfId||"",photoId:"",isGrade:true
  }));
  const rest=schoolPortfolio().filter(x=>x.child===child).map(x=>Object.assign({kind:"learning"},x));
- return grades.concat(rest).sort((a,b)=>String(b.asOf||"").localeCompare(String(a.asOf||""))||String(a.title||"").localeCompare(String(b.title||"")));
+ return grades.concat(rest).sort((a,b)=>String(b.asOf||"").localeCompare(String(a.asOf||""))||({learning:0,assessment:1,work:2,feedback:3}[a.kind]??4)-({learning:0,assessment:1,work:2,feedback:3}[b.kind]??4)||String(a.title||"").localeCompare(String(b.title||"")));
 }
 function bookGrid(){
  return '<div class="ps-book-shelves">'+KIDS.map((child,i)=>{
@@ -213,7 +213,7 @@ window.openChildSchoolBook=function(child,index=0){
  (x.photoId?'<div class="ps-school-photo"><img id="psSchoolPhoto" alt="Schoolwork sample" hidden><span id="psSchoolLoading">Loading schoolwork photo…</span></div>':"")+
  '<p class="ps-school-notes">'+esc(x.notes||x.summary||"")+'</p>'+
  (x.source?'<p class="ps-muted">Source: '+esc(x.source)+'</p>':"")+
- (hasDoc?'<button class="ps-school-doc" onclick="paperDownloadDigitalDoc(\''+qid(x.sourcePdfId)+'\')">↓ Save supporting school PDF</button>':x.sourcePdfId?'<p class="ps-muted">Supporting PDF: import the full Paper Sort archive to open it here.</p>':"")+
+ (hasDoc?'<button class="ps-school-doc" onclick="paperDownloadDigitalDoc(\''+qid(x.sourcePdfId)+'\')">↓ Save supporting school PDF</button>':"")+
  '</div><div class="ps-page-controls"><button '+(!n?"disabled":"")+' onclick="openChildSchoolBook(\''+child+'\','+(n-1)+')">‹ Previous</button>'+
  (canEdit?'<button onclick="openSchoolMemoryEntry(\''+child+'\',\''+id+'\')">Edit</button>':'<button onclick="openSchoolGrade(\''+id+'\',\''+child+'\')">Edit score</button>')+
  '<button '+(n>=pages.length-1?"disabled":"")+' onclick="openChildSchoolBook(\''+child+'\','+(n+1)+')">Next ›</button></div>'+
