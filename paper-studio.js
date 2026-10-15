@@ -56,7 +56,7 @@ window.openPaperStudio=function(){
  const n=paperCounts();modal("Papers · sort + declutter",
   '<div class="ps-studio"><div class="ps-top"><div class="ps-big-ring" style="--ps-pct:'+(n.percent??0)+'%"><b>'+(n.percent===null?"—":n.percent+"%")+'</b><small>sorted</small></div>'+
   '<div><b>'+n.decided+' / '+n.total+' batches categorized</b><small>'+n.finished+' physically handled · '+n.pending+' not finished</small><small>Only batches you enter count.</small></div></div>'+
-  '<div class="ps-nav"><button onclick="openPaperBatch()">+ Paper</button><button onclick="openArtLibrary()">🎨 Art books</button></div>'+
+  '<div class="ps-nav"><button onclick="openPaperBatch()">+ Paper</button><button onclick="openArtLibrary()">🎨 Art books</button><button onclick="openPaperImport()">↑ Import paper sort</button><button onclick="openPaperDigitalArchive()">📁 Digital papers</button></div>'+
   '<div class="ps-practice"><strong>✏ Extra learning (optional)</strong><span>'+n.practiceDone+' approved / '+n.practicePages+' sheets · '+n.practiceReview+' awaiting review</span>'+bar(n.practiceDone,n.practicePages)+
   '<small>Photo proof + parent approval required for new rewards. Optional practice has no deadlines.</small></div>'+
   rewardsHtml()+'<div class="ps-groups">'+Object.keys(TYPE).map(section).join("")+'</div>'+
