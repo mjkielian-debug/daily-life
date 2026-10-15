@@ -269,3 +269,48 @@
   #modal .modal .finance-roadmap-tile .finance-roadmap-tile-title strong{font-size:.7rem!important}
   #modal .modal .finance-roadmap-actions{grid-template-columns:1fr 1fr!important}
 }
+
+/* Goals and savings are separate screens; provide one simple navigation link. */
+#modal .modal .finance-savings-shortcut {
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  width:100%!important;
+  gap:12px!important;
+  border:1.5px solid #b9d0c9!important;
+  border-radius:16px!important;
+  background:linear-gradient(115deg,#ecf8f1,#f3f0ff)!important;
+  color:#33283e!important;
+  -webkit-text-fill-color:#33283e!important;
+  padding:12px 14px!important;
+  text-align:left!important;
+  font:inherit!important;
+  cursor:pointer!important;
+  text-shadow:none!important;
+}
+#modal .modal .finance-savings-shortcut>span {
+  display:grid!important;
+  gap:3px!important;
+  min-width:0!important;
+}
+#modal .modal .finance-savings-shortcut b {
+  font-size:.87rem!important;
+  font-weight:800!important;
+  color:#32283b!important;
+  -webkit-text-fill-color:#32283b!important;
+  text-shadow:none!important;
+}
+#modal .modal .finance-savings-shortcut small {
+  color:#615469!important;
+  -webkit-text-fill-color:#615469!important;
+  opacity:1!important;
+  font-size:.73rem!important;
+  text-shadow:none!important;
+}
+#modal .modal .finance-savings-shortcut strong {
+  color:#75466d!important;
+  -webkit-text-fill-color:#75466d!important;
+  font-size:.8rem!important;
+  flex:0 0 auto!important;
+  text-shadow:none!important;
+}
