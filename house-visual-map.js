@@ -54,6 +54,16 @@ function directory(f,m){
  '<span class="hvm-tile-open">Open this location ›</span></button>';
  }).join("")+'</div><p class="hvm-disclaimer">Tiles are not positioned as actual walls or rooms. Room locations will be placed when orientation photos are available.</p></div>';
 }
+function connect(m){
+ const c=arr(m.connections).filter(x=>x&&x.label&&x.from&&x.to);
+ if(!c.length)return "";
+ return '<section class="hvm-connections" aria-label="House connection routes"><strong>How these spaces connect</strong>'+
+ c.map(x=>'<div class="hvm-connection"><b>'+h(x.label)+'</b>'+
+ '<div class="hvm-route"><span class="hvm-route-end">⌂ '+h(x.from)+'</span>'+
+ arr(x.via).map(v=>'<div class="hvm-route-step"><span class="hvm-step-rail" aria-hidden="true">↓</span><span>'+h(v)+'</span></div>').join("")+
+ '<span class="hvm-route-end">⌂ '+h(x.to)+'</span></div>'+
+ (x.status?'<p>'+h(x.status)+'</p>':"")+'</div>').join("")+'</section>';
+}
 function draw(f,m){
  const work=arr(m.flow).map(x=>'<div class="hvm-flow-line"><b>'+h(x.from)+'</b><span>→</span><b>'+h(x.to)+'</b>'+
  '<small>'+h(x.status)+'</small></div>').join("");
@@ -62,6 +72,7 @@ function draw(f,m){
  return '<div class="hvm-rendered">'+(m.kind==="schematic"?mapSketch(f,m):directory(f,m))+
  '<p class="hvm-disclaimer">'+h(m.summary||"")+'</p>'+
  original+
+ connect(m)+
  (work?'<section class="hvm-flow"><strong>↗ Where things went</strong>'+work+'</section>':"")+
  (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
  '<button class="btn primary small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;)">+ Add room photos</button></div>':"")+
