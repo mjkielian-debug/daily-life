@@ -233,6 +233,9 @@ function schoolAnalysis(x){
   const focus=sounds?"Sounding out unfamiliar words is worth continued practice: the recorded phonics measures are "+sounds[1]+" letter sounds"+(recoded?" and "+recoded[1]+" complete words":"")+". Even a student meeting the overall goal can have individual skills to strengthen.":"Check word decoding and reading accuracy, not just overall speed.";
   return result(meaning,focus,"Try 5 minutes of reading together: sound out two unfamiliar words, reread the sentence smoothly, and talk about its meaning. Compare with the next school screening, rather than treating one test as a growth trend.","DIBELS is a screener, not a diagnosis. Benchmark source: Nebraska Department of Education, 2026–27, third-grade beginning-of-year cutoff 332.");
  }
+ if(/fall kindergarten conference/i.test(combined)){
+  return result("The fall conference marks following directions, participation, staying on task, taking pride in work and kindness as classroom strengths. It also records an early letter-sound baseline: 0 pre-sounds, 6 uppercase and 4 lowercase letters.","The positive classroom observations and early literacy learning are separate things; focus on helping letter names connect to their sounds.","Celebrate a specific classroom success, then play a 3-minute letter hunt using familiar names and books.","This is a dated conference snapshot. A later screening is needed before describing growth.");
+ }
  if(/pre.sounds|letter.baseline|kindergarten.*dibels/i.test(combined)){
   return result("This kindergarten starting-point sheet reports 0 pre-sounds, 6 uppercase letters and 4 lowercase letters. These are skills demonstrated at that moment, not a fixed limit on future learning.","Connect letter names to their sounds, gradually adding familiar letters.","Play a two-letter sound hunt for 3–5 minutes using books, names and signs.","A follow-up assessment is needed to establish actual growth.");
  }
