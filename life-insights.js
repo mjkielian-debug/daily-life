@@ -65,7 +65,7 @@ function insights(){
  const house=typeof homeOrganizationSummary==="function"?homeOrganizationSummary():null;
  if(house?.configured===0)add("Home","map-house","📦","Start with a small area","No organizing category has a total area goal yet.",
    "Set a goal for one drawer, shelf or paper stack. Progress should count what you confirm.","Organize");
- else if(house&&house.week<house.weeklyGoal)add("Home","organizing-week","🌱","Small organizing progress",
+ else if(house&&house.goalsConfirmed&&house.week<house.weeklyGoal)add("Home","organizing-week","🌱","Small organizing progress",
    house.week+" of "+house.weeklyGoal+" areas confirmed this week.",
    "Try one small paper stack before buying extra storage.","Papers");
  const pending=typeof practiceProofSummary==="function"?practiceProofSummary():null;
