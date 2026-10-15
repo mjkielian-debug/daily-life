@@ -128,7 +128,7 @@ dailyLifeAdvice=function(){
 
 /* A complete local-day palette: surfaces change along with the accents. */
 const DAILY_GARDEN_PALETTES=[
- ["Rose garden","#10251c","#18382a","#244935","#98dab1","#f2becf","#eed59a"],
+ ["Rainbow sunrise","#a7649d","#caa5d5","#f8c9dc","#98dab1","#f2becf","#eed59a"],
  ["Moonlit magnolia","#191c2c","#252b3d","#323b50","#b7c9f0","#e8bfdc","#f1dfac"],
  ["Peach blossom","#28201c","#392c25","#4a3930","#e8bf9b","#f0bac1","#d9e5b0"],
  ["Fern & rain","#10262a","#19383d","#244b50","#93d6d2","#e8c6d7","#e9d8ac"],
