@@ -677,7 +677,7 @@
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       (active?'<div class="dl-now-strip"><span>RIGHT NOW</span><strong>'+esc(active.title)+'</strong><small>Until '+esc(fmtClock(active.end))+'</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
-      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+guideLabel+'</span>'+
+      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
         '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
           (guideTaskId&&!guideSensitive?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
