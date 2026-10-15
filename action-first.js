@@ -194,6 +194,8 @@ window.actionFirstConfirmDone=async function(page){
  const model=page==="today"?null:typeof visualHubModel==="function"?visualHubModel(page):null;
  const first=presented(page,model)[0];
  if(!first)return;
+ const scheduled=scheduledTaskFor(first,page);
+ if(scheduled&&typeof toggleTask==="function"){await toggleTask(scheduled.id,true);return}
  const d=today();
  let row=null,kind="";
  if(first.id.startsWith("task:")||first.id.startsWith("household:task:")){
@@ -209,8 +211,9 @@ window.actionFirstConfirmDone=async function(page){
  if(kind==="task"&&typeof toggleTask==="function")await toggleTask(row.id,true);
  else if(kind==="chore"&&typeof toggleChore==="function")await toggleChore(row.id,true);
 };
-function canConfirm(first){
+function canConfirm(first,page){
  if(!first)return false;
+ if(scheduledTaskFor(first,page))return true;
  const id=String(first.id||""),d=today();
  if(id.startsWith("task:")||id.startsWith("household:task:")){
   const key=id.replace(/^household:task:|^task:/,"");
@@ -222,11 +225,38 @@ function canConfirm(first){
  }
  return false;
 }
+function upcomingPreview(page){
+ if(page!=="today"&&page!=="itinerary")return "";
+ const d=page==="itinerary"&&typeof itineraryDate==="string"?itineraryDate:today();
+ const rows=typeof itineraryDayItems==="function"?itineraryDayItems(d):[];
+ const now=new Date(),minute=now.getHours()*60+now.getMinutes();
+ const timeToMinutes=x=>{const m=String(x||"").match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1]*60 + +m[2]):null;};
+ const upcoming=rows.filter(x=>{
+  if(!x||x.done||x.nonBlocking||x.kind==="gap")return false;
+  const s=timeToMinutes(x.start),end=timeToMinutes(x.end);
+  if(s===null)return false;
+  return d!==today()||s>=minute||(end!==null&&end>minute);
+ }).slice(0,3);
+ if(!upcoming.length)return "";
+ return '<div class="directive-coming"><b>Next on your timeline</b><div>'+
+  upcoming.map(x=>'<div class="directive-coming-row"><strong>'+clean(typeof fmtClock==="function"?fmtClock(x.start):x.start)+'</strong>'+
+   '<span>'+clean(x.title||"Planned block")+'</span></div>').join("")+'</div></div>';
+}
+function scheduledTaskFor(first,page){
+ if(!first||!String(first.id||"").startsWith("block:"))return null;
+ const d=page==="itinerary"&&typeof itineraryDate==="string"?itineraryDate:today();
+ if(d!==today()||typeof itineraryDayItems!=="function"||typeof dayFlowCurrentItem!=="function")return null;
+ const current=dayFlowCurrentItem(d,itineraryDayItems(d));
+ if(!current||current.source!=="task"||!current.sourceId||current.done)return null;
+ const id="block:"+d+":"+(current.sourceId||current.id||current.start||current.title);
+ if(String(first.id)!==id)return null;
+ return (state.tasks||[]).find(x=>String(x.id)===String(current.sourceId)&&x.date===d&&!x.done&&!x.paused)||null;
+}
 function widget(page,model){
  const all=presented(page,model),first=all[0],others=all.slice(1,3);
  const alternative=others.length?'<details class="directive-other"><summary>Another option <span>('+others.length+')</span></summary>'+
  '<div class="directive-after">'+others.map(function(x,i){return '<button type="button" class="directive-mini" onclick="actionFirstRun(\''+clean(page)+'\','+(i+1)+')"><span><b>'+clean(x.title)+'</b><small>'+clean(x.why)+'</small></span><span aria-hidden="true">›</span></button>'}).join("")+'</div></details>':"";
- const doneButton=canConfirm(first)?'<button type="button" class="directive-confirm" onclick="actionFirstConfirmDone(\''+clean(page)+'\')">✓ I finished this</button>':"";
+ const doneButton=canConfirm(first,page)?'<button type="button" class="directive-confirm" onclick="actionFirstConfirmDone(\''+clean(page)+'\')">✓ I finished this</button>':"";
  const label=first.id==="overview"?"CHOOSE A STEP":first.optional?"IF IT HELPS":"YOUR NEXT STEP";
  return '<section class="directive-focus" aria-label="Recommended next action">'+
  '<div class="directive-kicker"><span class="directive-pulse" aria-hidden="true">●</span>'+label+'</div>'+
@@ -234,6 +264,7 @@ function widget(page,model){
  '<div class="directive-buttons">'+button(page,0,first.button+' ›',"directive-primary")+doneButton+
  (first.id!=="overview"?'<button type="button" class="directive-later" onclick="actionFirstLater(\''+clean(page)+'\')" aria-label="Show another recommendation for today">Not now</button>':"")+'</div>'+
  progressMarkup(page,model)+
+ upcomingPreview(page)+
  alternative+
  '<small class="directive-disclaimer">Progress only counts what is recorded. Opening a step or choosing “Not now” does not mark it completed.</small></section>';
 }
