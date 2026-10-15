@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261015-private-photo-inbox7";
+const CACHE_NAME="daily-life-shell-20261015-visual-floor1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -18,9 +18,11 @@ const APP_SHELL=[
   "./inventory-goals.js",
   "./paper-studio.js",
   "./paper-import.js",
+  "./house-visual-map.js",
   "./photo-inbox.js",
   "./home-area-projects.js",
   "./inventory-photo-review.js",
+  "./house-visual-map.css",
   "./photo-inbox.css",
   "./paper-studio.css",
   "./practice-proof.js",
