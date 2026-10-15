@@ -24,7 +24,10 @@ function choices(page,model){
   const current=typeof dayFlowCurrentItem==="function"?dayFlowCurrentItem(dt,items):null;
   if(current&&!current.done&&current.kind!=="gap"){
    const when=current.start&&typeof fmtClock==="function"?fmtClock(current.start):"Next scheduled";
-   add("block:"+dt+":"+(current.sourceId||current.id||current.start||current.title),"Open "+String(current.title||"your scheduled block"),when+" · Check the plan and record progress only when you have done it.","Open this block",()=>call("openDayFlowSection",["plan",dt]),100);
+   const hm=String(current.start||"").match(/^(\\d{1,2}):(\\d{2})$/),startMins=hm?Number(hm[1])*60+Number(hm[2]):null;
+   const nowDate=new Date(),until=startMins===null?null:startMins-(nowDate.getHours()*60+nowDate.getMinutes());
+   const rank=safePage==="today"&&until!==null&&until>90?32:100;
+   add("block:"+dt+":"+(current.sourceId||current.id||current.start||current.title),"Open "+String(current.title||"your scheduled block"),when+" · Check the plan and record progress only when you have done it.","Open this block",()=>call("openDayFlowSection",["plan",dt]),rank);
   }
   const loose=safePage==="itinerary"&&typeof itineraryTaskCandidates==="function"?itineraryTaskCandidates(dt):[];
   if(loose.length)add("loose:"+dt,"Place an unscheduled task",loose.length+" possible tasks still need a place in your day.","Review loose tasks",()=>call("openDayFlowSection",["unscheduled",dt]),62);
