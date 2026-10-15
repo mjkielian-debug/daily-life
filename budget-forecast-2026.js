@@ -47,7 +47,7 @@ function render(){
  '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0">'+
  '<div><small>Monthly cash income</small><b style="display:block">'+result(v.inc,"Enter income")+'</b></div>'+
  '<div><small>Monthly expense targets entered</small><b style="display:block">'+cash(v.cost)+'</b>'+(!v.complete?missing:"")+'</div>'+
- '<div><small>Monthly cash margin</small><b style="display:block;color:'+(v.margin===null?"inherit":v.margin<0?"#b33939":"#267d51")+'">'+result(v.margin,"Complete the estimate")+'</b></div>'+
+ '<div><small>Monthly cash margin</small><b style="display:block;color:'+(v.margin===null?"inherit":v.margin<0?"#b33939":"#5b4664")+'">'+result(v.margin,"Complete the estimate")+'</b></div>'+
  '<div><small>EBT (separate from cash)</small><b style="display:block">'+result(num(d.ebt),"Not entered")+'</b></div></div>'+
  '<details><summary style="cursor:pointer;font-weight:700">Edit monthly spending targets</summary><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 0">'+
  fields.map(k=>input(k,names[k],d)).join('')+'</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">'+
