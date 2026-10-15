@@ -2,11 +2,11 @@
    Authenticated Supabase RLS; no public URLs, GitHub uploads or auto-generated inventory facts. */
 (function(){
 "use strict";
-const CATEGORIES={paper:"🗂 Paper sorting",inventory:"📦 Inventory",house_map:"⌂ House map"};
+const CATEGORIES={paper:"🗂 Paper sorting",inventory:"📦 Inventory",house_map:"⌂ House map",home_progress:"🧹 Before + progress"};
 const FLOORS=["Basement","First floor","Second floor","Third floor"];
-let inboxMode="paper",floorView="First floor",inboxBusy=false;
+let inboxMode="paper",floorView="First floor",inboxBusy=false,prefillAreaId="";
 function cloudReady(){return typeof cloudClient!=="undefined"&&!!cloudClient&&typeof cloudUser==="function"&&!!cloudUser()}
-function sanitized(x){return String(x||"").trim().slice(0,260)}
+function sanitized(x,max=260){return String(x||"").trim().slice(0,max)}
 function notice(s){const e=document.getElementById("photoInboxStatus");if(e)e.textContent=s;}
 async function resize(file){
  if(!file?.type?.startsWith("image/")||file.size>22*1024*1024)throw Error("Use an image under 22 MB.");
@@ -32,23 +32,23 @@ function authMessage(){
 function floorSelect(value){
  return '<label>Floor (for maps)<select id="piFloor">'+FLOORS.map(f=>'<option '+(f===value?"selected":"")+'>'+f+'</option>').join("")+'</select></label>';
 }
-window.openPhotoInbox=function(mode="paper"){
- inboxMode=CATEGORIES[mode]?mode:"paper";
+window.openPhotoInbox=function(mode="paper",areaId=""){
+ inboxMode=CATEGORIES[mode]?mode:"paper";prefillAreaId=/^[a-f\d-]{36}$/i.test(String(areaId||""))?areaId:"";
  const signed=cloudReady();
  modal("📷 Private photo inbox",'<div class="pi-main">'+
  (signed?'<div class="pi-help"><b>Photograph → send → ask me to review</b><p>Send paper stacks, room contents, labels, shelves or your robot-vacuum map. Photos are private, not published or automatically analyzed. After uploading, return to ChatGPT and say <b>“Check my Daily Life Photo Inbox.”</b></p></div>'+
  '<div class="pi-form"><label>What are these pictures for?<select id="piMode">'+Object.entries(CATEGORIES).map(([k,v])=>'<option value="'+k+'" '+(k===inboxMode?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
  floorSelect(floorView)+
- '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="e.g. living room shelves, school folder"></label>'+
+ '<div class="pi-area-fields"><label>Area (for before/progress photos)<select id="piArea"><option value="">General inbox / choose later</option></select></label><label>Photo stage<select id="piPhase"><option value="before">Before</option><option value="progress">Progress / during</option><option value="after">After</option><option value="reference">Reference</option></select></label></div>'+ '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="e.g. living room shelves, school folder"></label>'+
  '<label>Notes / what you want help with (optional)<textarea id="piNotes" rows="2" maxlength="1500" placeholder="What should I identify or organize?"></textarea></label>'+
  '<label>Choose pictures from camera or gallery<input id="piFiles" type="file" accept="image/*" multiple></label>'+
  '<p class="pi-muted">Up to 10 images per batch. Pictures are compressed for upload; check that small handwriting remains readable before recycling paper.</p>'+
  '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button><p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
- '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
+ '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" onclick="openHomeAreaProjects()">🧹 Cleanup areas</button><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
  '<div id="photoInboxList">'+(signed?'<p class="pi-muted">Loading private photos…</p>':'<p class="pi-muted">Sign in to view your private inbox.</p>')+'</div>'+
  '<p class="pi-muted">Upload here rather than placing private papers in public GitHub files. You control when to ask ChatGPT to review the inbox.</p></div>',
  "Close",closeModal);
- if(signed)Promise.resolve().then(()=>window.photoInboxLoadList());
+ if(signed)Promise.resolve().then(async()=>{await window.photoInboxLoadAreas();await window.photoInboxLoadList()});
 };
 window.photoInboxSubmit=async function(){
  if(inboxBusy||!cloudReady())return;
@@ -59,7 +59,9 @@ window.photoInboxSubmit=async function(){
  if(!CATEGORIES[category])return;
  const floor=document.getElementById("piFloor")?.value||"";
  const title=sanitized(document.getElementById("piTitle")?.value);
- const notes=sanitized(document.getElementById("piNotes")?.value).slice(0,1500);
+ const notes=sanitized(document.getElementById("piNotes")?.value,1500);
+ const areaId=document.getElementById("piArea")?.value||null;
+ const phase=category==="home_progress"?(document.getElementById("piPhase")?.value||"before"):"reference";
  inboxBusy=true;let done=0;
  const btn=document.querySelector(".pi-submit");if(btn)btn.disabled=true;
  try{
@@ -68,7 +70,7 @@ window.photoInboxSubmit=async function(){
    const img=await resize(file);
    const {error}=await cloudClient.from("photo_inbox").insert({
     owner_user_id:cloudUser().id,category,title:title||sanitized(file.name),
-    notes,floor_label:category==="house_map"?floor:"",status:"new",
+    notes,floor_label:(category==="house_map"||category==="home_progress")?floor:"",status:"new",area_id:areaId,phase,
     image_mime:"image/jpeg",image_data:img.data,width:img.width,height:img.height
    });
    if(error)throw Error(error.message||"Cloud upload failed");
@@ -79,11 +81,27 @@ window.photoInboxSubmit=async function(){
  }catch(e){notice(done+" uploaded. Upload stopped: "+String(e?.message||e)+". Any successfully sent photos remain in your inbox.")}
  finally{inboxBusy=false;if(btn)btn.disabled=false}
 };
+
+window.photoInboxLoadAreas=async function(){
+ if(!cloudReady())return;
+ const target=document.getElementById("piArea");if(!target)return;
+ const {data,error}=await cloudClient.from("home_area_projects").select("id,area_name,floor_label").order("updated_at",{ascending:false}).limit(100);
+ if(error){notice("Could not load cleanup areas: "+error.message);return}
+ const items=(data||[]).filter(x=>/^[a-f\d-]{36}$/i.test(x.id));
+ target.innerHTML='<option value="">General inbox / choose later</option>'+
+ items.map(x=>'<option value="'+x.id+'" '+(x.id===prefillAreaId?"selected":"")+'>'+esc(x.area_name||"Area")+' · '+esc(x.floor_label||"Floor not set")+'</option>').join("");
+ if(prefillAreaId&&items.some(x=>x.id===prefillAreaId)){
+  document.getElementById("piMode").value="home_progress";
+  const floor=items.find(x=>x.id===prefillAreaId)?.floor_label;
+  if(floor)document.getElementById("piFloor").value=floor;
+  document.getElementById("piTitle").value=items.find(x=>x.id===prefillAreaId)?.area_name||"";
+ }
+};
 window.photoInboxLoadList=async function(showLoading=true){
  const el=document.getElementById("photoInboxList");if(!el||!cloudReady())return;
  if(showLoading)el.innerHTML='<p class="pi-muted">Loading…</p>';
  const {data,error}=await cloudClient.from("photo_inbox")
-  .select("id,category,title,notes,floor_label,status,created_at,width,height")
+  .select("id,category,title,notes,floor_label,status,created_at,width,height,area_id,phase")
   .order("created_at",{ascending:false}).limit(100);
  if(!document.getElementById("photoInboxList"))return;
  if(error){el.textContent="Could not load inbox: "+error.message;return}
