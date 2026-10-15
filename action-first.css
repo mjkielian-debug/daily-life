@@ -185,3 +185,10 @@
 .household-extra-diagnostics>div{display:grid;gap:10px;padding-top:10px}
 .home-care-compact{display:grid;gap:8px}
 .home-care-compact details>summary{padding:9px;font-size:.78rem;cursor:pointer}
+
+/* Small, nonintrusive version marker: confirms the phone loaded the guided Today layout. */
+.dl-build-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:1px 7px 2px;color:#755a81;font-size:.62rem;font-weight:850;letter-spacing:.035em}
+.dl-build-row button{font:inherit;font-size:.67rem;letter-spacing:0;font-weight:800;color:#69497c;border:1px solid #dbc6dd;border-radius:99px;background:#fff8fe;padding:6px 10px;min-height:30px;cursor:pointer}
+.dl-update-panel{display:grid;gap:10px;line-height:1.5}
+.dl-update-panel p{margin:0}
+.dl-update-panel #dailyLifeRefreshStatus:not(:empty){border-radius:11px;padding:10px;background:#f1f7fe;border:1px solid #d7e2f4;font-size:.78rem}
