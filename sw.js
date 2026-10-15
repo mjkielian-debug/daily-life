@@ -98,7 +98,7 @@ self.addEventListener("activate",event=>{
 
 async function navigationResponse(request){
   try{
-    const fresh=await fetch(request);
+    const fresh=await fetch(request,{cache:"no-store"});
     if(fresh.ok){
       const cache=await caches.open(CACHE_NAME);
       await cache.put(new URL("./index.html",self.location).pathname,fresh.clone());
@@ -117,7 +117,7 @@ async function staticAssetResponse(request,url,event){
   const key=url.pathname+url.search;
   const cache=await caches.open(CACHE_NAME);
   const cached=await cache.match(key);
-  const refresh=fetch(request).then(async response=>{
+  const refresh=fetch(request,{cache:"no-cache"}).then(async response=>{
     if(response.ok)await cache.put(key,response.clone());
     return response;
   }).catch(()=>null);
