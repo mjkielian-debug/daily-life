@@ -44,6 +44,7 @@ function card(){
  '<div class="finance-roadmap-grid">'+rows().map(tile).join("")+'</div>'+
  '<div class="finance-roadmap-actions"><button type="button" class="btn small" onclick="openFinanceHomePlanner()">⌂ Home cost + assistance</button>'+
  '<button type="button" class="btn small" onclick="openFinancePriority(\'new\')">＋ Personal goal</button></div>'+
+ '<button type="button" class="finance-savings-shortcut" onclick="openMoneyHubSection(\'savings\')"><span><b>♡ Savings buckets</b><small>Track amounts set aside separately</small></span><strong>Open ›</strong></button>'+
  '<details class="finance-roadmap-info"><summary>How these goals work</summary><p>These are private checklists, not bank transfers. Actual saved amounts belong in Savings Goals. Grants, FSS escrow and refunds never count as available cash without verification.</p></details></section>';
 }
 function byId(id){return rows().find(function(g){return String(g.id)===String(id);});}
