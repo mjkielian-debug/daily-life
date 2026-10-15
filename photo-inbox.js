@@ -41,7 +41,8 @@ window.openPhotoInbox=function(mode="paper",areaId=""){
  floorSelect(floorView)+
  '<div class="pi-area-fields"><label>Area (for before/progress photos)<select id="piArea"><option value="">General inbox / choose later</option></select></label><label>Photo stage<select id="piPhase"><option value="before">Before</option><option value="progress">Progress / during</option><option value="after">After</option><option value="reference">Reference</option></select></label></div>'+ '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="e.g. living room shelves, school folder"></label>'+
  '<label>Notes / what you want help with (optional)<textarea id="piNotes" rows="2" maxlength="1500" placeholder="What should I identify or organize?"></textarea></label>'+
- '<label>Choose pictures from camera or gallery<input id="piFiles" type="file" accept="image/*" multiple></label>'+
+ '<label>Take a new picture<input id="piCamera" type="file" accept="image/*" capture="environment"></label>'+ 
+ '<label>Or choose several from gallery<input id="piFiles" type="file" accept="image/*" multiple></label>'+
  '<p class="pi-muted">Up to 10 images per batch. Pictures are compressed for upload; check that small handwriting remains readable before recycling paper.</p>'+
  '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button><p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
  '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" onclick="openHomeAreaProjects()">🧹 Cleanup areas</button><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
@@ -52,7 +53,7 @@ window.openPhotoInbox=function(mode="paper",areaId=""){
 };
 window.photoInboxSubmit=async function(){
  if(inboxBusy||!cloudReady())return;
- const input=document.getElementById("piFiles"),files=Array.from(input?.files||[]);
+ const input=document.getElementById("piFiles"),camera=document.getElementById("piCamera"),files=[...Array.from(camera?.files||[]),...Array.from(input?.files||[])];
  if(!files.length){notice("Select at least one picture first.");return}
  if(files.length>10){notice("Choose up to 10 pictures at a time.");return}
  const category=document.getElementById("piMode")?.value||inboxMode;
@@ -77,7 +78,7 @@ window.photoInboxSubmit=async function(){
    done++;
   }
   notice("✓ "+done+" picture"+(done===1?"":"s")+" securely uploaded. Return to ChatGPT and ask: “Check my Daily Life Photo Inbox.”");
-  input.value="";await window.photoInboxLoadList(false);
+  input.value="";if(camera)camera.value="";await window.photoInboxLoadList(false);
  }catch(e){notice(done+" uploaded. Upload stopped: "+String(e?.message||e)+". Any successfully sent photos remain in your inbox.")}
  finally{inboxBusy=false;if(btn)btn.disabled=false}
 };
