@@ -226,7 +226,7 @@ function schoolAnalysis(x){
   if(score&&gradeThree&&atStart&&String(x.asOf||"").startsWith("2026")){
    meaning+=" Nebraska's 2026–27 beginning-of-third-grade benchmark is 332, so this result "+(score>=332?"meets":"does not meet")+" that benchmark"+(score>=332?" ("+(score-332)+" points above it).":".");
   }else if(/met goal/i.test(notes+" "+String(x.value||""))){meaning+=" The school report labels the result as meeting its goal.";}
-  const flu=notes.match(/(?:oral reading fluency|fluency)[:\s]+(\d{2,3})\s*(?:WCPM|words correct per minute)?/i);
+  const flu=notes.match(/oral reading fluency[:\s]+(\d{2,3})/i)||notes.match(/\b(?:ORF|words correct per minute)[:\s]+(\d{2,3})/i);
   const acc=notes.match(/(?:oral reading accuracy|accuracy)[:\s]+(\d{2,3})%/i);
   if(flu)meaning+=" The reading sample shows "+flu[1]+" correct words per minute"+(acc?" with "+acc[1]+"% accuracy":"")+".";
   const sounds=notes.match(/decoding letter sounds[:\s]+(\d+)/i),recoded=notes.match(/whole.word recoding[:\s]+(\d+)/i);
