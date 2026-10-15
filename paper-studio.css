@@ -49,7 +49,7 @@
 /* Three compact, independently browsable memory books for each child */
 .ps-book-shelves{display:grid;gap:19px;min-width:0}
 .ps-child-shelf{min-width:0;display:grid;gap:9px}
-.ps-child-shelf h3{font-size:1.03rem;font-weight:800;margin:0;padding-left:4px;letter-spacing:.01em;color:var(--text,#44334a)}
+.ps-child-shelf > h3{font-size:1.05rem;font-weight:850;margin:0;padding:8px 12px;letter-spacing:.02em;color:#263348 !important;background:#f7f2eb;border-left:4px solid #568873;border-radius:8px;text-shadow:none !important;opacity:1 !important;display:block}
 .ps-shelf-books{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;min-width:0;padding:5px 7px 10px 3px}
 .ps-shelf-books .ps-book{width:100%;min-width:0;min-height:132px;aspect-ratio:4/5;gap:7px;padding:9px 6px 10px 13px;border-width:1px}
 .ps-shelf-books .ps-book b{font-size:clamp(.72rem,2.9vw,.99rem);line-height:1.15;overflow-wrap:anywhere;font-family:Georgia,serif}
@@ -71,3 +71,11 @@
 .ps-school-doc{font-size:.81rem;border:1px solid #c4dfd0;border-radius:13px;padding:10px;background:#ecfaf3;color:#28594c;font-weight:800;cursor:pointer}
 @media(max-width:370px){.ps-shelf-books{gap:6px}.ps-shelf-books .ps-book{min-height:111px;padding:7px 5px 8px 9px}.ps-shelf-books .ps-book b{font-size:.72rem}.ps-shelf-books .ps-book-sparkle{font-size:1.3rem}}
 @media(min-width:650px){.ps-book-shelves{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.ps-shelf-books .ps-book{min-height:139px}}
+
+.ps-school-analysis{display:grid;gap:8px;border-top:1px dashed #cfcad7;padding-top:13px;margin-top:4px}
+.ps-school-analysis-block{display:grid;gap:5px;padding:10px 12px;border-radius:12px;background:#edf4fa;color:#26384a}
+.ps-school-analysis-block b{font-size:.81rem;color:#254563;letter-spacing:.02em}
+.ps-school-analysis-block p{font-size:.89rem;line-height:1.52;margin:0;white-space:pre-line;color:#283847}
+.ps-school-analysis-block.ps-school-practice{background:#eef8ed}
+.ps-school-analysis-block.ps-school-practice b{color:#2e5c38}
+.ps-school-analysis .ps-school-caution{font-size:.77rem;line-height:1.4;color:#665a65;padding:0 3px;margin:1px 0}
