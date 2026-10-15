@@ -4003,10 +4003,30 @@ async function quickHomeTask(task,area="Home"){
     state.petLogs.push({id:uid(),petId:"",type:"Litter",date:ymd(),time,value:"",notes:"Logged from Household cadence"});
   }
   await save();render();
+  if(typeof openHouseholdSection==="function")openHouseholdSection("cleaning");
 }
 function householdRoutineCard(){
-  const routines=[["Clean litter boxes","Cats"],["Clean toilets","Bathroom"],["Run robot vacuum","Floors"],["Clean refrigerator","Kitchen"],["Laundry reset","Laundry"],["Dishes / sink reset","Kitchen"],["Kids room reset","Kids rooms"]];
-  return `<div class="card household-cadence-card"><div class="section-title"><div><div class="eyebrow">⌂ Household cadence</div><h2>Track it — don’t remind me</h2></div><button class="btn" onclick="openHome()">Detailed log</button></div><div class="muted small">Daily Life learns the interval between your actual completed logs. It describes your pattern; it does not create reminders.</div>${routines.map(([task,area])=>{const age=homeTaskAge(task),last=lastHomeTask(task),cadence=homeTaskCadence(task);return `<div class="row cadence-row"><span class="grow"><b>${esc(task)}</b><div class="muted small">${last?(age===0?"Done today":age+" day"+(age===1?"":"s")+" ago"):"Not logged yet"} · ${esc(cadence.label)}</div>${cadence.samples>=2?`<div class="cadence-learning"><span class="tag">${esc(cadence.stateLabel)}</span><small>${cadence.samples} interval${cadence.samples===1?"":"s"} learned · recent range ${cadence.min}–${cadence.max} days</small></div>`:`<div class="muted small">Log ${Math.max(0,3-cadence.dates.length)} more completion${Math.max(0,3-cadence.dates.length)===1?"":"s"} to establish a steadier pattern.</div>`}</span><button class="btn small good" onclick="quickHomeTask('${task.replace(/'/g,"&#39;")}','${area}')">Done</button></div>`}).join("")}</div>`;
+ const routines=[["Clean litter boxes","Cats"],["Clean toilets","Bathroom"],["Run robot vacuum","Floors"],["Clean refrigerator","Kitchen"],["Laundry reset","Laundry"],["Dishes / sink reset","Kitchen"],["Kids room reset","Kids rooms"]];
+ const today=ymd(),already=routines.filter(([name])=>lastHomeTask(name)?.date===today),open=routines.filter(([name])=>lastHomeTask(name)?.date!==today);
+ const first=open[0],lastDone=already.map(([name])=>name);
+ const chosen=first?`<div class="cadence-next"><div class="eyebrow">OPTIONAL NEXT RESET</div><h2>${esc(first[0])}</h2>
+ <p>Check whether this actually needs doing. If it does, complete it and then record it.</p>
+ <button class="btn primary" onclick="quickHomeTask('${first[0]}','${first[1]}')">✓ Done — log it</button>
+ <button class="btn" onclick="openHome()">Choose a different task</button></div>`:
+ `<div class="cadence-next"><div class="eyebrow">RECORDED TODAY</div><h2>All listed resets logged today</h2><p>Nothing else is required by this list.</p></div>`;
+ const details=routines.map(([task,area])=>{
+  const last=lastHomeTask(task),age=homeTaskAge(task),complete=last?.date===today,cadence=homeTaskCadence(task);
+  return `<div class="cadence-compact-row"><div><b>${esc(task)}</b><small>${complete?"✓ Logged today":last?"Last logged "+age+" day"+(age===1?"":"s")+" ago":"No completion recorded"}</small></div>`+
+  (complete?'<span class="cadence-completed">✓</span>':`<button class="btn small good" onclick="quickHomeTask('${task}','${area}')">Done</button>`)+
+  (cadence.samples>=2?`<small class="cadence-pattern">${esc(cadence.label)} · observed, not a deadline</small>`:"")+'</div>';
+ }).join("");
+ return `<section class="card household-cadence-card cadence-directive">
+ <div class="section-title"><div><div class="eyebrow">⌂ CLEANING + RESETS</div><h2>${already.length?already.length+" reset"+(already.length===1?"":"s")+" recorded today":"Choose just one useful reset"}</h2></div><button class="btn small" onclick="openHome()">+ Log</button></div>
+ ${chosen}
+ ${lastDone.length?`<div class="cadence-wins"><b>✓ Recorded today</b><span>${lastDone.map(esc).join(" · ")}</span></div>`:""}
+ <details class="cadence-more"><summary>All cleaning options · ${routines.length} <span>⌄</span></summary><div>${details}</div></details>
+ <p class="muted small">A missing log does not mean you skipped something. Past intervals are reference information, not automatic cleaning deadlines.</p>
+ </section>`;
 }
 function trendDates(days=7){const out=[];const d=new Date();for(let i=days-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}return out}
 function trendBar(value,max,label,display){
@@ -4263,12 +4283,11 @@ function tireHistoryCard(tr){
   </div>`;
 }
 function homeCareCard(){
-  const task="Clean refrigerator",last=lastHomeTask(task),days=homeTaskAge(task),cadence=homeTaskCadence(task);
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">⌂ Home care</div><h2>${days==null?"No fridge baseline":days+" days since fridge clean"}</h2></div><button class="btn" onclick="openHome()">+ Log</button></div>
-    <div class="home-cadence-highlight"><b>${esc(cadence.label)}</b><span>${cadence.samples>=2?esc(cadence.stateLabel):"Keep logging and Daily Life will learn the interval."}</span></div>
-    <div class="muted small">${last?`Last fridge clean ${dl(last.date)}`:"Log a fridge clean to start learning the interval."}</div>
-    ${state.homeLogs.slice().filter(x=>x.status==="done").sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,6).map(x=>`<div class="row"><span>${esc(x.area)} · ${esc(x.task)}</span><b>${esc(dl(x.date))}</b></div>`).join("")}
-  </div>`;
+ const task="Clean refrigerator",last=lastHomeTask(task),days=homeTaskAge(task),cadence=homeTaskCadence(task);
+ const recent=[...(state.homeLogs||[])].filter(x=>x.status==="done").sort((a,b)=>(String(b.date||"")+String(b.time||"")).localeCompare(String(a.date||"")+String(a.time||""))).slice(0,6);
+ return `<div class="card home-care-compact"><div class="section-title"><div><div class="eyebrow">⌂ CLEANING HISTORY</div><h2>What you have recorded</h2></div><button class="btn small" onclick="openHome()">+ Log</button></div>
+ <p class="muted small">${last?"Fridge last logged "+esc(dl(last.date)):"No fridge cleaning date saved"}. ${cadence.samples>=2?esc(cadence.label)+".":"No interval estimate yet."} This is not a deadline.</p>
+ <details><summary>Recent household logs · ${recent.length}</summary><div>${recent.map(x=>`<div class="row"><span>${esc(x.area||"Home")} · ${esc(x.task||"Task")}</span><small>${esc(dl(x.date))}</small></div>`).join("")||"<p>Nothing logged yet.</p>"}</div></details></div>`;
 }
 function daysSinceDate(date){
   if(!date)return null;
@@ -5622,7 +5641,7 @@ function householdHomeLogCard(){
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Home log</div><h2>What has actually been done</h2><div class="muted small">Completion dates help Daily Life learn realistic household cadence.</div></div><button class="btn primary" onclick="openHome()">+ Log</button></div>${rows.map(x=>`<div class="row"><span><b>${esc(x.task||"Home care")}</b><div class="muted small">${esc(dl(x.date))}${x.area?" · "+esc(x.area):""}${x.notes?" · "+esc(x.notes):""}</div></span><b>${x.status==="done"?"✓":""}</b></div>`).join("")||`<div class="notice">No home-care completions logged yet.</div>`}</div>`;
 }
 function householdCleaningCard(){
-  return `${typeof homeResetDashboard==="function"?homeResetDashboard():""}${householdRoutineCard()}${homeCareCard()}`;
+  return `${householdRoutineCard()}<details class="household-extra-diagnostics"><summary>Room resets + cleaning history</summary><div>${typeof homeResetDashboard==="function"?homeResetDashboard():""}${homeCareCard()}</div></details>`;
 }
 function openHouseholdSection(section){
   if(section==="map"){inventoryTab="map";localStorage.setItem("dailyLifeInventoryTab","map");openInventoryHubSection("map");return}
