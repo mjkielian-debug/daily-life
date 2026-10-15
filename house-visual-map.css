@@ -1,0 +1,33 @@
+/* Schematic house map: useful before full photographic room survey. */
+.hvm-root{width:100%;min-width:0;margin:8px 0}
+.hvm-sketch,.hvm-level{border:1px solid #d3bfda;border-radius:20px;background:linear-gradient(145deg,#fffaff,#edf7ff);padding:12px;box-shadow:0 3px 12px #624c7814;color:#41384c}
+.hvm-sketch-heading{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.hvm-sketch-heading strong{font-size:1.05rem}
+.hvm-sketch-heading span{font-size:.78rem;color:#6a5874}
+.hvm-drawing{display:block;width:100%;max-width:440px;height:auto;margin:4px auto;overflow:visible}
+.hvm-zone{cursor:pointer;transition:filter .15s}
+.hvm-zone:hover{filter:brightness(.95)}
+.hvm-zone:focus-visible{outline:none;filter:drop-shadow(0 0 3px #473a9b)}
+.hvm-zone:focus-visible path{stroke:#5d358a;stroke-width:5}
+.hvm-room-name{font-size:16px;fill:#333049;font-weight:850;pointer-events:none}
+.hvm-room-sub{font-size:10px;fill:#443d57;font-weight:650;pointer-events:none}
+.hvm-entry-label{font-size:10px;fill:#443d57;font-weight:800}
+.hvm-door-symbol{font-size:27px;fill:#423d58}
+.hvm-disclaimer{font-size:.79rem;line-height:1.45;color:#67566f;margin:8px 3px 0}
+.hvm-level{min-height:175px}
+.hvm-level-top{display:flex;align-items:start;gap:12px}
+.hvm-level-top b{font-size:1.02rem}
+.hvm-level-top p{font-size:.86rem;margin:4px 0;line-height:1.5}
+.hvm-level-emoji{font-size:2.5rem;color:#8b71a1}
+.hvm-level-hints{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.hvm-level-hints span{border:1px solid #d4c0e3;background:#fff8fd;color:#4b3d59;border-radius:12px;padding:7px 9px;font-size:.78rem}
+.hvm-reference-disclosure{border:1px solid #dfd1e1;border-radius:15px;padding:8px 10px;background:#fffafc}
+.hvm-reference-disclosure>summary{cursor:pointer;font-size:.86rem;font-weight:800;color:#5b476c;min-height:34px;display:flex;align-items:center}
+.hvm-reference-disclosure .pi-map-image{margin-top:8px}
+.pi-form-optional{border:1px solid #e3d2e4;border-radius:13px;padding:9px;background:#fff6fd}
+.pi-form-optional summary{font-weight:800;cursor:pointer;color:#4c3c59;min-height:42px;display:flex;align-items:center}
+.pi-form-optional-fields{display:grid;gap:10px;padding:8px 0}
+.pi-quick-upload{display:grid;gap:9px}
+.pi-quick-upload>label{display:grid;gap:5px}
+.pi-review-guidance{font-size:.84rem;line-height:1.5;color:#57435e;margin:2px 0}
+@media(max-width:420px){.hvm-sketch{padding:7px}.hvm-room-name{font-size:15px}}
