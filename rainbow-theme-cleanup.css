@@ -1,0 +1,54 @@
+/* Daily Life rainbow theme — October 15, 2026.
+   Final override, intentionally loaded AFTER all old botanical-era styles.
+   Light surfaces + readable ink; mint may remain as a pastel rainbow accent, never as a dark surface. */
+:root{
+ --bg:#fff7fb;
+ --panel:#fffafd;
+ --panel2:#f6e8f4;
+ --text:#34273e;
+ --muted:#5b4c68;
+ --cream:#34273e;
+ --border:#cba6c1;
+ --success:#5c6f98;
+ --shadow:0 10px 26px rgba(72,47,91,.10),0 3px 8px rgba(72,47,91,.06);
+}
+html{
+ background:#f6dbe9!important;
+ color-scheme:light!important;
+ min-height:100%;
+}
+body{
+ background-color:#f6dbe9!important;
+ color-scheme:light!important;
+}
+/* Ensure the viewport outside the app content (including Android safe-area underlays) is blush, never green. */
+body::before{background-color:transparent}
+#app,.app{color:#34273e}
+#app :is(.bottom-nav,.people-tabs,.self-care-tabs){
+ background:#f7e5f1!important;
+ border-color:#bd91b0!important;
+}
+#app :is(.navbtn,.bottom-nav button){color:#493954}
+#app :is(.navbtn.active,.people-tabs button.active,.self-care-tabs button.active){
+ background:linear-gradient(135deg,#f3a9c6,#e7cdf0,#b6d8ed)!important;
+ color:#372b43!important;
+ border-color:#b98dab!important;
+}
+/* The old theme hard-coded deep forest-gradient cards. Keep those areas readable and bright. */
+#app :is(.tarot-card-back,.tarot-card-shell .tarot-card-back){
+ background:radial-gradient(circle at 40% 24%,rgba(248,210,235,.85),transparent 55%),
+ linear-gradient(145deg,#ecd9f3,#ffdce8 52%,#f6e8c8)!important;
+ border-color:#b99ccf!important;
+ color:#34273e!important;
+}
+#app .tarot-card-back :is(b,small,.tarot-symbol,.tarot-back-botanical){color:#493b60!important}
+#app :is(.bill-status.covered,.state.have,.btn.good){
+ color:#493954!important;
+ background:#dff2e8!important;
+ border-color:#a6cbbb!important;
+}
+#app .school-kid b,#app .ps-school-score{color:#523f60!important}
+#app .ps-child-shelf > h3{color:#263348!important;background:#f7f2eb!important}
+@media(display-mode:standalone){
+ html,body{background-color:#f6dbe9!important}
+}
