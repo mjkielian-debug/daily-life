@@ -163,5 +163,27 @@ window.photoInboxLoadFloor=async function(f){
  const img=document.createElement("img");img.alt=f+" reference image";img.src=data[0].image_data;
  current.replaceChildren(img);
 };
+
+window.houseMapInlineHtml=function(){
+ const rooms=state.houseRooms||[];
+ return '<div class="pi-house-inline"><h3>⌂ Your home, floor by floor</h3>'+
+ '<p class="pi-muted">Start with the robot-vacuum screenshot for the first floor. We can trace it together and confirm each room’s shape and storage locations rather than guessing.</p>'+
+ '<div class="pi-inline-floor-grid">'+FLOORS.map((f,i)=>{
+ const count=rooms.filter(r=>r.floor===f).length;
+ return '<button onclick="openHouseFloorMap(\''+f+'\')"><span class="pi-floor-glyph">'+["▱","⌂","▤","△"][i]+'</span><b>'+f+'</b><small>'+count+' room'+(count===1?"":"s")+' · view map</small></button>';
+ }).join("")+'</div>'+
+ '<div class="pi-inline-reference" id="piInlineReference"><span class="pi-muted">First-floor reference image will appear here after you upload it.</span></div>'+
+ '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'house_map\')">📷 Add robot map / room photos</button><button class="btn" onclick="openHomeAreaProjects()">🧹 Work on an area</button></div></div>';
+};
+window.photoInboxLoadInlineMap=async function(){
+ const el=document.getElementById("piInlineReference");if(!el||!cloudReady())return;
+ const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title")
+  .eq("category","house_map").eq("floor_label","First floor")
+  .order("created_at",{ascending:false}).limit(1);
+ const current=document.getElementById("piInlineReference");if(!current)return;
+ if(error){current.textContent="Unable to load the first-floor reference.";return}
+ if(!data?.length){current.innerHTML='<span class="pi-muted">No first-floor image yet. Upload the robot-vacuum map or a sketch to show it here.</span>';return}
+ const img=document.createElement("img");img.alt="First-floor reference photo";img.src=data[0].image_data;current.replaceChildren(img);
+};
 window.photoInboxStatus=function(){return cloudReady()?"ready":"sign-in-required"};
 })();
