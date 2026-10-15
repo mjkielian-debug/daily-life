@@ -5785,13 +5785,15 @@ function openInventoryItem(id=""){
     <label>Ideal quantity to keep (optional)<input id="invgoal" type="number" min="0" step="1" value="${x.targetQty===null||x.targetQty===undefined?"":Number(x.targetQty)}" placeholder="Your goal, not a required number"></label>
     <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
     <label>Status<select id="invstatus">${["Have","Low","Need","Stored","Lent out","Donate / sell","Gone"].map(v=>`<option ${String(x.status||"Have")===v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>What should happen with this item?<select id="invDecision">${[["review","Decide later"],["keep","Keep + organize"],["use_up","Use up what I have"],["donate","Donate"],["sell","Sell"],["recycle","Recycle appropriately"],["replace_later","Replace only when used up"]].map(([k,v])=>`<option value="${k}" ${String(x.organizingDecision||"review")===k?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Better replacement criteria for later (optional)<textarea id="invReplacement" rows="2" placeholder="Price cap, scent, ingredients, quality, refillability…">${esc(x.replacementCriteria||"")}</textarea></label>
     <label>Notes<textarea id="invnotes" rows="3">${esc(x.notes||"")}</textarea></label>
     ${x.id?`<button type="button" class="btn danger" onclick="removeInventoryItem('${x.id}')">Remove item</button>`:""}
   </div>`,"Save",async()=>{
     const name=$("#invname").value.trim();if(!name)return;
     const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
     let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
-    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),updatedAt:new Date().toISOString()});
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),updatedAt:new Date().toISOString()});
     await save();closeModal();render();
   });
 }
