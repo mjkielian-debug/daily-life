@@ -254,3 +254,16 @@
 #modal .event-detail-sheet .event-detail-field b{display:block!important;font-size:.83rem!important;color:#945b80!important}
 #modal .event-detail-sheet .event-detail-field span{display:block!important;line-height:1.45!important;color:#392b42!important;overflow-wrap:anywhere!important}
 #modal .event-detail-sheet h2{font-size:clamp(1.35rem,5vw,2rem)!important;line-height:1.2!important}
+
+/* Oct 15: protect legibility and keep non-practice paper fields out of view. */
+#modal .modal:has(#psTitle) [hidden]{display:none!important}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .ps-editor>label,
+#modal .modal:has(:is(#ibtitle,#psTitle)) .ps-extra-fields label{
+  color:#403048!important;-webkit-text-fill-color:#403048!important;
+  opacity:1!important;text-shadow:none!important;font-weight:800!important
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) :is(input:not([type="checkbox"]),select,textarea){
+  background:#fffdfd!important;color:#292331!important;-webkit-text-fill-color:#292331!important
+}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .ps-editor{gap:10px!important}
+#modal .modal:has(:is(#ibtitle,#psTitle)) .ps-editor>label{gap:5px!important}
