@@ -129,3 +129,59 @@
   #app .dl-guided-progress .dl-stats .dl-stat{padding:5px!important;gap:5px!important}
   #app .dl-guided-progress .dl-stat-copy strong{font-size:.69rem!important}
 }
+
+/* Guided10: prioritize instructions over decorative status. */
+#app .dl-heading .dl-kicker{font-size:.66rem!important}
+#app .dl-heading h1{font-size:1.18rem!important}
+#app .dl-command-center .dl-hero{padding:12px 14px!important}
+#app .dl-hero h2{overflow-wrap:anywhere}
+#app .dl-hero-text>small{
+  white-space:normal!important;
+  overflow:visible!important;
+  max-height:none!important;
+  text-overflow:clip!important;
+  line-height:1.28!important;
+}
+#app .dl-verification-note{
+  display:inline-flex;
+  align-items:center;
+  font-size:.67rem;
+  line-height:1.2;
+  color:#694b5d!important;
+  font-weight:700;
+  padding:4px 2px;
+}
+#app .dl-other-tasks{
+  border:1px solid #d6bbcc!important;
+  border-radius:999px;
+  background:rgba(255,255,255,.60)!important;
+  color:#764663!important;
+  font-size:.68rem!important;
+  font-weight:800;
+  min-height:34px!important;
+  padding:6px 11px!important;
+}
+#app .dl-optional-review .dl-home-goal-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  min-height:42px;
+  padding:9px 11px;
+  border:1px solid #e4c9d6;
+  border-radius:15px;
+  background:rgba(255,255,255,.76);
+  text-align:left;
+  color:#61415a!important;
+  font-size:.69rem;
+  line-height:1.2;
+  font-weight:750;
+}
+#app .dl-home-goal-link span{font-size:1rem}
+@media(max-width:370px){
+  #app .dl-hero-actions{gap:5px}
+  #app .dl-hero-actions .dl-primary{flex:1 1 130px}
+  #app .dl-verification-note{font-size:.62rem}
+  #app .dl-other-tasks{min-height:30px!important}
+}
