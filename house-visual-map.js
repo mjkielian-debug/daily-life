@@ -24,20 +24,25 @@ function facts(m){
  '<div><b>✓ Confirmed</b>'+b.map(t=>'<p>'+h(t)+'</p>').join("")+'</div>'+
  '<div><b>○ To verify</b>'+n.map(t=>'<p>'+h(t)+'</p>').join("")+'</div></div></details>';
 }
-function first(m){
+function mapSketch(f,m){
+ const isFirst=f==="First floor";
+ const viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503";
+ const limits=viewBox.split(" ").map(Number);
  const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).map(z=>{
-  const n=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act("First floor",z);
+  const x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
   return '<g class="hvm-zone" role="button" tabindex="0" onclick="'+onclick+
-  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="View '+h(z.name)+'">'+
+  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+'">'+
   '<path d="'+h(z.path)+'" fill="'+color(z.color)+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
-  '<text class="hvm-room-name" text-anchor="middle" x="'+Math.max(0,Math.min(375,n))+'" y="'+Math.max(0,Math.min(500,y))+'">'+h(z.short||z.name)+'</text></g>';
+  '<text class="hvm-room-name" text-anchor="middle" x="'+Math.max(limits[0],Math.min(limits[0]+limits[2],x))+'" y="'+Math.max(limits[1],Math.min(limits[1]+limits[3],y))+'">'+h(z.short||z.name)+'</text></g>';
  }).join("");
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>First-floor layout</strong><span>Tap a colored room</span></div>'+
- '<svg class="hvm-drawing" viewBox="0 0 380 503" role="group" aria-label="Approximate first-floor map based on the robot-vacuum image; not to scale">'+
- '<rect x="16" y="9" width="348" height="480" rx="18" fill="#faf7fb" stroke="#d7cede" stroke-width="2"/>'+
- paths+'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
- '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text></svg>'+
- '<p class="hvm-disclaimer">Shapes are approximate, preserving the robot map orientation. Open any room to see confirmed landmarks and photos.</p></div>';
+ const backing=isFirst?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#faf7fb" stroke="#d7cede" stroke-width="2"/>':
+ '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
+ const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
+ '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>Tap a colored area</span></div>'+
+ '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram based on the original robot-vacuum screenshot. Not measured.">'+
+ backing+paths+entry+'</svg>'+
+ '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
 }
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(m.title||f)+'</strong><small>Room directory · not floor geometry</small></div>'+
@@ -53,8 +58,10 @@ function draw(f,m){
  const work=arr(m.flow).map(x=>'<div class="hvm-flow-line"><b>'+h(x.from)+'</b><span>→</span><b>'+h(x.to)+'</b>'+
  '<small>'+h(x.status)+'</small></div>').join("");
  const todo=arr(m.pending)[0];
- return '<div class="hvm-rendered">'+(f==="First floor"&&m.kind==="schematic"?first(m):directory(f,m))+
+ const original=okPhoto(m.sourcePhotoId)?'<button type="button" class="btn hvm-source-photo" onclick="photoInboxView(&#39;'+m.sourcePhotoId+'&#39;,&#39;map&#39;)">📷 See original robot-vacuum screenshot</button>':"";
+ return '<div class="hvm-rendered">'+(m.kind==="schematic"?mapSketch(f,m):directory(f,m))+
  '<p class="hvm-disclaimer">'+h(m.summary||"")+'</p>'+
+ original+
  (work?'<section class="hvm-flow"><strong>↗ Where things went</strong>'+work+'</section>':"")+
  (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
  '<button class="btn primary small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;)">+ Add room photos</button></div>':"")+
