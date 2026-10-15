@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided10",
+  "build": "20261015-guided11",
   "released": "2026-10-15",
-  "ui": "Clear next step, safer confirmation, optional home goals",
+  "ui": "Safe update checker detects published releases and preserves offline/local data",
   "data_version": "local-first data unchanged"
 }
