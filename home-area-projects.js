@@ -8,30 +8,68 @@ function uidOk(id){return /^[a-f0-9-]{36}$/i.test(String(id||""))}
 function areaStatus(s){return ({not_started:"Not started",in_progress:"Working on it",paused:"Paused",complete:"Complete"})[s]||"Not started"}
 function areaSelect(value){return AREA_FLOORS.map(f=>'<option '+(f===value?"selected":"")+'>'+esc(f)+'</option>').join("")}
 function n(v){return Number.isFinite(Number(v))&&v!==null&&v!==""?Number(v):null}
+function areaMilestones(phases){
+ const set=phases||new Set(),labels=[["before","Before"],["progress","During"],["after","After"]];
+ return '<div class="ha-stage-strip" aria-label="Photo milestone evidence">'+labels.map(([id,label])=>
+  '<span class="ha-stage '+(set.has(id)?"evidenced":"not-recorded")+'"><b>'+(set.has(id)?"✓":"○")+'</b>'+label+
+  '<small>'+(set.has(id)?"photo saved":"not recorded")+'</small></span>').join("")+'</div>';
+}
+function areaNext(x){return String(x.next_step||"").trim()||"Take one photo of this area so we can choose its first small action."}
+function areaFocus(x,phases){
+ const p=n(x.progress_percent),mins=n(x.estimated_minutes_remaining),done=x.status==="complete",id=x.id;
+ return '<section class="ha-focused" aria-label="Next home area action"><div class="ha-focused-head"><div>'+
+  '<span class="ha-kicker">'+(done?"AREA RECORDED COMPLETE":"YOUR NEXT HOME STEP")+'</span>'+
+  '<h2>'+esc(x.area_name)+'</h2><small>'+esc(x.floor_label||"Floor not set")+' · '+esc(areaStatus(x.status))+'</small></div>'+
+  '<div class="ha-status-dot" aria-label="'+esc(areaStatus(x.status))+'">'+(done?"✓":"⌂")+'</div></div>'+
+  '<div class="ha-do-next">'+(done?'<strong>✓ Marked complete</strong><p>Reopen the plan to add a future touch-up if needed.</p>':
+   '<strong>Do next</strong><p>'+esc(areaNext(x))+'</p>')+'</div>'+
+  areaMilestones(phases)+
+  '<p class="ha-honest-estimate">'+(p===null?"Area percentage not assessed":p+"% estimated by "+esc(x.estimate_basis||"a prior review"))+
+  ' · '+(mins===null?"Time needed not estimated":"About "+mins+" min estimated remaining")+'</p>'+
+  '<div class="ha-focused-buttons"><button class="btn primary" onclick="homeAreaPhotos(\''+id+'\')">See photo progress ›</button>'+
+  '<button class="btn" onclick="openPhotoInbox(\'home_progress\',\''+id+'\')">+ Send an update</button>'+
+  '<button class="btn" onclick="homeAreaEdit(\''+id+'\')">Edit next step</button></div></section>';
+}
 window.openHomeAreaProjects=async function(){
  if(!online()){
   modal("🧹 Areas we’re improving",'<p class="muted">Sign in to Daily Life cloud to keep photo histories and your progress estimates private.</p><button class="btn primary" onclick="openCloudAuth()">Sign in to cloud</button>',"Close",closeModal);return
  }
- modal("🧹 Home improvement progress",'<div class="pi-main">'+
- '<div class="pi-help"><b>Before → small steps → progress photos</b><p>Create one project for a problem area. Take a before photo, ask ChatGPT to review, then repeat with progress photos. Percent complete and time remaining are estimates that we update together, never silently assumed by the app.</p></div>'+
- '<div class="pi-map-actions"><button class="btn primary" onclick="homeAreaEdit()">+ New area</button><button class="btn" onclick="openPhotoInbox(\'home_progress\')">📷 Upload progress</button></div>'+
- '<div id="homeAreaList"><p class="pi-muted">Loading cleanup areas…</p></div></div>',"Close",closeModal);
+ modal("🧹 Home progress",'<div class="pi-main ha-main">'+
+ '<div id="homeAreaList"><p class="pi-muted">Loading your next house action…</p></div></div>',"Close",closeModal);
  const {data,error}=await cloudClient.from("home_area_projects")
   .select("id,area_name,floor_label,location_notes,status,progress_percent,estimated_minutes_remaining,estimate_basis,next_step,destination_notes,updated_at")
   .order("updated_at",{ascending:false}).limit(100);
  const el=document.getElementById("homeAreaList");if(!el)return;
  if(error){el.textContent="Could not load areas: "+error.message;return}
- el.innerHTML=(data||[]).map(x=>{
-  const p=n(x.progress_percent),mins=n(x.estimated_minutes_remaining),id=x.id;
-  return '<div class="pi-area-card"><div class="pi-area-head"><div><b>'+esc(x.area_name)+'</b><small>'+esc(x.floor_label||"Floor not set")+' · '+esc(areaStatus(x.status))+'</small></div><strong>'+ (p===null?"Unestimated":p+"%")+'</strong></div>'+
-   '<div class="pi-meter"><i style="width:'+(p===null?0:Math.max(0,Math.min(100,p)))+'%"></i></div>'+
-   '<p class="pi-muted">'+(mins===null?"Time remaining: not estimated yet":"Est. "+mins+" minutes left")+(x.estimate_basis?" · "+esc(x.estimate_basis):"")+'</p>'+
-   '<div class="pi-area-next"><b>Do next</b><span>'+esc(x.next_step||"Take a before photo and ask me to make a small, specific cleanup plan.")+'</span></div>'+
-   (x.destination_notes?'<div class="pi-muted">Where things belong: '+esc(x.destination_notes)+'</div>':"")+
-   '<div class="pi-map-actions"><button class="btn small primary" onclick="openPhotoInbox(\'home_progress\',\''+id+'\')">📸 Add progress</button>'+
-   '<button class="btn small" onclick="homeAreaPhotos(\''+id+'\')">Photo timeline</button>'+ 
-   '<button class="btn small" onclick="homeAreaEdit(\''+id+'\')">Edit plan</button></div></div>';
- }).join("")||'<p class="pi-muted">No cleanup projects yet. Start with one area, even a single counter or shelf.</p>';
+ const rows=(data||[]).filter(x=>uidOk(x.id));
+ const phases=new Map();
+ if(rows.length){
+  // Metadata only: photos stay owner-private; no image bytes downloaded until requested.
+  const photos=await cloudClient.from("photo_inbox").select("area_id,phase").in("area_id",rows.map(x=>x.id)).limit(500);
+  if(!photos.error){for(const x of photos.data||[]){
+   if(!phases.has(x.area_id))phases.set(x.area_id,new Set());
+   if(["before","progress","after"].includes(x.phase))phases.get(x.area_id).add(x.phase);
+  }}
+ }
+ const current=document.getElementById("homeAreaList");if(!current)return;
+ if(!rows.length){
+  current.innerHTML='<div class="ha-focused"><h2>Choose one small spot</h2><p>Start with a surface you want to clear. One photo is enough to begin.</p>'+
+   '<button class="btn primary" onclick="homeAreaEdit()">+ Start an area</button>'+
+   '<button class="btn" onclick="openPhotoInbox(\'home_progress\')">📷 Send a photo</button></div>';
+  return;
+ }
+ // Only user-marked complete is complete; photo phases alone never imply it.
+ const ordered=[...rows].sort((a,b)=>(a.status==="complete"?1:0)-(b.status==="complete"?1:0));
+ const focus=ordered[0],rest=ordered.slice(1);
+ current.innerHTML=areaFocus(focus,phases.get(focus.id))+
+ '<div class="ha-handoff"><b>One area at a time</b><small>Photo labels describe evidence; no automatic completion percentages or assumptions about things being put away.</small></div>'+
+ (rest.length?'<details class="ha-other-areas"><summary>Other areas <b>'+rest.length+'</b></summary><div class="ha-other-items">'+
+  rest.map(x=>'<div class="ha-other-row"><div><strong>'+esc(x.area_name)+'</strong>'+
+  '<small>'+esc(areaStatus(x.status))+' · '+esc(x.floor_label||"")+'</small></div>'+
+  '<button type="button" class="btn small" onclick="homeAreaPhotos(\''+x.id+'\')">Photos</button>'+
+  '<button type="button" class="btn small" onclick="homeAreaEdit(\''+x.id+'\')">Plan</button></div>').join("")+'</div></details>':"")+
+ '<div class="ha-add-area"><button class="btn" onclick="homeAreaEdit()">+ New area</button>'+
+ '<button class="btn" onclick="openPhotoInbox(\'home_progress\')">📷 Send an unassigned photo</button></div>';
 };
 window.homeAreaEdit=async function(id=""){
  if(!online())return;
