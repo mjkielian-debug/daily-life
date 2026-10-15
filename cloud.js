@@ -1454,6 +1454,17 @@ function cloudApplyLifeEntry(row){
       let x=state.peopleProfiles.find(x=>String(x.name||"").toLowerCase()===name.toLowerCase());
       if(!x){x={id:uid(),name,wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
       for(const key of ["relationship","birthday","giftNotes","routineNotes"])if(p[key]!==undefined)x[key]=String(p[key]||"");
+      // Keep familiar display names (e.g. Dolly) while recognizing full names on
+      // school paperwork. Do not replace the profile or clear existing aliases.
+      if(p.fullName!==undefined&&String(p.fullName||"").trim())x.fullName=String(p.fullName).trim();
+      if(p.schoolName!==undefined&&String(p.schoolName||"").trim())x.schoolName=String(p.schoolName).trim();
+      const incomingAliases=[...(Array.isArray(p.aliases)?p.aliases:[]),p.fullName].map(v=>String(v||"").trim()).filter(Boolean);
+      if(incomingAliases.length){
+        const known=new Set((Array.isArray(x.aliases)?x.aliases:[]).map(v=>String(v||"").trim()).filter(Boolean));
+        const normalized=new Set([...known].map(v=>v.toLowerCase()));
+        for(const alias of incomingAliases)if(alias.toLowerCase()!==name.toLowerCase()&&!normalized.has(alias.toLowerCase())){known.add(alias);normalized.add(alias.toLowerCase())}
+        x.aliases=[...known];
+      }
       for(const key of ["favoriteColors","favoriteCharacters","favoriteFoods","interests"])if(Array.isArray(p[key]))x[key]=p[key].map(String);
       if(p.sizes&&typeof p.sizes==="object")x.sizes={...(x.sizes||{}),...p.sizes};
       if(Array.isArray(p.importantDates))x.importantDates=p.importantDates;
