@@ -7893,7 +7893,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261015-guided10";
+const DAILY_LIFE_BUILD="20261015-guided11";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -7906,35 +7906,54 @@ function openAppUpdateTools(){
 }
 async function dailyLifeRefreshShell(){
  const status=document.getElementById("dailyLifeRefreshStatus");
- function say(s){if(status)status.textContent=s}
- if(!navigator.onLine){say("You appear to be offline. Connect to the internet before checking for updates.");return}
- say("Checking published Daily Life version…");
+ const say=value=>{if(status)status.textContent=value};
+ if(!navigator.onLine){say("You're offline. Reconnect before checking for a new version.");return}
+ say("Checking the published Daily Life files…");
  try{
-  const resp=await fetch("./release.json?check="+Date.now(),{cache:"no-store",credentials:"same-origin"});
-  if(!resp.ok)throw new Error("The published version cannot be verified (HTTP "+resp.status+").");
-  const data=await resp.json();
-  if(!data||data.build!==DAILY_LIFE_BUILD){
-   say("The live website has not published the latest build yet, or this shortcut opens another copy of Daily Life. No data or caches were changed. Tell ChatGPT the version shown here.");
+  const stamp=String(Date.now());
+  // Check the same origin and installation scope; never switch to another
+  // hostname because IndexedDB and local photos are origin-specific.
+  const releaseUrl=new URL("./release.json",location.href);
+  releaseUrl.searchParams.set("dl_check",stamp);
+  const releaseResponse=await fetch(releaseUrl.href,{cache:"no-store",credentials:"same-origin"});
+  if(!releaseResponse.ok)throw new Error("Version check failed (HTTP "+releaseResponse.status+").");
+  const published=await releaseResponse.json();
+  const remoteBuild=String(published&&published.build||"");
+  if(!/^20[0-9]{6}-[a-z][a-z0-9-]{1,50}$/i.test(remoteBuild)){
+   say("Published version information was not recognizable. Your app and data were not changed.");return;
+  }
+  const indexUrl=new URL("./index.html",location.href);
+  indexUrl.searchParams.set("dl_check",stamp);
+  const indexResponse=await fetch(indexUrl.href,{cache:"no-store",credentials:"same-origin"});
+  if(!indexResponse.ok)throw new Error("The new app page is not ready (HTTP "+indexResponse.status+").");
+  const html=await indexResponse.text();
+  const embedded=html.match(/const\\s+DAILY_LIFE_BUILD\\s*=\\s*["']([^"']+)["']/);
+  const pageBuild=embedded&&embedded[1]||"";
+  if(remoteBuild!==pageBuild){
+   say("The website is still finishing its update (version "+remoteBuild+", page "+(pageBuild||"not ready")+"). Try again in a minute. Nothing was changed.");
    return;
   }
-  say("Latest build confirmed. Refreshing only the app files; your personal records stay intact…");
-  if("serviceWorker" in navigator){
-   const registrations=await navigator.serviceWorker.getRegistrations();
-   await Promise.all(registrations.filter(reg=>{
-    try{
-     const sw=reg.active||reg.waiting||reg.installing;
-     return !!sw&&new URL(sw.scriptURL).pathname===new URL("./sw.js",location.href).pathname&&reg.scope===new URL("./",location.href).href;
-    }catch(_){return false}
-   }).map(reg=>reg.unregister()));
+  const order=build=>{
+   const match=build.match(/^(20[0-9]{6})-guided([0-9]+)$/);
+   return match?Number(match[1])*10000+Number(match[2]):null;
+  };
+  const newer=order(remoteBuild),current=order(DAILY_LIFE_BUILD);
+  if(newer!==null&&current!==null&&newer<current){
+   say("This website is serving an older version ("+remoteBuild+") than the app on your phone ("+DAILY_LIFE_BUILD+"). No changes were made.");
+   return;
   }
-  if("caches" in window){
-   const names=await caches.keys();
-   await Promise.all(names.filter(k=>k.startsWith("daily-life-shell-")).map(k=>caches.delete(k)));
-  }
-  const url=new URL(location.href);
-  url.searchParams.set("dl_refresh",String(Date.now()));
-  location.replace(url.href);
- }catch(err){say("Could not safely verify the update: "+String(err.message||err)+". Your saved data and app caches were not changed.")}
+  say(remoteBuild===DAILY_LIFE_BUILD?
+   "Published version verified. Reloading app files…":
+   "Version "+remoteBuild+" is ready. Reloading from "+DAILY_LIFE_BUILD+" without touching your saved data…");
+  // Network-first navigation and versioned asset URLs refresh the application.
+  // Keep the current service-worker cache for safe offline fallback; do not
+  // unregister workers, clear caches, reset localStorage or touch IndexedDB.
+  const next=new URL(location.href);
+  next.searchParams.set("dl_refresh",stamp);
+  location.replace(next.href);
+ }catch(err){
+  say("Could not verify the new version: "+String(err&&err.message||err)+". Your saved data and cached app have not been changed.");
+ }
 }
 function showAppUpdateNotice(){
   if(document.getElementById("appUpdateNotice"))return;
@@ -7948,7 +7967,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-guided10");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261015-guided11");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
