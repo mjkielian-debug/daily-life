@@ -839,12 +839,12 @@
   font-weight:900!important;
 }
 .modal .recipe-details .ingredient-have{
-  color:#315c45!important;
+  color:#523f60!important;
   background:#eef8f1!important;
   border:1px solid #9dc9ad!important;
 }
 .modal .recipe-details .ingredient-have.selected{
-  color:#245139!important;
+  color:#523f60!important;
   background:#bce7cb!important;
   border-color:#74ad8a!important;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)!important;
