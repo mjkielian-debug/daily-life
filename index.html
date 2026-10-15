@@ -7927,7 +7927,7 @@ async function dailyLifeRefreshShell(){
   const indexResponse=await fetch(indexUrl.href,{cache:"no-store",credentials:"same-origin"});
   if(!indexResponse.ok)throw new Error("The new app page is not ready (HTTP "+indexResponse.status+").");
   const html=await indexResponse.text();
-  const embedded=html.match(/const\\s+DAILY_LIFE_BUILD\\s*=\\s*["']([^"']+)["']/);
+  const embedded=html.match(/const\s+DAILY_LIFE_BUILD\s*=\s*["']([^"']+)["']/);
   const pageBuild=embedded&&embedded[1]||"";
   if(remoteBuild!==pageBuild){
    say("The website is still finishing its update (version "+remoteBuild+", page "+(pageBuild||"not ready")+"). Try again in a minute. Nothing was changed.");
