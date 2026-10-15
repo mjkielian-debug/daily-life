@@ -168,9 +168,11 @@ window.photoInboxSelectFloor=function(f){
 };
 async function canonicalFloorReference(f){
  // A room picture must not silently replace an already-known robot-vacuum floor plan.
- if(f==="First floor"){
+ const canonicalTitle=f==="First floor"?"Main floor robovac layout":
+  f==="Second floor"?"Second floor · robovac room layout":"";
+ if(canonicalTitle){
   const canonical=await cloudClient.from("photo_inbox").select("id,title,image_data,created_at")
-   .eq("category","house_map").eq("floor_label",f).eq("title","Main floor robovac layout").limit(1);
+   .eq("category","house_map").eq("floor_label",f).eq("title",canonicalTitle).limit(1);
   if(canonical.error)return canonical;
   if(canonical.data?.length)return canonical;
  }
@@ -185,7 +187,7 @@ window.photoInboxLoadFloorGallery=async function(f){
   .order("created_at",{ascending:true}).limit(80);
  const current=document.getElementById("piFloorGallery");if(!current||floorView!==f)return;
  if(error){current.textContent="Unable to load room photos: "+error.message;return}
- const photos=(data||[]).filter(x=>x.title!=="Main floor robovac layout"&&/^[a-f0-9-]{36}$/i.test(x.id));
+ const photos=(data||[]).filter(x=>!["Main floor robovac layout","Second floor · robovac room layout"].includes(x.title)&&/^[a-f0-9-]{36}$/i.test(x.id));
  if(!photos.length){current.innerHTML='<span class="pi-muted">No extra room photos yet. Add photos of doorways, storage or rooms to build a visual map.</span>';return}
  current.innerHTML=photos.map((x,i)=>
   '<button class="pi-gallery-button" type="button" onclick="photoInboxView(\''+x.id+'\',\'map\')"><span class="pi-gallery-icon">📷</span><span>'+esc(x.title||("Room view "+(i+1)))+'</span><span aria-hidden="true">›</span></button>'
@@ -207,7 +209,7 @@ window.photoInboxLoadFloor=async function(f){
 window.houseMapInlineHtml=function(){
  const rooms=state.houseRooms||[];
  return '<div class="pi-house-inline"><h3>⌂ Your home, floor by floor</h3>'+
- '<p class="pi-muted">Start with the robot-vacuum screenshot for the first floor. We can trace it together and confirm each room’s shape and storage locations rather than guessing.</p>'+
+ '<p class="pi-muted">The first- and second-floor robot maps are reviewed. Tap any floor to see mapped rooms, photos and locations. Add more pictures when you want to refine walls, closets or doors.</p>'+
  '<div class="pi-inline-floor-grid">'+FLOORS.map((f,i)=>{
  const count=rooms.filter(r=>r.floor===f).length;
  return '<button onclick="openHouseFloorMap(\''+f+'\')"><span class="pi-floor-glyph">'+["▱","⌂","▤","△"][i]+'</span><b>'+f+'</b><small>'+count+' room'+(count===1?"":"s")+' · view map</small></button>';
