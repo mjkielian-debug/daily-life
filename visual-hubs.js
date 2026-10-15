@@ -156,7 +156,8 @@ function visualHubView(page){
  return `<section class="visual-hub visual-hub-${esc(page)}" aria-label="${esc(c.title)} dashboard">
   <div class="vh-heading"><div><div class="eyebrow">${esc(c.title.toUpperCase())} AT A GLANCE</div><h1>${esc(c.title)}</h1><p>${esc(c.subtitle)}</p></div><button type="button" class="btn primary vh-add" onclick="${c.addAction}">${esc(c.addLabel)}</button></div>
   ${titleSuffix}
-  <div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><div class="vh-focus-actions"><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button>${c.focusExtra?`<button type="button" class="vh-focus-extra" onclick="${c.focusExtra.action}">${esc(c.focusExtra.label)}</button>`:""}</div></div>
+  ${typeof actionFirstMarkup==="function"?actionFirstMarkup(page,c):`<div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><div class="vh-focus-actions"><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button>${c.focusExtra?`<button type="button" class="vh-focus-extra" onclick="${c.focusExtra.action}">${esc(c.focusExtra.label)}</button>`:""}</div></div>`}
+  <details class="vh-explore" ${typeof actionFirstOverviewOpen==="function"&&actionFirstOverviewOpen(page)?"open":""} ontoggle="if(typeof actionFirstRememberOverview===\'function\')actionFirstRememberOverview(\'${esc(page)}\',this.open)"><summary>Progress, sections + full details</summary><div class="vh-explore-body">
   ${visualPaperArtShortcuts(page)}
   <div class="vh-summary">
    <button type="button" class="vh-main-dial" style="--vh-one:${percent===null?0:Math.round(percent*.38)}%;--vh-two:${percent===null?0:Math.round(percent*.72)}%;--vh-progress:${percent===null?0:percent}%" onclick="${mainAction}" aria-label="${esc(progress?.label||c.mainLabel)}: ${esc(meterText)}">
@@ -165,6 +166,7 @@ function visualHubView(page){
   </div>
   <div class="vh-lower"><div class="vh-brief"><div class="vh-minor-heading">${esc(graph?c.barTitle:c.bottomTitle)}</div>${graph}<p>${esc(c.bottomDetail)}</p></div><div class="vh-shortcuts"><div class="vh-minor-heading">Open a section</div><div class="vh-links">${allLinks(displayedLinks)}</div></div></div>
   ${moreLinks.length?`<details class="vh-more"><summary>More tools <span>⌄</span></summary><div class="vh-links">${allLinks(moreLinks)}</div></details>`:""}
+  </div></details>
  </section>`;
 }
 function visualBudgetHubModel(base){
