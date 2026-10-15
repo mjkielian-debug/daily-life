@@ -3450,9 +3450,11 @@ function todayView(m,f,w,h,tk,done,nt,tr){
         adminNow=nextLifeAdminAction();
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
-  return `<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>
+  return `<div class="today-action-layout">${typeof actionFirstTodayCard==="function"?actionFirstTodayCard():`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>`}
+  <details class="action-first-today-section"><summary>Dinner + family checklists</summary><div class="action-first-today-body"><div class="today-section-grid">${todayMealCard()}${todayChoresCard()}</div></div></details>
+  <details class="action-first-today-section"><summary>All of today · schedule, records + advice</summary><div class="action-first-today-body">
   ${dailyAdviceCard()}
-  <div class="today-section-grid">${todayMealCard()}${todayChoresCard()}${todayUpcomingCard()}</div>${typeof sharingTodayCard==="function"?sharingTodayCard():""}${todaySleepPlanCard()}${todayCarePeopleDrawer()}
+  ${todayUpcomingCard()}${typeof sharingTodayCard==="function"?sharingTodayCard():""}${todaySleepPlanCard()}${todayCarePeopleDrawer()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
   ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
   ${birthdayPrepCard()}
@@ -3461,7 +3463,8 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   ${todayTasksTrackingDrawer(tk,done,actual,h,w,f,oz)}
   ${todayMoneySnapshot()}
   ${nextLifeAdminAction()?`<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">📌 Life admin</div><h2>${esc(nextLifeAdminAction().title)}</h2><div class="muted small">${esc(nextLifeAdminAction().notes)}</div></div><button class="btn" onclick="openProject('${nextLifeAdminAction().projectId}')">Open</button></div></div>`:""}
-  ${todayWeatherCarDrawer(m,ml,tr)}`;
+  ${todayWeatherCarDrawer(m,ml,tr)}
+  </div></details></div>`;
 }
 function sleepForDate(date=ymd()){return (state.sleepLogs||[]).find(x=>x.date===date)||null}
 function sleepWindowHours(log){
