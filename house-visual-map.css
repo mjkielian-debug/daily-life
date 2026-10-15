@@ -77,3 +77,15 @@
 .hvm-detail-actions{display:flex;gap:8px;flex-wrap:wrap}
 .hvm-detail-actions>*{flex:1 1 135px}
 @media(max-width:390px){.hvm-directory-grid{gap:6px}.hvm-room-tile{padding:9px;min-height:122px}.hvm-fact-split{grid-template-columns:1fr}}
+
+/* Directional, verbal walkthroughs. These are connections, not measured door positions. */
+.hvm-connections{border:1px solid #c9d9e7;background:linear-gradient(135deg,#f0fbff,#fbf6ff);border-radius:18px;display:grid;gap:9px;padding:12px;color:#3b3353}
+.hvm-connections>strong{font-size:.87rem;font-weight:850}
+.hvm-connection{display:grid;gap:9px;background:#ffffffd9;border:1px solid #e2dfeb;border-radius:13px;padding:11px}
+.hvm-connection>b{font-size:.84rem}
+.hvm-connection>p{font-size:.71rem;margin:0;line-height:1.5;color:#6d5d72}
+.hvm-route{display:grid;gap:4px;padding:3px 2px 4px}
+.hvm-route-end{display:block;border-radius:10px;background:#eaf0ff;border:1px solid #c6d5eb;padding:9px 10px;font-size:.8rem;font-weight:750;line-height:1.35}
+.hvm-route-step{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;align-items:start;font-size:.78rem;line-height:1.5;color:#484056;padding:2px 7px}
+.hvm-step-rail{text-align:center;font-weight:800;color:#6d5994}
+@media(max-width:370px){.hvm-connections{padding:8px}.hvm-route-end{padding:8px}}
