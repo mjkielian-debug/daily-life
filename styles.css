@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap");
 
 :root{
- --bg:#08130e;--panel:#11221a;--panel2:#193126;--text:#fbfff9;--muted:#b8cabf;
+ --bg:#995f85;--panel:#995f85;--panel2:#995f85;--text:#fbfff9;--muted:#b8cabf;
  --border:rgba(222,255,231,.13);--primary:#82cd9c;--secondary:#e4bdc8;--accent:#e6d19a;
  --success:#a5e4b9;--danger:#f0a3ae;--radius:22px;--shadow:0 16px 42px rgba(0,0,0,.28)
 }
@@ -21,12 +21,12 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:10p
 .metric{border:1px solid var(--border);border-radius:16px;padding:12px;background:rgba(255,255,255,.025)}
 .big{font-size:1.45rem;font-weight:900}.row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}.row:last-child{border-bottom:0}
 .btn{border:1px solid var(--border);border-radius:14px;min-height:42px;padding:9px 12px;background:rgba(255,255,255,.04);color:var(--text);font-weight:800}
-.btn.primary{border:1px solid color-mix(in srgb,var(--primary) 65%,white 12%);background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 92%,white 8%),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));color:#0b1a12;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 16%,transparent)}.btn.good{color:var(--success);background:color-mix(in srgb,var(--success) 14%,transparent)}
+.btn.primary{border:1px solid color-mix(in srgb,var(--primary) 65%,white 12%);background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 92%,white 8%),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));color:#49344f;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 16%,transparent)}.btn.good{color:var(--success);background:color-mix(in srgb,var(--success) 14%,transparent)}
 .btn.danger{color:var(--danger);background:color-mix(in srgb,var(--danger) 13%,transparent)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}.stack{display:grid;gap:10px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 0 6px}.section-title h2{margin:0;font-size:1.15rem}
-input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13px;background:#0d1714;color:var(--text);padding:11px}label{display:grid;gap:5px;font-weight:700;font-size:.86rem}
+input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13px;background:#995f85;color:var(--text);padding:11px}label{display:grid;gap:5px;font-weight:700;font-size:.86rem}
 .task{display:flex;gap:10px;align-items:flex-start}.task input{width:auto;margin-top:3px}.done{text-decoration:line-through;color:var(--muted)}.tag{font-size:.68rem;border:1px solid var(--border);border-radius:999px;padding:5px 8px;color:var(--muted)}
-.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:rgba(8,18,14,.96);backdrop-filter:blur(18px);border-top:1px solid var(--border);z-index:50}
+.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:rgba(250,227,242,.97);backdrop-filter:blur(18px);border-top:1px solid var(--border);z-index:50}
 .navbtn{border:0;background:transparent;color:var(--muted);padding:8px 3px;border-radius:12px;font-size:.72rem;font-weight:800}.navbtn.active{color:var(--text);background:color-mix(in srgb,var(--primary) 13%,transparent)}
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:grid;align-items:end;justify-items:center;padding:14px}.modal{width:min(720px,100%);max-height:min(90dvh,900px);overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:0 17px 17px;box-shadow:0 22px 60px rgba(0,0,0,.45),0 0 28px color-mix(in srgb,var(--primary) 12%,transparent)}.modal>.section-title:first-child{position:sticky;top:0;z-index:3;margin:0 -17px 10px;padding:14px 17px 10px;background:linear-gradient(180deg,var(--panel) 78%,color-mix(in srgb,var(--panel) 92%,transparent));backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}.modal>.actions:last-child{position:sticky;bottom:-17px;z-index:3;margin:12px -17px -17px;padding:10px 17px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,var(--panel) 82%,color-mix(in srgb,var(--panel) 90%,transparent));backdrop-filter:blur(14px);border-top:1px solid var(--border)}.modal>.actions:last-child .btn.primary{flex:1}.meal-editor textarea{min-height:72px;resize:vertical}.meal-editor .field-help{margin-top:-3px}
 .notice{border:1px solid var(--border);border-radius:14px;padding:10px 12px;color:var(--muted);background:rgba(255,255,255,.03);font-size:.83rem}
@@ -191,7 +191,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border:1px solid color-mix(in srgb,var(--primary) 44%,var(--border));color:var(--primary);font-size:.83rem;
   background:color-mix(in srgb,var(--primary) 7%,transparent)
 }
-.self-care-btn.is-done .self-care-mark{background:var(--primary);color:#0b1a12;border-color:var(--primary)}
+.self-care-btn.is-done .self-care-mark{background:var(--primary);color:#995f85;border-color:var(--primary)}
 .self-care-history{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
 .self-care-history summary{cursor:pointer;font-weight:800;color:color-mix(in srgb,var(--text) 90%,var(--primary) 10%)}
 .self-care-window{display:grid;grid-template-columns:auto auto auto auto;gap:5px 7px;align-items:baseline;text-align:right}
@@ -213,7 +213,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border:0;border-radius:12px;min-height:38px;background:transparent;color:var(--muted);font-weight:800
 }
 .self-care-tabs button.active{
-  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 74%,var(--accent) 26%));
+  color:#995f85;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 74%,var(--accent) 26%));
   box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)
 }
 .self-care-tab-panel{min-width:0}
@@ -329,7 +329,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 .person-card-top{display:flex;align-items:center;gap:10px}
 .person-avatar{
   width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:0 0 42px;
-  font-family:Georgia,serif;font-size:1.2rem;color:#0b1a12;
+  font-family:Georgia,serif;font-size:1.2rem;color:#995f85;
   background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 66%,var(--accent) 34%))
 }
 .person-card-top h2{margin:2px 0 0;font-size:1.05rem}
@@ -360,7 +360,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 .people-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;margin:0 0 12px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.024)}
 .people-tabs button{min-height:39px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:800;padding:8px}
-.people-tabs button.active{color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)}
+.people-tabs button.active{color:#995f85;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)}
 .people-agenda{border-color:color-mix(in srgb,var(--primary) 26%,var(--border))}
 .people-agenda-row{width:100%;display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);text-align:left}
 .agenda-date{width:50px;min-height:50px;border:1px solid var(--border);border-radius:14px;display:grid;place-items:center;align-content:center;background:rgba(255,255,255,.025)}
@@ -383,7 +383,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   white-space:nowrap;border:1px solid var(--border);border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.025);color:var(--muted);font-weight:800
 }
 .people-filter-chips button.active{
-  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
+  color:#995f85;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
   border-color:color-mix(in srgb,var(--primary) 55%,white 8%)
 }
 .elfster-status-card{
@@ -528,7 +528,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
   border:0;border-radius:12px;min-height:38px;background:transparent;color:var(--muted);font-weight:800
 }
 .living-tabs button.active{
-  color:#0b1a12;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
+  color:#995f85;background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--accent) 28%));
   box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 14%,transparent)
 }
 
@@ -630,9 +630,9 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
 
 /* Botanical blush visual refresh */
 :root{
-  --bg:#0b1813;
-  --panel:#14261e;
-  --panel2:#1d3328;
+  --bg:#fff8fb;
+  --panel:#995f85;
+  --panel2:#995f85;
   --text:#fffaf6;
   --muted:#c9d1cb;
   --border:rgba(255,237,241,.16);
@@ -648,7 +648,7 @@ body{
   background:
     radial-gradient(circle at 90% -8%,color-mix(in srgb,var(--secondary) 22%,transparent),transparent 30%),
     radial-gradient(circle at -5% 20%,color-mix(in srgb,var(--primary) 18%,transparent),transparent 34%),
-    linear-gradient(180deg,#0b1913 0%,#09140f 100%);
+    linear-gradient(180deg,#995f85 0%,#995f85 100%);
 }
 .app{
   position:relative;
@@ -750,7 +750,7 @@ header:after{
       color-mix(in srgb,var(--primary) 88%,white 12%),
       color-mix(in srgb,var(--primary) 64%,var(--accent) 20%),
       color-mix(in srgb,var(--secondary) 20%,var(--primary) 80%));
-  color:#0b1812;
+  color:#49344f;
   box-shadow:
     0 9px 22px color-mix(in srgb,var(--primary) 16%,transparent),
     inset 0 1px 0 rgba(255,255,255,.2);
@@ -762,7 +762,7 @@ header:after{
 }
 input,select,textarea{
   background:
-    linear-gradient(180deg,color-mix(in srgb,#101b17 95%,var(--secondary) 5%),#0d1714);
+    linear-gradient(180deg,color-mix(in srgb,#995f85 95%,var(--secondary) 5%),#995f85);
   border-color:color-mix(in srgb,var(--secondary) 20%,var(--border));
 }
 input:focus,select:focus,textarea:focus{
@@ -827,7 +827,7 @@ input:focus,select:focus,textarea:focus{
 .living-tabs button.active,
 .people-tabs button.active{
   background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--secondary) 24%,var(--primary) 76%));
-  color:#0b1812;
+  color:#995f85;
   box-shadow:0 7px 18px color-mix(in srgb,var(--secondary) 10%,transparent);
 }
 .personal-care-item{
@@ -885,9 +885,9 @@ hr,.hr{background:color-mix(in srgb,var(--secondary) 16%,var(--border))}
 
 /* Botanical blush v2 — stronger sage + pink feminine system */
 :root{
-  --bg:#0c1814;
-  --panel:#15251f;
-  --panel2:#20352b;
+  --bg:#fff8fb;
+  --panel:#995f85;
+  --panel2:#995f85;
   --text:#fffaf7;
   --muted:#d2ccc9;
   --border:rgba(255,228,236,.19);
@@ -904,7 +904,7 @@ body{
     radial-gradient(circle at 86% 2%,rgba(240,181,200,.23),transparent 28%),
     radial-gradient(circle at 8% 17%,rgba(158,205,170,.17),transparent 32%),
     radial-gradient(circle at 72% 60%,rgba(234,212,167,.07),transparent 25%),
-    linear-gradient(180deg,#102019 0%,#0b1712 48%,#09130f 100%);
+    linear-gradient(180deg,#995f85 0%,#995f85 48%,#995f85 100%);
 }
 .app{
   background:
@@ -995,7 +995,7 @@ header:before{
   background:
     linear-gradient(135deg,#b7ddc1 0%,#a8d4b4 44%,#eac1cf 100%);
   border-color:color-mix(in srgb,var(--secondary) 34%,var(--primary) 66%);
-  color:#112019;
+  color:#995f85;
 }
 .btn.good{
   color:var(--rose-soft);
@@ -1036,7 +1036,7 @@ header:before{
 }
 .person-avatar{
   background:linear-gradient(145deg,#b8ddc2,#eabacb 72%,#ecd9af);
-  color:#173022;
+  color:#995f85;
 }
 .person-chip,.pantry-chip{
   background:rgba(240,181,200,.08);
@@ -1062,7 +1062,7 @@ header:before{
 }
 input,select,textarea{
   background:
-    linear-gradient(180deg,color-mix(in srgb,#111c18 93%,var(--secondary) 7%),#0e1714);
+    linear-gradient(180deg,color-mix(in srgb,#995f85 93%,var(--secondary) 7%),#995f85);
   border-color:color-mix(in srgb,var(--secondary) 24%,var(--border));
 }
 .modal{
@@ -1108,7 +1108,7 @@ input,select,textarea{
   border-top-color:color-mix(in srgb,var(--secondary) 15%,var(--border));
 }
 .money-action.transfer .money-action-mark{
-  color:#193024;
+  color:#995f85;
   border-color:color-mix(in srgb,var(--primary) 50%,var(--secondary) 24%);
   background:linear-gradient(145deg,#b7ddc1,#e7bdcb);
 }
@@ -1172,9 +1172,9 @@ input,select,textarea{
 
 /* Botanical blush v3 — softer, visibly pinker interior */
 :root{
-  --bg:#101914;
-  --panel:#18271f;
-  --panel2:#263b30;
+  --bg:#995f85;
+  --panel:#995f85;
+  --panel2:#995f85;
   --text:#fffaf7;
   --muted:#d4cbc9;
   --border:rgba(255,220,233,.24);
@@ -1190,7 +1190,7 @@ body{
     radial-gradient(circle at 86% 0,rgba(243,170,196,.31),transparent 27%),
     radial-gradient(circle at 6% 18%,rgba(169,213,181,.20),transparent 31%),
     radial-gradient(circle at 88% 66%,rgba(239,216,167,.09),transparent 23%),
-    linear-gradient(180deg,#14241c 0%,#0d1813 52%,#0a130f 100%);
+    linear-gradient(180deg,#995f85 0%,#995f85 52%,#995f85 100%);
 }
 .app{
   background:
@@ -1215,7 +1215,7 @@ header{
   background:
     radial-gradient(circle at 100% 0,rgba(243,170,196,.145),transparent 34%),
     radial-gradient(circle at 0 100%,rgba(169,213,181,.075),transparent 30%),
-    linear-gradient(155deg,#294236 0%,#1c2e25 62%,#17261f 100%);
+    linear-gradient(155deg,#995f85 0%,#995f85 62%,#995f85 100%);
   border-color:rgba(243,170,196,.25);
   box-shadow:0 16px 42px rgba(2,8,5,.30),0 5px 22px rgba(243,170,196,.055);
 }
@@ -1223,7 +1223,7 @@ header{
   background:
     radial-gradient(circle at 0 0,rgba(243,170,196,.12),transparent 31%),
     radial-gradient(circle at 100% 100%,rgba(239,216,167,.07),transparent 27%),
-    linear-gradient(155deg,#243a31 0%,#1b2c25 66%,#16241e 100%);
+    linear-gradient(155deg,#995f85 0%,#995f85 66%,#995f85 100%);
 }
 .card:before{
   height:2px;
@@ -1260,7 +1260,7 @@ header{
   border-color:rgba(243,170,196,.23);
 }
 input,select,textarea{
-  background:linear-gradient(180deg,#17261f,#101a16);
+  background:linear-gradient(180deg,#995f85,#995f85);
   border-color:rgba(243,170,196,.26);
 }
 .bottom-nav{
@@ -1277,7 +1277,7 @@ input,select,textarea{
 .modal{
   background:
     radial-gradient(circle at 100% 0,rgba(243,170,196,.19),transparent 28%),
-    linear-gradient(165deg,#294136,#1b2d25 58%,#17251f);
+    linear-gradient(165deg,#995f85,#995f85 58%,#995f85);
   border-color:rgba(243,170,196,.30);
 }
 .self-care-tabs,.living-tabs,.people-tabs{
@@ -1298,7 +1298,7 @@ input,select,textarea{
   background:
     radial-gradient(circle at 96% 5%,rgba(243,170,196,.18),transparent 31%),
     radial-gradient(circle at 4% 95%,rgba(169,213,181,.09),transparent 30%),
-    linear-gradient(155deg,#2b4539 0%,#20352b 60%,#192a22 100%);
+    linear-gradient(155deg,#995f85 0%,#995f85 60%,#995f85 100%);
   border-color:rgba(243,170,196,.34);
 }
 .money-strategy-row{
@@ -1323,7 +1323,7 @@ input,select,textarea{
 .section-launcher>button{
   background:
     radial-gradient(circle at 100% 0,rgba(243,170,196,.15),transparent 39%),
-    linear-gradient(145deg,#263d33,#192b23);
+    linear-gradient(145deg,#995f85,#995f85);
   border-color:rgba(243,170,196,.25);
 }
 .section-launch-icon{
@@ -1337,9 +1337,9 @@ input,select,textarea{
 
 /* Botanical blush visual system — grown-up, feminine, calm */
 :root{
-  --bg:#0c1712;
-  --panel:#14271e;
-  --panel2:#1c3729;
+  --bg:#995f85;
+  --panel:#995f85;
+  --panel2:#995f85;
   --text:#fffaf7;
   --muted:#c9d3cc;
   --border:rgba(255,238,244,.16);
@@ -1442,7 +1442,7 @@ header{
   background:color-mix(in srgb,var(--secondary) 6%,transparent)
 }
 input,select,textarea{
-  background:linear-gradient(145deg,#0f1b16,color-mix(in srgb,#0f1b16 92%,var(--secondary) 8%));
+  background:linear-gradient(145deg,#995f85,color-mix(in srgb,#995f85 92%,var(--secondary) 8%));
   border-color:color-mix(in srgb,var(--secondary) 20%,var(--border));
   color:var(--cream)
 }
@@ -1485,7 +1485,7 @@ input,select,textarea{
 }
 .self-care-tabs button.active,.living-tabs button.active,.people-tabs button.active{
   background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 78%,var(--secondary) 22%),color-mix(in srgb,var(--secondary) 46%,var(--accent) 18%));
-  color:#132018
+  color:#995f85
 }
 .money-actions-card,.money-strategy-card,.today-money{
   border-color:color-mix(in srgb,var(--secondary) 25%,var(--border));
@@ -1559,7 +1559,7 @@ input,select,textarea{
   font-weight:850;font-size:.8rem
 }
 .care-page-tabs button.active{
-  color:#102117;
+  color:#995f85;
   border-color:color-mix(in srgb,var(--primary) 52%,var(--secondary) 30%);
   background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 86%,white 14%),color-mix(in srgb,var(--secondary) 58%,var(--primary) 42%));
   box-shadow:0 6px 16px color-mix(in srgb,var(--secondary) 10%,transparent)
@@ -1604,7 +1604,7 @@ body{
   background:
     radial-gradient(circle at 94% 3%,rgba(239,184,202,.20),transparent 25rem),
     radial-gradient(circle at 3% 19%,rgba(155,211,170,.16),transparent 25rem),
-    linear-gradient(180deg,#14241c 0%,#0d1813 54%,#09120e 100%);
+    linear-gradient(180deg,#995f85 0%,#995f85 54%,#995f85 100%);
 }
 .app{
   position:relative;
@@ -1648,7 +1648,7 @@ header>*{position:relative;z-index:1}
   background:
     radial-gradient(circle at 88% 6%,rgba(239,184,202,.20),transparent 35%),
     radial-gradient(circle at 8% 92%,rgba(155,211,170,.11),transparent 34%),
-    linear-gradient(150deg,#294237,#1d3027 60%,#18271f);
+    linear-gradient(150deg,#995f85,#995f85 60%,#995f85);
   border-color:rgba(239,184,202,.38)
 }
 .spirituality-title{
@@ -1664,7 +1664,7 @@ header>*{position:relative;z-index:1}
   border:0;border-radius:12px;min-height:39px;background:transparent;color:var(--muted);font-weight:850
 }
 .spirituality-tabs button.active{
-  color:#102117;background:linear-gradient(135deg,#b9dfc4 0%,#b4dac0 46%,#edb7c9 100%);
+  color:#995f85;background:linear-gradient(135deg,#b9dfc4 0%,#b4dac0 46%,#edb7c9 100%);
   box-shadow:0 7px 18px rgba(239,184,202,.12)
 }
 .daily-reading-card{
@@ -1672,7 +1672,7 @@ header>*{position:relative;z-index:1}
   background:
     radial-gradient(circle at 90% 6%,rgba(239,184,202,.19),transparent 31%),
     radial-gradient(circle at 5% 95%,rgba(234,212,167,.08),transparent 29%),
-    linear-gradient(155deg,#2a4438,#1b2d25 67%,#17251f)
+    linear-gradient(155deg,#995f85,#995f85 67%,#995f85)
 }
 .spiritual-reading-text{
   color:color-mix(in srgb,var(--cream) 90%,var(--muted) 10%);
@@ -1696,7 +1696,7 @@ header>*{position:relative;z-index:1}
 .spiritual-practice-grid button.done{
   border-color:rgba(155,211,170,.42);background:linear-gradient(145deg,rgba(155,211,170,.13),rgba(239,184,202,.06))
 }
-.spiritual-practice-grid button.done span{background:var(--primary);color:#102117}
+.spiritual-practice-grid button.done span{background:var(--primary);color:#995f85}
 .spiritual-season-card{border-color:rgba(234,212,167,.30)}
 .spiritual-moon{
   display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;
@@ -1715,7 +1715,7 @@ header>*{position:relative;z-index:1}
   background:
     url("botanical-sprig.svg?v=20261002-1") 115% 105%/105px auto no-repeat,
     radial-gradient(circle at 50% 40%,rgba(239,184,202,.18),transparent 37%),
-    linear-gradient(160deg,#18372a,#2e4438 55%,#5b3948 130%);
+    linear-gradient(160deg,#995f85,#995f85 55%,#5b3948 130%);
   box-shadow:0 15px 34px rgba(0,0,0,.28),inset 0 0 0 4px rgba(255,244,236,.035)
 }
 .tarot-card-shell.compact .tarot-card-face{min-height:185px;border-radius:18px;padding:10px}
@@ -1730,18 +1730,18 @@ header>*{position:relative;z-index:1}
 .ritual-card:nth-child(3n+1){
   background:
     radial-gradient(circle at 100% 0,rgba(239,184,202,.16),transparent 35%),
-    linear-gradient(150deg,#294137,#1a2c24)
+    linear-gradient(150deg,#995f85,#995f85)
 }
 .ritual-card:nth-child(3n+2){
   background:
     radial-gradient(circle at 0 100%,rgba(155,211,170,.11),transparent 36%),
-    linear-gradient(150deg,#263d32,#192a22)
+    linear-gradient(150deg,#995f85,#995f85)
 }
 .today-spirituality,.spirituality-launch{
   border-color:rgba(239,184,202,.32);
   background:
     radial-gradient(circle at 95% 0,rgba(239,184,202,.17),transparent 34%),
-    linear-gradient(150deg,#294137,#1a2d24)
+    linear-gradient(150deg,#995f85,#995f85)
 }
 @media(max-width:560px){
   .tarot-card-shell{grid-template-columns:1fr}
@@ -1949,7 +1949,7 @@ h1,h2,h3,.title,.section-title h2,.card h2,.modal h2,
 label{gap:7px;font-weight:800;line-height:1.4;color:#f4e7ed}
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),select,textarea{
   border:1px solid rgba(239,184,202,.38);border-radius:18px;
-  background:linear-gradient(145deg,#20372c,#172a21);
+  background:linear-gradient(145deg,#995f85,#995f85);
   padding:12px 14px;color:#fff8f2;min-width:0;max-width:100%;
   min-height:48px;font-size:1rem;font-weight:500;line-height:1.45;
   box-shadow:inset 0 1px 0 rgba(255,239,245,.06),0 4px 12px rgba(0,0,0,.09);
@@ -1960,11 +1960,11 @@ input::placeholder,textarea::placeholder{color:#c5cfc7;opacity:1;font-weight:400
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
 select:focus,textarea:focus{
   outline:2px solid #e9b7ca;outline-offset:2px;border-color:#f3cada;
-  background:linear-gradient(145deg,#263e31,#1a2e24);
+  background:linear-gradient(145deg,#995f85,#995f85);
   box-shadow:0 0 0 5px rgba(239,184,202,.09)
 }
 input[type="checkbox"],input[type="radio"]{accent-color:var(--primary)}
-select option{background:#172a21;color:#fff8f2}
+select option{background:#995f85;color:#fff8f2}
 input:disabled,select:disabled,textarea:disabled{opacity:.65;cursor:not-allowed}
 input[readonly],textarea[readonly]{border-style:dashed}
 .field-help{line-height:1.5;color:#cedbd1}
@@ -2089,7 +2089,7 @@ body::before{
   font-size:.64rem;
   letter-spacing:.11em;
   font-weight:900;
-  color:#102019;
+  color:#995f85;
   background:var(--accent);
   border-radius:999px;
   padding:5px 7px;
@@ -2912,7 +2912,7 @@ input,select,textarea{
   padding:12px 13px;
   background:
     radial-gradient(circle at 100% 0,rgba(243,170,196,.07),transparent 38%),
-    linear-gradient(180deg,#17261f,#101a16);
+    linear-gradient(180deg,#995f85,#995f85);
   border-color:rgba(243,170,196,.32);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 6px 18px rgba(0,0,0,.08);
 }
@@ -3397,7 +3397,7 @@ textarea{resize:vertical}
   background:
     radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 32%),
     repeating-linear-gradient(45deg,color-mix(in srgb,var(--secondary) 7%,transparent) 0 2px,transparent 2px 13px),
-    linear-gradient(155deg,color-mix(in srgb,var(--primary) 28%,#172b22),#1d3027 64%,color-mix(in srgb,var(--secondary) 14%,#172b22));
+    linear-gradient(155deg,color-mix(in srgb,var(--primary) 28%,#995f85),#995f85 64%,color-mix(in srgb,var(--secondary) 14%,#995f85));
   box-shadow:inset 0 0 0 5px color-mix(in srgb,var(--cream) 4%,transparent),0 14px 34px rgba(0,0,0,.26);
   display:grid;place-items:center;align-content:center;gap:10px;cursor:pointer
 }
