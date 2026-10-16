@@ -246,11 +246,16 @@
    '<path d="M26 332L314 461L592 332L592 321L314 451L26 320Z" fill="#c8a7ae" opacity=".8"/>'+
    '<path d="M64 324L341 205M111 347L387 232M157 370L436 251M203 395L479 271M249 415L525 292M300 442L574 314" stroke="#6c3f26" stroke-width="2" opacity=".32"/><path d="M105 353L133 341M215 386L239 377M367 315L404 297M460 353L491 339" stroke="#d3a479" stroke-width="2" opacity=".25"/>'+
    '<path d="M26 183L305 50L592 180" fill="none" stroke="#fffafa" stroke-width="9" stroke-linejoin="round"/>'+
-   marioPosterDrawing()+
-   // Both headboard-wall elements are on the LEFT wall: poster above bed, vanity window toward the corner.
-   '<g transform="translate(150 -78)">'+bedWindowDrawing()+'</g>'+
-   // The perpendicular RIGHT wall has the other window alongside the bed.
-   '<g transform="translate(-8 -26)">'+windowDrawing()+'</g>';
+   // The Mario poster and vanity-side window occupy the LEFT wall, not the entry/closet wall.
+   '<g transform="translate(-47 15)">'+marioPosterDrawing()+'</g>'+
+   '<g transform="translate(151 -42)">'+bedWindowDrawing()+'</g>'+
+   // The bed-side window is on the perpendicular RIGHT wall. Its frame follows that wall perspective.
+   '<g aria-label="Window beside the long side of Dolly’s bed">'+
+   '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
+   '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="2"/>'+
+   '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/>'+
+   '<path d="M361 153L453 195" stroke="#e5d3e7" stroke-width="6"/>'+
+   '</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
   const dresser='<g transform="translate(48 237) scale(.92 .72)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
