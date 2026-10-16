@@ -6,7 +6,7 @@
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
   bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
-  dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with ten small top drawers and four larger lower drawers, with brass-colored handles. Positioned along the former Barbie-house wall opposite the foot of the bed.",location:"Former Barbie-house wall, opposite bed footboard",sections:[]},
+  dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with ten small upper drawers and four larger lower drawers, with brass-colored handles. Positioned along the former Barbie-house wall opposite the foot of the bed.",location:"Former Barbie-house wall, opposite bed footboard",sections:[]},
   vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
   dollhouse:{label:"Barbie house",symbol:"⌂",description:"Large pink Barbie house beside the closet, with its playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
@@ -345,12 +345,16 @@
  };
 
  // A separate, true floor-plan arranger. The old miniature and its saved positions are untouched.
- const FLOOR_KEY="dailyLifeDollyFloorPlan_v2";
+ const FLOOR_KEY="dailyLifeDollyFloorPlan_photoReference_v3"; // independent of user-edited v2 layout
  const FLOOR_ITEMS={
-  bed:{label:"Bed",w:116,h:195,color:"#eee9ff",x:72,y:88,angle:0},
-  dresser:{label:"Dresser",w:172,h:47,color:"#99603e",x:190,y:298,angle:0},
-  vanity:{label:"Vanity",w:128,h:53,color:"#f8f7f3",x:214,y:51,angle:0},
-  dollhouse:{label:"Barbie house",w:132,h:61,color:"#f3a3ce",x:332,y:166,angle:90}
+  // Plan orientation: top = Mario/headboard + vanity window wall;
+  // left = footboard window; right = closet and entry wall;
+  // bottom = black tapestry / long dresser wall.
+  // Units are visual estimates from photographs, not inches.
+  bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:26,y:23,angle:0},
+  dresser:{label:"Dresser",w:198,h:48,color:"#a66a42",x:75,y:298,angle:0},
+  vanity:{label:"Vanity",w:118,h:46,color:"#f8f7f3",x:176,y:4,angle:0},
+  dollhouse:{label:"Barbie house",w:138,h:51,color:"#f3a3ce",x:325,y:62,angle:90}
  };
  let floorSelected="dresser";
  function floorRead(){try{return JSON.parse(localStorage.getItem(FLOOR_KEY)||"{}")||{}}catch(_){return {}}}
@@ -365,21 +369,45 @@
    const w=turned?p.h:p.w,h=turned?p.w:p.h;
    const x=floorClamp(Number(p.x)||0,0,480-w),y=floorClamp(Number(p.y)||0,0,350-h);
    const selected=floorSelected===key;
-   const label=p.label;
-   return '<g data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Move '+label+'" style="cursor:grab;touch-action:none">'+
-    '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="5" fill="'+p.color+'" stroke="'+(selected?'#c04495':'#6c5969')+'" stroke-width="'+(selected?4:2)+'"/>'+
-    (key==="dresser"?'<path d="M'+(x+5)+' '+(y+8)+'h'+(w-10)+'M'+(x+5)+' '+(y+h-8)+'h'+(w-10)+'" stroke="#5e3525" stroke-width="2"/>':'')+
-    (key==="dollhouse"?'<path d="M'+(x+4)+' '+(y+h/2)+'h'+(w-8)+'M'+(x+w/2)+' '+(y+4)+'v'+(h-8)+'" stroke="#ba729b" stroke-width="3"/>':'')+
-    '<text x="'+(x+w/2)+'" y="'+(y+h/2+5)+'" font-size="14" font-weight="700" text-anchor="middle" fill="#3c3040" pointer-events="none">'+label+'</text></g>';
+   // Draw in the object's unrotated local coordinates. Rotation changes its
+   // footprint, never stretches or substitutes a different piece of furniture.
+   const tx=turned?(p.angle===90?p.h:0):0;
+   const ty=turned?(p.angle===90?0:p.w):0;
+   const angle=((p.angle%360)+360)%360;
+   const artwork=key==="bed"?
+    '<rect x="4" y="4" width="'+(p.w-8)+'" height="'+(p.h-8)+'" rx="6" fill="#d8c8eb"/>'+
+    '<path d="M4 24Q'+(p.w/2)+' -2 '+(p.w-4)+' 24" fill="none" stroke="#fff" stroke-width="10"/>'+
+    '<rect x="13" y="34" width="'+(p.w-26)+'" height="45" rx="9" fill="#fff"/>'+
+    '<path d="M12 82h'+(p.w-24)+'v64H12Z" fill="#6f9bce" opacity=".85"/>'+
+    '<path d="M4 '+(p.h-18)+'Q'+(p.w/2)+' '+(p.h+1)+' '+(p.w-4)+' '+(p.h-18)+'" fill="none" stroke="#fff" stroke-width="9"/>' :
+    key==="dresser"?
+    '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="3" fill="#ad744b" stroke="#653d27" stroke-width="3"/>'+
+    Array.from({length:5},(_,i)=>'<rect x="'+(7+i*(p.w-14)/5)+'" y="6" width="'+((p.w-18)/5)+'" height="13" rx="1" fill="#b98659" stroke="#78492f"/><circle cx="'+(13+i*(p.w-14)/5+(p.w-18)/10)+'" cy="12" r="2" fill="#e8c78e"/>').join("")+
+    '<path d="M6 23H'+(p.w-6)+'M'+(p.w/2)+' 23V'+(p.h-5)+'" stroke="#71472e" stroke-width="2"/>'+
+    '<circle cx="'+(p.w/4)+'" cy="34" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="34" r="2" fill="#e8c78e"/>' :
+    key==="vanity"?
+    '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#fffdf9" stroke="#b7a7aa" stroke-width="3"/>'+
+    '<rect x="6" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
+    '<rect x="'+(p.w-31)+'" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
+    '<rect x="35" y="7" width="'+(p.w-70)+'" height="'+(p.h-14)+'" rx="4" fill="#dce8ed" stroke="#c8ac70" stroke-width="3"/>' :
+    '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#e69fca" stroke="#ae6a96" stroke-width="3"/>'+
+    '<rect x="7" y="7" width="'+(p.w-14)+'" height="'+(p.h-14)+'" fill="#f9d3e7" stroke="#bc779c"/>'+
+    '<path d="M'+(p.w/3)+' 7V'+(p.h-7)+'M'+(2*p.w/3)+' 7V'+(p.h-7)+'" stroke="#bb8b64" stroke-width="4"/>'+
+    '<path d="M7 '+(p.h-11)+'H'+(p.w-7)+'" stroke="#b46c99" stroke-width="4"/>';
+   return '<g data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Move '+p.label+'" style="cursor:grab;touch-action:none" transform="translate('+x+' '+y+')">'+
+    '<g transform="translate('+tx+' '+ty+') rotate('+angle+')">'+artwork+'</g>'+
+    '<rect width="'+w+'" height="'+h+'" fill="transparent" stroke="'+(selected?'#be428e':'transparent')+'" stroke-width="3" rx="4"/>'+
+    '<text x="'+(w/2)+'" y="'+(h/2)+'" font-size="12" font-weight="700" text-anchor="middle" fill="#302b33" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">'+p.label+'</text></g>';
   }).join("");
-  svg.innerHTML='<rect x="0" y="0" width="480" height="350" fill="#f6eaf5" stroke="#ad8ba9" stroke-width="5"/>'+
+  svg.innerHTML='<rect x="0" y="0" width="480" height="350" fill="#f8f0e8" stroke="#ad8ba9" stroke-width="5"/>'+
    '<path d="M0 0H480V350H0Z" fill="none" stroke="#7f667d" stroke-width="7"/>'+
-   '<path d="M195 0h105" stroke="#b4e4f7" stroke-width="13"/><path d="M0 110v90" stroke="#b4e4f7" stroke-width="13"/>'+
-   '<path d="M480 80v80" stroke="#fff" stroke-width="12"/><path d="M480 225v80" stroke="#fff" stroke-width="12"/>'+
-   '<text x="245" y="20" font-size="12" text-anchor="middle">Vanity window</text>'+
-   '<text x="20" y="90" font-size="12">Bed window</text>'+
-   '<text x="462" y="76" text-anchor="end" font-size="12">Closet</text>'+
-   '<text x="462" y="221" text-anchor="end" font-size="12">Entry</text>'+pieces;
+   '<path d="M172 0h130" stroke="#a7dcef" stroke-width="11"/><path d="M0 85v105" stroke="#a7dcef" stroke-width="11"/>'+
+   '<path d="M480 72v93" stroke="#fff" stroke-width="12"/><path d="M480 220v100" stroke="#fff" stroke-width="12"/>'+
+   '<text x="234" y="18" font-size="11" text-anchor="middle" fill="#594b58">Vanity window</text>'+
+   '<text x="15" y="73" font-size="11" fill="#594b58">Footboard window</text>'+
+   '<text x="470" y="64" text-anchor="end" font-size="12" fill="#594b58">Closet</text>'+
+   '<text x="470" y="213" text-anchor="end" font-size="12" fill="#594b58">Entry</text>'+
+   '<text x="64" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
   const label=root.querySelector("#dollyFloorSelected");if(label)label.textContent="Selected: "+FLOOR_ITEMS[floorSelected].label;
  }
  window.dollyFloorSelect=function(key){if(!FLOOR_ITEMS[key])return;floorSelected=key;floorDraw()};
@@ -455,7 +483,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" onclick="dollyFloorOpen()">Floor-plan arranger</button><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Bring missing vanity back into view">Find vanity</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff"><strong>Arrange on the floor · top view</strong><p>Drag furniture, turn 90°, or snap the selected piece to the nearest wall. Dimensions stay the same. This is a separate layout; your original arrangement is preserved.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close floor plan</button></div><p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 480 350" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top down bedroom furniture arranger"></svg></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" onclick="dollyFloorOpen()">Floor-plan arranger</button><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Bring missing vanity back into view">Find vanity</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff"><strong>Dolly’s photographed room · top view</strong><p>Photo-based starting positions: bed beneath Mario poster, vanity at its window, dresser on tapestry wall, Barbie house by closet. Drag and rotate without changing furniture size. This new reference plan preserves your earlier saved layout.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close floor plan</button></div><p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 480 350" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top down bedroom furniture arranger"></svg></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
