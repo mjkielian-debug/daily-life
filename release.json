@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided26",
+  "build": "20261016-guided27",
   "released": "2026-10-16",
-  "ui": "Reduce the after-work reminder to an actionable title and controls; keep full notes inside task details",
+  "ui": "Review photo inventory one item at a time and require confirmed quantity; roll back failed device saves",
   "data_version": "local-first data unchanged"
 }
