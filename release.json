@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided21",
+  "build": "20261016-guided22",
   "released": "2026-10-16",
-  "ui": "Protect saved House Map floor-plan images when device-storage deletion fails; includes guided20 truthful progress and next steps",
+  "ui": "Resume private photo uploads after partial failure without resending confirmed pictures; preselect the correct house-map floor",
   "data_version": "local-first data unchanged"
 }
