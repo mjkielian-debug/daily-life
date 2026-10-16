@@ -36,8 +36,8 @@
  function modelObject(key,body){
   const name=ITEMS[key].label;
   const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
-  return '<g class="dolly-scene-object dolly-svg-'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
-    ' onclick="dollyOpenObject(&#39;'+key+'&#39;)"'+
+  return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
+    ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
     ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+body+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
@@ -226,7 +226,58 @@
    '<path d="M287 431L287 451Q309 464 338 450" stroke="#9e84a9" stroke-width="2" stroke-dasharray="5 4" fill="none"/>'+
    '<text x="310" y="436" text-anchor="middle" class="dolly-scene-small">Entry*</text></g>';
  }
+ const LAYOUT_KEY="dailyLifeDollyRoomLayout_v1";
+ let arranging=false;
+ function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
+ function layoutApply(root){
+  if(!root)return;
+  const saved=layoutRead();
+  root.querySelectorAll(".dolly-scene-object[data-room-piece]").forEach(el=>{
+   const p=saved[el.dataset.roomPiece]||{};
+   el.setAttribute("transform","translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+")");
+   el.style.touchAction=arranging?"none":"";
+   el.style.cursor=arranging?"grab":"pointer";
+  });
+  const button=document.getElementById("dollyArrangeToggle");
+  if(button)button.textContent=arranging?"Done arranging":"Arrange room";
+  const reset=document.getElementById("dollyArrangeReset");
+  if(reset)reset.hidden=!arranging;
+ }
+ window.dollyIsArranging=function(){return arranging};
+ window.dollyToggleArrange=function(){arranging=!arranging;layoutApply(document.querySelector(".dolly-mini-svg"))};
+ window.dollyResetArrange=function(){if(!confirm("Reset furniture positions in Dolly’s miniature? Inventory and tasks will stay saved."))return;localStorage.removeItem(LAYOUT_KEY);layoutApply(document.querySelector(".dolly-mini-svg"))};
+ window.dollyScenePointerDown=function(event){
+  if(!arranging)return;
+  const obj=event.target.closest(".dolly-scene-object[data-room-piece]");
+  const svg=event.currentTarget;
+  if(!obj||!svg.contains(obj))return;
+  event.preventDefault();
+  const key=obj.dataset.roomPiece,base=layoutRead()[key]||{x:0,y:0};
+  const point=svg.createSVGPoint();
+  function coord(e){point.x=e.clientX;point.y=e.clientY;return point.matrixTransform(svg.getScreenCTM().inverse())}
+  const start=coord(event);let latest={x:Number(base.x)||0,y:Number(base.y)||0};
+  svg.setPointerCapture(event.pointerId);
+  const move=e=>{
+   if(e.pointerId!==event.pointerId)return;
+   const now=coord(e);
+   latest={x:Math.max(-280,Math.min(280,(Number(base.x)||0)+now.x-start.x)),y:Math.max(-230,Math.min(230,(Number(base.y)||0)+now.y-start.y))};
+   obj.setAttribute("transform","translate("+latest.x+" "+latest.y+")");
+  };
+  const stop=e=>{
+   if(e.pointerId!==event.pointerId)return;
+   svg.removeEventListener("pointermove",move);
+   svg.removeEventListener("pointerup",stop);
+   svg.removeEventListener("pointercancel",stop);
+   const all=layoutRead();all[key]=latest;
+   try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
+   layoutApply(svg);
+  };
+  svg.addEventListener("pointermove",move);
+  svg.addEventListener("pointerup",stop);
+  svg.addEventListener("pointercancel",stop);
+ };
  window.dollyRoomSceneHtml=function(){
+  setTimeout(()=>layoutApply(document.querySelector(".dolly-mini-svg")),0);
   const assets='<defs>'+
    '<linearGradient id="dollyWallLeft" x2="1" y2="1"><stop stop-color="#fbf5fc"/><stop offset="1" stop-color="#ead9ef"/></linearGradient>'+
    '<linearGradient id="dollyWallRight" x2="1" y2=".7"><stop stop-color="#fff7f6"/><stop offset="1" stop-color="#e3cfe0"/></linearGradient>'+
@@ -263,7 +314,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-scene dollhouse-view"><svg class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
