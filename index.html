@@ -193,7 +193,7 @@ dialog,
 <link rel="stylesheet" href="action-first.css?v=20261015-guided7">
 <link rel="stylesheet" href="today-guidance.css?v=20261016-guided26">
 <link rel="stylesheet" href="household-map-compact.css?v=20261016-map28">
-<link rel="stylesheet" href="household-map-layout.css?v=20261016-map28">
+<link rel="stylesheet" href="household-map-layout.css?v=20261016-guided30">
 <link rel="stylesheet" href="household-map-details.css?v=20261016-map28">
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 </head>
@@ -5690,20 +5690,19 @@ function householdMapPage(){
  const floors=["Basement","First floor","Second floor","Third floor"];
  let floor="First floor";try{floor=localStorage.getItem("dailyLifeMapFirstFloor")||floor}catch(e){}
  if(!floors.includes(floor))floor="First floor";
- const rooms=(state.houseRooms||[]).filter(r=>String(r.floor||"")===floor);
  return '<section class="household-map-page"><div class="household-map-title"><div><small>MY HOUSE</small><h1>Rooms + inventory</h1></div>'+
  '<button class="btn small primary" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+floor+'&#39;)">📷 Add photos</button></div>'+
  '<nav class="household-map-floors" aria-label="House floors">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)">'+esc(f==="Third floor"?"Third floor · attic":f)+'</button>').join("")+'</nav>'+
  '<div class="household-map-drawing">'+(typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p>Your private map will appear here after it loads.</p>')+'</div>'+
- '<div class="household-map-directory"><h2>Room progress</h2><small>Progress means completed saved tasks, not a cleanliness score.</small>'+
- (rooms.length?rooms.map(room=>{const p=householdMapProgress(room),pct=p.total?Math.round(100*p.done/p.total):null;const id=String(room.id||"").replace(/[^a-z0-9_-]/gi,"");
- return '<button class="household-room-progress" onclick="homeOpenRoomInventory(&#39;'+id+'&#39;)"><span><b>'+esc(room.name)+'</b><small>'+ (pct===null?"No tasks tracked yet":p.done+" / "+p.total+" tasks complete")+'</small></span><span><b>'+(pct===null?"—":pct+"%")+'</b><i><em style="width:'+(pct||0)+'%"></em></i></span></button>';
- }).join(""):'<p>Tap a room on the diagram above. Locally confirmed inventory rooms appear here once added.</p>')+
+ '<div class="household-map-directory"><div class="household-room-heading"><h2>Room progress</h2><small>Tap a room to see tasks + inventory</small></div>'+
+ '<div class="household-map-room-results" data-floor="'+esc(floor)+'">'+
+ (typeof houseVisualRoomProgressHtml==="function"?houseVisualRoomProgressHtml(floor):'<p>Loading room progress…</p>')+
+ '</div>'+
  '<div class="actions"><button class="btn" onclick="openInventoryRoom(&#39;&#39;,&#39;'+floor+'&#39;)">+ Add room</button>'+
- '<button class="btn" onclick="openInventoryPhotoReview()">Review photo items</button>'+
- '<button class="btn" onclick="openHomeAreaProjects()">Organize an area</button></div>'+
- '<p class="muted small">The diagram follows reviewed room zones; exact dimensions and furniture locations remain unmeasured unless confirmed.</p></div></section>';
+ '<button class="btn" onclick="openInventoryPhotoReview()">Review inventory</button>'+
+ '<button class="btn" onclick="openHomeAreaProjects()">Organize an area</button></div></div></section>';
 }
+
 function householdView(){
   const rooms=(state.houseRooms||[]).length,items=(state.inventoryItems||[]).length,pets=(state.pets||[]).length,
         petDue=typeof duePetRoutines==="function"?duePetRoutines():[],
@@ -7966,7 +7965,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261016-guided29";
+const DAILY_LIFE_BUILD="20261016-guided30";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8040,7 +8039,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided29");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided30");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8075,7 +8074,7 @@ registerAppWorker();
 <script src="inventory-goals.js?v=20261015-guided10"></script>
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
-<script src="house-visual-map.js?v=20261016-guided29"></script>
+<script src="house-visual-map.js?v=20261016-guided30"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
 <script src="inventory-photo-review.js?v=20261016-guided27"></script>
