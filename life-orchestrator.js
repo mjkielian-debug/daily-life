@@ -661,9 +661,14 @@
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
       timed=allBlocks.filter(x=>!x.nonBlocking&&!x.done&&!dayFlowBlockDone(x,today)&&x.kind!=="gap"&&x.kind!=="context"&&x.kind!=="sleep"&&hmMinutes(x.start)!==null),
       active=timed.find(x=>hmMinutes(x.start)<=minutes&&hmMinutes(x.end)!==null&&hmMinutes(x.end)>minutes),
-      workWindow=timed.find(x=>x.source==="work"&&hmMinutes(x.start)<=minutes&&
-        hmMinutes(x.end)!==null&&hmMinutes(x.end)>minutes),
-      workFocus=!!workWindow,
+      workRow=timed.find(x=>x.source==="work"&&hmMinutes(x.start)<=minutes),
+      workWindow=workRow&&hmMinutes(workRow.end)!==null&&hmMinutes(workRow.end)>minutes?workRow:null,
+      workEstimatedEnd=workRow?hmMinutes(workRow.end):null,
+      actualWork=typeof workForDate==="function"?workForDate(today):null,
+      workEndIsConfirmed=!!(actualWork&&typeof workEndConfirmed==="function"&&workEndConfirmed(actualWork)),
+      shiftEndUnconfirmed=!!workRow&&!!workRow.estimatedEnd&&!workEndIsConfirmed&&
+        workEstimatedEnd!==null&&minutes>=workEstimatedEnd&&minutes<workEstimatedEnd+180,
+      workFocus=!!workWindow||shiftEndUnconfirmed,
       future=timed.filter(x=>hmMinutes(x.start)>=minutes).sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),
       imminent=future.find(x=>hmMinutes(x.start)-minutes<=45),
       // The task queue can omit a legitimate task that Today still shows.
@@ -772,11 +777,15 @@
         '<div><span>UP NEXT · '+esc(fmtClock(night.kidsBedtime||"20:30"))+'</span><strong>Kids’ bedtime</strong>'+
         '<small>Finish settling in. Check on reading and bedtime readiness; no steps are assumed done.</small></div>'+
         '<button type="button" onclick="openTodayDayFlow()">Day Flow ›</button></section>':'')+
-      (workFocus?'<section class="dl-work-now" aria-label="Current UPS work window">'+
-        '<div class="dl-work-heading"><span>WORK WINDOW</span><strong>UPS preload</strong>'+
-        '<small>'+(workWindow.estimatedEnd?"Estimated until "+fmtClock(workWindow.end)+" · not a confirmed punch-out":
+      (workFocus?'<section class="dl-work-now" aria-label="UPS work status">'+
+        '<div class="dl-work-heading"><span>'+(shiftEndUnconfirmed?"SHIFT END UNCONFIRMED":"WORK WINDOW")+'</span><strong>UPS preload</strong>'+
+        '<small>'+(shiftEndUnconfirmed?
+          "Estimated end was "+fmtClock(workRow.end)+". Actual punch-out is not recorded.":
+          workWindow.estimatedEnd?"Estimated until "+fmtClock(workWindow.end)+" · not a confirmed punch-out":
           "Scheduled until "+fmtClock(workWindow.end)+" · check actual punches")+'</small></div>'+
-        '<p>Keep cold water within reach when practical. Your personal tasks can wait until after work.</p>'+
+        '<p>'+(shiftEndUnconfirmed?
+          "If you’re still working, finish your shift first. If you’ve left, check the actual punch-out when convenient.":
+          "Keep cold water within reach when practical. Your personal tasks can wait until after work.")+'</p>'+
         '<div class="dl-work-actions"><button type="button" onclick="openQuickHydration()">💧 Log water you drank</button>'+
           '<button type="button" onclick="openCareHubSection(\'work\')">Work details ›</button></div></section>':
         active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
