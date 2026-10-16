@@ -276,6 +276,10 @@ const blankState=()=>({
 });
 const APP_BUILD="2026.10.15-private-photo-inbox5";
 let appStartupReady=false;
+let appHydrating=true;
+let startupLocalDataReady=false;
+let startupFallbackAvailable=false;
+let startupFallbackTimer=null;
 let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Rainbow Rose","#c34d84","#9bc8ee","#f6cf8a"],
@@ -287,7 +291,7 @@ const themes=[
   ["Rainbow Sky","#497cad","#f1b9d4","#ffd398"],
   ["Warm Lilac","#835cb2","#f5b6c8","#e9cb91"]
 ];
-async function save(){await dbSet("state",state);if(typeof cloudSchedulePush==="function")cloudSchedulePush()}
+async function save(){await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
 function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f6dbe9");return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
 const ZODIAC_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
@@ -1936,7 +1940,7 @@ function renderSetup(){
 function render(){
   if(!appStartupReady){
     const root=document.querySelector("#app");
-    if(root)root.innerHTML='<main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p></main>';
+    if(root)root.innerHTML='<main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p>'+(startupFallbackAvailable?'<div class="notice" style="margin:22px auto 12px;max-width:420px;text-align:left">Your saved information on this phone is ready. Daily Life is taking longer than usual to reconnect your account.</div><button class="btn primary" type="button" onclick="continueWithSavedData()">Open saved information on this phone</button><p class="muted small">This keeps your current records on the phone and does not start a new account.</p>':'')+'</main>';
     return;
   }
   if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#f6dbe9");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${typeof lifeSimHud==="function"?lifeSimHud():""}${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
@@ -7976,8 +7980,58 @@ function correctOct14PickupRecord(){
     e.status="confirmed";
   }
 }
-async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261016-guided46";
+function continueWithSavedData(){
+  if(!startupLocalDataReady)return;
+  startupFallbackAvailable=false;
+  appStartupReady=true;
+  render();
+  const app=document.querySelector(".app"),header=app?.querySelector("header");
+  if(app&&header){
+    const note=document.createElement("div");
+    note.className="notice";
+    note.setAttribute("role","status");
+    note.textContent="Using the saved information on this phone while account sync reconnects. Changes are being saved on this device.";
+    header.insertAdjacentElement("afterend",note);
+  }
+}
+async function init(){
+  try{
+    const storedState=await dbGet("state");
+    state=migrateState(storedState||blankState());
+    if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);
+    if(typeof vaultInit==="function")await vaultInit();
+    ensureMealPatterns();
+    startupLocalDataReady=true;
+    startupFallbackTimer=setTimeout(()=>{
+      if(appStartupReady)return;
+      startupFallbackAvailable=true;
+      render();
+    },12000);
+    await cloudInit();
+    ensureRecurringFamilyEvents();ensureFamilyDay();
+    if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
+    applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();
+    await queueMissingMealRecipes();
+    sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();
+    await cloudFinanceInit();
+    if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();
+    if(typeof sharingInit==="function")await sharingInit();
+    appHydrating=false;
+    appStartupReady=true;
+    if(startupFallbackTimer)clearTimeout(startupFallbackTimer);
+    startupFallbackAvailable=false;
+    await save();render();
+    if(!needsSetup())getWeather();
+  }catch(error){
+    console.warn("Daily Life startup is still waiting for a connection or saved record",error);
+    if(startupLocalDataReady){
+      if(startupFallbackTimer)clearTimeout(startupFallbackTimer);
+      startupFallbackAvailable=true;
+      render();
+    }
+  }
+}
+const DAILY_LIFE_BUILD="20261016-guided47";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8051,7 +8105,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided46");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided47");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
