@@ -52,7 +52,7 @@
    '<path d="M-4 99L18 117L18 195L-4 177Z" fill="#e3dcda" stroke="#bdb1b0" stroke-width="2"/>'+
    '<path d="M25 143L81 128M25 166L81 151" stroke="#c8bdb9" stroke-width="2"/>'+
    '</g>';
-  if(key==="barbie")return '<g transform="translate(59 2)">'+
+  if(key==="barbie")return '<g transform="translate(28 2) scale(1.55 1)">'+
    '<ellipse cx="44" cy="277" rx="56" ry="13" fill="#725066" opacity=".16"/>'+
    '<path d="M0 58L50 36L91 53L43 75Z" fill="#f3a8cf" stroke="#c97ba5" stroke-width="4"/>'+
    '<path d="M0 58L43 75L43 264L0 249Z" fill="#eaa0c9" stroke="#b67a9b" stroke-width="3"/>'+
@@ -69,7 +69,7 @@
   const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
   return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
     ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(.92 .72)',vanity:'translate(304 165) scale(.78)',dollhouse:'translate(442 205) scale(.69)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(1.35 .88)',vanity:'translate(240 145) scale(.78)',dollhouse:'translate(442 205) scale(.69)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
  // These are visual approximations, not photographs or measured dimensions.
@@ -368,7 +368,7 @@
    // Smaller frame toward the back corner, with a clear gap from the Mario poster.
    '<g transform="translate(220 -15) scale(.72)">'+bedWindowDrawing()+'</g>'+
    // The bed-side window is on the perpendicular RIGHT wall. Its frame follows that wall perspective.
-   '<g aria-label="Window beside the long side of Dolly’s bed">'+
+   '<g transform="translate(-32 4)" aria-label="Window beside the long side of Dolly’s bed">'+
    '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
    '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="2"/>'+
    '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/>'+
@@ -388,7 +388,7 @@
    modelObject("bed",bed)+
    modelObject("dollhouse",barbie)+
    '<g aria-label="Closet label" pointer-events="none"><rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/><text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text></g>'+
-   '<g aria-label="Bedroom entry"><path d="M554 164L590 181L590 268L554 251Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M561 174L582 184L582 251L561 241Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><circle cx="578" cy="224" r="3" fill="#ae9a86"/><text x="568" y="161" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
+   '<g aria-label="Bedroom entry"><path d="M550 153L591 172L591 313L550 294Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M556 162L582 175L582 296L556 283Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><path d="M562 175L577 182L577 228L562 221ZM562 234L577 241L577 282L562 275Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/><circle cx="580" cy="245" r="3" fill="#ae9a86"/><text x="568" y="146" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
    '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
    '</svg></div>'+
    '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> white sleigh bed under Mario poster beside one window; white vanity under the other; long brown dresser on the former Barbie wall; large open-front pink Barbie house near the closet. Shift the house slightly to access the closet.</p>'+
