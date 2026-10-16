@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided59",
+  "build": "20261016-guided60",
   "released": "2026-10-16",
-  "ui": "Wait for all UI scripts before initializing saved dashboard",
+  "ui": "Expose dashboard ReferenceError details and failing startup stage",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
