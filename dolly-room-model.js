@@ -477,7 +477,7 @@ function dollyPerspectiveSync(){
   svg.addEventListener("pointermove",move);svg.addEventListener("pointerup",stop);svg.addEventListener("pointercancel",stop);
  };
  window.dollyRoomSceneHtml=function(){
-  setTimeout(()=>{layoutApply(document.querySelector(".dolly-mini-svg"));dollyPerspectiveSync()},0);
+  setTimeout(()=>{layoutApply(document.querySelector(".dolly-mini-svg"));dollyPerspectiveSync()},80);setTimeout(dollyPerspectiveSync,350);
   const assets='<defs>'+
    '<linearGradient id="dollyWallLeft" x2="1" y2="1"><stop stop-color="#fbf5fc"/><stop offset="1" stop-color="#ead9ef"/></linearGradient>'+
    '<linearGradient id="dollyWallRight" x2="1" y2=".7"><stop stop-color="#fff7f6"/><stop offset="1" stop-color="#e3cfe0"/></linearGradient>'+
