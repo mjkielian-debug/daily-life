@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided23",
+  "build": "20261016-guided24",
   "released": "2026-10-16",
-  "ui": "Only confirm today's matching room-reset task and keep paused, hidden, or differently assigned tasks out of room priorities",
+  "ui": "Compact secondary after-work reminders and explicitly distinguish unlogged water from recorded intake",
   "data_version": "local-first data unchanged"
 }
