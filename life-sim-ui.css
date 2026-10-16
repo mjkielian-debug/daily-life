@@ -14,6 +14,7 @@
 .life-sim-console>summary small{font-size:.61rem;line-height:1.1;overflow-wrap:anywhere}
 .life-sim-console-arrow{margin-left:auto;font-size:.9rem}
 .life-sim-console[open]{position:relative;z-index:5}
+.life-sim-hud:has(.life-sim-console[open]){position:relative;z-index:20}
 .life-sim-console-body{position:absolute;right:0;top:calc(100% + 7px);width:min(560px,calc(100vw - 24px));max-height:min(70vh,610px);overflow:auto;display:grid;gap:12px;padding:13px;border:1px solid var(--border);border-radius:20px;background:var(--panel);box-shadow:var(--shadow)}
 .life-sim-section-heading{display:flex;align-items:center;justify-content:space-between;gap:9px}
 .life-sim-section-heading>div{display:grid;gap:3px}
