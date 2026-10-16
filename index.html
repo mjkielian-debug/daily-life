@@ -199,8 +199,8 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided55…</p></main></div>
-<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided55">Reload Daily Life</a></div></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided56…</p></main></div>
+<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided56">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
@@ -211,11 +211,11 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
     try{if(typeof startupLocalDataReady!=="undefined"&&startupLocalDataReady&&typeof render==="function"){appStartupReady=true;render()}}catch(e){}
   }
   if(root.textContent.includes("Opening your Daily Life")){
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for startup to finish.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided55. Nothing has been reset or changed. Your saved information remains on this phone.</div><a class="btn primary" href="./?dl_retry=guided53">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for startup to finish.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided56. Nothing has been reset or changed. Your saved information remains on this phone.</div><a class="btn primary" href="./?dl_retry=guided53">Reload Daily Life</a></main>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided55").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261016-guided56").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -8046,6 +8046,11 @@ async function init(){
     if(startupStorageWatchdog)clearTimeout(startupStorageWatchdog);
     startupStorageWatchdog=null;
     startupStorageStalled=false;
+    // Open the saved on-device app immediately. Cloud reconnect and account
+    // services can continue below without keeping the whole app behind a splash.
+    appStartupReady=true;
+    render();
+    document.getElementById("startupFailsafe")?.remove();
     startupFallbackTimer=setTimeout(()=>{
       if(appStartupReady)return;
       startupFallbackAvailable=true;
@@ -8082,7 +8087,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided55";
+const DAILY_LIFE_BUILD="20261016-guided56";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8156,7 +8161,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided55");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided56");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
