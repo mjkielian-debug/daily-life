@@ -1,0 +1,54 @@
+/* Sims-inspired household controls. Uses the current theme colors unchanged. */
+.life-sim-hud{display:grid;gap:8px;min-width:0;margin:0 0 12px}
+.life-sim-toolbar{display:flex;align-items:center;gap:9px;min-width:0}
+.life-sim-roster{display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 1px 5px;scrollbar-width:thin}
+.life-sim-sim{display:grid;justify-items:center;align-content:center;gap:3px;flex:0 0 58px;min-width:58px;min-height:61px;padding:4px;border:1px solid var(--border);border-radius:16px;background:var(--panel);color:var(--text);font:inherit;font-size:.65rem;font-weight:800;line-height:1.05;text-align:center;cursor:pointer}
+.life-sim-sim.is-active{outline:2px solid currentColor;outline-offset:1px}
+.life-sim-avatar{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;font-weight:900;font-size:.88rem}
+.life-sim-console{flex:0 0 auto;min-width:113px;max-width:148px}
+.life-sim-console>summary{display:flex;align-items:center;gap:6px;list-style:none;min-height:54px;padding:6px 9px;border:1px solid var(--border);border-radius:16px;background:var(--panel);cursor:pointer}
+.life-sim-console>summary::-webkit-details-marker{display:none}
+.life-sim-live-indicator{font-size:.7rem}
+.life-sim-console>summary>span:nth-child(2){display:grid;gap:2px;min-width:0}
+.life-sim-console>summary b{font-size:.75rem;line-height:1.05}
+.life-sim-console>summary small{font-size:.61rem;line-height:1.1;overflow-wrap:anywhere}
+.life-sim-console-arrow{margin-left:auto;font-size:.9rem}
+.life-sim-console[open]{position:relative;z-index:5}
+.life-sim-console-body{position:absolute;right:0;top:calc(100% + 7px);width:min(560px,calc(100vw - 24px));max-height:min(70vh,610px);overflow:auto;display:grid;gap:12px;padding:13px;border:1px solid var(--border);border-radius:20px;background:var(--panel);box-shadow:var(--shadow)}
+.life-sim-section-heading{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.life-sim-section-heading>div{display:grid;gap:3px}
+.life-sim-section-heading .eyebrow{font-size:.61rem}
+.life-sim-section-heading b{font-size:.88rem}
+.life-sim-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.life-sim-status{display:grid;gap:7px;min-width:0;padding:9px;border:1px solid var(--border);border-radius:13px;background:var(--panel2);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.life-sim-status-head{display:flex;align-items:baseline;justify-content:space-between;gap:5px;min-width:0}
+.life-sim-status-head b{font-size:.7rem;line-height:1.15}
+.life-sim-status-head small{font-size:.64rem;text-align:right;overflow-wrap:anywhere}
+.life-sim-meter{display:block;width:100%;height:6px;overflow:hidden;border-radius:99px;background:var(--border)}
+.life-sim-meter i{display:block;height:100%;border-radius:inherit;background:var(--success)}
+.life-sim-meter-unknown i{width:0!important}
+.life-sim-queue-heading{margin-top:1px}
+.life-sim-queue{display:grid;gap:5px}
+.life-sim-queue-item{display:flex;align-items:center;gap:8px;min-width:0;padding:7px;border:1px solid var(--border);border-radius:13px;background:var(--panel2)}
+.life-sim-queue-order{display:grid;place-items:center;flex:0 0 25px;height:25px;border:1px solid var(--border);border-radius:50%;font-size:.72rem;font-weight:900}
+.life-sim-queue-copy{display:grid;gap:2px;flex:1;min-width:0}
+.life-sim-queue-copy b{font-size:.73rem;line-height:1.2;overflow-wrap:anywhere}
+.life-sim-queue-copy small{font-size:.64rem;line-height:1.25;overflow-wrap:anywhere}
+.life-sim-queue-controls{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+.life-sim-queue-controls .btn{min-width:31px;min-height:32px;padding:4px 6px;font-size:.68rem}
+.life-sim-queue-controls .btn:disabled{opacity:.4;cursor:default}
+.life-sim-empty{margin:0;padding:8px}
+.life-sim-interactions{display:flex;gap:6px;flex-wrap:wrap}
+.life-sim-interactions .btn{min-height:36px;padding:6px 9px;font-size:.75rem}
+.life-sim-picker-list{display:grid;gap:6px}
+.life-sim-picker-row{display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:13px;background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.life-sim-picker-row>span:first-child{display:grid;gap:3px;min-width:0}
+.life-sim-picker-row b{font-size:.8rem;overflow-wrap:anywhere}
+.life-sim-picker-row small{font-size:.67rem}
+@media(max-width:420px){
+  .life-sim-toolbar{gap:6px}
+  .life-sim-sim{flex-basis:52px;min-width:52px;min-height:56px}
+  .life-sim-console{min-width:105px;max-width:124px}
+  .life-sim-console>summary{min-height:51px;padding:5px 7px}
+  .life-sim-console-body{right:-1px;padding:11px;gap:10px}
+}

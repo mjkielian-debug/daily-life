@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided42",
+  "build": "20261016-guided44",
   "released": "2026-10-16",
-  "ui": "Photo-correct Dolly’s two-by-three dresser drawers, vanity center opening, and shorter three-story Barbie house",
+  "ui": "Add a Sims-inspired household roster, live HUD, status needs and action queue",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
