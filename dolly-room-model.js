@@ -248,7 +248,7 @@
    '<path d="M26 183L305 50L592 180" fill="none" stroke="#fffafa" stroke-width="9" stroke-linejoin="round"/>'+
    marioPosterDrawing()+bedWindowDrawing()+
    // Both windows are known; exact frame sizes are intentionally not to scale.
-   '<g transform="translate(-250 37) scale(.82)">'+windowDrawing()+'</g>';
+   '<g transform="translate(-85 -26)">'+windowDrawing()+'</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
   const dresser='<g transform="translate(48 237) scale(.92 .72)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
@@ -259,11 +259,11 @@
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
-   modelObject("bed",bed)+
    modelObject("dresser",dresser)+
+   modelObject("bed",bed)+
    modelObject("dollhouse",barbie)+
-   modelObject("closet",'<rect x="479" y="218" width="70" height="33" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
-    '<text x="514" y="239" text-anchor="middle" class="dolly-scene-small">Closet ↗</text>')+
+   modelObject("closet",'<rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
+    '<text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text>')+
    '<g aria-label="Bedroom entry"><path d="M554 164L590 181L590 268L554 251Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M561 174L582 184L582 251L561 241Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><circle cx="578" cy="224" r="3" fill="#ae9a86"/><text x="568" y="161" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
    '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
    '</svg></div>'+
