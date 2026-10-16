@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided49",
+  "build": "20261016-guided50",
   "released": "2026-10-16",
-  "ui": "Let app startup proceed while external libraries load",
+  "ui": "Add early startup diagnostics and worker update check",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
