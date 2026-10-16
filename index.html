@@ -199,10 +199,12 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided56…</p></main></div>
-<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided56">Reload Daily Life</a></div></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided57…</p></main></div>
+<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided57">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
+window.__DailyLifeStartupStage="Waiting for app code";
+window.__DailyLifeStartupDetail="Your saved information has not been changed.";
 window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   const root=document.getElementById("app");
   if(!root||!root.textContent.includes("Opening your Daily Life"))return;
@@ -211,11 +213,15 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
     try{if(typeof startupLocalDataReady!=="undefined"&&startupLocalDataReady&&typeof render==="function"){appStartupReady=true;render()}}catch(e){}
   }
   if(root.textContent.includes("Opening your Daily Life")){
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for startup to finish.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided56. Nothing has been reset or changed. Your saved information remains on this phone.</div><a class="btn primary" href="./?dl_retry=guided53">Reload Daily Life</a></main>';
+    const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
+    const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261016-guided57 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=guided57">Reload Daily Life</a></main>';
+    const panel=document.querySelector("#startupFailsafe .panel");
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261016-guided57 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=guided57">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided56").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261016-guided57").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -233,8 +239,9 @@ function openDB(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(DB_NAME,DB_VERSION);
     req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE)};
-    req.onsuccess=()=>{__db=req.result;resolve(__db)};
-    req.onerror=()=>reject(req.error);
+    req.onblocked=()=>{window.__DailyLifeStartupStage="Waiting for phone storage";window.__DailyLifeStartupDetail="Phone storage is busy in another Daily Life page. The saved information has not been changed."};
+    req.onsuccess=()=>{__db=req.result;__db.onversionchange=()=>__db.close();resolve(__db)};
+    req.onerror=()=>reject(req.error||new Error("Phone storage could not be opened."));
   });
 }
 async function dbGet(key){
@@ -8037,9 +8044,16 @@ async function init(){
     render();
   },12000);
   try{
-    const storedState=await dbGet("state");
+    window.__DailyLifeStartupStage="Reading saved information";
+    window.__DailyLifeStartupDetail="Phone storage has not responded yet. Your saved information has not been erased or replaced.";
+    const storedState=await Promise.race([
+      dbGet("state"),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Phone storage did not respond before the startup limit.")),15000))
+    ]);
+    window.__DailyLifeStartupStage="Preparing saved information";
     state=migrateState(storedState||blankState());
     if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);
+    window.__DailyLifeStartupStage="Opening private vault";
     if(typeof vaultInit==="function")await vaultInit();
     ensureMealPatterns();
     startupLocalDataReady=true;
@@ -8048,6 +8062,8 @@ async function init(){
     startupStorageStalled=false;
     // Open the saved on-device app immediately. Cloud reconnect and account
     // services can continue below without keeping the whole app behind a splash.
+    window.__DailyLifeStartupStage="Connecting account in background";
+    window.__DailyLifeStartupDetail="Your saved information is ready on this phone.";
     appStartupReady=true;
     render();
     document.getElementById("startupFailsafe")?.remove();
@@ -8087,7 +8103,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided56";
+const DAILY_LIFE_BUILD="20261016-guided57";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8161,7 +8177,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided56");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided57");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
