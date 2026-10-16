@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided27",
+  "build": "20261016-guided28",
   "released": "2026-10-16",
-  "ui": "Review photo inventory one item at a time and require confirmed quantity; roll back failed device saves",
+  "ui": "Household opens to a four-floor clickable map. Rooms show confirmed inventory and tracked task progress; Today links directly to House Map.",
   "data_version": "local-first data unchanged"
 }
