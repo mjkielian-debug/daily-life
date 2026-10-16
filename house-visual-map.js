@@ -221,14 +221,17 @@ window.houseVisualOpenZone=function(f,id){
 
  const spots=arr(z.markers).map(p=>'<div class="hvm-detail-marker"><b>'+h(p.label)+'</b><small>'+h(p.status||"")+'</small>'+
  (p.note?'<p>'+h(p.note)+'</p>':"")+'</div>').join("");
- const markup='<div class="hvm-zone-detail">'+progress+'<details class="hvm-context"><summary>Map observations and landmarks</summary><p>'+h(z.notes||"")+'</p>'+
+ const actions='<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button>'+
+ '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
+ (room?"Open full inventory":"+ Link inventory")+'</button>'+
+ '<button class="btn" type="button" onclick="openHouseFloorMap(&#39;'+f+'&#39;)">← Floor map</button></div>';
+ const references='<details class="hvm-room-extra"><summary>Reference photos ('+photos.length+') + mapping notes ›</summary>'+
+ (photos.length?'<div class="hvm-detail-photos">'+photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join("")+'</div>':"")+
+ (z.notes?'<p>'+h(z.notes)+'</p>':"")+
  (spots?'<div class="hvm-detail-markers"><strong>Mapped spots</strong>'+spots+'</div>':"")+
- '</details>'+
- '<div class="hvm-detail-photos"><strong>Reference photos ('+photos.length+')</strong>'+
- (photos.length?photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join(""):'<p>No photos assigned to this room yet.</p>')+'</div>'+
- '<div class="hvm-detail-actions"><button class="btn" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button><button class="btn primary" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
- (localRoom(f,z)?"Open room inventory":"+ Add room inventory")+'</button>'+
- '<button class="btn" onclick="openHouseFloorMap(&#39;'+f+'&#39;)">← Floor map</button></div></div>';
+ '</details>';
+ const markup='<div class="hvm-zone-detail">'+progress+actions+references+'</div>';
+
  modal(z.name+" · "+f,markup,"Close",closeModal);
 };
 })();
