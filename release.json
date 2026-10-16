@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided19",
+  "build": "20261016-guided20",
   "released": "2026-10-16",
-  "ui": "Preserve completed chore history across schedule changes and safely roll back failed shared task updates",
+  "ui": "Keep Today next steps aligned to visible actionable tasks; never count children's chores as the personal task ring",
   "data_version": "local-first data unchanged"
 }
