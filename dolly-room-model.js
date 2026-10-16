@@ -35,14 +35,15 @@
 
  function furnitureSide(key){
   // Local coordinates match the original art's bounding box, with a narrower but genuinely redrawn side.
-  if(key==="dresser")return '<g transform="translate(108 10) scale(1.65 1)">'+
-   '<ellipse cx="25" cy="163" rx="45" ry="12" fill="#60422e" opacity=".17"/>'+
-   '<path d="M-12 34L44 19L73 36L16 52Z" fill="#b77b50" stroke="#65402c" stroke-width="3"/>'+
-   '<path d="M16 52L73 36L73 141L16 158Z" fill="#8c5535" stroke="#593721" stroke-width="3"/>'+
-   '<path d="M-12 34L16 52L16 158L-12 138Z" fill="#6f422b" stroke="#543221" stroke-width="3"/>'+
-   '<path d="M22 64L67 51M22 88L67 75M22 112L67 99" stroke="#a16b48" stroke-width="2" opacity=".5"/>'+
+  if(key==="dresser")return '<g>'+
+   '<ellipse cx="118" cy="168" rx="111" ry="13" fill="#60422e" opacity=".17"/>'+
+   '<path d="M5 49L192 9L240 35L51 80Z" fill="#b77b50" stroke="#65402c" stroke-width="3"/>'+
+   '<path d="M51 80L240 35L240 125L51 170Z" fill="#8c5535" stroke="#593721" stroke-width="3"/>'+
+   '<path d="M5 49L51 80L51 170L5 139Z" fill="#6f422b" stroke="#543221" stroke-width="3"/>'+
+   '<path d="M61 91L228 52M61 115L228 76M61 139L228 100" stroke="#a16b48" stroke-width="2" opacity=".5"/>'+
+   '<path d="M60 169L239 124" stroke="#5e3b29" stroke-width="5"/>'+
    '</g>';
-  if(key==="vanity")return '<g transform="translate(59 5)">'+
+    if(key==="vanity")return '<g transform="translate(59 5)">'+
    '<ellipse cx="35" cy="203" rx="48" ry="11" fill="#75606e" opacity=".13"/>'+
    '<path d="M14 29Q14 9 35 9L58 11Q69 13 69 28L69 88L14 87Z" fill="#bba56f" stroke="#947e50" stroke-width="3"/>'+
    '<path d="M19 31Q19 17 36 17L56 18Q63 19 63 30L63 81L19 81Z" fill="#d5e8ed" stroke="#f7e4ae" stroke-width="2"/>'+
@@ -260,9 +261,13 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
+  // Rotate the artwork in place: anchor every view to the same original dresser footprint.
   const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
   const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
-  if(front&&side){front.style.display=direction%2===0?"":"none";side.style.display=direction%2===1?"":"none";}
+  if(front&&side){
+    front.style.display=direction%2===0?"":"none";
+    side.style.display=direction%2===1?"":"none";
+  }
   const x=Number(p.x),y=Number(p.y);
   return "translate("+(Number.isFinite(x)?x:0)+" "+(Number.isFinite(y)?y:0)+")";
  }
