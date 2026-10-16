@@ -38,3 +38,28 @@
 .dolly-task-line>span{font-size:.84rem}
 .dolly-task-line>small{font-size:.68rem;color:#655270}
 @media(max-width:370px){.dolly-room-scene{height:260px}.dolly-furn-bed{height:94px}.dolly-furn strong{font-size:.72rem}.dolly-furn small{font-size:.54rem}.dolly-furn-vanity{top:73px}}
+
+/* Guided34 · a true angled miniature-room illustration, rather than furniture icons. */
+.dolly-room-card.dolly-room-3d{gap:10px;background:linear-gradient(135deg,#fff9fd,#f6ecfb);padding:10px}
+.dolly-room-3d .dolly-room-heading{align-items:center}
+.dolly-room-3d .dolly-room-heading h3{font-size:1.15rem!important;color:#483050!important;line-height:1.2;text-shadow:none!important;margin:2px 0 0}
+.dolly-room-3d .dolly-room-heading>span{font-size:.68rem;color:#5c4165}
+.dolly-room-3d .dolly-room-scene.dollhouse-view{
+ position:relative;height:auto!important;min-height:0!important;max-height:none!important;
+ background:linear-gradient(#e8d7e9,#dcc9e0);border-radius:18px;
+ border:1px solid #cbb4d1;overflow:hidden;padding:0;line-height:0;
+ box-shadow:inset 0 1px 10px rgba(84,55,88,.2),0 4px 12px rgba(84,55,88,.1)
+}
+.dolly-room-3d .dolly-mini-svg{display:block;width:100%;height:auto;max-width:100%;overflow:visible}
+.dolly-scene-object{cursor:pointer;transition:filter .15s ease,transform .15s ease;outline:none}
+.dolly-scene-object:hover,.dolly-scene-object:focus-visible{filter:drop-shadow(0 0 8px rgba(122,72,160,.65));transform:translateY(-2px)}
+.dolly-scene-object:focus-visible{stroke:#7642aa;stroke-width:1.4}
+.dolly-scene-label,.dolly-scene-bed-label{
+ font-family:system-ui,sans-serif;font-weight:850;font-size:15px;fill:#422e4b;
+ paint-order:stroke;stroke:#fff7ff;stroke-width:4px;stroke-linejoin:round;pointer-events:none
+}
+.dolly-scene-bed-label{font-size:19px;fill:#533f60}
+.dolly-room-3d .dolly-room-caveat{font-size:.73rem;color:#664e6b;line-height:1.4;margin:0!important}
+.dolly-room-3d .dolly-room-caveat b{font-weight:850}
+.dolly-room-3d .dolly-room-helper{font-size:.75rem;color:#503a60;line-height:1.35}
+@media(max-width:390px){.dolly-room-card.dolly-room-3d{padding:7px;gap:8px}.dolly-room-3d .dolly-room-heading h3{font-size:1.02rem!important}}
