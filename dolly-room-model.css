@@ -1,0 +1,40 @@
+/* Dolly's bedroom · guided33 · illustrative Sims-inspired working room.
+   Furniture positions except under-window vanity are not verified. */
+.dolly-room-card{display:grid;gap:9px;padding:12px;border:1px solid #d9c9e6;border-radius:22px;background:linear-gradient(135deg,#fff6fd,#f2f3ff);color:#453251}
+.dolly-room-heading{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.dolly-room-heading h3{font-size:1.06rem;margin:0}
+.dolly-room-heading small{display:block;letter-spacing:.09em;font-size:.65rem;color:#856482;font-weight:850}
+.dolly-room-heading>span{font-size:.69rem;font-weight:800;border-radius:99px;background:#fff;border:1px solid #e5d4e7;padding:5px 9px;white-space:nowrap}
+.dolly-room-scene{isolation:isolate;position:relative;height:290px;overflow:hidden;border-radius:21px;border:2px solid #d3badc;background:linear-gradient(145deg,#f7e9ee,#e7dce8);box-shadow:inset 0 2px 14px #7a5c8630,0 8px 18px #6b476c18}
+.dolly-room-backwall{position:absolute;top:0;left:0;right:0;height:69px;background:linear-gradient(#f5eaf5,#e9d7e8);border-bottom:6px solid #cdb8d2;box-shadow:0 5px 8px #7055761a}
+.dolly-room-window{display:block;position:absolute;left:50%;transform:translateX(-50%);top:5px;width:34%;min-width:90px;height:44px;border:5px solid #fbfbff;background:linear-gradient(90deg,#d7ecfa 49%,#f6faff 50%,#d3eafd 51%);color:#52647e;text-align:center;line-height:35px;font-size:.66rem;font-weight:850;box-shadow:0 3px 5px #624d7227}
+.dolly-room-floor{position:absolute;inset:69px 0 0;background:repeating-linear-gradient(15deg,#ebdfe8 0 38px,#e7d5e3 39px 41px,#f2e5ed 42px 75px);opacity:.95}
+.dolly-furn{position:absolute;z-index:1;display:grid;gap:1px;align-content:center;justify-items:center;min-width:0;min-height:67px;padding:6px;border:2px solid #fff;border-bottom:5px solid #d1accb;border-radius:14px;background:#fff7fa;color:#4f3b58;box-shadow:0 7px 0 #b99bbb66,0 10px 16px #6e466933;cursor:pointer;font:inherit}
+.dolly-furn:focus-visible{outline:3px solid #7d4d9a;outline-offset:2px}
+.dolly-furn strong{font-size:.79rem;line-height:1.05}
+.dolly-furn small{font-size:.59rem;line-height:1.1;color:#77617a}
+.dolly-furn-art{font-size:1.3rem;line-height:1.25}
+.dolly-furn-vanity{top:76px;left:35%;width:31%;background:#f5e8fc;border-bottom-color:#ba9dd4}
+.dolly-furn-bed{left:6%;top:148px;width:45%;height:116px;background:repeating-linear-gradient(135deg,#faf9ff 0 22px,#e1d7f8 23px 39px,#f4eefe 40px 54px);border-bottom-color:#a99dcc}
+.dolly-furn-bed .dolly-furn-art{font-size:1.8rem}
+.dolly-furn-dresser{right:5%;top:150px;width:36%;background:#f5e0d9;border-bottom-color:#d3ad9d}
+.dolly-furn-dollhouse{right:5%;bottom:14px;width:36%;background:#fae5f4;border-bottom-color:#d3a4c7}
+.dolly-room-caveat{margin:0;font-size:.73rem;line-height:1.35;color:#6b5573}
+.dolly-room-helper{font-size:.72rem;line-height:1.3;font-weight:750;color:#65486f}
+.dolly-detail{display:grid;gap:11px}
+.dolly-detail-known{display:grid;gap:5px;padding:12px;background:#fbf3ff;border:1px solid #dfcbe8;border-radius:14px}
+.dolly-detail-known>strong{font-size:.92rem}
+.dolly-detail-known>small{font-size:.77rem;color:#68576b}
+.dolly-detail-stat{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;background:#f7f6ff;border:1px solid #ded7ef;padding:12px;border-radius:14px}
+.dolly-detail-stat>span{font-size:.82rem;color:#5c476c}
+.dolly-detail-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-top:6px;border-top:1px solid #e6dce7}
+.dolly-detail-head>span{font-size:.72rem;color:#6a556e}
+.dolly-compartment{width:100%;display:flex;gap:10px;justify-content:space-between;align-items:center;padding:12px;border:1px solid #dccddd;background:#fff8fd;border-radius:14px;color:#48364f;font:inherit;text-align:left}
+.dolly-compartment>span:first-child{display:grid;gap:2px}
+.dolly-compartment b{font-size:.86rem}
+.dolly-compartment small{font-size:.72rem;color:#6d5872}
+.dolly-compartment>span:last-child{font-weight:900;font-size:1.25rem}
+.dolly-task-line{display:flex;align-items:center;justify-content:space-between;gap:7px;border-bottom:1px solid #e9dde8;padding-bottom:6px}
+.dolly-task-line>span{font-size:.84rem}
+.dolly-task-line>small{font-size:.68rem;color:#655270}
+@media(max-width:370px){.dolly-room-scene{height:260px}.dolly-furn-bed{height:94px}.dolly-furn strong{font-size:.72rem}.dolly-furn small{font-size:.54rem}.dolly-furn-vanity{top:73px}}
