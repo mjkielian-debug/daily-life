@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided50",
+  "build": "20261016-guided51",
   "released": "2026-10-16",
-  "ui": "Add early startup diagnostics and worker update check",
+  "ui": "Keep saved-data recovery active until startup completes",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
