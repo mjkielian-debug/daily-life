@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided66",
+  "build": "20261016-guided67",
   "released": "2026-10-16",
-  "ui": "Improve active Sim dashboard layout and text contrast",
+  "ui": "Improve active Sim dashboard text contrast",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
