@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided30",
+  "build": "20261016-guided31",
   "released": "2026-10-16",
-  "ui": "Map rooms and locally saved inventory now share a room progress directory; technical mapping notes are collapsed by default",
+  "ui": "Room-specific tasks keep explicit map and local room associations, including after title edits; mapped rooms open a task editor directly",
   "data_version": "local-first data unchanged"
 }
