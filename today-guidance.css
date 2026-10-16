@@ -272,3 +272,81 @@
   #app .dl-now-step>b{font-size:.70rem}
   #app .dl-now-step>button{font-size:.65rem!important;padding:6px!important}
 }
+
+/* Guided14: secondary commitments remain visible without crowding a live routine. */
+#app .dl-secondary-task{
+  min-width:0;
+  padding:11px 14px;
+  border:1px solid rgba(255,255,255,.92);
+  border-radius:22px;
+  background:linear-gradient(115deg,rgba(253,241,248,.95),rgba(244,232,249,.91));
+  box-shadow:0 4px 12px rgba(82,48,82,.045);
+  display:grid;
+  gap:5px;
+}
+#app .dl-secondary-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+#app .dl-secondary-top>span{
+  font-family:var(--font-hand,inherit);
+  font-size:.66rem;
+  font-weight:900;
+  letter-spacing:.04em;
+  color:#925574;
+}
+#app .dl-secondary-top>button{
+  flex:0 0 auto;
+  border:0!important;
+  background:transparent!important;
+  padding:3px 0!important;
+  font-size:.65rem!important;
+  min-height:30px!important;
+  font-weight:800;
+  color:#7f466c!important;
+}
+#app .dl-secondary-open{
+  display:flex;
+  width:100%;
+  padding:2px 0!important;
+  background:transparent!important;
+  border:0!important;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:35px;
+  color:#3b2b41!important;
+  text-align:left;
+}
+#app .dl-secondary-open>strong{
+  min-width:0;
+  font-family:var(--font-heading,Georgia,serif);
+  font-size:1.01rem;
+  line-height:1.18;
+  overflow-wrap:anywhere;
+}
+#app .dl-secondary-open>span{
+  white-space:nowrap;
+  color:#9d366e;
+  font-size:.71rem;
+  font-weight:900;
+}
+#app .dl-secondary-task>p{
+  font-size:.72rem;
+  line-height:1.23;
+  color:#645066!important;
+  margin:0;
+}
+#app .dl-secondary-task>small{
+  font-size:.63rem;
+  font-weight:750;
+  color:#795a71;
+}
+@media(max-width:380px){
+  #app .dl-secondary-task{padding:9px 11px;gap:3px}
+  #app .dl-secondary-open>strong{font-size:.89rem}
+  #app .dl-secondary-top>span{font-size:.62rem}
+  #app .dl-secondary-top>button{font-size:.61rem!important}
+}
