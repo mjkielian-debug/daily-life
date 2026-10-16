@@ -83,7 +83,7 @@ function draw(f,m){
  connect(m)+
  (work?'<section class="hvm-flow"><strong>↗ Where things went</strong>'+work+'</section>':"")+
  (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
- '<button class="btn primary small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;)">+ Add room photos</button></div>':"")+
+ '<button class="btn primary small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+f+'&#39;)">+ Add room photos</button></div>':"")+
  facts(m)+'</div>';
 }
 function paint(f){
