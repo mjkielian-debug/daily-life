@@ -260,26 +260,21 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
-  // Use the original front drawing as the permanent anchor; swapping views must not move the furniture.
-  const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
+  // Fixed local origin: never measure hidden or transformed SVG views during layout.
   const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
-  let cx;
+  const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
   if(front&&side){
-    // Temporarily remove the side offset to measure its intrinsic bounds.
-    side.removeAttribute("transform");
-    const f=front.getBBox(),v=side.getBBox();
-    cx=f.x+f.width/2;
-    // Align both views at their floor contact point, centered on the same anchor.
-    // The side is drawn broad enough to be recognizable, not compressed into a line.
-    const dx=cx-(v.x+v.width/2),dy=(f.y+f.height)-(v.y+v.height);
-    side.setAttribute("transform","translate("+dx+" "+dy+")");
-    front.style.display=direction%2===0?"":"none";
-    side.style.display=direction%2===1?"":"none";
-  }else{
-    const box=el.getBBox();cx=box.x+box.width/2;
+    front.style.display="";side.style.display="";
+    front.style.visibility=direction%2===0?"visible":"hidden";
+    side.style.visibility=direction%2===1?"visible":"hidden";
+    // Pre-drawn side art occupies the same original object coordinates; no live bbox calculation.
+    side.setAttribute("transform","");
   }
   const mirror=direction>=2?-1:1;
-  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") translate("+cx+" 0) scale("+mirror+" 1) translate("+(-cx)+" 0)";
+  const cx={dresser:155,vanity:382,dollhouse:517}[el.dataset.roomPiece];
+  const x=Number(p.x)||0,y=Number(p.y)||0;
+  if(!Number.isFinite(cx))return "translate("+x+" "+y+")";
+  return "translate("+x+" "+y+") translate("+cx+" 0) scale("+mirror+" 1) translate("+(-cx)+" 0)";
  }
   function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
@@ -390,8 +385,7 @@
    modelObject("dresser",dresser)+
    modelObject("bed",bed)+
    modelObject("dollhouse",barbie)+
-   modelObject("closet",'<rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
-    '<text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text>')+
+   '<g aria-label="Closet label" pointer-events="none"><rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/><text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text></g>'+
    '<g aria-label="Bedroom entry"><path d="M554 164L590 181L590 268L554 251Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M561 174L582 184L582 251L561 241Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><circle cx="578" cy="224" r="3" fill="#ae9a86"/><text x="568" y="161" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
    '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
    '</svg></div>'+
