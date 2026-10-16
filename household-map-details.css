@@ -1,0 +1,13 @@
+.hvm-task-progress,.hvm-task-list,.hvm-room-inventory{display:grid;gap:8px;background:#fff8fc;border:1px solid #e2d3e4;border-radius:14px;padding:12px}
+.hvm-task-progress>div:first-child{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.hvm-task-progress b{font:800 1.3rem Georgia,serif}
+.hvm-task-progress small{color:#6a5372;font-size:.74rem;line-height:1.4}
+.hvm-task-list>b,.hvm-room-inventory>b{font-size:.9rem;color:#473650}
+.hvm-task-row{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #eadddf;padding-top:8px}
+.hvm-task-row span{font-size:.83rem;line-height:1.3}
+.hvm-task-row .btn{flex-shrink:0}
+.hvm-task-list p,.hvm-room-inventory p{font-size:.79rem;color:#67556e;margin:0}
+.hvm-context{border:1px solid #e2d3e4;border-radius:13px;padding:10px;background:#fff9fd}
+.hvm-context>summary{font-weight:800;color:#5b4764;cursor:pointer}
+.hvm-context>p{font-size:.79rem;line-height:1.5}
+.dl-house-entry{width:100%;min-height:41px;border:1px solid #caaad0;border-radius:17px;background:#fff7fc;color:#4d3658;font-weight:850;text-align:left;padding:9px 12px}
