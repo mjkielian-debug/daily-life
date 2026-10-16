@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided18",
+  "build": "20261016-guided19",
   "released": "2026-10-16",
-  "ui": "Custody-aware evening routines, truthful unfinished tasks, and unconfirmed UPS shift ends",
+  "ui": "Preserve completed chore history across schedule changes and safely roll back failed shared task updates",
   "data_version": "local-first data unchanged"
 }
