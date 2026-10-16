@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided34",
+  "build": "20261016-guided35",
   "released": "2026-10-16",
-  "ui": "Replace flat furniture icons with an angled Sims-style miniature of Dolly’s bedroom. The white bed frame, lavender bedding and patterned blankets now appear as an actual tappable bed. Preserve the existing object details and label placement uncertainty.",
-  "data_version": "existing local-first furniture records unchanged"
+  "ui": "Update Dolly’s interactive miniature to the user-confirmed rearrangement: sleigh bed under Mario beside window, vanity under second window, brown dresser on former Barbie wall, Barbie house facing room beside tappable closet; hallway playsets separate. Add bedding history and closet toy inventory.",
+  "data_version": "additive local-first, all existing items and dates preserved"
 }
