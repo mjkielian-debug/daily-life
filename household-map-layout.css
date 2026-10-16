@@ -10,3 +10,22 @@
 .household-room-progress span{display:grid;gap:4px}
 .household-room-progress i,.hvm-task-meter{height:8px;display:block;background:#e4dce8;border-radius:99px;overflow:hidden}
 .household-room-progress em,.hvm-task-meter i{display:block;height:100%;background:#a6a3df}
+
+/* Guided30: layout first; concise room progress under the clickable diagram. */
+.household-room-heading{display:flex;gap:8px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.household-room-heading h2{margin:0;font-size:1.18rem}
+.household-room-heading small{font-size:.76rem;color:#624d6b}
+.household-room-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.household-room-progress{min-width:0;min-height:99px;align-items:center;gap:10px;font:inherit;color:#3d3044}
+.household-room-progress>span:first-child{min-width:0;flex:1}
+.household-room-progress>span:first-child b{font-size:.93rem;overflow-wrap:anywhere}
+.household-room-progress>span:first-child small{font-size:.71rem;line-height:1.25;color:#68566e}
+.household-room-progress>span:last-child{width:61px;flex:none;align-self:center}
+.household-room-progress>span:last-child b{text-align:center;font-weight:850}
+.household-room-progress i{width:100%;height:9px}
+.household-progress-disclaimer,.household-progress-empty{font-size:.72rem;line-height:1.4;color:#67526d;margin:5px 0}
+.household-map-drawing .hvm-mapping-background{border:1px solid #e2d5e3;border-radius:13px;padding:8px 11px;background:rgba(255,255,255,.84)}
+.household-map-drawing .hvm-mapping-background>summary{cursor:pointer;min-height:34px;font-size:.79rem;font-weight:800;color:#62456e}
+.household-map-drawing .hvm-technical-detail{display:grid;gap:10px;padding-top:8px}
+.household-map-drawing .hvm-technical-detail .hvm-disclaimer{font-size:.75rem}
+@media(max-width:460px){.household-room-progress-grid{grid-template-columns:1fr}.household-room-progress{min-height:75px}}
