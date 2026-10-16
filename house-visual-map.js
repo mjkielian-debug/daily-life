@@ -172,6 +172,17 @@ function localRoom(f,z){
   return a===b||(a.includes(short)&&short.length>3)||(b.includes(a)&&a.length>5);
  });
 }
+window.houseVisualOpenDollyModel=function(){
+ if(typeof modal!=="function")return;
+ if(typeof window.dollyRoomSceneHtml!=="function"){
+  modal("Dolly's bedroom","<p>The interactive model has not loaded. Refresh Daily Life and try again.</p>","Close",closeModal);return;
+ }
+ try{
+  modal("Dolly's interactive bedroom · Second floor",
+   window.dollyRoomSceneHtml()+'<div class="actions"><button type="button" class="btn" onclick="houseVisualOpenZone(&#39;Second floor&#39;,&#39;dolly&#39;)">← Room details</button></div>',
+   "Close",closeModal);
+ }catch(e){modal("Dolly's bedroom","<p>Could not open the interactive model. Refresh Daily Life.</p>","Close",closeModal)}
+};
 window.houseVisualReturnToFloor=function(f){
  if(!floors.includes(f)||typeof modal!=="function")return;
  modal(f+" · Floor map",'<div class="hvm-floor-return">'+window.houseVisualMapHtml(f)+
@@ -239,7 +250,8 @@ window.houseVisualOpenZone=function(f,id){
  const isDolly=f==="Second floor"&&id==="dolly";
  const miniature=f==="Second floor"&&!isDolly&&typeof window.dailyLifeMiniScene==="function" ? (/bath/i.test(z.name||"") ? window.dailyLifeMiniScene("bathroom") : /hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";
  const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():miniature;
- const markup='<div class="hvm-zone-detail">'+furniture+progress+actions+references+'</div>';
+ const modelButton=isDolly?'<button class="btn primary" type="button" onclick="houseVisualOpenDollyModel()">🛏 Open interactive bedroom + furniture layout</button>':'';
+ const markup='<div class="hvm-zone-detail">'+modelButton+furniture+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
 };
