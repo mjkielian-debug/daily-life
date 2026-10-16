@@ -165,12 +165,34 @@
     closeModal();openInventoryItem();
     setTimeout(()=>{const el=document.querySelector("#invroom");if(el&&!el.value)el.value=room.name||""},0);
   };
+  function homeRoomTaskProgress(room){
+    const name=String(room.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    const tasks=(state.tasks||[]).filter(t=>{
+      if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
+      const assigned=String(t.homeRoomId||t.roomId||"");
+      if(assigned)return assigned===String(room.id);
+      const title=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+      return String(t.category||"").toLowerCase()==="home"&&name&&(" "+title+" ").includes(" "+name+" ");
+    });
+    return {tasks,done:tasks.filter(t=>t.done).length};
+  }
+  window.homeCompleteRoomTask=async function(taskId,roomId){
+    const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId));if(!t||t.done)return;
+    await toggleTask(taskId,true);
+    window.homeOpenRoomInventory(roomId);
+  };
   window.homeOpenRoomInventory=function(roomId){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
     const locs=(state.inventoryLocations||[]).filter(x=>x.roomId===roomId),
           locIds=new Set(locs.map(x=>x.id)),
           items=(state.inventoryItems||[]).filter(x=>x.roomId===roomId||locIds.has(x.locationId));
+    const tracked=homeRoomTaskProgress(room),unfinished=tracked.tasks.filter(t=>!t.done),pct=tracked.tasks.length?Math.round(100*tracked.done/tracked.tasks.length):null;
+    const taskCard='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks recorded":tracked.done+" / "+tracked.tasks.length+" tasks completed")+'</small></div>'+
+      '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Tracked tasks only; not an assessment of cleanliness.</small></div>'+
+      '<div class="hvm-task-list"><b>What needs doing · '+unfinished.length+'</b>'+
+      (unfinished.length?unfinished.map(t=>'<div class="hvm-task-row"><span>'+esc(t.title)+'</span><button class="btn small primary" onclick="homeCompleteRoomTask(&#39;'+esc(t.id)+'&#39;,&#39;'+esc(room.id)+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished recorded room tasks.</p>')+'</div>';
     modal("Inventory · "+(room.name||"Room"),`<div class="stack">
+      ${taskCard}
       <div class="home-room-modal-head"><span class="home-room-modal-dot" style="background:${esc(room.mapColor||"#bdeccf")}"></span><span><b>${esc(room.name||"Room")}</b><small>${esc(room.floor||"Floor not set")} · ${items.length} item${items.length===1?"":"s"} · ${locs.length} location${locs.length===1?"":"s"}</small></span></div>
       ${locs.length?locs.map(loc=>{const rows=items.filter(x=>x.locationId===loc.id);return `<div class="inventory-location"><div class="row"><span><b>${esc(loc.name)}</b><div class="muted small">${rows.length} item${rows.length===1?"":"s"}${loc.notes?" · "+esc(loc.notes):""}</div></span><button class="btn small" onclick="closeModal();openInventoryLocation('${loc.id}')">Edit</button></div>${rows.slice(0,10).map(x=>`<button class="inventory-mini-item" onclick="closeModal();openInventoryItem('${x.id}')"><span>${esc(x.name)}</span><b>${Number(x.quantity||1)>1?"×"+Number(x.quantity):""}</b></button>`).join("")}${rows.length>10?`<div class="muted small">+${rows.length-10} more</div>`:""}</div>`}).join(""):`<div class="notice">No shelves, drawers, closets, bins, or other storage locations are saved in this room yet.</div>`}
       ${items.filter(x=>!x.locationId).length?`<div class="inventory-location"><div class="mini-heading">Room-level items</div>${items.filter(x=>!x.locationId).map(x=>`<button class="inventory-mini-item" onclick="closeModal();openInventoryItem('${x.id}')"><span>${esc(x.name)}</span></button>`).join("")}</div>`:""}
