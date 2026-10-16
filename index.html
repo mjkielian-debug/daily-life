@@ -2002,7 +2002,16 @@ function ensureFamilyDay(date=ymd()){
   for(const row of state.chores||[]){
     if(row.date!==date||!generatedKinds.has(String(row.generated||""))){next.push(row);continue}
     const key=String(row.child||"").trim()+"|"+String(row.chore||"").trim();
-    if(!desired.has(key)||kept.has(key))continue;
+    if(!desired.has(key)||kept.has(key)){
+      // Changing a recurring rule must not erase a completed chore or a
+      // review decision that has already been recorded. Only untouched,
+      // automatically generated rows can be retired.
+      const recordedReview=(state.dailyReviews||[]).some(r=>
+        r.date===date&&r.kind==="chore"&&String(r.key)===String(row.id)&&
+        String(r.status||"")!=="unknown");
+      if(row.done||row.completedAt||recordedReview)next.push(row);
+      continue;
+    }
     const target=desired.get(key);
     row.child=target.child;row.chore=target.chore;row.generated=target.generated;
     kept.set(key,row);next.push(row);
