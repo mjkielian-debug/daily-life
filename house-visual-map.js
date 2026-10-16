@@ -231,7 +231,7 @@ window.houseVisualOpenZone=function(f,id){
  (spots?'<div class="hvm-detail-markers"><strong>Mapped spots</strong>'+spots+'</div>':"")+
  '</details>';
  const isDolly=f==="Second floor"&&id==="dolly";
- const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():"";
+ const miniature=f==="Second floor"&&!isDolly&&typeof window.dailyLifeMiniScene==="function" ? (/bath/i.test(z.name||"") ? window.dailyLifeMiniScene("bathroom") : /hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";\n const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():miniature;
  const markup='<div class="hvm-zone-detail">'+furniture+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
