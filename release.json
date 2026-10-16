@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided57",
+  "build": "20261016-guided58",
   "released": "2026-10-16",
-  "ui": "Add safe local storage startup diagnostics",
+  "ui": "Catch saved dashboard rendering failures safely",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
