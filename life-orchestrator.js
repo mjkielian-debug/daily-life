@@ -718,6 +718,7 @@
       night=state.settings?.itinerary?.nightRoutine||{},
       bedtimeMinutes=hmMinutes(night.kidsBedtime||"20:30"),
       weekday=new Date(today+"T12:00:00").getDay(),
+      kidsAtDadUsual=weekday===6||(weekday===5&&minutes>=17*60+30),
       // Friday and Saturday are generally at Dad's; this is a suggested
       // family routine, not proof of anyone's actual location or attendance.
       kidsUsuallyHome=weekday!==5&&weekday!==6&&
@@ -751,7 +752,7 @@
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
       lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","openQuickHydration()","Your water log"),
-      lifeStatRing("Kids' chores",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Confirmed chores"),
+      (kidsAtDadUsual?"":lifeStatRing("Kids' chores",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Confirmed chores")),
       lifeStatRing("Dinner",!hasMeal?"Choose":mealDone?"Done":"Planned",mealDone?1:0,1,"#efbf6f","♢","openMeal('"+today+"')",mealTime)
     ];
     const upcomingRows=upcoming.map(x=>{
@@ -811,6 +812,7 @@
            cards.slice(1,2).join("")+'<details class="dl-work-later"><summary>Other progress ›</summary>'+cards.slice(2).join("")+'</details>':
            cards.slice(1).join(""))+'</div></div>'+
       '<details class="dl-optional-review"><summary>Check-ins, insights and goals <span aria-hidden="true">›</span></summary><div>'+
+      (kidsAtDadUsual?'<button class="dl-home-goal-link" onclick="openPeopleHubSection(\'routines\')">Kids’ chores · saved list available (usually at Dad’s tonight) ›</button>':'')+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       (typeof window.lifeInsightNudge==="function"?window.lifeInsightNudge():"")+
       (typeof window.homeOrganizationSummary==="function"?(function(){
