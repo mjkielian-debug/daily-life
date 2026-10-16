@@ -172,6 +172,12 @@ function localRoom(f,z){
   return a===b||(a.includes(short)&&short.length>3)||(b.includes(a)&&a.length>5);
  });
 }
+window.houseVisualReturnToFloor=function(f){
+ if(!floors.includes(f)||typeof modal!=="function")return;
+ modal(f+" · Floor map",'<div class="hvm-floor-return">'+window.houseVisualMapHtml(f)+
+ '<div class="actions"><button type="button" class="btn" onclick="closeModal()">Close map</button></div></div>',"Close",closeModal);
+ Promise.resolve().then(()=>window.houseVisualMapHydrate(f)).catch(()=>{});
+};
 window.houseVisualFollowLink=function(target){
  if(!floors.includes(target))return;
  if(typeof openHouseFloorMap==="function"){openHouseFloorMap(target);return}
@@ -224,7 +230,7 @@ window.houseVisualOpenZone=function(f,id){
  const actions='<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button>'+
  '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
  (room?"Open full inventory":"+ Link inventory")+'</button>'+
- '<button class="btn" type="button" onclick="openHouseFloorMap(&#39;'+f+'&#39;)">← Floor map</button></div>';
+ '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">← Floor map</button></div>';
  const references='<details class="hvm-room-extra"><summary>Reference photos ('+photos.length+') + mapping notes ›</summary>'+
  (photos.length?'<div class="hvm-detail-photos">'+photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join("")+'</div>':"")+
  (z.notes?'<p>'+h(z.notes)+'</p>':"")+
