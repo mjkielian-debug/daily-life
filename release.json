@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided33",
+  "build": "20261016-guided34",
   "released": "2026-10-16",
-  "ui": "Start Dolly’s Sims-style tappable room: bed, dresser, vanity, dollhouse; nesting storage contents, bedding-change dates and linked tasks; verified vs illustrative placement clearly marked",
-  "data_version": "additive local-first furniture records"
+  "ui": "Replace flat furniture icons with an angled Sims-style miniature of Dolly’s bedroom. The white bed frame, lavender bedding and patterned blankets now appear as an actual tappable bed. Preserve the existing object details and label placement uncertainty.",
+  "data_version": "existing local-first furniture records unchanged"
 }
