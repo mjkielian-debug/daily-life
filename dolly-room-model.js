@@ -247,8 +247,9 @@
    '<path d="M64 324L341 205M111 347L387 232M157 370L436 251M203 395L479 271M249 415L525 292M300 442L574 314" stroke="#6c3f26" stroke-width="2" opacity=".32"/><path d="M105 353L133 341M215 386L239 377M367 315L404 297M460 353L491 339" stroke="#d3a479" stroke-width="2" opacity=".25"/>'+
    '<path d="M26 183L305 50L592 180" fill="none" stroke="#fffafa" stroke-width="9" stroke-linejoin="round"/>'+
    // The Mario poster and vanity-side window occupy the LEFT wall, not the entry/closet wall.
-   '<g transform="translate(-47 15)">'+marioPosterDrawing()+'</g>'+
-   '<g transform="translate(151 -42)">'+bedWindowDrawing()+'</g>'+
+   '<g transform="translate(-82 37) scale(.88)">'+marioPosterDrawing()+'</g>'+
+   // Smaller frame toward the back corner, with a clear gap from the Mario poster.
+   '<g transform="translate(220 -15) scale(.72)">'+bedWindowDrawing()+'</g>'+
    // The bed-side window is on the perpendicular RIGHT wall. Its frame follows that wall perspective.
    '<g aria-label="Window beside the long side of Dolly’s bed">'+
    '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
