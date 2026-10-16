@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided51",
+  "build": "20261016-guided52",
   "released": "2026-10-16",
-  "ui": "Keep saved-data recovery active until startup completes",
+  "ui": "Recover startup when the app is only partly rendered",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
