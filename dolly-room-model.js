@@ -35,7 +35,7 @@
 
  function furnitureSide(key){
   // Local coordinates match the original art's bounding box, with a narrower but genuinely redrawn side.
-  if(key==="dresser")return '<g transform="translate(108 10)">'+
+  if(key==="dresser")return '<g transform="translate(108 10) scale(1.65 1)">'+
    '<ellipse cx="25" cy="163" rx="45" ry="12" fill="#60422e" opacity=".17"/>'+
    '<path d="M-12 34L44 19L73 36L16 52Z" fill="#b77b50" stroke="#65402c" stroke-width="3"/>'+
    '<path d="M16 52L73 36L73 141L16 158Z" fill="#8c5535" stroke="#593721" stroke-width="3"/>'+
@@ -260,13 +260,23 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
-  // Keep every model upright. Each quarter turn selects a distinct drawn view.
-  const box=el.getBBox(),cx=box.x+box.width/2;
-  const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
+  // Use the original front drawing as the permanent anchor; swapping views must not move the furniture.
   const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
+  const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
+  let cx;
   if(front&&side){
-    front.style.visibility=direction%2===0?"visible":"hidden";
-    side.style.visibility=direction%2===1?"visible":"hidden";
+    // Temporarily remove the side offset to measure its intrinsic bounds.
+    side.removeAttribute("transform");
+    const f=front.getBBox(),v=side.getBBox();
+    cx=f.x+f.width/2;
+    // Align both views at their floor contact point, centered on the same anchor.
+    // The side is drawn broad enough to be recognizable, not compressed into a line.
+    const dx=cx-(v.x+v.width/2),dy=(f.y+f.height)-(v.y+v.height);
+    side.setAttribute("transform","translate("+dx+" "+dy+")");
+    front.style.display=direction%2===0?"":"none";
+    side.style.display=direction%2===1?"":"none";
+  }else{
+    const box=el.getBBox();cx=box.x+box.width/2;
   }
   const mirror=direction>=2?-1:1;
   return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") translate("+cx+" 0) scale("+mirror+" 1) translate("+(-cx)+" 0)";
