@@ -805,9 +805,7 @@
             (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
           '</div>'+
           '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(workFocus?guideTitle.replace(/^priority\s*:\s*/i,"").replace(/^./,letter=>letter.toUpperCase()):guideTitle)+'</strong><span>Open ›</span></button>'+
-          (workFocus?'<details class="dl-secondary-explain"><summary>Why this is on your list ›</summary><p>'+esc(guideDetail)+'</p>'+
-            (guideSensitive?'<small>Confirm the action before recording completion.</small>':'')+'</details>':
-            '<p>'+esc(guideDetail)+'</p>'+(guideSensitive?'<small>Confirm details before marking complete.</small>':''))+
+          (workFocus?"":'<p>'+esc(guideDetail)+'</p>'+(guideSensitive?'<small>Confirm details before marking complete.</small>':''))+
         '</section>':
         '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
           '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
