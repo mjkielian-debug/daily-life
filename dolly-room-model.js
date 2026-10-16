@@ -350,20 +350,26 @@
 // This intentionally leaves the user's old miniature localStorage untouched.
 function dollyPerspectiveSync(){
  const svg=document.querySelector(".dolly-mini-svg");if(!svg)return;
- const projection=(x,y)=>({x:305+(287*x/300)-(279*y/260),y:192+(129*x/300)+(128*y/260)});
- const configs={bed:{scale:.70},vanity:{scale:.57},dresser:{scale:.63},dollhouse:{scale:.58}};
- for(const key of Object.keys(configs)){
+ // The miniature is an illustrative camera angle, not a geometrically accurate
+ // isometric projection of the floor plan. Each furniture type has a calibrated
+ // visual anchor so the real wall relationships remain legible.
+ const anchors={
+  bed:{x:218,y:341,scale:.78,refX:12,refY:9},
+  vanity:{x:260,y:225,scale:.72,refX:126,refY:4},
+  dresser:{x:349,y:418,scale:.85,refX:12,refY:210},
+  dollhouse:{x:519,y:343,scale:.79,refX:249,refY:51}
+ };
+ for(const key of Object.keys(anchors)){
   const el=svg.querySelector('[data-room-piece="'+key+'"]');if(!el)continue;
-  const p=floorData(key),turned=((Number(p.angle)||0)%180)!==0;
-  const w=turned?p.h:p.w,h=turned?p.w:p.h;
-  const center=projection((Number(p.x)||0)+w/2,(Number(p.y)||0)+h/2);
-  const artwork=el.querySelector(".dolly-view-front")||el;
-  let box;
-  try{box=artwork.getBBox()}catch(_){continue}
+  const p=floorData(key),cfg=anchors[key];
+  const art=el.querySelector(".dolly-view-front")||el;
+  let box;try{box=art.getBBox()}catch(_){continue}
   if(!box.width||!box.height)continue;
-  const scale=configs[key].scale;
-  // All objects share the same projection and remain grounded at their floor location.
-  el.setAttribute("transform","translate("+center.x.toFixed(2)+" "+center.y.toFixed(2)+") scale("+scale+") translate("+(-box.x-box.width/2).toFixed(2)+" "+(-box.y-box.height).toFixed(2)+")");
+  // Small adjustments reflect floor-plan dragging without placing objects on
+  // the wrong wall in this stylized camera view.
+  const dx=((Number(p.x)||0)-cfg.refX)*.36;
+  const dy=((Number(p.y)||0)-cfg.refY)*.36;
+  el.setAttribute("transform","translate("+(cfg.x+dx).toFixed(2)+" "+(cfg.y+dy).toFixed(2)+") scale("+cfg.scale+") translate("+(-box.x-box.width/2).toFixed(2)+" "+(-box.y-box.height).toFixed(2)+")");
  }
 }
 
