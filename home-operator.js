@@ -144,7 +144,14 @@
   window.homeRemoveFloorPlan=async function(floor=homeActiveFloor()){
     if(!confirm("Remove the saved "+floor+" map from this device? Inventory rooms and items will stay."))return;
     floor=String(floor||"").trim()||"First floor";
-    try{await dbSet(homeFloorDbKey(floor),null)}catch(e){}
+    try{
+      await dbSet(homeFloorDbKey(floor),null);
+    }catch(e){
+      // Do not hide the saved map or delete its legacy backup when the
+      // database write fails; both copies may be needed to recover it.
+      alert("Daily Life could not remove this floor plan from device storage. Your saved map has been kept.");
+      return;
+    }
     homeFloorPlanCache.delete(floor);homeFloorPlanLoaded.add(floor);
     try{
       localStorage.removeItem(homeFloorStorageKey(floor));
