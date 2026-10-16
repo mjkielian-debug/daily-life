@@ -804,7 +804,7 @@
           '<div class="dl-secondary-top"><span>'+(workFocus?"AFTER WORK":"ALSO ON TODAY’S LIST")+'</span>'+
             (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
           '</div>'+
-          '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(workFocus?guideTitle.replace(/^priority\s*:\s*/i,""):guideTitle)+'</strong><span>Open ›</span></button>'+
+          '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(workFocus?guideTitle.replace(/^priority\s*:\s*/i,"").replace(/^./,letter=>letter.toUpperCase()):guideTitle)+'</strong><span>Open ›</span></button>'+
           (workFocus?'<details class="dl-secondary-explain"><summary>Why this is on your list ›</summary><p>'+esc(guideDetail)+'</p>'+
             (guideSensitive?'<small>Confirm the action before recording completion.</small>':'')+'</details>':
             '<p>'+esc(guideDetail)+'</p>'+(guideSensitive?'<small>Confirm details before marking complete.</small>':''))+
