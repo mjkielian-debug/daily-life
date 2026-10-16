@@ -156,6 +156,15 @@ window.houseVisualCompleteTask=async function(taskId,f,zoneId){
  await toggleTask(taskId,true);
  window.houseVisualOpenZone(f,zoneId);
 };
+window.houseVisualAddZoneTask=function(f,id){
+ const z=zone(f,id);if(!z)return;
+ const room=localRoom(f,z);
+ if(room&&typeof homeAddRoomTask==="function"){homeAddRoomTask(room.id);return}
+ if(typeof openInventoryRoom==="function"){
+  openInventoryRoom("",f);
+  Promise.resolve().then(()=>{const input=document.getElementById("irname");if(input&&!input.value)input.value=z.name||""});
+ }
+};
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
@@ -177,7 +186,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>'+
  '<div class="hvm-detail-photos"><strong>Reference photos ('+photos.length+')</strong>'+
  (photos.length?photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join(""):'<p>No photos assigned to this room yet.</p>')+'</div>'+
- '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
+ '<div class="hvm-detail-actions"><button class="btn" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button><button class="btn primary" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
  (localRoom(f,z)?"Open room inventory":"+ Add room inventory")+'</button>'+
  '<button class="btn" onclick="openHouseFloorMap(&#39;'+f+'&#39;)">← Floor map</button></div></div>';
  modal(z.name+" · "+f,markup,"Close",closeModal);
