@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided60",
+  "build": "20261016-guided61",
   "released": "2026-10-16",
-  "ui": "Expose dashboard ReferenceError details and failing startup stage",
+  "ui": "Fix Sims HUD task filter ReferenceError in dashboard render",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
