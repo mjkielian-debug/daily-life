@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided55",
+  "build": "20261016-guided56",
   "released": "2026-10-16",
-  "ui": "Add a delayed startup recovery link that preserves saved data",
+  "ui": "Open saved app immediately while account sync reconnects",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
