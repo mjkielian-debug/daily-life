@@ -704,7 +704,8 @@
       (active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
         '</span><strong>'+esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong>'+
         '<small>'+esc(active.templateKey==="wind-down"?"Bedtime steps follow":"Until "+fmtClock(active.end))+'</small>'+
-        '<button type="button" onclick="'+dayFlowItemAction(active,today)+'">All steps ›</button></div>'+
+        '<button type="button" onclick="'+(active.source==="suggested"?"openTodayDayFlow()":dayFlowItemAction(active,today))+'">'+
+        (active.source==="suggested"?"All steps ›":"Details ›")+'</button></div>'+
         (activeStepIndex>=0?'<div class="dl-now-step"><span>DO NEXT · STEP '+(activeStepIndex+1)+' OF '+activeStepLabels.length+'</span>'+
           '<b>'+esc(activeStepLabels[activeStepIndex])+'</b>'+
           '<button type="button" onclick="lifeCompleteNowStep(\''+today+'\',\''+activeStepKey+'\','+activeStepIndex+')">✓ Did this</button>'+
