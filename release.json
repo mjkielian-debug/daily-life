@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided52",
+  "build": "20261016-guided53",
   "released": "2026-10-16",
-  "ui": "Recover startup when the app is only partly rendered",
+  "ui": "Recover stalled startup on mobile and remove stray slash-n markup",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
