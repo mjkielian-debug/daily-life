@@ -35,9 +35,10 @@
 
  function modelObject(key,body){
   const name=ITEMS[key].label;
+  const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
   return '<g class="dolly-scene-object dolly-svg-'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
     ' onclick="dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+body+'</g>';
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+body+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
  // These are visual approximations, not photographs or measured dimensions.
@@ -198,9 +199,9 @@
    '</svg></div>'+
    '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> bed under Mario poster beside one window; white vanity under the other; brown dresser where the Barbie house used to be; large pink Barbie house near the closet, facing into the room. Shift the house slightly to access the closet.</p>'+
    '<p class="dolly-room-caveat">Miniature, not measured geometry. Relative relationships are confirmed; wall lengths, precise doorway position (*) and clearances are not.</p>'+
-   '<details class="dolly-hallway-details"><summary>Temporarily in the hallway · 3 playsets</summary>'+
+   '<details class="dolly-hallway-details"><summary>Hallway staging (October 16) · 3 playsets</summary>'+
    '<p>Wooden dollhouse · pink-roof dollhouse · cat-ear pretend kitchen. These are not counted as contents of Dolly’s room.</p></details>'+
-   '<div class="dolly-room-helper">Tap the furniture or closet to open maintenance, drawers, supplies or stored-toy lists.</div>'+
+   '<div class="dolly-room-helper">Tap furniture or closet to open upkeep, drawers, supplies or stored-toy lists. Dolly’s photographed October 15 clean-room baseline remains valid as a reference; visible belongings do not become unfinished tasks.</div>'+
    '</section>';
  };
 
