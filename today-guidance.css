@@ -514,3 +514,46 @@
   display:grid;gap:9px;
   padding:9px;
 }
+
+/* Guided24 · compact after-work guidance while a shift remains active.
+   The full reminder stays available from the task and disclosure. */
+#app .dl-secondary-work{
+  padding:9px 12px;
+  gap:3px;
+  border-radius:20px;
+}
+#app .dl-secondary-work .dl-secondary-open{
+  min-height:34px;
+  gap:10px;
+}
+#app .dl-secondary-work .dl-secondary-open>strong{
+  font-size:.9rem;
+  line-height:1.16;
+  font-family:var(--font-heading,Georgia,serif);
+}
+#app .dl-secondary-work .dl-secondary-open>span{
+  font-size:.7rem;
+  flex:0 0 auto;
+}
+#app .dl-secondary-explain>summary{
+  cursor:pointer;
+  list-style:none;
+  font-size:.67rem;
+  font-weight:750;
+  color:#825d78;
+  padding:3px 0;
+}
+#app .dl-secondary-explain>summary::-webkit-details-marker{display:none}
+#app .dl-secondary-explain>p{
+  margin:5px 0 4px;
+  color:#645066;
+  font-size:.7rem;
+  line-height:1.3;
+}
+#app .dl-secondary-explain>small{display:block;font-size:.66rem;color:#795a71}
+#app .dl-work-later>summary{
+  display:flex;
+  align-items:center;
+  min-height:36px;
+}
+#app .dl-guided-progress .dl-stats{align-content:center}
