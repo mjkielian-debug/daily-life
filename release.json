@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided45",
+  "build": "20261016-guided46",
   "released": "2026-10-16",
-  "ui": "Add Sims-inspired Live Mode and fix HUD panel layering",
+  "ui": "Add Sims-inspired Live Mode and improve HUD readability",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
