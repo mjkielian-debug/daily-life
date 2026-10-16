@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided62",
+  "build": "20261016-guided63",
   "released": "2026-10-16",
-  "ui": "Show the full household selector on narrow screens; preserve app palette",
+  "ui": "Keep the active Sim and action queue visible on the dashboard; preserve palette and saved data",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
