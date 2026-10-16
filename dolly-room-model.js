@@ -33,12 +33,42 @@
   if(returnSection)window.dollyOpenSection(key,returnSection);else window.dollyOpenObject(key);
  }
 
+ function furnitureSide(key){
+  // Local coordinates match the original art's bounding box, with a narrower but genuinely redrawn side.
+  if(key==="dresser")return '<g transform="translate(108 10)">'+
+   '<ellipse cx="25" cy="163" rx="45" ry="12" fill="#60422e" opacity=".17"/>'+
+   '<path d="M-12 34L44 19L73 36L16 52Z" fill="#b77b50" stroke="#65402c" stroke-width="3"/>'+
+   '<path d="M16 52L73 36L73 141L16 158Z" fill="#8c5535" stroke="#593721" stroke-width="3"/>'+
+   '<path d="M-12 34L16 52L16 158L-12 138Z" fill="#6f422b" stroke="#543221" stroke-width="3"/>'+
+   '<path d="M22 64L67 51M22 88L67 75M22 112L67 99" stroke="#a16b48" stroke-width="2" opacity=".5"/>'+
+   '</g>';
+  if(key==="vanity")return '<g transform="translate(59 5)">'+
+   '<ellipse cx="35" cy="203" rx="48" ry="11" fill="#75606e" opacity=".13"/>'+
+   '<path d="M14 29Q14 9 35 9L58 11Q69 13 69 28L69 88L14 87Z" fill="#bba56f" stroke="#947e50" stroke-width="3"/>'+
+   '<path d="M19 31Q19 17 36 17L56 18Q63 19 63 30L63 81L19 81Z" fill="#d5e8ed" stroke="#f7e4ae" stroke-width="2"/>'+
+   '<path d="M-4 99L69 84L89 98L18 117Z" fill="#fff" stroke="#c4b5b5" stroke-width="3"/>'+
+   '<path d="M18 117L89 98L89 175L18 195Z" fill="#f7f4f1" stroke="#bdb1b0" stroke-width="3"/>'+
+   '<path d="M-4 99L18 117L18 195L-4 177Z" fill="#e3dcda" stroke="#bdb1b0" stroke-width="2"/>'+
+   '<path d="M25 143L81 128M25 166L81 151" stroke="#c8bdb9" stroke-width="2"/>'+
+   '</g>';
+  if(key==="barbie")return '<g transform="translate(59 2)">'+
+   '<ellipse cx="44" cy="277" rx="56" ry="13" fill="#725066" opacity=".16"/>'+
+   '<path d="M0 58L50 36L91 53L43 75Z" fill="#f3a8cf" stroke="#c97ba5" stroke-width="4"/>'+
+   '<path d="M0 58L43 75L43 264L0 249Z" fill="#eaa0c9" stroke="#b67a9b" stroke-width="3"/>'+
+   '<path d="M43 75L91 53L91 253L43 264Z" fill="#f8c7df" stroke="#d390b0" stroke-width="3"/>'+
+   '<path d="M45 134L89 118M45 198L89 183" stroke="#bb916d" stroke-width="7"/>'+
+   '<path d="M48 80L48 260M86 60L86 254" stroke="#d1ae80" stroke-width="6"/>'+
+   '<rect x="57" y="91" width="20" height="19" fill="#bde2ee" stroke="#f6e9ee" stroke-width="2"/>'+
+   '<path d="M0 249L43 264L91 253" fill="none" stroke="#b98b5c" stroke-width="6"/>'+
+   '</g>';
+  return "";
+ }
  function modelObject(key,body){
   const name=ITEMS[key].label;
   const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
   return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
     ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+body+extraHitArea+'</g>';
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="visibility:hidden">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
  // These are visual approximations, not photographs or measured dimensions.
@@ -230,14 +260,18 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
-  // Turn furniture around its upright axis, never around the screen plane.
-  // The SVG miniature has no true 3D meshes; use floor-facing side views rather than tilting furniture.
+  // Keep every model upright. Each quarter turn selects a distinct drawn view.
   const box=el.getBBox(),cx=box.x+box.width/2;
   const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
-  const width=[1,.48,-1,-.48][direction];
-  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") translate("+cx+" 0) scale("+width+" 1) translate("+(-cx)+" 0)";
+  const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
+  if(front&&side){
+    front.style.visibility=direction%2===0?"visible":"hidden";
+    side.style.visibility=direction%2===1?"visible":"hidden";
+  }
+  const mirror=direction>=2?-1:1;
+  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") translate("+cx+" 0) scale("+mirror+" 1) translate("+(-cx)+" 0)";
  }
- function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
+  function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
   if(!root)return;
   const saved=layoutRead();
@@ -339,7 +373,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
