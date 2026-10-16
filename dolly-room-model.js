@@ -407,7 +407,7 @@
    '<text x="10" y="70" font-size="11" fill="#594b58">Footboard window</text>'+
    '<text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text>'+
    '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+
-   '<path d="M300 198L300 243A45 45 0 0 0 255 198" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 198L300 243" stroke="#927b85" stroke-width="3"/>'+
+   '<path d="M300 253L255 253A45 45 0 0 0 300 208" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 253L255 253" stroke="#927b85" stroke-width="3"/>'+
    '<text x="60" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
   const label=root.querySelector("#dollyFloorSelected");if(label)label.textContent="Selected: "+FLOOR_ITEMS[floorSelected].label;
  }
@@ -492,7 +492,7 @@
    modelObject("bed",bed)+
    modelObject("dollhouse",barbie)+
    '<g aria-label="Closet label" pointer-events="none"><rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/><text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text></g>'+
-   '<g aria-label="Bedroom entry"><path d="M550 153L591 172L591 313L550 294Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M556 162L582 175L582 296L556 283Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><path d="M562 175L577 182L577 228L562 221ZM562 234L577 241L577 282L562 275Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/><circle cx="580" cy="245" r="3" fill="#ae9a86"/><text x="568" y="146" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
+   '<g aria-label="Bedroom entry"><path d="M550 153L591 172L591 313L550 294Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M556 162L582 175L582 296L556 283Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><path d="M562 175L577 182L577 228L562 221ZM562 234L577 241L577 282L562 275Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/><circle cx="558" cy="245" r="3" fill="#ae9a86"/><text x="568" y="146" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
    '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
    '</svg></div>'+
    '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> white sleigh bed under Mario poster beside one window; white vanity under the other; long brown dresser on the former Barbie wall; large open-front pink Barbie house near the closet. Shift the house slightly to access the closet.</p>'+
