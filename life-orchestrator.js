@@ -606,6 +606,19 @@
     const clipped=value.slice(0,179),boundary=clipped.lastIndexOf(" ");
     return clipped.slice(0,boundary>=120?boundary:179).trimEnd()+"…";
   }
+  // Confirm only a step the user explicitly tapped. Use the same Day Flow
+  // keys and storage as the full checklist so progress stays in sync.
+  window.lifeCompleteNowStep=async function(date,encodedKey,index){
+    if(date!==ymd()||typeof toggleDayFlowPart!=="function")return;
+    const key=decodeURIComponent(String(encodedKey||""));
+    const item=itineraryDayItems(date).find(x=>dayFlowItemKey(x,date)===key);
+    const part=Number(index);
+    if(!item||item.source!=="suggested"||!Number.isInteger(part)||part<0)return;
+    const labels=dayFlowSubtaskLabels(item);
+    if(part>=labels.length||dayFlowPartDone(item,date,part))return;
+    await toggleDayFlowPart(null,date,encodedKey,part);
+    render();
+  };
   function lifeTodayWheel(){
     const today=ymd(),now=new Date(),minutes=now.getHours()*60+now.getMinutes(),
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
@@ -664,12 +677,15 @@
       guideSensitive=!!guideTask&&(/^(money|finance|bank|car)$/i.test(String(guideTask.category||""))||
         /\b(autopay|payment|pay bill|transfer|account clos|statement balance|credit card|insurance|registration|tire repair)\b/i
           .test([guideTask.title,guideTask.notes].join(" "))),
-      otherTaskCount=tasks.filter(x=>!x.done&&String(x.id)!==String(guideTaskId)).length;
+      otherTaskCount=tasks.filter(x=>!x.done&&String(x.id)!==String(guideTaskId)).length,
+      activeStepLabels=active&&active.source==="suggested"?dayFlowSubtaskLabels(active):[],
+      activeStepIndex=activeStepLabels.findIndex((_,i)=>!dayFlowPartDone(active,today,i)),
+      activeStepKey=active?encodeURIComponent(dayFlowItemKey(active,today)).replace(/'/g,"%27"):"";
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
       lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","openQuickHydration()","Your water log"),
-      lifeStatRing("Kids",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Today's chores"),
+      lifeStatRing("Kids' chores",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Confirmed chores"),
       lifeStatRing("Dinner",!hasMeal?"Choose":mealDone?"Done":"Planned",mealDone?1:0,1,"#efbf6f","♢","openMeal('"+today+"')",mealTime)
     ];
     const upcomingRows=upcoming.map(x=>{
@@ -685,10 +701,15 @@
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY</span><h1>What’s next?</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
-      (active?'<div class="dl-now-strip"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+'</span><strong>'+
-        esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong><small>'+
-        esc(active.templateKey==="wind-down"?"Kids’ electronics and bedtime steps follow later":"Planned until "+fmtClock(active.end))+
-        '</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
+      (active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
+        '</span><strong>'+esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong>'+
+        '<small>'+esc(active.templateKey==="wind-down"?"Bedtime steps follow":"Until "+fmtClock(active.end))+'</small>'+
+        '<button type="button" onclick="'+dayFlowItemAction(active,today)+'">All steps ›</button></div>'+
+        (activeStepIndex>=0?'<div class="dl-now-step"><span>DO NEXT · STEP '+(activeStepIndex+1)+' OF '+activeStepLabels.length+'</span>'+
+          '<b>'+esc(activeStepLabels[activeStepIndex])+'</b>'+
+          '<button type="button" onclick="lifeCompleteNowStep(\''+today+'\',\''+activeStepKey+'\','+activeStepIndex+')">✓ Did this</button>'+
+          '</div>':activeStepLabels.length?'<small class="dl-now-confirmed">All steps in this block have been recorded as done.</small>':'')+
+        '</div>':'')+
       '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
         '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
