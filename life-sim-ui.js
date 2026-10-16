@@ -1,6 +1,8 @@
 /* Sims-inspired interaction HUD, built from existing Daily Life records.
    This file only changes presentation preferences; it never edits household data. */
 const LIFE_SIM_ACTIVE_KEY = "dailyLifeActiveSim-v1";
+const LIFE_SIM_QUEUE_KEY = "dailyLifeActionQueues-v1";
+function lifeSimArg(value) { return esc(JSON.stringify(String(value))); }
 
 function lifeSimRoster() {
   const household = (state.peopleProfiles || []).filter(p =>
@@ -24,7 +26,7 @@ function setLifeSim(id) {
   render();
 }
 
-function lifeSimTaskRows(person, activeId) {
+function lifeSimAvailableTasks(person) {
   const day = ymd();
   const personName = String(person?.name || "").trim().toLowerCase();
   return (state.tasks || [])
@@ -33,8 +35,70 @@ function lifeSimTaskRows(person, activeId) {
       const assigned = String(task.child || "").trim().toLowerCase();
       return !assigned || assigned === personName || (activeId === "self" && assigned === String(state.profile?.name || "").trim().toLowerCase());
     })
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .slice(0, 3);
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+function lifeSimSavedQueues() {
+  try {
+    const queues = JSON.parse(localStorage.getItem(LIFE_SIM_QUEUE_KEY) || "{}");
+    return queues && typeof queues === "object" && !Array.isArray(queues) ? queues : {};
+  } catch (_) { return {}; }
+}
+
+function lifeSimTaskRows(person, activeId) {
+  const available = lifeSimAvailableTasks(person);
+  const queues = lifeSimSavedQueues();
+  const key = String(activeId);
+  const ids = Array.isArray(queues[key]) ? queues[key] : available.slice(0, 3).map(task => String(task.id));
+  const byId = new Map(available.map(task => [String(task.id), task]));
+  return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 8);
+}
+
+function lifeSimSaveQueue(activeId, ids) {
+  const queues = lifeSimSavedQueues();
+  queues[String(activeId)] = [...new Set(ids.map(String))].slice(0, 8);
+  try { localStorage.setItem(LIFE_SIM_QUEUE_KEY, JSON.stringify(queues)); } catch (_) {}
+}
+
+function lifeSimQueueTask(id) {
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  const active = roster.find(person => String(person.id) === activeId) || roster[0];
+  if (!lifeSimAvailableTasks(active).some(task => String(task.id) === String(id))) return;
+  const ids = lifeSimTaskRows(active, activeId).map(task => String(task.id));
+  if (!ids.includes(String(id))) ids.push(String(id));
+  lifeSimSaveQueue(activeId, ids);
+  closeModal();
+  render();
+}
+
+function lifeSimMoveTask(id, delta) {
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  const active = roster.find(person => String(person.id) === activeId) || roster[0];
+  const ids = lifeSimTaskRows(active, activeId).map(task => String(task.id));
+  const index = ids.indexOf(String(id)), other = index + Number(delta);
+  if (index < 0 || other < 0 || other >= ids.length) return;
+  [ids[index], ids[other]] = [ids[other], ids[index]];
+  lifeSimSaveQueue(activeId, ids);
+  render();
+}
+
+function lifeSimRemoveTask(id) {
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  const active = roster.find(person => String(person.id) === activeId) || roster[0];
+  const ids = lifeSimTaskRows(active, activeId).map(task => String(task.id)).filter(taskId => taskId !== String(id));
+  lifeSimSaveQueue(activeId, ids);
+  render();
+}
+
+function lifeSimOpenActionPicker() {
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  const active = roster.find(person => String(person.id) === activeId) || roster[0];
+  const queued = new Set(lifeSimTaskRows(active, activeId).map(task => String(task.id)));
+  const candidates = lifeSimAvailableTasks(active).filter(task => !queued.has(String(task.id)));
+  const rows = candidates.length
+    ? candidates.map(task => `<button class="life-sim-picker-row" type="button" onclick="lifeSimQueueTask(${lifeSimArg(task.id)})"><span><b>${esc(task.title)}</b><small>${esc(task.child || task.category || "Household task")}</small></span><span aria-hidden="true">＋</span></button>`).join("")
+    : `<p class="muted small">There are no other unfinished tasks available to add for ${esc(active.name)} today.</p>`;
+  modal("Add an action", `<div class="stack life-sim-action-picker"><p class="muted small">Choose an existing task for ${esc(active.name)}. This only changes the action queue; it does not edit or complete the task.</p><div class="life-sim-picker-list">${rows}</div></div>`, "Close", closeModal);
 }
 
 function lifeSimStatusMarkup(label, value, percent, action) {
@@ -61,12 +125,12 @@ function lifeSimHud() {
   const now = new Date();
   const clock = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   const queueMarkup = queued.length
-    ? queued.map((task, index) => `<div class="life-sim-queue-item"><span class="life-sim-queue-order">${index + 1}</span><span class="life-sim-queue-copy"><b>${esc(task.title)}</b>${task.notes ? `<small>${esc(task.notes)}</small>` : ""}</span><button class="btn small" type="button" onclick="openTaskDetails('${esc(task.id)}')">Open</button></div>`).join("")
+    ? queued.map((task, index) => `<div class="life-sim-queue-item"><span class="life-sim-queue-order">${index + 1}</span><span class="life-sim-queue-copy"><b>${esc(task.title)}</b>${task.notes ? `<small>${esc(task.notes)}</small>` : ""}</span><span class="life-sim-queue-controls"><button class="btn small" type="button" aria-label="Move ${esc(task.title)} up" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},-1)" ${index===0?"disabled":""}>↑</button><button class="btn small" type="button" aria-label="Move ${esc(task.title)} down" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},1)" ${index===queued.length-1?"disabled":""}>↓</button><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(task.id)})">Open</button><button class="btn small" type="button" aria-label="Remove ${esc(task.title)} from queue" onclick="lifeSimRemoveTask(${lifeSimArg(task.id)})">×</button></span></div>`).join("")
     : `<p class="muted small life-sim-empty">No unfinished tasks are queued for ${esc(active.name || "this Sim")} today.</p>`;
   const rosterMarkup = roster.map(person => {
     const selected = String(person.id) === activeId;
     const initial = String(person.name || "?").trim().charAt(0).toUpperCase() || "?";
-    return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim('${esc(person.id)}')"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
+    return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
   }).join("");
   const status = [
     lifeSimStatusMarkup("Household tasks", `${taskDone}/${tasks.length} done`, tasks.length ? taskDone * 100 / tasks.length : NaN, "setView('today')"),
@@ -79,9 +143,9 @@ function lifeSimHud() {
     <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div>
       <details class="life-sim-console"><summary><span class="life-sim-live-indicator">●</span><span><b>Live mode</b><small>${esc(active.name)} · ${clock}</small></span><span class="life-sim-console-arrow">⌄</span></summary>
         <div class="life-sim-console-body">
-          <div class="life-sim-section-heading"><div><div class="eyebrow">NEEDS + STATUS</div><b>Household at a glance</b></div><button type="button" class="btn small" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub('${esc(active.id)}')`}">${activeId === "self" ? "Settings" : "Sim profile"}</button></div>
+          <div class="life-sim-section-heading"><div><div class="eyebrow">NEEDS + STATUS</div><b>Household at a glance</b></div><button type="button" class="btn small" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub(${lifeSimArg(active.id)})`}">${activeId === "self" ? "Settings" : "Sim profile"}</button></div>
           <div class="life-sim-status-grid">${status}</div>
-          <div class="life-sim-section-heading life-sim-queue-heading"><div><div class="eyebrow">ACTION QUEUE</div><b>Next interactions</b></div><button type="button" class="btn small" onclick="setView('today')">Today</button></div>
+          <div class="life-sim-section-heading life-sim-queue-heading"><div><div class="eyebrow">ACTION QUEUE</div><b>Next interactions</b></div><button type="button" class="btn small" onclick="lifeSimOpenActionPicker()">＋ Add</button></div>
           <div class="life-sim-queue">${queueMarkup}</div>
           <div class="life-sim-interactions" role="group" aria-label="Quick interactions">
             <button class="btn small" type="button" onclick="setView('household')">⌂ House</button>

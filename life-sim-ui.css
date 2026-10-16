@@ -34,9 +34,17 @@
 .life-sim-queue-copy{display:grid;gap:2px;flex:1;min-width:0}
 .life-sim-queue-copy b{font-size:.73rem;line-height:1.2;overflow-wrap:anywhere}
 .life-sim-queue-copy small{font-size:.64rem;line-height:1.25;overflow-wrap:anywhere}
+.life-sim-queue-controls{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+.life-sim-queue-controls .btn{min-width:31px;min-height:32px;padding:4px 6px;font-size:.68rem}
+.life-sim-queue-controls .btn:disabled{opacity:.4;cursor:default}
 .life-sim-empty{margin:0;padding:8px}
 .life-sim-interactions{display:flex;gap:6px;flex-wrap:wrap}
 .life-sim-interactions .btn{min-height:36px;padding:6px 9px;font-size:.75rem}
+.life-sim-picker-list{display:grid;gap:6px}
+.life-sim-picker-row{display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:13px;background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.life-sim-picker-row>span:first-child{display:grid;gap:3px;min-width:0}
+.life-sim-picker-row b{font-size:.8rem;overflow-wrap:anywhere}
+.life-sim-picker-row small{font-size:.67rem}
 @media(max-width:420px){
   .life-sim-toolbar{gap:6px}
   .life-sim-sim{flex-basis:52px;min-width:52px;min-height:56px}
