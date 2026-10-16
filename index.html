@@ -195,7 +195,7 @@ dialog,
 <link rel="stylesheet" href="household-map-compact.css?v=20261016-map28">
 <link rel="stylesheet" href="household-map-layout.css?v=20261016-guided30">
 <link rel="stylesheet" href="household-map-details.css?v=20261016-guided32">
-<link rel="stylesheet" href="dolly-room-model.css?v=20261016-guided34">
+<link rel="stylesheet" href="dolly-room-model.css?v=20261016-guided35">
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 </head>
 <body>
@@ -7976,7 +7976,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261016-guided34";
+const DAILY_LIFE_BUILD="20261016-guided35";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8050,7 +8050,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided34");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided35");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8086,7 +8086,7 @@ registerAppWorker();
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="house-visual-map.js?v=20261016-guided33"></script>
-<script src="dolly-room-model.js?v=20261016-guided34"></script>
+<script src="dolly-room-model.js?v=20261016-guided35"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
 <script src="inventory-photo-review.js?v=20261016-guided27"></script>
