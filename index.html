@@ -6539,7 +6539,32 @@ function openAstrologySettings(){
     await save();closeModal();render();
   });
 }
-async function toggleTask(id,d){const x=state.tasks.find(x=>x.id===id);if(!x)return;x.done=d;if(d)dailyReviewSet("task",id,x.date||ymd(),"yes",x.title||"Task","Tasks");else dailyReviewClear("task",id,x.date||ymd());if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){const ok=await sharingUpsertTask(x);if(!ok){x.done=!d;render();return}}await save();render()}
+async function toggleTask(id,d){
+  const x=state.tasks.find(row=>String(row.id)===String(id));if(!x)return;
+  const date=x.date||ymd(),previousDone=!!x.done,
+    previousReview=typeof dailyReviewEntry==="function"?dailyReviewEntry("task",id,date):null,
+    reviewSnapshot=previousReview?{...previousReview}:null;
+  x.done=!!d;
+  if(d)dailyReviewSet("task",id,date,"yes",x.title||"Task","Tasks");
+  else dailyReviewClear("task",id,date);
+  if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){
+    let synced=false;
+    try{synced=!!(await sharingUpsertTask(x))}catch(_error){synced=false}
+    if(!synced){
+      x.done=previousDone;
+      // Shared sync failed: restore the exact local review state too.
+      // Never leave a false "yes" or erase an existing answer.
+      dailyReviewClear("task",id,date);
+      if(reviewSnapshot){
+        if(!Array.isArray(state.dailyReviews))state.dailyReviews=[];
+        state.dailyReviews.push(reviewSnapshot);
+      }
+      render();
+      return;
+    }
+  }
+  await save();render();
+}
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
 function customWater(){const n=Number(prompt("How many ounces?"));if(n>0)addWater(n)}
 async function addStretch(minutes){state.stretchLogs.push({id:uid(),date:ymd(),minutes});await save();render()}
