@@ -1,5 +1,5 @@
 {
-  "build": "20261016-guided28",
+  "build": "20261016-guided29",
   "released": "2026-10-16",
   "ui": "Household opens to a four-floor clickable map. Rooms show confirmed inventory and tracked task progress; Today links directly to House Map.",
   "data_version": "local-first data unchanged"
