@@ -187,6 +187,7 @@ function trackedRoomTasks(f,z,room){
  const name=String(z.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
  return (state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
+  if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z.id);
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
   const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -199,14 +200,11 @@ window.houseVisualCompleteTask=async function(taskId,f,zoneId){
  window.houseVisualOpenZone(f,zoneId);
 };
 window.houseVisualAddZoneTask=function(f,id){
- const z=zone(f,id);if(!z)return;
+ const z=zone(f,id);if(!z||typeof openTask!=="function")return;
  const room=localRoom(f,z);
- if(room&&typeof homeAddRoomTask==="function"){homeAddRoomTask(room.id);return}
- if(typeof openInventoryRoom==="function"){
-  openInventoryRoom("",f);
-  Promise.resolve().then(()=>{const input=document.getElementById("irname");if(input&&!input.value)input.value=z.name||""});
- }
+ openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room"});
 };
+
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
