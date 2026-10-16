@@ -199,8 +199,8 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided57…</p></main></div>
-<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided57">Reload Daily Life</a></div></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided58…</p></main></div>
+<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided58">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__DailyLifeStartupStage="Waiting for app code";
@@ -215,13 +215,13 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261016-guided57 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=guided57">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261016-guided58 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=guided58">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261016-guided57 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=guided57">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261016-guided58 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=guided58">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided57").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261016-guided58").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -303,6 +303,7 @@ const blankState=()=>({
 });
 const APP_BUILD="2026.10.15-private-photo-inbox5";
 let appStartupReady=false;
+let startupRenderCompleted=false;
 let appHydrating=true;
 let startupLocalDataReady=false;
 let startupFallbackAvailable=false;
@@ -8062,10 +8063,11 @@ async function init(){
     startupStorageStalled=false;
     // Open the saved on-device app immediately. Cloud reconnect and account
     // services can continue below without keeping the whole app behind a splash.
-    window.__DailyLifeStartupStage="Connecting account in background";
+    window.__DailyLifeStartupStage="Rendering saved dashboard";
     window.__DailyLifeStartupDetail="Your saved information is ready on this phone.";
     appStartupReady=true;
     render();
+    startupRenderCompleted=true;
     document.getElementById("startupFailsafe")?.remove();
     startupFallbackTimer=setTimeout(()=>{
       if(appStartupReady)return;
@@ -8089,21 +8091,34 @@ async function init(){
     await save();render();
     window.__DailyLifeAppReady=true;document.getElementById("startupFailsafe")?.remove();if(startupFallbackTimer)clearTimeout(startupFallbackTimer);startupFallbackAvailable=false;if(!needsSetup())getWeather();
   }catch(error){
-    console.warn("Daily Life startup is still waiting for a connection or saved record",error);
+    console.warn("Daily Life startup could not finish",error);
     if(startupStorageWatchdog)clearTimeout(startupStorageWatchdog);
     startupStorageWatchdog=null;
     if(!startupLocalDataReady){
+      window.__DailyLifeStartupStage=window.__DailyLifeStartupStage||"Reading saved information";
+      window.__DailyLifeStartupDetail="The phone has not returned the saved record yet. It has not been erased or replaced.";
       startupStorageStalled=true;
-      render();
-    }
-    if(startupLocalDataReady){
+      try{render()}catch{}
+    }else if(!startupRenderCompleted){
       if(startupFallbackTimer)clearTimeout(startupFallbackTimer);
-      startupFallbackAvailable=true;
-      render();
+      startupFallbackTimer=null;
+      startupFallbackAvailable=false;
+      startupStorageStalled=false;
+      appStartupReady=false;
+      window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+")";
+      window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
+      const root=document.querySelector("#app");
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261016-guided58 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=guided58">Reload Daily Life</a></main>';
+      const panel=document.querySelector("#startupFailsafe .panel");
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261016-guided58 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=guided58">Reload Daily Life</a>';
+    }else{
+      // The saved dashboard is already available; leave it usable if account
+      // sync or another optional startup service fails afterward.
+      console.warn("Daily Life is open with saved information; a background service did not finish.",error);
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided57";
+const DAILY_LIFE_BUILD="20261016-guided58";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8177,7 +8192,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided57");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided58");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
