@@ -820,6 +820,7 @@
         '<div class="dl-stats">'+(workFocus?
            cards.slice(1,2).join("")+'<details class="dl-work-later"><summary>Other progress ›</summary>'+cards.slice(2).join("")+'</details>':
            cards.slice(1).join(""))+'</div></div>'+
+      '<button type="button" class="dl-house-entry" onclick="setView(&#39;household&#39;)" aria-label="Open house map, rooms and progress">⌂ House map · rooms, inventory + progress ›</button>'+
       '<details class="dl-optional-review"><summary>Check-ins, insights and goals <span aria-hidden="true">›</span></summary><div>'+
       (kidsAtDadUsual?'<button class="dl-home-goal-link" onclick="openPeopleHubSection(\'routines\')">Kids’ chores · saved list available (usually at Dad’s tonight) ›</button>':'')+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
