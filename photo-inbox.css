@@ -101,3 +101,13 @@
 .ha-other-row small{font-size:.71rem;color:#79657d}
 .ha-add-area{display:flex;gap:8px;flex-wrap:wrap}
 .ha-add-area .btn{flex:1 1 150px}
+
+/* Guided27 · inventory photo review keeps one decision in focus. */
+.pi-review-counter{display:grid;gap:3px;padding:10px 12px;background:rgba(244,238,251,.72);border:1px solid #e5d5ec;border-radius:15px}
+.pi-review-counter>b{font-size:.91rem;color:#49345b}
+.pi-review-counter>span{font-size:.81rem;font-weight:800;color:#754a70}
+.pi-review-counter>small{font-size:.73rem;color:#62536b}
+.pi-inventory-choice-focus{border:1px solid #d5b9d4;border-radius:16px;padding:12px;background:#fffafd}
+.pi-review-more{padding:8px 0;border-top:1px solid #eadbe9}
+.pi-review-more>summary{cursor:pointer;padding:8px;font-weight:800;color:#754a70}
+.pi-review-more .pi-area-card{margin:8px 0}
