@@ -402,7 +402,9 @@
     }
 
     const evening=lifeEnsureSettings().olderKidsReading||{};
-    if(evening.enabled!==false){
+    // Friday and Saturday nights are generally at Dad's. Explicit custom
+    // day-flow blocks still work and existing confirmations are untouched.
+    if(evening.enabled!==false&&![5,6].includes(lifeWeekday(date))){
       const prepStart=hmMinutes(evening.prepStart||"19:30"),prepEnd=hmMinutes(evening.prepEnd||"19:40"),
         readStart=hmMinutes(evening.start||"19:40"),readEnd=hmMinutes(evening.end||"20:00"),
         readingRows=displayChoresForDate(date).filter(function(c){
@@ -577,10 +579,22 @@
       row.subtasks=(Array.isArray(row.subtasks)&&row.subtasks.length?row.subtasks:["Leo shower"]).map(function(x){return cover.caregiver+": "+x});
     }
     if(row.templateKey==="wind-down"){
-      const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30";
-      row.title="Teeth + face + pajamas + electronics sweep";
-      row.detail="Brush teeth · floss · mouthwash · wash face · pajamas · plug in phone + set alarm · at "+fmtClock(sweep)+" collect all kids’ electronics. Dolly + Ambrose come upstairs after brushing teeth; kids’ official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
-      row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"];
+      const night=lifeEnsureSettings().nightRoutine||{},sweep=night.electronicsSweepTime||"19:30",
+        weekendWithDad=wd===5||wd===6;
+      if(weekendWithDad){
+        // The children usually leave Friday evening and return Sunday.
+        // Keep the user's own nighttime routine; never require child steps
+        // here or infer that any of the children's chores are completed.
+        row.title="Your evening wind-down";
+        row.detail="Brush teeth · face · pajamas · charge phone · set alarm. Optional time for yourself after the kids go to Dad’s.";
+        const personal=Array.isArray(night.subtasks)?night.subtasks:[];
+        row.subtasks=personal.filter(x=>!/electronics sweep|dolly\s*\+\s*ambrose|kids? bedtime|all kids|leo:|demitri:|tree:|dolly:|ambrose:/i.test(String(x)));
+        if(!row.subtasks.length)row.subtasks=["Brush teeth","Wash face","Put on pajamas","Plug in phone","Set alarm"];
+      }else{
+        row.title="Teeth + face + pajamas + electronics sweep";
+        row.detail="Brush teeth · floss · mouthwash · wash face · pajamas · plug in phone + set alarm · at "+fmtClock(sweep)+" collect all kids’ electronics. Dolly + Ambrose come upstairs after brushing teeth; kids’ official bedtime is "+fmtClock(night.kidsBedtime||"20:30")+".";
+        row.subtasks=Array.isArray(night.subtasks)?night.subtasks.slice():["Brush teeth","Floss","Mouthwash","Wash face","Put on pajamas","Start vacuums","Plug in phone","Set alarm","Electronics sweep at 7:30","Lie down with Dolly + Ambrose · read / settle"];
+      }
     }
     row.id="suggest:"+date+":"+row.templateKey+":life"+index;
     row.fixed=false;row.kind="routine";row.source="suggested";row.learnedRoutine=!!saved;
@@ -598,6 +612,9 @@
       rows.push({templateKey:"kid-shower-leo",start:minutesHm(start),end:minutesHm(start+duration),
         title:"Leo · morning shower",detail:"Preferred shower time · "+duration+" minutes",subtasks:["Leo shower"],icon:"♡"});
     }
+    // The children are generally with Dad on Friday and Saturday evenings.
+    // Morning routines for Friday (before the handoff) remain available.
+    if(wd===5||wd===6)return rows;
     if(Array.isArray(cfg.noEveningWeekdays)&&cfg.noEveningWeekdays.map(Number).includes(wd))return rows;
     const plan=cfg.weeklyPlan&&Array.isArray(cfg.weeklyPlan[String(wd)])?cfg.weeklyPlan[String(wd)]:[];
     plan.slice(0,Math.max(1,Number(cfg.maxEveningShowers||2))).forEach(function(item){
@@ -688,7 +705,7 @@
       if(x.templateKey==="after-school-launch")return false;
       if(x.templateKey==="homework")return false;
       if(x.templateKey==="monday-school-launch")return false;
-      if(lifeWeekday(date)===1&&x.templateKey==="chores")return false;
+      if((lifeWeekday(date)===1||lifeWeekday(date)===6)&&x.templateKey==="chores")return false;
       return true;
     }).map(function(x){
       if(x.templateKey==="monday-water-school"){
@@ -738,7 +755,8 @@
           shifted=startMinutes>15*60+30;
         return Object.assign({},x,{
           title:"Kids chores + homework",start:minutesHm(startMinutes),end:minutesHm(endMinutes),
-          detail:(shifted?"After the late activity pickup: ":"Right after school: ")+"clean rooms, homework, and today’s rotating household jobs. Leo + Tree reading is saved for 7:40–8:00 PM after the 7:30 electronics/teeth routine.",
+          detail:(shifted?"After the late activity pickup: ":"Right after school: ")+"clean rooms, homework, and today’s rotating household jobs."+
+            (lifeWeekday(date)===5?" Friday evening is normally at Dad’s; no bedtime or reading block is expected here.":" Leo + Demitri’s reading normally follows the 7:30 electronics/teeth routine."),
           subtasks:subtasks,subtaskRefs:refs
         });
       }
