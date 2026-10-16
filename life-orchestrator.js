@@ -622,7 +622,7 @@
   // Advance the Today guide at actual block boundaries without clearing any
   // saved checkmarks. A stale scheduled step never counts as finished.
   let lifeTodayNextHandoffAt=0;
-  function lifeClockHandoffAt(items,now){
+  function lifeClockHandoffAt(items,now,extraMinutes=[]){
     const minute=now.getHours()*60+now.getMinutes();
     const future=[];
     for(const block of items||[]){
@@ -631,6 +631,9 @@
         const n=hmMinutes(time);
         if(n!==null&&n>minute)future.push(n);
       }
+    }
+    for(const when of extraMinutes){
+      if(Number.isInteger(when)&&when>minute&&when<=1440)future.push(when);
     }
     const target=future.length?Math.min(...future):1440;
     return new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,target,1).getTime();
@@ -709,14 +712,15 @@
       guideTask=guideTaskId?(tasks.find(x=>String(x.id)===String(guideTaskId))||
         (state.tasks||[]).find(x=>String(x.id)===String(guideTaskId))):null,
       guideSensitive=!!guideTask&&(/^(money|finance|bank|car)$/i.test(String(guideTask.category||""))||
-        /\b(autopay|payment|pay bill|transfer|account clos|statement balance|credit card|insurance|registration|tire repair)\b/i
+        /\b(autopay|payment|pay bill|transfer|account clos|statement balance|credit card|insurance|registration|tire repair|student meal balance|add funds|refill.*balance)\b/i
           .test([guideTask.title,guideTask.notes].join(" "))),
       otherTaskCount=tasks.filter(x=>!x.done&&String(x.id)!==String(guideTaskId)).length,
       activeStepLabels=active&&active.source==="suggested"?dayFlowSubtaskLabels(active):[],
       activeStepIndex=activeStepLabels.findIndex((_,i)=>!dayFlowPartDone(active,today,i)),
       activeStepKey=active?encodeURIComponent(dayFlowItemKey(active,today)).replace(/'/g,"%27"):"";
 
-    lifeTodayNextHandoffAt=lifeClockHandoffAt(allBlocks,now);
+    lifeTodayNextHandoffAt=lifeClockHandoffAt(allBlocks,now,
+      kidsUsuallyHome&&bedtimeMinutes!==null?[bedtimeMinutes-45,bedtimeMinutes]:[]);
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
