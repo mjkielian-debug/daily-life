@@ -191,7 +191,7 @@ dialog,
 </style>
 <link rel="stylesheet" href="finance-roadmap.css?v=20261015-grounded-progress4">
 <link rel="stylesheet" href="action-first.css?v=20261015-guided7">
-<link rel="stylesheet" href="today-guidance.css?v=20261016-guided24">
+<link rel="stylesheet" href="today-guidance.css?v=20261016-guided25">
 </head>
 <body>
 <div id="app"></div>
@@ -7927,7 +7927,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261016-guided24";
+const DAILY_LIFE_BUILD="20261016-guided25";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8001,7 +8001,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided24");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided25");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8026,7 +8026,7 @@ registerAppWorker();
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261016-guided18"></script>
-<script src="life-orchestrator.js?v=20261016-guided24"></script>
+<script src="life-orchestrator.js?v=20261016-guided25"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261016-guided23"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
