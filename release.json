@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided61",
+  "build": "20261016-guided62",
   "released": "2026-10-16",
-  "ui": "Fix Sims HUD task filter ReferenceError in dashboard render",
+  "ui": "Show the full household selector on narrow screens; preserve app palette",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
