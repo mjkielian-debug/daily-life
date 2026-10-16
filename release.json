@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided58",
+  "build": "20261016-guided59",
   "released": "2026-10-16",
-  "ui": "Catch saved dashboard rendering failures safely",
+  "ui": "Wait for all UI scripts before initializing saved dashboard",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
