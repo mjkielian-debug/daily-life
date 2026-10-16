@@ -569,8 +569,8 @@
       oz=entries.reduce((n,x)=>n+(Number(x.oz)||0),0),
       goal=Math.max(0,Number(state.settings?.waterTarget||78));
     modal("Water · Today",
-      '<div class="dl-water-quick"><h2>💧 '+Math.round(oz)+(goal?' / '+goal:'')+' oz</h2>'+
-      '<p>'+entries.length+' water entries recorded today</p>'+
+      '<div class="dl-water-quick"><h2>💧 '+(entries.length?Math.round(oz)+(goal?' / '+goal:'')+' oz':"No water logged yet")+'</h2>'+
+      '<p>'+(entries.length?entries.length+' water entries recorded today':"Nothing has been reported yet.")+(goal?" · "+goal+" oz goal":"")+'</p>'+
       '<p><b>How much have you actually finished?</b> Only log water already drunk.</p>'+
       '<div class="dl-water-confirm-options">'+
         '<button class="btn" onclick="lifeConfirmWater(8)">✓ Drank 8 oz</button>'+
@@ -691,6 +691,7 @@
       choreDone=chores.filter(x=>x.done).length,
       waterTarget=Math.max(0,Number(state.settings?.waterTarget||0)),
       waterOz=Math.max(0,water()),
+      waterHasEntry=waterOz>0||(state.waterLogs||[]).some(x=>x.date===today&&Number(x.oz)>0),
       bottleGoal=waterTarget>0?Math.max(1,Math.ceil(waterTarget/26)):3,
       bottles=Math.min(bottleGoal,Math.floor(waterOz/26)),
       meal=mealForDate(today),
@@ -756,7 +757,7 @@
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
-      lifeStatRing("Water",waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz",waterOz,waterTarget,"#6ab7ea","💧","openQuickHydration()","Your water log"),
+      lifeStatRing("Water",waterHasEntry?(waterTarget?waterOz+" / "+waterTarget+" oz":waterOz+" oz"):"Not logged yet",waterOz,waterTarget,"#6ab7ea","💧","openQuickHydration()",waterTarget?waterTarget+" oz goal · log what you've drunk":"Log water already drunk"),
       (kidsAtDadUsual?"":lifeStatRing("Kids' chores",choreDone+" / "+chores.length,choreDone,chores.length,"#ea8ca8","♡","openPeopleHubSection('routines')","Confirmed chores")),
       lifeStatRing("Dinner",!hasMeal?"Choose":mealDone?"Done":"Planned",mealDone?1:0,1,"#efbf6f","♢","openMeal('"+today+"')",mealTime)
     ];
@@ -799,13 +800,14 @@
           '</div>':activeStepLabels.length?'<small class="dl-now-confirmed">All steps in this block have been recorded as done.</small>':'')+
         '</div>':'')+
       ((activeStepIndex>=0||familyFirst||workFocus)&&guideTaskId?
-        '<section class="dl-secondary-task" aria-label="Other important task today">'+
-          '<div class="dl-secondary-top"><span>'+(workFocus?"AFTER WORK · TO REVIEW":"ALSO ON TODAY’S LIST")+'</span>'+
+        '<section class="dl-secondary-task'+(workFocus?" dl-secondary-work":"")+'" aria-label="Other important task today">'+
+          '<div class="dl-secondary-top"><span>'+(workFocus?"AFTER WORK":"ALSO ON TODAY’S LIST")+'</span>'+
             (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
           '</div>'+
-          '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(guideTitle)+'</strong><span>Review ›</span></button>'+
-          '<p>'+esc(guideDetail)+'</p>'+
-          (guideSensitive?'<small>Confirm details before marking complete.</small>':'')+
+          '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(workFocus?guideTitle.replace(/^priority\s*:\s*/i,""):guideTitle)+'</strong><span>Open ›</span></button>'+
+          (workFocus?'<details class="dl-secondary-explain"><summary>Why this is on your list ›</summary><p>'+esc(guideDetail)+'</p>'+
+            (guideSensitive?'<small>Confirm the action before recording completion.</small>':'')+'</details>':
+            '<p>'+esc(guideDetail)+'</p>'+(guideSensitive?'<small>Confirm details before marking complete.</small>':''))+
         '</section>':
         '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
           '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
