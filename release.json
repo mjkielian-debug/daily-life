@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided47",
+  "build": "20261016-guided48",
   "released": "2026-10-16",
-  "ui": "Add local startup fallback while account reconnects",
+  "ui": "Add safe timeout for local database startup stalls",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
