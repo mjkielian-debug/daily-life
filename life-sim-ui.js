@@ -26,7 +26,7 @@ function setLifeSim(id) {
   render();
 }
 
-function lifeSimAvailableTasks(person) {
+function lifeSimAvailableTasks(person, activeId = lifeSimSelectedId()) {
   const day = ymd();
   const personName = String(person?.name || "").trim().toLowerCase();
   return (state.tasks || [])
@@ -46,7 +46,7 @@ function lifeSimSavedQueues() {
 }
 
 function lifeSimTaskRows(person, activeId) {
-  const available = lifeSimAvailableTasks(person);
+  const available = lifeSimAvailableTasks(person, activeId);
   const queues = lifeSimSavedQueues();
   const key = String(activeId);
   const ids = Array.isArray(queues[key]) ? queues[key] : available.slice(0, 3).map(task => String(task.id));
@@ -63,7 +63,7 @@ function lifeSimSaveQueue(activeId, ids) {
 function lifeSimQueueTask(id) {
   const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
   const active = roster.find(person => String(person.id) === activeId) || roster[0];
-  if (!lifeSimAvailableTasks(active).some(task => String(task.id) === String(id))) return;
+  if (!lifeSimAvailableTasks(active, activeId).some(task => String(task.id) === String(id))) return;
   const ids = lifeSimTaskRows(active, activeId).map(task => String(task.id));
   if (!ids.includes(String(id))) ids.push(String(id));
   lifeSimSaveQueue(activeId, ids);
@@ -94,7 +94,7 @@ function lifeSimOpenActionPicker() {
   const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
   const active = roster.find(person => String(person.id) === activeId) || roster[0];
   const queued = new Set(lifeSimTaskRows(active, activeId).map(task => String(task.id)));
-  const candidates = lifeSimAvailableTasks(active).filter(task => !queued.has(String(task.id)));
+  const candidates = lifeSimAvailableTasks(active, activeId).filter(task => !queued.has(String(task.id)));
   const rows = candidates.length
     ? candidates.map(task => `<button class="life-sim-picker-row" type="button" onclick="lifeSimQueueTask(${lifeSimArg(task.id)})"><span><b>${esc(task.title)}</b><small>${esc(task.child || task.category || "Household task")}</small></span><span aria-hidden="true">＋</span></button>`).join("")
     : `<p class="muted small">There are no other unfinished tasks available to add for ${esc(active.name)} today.</p>`;
