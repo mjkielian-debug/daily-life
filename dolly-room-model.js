@@ -228,13 +228,16 @@
  }
  const LAYOUT_KEY="dailyLifeDollyRoomLayout_v1";
  let arranging=false;
+ let selectedPiece=null;
+ function pieceTransform(el,p){const box=el.getBBox(),cx=box.x+box.width/2,cy=box.y+box.height/2;return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") rotate("+(Number(p.angle)||0)+" "+cx+" "+cy+")"}
  function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
   if(!root)return;
   const saved=layoutRead();
   root.querySelectorAll(".dolly-scene-object[data-room-piece]").forEach(el=>{
    const p=saved[el.dataset.roomPiece]||{};
-   el.setAttribute("transform","translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+")");
+   el.setAttribute("transform",pieceTransform(el,p));
+   el.style.filter=arranging&&selectedPiece===el.dataset.roomPiece?"drop-shadow(0 0 5px #e05bb0)":"";
    el.style.touchAction=arranging?"none":"";
    el.style.cursor=arranging?"grab":"pointer";
   });
@@ -242,9 +245,18 @@
   if(button)button.textContent=arranging?"Done arranging":"Arrange room";
   const reset=document.getElementById("dollyArrangeReset");
   if(reset)reset.hidden=!arranging;
+  const rotate=document.getElementById("dollyRotateTools");if(rotate)rotate.hidden=!arranging;
+  const name=document.getElementById("dollySelectedPiece");if(name)name.textContent=selectedPiece?"Selected: "+(ITEMS[selectedPiece]?.label||selectedPiece):"Tap a piece to select, then rotate";
  }
  window.dollyIsArranging=function(){return arranging};
- window.dollyToggleArrange=function(){arranging=!arranging;layoutApply(document.querySelector(".dolly-mini-svg"))};
+ window.dollyToggleArrange=function(){arranging=!arranging;if(!arranging)selectedPiece=null;layoutApply(document.querySelector(".dolly-mini-svg"))};
+ window.dollyRotateSelected=function(direction){
+  if(!arranging||!selectedPiece)return;
+  const all=layoutRead(),p=all[selectedPiece]||{};
+  all[selectedPiece]={...p,angle:((Number(p.angle)||0)+direction*45+360)%360};
+  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
+  layoutApply(document.querySelector(".dolly-mini-svg"));
+ };
  window.dollyResetArrange=function(){if(!confirm("Reset furniture positions in Dolly’s miniature? Inventory and tasks will stay saved."))return;localStorage.removeItem(LAYOUT_KEY);layoutApply(document.querySelector(".dolly-mini-svg"))};
  window.dollyScenePointerDown=function(event){
   if(!arranging)return;
@@ -253,6 +265,7 @@
   if(!obj||!svg.contains(obj))return;
   event.preventDefault();
   const key=obj.dataset.roomPiece,base=layoutRead()[key]||{x:0,y:0};
+  selectedPiece=key;layoutApply(svg);
   const point=svg.createSVGPoint();
   function coord(e){point.x=e.clientX;point.y=e.clientY;return point.matrixTransform(svg.getScreenCTM().inverse())}
   const start=coord(event);let latest={x:Number(base.x)||0,y:Number(base.y)||0};
@@ -261,14 +274,14 @@
    if(e.pointerId!==event.pointerId)return;
    const now=coord(e);
    latest={x:Math.max(-280,Math.min(280,(Number(base.x)||0)+now.x-start.x)),y:Math.max(-230,Math.min(230,(Number(base.y)||0)+now.y-start.y))};
-   obj.setAttribute("transform","translate("+latest.x+" "+latest.y+")");
+   obj.setAttribute("transform",pieceTransform(obj,{...base,...latest}));
   };
   const stop=e=>{
    if(e.pointerId!==event.pointerId)return;
    svg.removeEventListener("pointermove",move);
    svg.removeEventListener("pointerup",stop);
    svg.removeEventListener("pointercancel",stop);
-   const all=layoutRead();all[key]=latest;
+   const all=layoutRead();all[key]={...base,...latest};
    try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
    layoutApply(svg);
   };
@@ -314,7 +327,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Rotate selected furniture left 45 degrees">↶ Rotate left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Rotate selected furniture right 45 degrees">↷ Rotate right</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
