@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided13",
+  "build": "20261015-guided14",
   "released": "2026-10-15",
-  "ui": "One actionable, checkable current routine step on Today",
+  "ui": "Current routine first, compact secondary tasks with verification",
   "data_version": "local-first data unchanged"
 }
