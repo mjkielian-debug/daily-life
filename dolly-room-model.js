@@ -416,7 +416,7 @@
   const oldW=p.angle%180?p.h:p.w,oldH=p.angle%180?p.w:p.h;
   const next=(p.angle+dir*90+360)%360;
   const newW=next%180?p.h:p.w,newH=next%180?p.w:p.h;
-  data[floorSelected]={...p,angle:next,x:floorClamp(p.x+(oldW-newW)/2,0,480-newW),y:floorClamp(p.y+(oldH-newH)/2,0,350-newH)};
+  data[floorSelected]={...p,angle:next,x:floorClamp(p.x+(oldW-newW)/2,0,350-newW),y:floorClamp(p.y+(oldH-newH)/2,0,260-newH)};
   floorSave(data);floorDraw();
  };
  window.dollyFloorSnap=function(){
