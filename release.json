@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided22",
+  "build": "20261016-guided23",
   "released": "2026-10-16",
-  "ui": "Resume private photo uploads after partial failure without resending confirmed pictures; preselect the correct house-map floor",
+  "ui": "Only confirm today's matching room-reset task and keep paused, hidden, or differently assigned tasks out of room priorities",
   "data_version": "local-first data unchanged"
 }
