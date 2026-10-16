@@ -68,7 +68,7 @@
   const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
   return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
     ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="visibility:hidden">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(.92 .72)',vanity:'translate(304 165) scale(.78)',dollhouse:'translate(442 205) scale(.69)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
  // These are visual approximations, not photographs or measured dimensions.
@@ -260,15 +260,11 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
-  // Translation only: never mirror around scene coordinates (which sent furniture across the room).
   const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
   const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
-  if(front&&side){
-    front.style.display=direction%2===0?"":"none";
-    side.style.display=direction%2===1?"":"none";
-    front.style.visibility="visible";side.style.visibility="visible";
-  }
-  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+")";
+  if(front&&side){front.style.display=direction%2===0?"":"none";side.style.display=direction%2===1?"":"none";}
+  const x=Number(p.x),y=Number(p.y);
+  return "translate("+(Number.isFinite(x)?x:0)+" "+(Number.isFinite(y)?y:0)+")";
  }
   function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
