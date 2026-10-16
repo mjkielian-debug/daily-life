@@ -141,14 +141,40 @@ window.houseVisualInventoryOpen=function(f,id){
  if(room&&typeof homeOpenRoomInventory==="function"){homeOpenRoomInventory(room.id);return}
  if(typeof openInventoryRoom==="function")openInventoryRoom("",f);
 };
+function trackedRoomTasks(f,z,room){
+ const name=String(z.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ return (state.tasks||[]).filter(t=>{
+  if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
+  const assigned=String(t.homeRoomId||t.roomId||"");
+  if(assigned)return !!room&&assigned===String(room.id);
+  const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  return String(t.category||"").toLowerCase()==="home"&&name&&(" "+label+" ").includes(" "+name+" ");
+ });
+}
+window.houseVisualCompleteTask=async function(taskId,f,zoneId){
+ const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId));if(!t||t.done)return;
+ await toggleTask(taskId,true);
+ window.houseVisualOpenZone(f,zoneId);
+};
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
  const photos=arr(z.photos).filter(okPhoto);
+ const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
+ const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
+ const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
+ const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
+ '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
+ '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
+ (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
+ '<div class="hvm-room-inventory"><b>Confirmed inventory · '+inventory.length+' item types</b>'+
+ (inventory.length?inventory.slice(0,14).map(x=>'<p>'+h(x.name)+(x.quantity!=null?' · '+h(x.quantity):'')+'</p>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
+
  const spots=arr(z.markers).map(p=>'<div class="hvm-detail-marker"><b>'+h(p.label)+'</b><small>'+h(p.status||"")+'</small>'+
  (p.note?'<p>'+h(p.note)+'</p>':"")+'</div>').join("");
- const markup='<div class="hvm-zone-detail"><p>'+h(z.notes||"")+'</p>'+
+ const markup='<div class="hvm-zone-detail">'+progress+'<details class="hvm-context"><summary>Map observations and landmarks</summary><p>'+h(z.notes||"")+'</p>'+
  (spots?'<div class="hvm-detail-markers"><strong>Mapped spots</strong>'+spots+'</div>':"")+
+ '</details>'+
  '<div class="hvm-detail-photos"><strong>Reference photos ('+photos.length+')</strong>'+
  (photos.length?photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join(""):'<p>No photos assigned to this room yet.</p>')+'</div>'+
  '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
