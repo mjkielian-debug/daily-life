@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided35",
+  "build": "20261016-guided36",
   "released": "2026-10-16",
-  "ui": "Update Dolly’s interactive miniature to the user-confirmed rearrangement: sleigh bed under Mario beside window, vanity under second window, brown dresser on former Barbie wall, Barbie house facing room beside tappable closet; hallway playsets separate. Add bedding history and closet toy inventory.",
-  "data_version": "additive local-first, all existing items and dates preserved"
+  "ui": "Dolly post-rearrangement miniature with closet enlarged touch target, as-of-dated hallway staging, and clean-room reference note; retain bedding history and room tasks",
+  "data_version": "additive local-first records, existing records preserved"
 }
