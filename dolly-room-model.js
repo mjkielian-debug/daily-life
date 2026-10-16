@@ -6,7 +6,7 @@
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
   bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
-  dresser:{label:"Dresser",symbol:"▤",description:"Long brown dresser holding Dolly’s clothes. Moved to the wall that previously held the large Barbie house.",location:"Former Barbie-house wall (confirmed relationship)",sections:[]},
+  dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with ten small top drawers and four larger lower drawers, with brass-colored handles. Positioned along the former Barbie-house wall opposite the foot of the bed.",location:"Former Barbie-house wall, opposite bed footboard",sections:[]},
   vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
   dollhouse:{label:"Barbie house",symbol:"⌂",description:"Large pink Barbie house beside the closet, with its playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
@@ -250,7 +250,7 @@
    // Both windows are known; exact frame sizes are intentionally not to scale.
    '<g transform="translate(-85 -26)">'+windowDrawing()+'</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(16 231) scale(.67 .72)">'+dresserDrawing()+'</g>';
+  const dresser='<g transform="translate(27 311) scale(.94 .76)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
