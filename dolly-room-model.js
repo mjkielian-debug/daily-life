@@ -246,9 +246,11 @@
    '<path d="M26 332L314 461L592 332L592 321L314 451L26 320Z" fill="#c8a7ae" opacity=".8"/>'+
    '<path d="M64 324L341 205M111 347L387 232M157 370L436 251M203 395L479 271M249 415L525 292M300 442L574 314" stroke="#6c3f26" stroke-width="2" opacity=".32"/><path d="M105 353L133 341M215 386L239 377M367 315L404 297M460 353L491 339" stroke="#d3a479" stroke-width="2" opacity=".25"/>'+
    '<path d="M26 183L305 50L592 180" fill="none" stroke="#fffafa" stroke-width="9" stroke-linejoin="round"/>'+
-   marioPosterDrawing()+bedWindowDrawing()+
-   // Both windows are known; exact frame sizes are intentionally not to scale.
-   '<g transform="translate(-85 -26)">'+windowDrawing()+'</g>';
+   bedWindowDrawing()+
+   // The Mario poster and vanity window share the headboard/vanity wall; the bed-side window is perpendicular.
+   '<g transform="translate(152 -9)">'+marioPosterDrawing()+'</g>'+
+   // Keep the vanity window on the same right-hand wall as the poster, beyond it toward the vanity.
+   '<g transform="translate(0 -26)">'+windowDrawing()+'</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
   const dresser='<g transform="translate(48 237) scale(.92 .72)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
