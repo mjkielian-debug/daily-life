@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided15",
+  "build": "20261015-guided16",
   "released": "2026-10-15",
-  "ui": "Today follows schedule boundaries; checkmarks remain user-confirmed",
+  "ui": "Bedtime first, contextual provided-meal check-in, no stale Runza prompt",
   "data_version": "local-first data unchanged"
 }
