@@ -2,7 +2,9 @@
    Only presentation changes; no changes to saved tasks or local data. */
 #app .today-one-screen-shell .dl-command-center.life-today-one-screen{
   gap:10px!important;
-  padding-bottom:calc(108px + env(safe-area-inset-bottom))!important;
+  /* The outer Today shell already reserves the fixed-nav clearance.
+     An extra 108px here made a tall empty pink panel on short pages. */
+  padding-bottom:12px!important;
 }
 #app .dl-command-center .dl-now-strip{
   display:flex;
@@ -557,3 +559,28 @@
   min-height:36px;
 }
 #app .dl-guided-progress .dl-stats{align-content:center}
+
+/* Guided25 · compact secondary card and scroll-safe bottom clearance.
+   Only the outer Today shell reserves room for the fixed nav. */
+#app .today-one-screen-shell:has(.dl-command-center){
+  padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;
+}
+#app .dl-secondary-work{
+  flex:0 0 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  align-content:start!important;
+  grid-auto-rows:max-content;
+}
+#app .dl-secondary-work .dl-secondary-open{
+  align-self:start;
+}
+#app .dl-secondary-work .dl-secondary-explain:not([open]){
+  align-self:start;
+}
+#app .dl-work-after{
+  scroll-margin-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+@media(max-width:380px){
+  #app .dl-secondary-work{padding:9px 11px!important}
+}
