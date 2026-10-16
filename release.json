@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided31",
+  "build": "20261016-guided32",
   "released": "2026-10-16",
-  "ui": "Room-specific tasks keep explicit map and local room associations, including after title edits; mapped rooms open a task editor directly",
+  "ui": "Rooms open directly to task progress and inventory actions; photo and mapping evidence stays available in a compact disclosure",
   "data_version": "local-first data unchanged"
 }
