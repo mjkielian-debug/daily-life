@@ -661,11 +661,19 @@
       bottles=Math.min(bottleGoal,Math.floor(waterOz/26)),
       meal=mealForDate(today),
       cookingBatch=typeof runzaCookingBatch==="function"?runzaCookingBatch():null,
-      showCookingBatch=cookingBatch&&String(cookingBatch.status||"").toLowerCase()!=="made"&&today>="2026-10-13",
+      // A historical cooking batch is reference material until a specific
+      // finish date is chosen; never make it tonight's priority by default.
+      showCookingBatch=!!cookingBatch&&String(cookingBatch.status||"").toLowerCase()!=="made"&&
+        String(cookingBatch.plannedFinishDate||"")===today,
       hasMeal=!!String(meal?.dish||"").trim(),
       mealDone=!!(meal&&["made","done","cooked","served","eaten"].includes(String(meal.status||"").toLowerCase())),
       mealTitle=hasMeal?String(meal.dish):"Dinner not planned yet",
-      mealTime=meal?.startBy?"Start by "+fmtClock(meal.startBy):meal?.serveTime?"Serve around "+fmtClock(meal.serveTime):"Open the dinner plan",
+      providedMeal=!!meal&&(/\b(food fort|prime time|everett reading|provided meal)\b/i.test(String(meal.dish||""))||
+        /\b(away|provided|free family meal)\b/i.test(String(meal.method||""))),
+      mealTime=providedMeal?(mealDone?"Meal recorded":/food fort/i.test(String(meal.dish||""))?
+        "Food Fort · 5:30–6:30 PM"+(minutes>=18*60+30?" · Confirm if eaten":""):"Meal provided · confirm when eaten"):
+        meal?.startBy?"Start by "+fmtClock(meal.startBy):
+        meal?.serveTime?"Serve around "+fmtClock(meal.serveTime):"Open the dinner plan",
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(today):{unknown:0},
       audit=typeof dayFlowConflictAudit==="function"?dayFlowConflictAudit(today):{hardCount:0,routineCount:0},
       placed=new Set(allBlocks.filter(x=>x.source==="task").map(x=>String(x.sourceId))),
@@ -678,6 +686,16 @@
       importantFuture=future.filter(x=>x.fixed||x.source==="event"||x.source==="meal"||
         ["meal-prep","dinner","chores","wind-down","work-commute","tomorrow-prep","after-school-launch"].includes(String(x.templateKey||""))),
       upcoming=(importantFuture.length?importantFuture:future).slice(0,2),
+      night=state.settings?.itinerary?.nightRoutine||{},
+      bedtimeMinutes=hmMinutes(night.kidsBedtime||"20:30"),
+      weekday=new Date(today+"T12:00:00").getDay(),
+      // Friday and Saturday are generally at Dad's; this is a suggested
+      // family routine, not proof of anyone's actual location or attendance.
+      kidsUsuallyHome=weekday!==5&&weekday!==6&&
+        (typeof childProfiles!=="function"||childProfiles().length>0),
+      bedtimeSoon=night.enabled!==false&&kidsUsuallyHome&&bedtimeMinutes!==null&&
+        bedtimeMinutes>minutes&&bedtimeMinutes-minutes<=45,
+      familyFirst=!active&&bedtimeSoon,
       taskPercent=lifeProgress(taskDone,tasks.length),
       ringDetails=tasks.length?taskDone+" / "+tasks.length+" recorded tasks":"No tasks recorded yet",
       pendingToday=tasks.filter(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today)
@@ -719,6 +737,10 @@
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY</span><h1>What’s next?</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
+      (familyFirst?'<section class="dl-family-next" aria-label="Upcoming family routine">'+
+        '<div><span>UP NEXT · '+esc(fmtClock(night.kidsBedtime||"20:30"))+'</span><strong>Kids’ bedtime</strong>'+
+        '<small>Finish settling in. Check on reading and bedtime readiness; no steps are assumed done.</small></div>'+
+        '<button type="button" onclick="openTodayDayFlow()">Day Flow ›</button></section>':'')+
       (active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
         '</span><strong>'+esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong>'+
         '<small>'+esc(active.templateKey==="wind-down"?"Bedtime steps follow":"Until "+fmtClock(active.end))+'</small>'+
@@ -729,7 +751,7 @@
           '<button type="button" onclick="lifeCompleteNowStep(\''+today+'\',\''+activeStepKey+'\','+activeStepIndex+')">✓ Did this</button>'+
           '</div>':activeStepLabels.length?'<small class="dl-now-confirmed">All steps in this block have been recorded as done.</small>':'')+
         '</div>':'')+
-      (activeStepIndex>=0&&guideTaskId?
+      ((activeStepIndex>=0||familyFirst)&&guideTaskId?
         '<section class="dl-secondary-task" aria-label="Other important task today">'+
           '<div class="dl-secondary-top"><span>ALSO ON TODAY’S LIST</span>'+
             (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
@@ -760,14 +782,13 @@
         return '<button class="dl-home-goal-link" onclick="openDailyWeeklyProgress()">⌂ '+esc(caption)+' <span aria-hidden="true">›</span></button>';
       })():"")+
       '</div></details>'+
-      '<div class="dl-mid-grid">'+
-        '<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
-        (upcomingRows||'<p class="dl-empty">Nothing else is timed today. Open Day Flow to plan a block.</p>')+
-        '</section>'+
-        '<section class="dl-panel dl-dinner"><div class="dl-panel-heading"><h2>♢ Dinner plan</h2><button onclick="openMeal(\''+today+'\')">Edit ›</button></div>'+
+      '<div class="dl-mid-grid'+(!upcomingRows?' dl-no-upcoming':'')+'">'+
+        (upcomingRows?'<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
+        upcomingRows+'</section>':'')+
+        '<section class="dl-panel dl-dinner"><div class="dl-panel-heading"><h2>♢ '+(providedMeal&&!mealDone&&minutes>=18*60+30?'Dinner check-in':'Dinner plan')+'</h2><button onclick="openMeal(\''+today+'\')">Edit ›</button></div>'+
          '<div class="dl-dinner-content"><span aria-hidden="true">🍽️</span><div><b>'+esc(mealTitle)+'</b><small>'+esc(mealTime)+'</small></div></div>'+
          '<div class="dl-dinner-actions"><button class="dl-dinner-button" onclick="openMeal(\''+today+'\')">'+(hasMeal?(typeof mealNeedsRecipe==="function"&&mealNeedsRecipe(meal)?"Recipe":"Details"):"Choose dinner")+' ›</button>'+
-         (hasMeal&&!mealDone?'<button class="dl-dinner-done" onclick="setMealStatus('+esc(JSON.stringify(String(meal.id)))+',\'made\')">'+(mealNeedsRecipe(meal)?"✓ Made":"✓ Ate")+'</button>':'')+
+         (hasMeal&&!mealDone?'<button class="dl-dinner-done" onclick="setMealStatus('+esc(JSON.stringify(String(meal.id)))+','+(providedMeal?"\'eaten\'":"\'made\'")+')">'+(providedMeal?"✓ Ate":mealNeedsRecipe(meal)?"✓ Made":"✓ Ate")+'</button>':'')+
          '</div>'+
          (showCookingBatch?'<button class="dl-cook-ahead" onclick="openRunzaCookingBatch()">🥟 Runzas: finish baking later ›</button>':'')+
          '</section>'+
