@@ -666,7 +666,12 @@
       workFocus=!!workWindow,
       future=timed.filter(x=>hmMinutes(x.start)>=minutes).sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),
       imminent=future.find(x=>hmMinutes(x.start)-minutes<=45),
-      nextTask=lifeNextTask(),
+      // The task queue can omit a legitimate task that Today still shows.
+      // Check the same visible, uncompleted rows before claiming caught up.
+      fallbackTask=todayTasks().filter(t=>!t.done&&!t.paused&&!t.waitingForFunds&&
+        !t.duplicateHidden&&String(t.date||"")===today&&
+        !/^ups shift$/i.test(String(t.title||""))).sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||null,
+      nextTask=lifeNextTask()||fallbackTask,
       focusBlock=active||imminent||(!nextTask?future[0]:null),
       taskFocus=!focusBlock?nextTask:null,
       focusLabel=active?"RIGHT NOW":imminent||focusBlock?"UP NEXT":taskFocus?"DO NEXT":"YOU'RE CAUGHT UP",
