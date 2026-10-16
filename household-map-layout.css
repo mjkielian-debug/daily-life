@@ -1,0 +1,12 @@
+.household-map-page{display:grid;gap:10px;padding:10px 12px 32px}
+.household-map-title{display:flex;justify-content:space-between;align-items:center}
+.household-map-title h1{font-size:1.3rem;margin:0}
+.household-map-floors button{border:1px solid #cdb9d0;border-radius:15px;padding:9px;background:#fff8fc;color:#49364e;font-weight:800}
+.household-map-floors button.selected{background:#f8dcec}
+.household-map-drawing{background:#fff9fd;border-radius:20px;padding:8px}
+.household-map-drawing .hvm-drawing{max-width:100%;max-height:430px}
+.household-map-directory{display:grid;gap:8px}
+.household-room-progress{display:flex;justify-content:space-between;gap:8px;border:1px solid #dac8db;border-radius:15px;background:#fff7fc;padding:10px;text-align:left}
+.household-room-progress span{display:grid;gap:4px}
+.household-room-progress i,.hvm-task-meter{height:8px;display:block;background:#e4dce8;border-radius:99px;overflow:hidden}
+.household-room-progress em,.hvm-task-meter i{display:block;height:100%;background:#a6a3df}
