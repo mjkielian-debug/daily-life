@@ -72,3 +72,9 @@
 .dolly-scene-small{font:800 15px system-ui,sans-serif;fill:#513c60;paint-order:stroke;stroke:#fffbff;stroke-width:4px;pointer-events:none}
 .dolly-svg-closet{cursor:pointer}
 .dolly-svg-closet:hover,.dolly-svg-closet:focus-visible{filter:drop-shadow(0 0 7px #8c54b8)}
+
+/* Guided39: larger visual miniature without changing the interaction model. */
+.dolly-room-card.dolly-room-3d{padding:5px!important;gap:8px}
+.dolly-room-3d .dolly-room-heading{padding:3px 5px 1px}
+.dolly-room-3d .dolly-room-scene.dollhouse-view{margin:0;border-radius:14px}
+.dolly-room-3d .dolly-mini-svg{display:block;width:100%;height:auto}
