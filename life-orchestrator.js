@@ -552,15 +552,27 @@
       '<button class="btn" onclick="closeModal();openDailyReview()">Optional review</button></div>',
       "Close",closeModal);
   };
+  window.lifeConfirmWater=async function(amount){
+    const oz=Number(amount);
+    if(![8,13,26].includes(oz))return;
+    await addWater(oz);
+    if(document.querySelector("#modal"))openQuickHydration();
+  };
   window.openQuickHydration=function(){
     const date=ymd(),entries=(state.waterLogs||[]).filter(x=>x.date===date),
-      oz=entries.reduce((n,x)=>n+(Number(x.oz)||0),0);
+      oz=entries.reduce((n,x)=>n+(Number(x.oz)||0),0),
+      goal=Math.max(0,Number(state.settings?.waterTarget||78));
     modal("Water · Today",
-      '<div class="dl-water-quick"><h2>💧 '+Math.round(oz)+' / 78 oz</h2>'+
+      '<div class="dl-water-quick"><h2>💧 '+Math.round(oz)+(goal?' / '+goal:'')+' oz</h2>'+
       '<p>'+entries.length+' water entries recorded today</p>'+
-      '<button class="btn primary" onclick="addWater(26);openQuickHydration()">+ 26 oz bottle</button>'+
+      '<p><b>How much have you actually finished?</b> Only log water already drunk.</p>'+
+      '<div class="dl-water-confirm-options">'+
+        '<button class="btn" onclick="lifeConfirmWater(8)">✓ Drank 8 oz</button>'+
+        '<button class="btn" onclick="lifeConfirmWater(13)">✓ Drank 13 oz</button>'+
+        '<button class="btn primary" onclick="lifeConfirmWater(26)">✓ Finished 26 oz bottle</button>'+
+      '</div>'+
       '<button class="btn" onclick="closeModal();setView(&quot;log&quot;)">Hydration history</button>'+
-      '<p>Only confirmed entries count toward your goal.</p></div>',
+      '<p>You can take a few sips now and log them later—no catch-up requirement.</p></div>',
       "Close",closeModal);
   };
 
@@ -643,6 +655,9 @@
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
       timed=allBlocks.filter(x=>!x.nonBlocking&&!x.done&&!dayFlowBlockDone(x,today)&&x.kind!=="gap"&&x.kind!=="context"&&x.kind!=="sleep"&&hmMinutes(x.start)!==null),
       active=timed.find(x=>hmMinutes(x.start)<=minutes&&hmMinutes(x.end)!==null&&hmMinutes(x.end)>minutes),
+      workWindow=timed.find(x=>x.source==="work"&&hmMinutes(x.start)<=minutes&&
+        hmMinutes(x.end)!==null&&hmMinutes(x.end)>minutes),
+      workFocus=!!workWindow,
       future=timed.filter(x=>hmMinutes(x.start)>=minutes).sort((a,b)=>hmMinutes(a.start)-hmMinutes(b.start)),
       imminent=future.find(x=>hmMinutes(x.start)-minutes<=45),
       nextTask=lifeNextTask(),
@@ -703,12 +718,12 @@
       ringDetails=tasks.length?taskDone+" / "+tasks.length+" recorded tasks":"No tasks recorded yet",
       pendingToday=tasks.filter(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today)
         .sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||null,
-      guideTitle=active&&pendingToday?lifeTaskTitle(pendingToday):focusTitle,
-      guideLabel=active&&pendingToday?"NEXT ON YOUR LIST":focusLabel,
-      guideMeta=active&&pendingToday?"When you have a moment":focusMeta,
-      guideDetail=active&&pendingToday?lifeTaskActionPreview(pendingToday.notes):focusDetail,
-      guideAction=active&&pendingToday?"openTaskDetails('"+esc(pendingToday.id)+"')":focusAction,
-      guideTaskId=active&&pendingToday?pendingToday.id:focusTaskId,
+      guideTitle=(active||workFocus)&&pendingToday?lifeTaskTitle(pendingToday):focusTitle,
+      guideLabel=(active||workFocus)&&pendingToday?"NEXT ON YOUR LIST":focusLabel,
+      guideMeta=(active||workFocus)&&pendingToday?(workFocus?"After your shift":"When you have a moment"):focusMeta,
+      guideDetail=(active||workFocus)&&pendingToday?lifeTaskActionPreview(pendingToday.notes):focusDetail,
+      guideAction=(active||workFocus)&&pendingToday?"openTaskDetails('"+esc(pendingToday.id)+"')":focusAction,
+      guideTaskId=(active||workFocus)&&pendingToday?pendingToday.id:focusTaskId,
       guideTask=guideTaskId?(tasks.find(x=>String(x.id)===String(guideTaskId))||
         (state.tasks||[]).find(x=>String(x.id)===String(guideTaskId))):null,
       guideSensitive=!!guideTask&&(/^(money|finance|bank|car)$/i.test(String(guideTask.category||""))||
@@ -745,7 +760,14 @@
         '<div><span>UP NEXT · '+esc(fmtClock(night.kidsBedtime||"20:30"))+'</span><strong>Kids’ bedtime</strong>'+
         '<small>Finish settling in. Check on reading and bedtime readiness; no steps are assumed done.</small></div>'+
         '<button type="button" onclick="openTodayDayFlow()">Day Flow ›</button></section>':'')+
-      (active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
+      (workFocus?'<section class="dl-work-now" aria-label="Current UPS work window">'+
+        '<div class="dl-work-heading"><span>WORK WINDOW</span><strong>UPS preload</strong>'+
+        '<small>'+(workWindow.estimatedEnd?"Estimated until "+fmtClock(workWindow.end)+" · not a confirmed punch-out":
+          "Scheduled until "+fmtClock(workWindow.end)+" · check actual punches")+'</small></div>'+
+        '<p>Keep cold water within reach when practical. Your personal tasks can wait until after work.</p>'+
+        '<div class="dl-work-actions"><button type="button" onclick="openQuickHydration()">💧 Log water you drank</button>'+
+          '<button type="button" onclick="openCareHubSection(\'work\')">Work details ›</button></div></section>':
+        active?'<div class="dl-now-strip"><div class="dl-now-top"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+
         '</span><strong>'+esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong>'+
         '<small>'+esc(active.templateKey==="wind-down"?"Bedtime steps follow":"Until "+fmtClock(active.end))+'</small>'+
         '<button type="button" onclick="'+(active.source==="suggested"?"openTodayDayFlow()":dayFlowItemAction(active,today))+'">'+
@@ -755,9 +777,9 @@
           '<button type="button" onclick="lifeCompleteNowStep(\''+today+'\',\''+activeStepKey+'\','+activeStepIndex+')">✓ Did this</button>'+
           '</div>':activeStepLabels.length?'<small class="dl-now-confirmed">All steps in this block have been recorded as done.</small>':'')+
         '</div>':'')+
-      ((activeStepIndex>=0||familyFirst)&&guideTaskId?
+      ((activeStepIndex>=0||familyFirst||workFocus)&&guideTaskId?
         '<section class="dl-secondary-task" aria-label="Other important task today">'+
-          '<div class="dl-secondary-top"><span>ALSO ON TODAY’S LIST</span>'+
+          '<div class="dl-secondary-top"><span>'+(workFocus?"AFTER WORK · TO REVIEW":"ALSO ON TODAY’S LIST")+'</span>'+
             (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
           '</div>'+
           '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(guideTitle)+'</strong><span>Review ›</span></button>'+
@@ -774,7 +796,9 @@
       '<div class="dl-progress-area dl-guided-progress" aria-label="Separate progress from confirmed records">'+
         '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+esc(ringDetails)+'; open progress details" style="background:'+lifeRainbowProgressStyle(taskPercent)+'">'+
            '<span class="dl-total-inner"><span>✓</span><b>'+taskDone+' / '+tasks.length+'</b><strong>Your tasks</strong><small>Confirmed only</small></span></button>'+
-        '<div class="dl-stats">'+cards.slice(1).join("")+'</div></div>'+
+        '<div class="dl-stats">'+(workFocus?
+           cards.slice(1,2).join("")+'<details class="dl-work-later"><summary>Other progress ›</summary>'+cards.slice(2).join("")+'</details>':
+           cards.slice(1).join(""))+'</div></div>'+
       '<details class="dl-optional-review"><summary>Check-ins, insights and goals <span aria-hidden="true">›</span></summary><div>'+
       (typeof window.chatCheckinNudge==="function"?window.chatCheckinNudge():"")+
       (typeof window.lifeInsightNudge==="function"?window.lifeInsightNudge():"")+
@@ -801,7 +825,7 @@
         '<button onclick="openDayFlowSection(\'unscheduled\',\''+today+'\')"><span>◌</span><b>Loose items</b><small>'+looseCount+' to schedule</small></button>'+
         '<button onclick="openDayFlowSection(\'plan\',\''+today+'\')"><span>✦</span><b>Plan day</b><small>'+(audit.hardCount?audit.hardCount+" possible overlaps":audit.routineCount?audit.routineCount+" flexible routines to fit":"No detected time conflicts")+'</small></button>'+
        '</div>'+
-       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="addWater(26)">＋ 26 oz water</button><button onclick="openDailyWeeklyProgress()">◉ Goals + progress</button></div>'+
+       '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="openQuickHydration()">💧 Log water</button><button onclick="openDailyWeeklyProgress()">◉ Goals + progress</button></div>'+
      '</section>';
   }
 
