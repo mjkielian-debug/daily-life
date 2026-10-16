@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided12",
+  "build": "20261015-guided13",
   "released": "2026-10-15",
-  "ui": "Short actionable task cards and clearly labeled suggested routines",
+  "ui": "One actionable, checkable current routine step on Today",
   "data_version": "local-first data unchanged"
 }
