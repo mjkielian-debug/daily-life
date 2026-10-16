@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided16",
-  "released": "2026-10-15",
-  "ui": "Bedtime first, contextual provided-meal check-in, no stale Runza prompt",
+  "build": "20261016-guided17",
+  "released": "2026-10-16",
+  "ui": "Estimated UPS work window, post-shift planning and confirmed hydration logs",
   "data_version": "local-first data unchanged"
 }
