@@ -63,3 +63,12 @@
 .dolly-room-3d .dolly-room-caveat b{font-weight:850}
 .dolly-room-3d .dolly-room-helper{font-size:.75rem;color:#503a60;line-height:1.35}
 @media(max-width:390px){.dolly-room-card.dolly-room-3d{padding:7px;gap:8px}.dolly-room-3d .dolly-room-heading h3{font-size:1.02rem!important}}
+
+/* Guided35 · verified post-rearrangement relationships and closet inventory. */
+.dolly-bedding-history,.dolly-hallway-details{border:1px solid #e1d4e5;border-radius:13px;padding:9px 11px;background:#fff9ff;color:#5b4167}
+.dolly-bedding-history>summary,.dolly-hallway-details>summary{cursor:pointer;font-size:.81rem;font-weight:850}
+.dolly-bedding-history p,.dolly-hallway-details p,.dolly-closet-access{margin:6px 0;line-height:1.42;font-size:.77rem;color:#67516d}
+.dolly-closet-access{padding:10px;border-radius:12px;border:1px solid #d7c6dc;background:#fff9fd}
+.dolly-scene-small{font:800 15px system-ui,sans-serif;fill:#513c60;paint-order:stroke;stroke:#fffbff;stroke-width:4px;pointer-events:none}
+.dolly-svg-closet{cursor:pointer}
+.dolly-svg-closet:hover,.dolly-svg-closet:focus-visible{filter:drop-shadow(0 0 7px #8c54b8)}
