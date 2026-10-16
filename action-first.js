@@ -41,7 +41,11 @@ function choices(page,model){
  if(safePage==="today"){
   const projects=typeof nextLifeAdminAction==="function"?nextLifeAdminAction():null;
   if(projects&&projects.projectId)add("admin:"+projects.projectId,projects.title,projects.notes||"A next step saved with your project.","Open the project",()=>call("openProject",[projects.projectId]),48);
-  const pending=(s.tasks||[]).filter(x=>x.date===d&&!x.done&&!x.paused&&String(x.title||"").trim()&&!/^(ups shift|bedtime wind.?down)$/i.test(String(x.title||"")));
+  // Use the same visible task set as the Today checklist and progress meter.
+  // Hidden duplicates, paused items, and items waiting on funds are not
+  // actionable next steps.
+  const visibleTasks=typeof todayTasks==="function"?todayTasks():(s.tasks||[]).filter(x=>x.date===d);
+  const pending=(visibleTasks||[]).filter(x=>x&&x.date===d&&!x.done&&!x.paused&&!x.duplicateHidden&&!x.waitingForFunds&&String(x.title||"").trim()&&!/^(ups shift|bedtime wind.?down|everyone reading|kids? room reset \+ homework)$/i.test(String(x.title||"").trim()));
   if(pending.length){const t=pending[0];add("task:"+t.id,t.title,(t.child?t.child+" · ":"")+((Array.isArray(t.subtasks)&&t.subtasks.length)?"Start with: "+String(t.subtasks[0]):String(t.notes||"This task is on your list for today. Mark it done when you finish.")),"Show task steps",()=>call("openTaskDetails",[t.id]),64);}
   const chore=typeof displayChoresForDate==="function"?displayChoresForDate(d).find(x=>!x.done):null;
   if(chore)add("chore:"+chore.id,"Check "+[chore.child,chore.chore].filter(Boolean).join(" · "),"Today's family chore is not marked complete. Ask/check before recording it.","Open family checklist",()=>call("openPeopleHubSection",["routines"]),35);
@@ -201,13 +205,16 @@ function progressMarkup(page,model){
  // Today's main ring reports actual personal tasks only. Children's unreported
  // chore check-ins appear separately instead of depressing a made-up "day score".
  const dialMetrics=page==="today"?metrics.filter(m=>m.label==="Your tasks"):metrics;
- const summed=dialMetrics.length?dialMetrics:metrics;
- const total=summed.reduce((sum,m)=>sum+m.total,0),done=summed.reduce((sum,m)=>sum+m.done,0);
+ // Never let children's chores become the personal-task dial just because
+ // no personal task total was recorded today.
+ const total=dialMetrics.reduce((sum,m)=>sum+m.total,0),done=dialMetrics.reduce((sum,m)=>sum+m.done,0);
  const pct=total?Math.min(100,Math.round(100*done/total)):0;
  const progressName=page==="today"?"personal tasks marked complete":metrics[0].label;
  const wins=data.wins.length?'<div class="directive-wins"><span>✓ Already done</span>'+data.wins.map(x=>'<span class="directive-win">'+clean(x.name)+'</span>').join("")+'</div>':"";
- return '<div class="directive-progress" aria-label="Progress from recorded tasks"><div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' · '+clean(progressName)+'"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>'+
- '<div class="directive-progress-text"><b>'+ (page==="today"?"Tasks confirmed · not a day score":"Progress you can see") +'</b>'+bars+
+ const dial=dialMetrics.length?'<div class="directive-progress-ring" style="--dir-pct:'+pct+'%" role="img" aria-label="'+done+' of '+total+' · '+clean(progressName)+'"><div><strong>'+done+'<em>/'+total+'</em></strong><small>recorded</small></div></div>':"";
+ return '<div class="directive-progress" aria-label="Progress from recorded tasks">'+dial+
+ '<div class="directive-progress-text"><b>'+ (page==="today"?(dialMetrics.length?"Tasks confirmed · not a day score":"Kids’ check-ins · no personal task total"):"Progress you can see") +'</b>'+bars+
+ (page==="today"&&!dialMetrics.length?'<small class="directive-unknown-note">No personal task percentage is calculated when none are recorded.</small>':"")+
  (page==="today"&&metrics.some(m=>m.label==="Kids\' chores")?'<small class="directive-unknown-note">Unreported chores are unknown, not failed.</small>':"")+'</div></div>'+wins;
 }
 window.actionFirstConfirmDone=async function(page){
