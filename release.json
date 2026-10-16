@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided46",
+  "build": "20261016-guided47",
   "released": "2026-10-16",
-  "ui": "Add Sims-inspired Live Mode and improve HUD readability",
+  "ui": "Add local startup fallback while account reconnects",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
