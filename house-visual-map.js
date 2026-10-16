@@ -76,19 +76,61 @@ function draw(f,m){
  const work=arr(m.flow).map(x=>'<div class="hvm-flow-line"><b>'+h(x.from)+'</b><span>→</span><b>'+h(x.to)+'</b>'+
  '<small>'+h(x.status)+'</small></div>').join("");
  const todo=arr(m.pending)[0];
- const original=okPhoto(m.sourcePhotoId)?'<button type="button" class="btn hvm-source-photo" onclick="photoInboxView(&#39;'+m.sourcePhotoId+'&#39;,&#39;map&#39;)">📷 See original robot-vacuum screenshot</button>':"";
- return '<div class="hvm-rendered">'+(m.kind==="schematic"?mapSketch(f,m):directory(f,m))+
- '<p class="hvm-disclaimer">'+h(m.summary||"")+'</p>'+
- original+
- connect(m)+
+ const original=okPhoto(m.sourcePhotoId)?'<button type="button" class="btn hvm-source-photo" onclick="photoInboxView(&#39;'+m.sourcePhotoId+'&#39;,&#39;map&#39;)">📷 Original robot map</button>':"";
+ // Keep the clickable layout and tasks up front. Mapping caveats and stair
+ // route evidence are supporting reference material, not the main screen.
+ const references='<div class="hvm-technical-detail">'+
+ (m.summary?'<p class="hvm-disclaimer">'+h(m.summary)+'</p>':"")+
+ original+connect(m)+
  (work?'<section class="hvm-flow"><strong>↗ Where things went</strong>'+work+'</section>':"")+
  (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
- '<button class="btn primary small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+f+'&#39;)">+ Add room photos</button></div>':"")+
+ '<button class="btn small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+f+'&#39;)">+ Add room photos</button></div>':"")+
  facts(m)+'</div>';
+ return '<div class="hvm-rendered">'+(m.kind==="schematic"?mapSketch(f,m):directory(f,m))+
+ '<details class="hvm-mapping-background"><summary>Mapping notes, stair connections and evidence ›</summary>'+
+ references+'</details></div>';
 }
+function mappedRoomItems(room){
+ if(!room)return [];
+ const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
+ return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
+}
+function mappedProgressCard(f,z,room){
+ const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
+ const inventory=mappedRoomItems(room);
+ const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
+   'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
+ const title=z?z.name:room.name;
+ return '<button type="button" class="household-room-progress" onclick="'+action+'">'+
+ '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
+ '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
+ '<span><b>'+(percent===null?'—':percent+'%')+'</b>'+
+ '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
+}
+function roomProgressHtml(f){
+ const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
+ const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
+ const localUsed=new Set();
+ const mapped=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return mappedProgressCard(f,z,room)});
+ const localOnly=floorRooms.filter(r=>!localUsed.has(str(r.id))).map(room=>mappedProgressCard(f,null,room));
+ const rows=mapped.concat(localOnly);
+ if(rows.length)return '<div class="household-room-progress-grid">'+rows.join("")+'</div>'+
+ '<p class="household-progress-disclaimer">Percentages show completed saved room tasks, not an overall cleanliness score. Unrecorded work stays unknown.</p>';
+ return '<p class="household-progress-empty">'+
+ (online()&&!map?'Loading mapped rooms…':'No room tasks or inventory locations are linked to this floor yet. You can tap the diagram or add a room.')+
+ '</p>';
+}
+window.houseVisualRoomProgressHtml=function(f){return roomProgressHtml(f)};
+function refreshRoomProgress(f){
+ document.querySelectorAll(".household-map-room-results[data-floor]").forEach(el=>{
+  if(el.dataset.floor===f)el.innerHTML=roomProgressHtml(f);
+ });
+}
+
 function paint(f){
  const m=get(f),view=m?draw(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
+ refreshRoomProgress(f);
 }
 window.houseVisualMapHtml=function(f){
  if(!floors.includes(f))f="First floor";
