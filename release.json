@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided48",
+  "build": "20261016-guided49",
   "released": "2026-10-16",
-  "ui": "Add safe timeout for local database startup stalls",
+  "ui": "Let app startup proceed while external libraries load",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
