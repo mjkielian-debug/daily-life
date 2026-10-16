@@ -54,3 +54,26 @@
   .life-sim-console>summary{min-height:44px;padding:5px 9px}
   .life-sim-console-body{right:-1px;padding:11px;gap:10px}
 }
+
+
+/* Keep the active Sim and action queue visible as the main live-mode panel. */
+.life-sim-focus{display:grid;gap:8px;min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}
+.life-sim-focus-heading{display:flex;align-items:center;gap:9px;min-width:0}
+.life-sim-focus-avatar{flex:0 0 42px;width:42px;height:42px;border:2px solid var(--border);background:var(--panel2);font-size:1.05rem}
+.life-sim-focus-copy{display:grid;gap:2px;flex:1;min-width:0}
+.life-sim-focus-copy .eyebrow{font-size:.62rem}
+.life-sim-focus-copy>b{font-size:1rem;line-height:1.1;overflow-wrap:anywhere}
+.life-sim-focus-copy>small{font-size:.68rem;line-height:1.15}
+.life-sim-focus-heading>.btn{min-height:36px;white-space:nowrap}
+.life-sim-focus-queue-heading{margin-top:1px}
+.life-sim-focus .life-sim-queue-item{background:var(--panel2)}
+.life-sim-focus .life-sim-queue-copy b{font-size:.78rem}
+@media(max-width:420px){
+  .life-sim-focus{padding:9px;gap:7px}
+  .life-sim-focus-avatar{flex-basis:38px;width:38px;height:38px}
+  .life-sim-focus-heading{gap:7px}
+  .life-sim-focus-heading>.btn{padding:5px 8px;font-size:.68rem}
+  .life-sim-focus .life-sim-queue-item{flex-wrap:wrap}
+  .life-sim-focus .life-sim-queue-copy{flex-basis:calc(100% - 42px)}
+  .life-sim-focus .life-sim-queue-controls{margin-left:33px}
+}
