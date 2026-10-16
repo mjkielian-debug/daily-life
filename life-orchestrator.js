@@ -596,6 +596,16 @@
       '<span class="dl-stat-ring" style="--dl-pct:'+pct+'%;--dl-ring-color:'+color+'"><i aria-hidden="true">'+icon+'</i></span>'+
       '<span class="dl-stat-copy"><b>'+esc(label)+'</b><strong>'+esc(value)+'</strong><small>'+esc(detail||"")+'</small></span></button>';
   }
+  function lifeTaskActionPreview(notes){
+    const raw=String(notes||"").replace(/\s+/g," ").trim();
+    if(!raw)return "Open this task to see what needs doing before marking it complete.";
+    const sentences=raw.match(/[^.!?]+[.!?]?/g)||[raw];
+    const action=sentences.map(v=>v.trim()).find(v=>/^(confirm|verify|check|review|prepare|finish|follow up|make sure|send|submit|schedule|transfer|call|cancel|replace|update|bring|pick up)\b/i.test(v));
+    const value=action||raw;
+    if(value.length<=180)return value;
+    const clipped=value.slice(0,179),boundary=clipped.lastIndexOf(" ");
+    return clipped.slice(0,boundary>=120?boundary:179).trimEnd()+"…";
+  }
   function lifeTodayWheel(){
     const today=ymd(),now=new Date(),minutes=now.getHours()*60+now.getMinutes(),
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
@@ -644,10 +654,9 @@
       pendingToday=tasks.filter(x=>!x.done&&!x.paused&&!x.waitingForFunds&&x.date===today)
         .sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||null,
       guideTitle=active&&pendingToday?lifeTaskTitle(pendingToday):focusTitle,
-      guideLabel=active&&pendingToday?"AFTER "+String(active.title||"THIS ACTIVITY").toUpperCase().slice(0,45):focusLabel,
-      guideMeta=active&&pendingToday?"Open the task for its checklist":focusMeta,
-      guideDetail=active&&pendingToday?(String(pendingToday.notes||"").trim().slice(0,180)||
-        "Check the details before confirming this task is finished."):focusDetail,
+      guideLabel=active&&pendingToday?"NEXT ON YOUR LIST":focusLabel,
+      guideMeta=active&&pendingToday?"When you have a moment":focusMeta,
+      guideDetail=active&&pendingToday?lifeTaskActionPreview(pendingToday.notes):focusDetail,
       guideAction=active&&pendingToday?"openTaskDetails('"+esc(pendingToday.id)+"')":focusAction,
       guideTaskId=active&&pendingToday?pendingToday.id:focusTaskId,
       guideTask=guideTaskId?(tasks.find(x=>String(x.id)===String(guideTaskId))||
@@ -676,7 +685,10 @@
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY</span><h1>What’s next?</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
-      (active?'<div class="dl-now-strip"><span>RIGHT NOW</span><strong>'+esc(active.title)+'</strong><small>Until '+esc(fmtClock(active.end))+'</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
+      (active?'<div class="dl-now-strip"><span>'+(active.source==="suggested"?"PLANNED NOW":"ON YOUR SCHEDULE")+'</span><strong>'+
+        esc(active.templateKey==="wind-down"?"Evening prep":active.title)+'</strong><small>'+
+        esc(active.templateKey==="wind-down"?"Kids’ electronics and bedtime steps follow later":"Planned until "+fmtClock(active.end))+
+        '</small><button onclick="'+dayFlowItemAction(active,today)+'">Details ›</button></div>':'')+
       '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
         '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
         '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
