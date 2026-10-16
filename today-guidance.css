@@ -350,3 +350,83 @@
   #app .dl-secondary-top>span{font-size:.62rem}
   #app .dl-secondary-top>button{font-size:.61rem!important}
 }
+
+/* Guided16: next real family obligation, with dinner as a small check-in. */
+#app .dl-family-next{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 13px;
+  border:1px solid rgba(255,255,255,.94);
+  border-radius:20px;
+  background:linear-gradient(110deg,#ebf9ed,#f8edf5);
+  color:#3c3b43;
+}
+#app .dl-family-next>div{
+  display:flex;flex-direction:column;gap:3px;min-width:0;
+}
+#app .dl-family-next span{
+  font-family:var(--font-hand,inherit);
+  color:#577b63;font-size:.67rem;font-weight:900;
+}
+#app .dl-family-next strong{
+  font-family:var(--font-heading,Georgia,serif);
+  font-size:1.18rem;
+  line-height:1.12;
+}
+#app .dl-family-next small{
+  font-size:.70rem;
+  line-height:1.3;
+  color:#57635d;
+}
+#app .dl-family-next>button{
+  flex:0 0 auto;
+  border:1px solid #d0dccf;
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  color:#436a55;
+  padding:7px 10px;
+  min-height:36px;
+  font-size:.7rem;
+  font-weight:850;
+}
+#app .dl-mid-grid.dl-no-upcoming{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-dinner{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:9px;
+  align-items:center;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-dinner .dl-panel-heading{
+  grid-column:1/-1;
+  margin-bottom:0;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-dinner-content{
+  min-width:0;
+  padding:2px 0!important;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-dinner-actions{
+  display:flex!important;
+  flex-direction:column;
+  gap:5px;
+  align-items:stretch;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-dinner-actions>button{
+  min-height:32px!important;
+  min-width:88px;
+  padding:5px 10px!important;
+  font-size:.69rem!important;
+}
+#app .dl-mid-grid.dl-no-upcoming .dl-cook-ahead{
+  grid-column:1/-1;
+}
+@media(max-width:380px){
+  #app .dl-family-next{padding:9px 10px;gap:6px}
+  #app .dl-family-next strong{font-size:1.06rem}
+  #app .dl-family-next small{font-size:.66rem}
+  #app .dl-family-next>button{padding:6px!important;font-size:.65rem!important}
+  #app .dl-mid-grid.dl-no-upcoming .dl-dinner-actions>button{min-width:75px}
+}
