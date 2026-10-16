@@ -118,7 +118,7 @@ function lifeSimHud() {
   const tasks = (state.tasks || []).filter(task => {
     if (task.date !== ymd() || task.paused || task.waitingForFunds) return false;
     const assigned = String(task.child || "").trim().toLowerCase();
-    return activeId === "self" ? (!assigned || assigned === activeName) : assigned === activeName;
+    return !assigned || assigned === activeName;
   });
   const taskDone = tasks.filter(task => task.done).length;
   const care = typeof selfCareTodayStats === "function" ? selfCareTodayStats() : null;
