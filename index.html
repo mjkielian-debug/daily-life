@@ -242,9 +242,9 @@ async function dbClear(){
 }
 
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
+<script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="cloud.js?v=20261015-name-alias1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261014-chase1"></script>
@@ -7996,6 +7996,18 @@ function continueWithSavedData(){
     header.insertAdjacentElement("afterend",note);
   }
 }
+window.dailyLifeCloudLibraryReady=window.dailyLifeCloudLibraryReady||function(){
+  if(window.__dailyLifeCloudReconnectQueued)return;
+  window.__dailyLifeCloudReconnectQueued=true;
+  setTimeout(async()=>{
+    window.__dailyLifeCloudReconnectQueued=false;
+    if(!appStartupReady||!window.supabase?.createClient||cloudClient)return;
+    await cloudInit();
+    if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
+    if(typeof sharingInit==="function")await sharingInit();
+    if(typeof render==="function")render();
+  },1000);
+};
 function retryStartup(){location.reload()}
 async function init(){
   startupStorageWatchdog=setTimeout(()=>{
@@ -8029,6 +8041,7 @@ async function init(){
     if(typeof sharingInit==="function")await sharingInit();
     appHydrating=false;
     appStartupReady=true;
+    if(window.__DailyLifeSupabaseReady)window.dailyLifeCloudLibraryReady();
     if(startupFallbackTimer)clearTimeout(startupFallbackTimer);
     startupFallbackAvailable=false;
     await save();render();
@@ -8048,7 +8061,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided48";
+const DAILY_LIFE_BUILD="20261016-guided49";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8122,7 +8135,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided48");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided49");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
