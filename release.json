@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided24",
+  "build": "20261016-guided25",
   "released": "2026-10-16",
-  "ui": "Compact secondary after-work reminders and explicitly distinguish unlogged water from recorded intake",
+  "ui": "Remove duplicate bottom-navigation spacer, keep the last Today section scrollable, and capitalize after-work action titles",
   "data_version": "local-first data unchanged"
 }
