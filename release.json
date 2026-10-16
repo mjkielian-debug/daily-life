@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided54",
+  "build": "20261016-guided55",
   "released": "2026-10-16",
-  "ui": "Recover stalled startup without bypassing saved-data loading; remove stray slash-n markup",
+  "ui": "Add a delayed startup recovery link that preserves saved data",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
