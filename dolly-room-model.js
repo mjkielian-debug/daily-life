@@ -53,13 +53,17 @@
    '<path d="M283 367L380 317L380 337L283 386Z" fill="#e3dfe9" stroke="#aca4b2" stroke-width="2"/>'+
    '<path d="M119 277L283 367L283 386L119 295Z" fill="#fcfbff" stroke="#aaa4b1" stroke-width="2"/>'+
    // Upright white wooden headboard, raised above the mattress.
-   '<path d="M115 273L115 218Q122 215 130 215C159 197 197 189 216 180Q224 176 225 189L221 230Z" fill="url(#dollyWhiteFrame)" stroke="#aca4b0" stroke-width="3"/>'+
-   '<path d="M128 232Q168 203 208 196L209 226L128 263Z" fill="#fffefe" stroke="#ded7e3" stroke-width="2"/>'+
-   '<path d="M113 218L113 288M222 180L222 244" stroke="#fff" stroke-width="9" stroke-linecap="round"/>'+
-   '<path d="M113 218L113 288M222 180L222 244" stroke="#aaa0b0" stroke-width="2" fill="none"/>'+
+   '<path d="M115 273L115 212Q122 203 133 205Q158 187 187 171Q207 155 218 177Q226 180 225 195L221 238Z" fill="url(#dollyWhiteFrame)" stroke="#aca4b0" stroke-width="3"/>'+
+   '<path d="M127 225Q151 211 172 194Q189 174 206 176Q216 185 210 197L210 230L127 264Z" fill="#fffefa" stroke="#ded7e3" stroke-width="2"/>'+
+   '<path d="M170 194Q180 179 191 184Q200 189 189 193M178 198Q189 190 196 202M186 190Q192 178 200 181" fill="none" stroke="#dbd4cb" stroke-width="2.6" stroke-linecap="round"/>'+
+   '<path d="M113 207L113 288M222 178L222 244" stroke="#fff" stroke-width="11" stroke-linecap="round"/>'+
+   '<path d="M113 207L113 288M222 178L222 244" stroke="#aaa0b0" stroke-width="2.2" fill="none"/>'+
    // Lavender fitted mattress and a folded, patterned comforter.
    '<path d="M123 275L219 231L370 313L277 358Z" fill="url(#dollyLavenderSheet)" stroke="#e8dff1" stroke-width="2"/>'+
-   '<path d="M226 242L305 284L211 331L131 287Z" fill="url(#dollyBlanket)" stroke="#c6b1c5" stroke-width="1.5"/>'+
+   '<path d="M226 242L305 284L211 331L131 287Z" fill="#3379c6" stroke="#245991" stroke-width="2"/>'+
+   '<path d="M158 293L177 302L170 309L150 299M202 313L222 320L216 328L193 320" fill="#dc5f54" opacity=".9"/>'+
+   '<path d="M195 267L207 274L200 282L188 276Z" fill="#f2c54a"/>'+
+   '<path d="M216 254L253 274" fill="none" stroke="#84b9e7" stroke-width="4" opacity=".8"/>'+
    '<path d="M148 286Q168 277 184 279T219 272M201 310Q224 294 248 301M223 267Q244 272 258 282" fill="none" stroke="#9d7f9e" stroke-width="4" opacity=".56"/>'+
    '<path d="M183 269L206 258L225 268L203 280Z" fill="#c0b5ce" opacity=".63"/>'+
    '<path d="M242 290L260 286L275 301L258 307Z" fill="#8e9ab9" opacity=".68"/>'+
@@ -67,8 +71,9 @@
    // A white pillow, rather than inventing an exact pillow count.
    '<path d="M157 272Q153 261 163 258L199 242Q209 238 215 245L234 256Q238 263 229 267L183 288Q171 292 166 283Z" fill="url(#dollyPillow)" stroke="#d5d0d7" stroke-width="2"/>'+
    '<path d="M164 272L223 251" stroke="#ede9ed" stroke-width="2" opacity=".8"/>'+
-   '<path d="M270 358Q307 358 338 334Q362 320 377 314L377 333Q342 362 284 386Z" fill="url(#dollyWhiteFrame)" stroke="#a9a1b3" stroke-width="2.5"/>'+
-   '<path d="M276 363Q321 352 368 321" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'+
+   '<path d="M269 351Q301 358 339 334Q364 318 378 307L380 367Q348 396 282 397Q272 383 269 368Z" fill="url(#dollyWhiteFrame)" stroke="#a9a1b3" stroke-width="3"/>'+
+   '<path d="M286 367Q314 381 353 353M316 358Q327 345 335 348Q343 357 329 363M333 354Q340 345 349 348" fill="none" stroke="#ded9d2" stroke-width="2.5"/>'+
+   '<path d="M276 354Q321 362 370 316" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>'+
    '</g>';
  }
  function vanityDrawing(){
