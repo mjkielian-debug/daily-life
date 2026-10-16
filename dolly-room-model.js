@@ -260,21 +260,15 @@
  let arranging=false;
  let selectedPiece=null;
  function pieceTransform(el,p){
-  // Fixed local origin: never measure hidden or transformed SVG views during layout.
+  // Translation only: never mirror around scene coordinates (which sent furniture across the room).
   const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
   const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
   if(front&&side){
-    front.style.display="";side.style.display="";
-    front.style.visibility=direction%2===0?"visible":"hidden";
-    side.style.visibility=direction%2===1?"visible":"hidden";
-    // Pre-drawn side art occupies the same original object coordinates; no live bbox calculation.
-    side.setAttribute("transform","");
+    front.style.display=direction%2===0?"":"none";
+    side.style.display=direction%2===1?"":"none";
+    front.style.visibility="visible";side.style.visibility="visible";
   }
-  const mirror=direction>=2?-1:1;
-  const cx={dresser:155,vanity:382,dollhouse:517}[el.dataset.roomPiece];
-  const x=Number(p.x)||0,y=Number(p.y)||0;
-  if(!Number.isFinite(cx))return "translate("+x+" "+y+")";
-  return "translate("+x+" "+y+") translate("+cx+" 0) scale("+mirror+" 1) translate("+(-cx)+" 0)";
+  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+")";
  }
   function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
@@ -305,6 +299,13 @@
  };
  window.dollyRecoverPiece=function(){
   const all=layoutRead();const key=selectedPiece||"dresser";all[key]={x:0,y:0,angle:0};
+  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
+  layoutApply(document.querySelector(".dolly-mini-svg"));
+ };
+ window.dollyRestoreVanity=function(){
+  const all=layoutRead();
+  // Recover only the missing vanity; other saved placements are untouched.
+  all.vanity={...(all.vanity||{}),x:0,y:0,angle:0};
   try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
   layoutApply(document.querySelector(".dolly-mini-svg"));
  };
@@ -378,7 +379,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Bring missing vanity back into view">Find vanity</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
