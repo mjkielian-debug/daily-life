@@ -552,11 +552,17 @@
       '<button class="btn" onclick="closeModal();openDailyReview()">Optional review</button></div>',
       "Close",closeModal);
   };
+  let lifeWaterSaveBusy=false;
   window.lifeConfirmWater=async function(amount){
     const oz=Number(amount);
-    if(![8,13,26].includes(oz))return;
-    await addWater(oz);
-    if(document.querySelector("#modal"))openQuickHydration();
+    if(lifeWaterSaveBusy||![8,13,26].includes(oz))return;
+    lifeWaterSaveBusy=true;
+    try{
+      await addWater(oz);
+      if(document.querySelector("#modal"))openQuickHydration();
+    }finally{
+      lifeWaterSaveBusy=false;
+    }
   };
   window.openQuickHydration=function(){
     const date=ymd(),entries=(state.waterLogs||[]).filter(x=>x.date===date),
