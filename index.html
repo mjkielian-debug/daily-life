@@ -199,16 +199,16 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4">\n</head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided51…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided52…</p></main></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   const root=document.getElementById("app");
-  if(window.__DailyLifeAppReady||!root||root.querySelector("button")||!root.textContent.includes("Opening your Daily Life"))return;if(typeof window.continueWithSavedData==="function"){window.continueWithSavedData();if(!root.textContent.includes("Opening your Daily Life"))return;}
-  root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for its startup code to load.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided51. Nothing has been reset or changed. Your saved information remains on this phone.</div><button class="btn primary" type="button" onclick="location.reload()">Reload this page</button></main>';
+  if(window.__DailyLifeAppReady||!root||!root.textContent.includes("Opening your Daily Life"))return;if(typeof window.continueWithSavedData==="function"){window.continueWithSavedData();if(!root.textContent.includes("Opening your Daily Life"))return;}
+  root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for its startup code to load.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided52. Nothing has been reset or changed. Your saved information remains on this phone.</div><button class="btn primary" type="button" onclick="location.reload()">Reload this page</button></main>';
 },15000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided51").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261016-guided52").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -8074,7 +8074,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided51";
+const DAILY_LIFE_BUILD="20261016-guided52";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8148,7 +8148,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided51");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided52");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
