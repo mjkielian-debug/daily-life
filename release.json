@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided63",
+  "build": "20261016-guided64",
   "released": "2026-10-16",
-  "ui": "Keep the active Sim and action queue visible on the dashboard; preserve palette and saved data",
+  "ui": "Show selected Sim and current action queue directly on dashboard",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
