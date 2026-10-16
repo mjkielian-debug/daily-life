@@ -90,6 +90,12 @@ function lifeSimRemoveTask(id) {
   render();
 }
 
+async function lifeSimCompleteTask(id) {
+  await toggleTask(id, true);
+  const task = (state.tasks || []).find(row => String(row.id) === String(id));
+  if (task?.done) lifeSimRemoveTask(id);
+}
+
 function lifeSimOpenActionPicker() {
   const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
   const active = roster.find(person => String(person.id) === activeId) || roster[0];
@@ -129,45 +135,28 @@ function lifeSimHud() {
   const queued = lifeSimTaskRows(active, activeId);
   const now = new Date();
   const clock = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const queueMarkup = queued.length
-    ? queued.map((task, index) => `<div class="life-sim-queue-item"><span class="life-sim-queue-order">${index + 1}</span><span class="life-sim-queue-copy"><b>${esc(task.title)}</b>${task.notes ? `<small>${esc(task.notes)}</small>` : ""}</span><span class="life-sim-queue-controls"><button class="btn small" type="button" aria-label="Move ${esc(task.title)} up" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},-1)" ${index===0?"disabled":""}>↑</button><button class="btn small" type="button" aria-label="Move ${esc(task.title)} down" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},1)" ${index===queued.length-1?"disabled":""}>↓</button><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(task.id)})">Open</button><button class="btn small" type="button" aria-label="Remove ${esc(task.title)} from queue" onclick="lifeSimRemoveTask(${lifeSimArg(task.id)})">×</button></span></div>`).join("")
-    : `<p class="muted small life-sim-empty">No unfinished tasks are queued for ${esc(active.name || "this Sim")} today.</p>`;
+  const current = queued[0];
+  const queueMarkup = queued.length > 1
+    ? queued.slice(1).map((task, index) => `<div class="life-sim-queue-item"><span class="life-sim-queue-order">${index + 2}</span><span class="life-sim-queue-copy"><b>${esc(task.title)}</b></span><span class="life-sim-queue-controls"><button class="btn small" type="button" aria-label="Move ${esc(task.title)} up" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},-1)">↑</button><button class="btn small" type="button" aria-label="Move ${esc(task.title)} down" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},1)" ${index===queued.length-2?"disabled":""}>↓</button><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(task.id)})">Open</button><button class="btn small" type="button" aria-label="Remove ${esc(task.title)} from queue" onclick="lifeSimRemoveTask(${lifeSimArg(task.id)})">×</button></span></div>`).join("")
+    : `<p class="muted small life-sim-empty">No more queued actions.</p>`;
   const rosterMarkup = roster.map(person => {
     const selected = String(person.id) === activeId;
     const initial = String(person.name || "?").trim().charAt(0).toUpperCase() || "?";
     return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
   }).join("");
-  const status = activeId === "self" ? [
-    lifeSimStatusMarkup("Today’s tasks", `${taskDone}/${tasks.length} done`, tasks.length ? taskDone * 100 / tasks.length : NaN, "setView('today')"),
-    lifeSimStatusMarkup("Care", care ? `${care.done}/${care.total}` : "Not logged", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"),
-    lifeSimStatusMarkup("Mood", mood?.mood ? moodLabel(mood.mood) : "No check-in", mood?.mood ? Number(mood.mood) * 20 : NaN, "openWellnessCheckin()"),
-    lifeSimStatusMarkup("Water", waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz logged`, waterGoal ? waterNow * 100 / waterGoal : NaN, "openCareHubSection('water')"),
-    lifeSimStatusMarkup("Sleep", sleep ? `${sleep.toFixed(1)} hours logged` : "No sleep log", NaN, "openSleep()")
-  ].join("") : [
-    lifeSimStatusMarkup("Today’s tasks", `${taskDone}/${tasks.length} done`, tasks.length ? taskDone * 100 / tasks.length : NaN, "setView('today')"),
-    lifeSimStatusMarkup("Personal needs", "Not tracked for this Sim", NaN, `openPersonHub(${lifeSimArg(active.id)})`)
-  ].join("");
+  const needs = activeId === "self" ? [
+    ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
+    ["☼", "Mood", mood?.mood ? moodLabel(mood.mood) : "No check-in", mood?.mood ? Number(mood.mood) * 20 : NaN, "openWellnessCheckin()"],
+    ["◉", "Water", waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz`, waterGoal ? waterNow * 100 / waterGoal : NaN, "openCareHubSection('water')"],
+    ["☾", "Sleep", sleep ? `${sleep.toFixed(1)} hr` : "No log", NaN, "openSleep()"]
+  ].map(([icon,label,value,percent,action]) => `<button class="life-sim-need" type="button" onclick="${action}"><span class="life-sim-need-icon">${icon}</span><span class="life-sim-need-copy"><b>${label}</b><small>${esc(value)}</small></span><span class="life-sim-meter"><i style="width:${Math.max(0,Math.min(100,Number(percent)||0))}%"></i></span></button>`).join("") : `<div class="life-sim-needs-note"><b>Personal needs are not tracked for ${esc(active.name)}.</b><span>Showing assigned tasks and action progress only.</span></div>`;
   return `<section class="life-sim-hud" aria-label="Household live mode">
-    <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div>
-      <details class="life-sim-console"><summary><span class="life-sim-live-indicator">●</span><span><b>Live mode</b><small>${esc(active.name)} · ${clock}</small></span><span class="life-sim-console-arrow">⌄</span></summary>
-        <div class="life-sim-console-body">
-          <div class="life-sim-section-heading"><div><div class="eyebrow">NEEDS + STATUS</div><b>${activeId === "self" ? "Your Sim needs" : esc(active.name) + " · status"}</b></div><button type="button" class="btn small" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub(${lifeSimArg(active.id)})`}">${activeId === "self" ? "Settings" : "Sim profile"}</button></div>
-          <div class="life-sim-status-grid">${status}</div>
-          <div class="life-sim-interactions" role="group" aria-label="Quick interactions">
-            <button class="btn small" type="button" onclick="setView('household')">⌂ House</button>
-            <button class="btn small" type="button" onclick="setView('family')">♡ People</button>
-            <button class="btn small" type="button" onclick="setView('home')">◇ Food</button>
-            <button class="btn small" type="button" onclick="setView('inventory')">▦ Inventory</button>
-            <button class="btn small" type="button" onclick="setView('itinerary')">◷ Plans</button>
-            <button class="btn small" type="button" onclick="openSectionLauncher()">☰ Sections</button>
-          </div>
-        </div>
-      </details>
+    <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
+    <div class="life-sim-play-panel">
+      <div class="life-sim-active-sim"><div class="life-sim-portrait" aria-hidden="true">${esc(String(active.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="life-sim-sim-meta"><span class="eyebrow">ACTIVE SIM</span><h2>${esc(active.name)}</h2><small>${taskDone} of ${tasks.length} tasks done</small><button class="btn small" type="button" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub(${lifeSimArg(active.id)})`}">${activeId === "self" ? "Your profile" : "Sim profile"} ›</button></div></div>
+      <div class="life-sim-needs-block"><div class="life-sim-panel-label">${activeId==="self"?"NEEDS":"TODAY"}</div><div class="life-sim-needs">${needs}</div></div>
+      <div class="life-sim-current-block"><div class="life-sim-panel-label">CURRENT ACTION <button type="button" class="life-sim-add-action" onclick="lifeSimOpenActionPicker()" aria-label="Add an action">＋</button></div>${current?`<div class="life-sim-current-action"><span class="life-sim-plumbob" aria-hidden="true">✦</span><div><b>${esc(current.title)}</b><small>${esc(current.child||current.category||"Ready when you are")}</small></div><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(current.id)})">Open</button><button class="btn small life-sim-done" type="button" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})" aria-label="Mark ${esc(current.title)} done">✓</button></div>`:`<div class="life-sim-needs-note"><b>No current action</b><span>Choose from ${lifeSimAvailableTasks(active,activeId).length} unfinished tasks.</span></div>`}<div class="life-sim-queue">${queueMarkup}</div></div>
+      <div class="life-sim-interactions" role="group" aria-label="Quick interactions"><button type="button" onclick="setView('household')"><span>⌂</span>House</button><button type="button" onclick="setView('family')"><span>♡</span>People</button><button type="button" onclick="setView('home')"><span>◇</span>Food</button><button type="button" onclick="setView('inventory')"><span>▦</span>Inventory</button><button type="button" onclick="setView('itinerary')"><span>◷</span>Plans</button></div>
     </div>
-    <section class="life-sim-focus" aria-label="Active Sim and action queue">
-      <div class="life-sim-focus-heading"><span class="life-sim-avatar life-sim-focus-avatar">${esc(String(active.name || "?").trim().charAt(0).toUpperCase() || "?")}</span><span class="life-sim-focus-copy"><span class="eyebrow">ACTIVE SIM · LIVE</span><b>${esc(active.name)}</b><small>${clock} · ${queued.length} queued</small></span><button type="button" class="btn small primary" onclick="lifeSimOpenActionPicker()">＋ Action</button></div>
-      <div class="life-sim-section-heading life-sim-focus-queue-heading"><div><div class="eyebrow">ACTION QUEUE</div><b>Up next for ${esc(active.name || "this Sim")}</b></div><span class="tag">${queued.length} queued</span></div>
-      <div class="life-sim-queue">${queueMarkup}</div>
-    </section>
   </section>`;
 }
