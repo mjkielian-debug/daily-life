@@ -217,11 +217,16 @@
   }
   function homeRoomOpenItems(roomId){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId),name=String(room?.name||"").toLowerCase();
-    return (state.tasks||[]).filter(t=>!t.done&&(
-      t.roomId===roomId||
-      (name&&String(t.title||"").toLowerCase().includes(name))||
-      (name&&String(t.notes||"").toLowerCase().includes(name))
-    ));
+    return (state.tasks||[]).filter(t=>{
+      if(t.done||t.paused||t.duplicateHidden||t.waitingForFunds)return false;
+      // Explicit room links always win over incidental title/notes matches.
+      const assigned=String(t.homeRoomId||t.roomId||"");
+      if(assigned)return assigned===String(roomId);
+      return !!(name&&(
+        String(t.title||"").toLowerCase().includes(name)||
+        String(t.notes||"").toLowerCase().includes(name)
+      ));
+    });
   }
   function homeRoomScore(room){
     const last=homeLastReset(room.id),days=last?homeDaysSince(last.date):999,
@@ -267,8 +272,11 @@
   window.homeLogRoomReset=async function(roomId,minutes){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
     homeEnsure().push({id:uid(),roomId,date:ymd(),time:new Date().toTimeString().slice(0,5),minutes:Number(minutes||20),createdAt:new Date().toISOString()});
-    const task=(state.tasks||[]).find(t=>!t.done&&t.homeRoomId===roomId&&t.generated==="home-reset");
-    if(task)task.done=true;
+    const task=(state.tasks||[]).find(t=>!t.done&&!t.paused&&t.date===ymd()&&t.homeRoomId===roomId&&t.generated==="home-reset");
+    if(task){
+      task.done=true;
+      if(typeof dailyReviewSet==="function")dailyReviewSet("task",task.id,task.date,"yes",task.title||"Room reset","Tasks");
+    }
     await save();render();
   };
 
