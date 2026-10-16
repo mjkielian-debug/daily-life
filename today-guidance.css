@@ -584,3 +584,38 @@
 @media(max-width:380px){
   #app .dl-secondary-work{padding:9px 11px!important}
 }
+
+/* Guided26: keep the after-work reminder a short action instead of an
+   oversized information card. Task details remain available via Open. */
+#app .dl-secondary-task.dl-secondary-work{
+  display:block!important;
+  box-sizing:border-box!important;
+  flex:none!important;
+  width:100%;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:none!important;
+  height:auto!important;
+  padding:10px 12px!important;
+  border-radius:20px!important;
+}
+#app .dl-secondary-work .dl-secondary-top{margin:0 0 5px!important}
+#app .dl-secondary-work .dl-secondary-open{
+  display:flex!important;
+  min-height:44px!important;
+  width:100%;
+  align-items:center;
+  justify-content:space-between;
+  padding:3px 0!important;
+}
+#app .dl-secondary-work .dl-secondary-open>strong{
+  display:block;
+  line-height:1.2!important;
+  font-size:.9rem!important;
+  font-weight:800;
+}
+#app .dl-secondary-work .dl-secondary-open>span{flex:0 0 auto}
+@media(max-width:380px){
+  #app .dl-secondary-task.dl-secondary-work{padding:9px 10px!important}
+  #app .dl-secondary-work .dl-secondary-open>strong{font-size:.84rem!important}
+}
