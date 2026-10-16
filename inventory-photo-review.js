@@ -21,13 +21,19 @@ window.openInventoryPhotoReview=async function(){
   .eq("review_status","pending").order("created_at",{ascending:false}).limit(150);
  const target=document.getElementById("inventoryReviewRows");if(!target)return;
  if(error){target.textContent="Could not load suggestions: "+error.message;return}
- target.innerHTML=(data||[]).map(x=>'<div class="pi-area-card"><b>'+esc(x.item_name)+'</b>'+
-  '<small>'+esc(x.category||"Household")+(x.quantity_estimate===null?" · count not verified":" · about "+esc(x.quantity_estimate)+" "+esc(x.unit||"each"))+'</small>'+
-  '<p class="pi-muted">'+esc(x.room_name||"Room unknown")+(x.storage_spot?" → "+esc(x.storage_spot):"")+'</p>'+
+ const pending=(data||[]).filter(x=>digits(x.id));
+ const card=(x,focus=false)=>'<div class="pi-area-card pi-inventory-choice'+(focus?' pi-inventory-choice-focus':'')+'"><b>'+esc(x.item_name||"Unnamed suggestion")+'</b>'+
+  '<small>'+esc(x.category||"Household")+(x.quantity_estimate===null||x.quantity_estimate===undefined?" · quantity not verified":" · suggested count: "+esc(x.quantity_estimate)+" "+esc(x.unit||"each"))+'</small>'+
+  '<p class="pi-muted">'+esc(x.room_name||"Room not verified")+(x.storage_spot?" → "+esc(x.storage_spot):"")+'</p>'+
   (x.evidence_note?'<p class="pi-muted">Seen in photo: '+esc(x.evidence_note)+'</p>':"")+
-  '<div class="pi-map-actions"><button class="btn primary small" onclick="inventoryReviewEdit(\''+x.id+'\')">Review / add</button>'+
-  '<button class="btn small" onclick="inventoryIgnoreSuggestion(\''+x.id+'\')">Not mine / skip</button></div></div>').join("")||
+  '<div class="pi-map-actions"><button type="button" class="btn primary small" onclick="inventoryReviewEdit(&#39;'+x.id+'&#39;)">'+(focus?"Review this item":"Review / add")+'</button>'+
+  '<button type="button" class="btn small" onclick="inventoryIgnoreSuggestion(&#39;'+x.id+'&#39;)">Not mine / skip</button></div></div>';
+ target.innerHTML=pending.length?
+  '<div class="pi-review-counter"><b>One item at a time</b><span>1 of '+pending.length+' awaiting review</span><small>A suggestion is not an owned item until you confirm it.</small></div>'+
+  card(pending[0],true)+
+  (pending.length>1?'<details class="pi-review-more"><summary>Other photo suggestions ('+(pending.length-1)+') ›</summary>'+pending.slice(1).map(x=>card(x)).join("")+'</details>':""):
   '<p class="pi-muted">No pending suggestions yet. Send pictures, then ask ChatGPT to review the Photo Inbox and prepare inventory candidates.</p>';
+
 };
 window.inventoryReviewEdit=async function(id){
  if(!signed()||!digits(id))return;
@@ -35,11 +41,13 @@ window.inventoryReviewEdit=async function(id){
  if(error||!x){alert("Could not load suggestion.");return}
  const existing=(state.inventoryItems||[]).find(i=>i.sourceSuggestionId===id);
  const candidates=(state.inventoryItems||[]).filter(i=>clean(i.name)===clean(x.item_name));
+ // A proposed photo count is evidence to review, not a verified quantity.
+ const confirmedQty=existing&&Number.isInteger(Number(existing.quantity))&&Number(existing.quantity)>0?String(existing.quantity):"";
   const dupe=candidates.length?'<div class="pi-help"><b>Possible existing match</b><p>Do these photos show an item you already counted?</p>'+
  candidates.slice(0,8).map(i=>'<button class="btn small" type="button" onclick="inventoryMarkAlreadyCounted(\''+id+'\',\''+String(i.id||"").replace(/[^a-z0-9_-]/gi,"")+'\')">Already counted: '+esc(i.name||"")+' (×'+Number(i.quantity||0)+')</button>').join(" ")+'</div>':"";
  modal("Check before adding",'<div class="stack pi-form">'+dupe+
  '<label>Item name<input id="irName" value="'+esc(x.item_name)+'"></label>'+
- '<div class="grid2"><label>Confirmed quantity<input id="irQty" type="number" min="0" step="1" value="'+(x.quantity_estimate===null?"1":Math.max(0,Math.floor(Number(x.quantity_estimate)||1)))+'"></label>'+
+ '<div class="grid2"><label>Quantity you actually confirmed<input id="irQty" type="number" min="1" step="1" required placeholder="Count before saving" value="'+confirmedQty+'"></label>'+
  '<label>Category<input id="irCategory" value="'+esc(x.category||"Household")+'"></label></div>'+
  '<div class="grid2"><label>Room<input id="irRoom" value="'+esc(x.room_name||"")+'"></label>'+
  '<label>Storage spot<input id="irStorage" value="'+esc(x.storage_spot||"")+'"></label></div>'+
@@ -49,8 +57,16 @@ window.inventoryReviewEdit=async function(id){
  '<p class="pi-muted">Confirm the item actually belongs to your household; the photo may contain packaging, advertisements or things that are not yours.</p></div>',
  "Confirm as owned",async()=>{
   const get=id=>document.getElementById(id);
-  const name=get("irName").value.trim(),qty=Number(get("irQty").value);
-  if(!name||!Number.isInteger(qty)||qty<0){alert("Enter a name and valid whole-number quantity.");return}
+  const name=get("irName").value.trim(),qtyText=get("irQty").value.trim();
+  const qty=Number(qtyText);
+  if(!name||qtyText===""||!Number.isSafeInteger(qty)||qty<1){
+   alert("Confirm the item name and a quantity of at least 1. Leave the suggestion pending until you can count it.");return;
+  }
+  const snapshot={
+   inventoryItems:(state.inventoryItems||[]).map(x=>({...x})),
+   houseRooms:(state.houseRooms||[]).map(x=>({...x})),
+   inventoryLocations:(state.inventoryLocations||[]).map(x=>({...x}))
+  };
   const roomId=inventoryEnsureRoom(get("irRoom").value.trim());
   const locationId=inventoryEnsureLocation(roomId,get("irStorage").value.trim());
   const decision=get("irDecision").value;
@@ -61,7 +77,13 @@ window.inventoryReviewEdit=async function(id){
   Object.assign(row,{name,category:get("irCategory").value.trim()||"Household",quantity:qty,status:decision==="donate"||decision==="sell"?"Donate / sell":"Have",
    roomId,locationId,notes:get("irNotes").value.trim(),organizingDecision:decision,
    replacementCriteria:get("irReplace").value.trim(),sourceSuggestionId:id,updatedAt:new Date().toISOString()});
-  try{await save()}catch(e){alert("Couldn't save this item on your phone. Keep the suggestion for another attempt.");return}
+  try{await save()}catch(e){
+   state.inventoryItems=snapshot.inventoryItems;
+   state.houseRooms=snapshot.houseRooms;
+   state.inventoryLocations=snapshot.inventoryLocations;
+   alert("Couldn't save this item on your phone. The changes were not kept; the suggestion remains available.");
+   return;
+  }
   const {error:err}=await cloudClient.from("inventory_photo_suggestions").update({review_status:"confirmed",app_item_id:row.id,updated_at:new Date().toISOString()}).eq("id",id);
   if(err)alert("Item saved locally; the cloud review badge could not update. Check it before confirming again.");
   render();window.openInventoryPhotoReview();
