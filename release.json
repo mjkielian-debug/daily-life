@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided65",
+  "build": "20261016-guided66",
   "released": "2026-10-16",
-  "ui": "Make the active Sim, tracked needs, and live action queue the dashboard focus",
+  "ui": "Improve active Sim dashboard layout and text contrast",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }

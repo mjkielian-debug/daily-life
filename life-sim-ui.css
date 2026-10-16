@@ -6,16 +6,16 @@
 .life-sim-sim.is-active{outline:2px solid var(--primary);outline-offset:1px;background:var(--panel2)}
 .life-sim-avatar{display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--border);border-radius:50%;background:var(--panel2);font-weight:900;font-size:.9rem}
 .life-sim-sim.is-active .life-sim-avatar{border-color:var(--primary);box-shadow:0 0 0 2px var(--panel)}
-.life-sim-clock{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:5px;flex:0 0 auto;padding:7px 10px;border:1px solid var(--border);border-radius:15px;background:var(--panel);font-size:.68rem}
+.life-sim-clock{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:5px;flex:0 0 auto;padding:7px 10px;border:1px solid var(--border);border-radius:15px;background:var(--panel);color:var(--text);font-size:.68rem}
 .life-sim-clock i{width:7px;height:7px;border-radius:50%;background:var(--success)}
 .life-sim-clock span{font-size:.58rem;font-weight:900;letter-spacing:.08em}
 .life-sim-clock b{grid-column:2;font-size:.78rem}
-.life-sim-play-panel{display:grid;grid-template-columns:minmax(150px,.85fr) minmax(210px,1fr) minmax(270px,1.45fr);gap:12px;padding:12px;border:1px solid var(--border);border-radius:22px;background:var(--panel);box-shadow:var(--shadow)}
+.life-sim-play-panel{display:grid;grid-template-columns:minmax(150px,.85fr) minmax(210px,1fr) minmax(270px,1.45fr);gap:12px;padding:12px;border:1px solid var(--border);border-radius:22px;background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
 .life-sim-active-sim{display:flex;align-items:center;gap:11px;min-width:0;padding:8px;border-radius:17px;background:var(--panel2)}
 .life-sim-portrait{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border:3px solid var(--panel);border-radius:22px;background:var(--primary);color:var(--panel);font-size:2.25rem;font-weight:900;box-shadow:0 0 0 1px var(--border)}
 .life-sim-sim-meta{display:grid;justify-items:start;gap:3px;min-width:0}
 .life-sim-sim-meta .eyebrow,.life-sim-panel-label{font-size:.62rem;font-weight:900;letter-spacing:.1em;opacity:.74}
-.life-sim-sim-meta h2{margin:0;font-size:1.15rem;line-height:1.05;overflow-wrap:anywhere}
+.life-sim-sim-meta h2{margin:0;color:var(--text);font-size:1.15rem;line-height:1.05;overflow-wrap:anywhere}
 .life-sim-sim-meta small{font-size:.69rem;line-height:1.25}
 .life-sim-sim-meta .btn{min-height:30px;margin-top:3px}
 .life-sim-needs-block,.life-sim-current-block{display:grid;align-content:start;gap:8px;min-width:0}
