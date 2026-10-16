@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided20",
+  "build": "20261016-guided21",
   "released": "2026-10-16",
-  "ui": "Keep Today next steps aligned to visible actionable tasks; never count children's chores as the personal task ring",
+  "ui": "Protect saved House Map floor-plan images when device-storage deletion fails; includes guided20 truthful progress and next steps",
   "data_version": "local-first data unchanged"
 }
