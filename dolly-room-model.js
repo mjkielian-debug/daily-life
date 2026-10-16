@@ -501,25 +501,25 @@ function dollyPerspectiveSync(){
    '<g transform="translate(-82 37) scale(.88)">'+marioPosterDrawing()+'</g>'+
    // Smaller frame toward the back corner, with a clear gap from the Mario poster.
    '<g transform="translate(220 -15) scale(.72)">'+bedWindowDrawing()+'</g>'+
-   // The bed-side window is on the perpendicular RIGHT wall. Its frame follows that wall perspective.
-   '<g transform="translate(-55 -5)" aria-label="Window beside the long side of Dolly’s bed">'+
-   '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
-   '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="2"/>'+
-   '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/>'+
+   // The second tall window is on the bed-side wall; keep the entry/closet wall window-free.
+   '<g transform="translate(-337 102) scale(.72 1.48)" aria-label="Tall window beside Dolly’s bed">'+
+   '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="8"/>'+
+   '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="3"/>'+
+   '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/><path d="M379 110L435 134M378 117L434 141M377 124L433 148M376 131L432 155M375 138L431 162" stroke="#e8e8ef" stroke-width="2"/>'+
    '<path d="M361 153L453 195" stroke="#e5d3e7" stroke-width="6"/>'+
    '</g>';
-  const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(158 315) scale(.82 .52)">'+dresserDrawing()+'</g>';
-  const vanity='<g transform="translate(207 117) scale(.68)">'+vanityDrawing()+'</g>';
-  const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
+  const bed='<g transform="translate(44 60) scale(1.03)">'+bedDrawing()+'</g>';
+  const dresser='<g transform="translate(36 313) scale(1.05 .70)">'+dresserDrawing()+'</g>';
+  const vanity='<g transform="translate(237 111) scale(.83)">'+vanityDrawing()+'</g>';
+  const barbie='<g transform="translate(422 166) scale(.87)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
    '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" onclick="dollyFloorOpen()">Floor-plan arranger</button><button type="button" id="dollyArrangeToggle" onclick="dollyFloorOpen()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Bring missing vanity back into view">Find vanity</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff"><strong>Dolly’s photographed room · top view</strong><p>Closer photo-based spacing: bed beside vanity, dresser near footboard, Barbie house close to vanity and closet. Drag and rotate without changing furniture size. This new reference plan preserves your earlier saved layout.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close floor plan</button></div><p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 300 260" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top down bedroom furniture arranger"></svg></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
-   modelObject("dresser",dresser)+
    modelObject("bed",bed)+
+   modelObject("dresser",dresser)+
    modelObject("dollhouse",barbie)+
    '<g aria-label="Closet label" pointer-events="none"><rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/><text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text></g>'+
    '<g aria-label="Bedroom entry"><path d="M550 153L591 172L591 313L550 294Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M556 162L582 175L582 296L556 283Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><path d="M562 175L577 182L577 228L562 221ZM562 234L577 241L577 282L562 275Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/><circle cx="558" cy="245" r="3" fill="#ae9a86"/><text x="568" y="146" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
