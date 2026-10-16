@@ -5,6 +5,27 @@
 const CATEGORIES={paper:"🗂 Paper sorting",inventory:"📦 Inventory",house_map:"⌂ House map",home_progress:"🧹 Before + progress"};
 const FLOORS=["Basement","First floor","Second floor","Third floor"];
 let inboxMode="paper",floorView="First floor",inboxBusy=false,prefillAreaId="";
+let pendingPhotoBatch=null; // Keep only files not yet confirmed uploaded.
+function updateBatchControls(){
+ const btn=document.querySelector(".pi-submit"),reset=document.getElementById("piNewBatch");
+ const n=pendingPhotoBatch?.files?.length||0;
+ if(btn){btn.disabled=inboxBusy;btn.textContent=n?"↻ Retry remaining "+n+" picture"+(n===1?"":"s"):"↑ Send pictures for review";}
+ if(reset)reset.hidden=!n;
+ for(const id of ["piCamera","piFiles"]){const e=document.getElementById(id);if(e)e.disabled=inboxBusy||n>0;}
+}
+window.photoInboxChooseSource=function(kind){
+ if(inboxBusy||pendingPhotoBatch)return;
+ const other=document.getElementById(kind==="camera"?"piFiles":"piCamera");
+ if(other)other.value="";
+};
+window.photoInboxStartNewBatch=function(){
+ if(inboxBusy)return;
+ if(pendingPhotoBatch&&!confirm("Leave the "+pendingPhotoBatch.files.length+" unsent picture(s) in this batch? Pictures already uploaded remain in your private inbox."))return;
+ pendingPhotoBatch=null;
+ for(const id of ["piCamera","piFiles"]){const el=document.getElementById(id);if(el)el.value="";}
+ notice("Choose pictures for a new batch. Earlier successful uploads are still saved.");
+ updateBatchControls();
+};
 function cloudReady(){return typeof cloudClient!=="undefined"&&!!cloudClient&&typeof cloudUser==="function"&&!!cloudUser()}
 function sanitized(x,max=260){return String(x||"").trim().slice(0,max)}
 function notice(s){const e=document.getElementById("photoInboxStatus");if(e)e.textContent=s;}
@@ -32,14 +53,15 @@ function authMessage(){
 function floorSelect(value){
  return '<label>Floor (for maps)<select id="piFloor">'+FLOORS.map(f=>'<option '+(f===value?"selected":"")+'>'+f+'</option>').join("")+'</select></label>';
 }
-window.openPhotoInbox=function(mode="inventory",areaId=""){
+window.openPhotoInbox=function(mode="inventory",areaId="",selectedFloor=""){
  inboxMode=CATEGORIES[mode]?mode:"inventory";prefillAreaId=/^[a-f\d-]{36}$/i.test(String(areaId||""))?areaId:"";
+ if(FLOORS.includes(selectedFloor))floorView=selectedFloor;
  const signed=cloudReady();
  modal("📷 Private photo inbox",'<div class="pi-main">'+
  (signed?'<div class="pi-help"><b>Photograph → send → ask me to review</b><p>Send paper stacks, room contents, labels, shelves or your robot-vacuum map. Photos are private, not published or automatically analyzed. After uploading, return to ChatGPT and say <b>“Check my Daily Life Photo Inbox.”</b></p></div>'+
  '<div class="pi-form"><div class="pi-quick-upload"><p class="pi-review-guidance"><b>Just send the photos.</b> No need to identify every room or stage first. When you ask ChatGPT to check your inbox, I will review what is visible and ask only about things I cannot confirm.</p>'+
- '<label>📷 Take a picture<input id="piCamera" type="file" accept="image/*" capture="environment"></label>'+
- '<label>🖼 Choose several photos<input id="piFiles" type="file" accept="image/*" multiple></label></div>'+
+ '<label>📷 Take a picture<input id="piCamera" type="file" accept="image/*" capture="environment" onchange="photoInboxChooseSource(\'camera\')"></label>'+
+ '<label>🖼 Choose several photos<input id="piFiles" type="file" accept="image/*" multiple onchange="photoInboxChooseSource(\'files\')"></label></div>'+
  '<details class="pi-form-optional" '+(prefillAreaId?"open":"")+'><summary>Optional details · skip unless you want</summary><div class="pi-form-optional-fields">'+
  '<label>What kind of pictures?<select id="piMode">'+Object.entries(CATEGORIES).map(([k,v])=>'<option value="'+k+'" '+(k===inboxMode?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
  floorSelect(floorView)+
@@ -47,43 +69,67 @@ window.openPhotoInbox=function(mode="inventory",areaId=""){
  '<label>Short label (optional)<input id="piTitle" maxlength="100" placeholder="Leave blank if unsure"></label>'+
  '<label>Notes (optional)<textarea id="piNotes" rows="2" maxlength="1500" placeholder="Tell me anything that is not obvious from the pictures"></textarea></label></div></details>'+
   '<p class="pi-muted">Up to 10 images per batch. Pictures are compressed for upload; check that small handwriting remains readable before recycling paper.</p>'+
- '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button><p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
+ '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button>'+
+ '<button class="btn small" id="piNewBatch" type="button" hidden onclick="photoInboxStartNewBatch()">Choose a different batch</button>'+
+ '<p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
  '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" onclick="openHomeAreaProjects()">🧹 Cleanup areas</button><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
  '<div id="photoInboxList">'+(signed?'<p class="pi-muted">Loading private photos…</p>':'<p class="pi-muted">Sign in to view your private inbox.</p>')+'</div>'+
  '<p class="pi-muted">Upload here rather than placing private papers in public GitHub files. You control when to ask ChatGPT to review the inbox.</p></div>',
  "Close",closeModal);
- if(signed)Promise.resolve().then(async()=>{await window.photoInboxLoadAreas();await window.photoInboxLoadList()});
+ if(signed){
+  updateBatchControls();
+  if(pendingPhotoBatch)notice(pendingPhotoBatch.files.length+" unsent picture(s) from the earlier batch. Use Retry remaining, or Choose a different batch.");
+  Promise.resolve().then(async()=>{await window.photoInboxLoadAreas();await window.photoInboxLoadList()}).catch(()=>{});
+ }
 };
 window.photoInboxSubmit=async function(){
  if(inboxBusy||!cloudReady())return;
- const input=document.getElementById("piFiles"),camera=document.getElementById("piCamera"),files=[...Array.from(camera?.files||[]),...Array.from(input?.files||[])];
- if(!files.length){notice("Select at least one picture first.");return}
- if(files.length>10){notice("Choose up to 10 pictures at a time.");return}
- const category=document.getElementById("piMode")?.value||inboxMode;
- if(!CATEGORIES[category])return;
- const floor=document.getElementById("piFloor")?.value||"";
- const title=sanitized(document.getElementById("piTitle")?.value);
- const notes=sanitized(document.getElementById("piNotes")?.value,1500);
- const areaId=document.getElementById("piArea")?.value||null;
- const phase=category==="home_progress"?(document.getElementById("piPhase")?.value||"reference"):"reference";
- inboxBusy=true;let done=0;
- const btn=document.querySelector(".pi-submit");if(btn)btn.disabled=true;
+ const input=document.getElementById("piFiles"),camera=document.getElementById("piCamera");
+ const userId=String(cloudUser()?.id||"");
+ if(!pendingPhotoBatch){
+  const files=[...Array.from(camera?.files||[]),...Array.from(input?.files||[])];
+  if(!files.length){notice("Select at least one picture first.");return}
+  if(files.length>10){notice("Choose up to 10 pictures at a time.");return}
+  const category=document.getElementById("piMode")?.value||inboxMode;
+  if(!CATEGORIES[category]){notice("Choose a photo category.");return}
+  const floor=document.getElementById("piFloor")?.value||"";
+  const title=sanitized(document.getElementById("piTitle")?.value);
+  const notes=sanitized(document.getElementById("piNotes")?.value,1500);
+  const areaId=document.getElementById("piArea")?.value||null;
+  const phase=category==="home_progress"?(document.getElementById("piPhase")?.value||"reference"):"reference";
+  pendingPhotoBatch={files,total:files.length,uploaded:0,userId,fields:{
+   category,title,notes,floor_label:(category==="house_map"||category==="home_progress")?floor:"",
+   status:"new",area_id:areaId,phase,image_mime:"image/jpeg"
+  }};
+ }
+ if(pendingPhotoBatch.userId!==userId){
+  notice("Your signed-in account changed. Choose a different batch before uploading these pictures.");
+  updateBatchControls();return;
+ }
+ inboxBusy=true;updateBatchControls();
  try{
-  for(const file of files){
-   notice("Preparing and uploading "+(done+1)+" of "+files.length+"…");
+  while(pendingPhotoBatch.files.length){
+   const file=pendingPhotoBatch.files[0];
+   notice("Preparing and uploading "+(pendingPhotoBatch.uploaded+1)+" of "+pendingPhotoBatch.total+"…");
    const img=await resize(file);
    const {error}=await cloudClient.from("photo_inbox").insert({
-    owner_user_id:cloudUser().id,category,title:title||sanitized(file.name),
-    notes,floor_label:(category==="house_map"||category==="home_progress")?floor:"",status:"new",area_id:areaId,phase,
-    image_mime:"image/jpeg",image_data:img.data,width:img.width,height:img.height
+    owner_user_id:userId,...pendingPhotoBatch.fields,
+    title:pendingPhotoBatch.fields.title||sanitized(file.name),
+    image_data:img.data,width:img.width,height:img.height
    });
    if(error)throw Error(error.message||"Cloud upload failed");
-   done++;
+   pendingPhotoBatch.files.shift();
+   pendingPhotoBatch.uploaded++;
   }
+  const done=pendingPhotoBatch.uploaded;
+  pendingPhotoBatch=null;
+  if(input)input.value="";if(camera)camera.value="";
   notice("✓ "+done+" picture"+(done===1?"":"s")+" securely uploaded. Return to ChatGPT and ask: “Check my Daily Life Photo Inbox.”");
-  input.value="";if(camera)camera.value="";await window.photoInboxLoadList(false);
- }catch(e){notice(done+" uploaded. Upload stopped: "+String(e?.message||e)+". Any successfully sent photos remain in your inbox.")}
- finally{inboxBusy=false;if(btn)btn.disabled=false}
+  try{await window.photoInboxLoadList(false)}catch(_){}
+ }catch(e){
+  const uploaded=pendingPhotoBatch?.uploaded||0,remaining=pendingPhotoBatch?.files?.length||0;
+  notice(uploaded+" of "+(pendingPhotoBatch?.total||0)+" uploaded. "+remaining+" unsent. Tap Retry remaining; pictures already confirmed will not be retried. Error: "+String(e?.message||e));
+ }finally{inboxBusy=false;updateBatchControls()}
 };
 
 window.photoInboxLoadAreas=async function(){
@@ -152,7 +198,7 @@ function mapMarkup(f){
  '<p class="pi-muted">Reference only; precise walls, room boundaries and measurements still need confirmation.</p>'+
  '<div class="pi-gallery"><b>Room photos on this floor</b><div id="piFloorGallery" class="pi-gallery-list"><span class="pi-muted">Loading room references…</span></div></div>'+
  '<div class="pi-rooms"><h3>'+esc(f)+' rooms</h3>'+floorRooms(f)+'</div>'+
- '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'house_map\')">+ Add map / room photo</button>'+
+ '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'house_map\',\'\',\''+f+'\')">+ Add map / room photo</button>'+
  '<button class="btn" onclick="openInventoryRoom(\'\',\''+f+'\')">+ Room on this floor</button>'+
  '<button class="btn" onclick="openHomeAreaProjects()">🧹 Work on an area</button></div></div>';
 }
