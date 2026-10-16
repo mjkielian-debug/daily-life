@@ -810,6 +810,7 @@
         return '<button class="dl-home-goal-link" onclick="openDailyWeeklyProgress()">⌂ '+esc(caption)+' <span aria-hidden="true">›</span></button>';
       })():"")+
       '</div></details>'+
+      (workFocus?'<details class="dl-work-after"><summary>After work · plans and reminders ›</summary><div class="dl-work-after-inner">':'')+
       '<div class="dl-mid-grid'+(!upcomingRows?' dl-no-upcoming':'')+'">'+
         (upcomingRows?'<section class="dl-panel dl-coming"><div class="dl-panel-heading"><h2>◷ Coming up</h2><button onclick="openTodayDayFlow()">View all ›</button></div>'+
         upcomingRows+'</section>':'')+
@@ -826,6 +827,7 @@
         '<button onclick="openDayFlowSection(\'plan\',\''+today+'\')"><span>✦</span><b>Plan day</b><small>'+(audit.hardCount?audit.hardCount+" possible overlaps":audit.routineCount?audit.routineCount+" flexible routines to fit":"No detected time conflicts")+'</small></button>'+
        '</div>'+
        '<div class="dl-quick-actions"><button onclick="openTask()">＋ Task</button><button onclick="openQuickHydration()">💧 Log water</button><button onclick="openDailyWeeklyProgress()">◉ Goals + progress</button></div>'+
+       (workFocus?'</div></details>':'')+
      '</section>';
   }
 
