@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided14",
+  "build": "20261015-guided15",
   "released": "2026-10-15",
-  "ui": "Current routine first, compact secondary tasks with verification",
+  "ui": "Today follows schedule boundaries; checkmarks remain user-confirmed",
   "data_version": "local-first data unchanged"
 }
