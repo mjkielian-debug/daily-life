@@ -619,6 +619,22 @@
     await toggleDayFlowPart(null,date,encodedKey,part);
     render();
   };
+  // Advance the Today guide at actual block boundaries without clearing any
+  // saved checkmarks. A stale scheduled step never counts as finished.
+  let lifeTodayNextHandoffAt=0;
+  function lifeClockHandoffAt(items,now){
+    const minute=now.getHours()*60+now.getMinutes();
+    const future=[];
+    for(const block of items||[]){
+      if(block.nonBlocking||["gap","context","sleep"].includes(String(block.kind||"")))continue;
+      for(const time of [block.start,block.end]){
+        const n=hmMinutes(time);
+        if(n!==null&&n>minute)future.push(n);
+      }
+    }
+    const target=future.length?Math.min(...future):1440;
+    return new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,target,1).getTime();
+  }
   function lifeTodayWheel(){
     const today=ymd(),now=new Date(),minutes=now.getHours()*60+now.getMinutes(),
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
@@ -681,6 +697,8 @@
       activeStepLabels=active&&active.source==="suggested"?dayFlowSubtaskLabels(active):[],
       activeStepIndex=activeStepLabels.findIndex((_,i)=>!dayFlowPartDone(active,today,i)),
       activeStepKey=active?encodeURIComponent(dayFlowItemKey(active,today)).replace(/'/g,"%27"):"";
+
+    lifeTodayNextHandoffAt=lifeClockHandoffAt(allBlocks,now);
 
     const cards=[
       lifeStatRing("Tasks",taskDone+" / "+tasks.length,taskDone,tasks.length,"#b88cde","✓","openTodayTasksHub()","Tap to see tasks"),
@@ -855,6 +873,19 @@
     requestAnimationFrame(decorateLifeWheels);
     return result;
   };
+
+  // Only refresh while Today is visible, at a real schedule transition.
+  // Modal forms stay untouched; navigation and data remain local-first.
+  setInterval(()=>{
+    if(document.hidden||typeof appStartupReady!=="undefined"&&!appStartupReady||
+       typeof view==="undefined"||view!=="today"||document.querySelector("#modal")||
+       !lifeTodayNextHandoffAt||Date.now()<lifeTodayNextHandoffAt)return;
+    const scroller=document.scrollingElement||document.documentElement;
+    const priorScroll=scroller?.scrollTop||0;
+    lifeTodayNextHandoffAt=Date.now()+60000; // avoid repeated refresh if interrupted
+    render();
+    requestAnimationFrame(()=>{if(scroller)scroller.scrollTop=priorScroll});
+  },15000);
 
   // The main init() performs the first real render after loading saved data.
 })();
