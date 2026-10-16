@@ -70,7 +70,7 @@
   const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
   return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
     ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(1.35 .88)',vanity:'translate(240 145) scale(.78)',dollhouse:'translate(442 205) scale(.69)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(1.35 .88)',vanity:'translate(240 145) scale(.78)',dollhouse:'translate(493 165) scale(.48)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
  }
  // Layered vector furniture with visible tops, fronts, shadows and depth.
  // These are visual approximations, not photographs or measured dimensions.
@@ -479,8 +479,8 @@
    '<path d="M361 153L453 195" stroke="#e5d3e7" stroke-width="6"/>'+
    '</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(48 237) scale(.92 .72)">'+dresserDrawing()+'</g>';
-  const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
+  const dresser='<g transform="translate(158 315) scale(.82 .52)">'+dresserDrawing()+'</g>';
+  const vanity='<g transform="translate(207 117) scale(.68)">'+vanityDrawing()+'</g>';
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
@@ -496,6 +496,7 @@
    '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
    '</svg></div>'+
    '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> white sleigh bed under Mario poster beside one window; white vanity under the other; long brown dresser on the former Barbie wall; large open-front pink Barbie house near the closet. Shift the house slightly to access the closet.</p>'+
+   '<p class="dolly-room-caveat">The top-down plan above is the placement reference. The perspective below is an illustration, not a second floor plan.</p>'+ 
    '<p class="dolly-room-caveat">Miniature, not measured geometry. Relative relationships are confirmed; wall lengths, precise doorway position (*) and clearances are not.</p>'+
    '<details class="dolly-hallway-details"><summary>Hallway staging (October 16) · 3 playsets</summary>'+
    '<p>Wooden dollhouse · pink-roof dollhouse · cat-ear pretend kitchen. These are not counted as contents of Dolly’s room.</p></details>'+
