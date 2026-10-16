@@ -1,5 +1,4 @@
-/* Dolly's bedroom · guided33 · illustrative Sims-inspired working room.
-   Furniture positions except under-window vanity are not verified. */
+/* Dolly's bedroom · photo-referenced furniture projected from the saved top view. */
 .dolly-room-card{display:grid;gap:9px;padding:12px;border:1px solid #d9c9e6;border-radius:22px;background:linear-gradient(135deg,#fff6fd,#f2f3ff);color:#453251}
 .dolly-room-heading{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .dolly-room-heading h3{font-size:1.06rem;margin:0}
@@ -51,8 +50,8 @@
  box-shadow:inset 0 1px 10px rgba(84,55,88,.2),0 4px 12px rgba(84,55,88,.1)
 }
 .dolly-room-3d .dolly-mini-svg{display:block;width:100%;height:auto;max-width:100%;overflow:visible}
-.dolly-scene-object{cursor:pointer;transition:filter .15s ease,transform .15s ease;outline:none}
-.dolly-scene-object:hover,.dolly-scene-object:focus-visible{filter:drop-shadow(0 0 8px rgba(122,72,160,.65));transform:translateY(-2px)}
+.dolly-scene-object{cursor:pointer;transition:filter .15s ease;outline:none}
+.dolly-scene-object:hover,.dolly-scene-object:focus-visible{filter:drop-shadow(0 0 8px rgba(122,72,160,.65))}
 .dolly-scene-object:focus-visible{stroke:#7642aa;stroke-width:1.4}
 .dolly-scene-label,.dolly-scene-bed-label{
  font-family:system-ui,sans-serif;font-weight:850;font-size:15px;fill:#422e4b;

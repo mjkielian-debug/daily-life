@@ -1,14 +1,12 @@
-/* Dolly's bedroom: a local-first, tappable furniture model.
-   The only confirmed spatial relationship is vanity beneath a window.
-   Other positions on this illustrative sketch are NOT verified. */
+/* Dolly's bedroom: clickable furniture projected from the saved floor plan. */
 (function(){
  "use strict";
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
   bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
-  dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with ten small upper drawers and four larger lower drawers, with brass-colored handles. Positioned along the former Barbie-house wall opposite the foot of the bed.",location:"Former Barbie-house wall, opposite bed footboard",sections:[]},
+  dresser:{label:"Dresser",symbol:"▤",description:"Modest-width, low brown dresser with six drawers arranged two across and three down, with brass-colored handles. Positioned along the wall opposite the bed’s footboard.",location:"Opposite the bed footboard",sections:[]},
   vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
-  dollhouse:{label:"Barbie house",symbol:"⌂",description:"Large pink Barbie house beside the closet, with its playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
+  dollhouse:{label:"Barbie house",symbol:"⌂",description:"Three-story pink Barbie house with an open, playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
  };
  function html(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
@@ -33,362 +31,208 @@
   if(returnSection)window.dollyOpenSection(key,returnSection);else window.dollyOpenObject(key);
  }
 
- function furnitureSide(key){
-  // Local coordinates match the original art's bounding box, with a narrower but genuinely redrawn side.
-  if(key==="dresser")return '<g>'+
-   '<ellipse cx="118" cy="168" rx="111" ry="13" fill="#60422e" opacity=".17"/>'+
-   '<path d="M5 49L192 9L240 35L51 80Z" fill="#b77b50" stroke="#65402c" stroke-width="3"/>'+
-   '<path d="M51 80L240 35L240 125L51 170Z" fill="#8c5535" stroke="#593721" stroke-width="3"/>'+
-   '<path d="M5 49L51 80L51 170L5 139Z" fill="#6f422b" stroke="#543221" stroke-width="3"/>'+
-   '<path d="M61 91L228 52M61 115L228 76M61 139L228 100" stroke="#a16b48" stroke-width="2" opacity=".5"/>'+
-   '<path d="M60 169L239 124" stroke="#5e3b29" stroke-width="5"/>'+
-   '</g>';
-  if(key==="vanity")return '<g>'+
-   '<ellipse cx="95" cy="206" rx="94" ry="12" fill="#75606e" opacity=".12"/>'+
-   '<path d="M47 16Q47 4 63 4L128 4Q144 4 144 17L144 90L47 90Z" fill="#c7ac69" stroke="#a58a4b" stroke-width="4"/>'+
-   '<path d="M53 19Q53 11 65 11L125 11Q138 11 138 20L138 84L53 84Z" fill="#dcecf2" stroke="#f9e9bc" stroke-width="3"/>'+
-   '<path d="M7 104L146 104L186 121L45 123Z" fill="#fff" stroke="#c5babb" stroke-width="3"/>'+
-   '<path d="M7 104L45 123L45 200L7 180Z" fill="#f4f0ee" stroke="#c5babb" stroke-width="3"/>'+
-   '<path d="M45 123L186 121L186 188L45 200Z" fill="#fffdfb" stroke="#c5babb" stroke-width="3"/>'+
-   '<path d="M58 135L173 133L173 154L58 157ZM58 161L173 157L173 177L58 182Z" fill="#f9f8f6" stroke="#c7bbbb" stroke-width="2"/>'+
-   '<circle cx="115" cy="145" r="3" fill="#b6a8a6"/><circle cx="115" cy="170" r="3" fill="#b6a8a6"/>'+
-   '</g>';
-  if(key==="barbie")return '<g>'+
-   '<ellipse cx="106" cy="278" rx="98" ry="12" fill="#725066" opacity=".14"/>'+
-   '<path d="M24 62L113 22L204 61L116 103Z" fill="#f6a5d1" stroke="#bd709d" stroke-width="4"/>'+
-   '<path d="M24 62L116 103L116 264L24 226Z" fill="#e4a1c5" stroke="#bb7e9f" stroke-width="4"/>'+
-   '<path d="M116 103L204 61L204 226L116 264Z" fill="#f8c8e0" stroke="#bb7e9f" stroke-width="4"/>'+
-   '<path d="M122 150L198 116M122 206L198 172" stroke="#bc946a" stroke-width="7"/>'+
-   '<path d="M129 100L129 257M193 69L193 231" stroke="#d3ad80" stroke-width="6"/>'+
-   '<path d="M39 91L94 116L94 158L39 135Z" fill="#cde7ef" stroke="#fff3f6" stroke-width="4"/>'+
-   '<path d="M24 226L116 264L204 226" fill="none" stroke="#b98b5c" stroke-width="6"/>'+
-   '</g>';
-  return "";
- }
- function modelObject(key,body){
-  const name=ITEMS[key].label;
-  const extraHitArea=key==="closet"?'<rect x="514" y="181" width="80" height="140" fill="transparent" pointer-events="all" aria-hidden="true"/>':"";
-  return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(name)+' details"'+
-    ' onclick="if(!window.dollyIsArranging())dollyOpenObject(&#39;'+key+'&#39;)"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+(furnitureSide(key)?'<g class="dolly-view-front">'+body+'</g><g class="dolly-view-side" style="display:none" transform="'+({dresser:'translate(48 237) scale(1.35 .88)',vanity:'translate(240 145) scale(.78)',dollhouse:'translate(493 165) scale(.48)'}[key]||'')+'">'+furnitureSide(key)+'</g>':body)+extraHitArea+'</g>';
- }
- // Layered vector furniture with visible tops, fronts, shadows and depth.
- // These are visual approximations, not photographs or measured dimensions.
- function bedDrawing(){
-  return '<g class="dolly-drawn-bed">'+
-   '<ellipse cx="263" cy="368" rx="131" ry="40" fill="#665671" opacity=".17"/>'+
-   // Four short white feet and the near-side frame under the mattress.
-   '<path d="M133 302L133 336L143 340L143 300Z" fill="#fafafa" stroke="#a49aab" stroke-width="2"/>'+
-   '<path d="M276 360L276 399L287 394L287 358Z" fill="#fcfcff" stroke="#9e96a7" stroke-width="2"/>'+
-   '<path d="M360 313L360 350L371 344L371 309Z" fill="#f9f9fe" stroke="#aba4b1" stroke-width="2"/>'+
-   '<path d="M119 277L215 230L380 317L283 367Z" fill="#f7f5fb" stroke="#afa7b8" stroke-width="3"/>'+
-   '<path d="M283 367L380 317L380 337L283 386Z" fill="#e3dfe9" stroke="#aca4b2" stroke-width="2"/>'+
-   '<path d="M119 277L283 367L283 386L119 295Z" fill="#fcfbff" stroke="#aaa4b1" stroke-width="2"/>'+
-   // Upright white wooden headboard, raised above the mattress.
-   '<path d="M115 273L115 212Q122 203 133 205Q158 187 187 171Q207 155 218 177Q226 180 225 195L221 238Z" fill="url(#dollyWhiteFrame)" stroke="#aca4b0" stroke-width="3"/>'+
-   '<path d="M127 225Q151 211 172 194Q189 174 206 176Q216 185 210 197L210 230L127 264Z" fill="#fffefa" stroke="#ded7e3" stroke-width="2"/>'+
-   '<path d="M170 194Q180 179 191 184Q200 189 189 193M178 198Q189 190 196 202M186 190Q192 178 200 181" fill="none" stroke="#dbd4cb" stroke-width="2.6" stroke-linecap="round"/>'+
-   '<path d="M113 207L113 288M222 178L222 244" stroke="#fff" stroke-width="11" stroke-linecap="round"/>'+
-   '<path d="M113 207L113 288M222 178L222 244" stroke="#aaa0b0" stroke-width="2.2" fill="none"/>'+
-   // Lavender fitted mattress and a folded, patterned comforter.
-   '<path d="M123 275L219 231L370 313L277 358Z" fill="url(#dollyLavenderSheet)" stroke="#e8dff1" stroke-width="2"/>'+
-   '<path d="M226 242L305 284L211 331L131 287Z" fill="#3379c6" stroke="#245991" stroke-width="2"/>'+
-   '<path d="M158 293L177 302L170 309L150 299M202 313L222 320L216 328L193 320" fill="#dc5f54" opacity=".9"/>'+
-   '<path d="M195 267L207 274L200 282L188 276Z" fill="#f2c54a"/>'+
-   '<path d="M216 254L253 274" fill="none" stroke="#84b9e7" stroke-width="4" opacity=".8"/>'+
-   '<path d="M148 286Q168 277 184 279T219 272M201 310Q224 294 248 301M223 267Q244 272 258 282" fill="none" stroke="#9d7f9e" stroke-width="4" opacity=".56"/>'+
-   '<path d="M183 269L206 258L225 268L203 280Z" fill="#c0b5ce" opacity=".63"/>'+
-   '<path d="M242 290L260 286L275 301L258 307Z" fill="#8e9ab9" opacity=".68"/>'+
-   '<path d="M194 301L211 292L226 300L207 311Z" fill="#d7a7a8" opacity=".76"/>'+
-   // A white pillow, rather than inventing an exact pillow count.
-   '<path d="M157 272Q153 261 163 258L199 242Q209 238 215 245L234 256Q238 263 229 267L183 288Q171 292 166 283Z" fill="url(#dollyPillow)" stroke="#d5d0d7" stroke-width="2"/>'+
-   '<path d="M164 272L223 251" stroke="#ede9ed" stroke-width="2" opacity=".8"/>'+
-   '<path d="M269 351Q301 358 339 334Q364 318 378 307L380 367Q348 396 282 397Q272 383 269 368Z" fill="url(#dollyWhiteFrame)" stroke="#a9a1b3" stroke-width="3"/>'+
-   '<path d="M286 367Q314 381 353 353M316 358Q327 345 335 348Q343 357 329 363M333 354Q340 345 349 348" fill="none" stroke="#ded9d2" stroke-width="2.5"/>'+
-   '<path d="M276 354Q321 362 370 316" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>'+
-   '</g>';
- }
- function vanityDrawing(){
-  // Wide white double-pedestal vanity with drawers, bowed tabletop and the
-  // real gold-toned, rectangular arched-top mirror.
-  let drawer='';
-  for(let row=0;row<3;row++){
-   const yL=126+row*20,yR=121+row*20;
-   drawer+='<path d="M11 '+yL+'L55 '+(yL+8)+'L55 '+(yL+24)+'L11 '+(yL+16)+'Z" fill="#fbfaf8" stroke="#c3b6b3" stroke-width="1.8"/>'+
-      '<circle cx="32" cy="'+(yL+12)+'" r="3.6" fill="#f1eeeb" stroke="#aa9997" stroke-width="1.3"/>'+
-      '<path d="M135 '+yR+'L178 '+(yR-10)+'L178 '+(yR+7)+'L135 '+(yR+17)+'Z" fill="#fbfaf8" stroke="#c3b6b3" stroke-width="1.8"/>'+
-      '<circle cx="158" cy="'+(yR+3)+'" r="3.5" fill="#f1eeeb" stroke="#aa9997" stroke-width="1.3"/>';
-  }
-  return '<g class="dolly-drawn-vanity">'+
-   '<ellipse cx="101" cy="194" rx="95" ry="17" fill="#65576a" opacity=".16"/>'+
-   // Gold-toned arched tabletop mirror behind the wide desk.
-   '<path d="M43 92L43 42Q43 12 76 9L138 10Q153 11 154 33L154 86L141 92Z" fill="#bda56f" stroke="#9b824f" stroke-width="3"/>'+
-   '<path d="M49 85L49 41Q49 19 78 17L136 17Q147 18 148 35L148 80L138 87Z" fill="url(#dollyMirror)" stroke="#f8e8b9" stroke-width="2.6"/>'+
-   '<path d="M59 40L91 24" stroke="#fff" stroke-width="3" opacity=".7"/>'+
-   '<path d="M95 88L95 103M109 88L109 102" stroke="#b49b69" stroke-width="4"/>'+
-   // Slightly bowed, overhanging wooden tabletop and carved drawer lip.
-   '<path d="M1 107L120 88L186 111Q149 126 94 136Q42 139 1 122Z" fill="#fffdfb" stroke="#b8a8a6" stroke-width="2.6"/>'+
-   '<path d="M2 122Q46 141 94 136Q148 126 185 112L185 125Q132 146 94 149Q36 148 2 135Z" fill="#eee8e7" stroke="#baaca9" stroke-width="2"/>'+
-   '<path d="M10 132L55 141L55 202L10 183Z" fill="#f8f6f3" stroke="#b7aaa9" stroke-width="2.5"/>'+
-   '<path d="M134 138L178 125L178 183L134 196Z" fill="#f8f6f3" stroke="#b7aaa9" stroke-width="2.5"/>'+
-   '<path d="M58 140Q96 149 132 138L132 154Q99 165 58 157Z" fill="#f8f6f7" stroke="#baabae" stroke-width="1.8"/>'+
-   '<circle cx="97" cy="154" r="3" fill="#c6baba" stroke="#a79b9b"/>'+
-   drawer+
-   '<path d="M10 185L55 204L55 211L9 191M133 197L179 183L179 192L133 205" fill="#e7e0de" stroke="#b8aeab" stroke-width="2"/>'+
-   '</g>';
- }
- function dresserDrawing(){
-  // Wide brown dresser with two banks of smaller drawers above larger lower
-  // drawers, per the actual photo. This is a drawing, NOT an inventory count.
-  function pt(u,v){return [77+183*u,95-51*u+72*v]}
-  function face(u0,u1,v0,v1){
-   const p=[pt(u0,v0),pt(u1,v0),pt(u1,v1),pt(u0,v1)];
-   return 'M'+p.map(x=>x.map(n=>n.toFixed(1)).join(' ')).join('L')+'Z';
-  }
-  let drawers='';
-  for(let row=0;row<2;row++){
-   for(let col=0;col<5;col++){
-    let u0=col/5+.01,u1=(col+1)/5-.01,v0=.025+row*.235,v1=v0+.205;
-    const center=pt((u0+u1)/2,(v0+v1)/2);
-    drawers+='<path d="'+face(u0,u1,v0,v1)+'" fill="#945b37" stroke="#5d341e" stroke-width="1.7"/>'+
-      '<circle cx="'+center[0].toFixed(1)+'" cy="'+center[1].toFixed(1)+'" r="2.7" fill="#d7b270" stroke="#5d3c24" stroke-width=".6"/>';
-   }
-  }
-  for(let row=0;row<2;row++)for(let col=0;col<2;col++){
-   const u0=col*.5+.014,u1=(col+1)*.5-.014,v0=.52+row*.235,v1=v0+.209;
-   drawers+='<path d="'+face(u0,u1,v0,v1)+'" fill="'+(row?'#96603e':'#a56d47')+'" stroke="#643c27" stroke-width="2"/>';
-   for(const u of [u0+(u1-u0)*.22,u0+(u1-u0)*.78]){
-    const c=pt(u,(v0+v1)/2);
-    drawers+='<path d="M'+(c[0]-6).toFixed(1)+' '+(c[1]-1).toFixed(1)+'q6 8 12 -3" fill="none" stroke="#d0a55b" stroke-width="3" stroke-linecap="round"/>'+
-      '<circle cx="'+(c[0]-7).toFixed(1)+'" cy="'+(c[1]-2).toFixed(1)+'" r="2" fill="#b1864c"/>'+
-      '<circle cx="'+(c[0]+7).toFixed(1)+'" cy="'+(c[1]-2).toFixed(1)+'" r="2" fill="#b1864c"/>';
-   }
-  }
-  return '<g class="dolly-drawn-dresser">'+
-   '<ellipse cx="147" cy="163" rx="126" ry="27" fill="#513020" opacity=".18"/>'+
-   '<path d="M12 52L193 1L271 42L77 94Z" fill="#98613c" stroke="#643c25" stroke-width="3"/>'+
-   '<path d="M12 52L77 94L77 168L12 124Z" fill="#754326" stroke="#56301d" stroke-width="3"/>'+
-   '<path d="M77 94L260 43L260 115L77 167Z" fill="#ad7044" stroke="#59351e" stroke-width="3"/>'+
-   '<path d="M16 51L193 2L264 41" fill="none" stroke="#c48b60" stroke-width="5" stroke-linecap="round"/>'+
-   drawers+
-   '<path d="M79 166L260 115L257 124L78 175Z" fill="#59341e" stroke="#4d2e20" stroke-width="2"/>'+
-   '<path d="M15 124L75 168L75 177L15 134Z" fill="#664029"/>'+
-   '</g>';
- }
- function dollhouseDrawing(){
-  // The photographed Barbie/KidKraft house: broad three-level exposed
-  // rooms, pink curved roof pieces and visible pale wooden supports.
-  // Tiny in-room shapes illustrate its furnishings, not counted inventory.
-  const floors=[104,174,245];
-  const frame=floors.map(y=>'<path d="M9 '+y+'L188 '+(y-8)+'L201 '+(y+1)+'L17 '+(y+13)+'Z" fill="#c99b6c" stroke="#9e704c" stroke-width="2"/>').join('');
-  const posts=[12,67,124,190].map(x=>'<path d="M'+x+' 68L'+(x+5)+' 67L'+(x+7)+' 275L'+x+' 276Z" fill="#d8b785" stroke="#ac8357" stroke-width="1.6"/>').join('');
-  return '<g class="dolly-drawn-dollhouse">'+
-   '<ellipse cx="112" cy="277" rx="111" ry="20" fill="#6f5164" opacity=".16"/>'+
-   '<path d="M10 70L76 57L197 65L198 268L12 280Z" fill="#f9c8df" stroke="#d48eab" stroke-width="3"/>'+
-   // Real room-print motifs and interior windows on the back panels.
-   '<rect x="17" y="81" width="45" height="19" rx="2" fill="#c0e6f6" stroke="#efeffd" stroke-width="3"/>'+
-   '<rect x="92" y="81" width="48" height="19" rx="2" fill="#b1dcee" stroke="#f7dded" stroke-width="3"/>'+
-   '<rect x="145" y="86" width="42" height="28" rx="2" fill="#f9e1ed" stroke="#d88ead" stroke-width="2"/>'+
-   '<path d="M13 165L197 155M13 235L197 226" stroke="#d883af" stroke-width="3" stroke-dasharray="5 4" opacity=".5"/>'+
-   '<rect x="23" y="185" width="43" height="26" fill="#ecc7e4" stroke="#f4f0f1" stroke-width="2"/>'+
-   '<path d="M74 184L102 166L133 184Z" fill="#f6b7d7"/>'+
-   // Broad, asymmetrical CURVED pink roof, with distinct small left wing.
-   '<path d="M8 64Q32 27 91 21Q151 14 197 42L199 65Q132 38 81 48Q40 52 12 76Z" fill="#d77faa" stroke="#894e78" stroke-width="4"/>'+
-   '<path d="M8 67Q22 44 53 38L69 55L21 79Z" fill="#ef9fc3" stroke="#b76d94" stroke-width="3"/>'+
-   '<path d="M72 33Q140 18 191 45" fill="none" stroke="#f5bdd7" stroke-width="4" stroke-linecap="round"/>'+
-   // Three open stories: no wall blocking the playable interior.
-   frame+posts+
-   '<path d="M197 67L208 71L208 276L197 268Z" fill="#cd8fac" stroke="#97647e" stroke-width="2"/>'+
-   // Open central stairs similar to the photographed playset.
-   '<path d="M156 154L187 123L190 131L162 162Z" fill="#d775aa"/>'+
-   '<path d="M163 153L193 164M169 146L195 156M175 139L196 148" stroke="#aa477c" stroke-width="3"/>'+
-   // Hint of upper purple seating, middle pink seating and lower toy furniture.
-   '<path d="M36 85L57 85L59 102L34 104Z" fill="#9d77c9" stroke="#71599e" stroke-width="2"/>'+
-   '<path d="M82 158L126 156L132 168L78 172Z" fill="#f1a1cb" stroke="#c071a0" stroke-width="2"/>'+
-   '<path d="M28 224L52 224L52 245L28 245Z" fill="#a9cae7" stroke="#7fa4c8" stroke-width="2"/>'+
-   '<path d="M98 229L128 229L128 241L98 241Z" fill="#dfaddb" stroke="#aa78ab" stroke-width="2"/>'+
-   '<path d="M15 276L204 270" stroke="#b98b5c" stroke-width="6"/>'+
-   '</g>';
- }
- function windowDrawing(){
-  return '<g aria-label="Window above vanity">'+
-   '<path d="M407 96L532 152L532 222L407 168Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
-   '<path d="M417 107L521 157L521 210L417 161Z" fill="url(#dollyWindowGlass)" stroke="#fefeff" stroke-width="2"/>'+
-   '<path d="M468 132L468 186M417 135L521 180" stroke="#fff" stroke-width="5"/>'+
-   '<path d="M408 169L532 225" stroke="#e5d3e7" stroke-width="7"/>'+
-   '</g>';
- }
-
- function bedWindowDrawing(){
-  // Bed is beside this window; angle and wall widths are schematic.
-  return '<g aria-label="Window beside bed">'+
-   '<path d="M51 175L123 140L123 204L51 240Z" fill="#fff" stroke="#b49cbf" stroke-width="5"/>'+
-   '<path d="M59 180L115 153L115 201L59 228Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="2"/>'+
-   '<path d="M87 167L87 215M60 206L115 180" stroke="#fff" stroke-width="4"/>'+
-   '<path d="M48 240L127 203" stroke="#eee1f1" stroke-width="6"/>'+
-   '</g>';
- }
- function marioPosterDrawing(){
-  // Poster placement and Mario motif are confirmed; illustration is simplified.
-  return '<g aria-label="Mario poster above sleigh bed">'+
-   '<path d="M160 129L241 90L241 171L160 208Z" fill="#fff" stroke="#957e9c" stroke-width="3"/>'+
-   '<path d="M166 133L235 99L235 164L166 198Z" fill="#85c8ee"/>'+
-   '<path d="M176 145L225 121L225 136L176 161Z" fill="#e94f48"/>'+
-   '<path d="M180 165L197 155L210 167L222 163L222 176L200 188L177 183Z" fill="#e94f48"/>'+
-   '<path d="M187 160L203 153L205 165L192 173Z" fill="#f3bd8b"/>'+
-   '<path d="M201 155L215 150L219 157L208 163Z" fill="#4d3a37"/>'+
-   '<text x="201" y="116" text-anchor="middle" font-weight="900" font-size="11" fill="#fff">MARIO</text>'+
-   '</g>';
- }
- function closetDrawing(){
-  // White interior closet door stays BEHIND the large Barbie house.
-  // The narrow access route is deliberately visible, not dimensionally measured.
-  return '<g aria-label="White closet door behind Barbie house">'+
-   '<path d="M553 153L594 172L594 313L553 294Z" fill="#fffefc" stroke="#aa9da9" stroke-width="3"/>'+
-   '<path d="M559 162L585 175L585 296L559 283Z" fill="#f5f3f4" stroke="#d4cbd3" stroke-width="2"/>'+
-   '<path d="M565 174L580 181L580 226L565 220ZM565 231L580 239L580 280L565 273Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/>'+
-   '<circle cx="583" cy="244" r="3.2" fill="#aa9e9f"/>'+
-   '<path d="M592 311L606 319L606 359" fill="none" stroke="#bb85bc" stroke-width="3" stroke-dasharray="5 5"/>'+
-   '</g>';
- }
- function entryDoorDrawing(){
-  // The door exists; its precise position and swing were not surveyed.
-  return '<g aria-label="Bedroom entry; exact position on the wall is unverified">'+
-   '<path d="M280 438L336 457" stroke="#faf8ff" stroke-width="8" stroke-linecap="round"/>'+
-   '<path d="M287 431L287 451Q309 464 338 450" stroke="#9e84a9" stroke-width="2" stroke-dasharray="5 4" fill="none"/>'+
-   '<text x="310" y="436" text-anchor="middle" class="dolly-scene-small">Entry*</text></g>';
- }
- const LAYOUT_KEY="dailyLifeDollyRoomLayout_v1";
- let arranging=false;
- let selectedPiece=null;
- function pieceTransform(el,p){
-  // Rotate the artwork in place: anchor every view to the same original dresser footprint.
-  const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
-  const front=el.querySelector(".dolly-view-front"),side=el.querySelector(".dolly-view-side");
-  if(front&&side){
-    front.style.display=direction%2===0?"":"none";
-    side.style.display=direction%2===1?"":"none";
-  }
-  const x=Number(p.x),y=Number(p.y);
-  return "translate("+(Number.isFinite(x)?x:0)+" "+(Number.isFinite(y)?y:0)+")";
- }
-  function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
- function layoutApply(root){
-  if(!root)return;
-  const saved=layoutRead();
-  root.querySelectorAll(".dolly-scene-object[data-room-piece]").forEach(el=>{
-   const p=saved[el.dataset.roomPiece]||{};
-   el.setAttribute("transform",pieceTransform(el,p));
-   el.style.filter=arranging&&selectedPiece===el.dataset.roomPiece?"drop-shadow(0 0 5px #e05bb0)":"";
-   el.style.touchAction=arranging?"none":"";
-   el.style.cursor=arranging?"grab":"pointer";
-  });
-  const button=document.getElementById("dollyArrangeToggle");
-  if(button)button.textContent=arranging?"Done arranging":"Arrange room";
-  const reset=document.getElementById("dollyArrangeReset");
-  if(reset)reset.hidden=!arranging;
-  const rotate=document.getElementById("dollyRotateTools");if(rotate){rotate.hidden=!arranging;rotate.style.display=arranging?"flex":"none";}
-  const name=document.getElementById("dollySelectedPiece");if(name)name.textContent=selectedPiece?"Selected: "+(ITEMS[selectedPiece]?.label||selectedPiece):"Tap a piece to select, then rotate";
- }
- window.dollyIsArranging=function(){return arranging};
- window.dollyToggleArrange=function(){arranging=!arranging;if(!arranging)selectedPiece=null;layoutApply(document.querySelector(".dolly-mini-svg"))};
- window.dollyRotateSelected=function(direction){
-  if(!arranging||!selectedPiece)return;
-  const all=layoutRead(),p=all[selectedPiece]||{};
-  all[selectedPiece]={...p,angle:((Math.round((Number(p.angle)||0)/90)*90)+direction*90+360)%360};
-  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
-  layoutApply(document.querySelector(".dolly-mini-svg"));
- };
- window.dollyRecoverPiece=function(){
-  const all=layoutRead();const key=selectedPiece||"dresser";all[key]={x:0,y:0,angle:0};
-  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
-  layoutApply(document.querySelector(".dolly-mini-svg"));
- };
- window.dollyRestoreVanity=function(){
-  const all=layoutRead();
-  // Recover only the missing vanity; other saved placements are untouched.
-  all.vanity={...(all.vanity||{}),x:0,y:0,angle:0};
-  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
-  layoutApply(document.querySelector(".dolly-mini-svg"));
- };
- window.dollyResetArrange=function(){if(!confirm("Reset furniture positions in Dolly’s miniature? Inventory and tasks will stay saved."))return;localStorage.removeItem(LAYOUT_KEY);layoutApply(document.querySelector(".dolly-mini-svg"))};
- window.dollyScenePointerDown=function(event){
-  if(!arranging)return;
-  const obj=event.target.closest(".dolly-scene-object[data-room-piece]");
-  const svg=event.currentTarget;
-  if(!obj||!svg.contains(obj))return;
-  event.preventDefault();
-  const key=obj.dataset.roomPiece,base=layoutRead()[key]||{x:0,y:0};
-  selectedPiece=key;layoutApply(svg);
-  const point=svg.createSVGPoint();
-  function coord(e){point.x=e.clientX;point.y=e.clientY;return point.matrixTransform(svg.getScreenCTM().inverse())}
-  const start=coord(event);let latest={x:Number(base.x)||0,y:Number(base.y)||0};
-  svg.setPointerCapture(event.pointerId);
-  const move=e=>{
-   if(e.pointerId!==event.pointerId)return;
-   const now=coord(e);
-   latest={x:Math.max(-165,Math.min(165,(Number(base.x)||0)+now.x-start.x)),y:Math.max(-125,Math.min(125,(Number(base.y)||0)+now.y-start.y))};
-   obj.setAttribute("transform",pieceTransform(obj,{...base,...latest}));
-  };
-  const stop=e=>{
-   if(e.pointerId!==event.pointerId)return;
-   svg.removeEventListener("pointermove",move);
-   svg.removeEventListener("pointerup",stop);
-   svg.removeEventListener("pointercancel",stop);
-   const all=layoutRead();all[key]={...base,...latest};
-   try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
-   layoutApply(svg);
-  };
-  svg.addEventListener("pointermove",move);
-  svg.addEventListener("pointerup",stop);
-  svg.addEventListener("pointercancel",stop);
- };
-
-
-// The approved floor plan is the single source for both views.
-// Project floor coordinates onto the miniature's floor quadrilateral.
-// This intentionally leaves the user's old miniature localStorage untouched.
-function dollyPerspectiveSync(){
- const svg=document.querySelector(".dolly-mini-svg");if(!svg)return;
- // The miniature is an illustrative camera angle, not a geometrically accurate
- // isometric projection of the floor plan. Each furniture type has a calibrated
- // visual anchor so the real wall relationships remain legible.
- const anchors={
-  bed:{x:218,y:341,scale:.78,refX:12,refY:9},
-  vanity:{x:260,y:225,scale:.72,refX:126,refY:4},
-  dresser:{x:349,y:418,scale:.85,refX:12,refY:210},
-  dollhouse:{x:519,y:343,scale:.79,refX:249,refY:51}
- };
- for(const key of Object.keys(anchors)){
-  const el=svg.querySelector('[data-room-piece="'+key+'"]');if(!el)continue;
-  const p=floorData(key),cfg=anchors[key];
-  const art=el.querySelector(".dolly-view-front")||el;
-  let box;try{box=art.getBBox()}catch(_){continue}
-  if(!box.width||!box.height)continue;
-  // Small adjustments reflect floor-plan dragging without placing objects on
-  // the wrong wall in this stylized camera view.
-  const dx=((Number(p.x)||0)-cfg.refX)*.36;
-  const dy=((Number(p.y)||0)-cfg.refY)*.36;
-  el.setAttribute("transform","translate("+(cfg.x+dx).toFixed(2)+" "+(cfg.y+dy).toFixed(2)+") scale("+cfg.scale+") translate("+(-box.x-box.width/2).toFixed(2)+" "+(-box.y-box.height).toFixed(2)+")");
- }
-}
-
- // A separate, true floor-plan arranger. The old miniature and its saved positions are untouched.
- const FLOOR_KEY="dailyLifeDollyFloorPlan_photoReference_v5"; // independent of user-edited v2 layout
+ // One photo-referenced floor plan drives the top view and this perspective.
+ // The plan remains independently saved and editable; perspective reads it directly.
+ const FLOOR_KEY="dailyLifeDollyFloorPlan_photoReference_v5"; // shared saved geometry for both views
  const FLOOR_ITEMS={
   // Plan orientation: top = Mario/headboard + vanity window wall;
   // left = footboard window; right = closet and entry wall;
   // bottom = black tapestry / long dresser wall.
   // Units are visual estimates from photographs, not inches.
   bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:12,y:9,angle:0},
-  dresser:{label:"Dresser",w:198,h:48,color:"#a66a42",x:12,y:210,angle:0},
+  dresser:{label:"Dresser",w:148,h:48,color:"#a66a42",x:0,y:210,angle:0},
   vanity:{label:"Vanity",w:118,h:46,color:"#f8f7f3",x:126,y:4,angle:0},
   dollhouse:{label:"Barbie house",w:138,h:51,color:"#f3a3ce",x:249,y:51,angle:90}
  };
  let floorSelected="dresser";
  function floorRead(){try{return JSON.parse(localStorage.getItem(FLOOR_KEY)||"{}")||{}}catch(_){return {}}}
  function floorSave(data){try{localStorage.setItem(FLOOR_KEY,JSON.stringify(data))}catch(_){}}
- function floorData(key){return {...FLOOR_ITEMS[key],...(floorRead()[key]||{})}}
+ function floorData(key){
+  const saved=floorRead()[key]||{};
+  // Keep saved position and rotation while correcting the photo-derived dresser footprint.
+  const fixedSize=key==="dresser"?{w:FLOOR_ITEMS.dresser.w,h:FLOOR_ITEMS.dresser.h}:{};
+  return {...FLOOR_ITEMS[key],...saved,...fixedSize};
+ }
+ window.dollyRestoreVanity=function(){
+  const saved=floorRead();saved.vanity={...(saved.vanity||{}),x:FLOOR_ITEMS.vanity.x,y:FLOOR_ITEMS.vanity.y,angle:0};
+  floorSave(saved);floorDraw();
+ };
+ // Both views use the exact same floor-plan coordinate system. These are
+ // relative drawing units, not surveyed inches or feet.
+ const ISO={cx:310,baseY:146,sx:.78,depth:.5,sy:.42,sz:1.02,wall:130};
+ function iso(x,y,z=0){return [ISO.cx+x*ISO.sx-y*ISO.depth,ISO.baseY+(x+y)*ISO.sy-z*ISO.sz]}
+ function isoPoints(points){return points.map(p=>iso(p[0],p[1],p[2]||0).map(n=>n.toFixed(1)).join(",")).join(" ")}
+ function poly(points,fill,stroke="#755f6d",width=1.5,extra=""){
+  return '<polygon points="'+isoPoints(points)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+width+'" stroke-linejoin="round" '+extra+'/>';
+ }
+ function line(points,color,width=2,extra=""){
+  return '<polyline points="'+isoPoints(points)+'" fill="none" stroke="'+color+'" stroke-width="'+width+'" stroke-linecap="round" stroke-linejoin="round" '+extra+'/>';
+ }
+ function wallPatchY(x1,x2,z1,z2,fill,stroke="#a99ca7"){
+  return poly([[x1,0,z1],[x2,0,z1],[x2,0,z2],[x1,0,z2]],fill,stroke,2);
+ }
+ function wallPatchX(y1,y2,z1,z2,fill,stroke="#a99ca7"){
+  return poly([[300,y1,z1],[300,y2,z1],[300,y2,z2],[300,y1,z2]],fill,stroke,2);
+ }
+ function wallPatchLeft(y1,y2,z1,z2,fill,stroke="#a99ca7"){
+  return poly([[0,y1,z1],[0,y2,z1],[0,y2,z2],[0,y1,z2]],fill,stroke,2);
+ }
+ function roomSceneBase(){
+  const floor=poly([[0,0,0],[300,0,0],[300,260,0],[0,260,0]],"url(#roomFloor)","#8b6951",3);
+  let planks="";
+  for(let y=24;y<260;y+=24)planks+=line([[0,y,1],[300,y,1]],"#74482f",1.2,'opacity=".45"');
+  for(let x=35;x<300;x+=62)planks+=line([[x,0,1],[x,260,1]],"#d5a779",1,'opacity=".22"');
+  const far=poly([[0,0,0],[300,0,0],[300,0,ISO.wall],[0,0,ISO.wall]],"url(#roomBackWall)","#b7a7ac",2);
+  const left=poly([[0,0,0],[0,260,0],[0,260,ISO.wall],[0,0,ISO.wall]],"url(#roomSideWall)","#b7a7ac",2);
+  const right=poly([[300,0,0],[300,260,0],[300,260,ISO.wall],[300,0,ISO.wall]],"url(#roomRightWall)","#b7a7ac",2);
+  return '<rect x="0" y="0" width="620" height="440" fill="#f0eaec"/>'+floor+planks+far+left+right+
+   line([[0,0,ISO.wall],[300,0,ISO.wall],[300,260,ISO.wall]],"#fffdf8",4)+
+   line([[0,0,0],[300,0,0],[300,260,0],[0,260,0],[0,0,0]],"#a88772",3);
+ }
+ function windowWallY(x1,x2){
+  return wallPatchY(x1-5,x2+5,53,125,"#fffdf9","#9d8992")+
+   wallPatchY(x1,x2,60,119,"#9ec8dc","#fff")+
+   line([[x1+(x2-x1)/2,0,60],[x1+(x2-x1)/2,0,119]],"#fff",3)+
+   line([[x1,0,90],[x2,0,90]],"#fff",3)+
+   line([[x1-8,0,53],[x2+8,0,53]],"#fff",5);
+ }
+ function windowWallLeft(y1,y2){
+  return wallPatchLeft(y1-5,y2+5,18,118,"#fffdf9","#9d8992")+
+   wallPatchLeft(y1,y2,25,112,"#9ec8dc","#fff")+
+   line([[0,y1+(y2-y1)/2,25],[0,y1+(y2-y1)/2,112]],"#fff",3)+
+   line([[0,y1,67],[0,y2,67]],"#fff",3)+
+   line([[0,y1-8,18],[0,y2+8,18]],"#fff",5);
+ }
+ function wallDecor(){
+  // Top/far wall has the Mario poster over the headboard and the vanity window.
+  let s=windowWallY(150,218);
+  s+=wallPatchY(24,92,51,88,"#fffdf8","#8d7785")+
+    wallPatchY(28,88,55,84,"#74b9e2","#fff")+
+    wallPatchY(31,85,70,75,"#e54d49","#e54d49")+
+    '<text x="'+iso(58,0,94)[0].toFixed(1)+'" y="'+(iso(58,0,94)[1]+4).toFixed(1)+'" text-anchor="middle" fill="#5c4250" font-size="9" font-weight="800">MARIO</text>';
+  // The second window belongs to the left wall, beside the bed length.
+  s+=windowWallLeft(73,163);
+  // Closet is an opening with a blue curtain, on the entry-door wall.
+  s+=wallPatchX(36,151,0,83,"#efe9e0","#a89891")+
+    wallPatchX(40,148,5,78,"#8bb7cf","#e5f0f5")+
+    line([[300,43,7],[300,146,7]],"#f8f2eb",4)+
+    '<g class="dolly-scene-object dolly-svg-closet" data-room-piece="closet" role="button" tabindex="0" aria-label="Open Dolly’s closet details" onclick="dollyOpenObject(\'closet\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();dollyOpenObject(\'closet\')}">'+
+    poly([[300,49,4],[300,143,4],[300,143,78],[300,49,78]],"#76a9c5","#e2f0f6",2)+
+    line([[300,56,7],[300,136,7]],"#c4e2ed",3)+
+    '</g>';
+  // The entry hinges at the lower end; the leaf swings inward and rests along
+  // the dresser-side wall. Handle is on the free end, opposite the hinge.
+  s+=wallPatchX(192,253,0,84,"#d3c4b9","#89776e")+
+    wallPatchX(197,249,5,79,"#aebfca","#f7f1ea")+
+    poly([[300,253,0],[254,253,0],[254,253,76],[300,253,76]],"#eee5db","#8d786d",2)+
+    poly([[299,253,3],[256,253,3],[256,253,73],[299,253,73]],"#d8e0e4","#fffaf3",1.5)+
+    line([[300,253,4],[300,253,72]],"#8a7166",2)+
+    '<circle cx="'+iso(260,253,39)[0].toFixed(1)+'" cy="'+iso(260,253,39)[1].toFixed(1)+'" r="3" fill="#b08b4e" stroke="#755d3a" stroke-width="1"/>'+
+    line([[300,253,5],[300,253,70]],"#8a7166",2);
+  // Dashed sweep connects the closed leaf on the right wall to its open
+  // position along the dresser-side wall.
+  const h=iso(300,253,2),m=iso(254,253,2),closed=iso(300,207,2);
+  s+='<path d="M'+closed[0]+' '+closed[1]+' Q'+h[0]+' '+h[1]+' '+m[0]+' '+m[1]+'" fill="none" stroke="#8f7a70" stroke-width="2" stroke-dasharray="4 4"/>';
+  return s;
+ }
+ function boxTop(x,y,w,h,z,color,stroke="#745744"){
+  return poly([[x,y,z],[x+w,y,z],[x+w,y+h,z],[x,y+h,z]],color,stroke,1.5);
+ }
+ function boxFaces(x,y,w,h,z0,z1,top,front,side){
+  return poly([[x,y,z0],[x,y+h,z0],[x,y+h,z1],[x,y,z1]],front)+
+   poly([[x+w,y,z0],[x+w,y+h,z0],[x+w,y+h,z1],[x+w,y,z1]],side)+
+   poly([[x,y,z1],[x+w,y,z1],[x+w,y+h,z1],[x,y+h,z1]],top);
+ }
+ function pointLabel(x,y,z,text){const p=iso(x,y,z);return '<text class="dolly-scene-small" x="'+p[0].toFixed(1)+'" y="'+p[1].toFixed(1)+'" text-anchor="middle">'+text+'</text>'}
+ function bedMesh(p){
+  const {x,y,w,h}=p;
+  let s=boxFaces(x-2,y+4,w+4,h-8,3,20,"#f8f7f7","#fbf9f7","#e5e0df");
+  s+=boxTop(x+5,y+10,w-10,h-19,22,"#cfc3e8","#faf8fc");
+  // lavender fitted sheet, blue blanket and the loose multicolor comforter.
+  s+=poly([[x+7,y+91,23],[x+w-7,y+91,23],[x+w-8,y+h-14,23],[x+7,y+h-14,23]],"#cfc3e8","#e6def1",1);
+  s+=poly([[x+7,y+25,24],[x+w-7,y+25,24],[x+w-7,y+91,24],[x+7,y+91,24]],"#397ab9","#275c90",1.2);
+  s+=poly([[x+12,y+79,25],[x+48,y+73,25],[x+67,y+94,25],[x+31,y+105,25]],"#dfadae","#8b7588",1);
+  s+=poly([[x+55,y+49,25],[x+88,y+57,25],[x+84,y+73,25],[x+51,y+65,25]],"#ebbd49","#b07d32",1);
+  s+=poly([[x+12,y+18,26],[x+w-12,y+18,26],[x+w-12,y+38,26],[x+12,y+38,26]],"#f5f2f6","#d5ced8",1);
+  // Sculpted headboard and footboard: a bowed, raised white sleigh rail.
+  const xs=[0,.15,.35,.5,.65,.85,1],head=xs.map(t=>[x+t*w,y+7,47+18*Math.sin(Math.PI*t)]),foot=xs.map(t=>[x+t*w,y+h-7,39+12*Math.sin(Math.PI*t)]);
+  const board=(pts,base)=>poly([...pts,[x+w,y+base,5],[x,y+base,5]],"#f8f7f4","#aaa0a0",2)+line(pts,"#fff",4);
+  s+=board(head,y+7)+board(foot,y+h-7);
+  s+=line([[x+4,y+22,30],[x+4,y+h-18,30]],"#f9f8f6",5)+line([[x+w-4,y+22,30],[x+w-4,y+h-18,30]],"#e7e2e0",4);
+  s+=poly([[x+23,y+10,29],[x+52,y+10,29],[x+52,y+40,29],[x+23,y+40,29]],"#fff","#d8d3d2",1);
+  return s;
+ }
+ function vanityMesh(p){
+  const {x,y,w,h}=p,pedestal=w*.29;let s="";
+  // Two drawer pedestals support a thin top, leaving the center open for a chair.
+  s+=boxFaces(x,y,pedestal,h,2,25,"#f5f3ef","#f5f3ef","#e5e1df")+
+   boxFaces(x+w-pedestal,y,pedestal,h,2,25,"#f5f3ef","#f5f3ef","#e5e1df")+
+   boxTop(x,y,w,h,27,"#fffdfb","#d3c8c4");
+  for(const side of [0,1])for(let row=0;row<2;row++){
+   const xa=side?x+w-pedestal+3:x+3,xb=side?x+w-3:x+pedestal-3,z1=6+row*9,z2=z1+8;
+   s+=poly([[xa,y+h,z1],[xb,y+h,z1],[xb,y+h,z2],[xa,y+h,z2]],"#fbfaf8","#c5b9b7",1.1);
+   const q=iso((xa+xb)/2,y+h,(z1+z2)/2);s+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="1.7" fill="#b99a59"/>';
+  }
+  // Gold framed mirror rises on the far wall directly above the vanity.
+  s+=wallPatchY(x+27,x+w-25,35,81,"#b99a55","#8c713c")+
+   wallPatchY(x+32,x+w-30,40,76,"#c6dce4","#fff1c7")+
+   line([[x+w/2,0,42],[x+w/2,0,74]],"#edf7f8",2);
+  return s;
+ }
+ function dresserMesh(p){
+  const {x,y,w,h}=p;let s=boxFaces(x,y,w,h,2,38,"#9a633e","#8a5835","#68422f");
+  s+=poly([[x,y,2],[x+w,y,2],[x+w,y,38],[x,y,38]],"#9d643e","#59351e",1.5);
+  // Photo shows six drawers arranged two across and three down.
+  for(let row=0;row<3;row++)for(let col=0;col<2;col++){
+   const a=x+col*w/2+2,b=x+(col+1)*w/2-2,z1=4+row*10,z2=z1+9;
+   s+=poly([[a,y,z1],[b,y,z1],[b,y,z2],[a,y,z2]],row===2?"#8f5b39":"#a66d44","#62402a",1);
+   const q=iso((a+b)/2,y,(z1+z2)/2);s+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="1.6" fill="#d3ac63" stroke="#765533" stroke-width=".5"/>';
+  }
+  return s;
+ }
+ function barbieMesh(p){
+  const {x,y,w,h}=p,front=x+3,back=x+w-3;let s="";
+  // Narrow depth at the wall, open playable side toward the room (left).
+  s+=boxTop(front,y+4,w-7,h-8,4,"#f5afd0","#9d6c55");
+  s+=poly([[back,y,4],[back,y+h,4],[back,y+h,36],[back,y,36]],"#f4c5dc","#bd769f",2);
+  for(const z of [5,15,25]){
+   s+=poly([[front,y+2,z],[back,y+2,z],[back,y+h-2,z],[front,y+h-2,z]],z===6?"#f0dbca":"#d9b58b","#9c744d",2);
+   s+=line([[front,y+2,z+3],[front,y+h-2,z+3]],"#d8ae80",3);
+  }
+  for(const t of [0,.5,1]){
+   const yy=y+t*h;
+   s+=poly([[front,yy-2,5],[front+3,yy-2,5],[front+3,yy-2,34],[front,yy-2,34]],"#d6b184","#9b7652",1);
+  }
+  // Pink roof sections and upper gable, visibly supported by the wooden frame.
+  s+=poly([[front,y,36],[back,y,36],[back,y+h*.48,42],[front,y+h*.48,42]],"#e895bf","#a85d88",2)+
+   poly([[front,y+h*.48,42],[back,y+h*.48,42],[back,y+h,36],[front,y+h,36]],"#f1add0","#aa648c",2)+
+   line([[front,y,36],[front,y+h,36]],"#cb83a8",3);
+  // Each room stays open: pastel back panels and small room dividers only.
+  for(const z of [15,25]){
+   s+=poly([[back,y+6,z],[back,y+h-6,z],[back,y+h-6,z+7],[back,y+6,z+7]],"#f6d9e7","#d28caf",1);
+   s+=line([[front,y+6,z],[front,y+h-6,z]],"#d7b184",3);
+  }
+  return s;
+ }
+ function perspectivePiece(key){
+  const raw=floorData(key),turned=((Math.round((Number(raw.angle)||0)/90)%2)+2)%2===1;
+  const w=turned?raw.h:raw.w,h=turned?raw.w:raw.h;
+  const p={...raw,x:floorClamp(Number(raw.x)||0,0,300-w),y:floorClamp(Number(raw.y)||0,0,260-h),w,h};let shape="";
+  if(key==="bed")shape=bedMesh(p);
+  if(key==="vanity")shape=vanityMesh(p);
+  if(key==="dresser")shape=dresserMesh(p);
+  if(key==="dollhouse")shape=barbieMesh(p);
+  return '<g class="dolly-scene-object dolly-svg-'+key+'" data-room-piece="'+key+'" role="button" tabindex="0" aria-label="Open Dolly’s '+html(ITEMS[key].label)+' details" onclick="dollyOpenObject(&#39;'+key+'&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}">'+shape+'</g>';
+ }
+ function dollyPerspectiveSync(){
+  const svg=document.querySelector(".dolly-mini-svg");if(!svg)return;
+  for(const key of ["bed","vanity","dresser","dollhouse"]){
+   const old=svg.querySelector('[data-room-piece="'+key+'"]');if(!old)continue;
+   const wrapped='<svg xmlns="http://www.w3.org/2000/svg">'+perspectivePiece(key)+'</svg>';
+   const parsed=new DOMParser().parseFromString(wrapped,"image/svg+xml").documentElement.firstElementChild;
+   old.replaceWith(document.importNode(parsed,true));
+  }
+ }
  function floorClamp(v,min,max){return Math.max(min,Math.min(max,v))}
  function floorDraw(){
   const root=document.getElementById("dollyFloorPlan");if(!root)return;
@@ -411,14 +255,15 @@ function dollyPerspectiveSync(){
     '<path d="M4 '+(p.h-18)+'Q'+(p.w/2)+' '+(p.h+1)+' '+(p.w-4)+' '+(p.h-18)+'" fill="none" stroke="#fff" stroke-width="9"/>' :
     key==="dresser"?
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="3" fill="#ad744b" stroke="#653d27" stroke-width="3"/>'+
-    Array.from({length:5},(_,i)=>'<rect x="'+(7+i*(p.w-14)/5)+'" y="6" width="'+((p.w-18)/5)+'" height="13" rx="1" fill="#b98659" stroke="#78492f"/><circle cx="'+(13+i*(p.w-14)/5+(p.w-18)/10)+'" cy="12" r="2" fill="#e8c78e"/>').join("")+
-    '<path d="M6 23H'+(p.w-6)+'M'+(p.w/2)+' 23V'+(p.h-5)+'" stroke="#71472e" stroke-width="2"/>'+
-    '<circle cx="'+(p.w/4)+'" cy="34" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="34" r="2" fill="#e8c78e"/>' :
+    Array.from({length:6},(_,i)=>{const row=Math.floor(i/2),col=i%2,x=6+col*(p.w-14)/2,y=5+row*(p.h-10)/3,w=(p.w-18)/2,h=(p.h-16)/3;return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="1" fill="#b17b50" stroke="#78492f"/><circle cx="'+(x+w/2)+'" cy="'+(y+h/2)+'" r="2" fill="#e8c78e"/>'}).join("")+
+    '<path d="M'+(p.w/2)+' 4V'+(p.h-4)+'M4 '+(p.h/3)+'H'+(p.w-4)+'M4 '+(p.h*2/3)+'H'+(p.w-4)+'" stroke="#71472e" stroke-width="2"/>'+
+    '<circle cx="'+(p.w/4)+'" cy="'+(p.h/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w/4)+'" cy="'+(p.h/2)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h/2)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w/4)+'" cy="'+(p.h*5/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h*5/6)+'" r="2" fill="#e8c78e"/>' :
     key==="vanity"?
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#fffdf9" stroke="#b7a7aa" stroke-width="3"/>'+
     '<rect x="6" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
     '<rect x="'+(p.w-31)+'" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
-    '<rect x="35" y="7" width="'+(p.w-70)+'" height="'+(p.h-14)+'" rx="4" fill="#dce8ed" stroke="#c8ac70" stroke-width="3"/>' :
+    '<path d="M8 '+(p.h/3)+'h21M8 '+(p.h*2/3)+'h21M'+(p.w-29)+' '+(p.h/3)+'h21M'+(p.w-29)+' '+(p.h*2/3)+'h21" stroke="#c8ac70" stroke-width="2"/>'+
+    '<rect x="35" y="7" width="'+(p.w-70)+'" height="'+(p.h-14)+'" fill="#f8f0e8" stroke="#d2c1b0" stroke-dasharray="3 2"/>' :
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#e69fca" stroke="#ae6a96" stroke-width="3"/>'+
     '<rect x="7" y="7" width="'+(p.w-14)+'" height="'+(p.h-14)+'" fill="#f9d3e7" stroke="#bc779c"/>'+
     '<path d="M'+(p.w/3)+' 7V'+(p.h-7)+'M'+(2*p.w/3)+' 7V'+(p.h-7)+'" stroke="#bb8b64" stroke-width="4"/>'+
@@ -477,60 +322,33 @@ function dollyPerspectiveSync(){
   svg.addEventListener("pointermove",move);svg.addEventListener("pointerup",stop);svg.addEventListener("pointercancel",stop);
  };
  window.dollyRoomSceneHtml=function(){
-  setTimeout(()=>{layoutApply(document.querySelector(".dolly-mini-svg"));dollyPerspectiveSync()},80);setTimeout(dollyPerspectiveSync,350);
-  const assets='<defs>'+
-   '<linearGradient id="dollyWallLeft" x2="1" y2="1"><stop stop-color="#fbf5fc"/><stop offset="1" stop-color="#ead9ef"/></linearGradient>'+
-   '<linearGradient id="dollyWallRight" x2="1" y2=".7"><stop stop-color="#fff7f6"/><stop offset="1" stop-color="#e3cfe0"/></linearGradient>'+
-   '<linearGradient id="dollyWoodFloor" x2=".8" y2="1"><stop stop-color="#bc8155"/><stop offset=".55" stop-color="#a76c41"/><stop offset="1" stop-color="#85522f"/></linearGradient>'+
-   '<linearGradient id="dollyWhiteFrame" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#f6f3fb"/><stop offset="1" stop-color="#d8d3e0"/></linearGradient>'+
-   '<linearGradient id="dollyLavenderSheet" x2=".9" y2="1"><stop stop-color="#f1e6fc"/><stop offset=".48" stop-color="#cfc2ee"/><stop offset="1" stop-color="#b8acd8"/></linearGradient>'+
-   '<linearGradient id="dollyBlanket" x2="1" y2=".75"><stop stop-color="#b5c1d7"/><stop offset=".4" stop-color="#d2a7b4"/><stop offset=".75" stop-color="#aaa0c1"/><stop offset="1" stop-color="#e0c4b6"/></linearGradient>'+
-   '<linearGradient id="dollyPillow" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e7e4ed"/></linearGradient>'+
-   '<linearGradient id="dollyMirror" x2="1" y2=".5"><stop stop-color="#d5e7f2"/><stop offset="1" stop-color="#fdf7ff"/></linearGradient>'+
-   '<linearGradient id="dollyDresserWood" x2="1" y2=".8"><stop stop-color="#b88756"/><stop offset="1" stop-color="#5d3624"/></linearGradient>'+
-   '<linearGradient id="dollyWindowGlass" x2="1" y2="1"><stop stop-color="#c0e4fa"/><stop offset="1" stop-color="#eaf2ff"/></linearGradient>'+
+  const defs='<defs>'+
+   '<linearGradient id="roomFloor" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#bd865e"/><stop offset=".58" stop-color="#a56d45"/><stop offset="1" stop-color="#895731"/></linearGradient>'+
+   '<linearGradient id="roomBackWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#eee9df"/><stop offset="1" stop-color="#d9d5cd"/></linearGradient>'+
+   '<linearGradient id="roomSideWall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e6e2d9"/><stop offset="1" stop-color="#cfcac3"/></linearGradient>'+
+   '<linearGradient id="roomRightWall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e3ded5"/><stop offset="1" stop-color="#d2cec7"/></linearGradient>'+
    '</defs>';
-  const room='<rect width="620" height="470" rx="18" fill="#e8dbea"/>'+
-   '<path d="M26 183L305 50L305 192L26 320Z" fill="url(#dollyWallLeft)" stroke="#c5b4cb" stroke-width="3"/>'+
-   '<path d="M305 50L592 180L592 321L305 192Z" fill="url(#dollyWallRight)" stroke="#c5b4cb" stroke-width="3"/>'+
-   '<path d="M26 320L305 192L592 321L314 451Z" fill="url(#dollyWoodFloor)" stroke="#af99a9" stroke-width="3"/>'+
-   '<path d="M26 332L314 461L592 332L592 321L314 451L26 320Z" fill="#c8a7ae" opacity=".8"/>'+
-   '<path d="M64 324L341 205M111 347L387 232M157 370L436 251M203 395L479 271M249 415L525 292M300 442L574 314" stroke="#6c3f26" stroke-width="2" opacity=".32"/><path d="M105 353L133 341M215 386L239 377M367 315L404 297M460 353L491 339" stroke="#d3a479" stroke-width="2" opacity=".25"/>'+
-   '<path d="M26 183L305 50L592 180" fill="none" stroke="#fffafa" stroke-width="9" stroke-linejoin="round"/>'+
-   // The Mario poster and vanity-side window occupy the LEFT wall, not the entry/closet wall.
-   '<g transform="translate(-82 37) scale(.88)">'+marioPosterDrawing()+'</g>'+
-   // Smaller frame toward the back corner, with a clear gap from the Mario poster.
-   '<g transform="translate(220 -15) scale(.72)">'+bedWindowDrawing()+'</g>'+
-   // The second tall window is on the bed-side wall; keep the entry/closet wall window-free.
-   '<g transform="translate(-337 102) scale(.72 1.48)" aria-label="Tall window beside Dolly’s bed">'+
-   '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="8"/>'+
-   '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="3"/>'+
-   '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/><path d="M379 110L435 134M378 117L434 141M377 124L433 148M376 131L432 155M375 138L431 162" stroke="#e8e8ef" stroke-width="2"/>'+
-   '<path d="M361 153L453 195" stroke="#e5d3e7" stroke-width="6"/>'+
-   '</g>';
-  const bed='<g transform="translate(44 60) scale(1.03)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(36 313) scale(1.05 .70)">'+dresserDrawing()+'</g>';
-  const vanity='<g transform="translate(237 111) scale(.83)">'+vanityDrawing()+'</g>';
-  const barbie='<g transform="translate(422 166) scale(.87)">'+dollhouseDrawing()+'</g>';
-  return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
+  const pieces=["bed","vanity","dresser","dollhouse"].sort((a,b)=>{
+   const pa=floorData(a),pb=floorData(b);
+   const da=(Number(pa.x)||0)+(Number(pa.y)||0),db=(Number(pb.x)||0)+(Number(pb.y)||0);
+   return da-db;
+  }).map(perspectivePiece).join("");
+  const body=roomSceneBase()+wallDecor()+pieces;
+  setTimeout(dollyPerspectiveSync,80);
+  setTimeout(dollyPerspectiveSync,350);
+  return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s bedroom, perspective built from the saved top-down layout">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:56px"><button type="button" onclick="dollyFloorOpen()">Floor-plan arranger</button><button type="button" id="dollyArrangeToggle" onclick="dollyFloorOpen()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Bring missing vanity back into view">Find vanity</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;width:100%" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff"><strong>Dolly’s photographed room · top view</strong><p>Closer photo-based spacing: bed beside vanity, dresser near footboard, Barbie house close to vanity and closet. Drag and rotate without changing furniture size. This new reference plan preserves your earlier saved layout.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close floor plan</button></div><p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 300 260" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top down bedroom furniture arranger"></svg></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
-   assets+room+
-   modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
-   modelObject("vanity",vanity)+
-   modelObject("bed",bed)+
-   modelObject("dresser",dresser)+
-   modelObject("dollhouse",barbie)+
-   '<g aria-label="Closet label" pointer-events="none"><rect x="482" y="188" width="65" height="29" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/><text x="514" y="207" text-anchor="middle" class="dolly-scene-small">Closet ↗</text></g>'+
-   '<g aria-label="Bedroom entry"><path d="M550 153L591 172L591 313L550 294Z" fill="#fffdfb" stroke="#ad9da8" stroke-width="3"/><path d="M556 162L582 175L582 296L556 283Z" fill="#f5f2f5" stroke="#d1c7d2" stroke-width="2"/><path d="M562 175L577 182L577 228L562 221ZM562 234L577 241L577 282L562 275Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/><circle cx="558" cy="245" r="3" fill="#ae9a86"/><text x="568" y="146" text-anchor="middle" class="dolly-scene-small">Entry</text></g>'+ 
-   '<g aria-label="Light switch between entry and closet"><rect x="541" y="233" width="8" height="13" rx="1" fill="#fff" stroke="#9c8c96"/><path d="M545 236v6" stroke="#857883"/></g>'+
-   '</svg></div>'+
-   '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> white sleigh bed under Mario poster beside one window; white vanity under the other; long brown dresser on the former Barbie wall; large open-front pink Barbie house near the closet. Shift the house slightly to access the closet.</p>'+
-   '<p class="dolly-room-caveat">The top-down plan above is the placement reference. The perspective below is an illustration, not a second floor plan.</p>'+ 
-   '<p class="dolly-room-caveat">Miniature, not measured geometry. Relative relationships are confirmed; wall lengths, precise doorway position (*) and clearances are not.</p>'+
-   '<details class="dolly-hallway-details"><summary>Hallway staging (October 16) · 3 playsets</summary>'+
-   '<p>Wooden dollhouse · pink-roof dollhouse · cat-ear pretend kitchen. These are not counted as contents of Dolly’s room.</p></details>'+
-   '<div class="dolly-room-helper">Tap furniture or closet to open upkeep, drawers, supplies or stored-toy lists. Dolly’s photographed October 15 clean-room baseline remains valid as a reference; visible belongings do not become unfinished tasks.</div>'+
+   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:9px 4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
+   '<button type="button" onclick="dollyFloorOpen()">Open top-down layout</button>'+
+   '<button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Restore vanity to its saved plan position">Restore vanity</button>'+
+   '</div>'+
+   '<div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff">'+
+   '<strong>Dolly’s photographed room · top view</strong><p>Drag and turn furniture here. The perspective uses these same saved positions and proportions.</p>'+
+   '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close layout</button></div>'+
+   '<p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 300 260" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top-down bedroom furniture layout"></svg></div>'+
+   '<div class="dolly-room-scene dollhouse-view"><svg class="dolly-mini-svg" viewBox="150 0 410 400" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Perspective view of Dolly’s bedroom. Furniture positions and proportions follow the saved top-down plan.">'+defs+body+'</svg></div>'+
+   '<p class="dolly-room-caveat"><b>Saved arrangement:</b> bed below the Mario poster beside the side window; vanity under the far window; dresser at the bed’s foot; open Barbie house by the closet. The entry and closet share the right wall; the entry swings inward toward the dresser-side wall.</p>'+
+   '<div class="dolly-room-helper">Tap a furniture piece or the closet to open its inventory and tasks. The picture uses relative room proportions, not measured dimensions.</div>'+
    '</section>';
  };
 
