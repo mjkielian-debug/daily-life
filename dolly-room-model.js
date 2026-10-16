@@ -43,24 +43,25 @@
    '<path d="M61 91L228 52M61 115L228 76M61 139L228 100" stroke="#a16b48" stroke-width="2" opacity=".5"/>'+
    '<path d="M60 169L239 124" stroke="#5e3b29" stroke-width="5"/>'+
    '</g>';
-    if(key==="vanity")return '<g transform="translate(59 5)">'+
-   '<ellipse cx="35" cy="203" rx="48" ry="11" fill="#75606e" opacity=".13"/>'+
-   '<path d="M14 29Q14 9 35 9L58 11Q69 13 69 28L69 88L14 87Z" fill="#bba56f" stroke="#947e50" stroke-width="3"/>'+
-   '<path d="M19 31Q19 17 36 17L56 18Q63 19 63 30L63 81L19 81Z" fill="#d5e8ed" stroke="#f7e4ae" stroke-width="2"/>'+
-   '<path d="M-4 99L69 84L89 98L18 117Z" fill="#fff" stroke="#c4b5b5" stroke-width="3"/>'+
-   '<path d="M18 117L89 98L89 175L18 195Z" fill="#f7f4f1" stroke="#bdb1b0" stroke-width="3"/>'+
-   '<path d="M-4 99L18 117L18 195L-4 177Z" fill="#e3dcda" stroke="#bdb1b0" stroke-width="2"/>'+
-   '<path d="M25 143L81 128M25 166L81 151" stroke="#c8bdb9" stroke-width="2"/>'+
+  if(key==="vanity")return '<g>'+
+   '<ellipse cx="95" cy="206" rx="94" ry="12" fill="#75606e" opacity=".12"/>'+
+   '<path d="M47 16Q47 4 63 4L128 4Q144 4 144 17L144 90L47 90Z" fill="#c7ac69" stroke="#a58a4b" stroke-width="4"/>'+
+   '<path d="M53 19Q53 11 65 11L125 11Q138 11 138 20L138 84L53 84Z" fill="#dcecf2" stroke="#f9e9bc" stroke-width="3"/>'+
+   '<path d="M7 104L146 104L186 121L45 123Z" fill="#fff" stroke="#c5babb" stroke-width="3"/>'+
+   '<path d="M7 104L45 123L45 200L7 180Z" fill="#f4f0ee" stroke="#c5babb" stroke-width="3"/>'+
+   '<path d="M45 123L186 121L186 188L45 200Z" fill="#fffdfb" stroke="#c5babb" stroke-width="3"/>'+
+   '<path d="M58 135L173 133L173 154L58 157ZM58 161L173 157L173 177L58 182Z" fill="#f9f8f6" stroke="#c7bbbb" stroke-width="2"/>'+
+   '<circle cx="115" cy="145" r="3" fill="#b6a8a6"/><circle cx="115" cy="170" r="3" fill="#b6a8a6"/>'+
    '</g>';
-  if(key==="barbie")return '<g transform="translate(28 2) scale(1.55 1)">'+
-   '<ellipse cx="44" cy="277" rx="56" ry="13" fill="#725066" opacity=".16"/>'+
-   '<path d="M0 58L50 36L91 53L43 75Z" fill="#f3a8cf" stroke="#c97ba5" stroke-width="4"/>'+
-   '<path d="M0 58L43 75L43 264L0 249Z" fill="#eaa0c9" stroke="#b67a9b" stroke-width="3"/>'+
-   '<path d="M43 75L91 53L91 253L43 264Z" fill="#f8c7df" stroke="#d390b0" stroke-width="3"/>'+
-   '<path d="M45 134L89 118M45 198L89 183" stroke="#bb916d" stroke-width="7"/>'+
-   '<path d="M48 80L48 260M86 60L86 254" stroke="#d1ae80" stroke-width="6"/>'+
-   '<rect x="57" y="91" width="20" height="19" fill="#bde2ee" stroke="#f6e9ee" stroke-width="2"/>'+
-   '<path d="M0 249L43 264L91 253" fill="none" stroke="#b98b5c" stroke-width="6"/>'+
+  if(key==="barbie")return '<g>'+
+   '<ellipse cx="106" cy="278" rx="98" ry="12" fill="#725066" opacity=".14"/>'+
+   '<path d="M24 62L113 22L204 61L116 103Z" fill="#f6a5d1" stroke="#bd709d" stroke-width="4"/>'+
+   '<path d="M24 62L116 103L116 264L24 226Z" fill="#e4a1c5" stroke="#bb7e9f" stroke-width="4"/>'+
+   '<path d="M116 103L204 61L204 226L116 264Z" fill="#f8c8e0" stroke="#bb7e9f" stroke-width="4"/>'+
+   '<path d="M122 150L198 116M122 206L198 172" stroke="#bc946a" stroke-width="7"/>'+
+   '<path d="M129 100L129 257M193 69L193 231" stroke="#d3ad80" stroke-width="6"/>'+
+   '<path d="M39 91L94 116L94 158L39 135Z" fill="#cde7ef" stroke="#fff3f6" stroke-width="4"/>'+
+   '<path d="M24 226L116 264L204 226" fill="none" stroke="#b98b5c" stroke-width="6"/>'+
    '</g>';
   return "";
  }
@@ -368,7 +369,7 @@
    // Smaller frame toward the back corner, with a clear gap from the Mario poster.
    '<g transform="translate(220 -15) scale(.72)">'+bedWindowDrawing()+'</g>'+
    // The bed-side window is on the perpendicular RIGHT wall. Its frame follows that wall perspective.
-   '<g transform="translate(-32 4)" aria-label="Window beside the long side of Dolly’s bed">'+
+   '<g transform="translate(-55 -5)" aria-label="Window beside the long side of Dolly’s bed">'+
    '<path d="M363 90L451 129L451 191L363 151Z" fill="#fff" stroke="#b8a1bd" stroke-width="5"/>'+
    '<path d="M373 103L440 133L440 177L373 146Z" fill="url(#dollyWindowGlass)" stroke="#fff" stroke-width="2"/>'+
    '<path d="M407 119L407 161M374 124L440 155" stroke="#fff" stroke-width="4"/>'+
