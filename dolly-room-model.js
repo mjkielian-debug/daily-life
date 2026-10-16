@@ -229,7 +229,14 @@
  const LAYOUT_KEY="dailyLifeDollyRoomLayout_v1";
  let arranging=false;
  let selectedPiece=null;
- function pieceTransform(el,p){const box=el.getBBox(),cx=box.x+box.width/2,cy=box.y+box.height/2;return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") rotate("+(Number(p.angle)||0)+" "+cx+" "+cy+")"}
+ function pieceTransform(el,p){
+  // Turn furniture around its upright axis, never around the screen plane.
+  // The SVG miniature has no true 3D meshes; use floor-facing side views rather than tilting furniture.
+  const box=el.getBBox(),cx=box.x+box.width/2;
+  const direction=((Math.round((Number(p.angle)||0)/90)%4)+4)%4;
+  const width=[1,.48,-1,-.48][direction];
+  return "translate("+(Number(p.x)||0)+" "+(Number(p.y)||0)+") translate("+cx+" 0) scale("+width+" 1) translate("+(-cx)+" 0)";
+ }
  function layoutRead(){try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}catch(_){return {}}}
  function layoutApply(root){
   if(!root)return;
@@ -253,7 +260,7 @@
  window.dollyRotateSelected=function(direction){
   if(!arranging||!selectedPiece)return;
   const all=layoutRead(),p=all[selectedPiece]||{};
-  all[selectedPiece]={...p,angle:((Number(p.angle)||0)+direction*45+360)%360};
+  all[selectedPiece]={...p,angle:((Math.round((Number(p.angle)||0)/90)*90)+direction*90+360)%360};
   try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
   layoutApply(document.querySelector(".dolly-mini-svg"));
  };
@@ -332,7 +339,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Rotate selected furniture left 45 degrees">↶ Rotate left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Rotate selected furniture right 45 degrees">↷ Rotate right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Turn selected furniture left 90 degrees">↶ Turn left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Turn selected furniture right 90 degrees">↷ Turn right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
