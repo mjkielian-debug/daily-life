@@ -245,7 +245,7 @@
   if(button)button.textContent=arranging?"Done arranging":"Arrange room";
   const reset=document.getElementById("dollyArrangeReset");
   if(reset)reset.hidden=!arranging;
-  const rotate=document.getElementById("dollyRotateTools");if(rotate)rotate.hidden=!arranging;
+  const rotate=document.getElementById("dollyRotateTools");if(rotate){rotate.hidden=!arranging;rotate.style.display=arranging?"flex":"none";}
   const name=document.getElementById("dollySelectedPiece");if(name)name.textContent=selectedPiece?"Selected: "+(ITEMS[selectedPiece]?.label||selectedPiece):"Tap a piece to select, then rotate";
  }
  window.dollyIsArranging=function(){return arranging};
@@ -254,6 +254,11 @@
   if(!arranging||!selectedPiece)return;
   const all=layoutRead(),p=all[selectedPiece]||{};
   all[selectedPiece]={...p,angle:((Number(p.angle)||0)+direction*45+360)%360};
+  try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
+  layoutApply(document.querySelector(".dolly-mini-svg"));
+ };
+ window.dollyRecoverPiece=function(){
+  const all=layoutRead();const key=selectedPiece||"dresser";all[key]={x:0,y:0,angle:0};
   try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(all))}catch(_){}
   layoutApply(document.querySelector(".dolly-mini-svg"));
  };
@@ -273,7 +278,7 @@
   const move=e=>{
    if(e.pointerId!==event.pointerId)return;
    const now=coord(e);
-   latest={x:Math.max(-280,Math.min(280,(Number(base.x)||0)+now.x-start.x)),y:Math.max(-230,Math.min(230,(Number(base.y)||0)+now.y-start.y))};
+   latest={x:Math.max(-165,Math.min(165,(Number(base.x)||0)+now.x-start.x)),y:Math.max(-125,Math.min(125,(Number(base.y)||0)+now.y-start.y))};
    obj.setAttribute("transform",pieceTransform(obj,{...base,...latest}));
   };
   const stop=e=>{
@@ -327,7 +332,7 @@
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Rotate selected furniture left 45 degrees">↶ Rotate left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Rotate selected furniture right 45 degrees">↷ Rotate right</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
+   '<div class="dolly-room-arrange-tools"><button type="button" id="dollyArrangeToggle" onclick="dollyToggleArrange()">Arrange room</button><button type="button" id="dollyArrangeReset" onclick="dollyResetArrange()" hidden>Reset positions</button><span id="dollyRotateTools" style="display:none;flex-wrap:wrap;gap:6px;align-items:center" hidden><span id="dollySelectedPiece">Tap a piece to select, then rotate</span> <button type="button" onclick="dollyRotateSelected(-1)" aria-label="Rotate selected furniture left 45 degrees">↶ Rotate left</button> <button type="button" onclick="dollyRotateSelected(1)" aria-label="Rotate selected furniture right 45 degrees">↷ Rotate right</button> <button type="button" onclick="dollyRecoverPiece()">Bring selected back</button></span></div><div class="dolly-room-scene dollhouse-view"><svg onpointerdown="dollyScenePointerDown(event)" class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing().replace(/553/g,"493").replace(/594/g,"534").replace(/559/g,"499").replace(/585/g,"525").replace(/565/g,"505").replace(/580/g,"520").replace(/583/g,"523").replace(/592/g,"532").replace(/606/g,"546"))+
    modelObject("vanity",vanity)+
