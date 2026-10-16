@@ -711,13 +711,22 @@
           '<button type="button" onclick="lifeCompleteNowStep(\''+today+'\',\''+activeStepKey+'\','+activeStepIndex+')">✓ Did this</button>'+
           '</div>':activeStepLabels.length?'<small class="dl-now-confirmed">All steps in this block have been recorded as done.</small>':'')+
         '</div>':'')+
-      '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
-        '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
-        '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
-          (guideTaskId&&!guideSensitive?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
-          (guideSensitive?'<span class="dl-verification-note">Verify before marking done</span>':'')+
-          (otherTaskCount?'<button class="dl-other-tasks" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+'</button>':'')+
-        '</div></div></article>'+
+      (activeStepIndex>=0&&guideTaskId?
+        '<section class="dl-secondary-task" aria-label="Other important task today">'+
+          '<div class="dl-secondary-top"><span>ALSO ON TODAY’S LIST</span>'+
+            (otherTaskCount?'<button type="button" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+' ›</button>':'')+
+          '</div>'+
+          '<button type="button" class="dl-secondary-open" onclick="'+guideAction+'"><strong>'+esc(guideTitle)+'</strong><span>Review ›</span></button>'+
+          '<p>'+esc(guideDetail)+'</p>'+
+          (guideSensitive?'<small>Confirm details before marking complete.</small>':'')+
+        '</section>':
+        '<article class="dl-hero"><span class="dl-hero-emoji" aria-hidden="true">✦</span><div class="dl-hero-text"><span class="dl-kicker">'+esc(guideLabel)+'</span>'+
+          '<h2>'+esc(guideTitle)+'</h2><p>'+esc(guideMeta)+'</p><small>'+esc(guideDetail)+'</small>'+
+          '<div class="dl-hero-actions"><button class="dl-primary" onclick="'+guideAction+'">'+(guideTaskId?'See task steps':'Open details')+' <span aria-hidden="true">›</span></button>'+
+            (guideTaskId&&!guideSensitive?'<button class="dl-quiet" onclick="toggleTask(\''+esc(guideTaskId)+'\',true)">✓ Done</button>':'')+
+            (guideSensitive?'<span class="dl-verification-note">Verify before marking done</span>':'')+
+            (otherTaskCount?'<button class="dl-other-tasks" onclick="openTodayTasksHub()">Other tasks · '+otherTaskCount+'</button>':'')+
+          '</div></div></article>')+
       '<div class="dl-progress-area dl-guided-progress" aria-label="Separate progress from confirmed records">'+
         '<button type="button" class="dl-total-ring" onclick="openDailyProgressBreakdown()" aria-label="'+esc(ringDetails)+'; open progress details" style="background:'+lifeRainbowProgressStyle(taskPercent)+'">'+
            '<span class="dl-total-inner"><span>✓</span><b>'+taskDone+' / '+tasks.length+'</b><strong>Your tasks</strong><small>Confirmed only</small></span></button>'+
