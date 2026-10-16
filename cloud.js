@@ -685,6 +685,7 @@ function cloudDisableAutoSync(){
 }
 
 function cloudSchedulePush(){
+  if(typeof appHydrating!=="undefined"&&appHydrating)return;
   if(cloudRecoveryRequired||!cloudAutoEnabled()||!cloudAutoCanPush||cloudNeedsReview||!cloudUser())return;
   if(cloudStateSignature()===cloudLastSignature())return;
   if(cloudPushTimer)clearTimeout(cloudPushTimer);
