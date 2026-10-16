@@ -6,7 +6,7 @@
 .life-sim-sim.is-active{outline:2px solid currentColor;outline-offset:1px}
 .life-sim-avatar{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;font-weight:900;font-size:.88rem}
 .life-sim-console{flex:0 0 auto;min-width:113px;max-width:148px}
-.life-sim-console>summary{display:flex;align-items:center;gap:6px;list-style:none;min-height:54px;padding:6px 9px;border:1px solid var(--border);border-radius:16px;background:var(--panel);cursor:pointer}
+.life-sim-console>summary{display:flex;align-items:center;gap:6px;list-style:none;min-height:54px;padding:6px 9px;border:1px solid var(--border);border-radius:16px;background:var(--panel);color:var(--text);cursor:pointer}
 .life-sim-console>summary::-webkit-details-marker{display:none}
 .life-sim-live-indicator{font-size:.7rem}
 .life-sim-console>summary>span:nth-child(2){display:grid;gap:2px;min-width:0}
@@ -15,7 +15,7 @@
 .life-sim-console-arrow{margin-left:auto;font-size:.9rem}
 .life-sim-console[open]{position:relative;z-index:5}
 .life-sim-hud:has(.life-sim-console[open]){position:relative;z-index:20}
-.life-sim-console-body{position:absolute;right:0;top:calc(100% + 7px);width:min(560px,calc(100vw - 24px));max-height:min(70vh,610px);overflow:auto;display:grid;gap:12px;padding:13px;border:1px solid var(--border);border-radius:20px;background:var(--panel);box-shadow:var(--shadow)}
+.life-sim-console-body{position:absolute;right:0;top:calc(100% + 7px);width:min(560px,calc(100vw - 24px));max-height:min(70vh,610px);overflow:auto;display:grid;gap:12px;padding:13px;border:1px solid var(--border);border-radius:20px;background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
 .life-sim-section-heading{display:flex;align-items:center;justify-content:space-between;gap:9px}
 .life-sim-section-heading>div{display:grid;gap:3px}
 .life-sim-section-heading .eyebrow{font-size:.61rem}
