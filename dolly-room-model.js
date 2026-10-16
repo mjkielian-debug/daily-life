@@ -406,7 +406,8 @@
    '<text x="180" y="18" font-size="11" text-anchor="middle" fill="#594b58">Vanity window</text>'+
    '<text x="10" y="70" font-size="11" fill="#594b58">Footboard window</text>'+
    '<text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text>'+
-   '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+\n   '<path d="M300 198L255 198A45 45 0 0 1 300 243" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 198L255 198" stroke="#927b85" stroke-width="3"/>'+
+   '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+
+   '<path d="M300 198L255 198A45 45 0 0 1 300 243" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 198L255 198" stroke="#927b85" stroke-width="3"/>'+
    '<text x="60" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
   const label=root.querySelector("#dollyFloorSelected");if(label)label.textContent="Selected: "+FLOOR_ITEMS[floorSelected].label;
  }
