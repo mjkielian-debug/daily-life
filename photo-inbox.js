@@ -72,6 +72,7 @@ window.openPhotoInbox=function(mode="inventory",areaId="",selectedFloor=""){
  '<button class="btn primary pi-submit" type="button" onclick="photoInboxSubmit()">↑ Send pictures for review</button>'+
  '<button class="btn small" id="piNewBatch" type="button" hidden onclick="photoInboxStartNewBatch()">Choose a different batch</button>'+
  '<p id="photoInboxStatus" role="status" aria-live="polite"></p></div>':authMessage())+
+ '<div style="padding:8px 0"><button class="btn primary" type="button" onclick="photoInboxSharePicker()">Share saved room photos with ChatGPT</button><p class="pi-muted">Select existing photos and save a contact sheet. You choose whether to attach it in chat.</p></div>'+ 
  '<div class="pi-list-head"><b>Previously sent</b><button class="btn small" onclick="openHomeAreaProjects()">🧹 Cleanup areas</button><button class="btn small" type="button" onclick="photoInboxLoadList()">Refresh</button></div>'+
  '<div id="photoInboxList">'+(signed?'<p class="pi-muted">Loading private photos…</p>':'<p class="pi-muted">Sign in to view your private inbox.</p>')+'</div>'+
  '<p class="pi-muted">Upload here rather than placing private papers in public GitHub files. You control when to ask ChatGPT to review the inbox.</p></div>',
@@ -270,6 +271,64 @@ window.photoInboxLoadInlineMap=async function(){
  if(error){current.textContent="Unable to load the first-floor reference.";return}
  if(!data?.length){current.innerHTML='<span class="pi-muted">No first-floor image yet. Upload the robot-vacuum map or a sketch to show it here.</span>';return}
  const img=document.createElement("img");img.alt="First-floor reference photo";img.src=data[0].image_data;current.replaceChildren(img);
+};
+
+/* Private, user-initiated photo export for ChatGPT. No public URLs or server uploads. */
+let shareSelection=new Set();
+let sharePhotos=[];
+window.photoInboxSharePicker=async function(){
+ if(!cloudReady()){alert("Sign in to Daily Life to access your private photographs.");return;}
+ modal("Share existing bedroom photos",'<div class="pi-preview"><p>Select up to six existing room photographs. Then save one labeled contact sheet to your phone and attach it to ChatGPT. Nothing is shared automatically.</p><div id="piShareStatus" role="status">Loading private references…</div><div id="piShareGrid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:52vh;overflow:auto"></div><button type="button" class="btn primary" onclick="photoInboxExportSelection()">Save selected photos as one image</button></div>',"Close",closeModal);
+ const {data,error}=await cloudClient.from("photo_inbox").select("id,title,created_at,width,height").eq("category","house_map").eq("floor_label","Second floor").order("created_at",{ascending:false}).limit(50);
+ const grid=document.getElementById("piShareGrid"),status=document.getElementById("piShareStatus");
+ if(!grid||!status)return;
+ if(error){status.textContent="Could not load references: "+error.message;return;}
+ sharePhotos=(data||[]).filter(p=>/^[a-f0-9-]{36}$/i.test(p.id));shareSelection=new Set();
+ status.textContent=sharePhotos.length+" saved second-floor photos. Select up to six.";
+ for(const p of sharePhotos){
+  const label=document.createElement("label");
+  label.style.cssText="display:flex;flex-direction:column;gap:5px;border:1px solid #dcc5da;border-radius:10px;padding:6px;background:#fff;min-width:0";
+  const check=document.createElement("input");check.type="checkbox";
+  check.onchange=()=>{if(check.checked){if(shareSelection.size>=6){check.checked=false;alert("Select up to six at a time.");return;}shareSelection.add(p.id);}else shareSelection.delete(p.id);status.textContent=shareSelection.size+" selected · "+sharePhotos.length+" available";};
+  const preview=document.createElement("img");preview.alt=p.title||"Room photograph";preview.loading="lazy";preview.style.cssText="width:100%;aspect-ratio:4/3;object-fit:contain;background:#f6f1f6";
+  const title=document.createElement("small");title.textContent=p.title||"Room photograph";title.style.overflowWrap="anywhere";
+  label.append(check,preview,title);grid.append(label);
+  // Image data stays in the signed-in browser until the user chooses to save.
+  const {data:photo,error:err}=await cloudClient.from("photo_inbox").select("image_data").eq("id",p.id).single();
+  if(!err&&/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(photo?.image_data||""))preview.src=photo.image_data;
+ }
+};
+window.photoInboxExportSelection=async function(){
+ if(!cloudReady())return;
+ const status=document.getElementById("piShareStatus");
+ const chosen=sharePhotos.filter(p=>shareSelection.has(p.id));
+ if(!chosen.length){alert("Select at least one photograph.");return;}
+ if(status)status.textContent="Preparing your private contact sheet…";
+ try{
+  const canvas=document.createElement("canvas"),columns=2,tileW=900,tileH=740;
+  canvas.width=columns*tileW;canvas.height=Math.ceil(chosen.length/columns)*tileH;
+  const ctx=canvas.getContext("2d");if(!ctx)throw Error("Canvas unavailable");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let i=0;i<chosen.length;i++){
+   const p=chosen[i],{data,error}=await cloudClient.from("photo_inbox").select("image_data").eq("id",p.id).single();
+   if(error||!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data?.image_data||""))throw Error("Could not load photograph "+(i+1));
+   const img=new Image();img.src=data.image_data;await img.decode();
+   const x=(i%columns)*tileW,y=Math.floor(i/columns)*tileH;
+   const scale=Math.min((tileW-24)/img.width,(tileH-65)/img.height);
+   const w=img.width*scale,h=img.height*scale;
+   ctx.drawImage(img,x+(tileW-w)/2,y+(tileH-65-h)/2,w,h);
+   ctx.fillStyle="#27202a";ctx.font="22px sans-serif";
+   ctx.fillText("Room photo "+(i+1)+" · "+String(p.title||"").slice(0,43),x+12,y+tileH-22);
+  }
+  canvas.toBlob(blob=>{
+   if(!blob){if(status)status.textContent="Could not create the image.";return;}
+   const url=URL.createObjectURL(blob),a=document.createElement("a");
+   a.href=url;a.download="dolly-room-reference-"+chosen.length+"-photos.jpg";
+   document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),30000);
+   if(status)status.textContent="Saved contact sheet. Attach that image in this ChatGPT conversation. You can select another six afterward.";
+  },"image/jpeg",.91);
+ }catch(e){if(status)status.textContent="Could not prepare the sheet: "+String(e.message||e);}
 };
 window.photoInboxStatus=function(){return cloudReady()?"ready":"sign-in-required"};
 })();
