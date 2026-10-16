@@ -197,18 +197,24 @@ dialog,
 <link rel="stylesheet" href="household-map-details.css?v=20261016-guided32">
 <link rel="stylesheet" href="dolly-room-model.css?v=20261016-geometry1">
 <link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
-<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4">\n</head>
+<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-live-mode4"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided52…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided53…</p></main></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   const root=document.getElementById("app");
-  if(window.__DailyLifeAppReady||!root||!root.textContent.includes("Opening your Daily Life"))return;if(typeof window.continueWithSavedData==="function"){window.continueWithSavedData();if(!root.textContent.includes("Opening your Daily Life"))return;}
-  root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for its startup code to load.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided52. Nothing has been reset or changed. Your saved information remains on this phone.</div><button class="btn primary" type="button" onclick="location.reload()">Reload this page</button></main>';
-},15000);
+  if(!root||!root.textContent.includes("Opening your Daily Life"))return;
+  try{if(typeof window.continueWithSavedData==="function")window.continueWithSavedData()}catch(e){}
+  if(root.textContent.includes("Opening your Daily Life")){
+    try{if(typeof render==="function"){appStartupReady=true;render()}}catch(e){}
+  }
+  if(root.textContent.includes("Opening your Daily Life")){
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life is still waiting for startup to finish.</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Build 20261016-guided53. Nothing has been reset or changed. Your saved information remains on this phone.</div><a class="btn primary" href="./?dl_retry=guided53">Reload Daily Life</a></main>';
+  }
+},12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided52").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261016-guided53").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -8074,7 +8080,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided52";
+const DAILY_LIFE_BUILD="20261016-guided53";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8148,7 +8154,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided52");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided53");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8183,7 +8189,8 @@ registerAppWorker();
 <script src="inventory-goals.js?v=20261015-guided10"></script>
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
-<script src="second-floor-miniatures.js?v=20261016-mini1"></script>\n<script src="house-visual-map.js?v=20261016-roomlink2"></script>
+<script src="second-floor-miniatures.js?v=20261016-mini1"></script>
+<script src="house-visual-map.js?v=20261016-roomlink2"></script>
 <script src="dolly-room-model.js?v=20261016-photo-proportions2"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
