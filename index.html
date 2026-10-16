@@ -6630,12 +6630,13 @@ function openTaskDetails(id){
  document.getElementById("taskDetailEdit")?.addEventListener("click",()=>{closeModal();openTask("",id)});
  document.getElementById("taskDetailToggle")?.addEventListener("click",async()=>{t.done=!t.done;await save();render();openTaskDetails(id)});
 }
-function openTask(person="",id="",shareDefault=false){
+function openTask(person="",id="",shareDefault=false,roomContext=null){
   ensurePeopleProfiles();
   const existing=(state.tasks||[]).find(x=>x.id===id)||null,
-        x=existing||{date:ymd(),title:"",child:person||"",category:"life",notes:"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
+        x=existing||{date:ymd(),title:roomContext?.roomName?String(roomContext.roomName)+" · ":"",child:person||"",category:roomContext?"home":"life",notes:roomContext?.roomName?"Room: "+String(roomContext.roomName):"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
   modal(existing?"Edit task":"Add task",`<div class="stack rainbow-task-editor">
     <label>Task<input id="task" value="${esc(x.title||"")}"></label>
+    ${roomContext?.roomName&&!existing?'<p class="muted small">Linked to '+esc(roomContext.roomName)+(roomContext.floor?' · '+esc(roomContext.floor):'')+'</p>':""}
     <div class="grid2"><label>Date<input id="taskdate" type="date" value="${esc(x.date||ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
     <label>Category<input id="cat" value="${esc(x.category||"life")}"></label>
     <div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${Number(x.itineraryMinutes)===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="" ${!x.itineraryPreference?"selected":""}>Auto · fit my day</option><option value="morning" ${x.itineraryPreference==="morning"?"selected":""}>Morning</option><option value="afternoon" ${x.itineraryPreference==="afternoon"?"selected":""}>Afternoon</option><option value="after-school" ${x.itineraryPreference==="after-school"?"selected":""}>After school</option><option value="evening" ${x.itineraryPreference==="evening"?"selected":""}>Evening</option><option value="any" ${x.itineraryPreference==="any"?"selected":""}>Anywhere</option></select></label></div>
@@ -6650,6 +6651,14 @@ function openTask(person="",id="",shareDefault=false){
     let t=existing;
     if(!t){t={id:uid(),done:false,order:100};state.tasks.push(t)}
     Object.assign(t,{date,title,child:$("#taskperson").value.trim(),category:$("#cat").value.trim()||"life",notes:$("#notes").value.trim(),done:$("#taskdone").checked,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"",itineraryStart:$("#taskstart").value||""});
+    if(!existing&&roomContext){
+      if(roomContext.roomId)t.homeRoomId=String(roomContext.roomId);
+      if(roomContext.floor&&roomContext.zoneId){
+        t.homeMapFloor=String(roomContext.floor);
+        t.homeMapZoneId=String(roomContext.zoneId);
+        t.homeMapRoomName=String(roomContext.roomName||"");
+      }
+    }
     const shareRequested=$("#taskShared")?$("#taskShared").checked:!!t.sharedEntryId;
     if(typeof sharingCanShare==="function"&&sharingCanShare()){
       if(shareRequested){const ok=await sharingUpsertTask(t);if(!ok)return}
@@ -7965,7 +7974,7 @@ function correctOct14PickupRecord(){
   }
 }
 async function init(){const storedState=await dbGet("state");state=migrateState(storedState||blankState());if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=localStorage.getItem("dailyLifeConfiguredOnce")==="1"&&!String(state.profile?.name||"").trim()&&!stateHasMeaningfulLocalData(state);if(typeof vaultInit==="function")await vaultInit();ensureMealPatterns();await cloudInit();ensureRecurringFamilyEvents();ensureFamilyDay();if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyTannerGiftFinished();cleanupNoRecipeMeals();await queueMissingMealRecipes();sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();await cloudFinanceInit();if(typeof ensureFinanceRoadmap==="function")ensureFinanceRoadmap();if(typeof sharingInit==="function")await sharingInit();await save();appStartupReady=true;render();if(!needsSetup())getWeather();}
-const DAILY_LIFE_BUILD="20261016-guided30";
+const DAILY_LIFE_BUILD="20261016-guided31";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8039,7 +8048,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided30");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided31");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8066,7 +8075,7 @@ registerAppWorker();
 <script src="life-system.js?v=20261016-guided18"></script>
 <script src="life-orchestrator.js?v=20261016-guided28"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
-<script src="home-operator.js?v=20261016-guided28"></script>
+<script src="home-operator.js?v=20261016-guided31"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
 <script src="life-tools.js?v=20261003-tools2"></script>
 <script src="capacity-planner.js?v=20261004-dayflowfix2"></script>
@@ -8074,7 +8083,7 @@ registerAppWorker();
 <script src="inventory-goals.js?v=20261015-guided10"></script>
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
-<script src="house-visual-map.js?v=20261016-guided30"></script>
+<script src="house-visual-map.js?v=20261016-guided31"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
 <script src="inventory-photo-review.js?v=20261016-guided27"></script>
