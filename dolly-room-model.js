@@ -4,7 +4,7 @@
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
   bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
-  dresser:{label:"Dresser",symbol:"▤",description:"Modest-width, low brown dresser with three narrow upper drawers and six larger drawers below, with brass-colored handles. Positioned along the wall opposite the bed’s footboard.",location:"Opposite the bed footboard",sections:[]},
+  dresser:{label:"Dresser",symbol:"▤",description:"Modest-width, low brown dresser with six drawers arranged two across and three down, with brass-colored handles. Positioned along the wall opposite the bed’s footboard.",location:"Opposite the bed footboard",sections:[]},
   vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
   dollhouse:{label:"Barbie house",symbol:"⌂",description:"Three-story pink Barbie house with an open, playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
@@ -182,15 +182,10 @@
  function dresserMesh(p){
   const {x,y,w,h}=p;let s=boxFaces(x,y,w,h,2,38,"#9a633e","#8a5835","#68422f");
   s+=poly([[x,y,2],[x+w,y,2],[x+w,y,38],[x,y,38]],"#9d643e","#59351e",1.5);
-  // Photo shows a modest chest with three narrow top drawers and six broad drawers.
-  for(let col=0;col<3;col++){
-   const a=x+col*w/3+1,b=x+(col+1)*w/3-1,z1=26,z2=34;
-   s+=poly([[a,y,z1],[b,y,z1],[b,y,z2],[a,y,z2]],"#b17b50","#62402a",.8);
-   const q=iso((a+b)/2,y,z1+4);s+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="1.7" fill="#d0aa62" stroke="#775b34" stroke-width=".5"/>';
-  }
-  for(let row=0;row<2;row++)for(let col=0;col<3;col++){
-   const a=x+col*w/3+2,b=x+(col+1)*w/3-2,z1=3+row*10,z2=z1+9;
-   s+=poly([[a,y,z1],[b,y,z1],[b,y,z2],[a,y,z2]],row?"#8f5b39":"#a66d44","#62402a",1);
+  // Photo shows six drawers arranged two across and three down.
+  for(let row=0;row<3;row++)for(let col=0;col<2;col++){
+   const a=x+col*w/2+2,b=x+(col+1)*w/2-2,z1=4+row*10,z2=z1+9;
+   s+=poly([[a,y,z1],[b,y,z1],[b,y,z2],[a,y,z2]],row===2?"#8f5b39":"#a66d44","#62402a",1);
    const q=iso((a+b)/2,y,(z1+z2)/2);s+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="1.6" fill="#d3ac63" stroke="#765533" stroke-width=".5"/>';
   }
   return s;
@@ -199,22 +194,22 @@
   const {x,y,w,h}=p,front=x+3,back=x+w-3;let s="";
   // Narrow depth at the wall, open playable side toward the room (left).
   s+=boxTop(front,y+4,w-7,h-8,4,"#f5afd0","#9d6c55");
-  s+=poly([[back,y,4],[back,y+h,4],[back,y+h,60],[back,y,60]],"#f4c5dc","#bd769f",2);
-  for(const z of [7,25,43]){
-   s+=poly([[front,y+2,z],[back,y+2,z],[back,y+h-2,z],[front,y+h-2,z]],z===8?"#f0dbca":"#d9b58b","#9c744d",2);
+  s+=poly([[back,y,4],[back,y+h,4],[back,y+h,36],[back,y,36]],"#f4c5dc","#bd769f",2);
+  for(const z of [5,15,25]){
+   s+=poly([[front,y+2,z],[back,y+2,z],[back,y+h-2,z],[front,y+h-2,z]],z===6?"#f0dbca":"#d9b58b","#9c744d",2);
    s+=line([[front,y+2,z+3],[front,y+h-2,z+3]],"#d8ae80",3);
   }
   for(const t of [0,.5,1]){
    const yy=y+t*h;
-   s+=poly([[front,yy-2,6],[front+3,yy-2,6],[front+3,yy-2,56],[front,yy-2,56]],"#d6b184","#9b7652",1);
+   s+=poly([[front,yy-2,5],[front+3,yy-2,5],[front+3,yy-2,34],[front,yy-2,34]],"#d6b184","#9b7652",1);
   }
   // Pink roof sections and upper gable, visibly supported by the wooden frame.
-  s+=poly([[front,y,60],[back,y,60],[back,y+h*.48,69],[front,y+h*.48,69]],"#e895bf","#a85d88",2)+
-   poly([[front,y+h*.48,69],[back,y+h*.48,69],[back,y+h,60],[front,y+h,60]],"#f1add0","#aa648c",2)+
-   line([[front,y,60],[front,y+h,60]],"#cb83a8",3);
+  s+=poly([[front,y,36],[back,y,36],[back,y+h*.48,42],[front,y+h*.48,42]],"#e895bf","#a85d88",2)+
+   poly([[front,y+h*.48,42],[back,y+h*.48,42],[back,y+h,36],[front,y+h,36]],"#f1add0","#aa648c",2)+
+   line([[front,y,36],[front,y+h,36]],"#cb83a8",3);
   // Each room stays open: pastel back panels and small room dividers only.
-  for(const z of [26,44]){
-   s+=poly([[back,y+6,z],[back,y+h-6,z],[back,y+h-6,z+13],[back,y+6,z+13]],"#f6d9e7","#d28caf",1);
+  for(const z of [15,25]){
+   s+=poly([[back,y+6,z],[back,y+h-6,z],[back,y+h-6,z+7],[back,y+6,z+7]],"#f6d9e7","#d28caf",1);
    s+=line([[front,y+6,z],[front,y+h-6,z]],"#d7b184",3);
   }
   return s;
@@ -260,14 +255,14 @@
     '<path d="M4 '+(p.h-18)+'Q'+(p.w/2)+' '+(p.h+1)+' '+(p.w-4)+' '+(p.h-18)+'" fill="none" stroke="#fff" stroke-width="9"/>' :
     key==="dresser"?
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="3" fill="#ad744b" stroke="#653d27" stroke-width="3"/>'+
-    Array.from({length:3},(_,i)=>'<rect x="'+(7+i*(p.w-14)/3)+'" y="6" width="'+((p.w-18)/3)+'" height="11" rx="1" fill="#b98659" stroke="#78492f"/><circle cx="'+(13+i*(p.w-14)/3+(p.w-18)/6)+'" cy="11.5" r="2" fill="#e8c78e"/>').join("")+
-    '<path d="M6 20H'+(p.w-6)+'M6 33H'+(p.w-6)+'M'+(p.w/3)+' 20V'+(p.h-5)+'M'+(p.w*2/3)+' 20V'+(p.h-5)+'" stroke="#71472e" stroke-width="2"/>'+
-    '<circle cx="'+(p.w/6)+'" cy="27" r="2" fill="#e8c78e"/><circle cx="'+(p.w/2)+'" cy="27" r="2" fill="#e8c78e"/><circle cx="'+(p.w*5/6)+'" cy="27" r="2" fill="#e8c78e"/><circle cx="'+(p.w/6)+'" cy="39" r="2" fill="#e8c78e"/><circle cx="'+(p.w/2)+'" cy="39" r="2" fill="#e8c78e"/><circle cx="'+(p.w*5/6)+'" cy="39" r="2" fill="#e8c78e"/>' :
+    Array.from({length:6},(_,i)=>{const row=Math.floor(i/2),col=i%2,x=6+col*(p.w-14)/2,y=5+row*(p.h-10)/3,w=(p.w-18)/2,h=(p.h-16)/3;return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="1" fill="#b17b50" stroke="#78492f"/><circle cx="'+(x+w/2)+'" cy="'+(y+h/2)+'" r="2" fill="#e8c78e"/>'}).join("")+
+    '<path d="M'+(p.w/2)+' 4V'+(p.h-4)+'M4 '+(p.h/3)+'H'+(p.w-4)+'M4 '+(p.h*2/3)+'H'+(p.w-4)+'" stroke="#71472e" stroke-width="2"/>'+
+    '<circle cx="'+(p.w/4)+'" cy="'+(p.h/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w/4)+'" cy="'+(p.h/2)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h/2)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w/4)+'" cy="'+(p.h*5/6)+'" r="2" fill="#e8c78e"/><circle cx="'+(p.w*3/4)+'" cy="'+(p.h*5/6)+'" r="2" fill="#e8c78e"/>' :
     key==="vanity"?
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#fffdf9" stroke="#b7a7aa" stroke-width="3"/>'+
     '<rect x="6" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
     '<rect x="'+(p.w-31)+'" y="7" width="25" height="'+(p.h-14)+'" fill="#ece8e8" stroke="#b7a7aa"/>'+
-    '<path d="M8 '+(p.h/2)+'h21M'+(p.w-29)+' '+(p.h/2)+'h21" stroke="#c8ac70" stroke-width="2"/>'+
+    '<path d="M8 '+(p.h/3)+'h21M8 '+(p.h*2/3)+'h21M'+(p.w-29)+' '+(p.h/3)+'h21M'+(p.w-29)+' '+(p.h*2/3)+'h21" stroke="#c8ac70" stroke-width="2"/>'+
     '<rect x="35" y="7" width="'+(p.w-70)+'" height="'+(p.h-14)+'" fill="#f8f0e8" stroke="#d2c1b0" stroke-dasharray="3 2"/>' :
     '<rect x="2" y="2" width="'+(p.w-4)+'" height="'+(p.h-4)+'" rx="4" fill="#e69fca" stroke="#ae6a96" stroke-width="3"/>'+
     '<rect x="7" y="7" width="'+(p.w-14)+'" height="'+(p.h-14)+'" fill="#f9d3e7" stroke="#bc779c"/>'+
