@@ -250,7 +250,7 @@
    // Both windows are known; exact frame sizes are intentionally not to scale.
    '<g transform="translate(-85 -26)">'+windowDrawing()+'</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(27 311) scale(.94 .76)">'+dresserDrawing()+'</g>';
+  const dresser='<g transform="translate(48 237) scale(.92 .72)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
   const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
@@ -258,8 +258,8 @@
    '<div class="dolly-room-scene dollhouse-view"><svg class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
    assets+room+
    modelObject("closet",closetDrawing())+
-   modelObject("dresser",dresser)+
    modelObject("vanity",vanity)+
+   modelObject("dresser",dresser)+
    modelObject("dollhouse",barbie)+
    modelObject("bed",bed)+
    modelObject("closet",'<rect x="542" y="174" width="70" height="33" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
