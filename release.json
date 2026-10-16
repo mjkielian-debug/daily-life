@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided25",
+  "build": "20261016-guided26",
   "released": "2026-10-16",
-  "ui": "Remove duplicate bottom-navigation spacer, keep the last Today section scrollable, and capitalize after-work action titles",
+  "ui": "Reduce the after-work reminder to an actionable title and controls; keep full notes inside task details",
   "data_version": "local-first data unchanged"
 }
