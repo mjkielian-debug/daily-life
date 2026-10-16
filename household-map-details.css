@@ -11,3 +11,12 @@
 .hvm-context>summary{font-weight:800;color:#5b4764;cursor:pointer}
 .hvm-context>p{font-size:.79rem;line-height:1.5}
 .dl-house-entry{width:100%;min-height:41px;border:1px solid #caaad0;border-radius:17px;background:#fff7fc;color:#4d3658;font-weight:850;text-align:left;padding:9px 12px}
+
+/* Guided32: room checklists and inventory actions precede reference material. */
+.hvm-zone-detail .hvm-detail-actions{order:0}
+.hvm-zone-detail .hvm-detail-actions>.btn{min-height:42px}
+.hvm-room-extra{border:1px solid #e1d3e4;background:#fff9fc;border-radius:14px;padding:9px 11px}
+.hvm-room-extra>summary{font-weight:850;font-size:.81rem;color:#614a69;cursor:pointer;padding:5px 0}
+.hvm-room-extra>p{font-size:.78rem;line-height:1.4;color:#66556c;margin:10px 0}
+.hvm-room-extra .hvm-detail-photos{margin-top:8px}
+.hvm-zone-detail .hvm-room-inventory{margin-bottom:1px}
