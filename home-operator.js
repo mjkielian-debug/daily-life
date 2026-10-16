@@ -171,6 +171,7 @@
       if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
       const assigned=String(t.homeRoomId||t.roomId||"");
       if(assigned)return assigned===String(room.id);
+      if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===String(room.floor||"")&&String(t.homeMapRoomName||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()===name;
       const title=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
       return String(t.category||"").toLowerCase()==="home"&&name&&(" "+title+" ").includes(" "+name+" ");
     });
@@ -244,6 +245,7 @@
       // Explicit room links always win over incidental title/notes matches.
       const assigned=String(t.homeRoomId||t.roomId||"");
       if(assigned)return assigned===String(roomId);
+      if(t.homeMapZoneId||t.homeMapFloor)return !!(room&&String(t.homeMapFloor||"")===String(room.floor||"")&&String(t.homeMapRoomName||"").toLowerCase()===name);
       return !!(name&&(
         String(t.title||"").toLowerCase().includes(name)||
         String(t.notes||"").toLowerCase().includes(name)
@@ -315,13 +317,7 @@
 
   window.homeAddRoomTask=function(roomId){
     const room=(state.houseRooms||[]).find(r=>r.id===roomId);if(!room)return;
-    openTask("","",false);
-    setTimeout(()=>{
-      const title=document.querySelector("#task"),cat=document.querySelector("#cat"),notes=document.querySelector("#notes");
-      if(title&&!title.value)title.value=room.name+" · ";
-      if(cat)cat.value="home";
-      if(notes&&!notes.value)notes.value="Room: "+room.name;
-    },0);
+    openTask("","",false,{roomId:room.id,floor:room.floor||"",roomName:room.name||"Room"});
   };
 
   function homeRoomBubble(room){
