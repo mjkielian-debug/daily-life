@@ -1,6 +1,6 @@
 {
-  "build": "20261015-guided11",
+  "build": "20261015-guided12",
   "released": "2026-10-15",
-  "ui": "Safe update checker detects published releases and preserves offline/local data",
+  "ui": "Short actionable task cards and clearly labeled suggested routines",
   "data_version": "local-first data unchanged"
 }
