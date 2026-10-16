@@ -259,9 +259,9 @@
    assets+room+
    modelObject("closet",closetDrawing())+
    modelObject("vanity",vanity)+
+   modelObject("bed",bed)+
    modelObject("dresser",dresser)+
    modelObject("dollhouse",barbie)+
-   modelObject("bed",bed)+
    modelObject("closet",'<rect x="542" y="174" width="70" height="33" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
     '<text x="577" y="195" text-anchor="middle" class="dolly-scene-small">Closet ↗</text>')+
    entryDoorDrawing()+
