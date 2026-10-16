@@ -204,13 +204,14 @@
    '</g>';
  }
  function closetDrawing(){
-  return '<g aria-label="Closet behind large Barbie house">'+
-   '<path d="M533 190L579 211L579 302L533 281Z" fill="#f7f0fa" stroke="#9e88a5" stroke-width="3"/>'+
-   '<path d="M541 198L570 211L570 291L541 278Z" fill="#e5d8e6" stroke="#b6a4bd" stroke-width="2"/>'+
-   '<path d="M555 205L555 285" stroke="#fff" stroke-width="2.5"/>'+
-   '<circle cx="560" cy="252" r="2.8" fill="#8d7194"/>'+
-   '<path d="M531 189L583 212" stroke="#fff" stroke-width="5"/>'+
-   '<path d="M528 291Q538 303 545 305" fill="none" stroke="#9a62bb" stroke-width="2" stroke-dasharray="4 5"/>'+
+  // White interior closet door stays BEHIND the large Barbie house.
+  // The narrow access route is deliberately visible, not dimensionally measured.
+  return '<g aria-label="White closet door behind Barbie house">'+
+   '<path d="M553 153L594 172L594 313L553 294Z" fill="#fffefc" stroke="#aa9da9" stroke-width="3"/>'+
+   '<path d="M559 162L585 175L585 296L559 283Z" fill="#f5f3f4" stroke="#d4cbd3" stroke-width="2"/>'+
+   '<path d="M565 174L580 181L580 226L565 220ZM565 231L580 239L580 280L565 273Z" fill="#fff" stroke="#ddd6db" stroke-width="1.5"/>'+
+   '<circle cx="583" cy="244" r="3.2" fill="#aa9e9f"/>'+
+   '<path d="M592 311L606 319L606 359" fill="none" stroke="#bb85bc" stroke-width="3" stroke-dasharray="5 5"/>'+
    '</g>';
  }
  function entryDoorDrawing(){
@@ -244,9 +245,9 @@
    // Both windows are known; exact frame sizes are intentionally not to scale.
    '<g transform="translate(-85 -26)">'+windowDrawing()+'</g>';
   const bed='<g transform="translate(83 77) scale(.82)">'+bedDrawing()+'</g>';
-  const dresser='<g transform="translate(28 230) scale(.72 .74)">'+dresserDrawing()+'</g>';
+  const dresser='<g transform="translate(16 231) scale(.67 .72)">'+dresserDrawing()+'</g>';
   const vanity='<g transform="translate(304 165) scale(.78)">'+vanityDrawing()+'</g>';
-  const barbie='<g transform="translate(407 155) scale(.80)">'+dollhouseDrawing()+'</g>';
+  const barbie='<g transform="translate(442 205) scale(.69)">'+dollhouseDrawing()+'</g>';
   return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s current bedroom arrangement">'+
    '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
    '<div class="dolly-room-scene dollhouse-view"><svg class="dolly-mini-svg" viewBox="0 0 620 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Illustrated miniature: white sleigh bed under Mario poster beside a window; vanity under the second window; brown dresser on former Barbie wall; large pink Barbie house by closet with front facing into room; entry door placement illustrative.">'+
@@ -256,6 +257,8 @@
    modelObject("vanity",vanity)+
    modelObject("dollhouse",barbie)+
    modelObject("bed",bed)+
+   modelObject("closet",'<rect x="542" y="174" width="70" height="33" rx="12" fill="#fffafc" stroke="#c1a9c8" stroke-width="2"/>'+
+    '<text x="577" y="195" text-anchor="middle" class="dolly-scene-small">Closet ↗</text>')+
    entryDoorDrawing()+
    '</svg></div>'+
    '<p class="dolly-room-caveat"><b>Confirmed arrangement:</b> white sleigh bed under Mario poster beside one window; white vanity under the other; long brown dresser on the former Barbie wall; large open-front pink Barbie house near the closet. Shift the house slightly to access the closet.</p>'+
