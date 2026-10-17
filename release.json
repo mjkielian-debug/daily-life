@@ -1,6 +1,6 @@
 {
-  "build": "20261017-live-mode1",
+  "build": "20261017-object-actions1",
   "released": "2026-10-17",
-  "ui": "Keep Sims controls compact across every Daily Life section",
+  "ui": "Make mapped house objects actionable with linked tasks and room inventory",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
