@@ -6,6 +6,14 @@
 .household-map-floors button{border:1px solid #cdb9d0;border-radius:15px;padding:9px;background:#fff8fc;color:#49364e;font-weight:800}
 .household-map-floors button.selected{background:#f8dcec}
 .household-map-floors button span{display:block;font-size:1.15rem;line-height:1.1;margin-bottom:2px}
+.household-map-floor-progress{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 12px;border:1px solid #cdb9d0;border-radius:15px;background:#fff9fd;color:#49364e;font:inherit;text-align:left;cursor:pointer}
+.household-map-floor-progress-copy{display:grid;gap:3px;min-width:0}
+.household-map-floor-progress-copy b{font-size:.83rem}
+.household-map-floor-progress-copy small{font-size:.72rem;color:#67526d}
+.household-map-floor-progress-meter{display:grid;grid-template-columns:auto;gap:4px;flex:0 0 66px;text-align:center;font-size:.76rem}
+.household-map-floor-progress-meter i{height:7px;display:block;overflow:hidden;border-radius:99px;background:#e4dce8}
+.household-map-floor-progress-meter em{display:block;height:100%;background:#a6a3df}
+.household-map-floor-progress-state{flex:none;color:#69516f;font-size:.7rem;font-weight:800}
 .household-map-drawing{background:#fff9fd;border-radius:20px;padding:8px}
 .household-map-drawing .hvm-drawing{max-width:100%;max-height:430px}
 .household-map-directory{border:1px solid #e1d3e4;border-radius:16px;background:#fff9fd;overflow:hidden}
