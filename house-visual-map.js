@@ -25,6 +25,7 @@ function facts(m){
  '<div><b>○ To verify</b>'+n.map(t=>'<p>'+h(t)+'</p>').join("")+'</div></div></details>';
 }
 
+
 function zoneBounds(path){
  const nums=(str(path).match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
  if(nums.length<4)return null;
@@ -37,24 +38,46 @@ function previewSource(f,z){
  if(f!=="Second floor")return null;
  if(z.id==="dolly"&&typeof window.dollyRoomMapPreviewSvg==="function"){
   const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
-  return match?{viewBox:match[1],markup:match[2]}:null;
+  return match?{viewBox:match[1],markup:match[2],kind:"dolly"}:null;
  }
  const kind=/bath/i.test(z.name||"")?"bathroom":/hall/i.test(z.name||"")?"hallway":"";
  if(!kind||typeof window.dailyLifeMiniatureSvg!=="function")return null;
- return window.dailyLifeMiniatureSvg(kind);
+ const source=window.dailyLifeMiniatureSvg(kind);
+ return source?{...source,kind}:null;
+}
+function previewMarkerIndex(z,item,kind){
+ const aliases={
+  bathroom:{tub:["bathtub","tub"],window:["window"],organizer:["organizer"],mat:["bath mat","mat"],storage:["storage basket","basket"],vent:["floor vent","vent"]},
+  hallway:{stairs:["stairs"],railing:["railing"],bathroom:["bathroom door"],bedrooms:["bedroom door","bedrooms"],window:["window"],organizer:["organizer"],plants:["plants","shoes"]}
+ };
+ const wanted=aliases[kind]?.[item]||[item];
+ const norm=value=>str(value).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ return arr(z.markers).findIndex(marker=>{
+  const label=norm(marker?.label||marker?.name||marker?.id);
+  return label&&wanted.some(alias=>{const key=norm(alias);return label===key||label.includes(key)});
+ });
 }
 function inlineRoomPreview(f,z,bounds){
  const source=previewSource(f,z);
  if(!source||!bounds||bounds.width<48||bounds.height<48)return "";
  const view=String(source.viewBox||"").split(/\s+/).map(Number);
  if(view.length!==4||view[2]<=0||view[3]<=0)return "";
- const maxW=bounds.width*.82,maxH=bounds.height*.62;
+ const maxW=bounds.width*.97,maxH=bounds.height*.9;
  const scale=Math.min(maxW/view[2],maxH/view[3]);
  if(!Number.isFinite(scale)||scale<.16)return "";
  const width=view[2]*scale,height=view[3]*scale;
- const x=bounds.cx-width/2,y=bounds.y+Math.max(18,(bounds.height-height)/2+4);
- return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false" pointer-events="none">'+
- '<rect x="2" y="2" width="'+(view[2]-4)+'" height="'+(view[3]-4)+'" rx="18" fill="#fffaf7" stroke="#c8b9c1" stroke-width="3"/>'+source.markup+'</svg>';
+ const x=bounds.cx-width/2,y=bounds.y+Math.max(17,(bounds.height-height)/2+3);
+ let contents=source.markup||"";
+ if(source.kind==="bathroom"||source.kind==="hallway"){
+  contents=contents.replace(/(<g class="dl-mini-item"[^>]*data-item="([^"]+)"[^>]*)>/g,(open,itemTag,item)=>{
+   const index=previewMarkerIndex(z,item,source.kind);
+   return index<0?open+">":open+
+    ' onclick="event.stopPropagation();houseVisualInteractMarker(&#39;Second floor&#39;,&#39;'+z.id+'&#39;,'+index+')"'+
+    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();houseVisualInteractMarker(&#39;Second floor&#39;,&#39;'+z.id+'&#39;,'+index+')}"'+
+    '>'+""; 
+  });
+ }
+ return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="'+h(z.name)+' furniture preview" focusable="false" pointer-events="auto">'+contents+'</svg>';
 }
 function mapSketch(f,m){
  const isFirst=f==="First floor";
@@ -84,7 +107,7 @@ function mapSketch(f,m){
  '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
  const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
  '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>'+(hasPreviews?"Room layouts shown inline · tap a room to interact":"Tap a colored area")+'</span></div>'+
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>'+(hasPreviews?"Room layouts shown inline · tap a room or mapped object":"Tap a colored area")+'</span></div>'+
  '<svg class="hvm-drawing'+(hasPreviews?' hvm-has-previews':'')+'" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram with room previews based on saved room layouts.">'+
  backing+paths+pins+entry+'</svg>'+
  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';

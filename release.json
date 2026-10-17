@@ -1,6 +1,6 @@
 {
-  "build": "20261017-inline-room-previews1",
+  "build": "20261017-refined-room-map1",
   "released": "2026-10-17",
-  "ui": "Show room furniture and object layouts directly on floor maps",
+  "ui": "Fit room layouts into floor plans and interact with mapped furniture",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
