@@ -24,6 +24,10 @@ const parts=objects.map(([id,label,shape])=>'<g class="dl-mini-item" tabindex="0
 return '<section class="dl-mini"><h3>'+ (bath?"Upstairs bathroom":"Second-floor hallway")+' · miniature</h3><p class="small">Illustrative Sims-style view · positions are approximate. Tap an object to view its details.</p><svg viewBox="0 0 360 285" role="img" aria-label="'+(bath?"Miniature upstairs bathroom":"Miniature upstairs hallway")+'"><path d="M24 63 L181 15 L337 63 L337 241 L181 275 L24 241 Z" fill="#d1ab82" stroke="#97765d" stroke-width="5"/><path d="M24 63 L181 15 L337 63 L181 112 Z" fill="#f7f0e6" opacity=".9"/><path d="M24 63 L24 241 L181 275 L181 112 Z" fill="#e8ded0" opacity=".5"/>'+parts+'</svg><div class="dl-mini-info" aria-live="polite">Select an object to see what is mapped.</div></section>';
 }
 const info={bathroom:{tub:"Bathtub and floral shower curtain",window:"Bathroom window",organizer:"Hanging shower organizer",mat:"Bath mat",storage:"Bathroom storage baskets",vent:"Floor vent"},hallway:{stairs:"Stairs and landing",railing:"White railing",bathroom:"Bathroom entrance",bedrooms:"Bedroom doorways; exact door spacing not measured",window:"Hallway window",organizer:"Orange organizer",plants:"Plants and shoes"}};
+window.dailyLifeMiniatureSvg=function(kind){
+ const markup=scene(kind),match=markup.match(/<svg\s+viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
+ return match?{viewBox:match[1],markup:match[2]}:null;
+};
 window.dailyLifeMiniScene=function(kind){return scene(kind)};
 document.addEventListener("click",e=>{const g=e.target.closest?.(".dl-mini-item");if(!g)return;const panel=g.closest(".dl-mini");const kind=panel?.querySelector("h3")?.textContent.includes("bathroom")?"bathroom":"hallway";const out=panel?.querySelector(".dl-mini-info");if(out)out.textContent=info[kind][g.dataset.item]||"Mapped object";});
 document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches?.(".dl-mini-item")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
