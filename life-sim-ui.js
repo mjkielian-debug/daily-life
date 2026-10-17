@@ -51,7 +51,7 @@ function lifeSimAvailableTasks(person, activeId = lifeSimSelectedId()) {
     .filter(task => task.date === day && !task.done && !task.paused && !task.waitingForFunds)
     .filter(task => {
       const assigned = String(task.child || "").trim().toLowerCase();
-      return !assigned || assigned === personName || (activeId === "self" && assigned === String(state.profile?.name || "").trim().toLowerCase());
+      return assigned === personName || (activeId === "self" && !assigned);
     })
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
@@ -152,6 +152,28 @@ function lifeSimOpenNeeds() {
   modal("Your Sim needs", `<div class="life-sim-needs-panel">${rows.map(([icon,label,value,action]) => `<button type="button" class="life-sim-needs-row" onclick="closeModal();${action}"><span>${icon}</span><b>${label}</b><small>${esc(value)}</small><i>›</i></button>`).join("")}<p class="muted small">Values come from your existing check-ins and logs.</p></div>`, "Close", closeModal);
 }
 
+function lifeSimOpenSelectedTasks() {
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  if (activeId === "self") return lifeSimOpenNeeds();
+  const active = roster.find(person => String(person.id) === activeId) || roster[0];
+  const personName = String(active.name || "").trim().toLowerCase();
+  const tasks = (state.tasks || []).filter(task =>
+    task.date === ymd() && String(task.child || "").trim().toLowerCase() === personName
+  ).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const done = tasks.filter(task => task.done).length;
+  const remaining = tasks.filter(task => !task.done && !task.paused && !task.waitingForFunds).length;
+  const rows = tasks.length
+    ? tasks.map(task => {
+        const status = task.done ? "Done" : task.paused ? "Paused" : task.waitingForFunds ? "Waiting for funds" : task.category || "Assigned today";
+        const complete = !task.done && !task.paused && !task.waitingForFunds
+          ? `<button type="button" class="house-today-done" aria-label="Complete ${esc(task.title || "task")}" onclick="closeModal();lifeSimCompleteTask(${lifeSimArg(task.id)})">✓</button>`
+          : `<span class="house-today-done" aria-label="${esc(status)}">${task.done ? "✓" : "·"}</span>`;
+        return `<div class="house-today-row"><button type="button" class="house-today-open" onclick="closeModal();openTaskDetails(${lifeSimArg(task.id)})"><span><b>${esc(task.title || "Task")}</b><small>${esc(status)}</small></span><span>›</span></button>${complete}</div>`;
+      }).join("")
+    : `<div class="notice">No tasks are assigned to ${esc(active.name)} today.</div>`;
+  modal(`${esc(active.name)} · Today`, `<div class="house-today-panel"><div class="house-today-summary"><b>${done} done</b><span>${remaining} left</span></div>${rows}<button type="button" class="btn small primary" onclick="closeModal();openTask(${lifeSimArg(active.name)})">＋ Add task for ${esc(active.name)}</button><button type="button" class="btn" onclick="closeModal();openPersonHub(${lifeSimArg(active.id)})">Open ${esc(active.name)}'s profile</button></div>`, "Close", closeModal);
+}
+
 function lifeSimHud() {
   if (!state?.profile?.name && typeof stateHasMeaningfulLocalData === "function" && !stateHasMeaningfulLocalData()) return "";
   const roster = lifeSimRoster();
@@ -161,7 +183,7 @@ function lifeSimHud() {
   const tasks = (state.tasks || []).filter(task => {
     if (task.date !== ymd() || task.paused || task.waitingForFunds) return false;
     const assigned = String(task.child || "").trim().toLowerCase();
-    return !assigned || assigned === activeName;
+    return assigned === activeName || (activeId === "self" && !assigned);
   });
   const taskDone = tasks.filter(task => task.done).length;
   const care = typeof selfCareTodayStats === "function" ? selfCareTodayStats() : null;
@@ -192,7 +214,7 @@ function lifeSimHud() {
   }
   if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
     <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" onclick="lifeSimOpenNeeds()">♡ Needs</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}${current?`<button type="button" class="life-sim-house-complete" aria-label="Mark ${esc(current.title)} complete" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})">✓</button>`:""}<button type="button" class="life-sim-house-queue" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
+    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" aria-label="${activeId === "self" ? "Open your personal needs" : `Open ${esc(active.name)}'s assigned tasks`}" onclick="${activeId === "self" ? "lifeSimOpenNeeds()" : "lifeSimOpenSelectedTasks()"}">${activeId === "self" ? "♡ Needs" : "✓ Tasks"}</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}${current?`<button type="button" class="life-sim-house-complete" aria-label="Mark ${esc(current.title)} complete" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})">✓</button>`:""}<button type="button" class="life-sim-house-queue" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
   </section>`;
   const needs = activeId === "self" ? [
     ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
