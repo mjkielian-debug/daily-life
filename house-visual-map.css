@@ -99,9 +99,10 @@
 .hvm-annotation:focus-visible rect{stroke-width:4}
 
 
-/* Inline room scenes are drawn directly over the saved floor-zone fills. */
-.hvm-zone.has-inline-preview .hvm-room-name{font-size:12px;paint-order:stroke;stroke:#fffaf5;stroke-width:4px;stroke-linejoin:round}
-.hvm-inline-room-preview{overflow:hidden;pointer-events:auto}
-.hvm-inline-room-preview .dl-mini-item{cursor:pointer}
-.hvm-inline-room-preview .dl-mini-item:hover,.hvm-inline-room-preview .dl-mini-item:focus-visible{filter:drop-shadow(0 0 4px #a64d91)}
+/* The saved bedroom plan shares the room footprint; stair treads stay in their zone. */
+.hvm-inline-room-preview{overflow:visible;pointer-events:auto}
+.hvm-stair-plan{pointer-events:none}
+.hvm-stair-plan rect{opacity:.96}
+.hvm-stair-plan path{vector-effect:non-scaling-stroke}
+.hvm-stair-zone .hvm-room-name{paint-order:stroke;stroke:#f4e8fb;stroke-width:4px;stroke-linejoin:round}
 .household-map-drawing .hvm-drawing.hvm-has-previews{max-height:min(68vh,600px)}
