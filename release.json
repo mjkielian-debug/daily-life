@@ -1,6 +1,6 @@
 {
-  "build": "20261017-map-needs1",
+  "build": "20261017-map-action-done1",
   "released": "2026-10-17",
-  "ui": "Keep real Sim needs reachable from the house map",
+  "ui": "Complete the current action directly from the House map",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
