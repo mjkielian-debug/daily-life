@@ -221,10 +221,10 @@ window.houseVisualInventoryOpen=function(f,id){
  if(typeof openInventoryRoom==="function")openInventoryRoom("",f);
 };
 function trackedRoomTasks(f,z,room){
- const name=String(z.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ const name=String(z?.name||room?.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
  return (state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
-  if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z.id);
+  if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
   const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
