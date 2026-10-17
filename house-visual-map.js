@@ -84,7 +84,7 @@ function mapSketch(f,m){
  '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
  const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
  '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>Rooms shown with their mapped objects · tap a room to interact</span></div>'+
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>'+(hasPreviews?"Room layouts shown inline · tap a room to interact":"Tap a colored area")+'</span></div>'+
  '<svg class="hvm-drawing'+(hasPreviews?' hvm-has-previews':'')+'" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram with room previews based on saved room layouts.">'+
  backing+paths+pins+entry+'</svg>'+
  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
