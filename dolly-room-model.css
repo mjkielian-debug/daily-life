@@ -84,3 +84,5 @@
 .dolly-room-topdown #dollyFloorPlan>strong{display:block;font-size:.95rem;color:#493551}
 .dolly-room-topdown #dollyFloorPlan>p{margin:6px 0;color:#68596b;font-size:.78rem;line-height:1.35}
 .dolly-room-topdown #dollyFloorPlan svg{max-height:70vh}
+
+.dolly-room-topdown .dolly-floor-hotspot:focus-visible rect{stroke:#be428e;stroke-width:2;fill:rgba(255,255,255,.22)}
