@@ -172,3 +172,7 @@ button.life-sim-compact-needs{cursor:pointer}
 .hvm-object-task-row small,.hvm-task-row span small{font-size:.65rem;color:#715d78;line-height:1.25}
 .hvm-object-task-row .btn{flex-shrink:0}
 @media(max-width:420px){.life-sim-house-map-actions{padding:6px 8px}.household-map-page{padding-left:8px;padding-right:8px}.household-map-title>button{flex:none}}
+/* Keep the house navigation clear while giving the map more screen space. */
+.bottom-nav.house-game-dock{gap:3px;padding:5px 7px calc(5px + env(safe-area-inset-bottom))}
+.bottom-nav.house-game-dock .navbtn{min-height:46px;padding:4px 2px;border-radius:15px;font-size:.84rem}
+.bottom-nav.house-game-dock .navbtn>div:first-child{font-size:1.08rem}
