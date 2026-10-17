@@ -35,49 +35,44 @@ function zoneBounds(path){
  return {x:minX,y:minY,width:maxX-minX,height:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
 }
 function previewSource(f,z){
- if(f!=="Second floor")return null;
- if(z.id==="dolly"&&typeof window.dollyRoomMapPreviewSvg==="function"){
-  const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
-  return match?{viewBox:match[1],markup:match[2],kind:"dolly"}:null;
- }
- const kind=/bath/i.test(z.name||"")?"bathroom":/hall/i.test(z.name||"")?"hallway":"";
- if(!kind||typeof window.dailyLifeMiniatureSvg!=="function")return null;
- const source=window.dailyLifeMiniatureSvg(kind);
- return source?{...source,kind}:null;
-}
-function previewMarkerIndex(z,item,kind){
- const aliases={
-  bathroom:{tub:["bathtub","tub"],window:["window"],organizer:["organizer"],mat:["bath mat","mat"],storage:["storage basket","basket"],vent:["floor vent","vent"]},
-  hallway:{stairs:["stairs"],railing:["railing"],bathroom:["bathroom door"],bedrooms:["bedroom door","bedrooms"],window:["window"],organizer:["organizer"],plants:["plants","shoes"]}
- };
- const wanted=aliases[kind]?.[item]||[item];
- const norm=value=>str(value).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
- return arr(z.markers).findIndex(marker=>{
-  const label=norm(marker?.label||marker?.name||marker?.id);
-  return label&&wanted.some(alias=>{const key=norm(alias);return label===key||label.includes(key)});
- });
+ if(f!=="Second floor"||z.id!=="dolly"||typeof window.dollyRoomMapPreviewSvg!=="function")return null;
+ const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
+ if(!match)return null;
+ // The saved Dolly plan supplies furniture positions. The floor-zone path is
+ // the room boundary, so drop the miniature's duplicate floor and wall frame.
+ const markup=match[2]
+  .replace(/<rect x="0" y="0" width="300" height="260" fill="#f8f0e8" stroke="#ad8ba9" stroke-width="5"\/>/,"")
+  .replace(/<path d="M0 0H300V260H0Z" fill="none" stroke="#7f667d" stroke-width="7"\/>/,"")
+  .replace(/<text x="180" y="18"[^>]*>Vanity window<\/text>/,"")
+  .replace(/<text x="10" y="70"[^>]*>Footboard window<\/text>/,"")
+  .replace(/<text x="291" y="189"[^>]*>Entry<\/text>/,"")
+  .replace(/<text x="60" y="18"[^>]*>Mario poster<\/text>/,"");
+ return {viewBox:match[1],markup,kind:"dolly"};
 }
 function inlineRoomPreview(f,z,bounds){
  const source=previewSource(f,z);
  if(!source||!bounds||bounds.width<48||bounds.height<48)return "";
  const view=String(source.viewBox||"").split(/\s+/).map(Number);
  if(view.length!==4||view[2]<=0||view[3]<=0)return "";
- const maxW=bounds.width*.97,maxH=bounds.height*.9;
+ const maxW=bounds.width*.99,maxH=bounds.height*.96;
  const scale=Math.min(maxW/view[2],maxH/view[3]);
  if(!Number.isFinite(scale)||scale<.16)return "";
  const width=view[2]*scale,height=view[3]*scale;
- const x=bounds.cx-width/2,y=bounds.y+Math.max(17,(bounds.height-height)/2+3);
- let contents=source.markup||"";
- if(source.kind==="bathroom"||source.kind==="hallway"){
-  contents=contents.replace(/(<g class="dl-mini-item"[^>]*data-item="([^"]+)"[^>]*)>/g,(open,itemTag,item)=>{
-   const index=previewMarkerIndex(z,item,source.kind);
-   return index<0?open+">":open+
-    ' onclick="event.stopPropagation();houseVisualInteractMarker(&#39;Second floor&#39;,&#39;'+z.id+'&#39;,'+index+')"'+
-    ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();houseVisualInteractMarker(&#39;Second floor&#39;,&#39;'+z.id+'&#39;,'+index+')}"'+
-    '>'+""; 
-  });
- }
- return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="'+h(z.name)+' furniture preview" focusable="false" pointer-events="auto">'+contents+'</svg>';
+ const x=bounds.cx-width/2,y=bounds.cy-height/2;
+ return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="Dolly bedroom saved furniture layout" focusable="false" pointer-events="auto">'+source.markup+'</svg>';
+}
+function zoneFloorGraphic(f,z,bounds){
+ if(f!=="Second floor"||!bounds)return "";
+ if(z.id!=="stairs"&&!/stairs/i.test(z.name||""))return "";
+ const left=bounds.x+bounds.width*.24,right=bounds.x+bounds.width*.76;
+ const top=bounds.y+bounds.height*.34,bottom=bounds.y+bounds.height*.82;
+ const count=6,step=(bottom-top)/(count-1);
+ const treads=Array.from({length:count},(_,i)=>{
+  const y=top+i*step;
+  return '<path d="M'+left.toFixed(1)+' '+y.toFixed(1)+'H'+right.toFixed(1)+'" stroke="#805c47" stroke-width="5" stroke-linecap="round"/>';
+ }).join("");
+ return '<g class="hvm-stair-plan" aria-label="Stair treads inside stair footprint" pointer-events="none">'+
+  '<rect x="'+(left-7).toFixed(1)+'" y="'+(top-8).toFixed(1)+'" width="'+(right-left+14).toFixed(1)+'" height="'+(bottom-top+16).toFixed(1)+'" rx="5" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
 }
 function mapSketch(f,m){
  const isFirst=f==="First floor";
@@ -89,11 +84,14 @@ function mapSketch(f,m){
   const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
   const preview=zonePreviews.find(([id])=>id===z.id)?.[1]||"";
   const labelX=preview&&bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
-  const labelY=preview&&bounds?bounds.y+14:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
-  return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+'" role="button" tabindex="0" onclick="'+onclick+
+  const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
+  const labelY=(preview||isStair)&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
+  const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
+  const floorGraphic=zoneFloorGraphic(f,z,bounds);
+  return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+'">'+
-  '<path d="'+h(z.path)+'" fill="'+color(z.color)+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
-  preview+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text></g>';
+  '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
+  preview+floorGraphic+(preview?'':'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text>')+'</g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
   const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
