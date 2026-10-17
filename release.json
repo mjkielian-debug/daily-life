@@ -1,6 +1,6 @@
 {
-  "build": "20261016-guided68",
-  "released": "2026-10-16",
-  "ui": "Strengthen active Sim profile text contrast",
+  "build": "20261017-sim-house1",
+  "released": "2026-10-17",
+  "ui": "Make the house map the main screen and embed daily controls",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }

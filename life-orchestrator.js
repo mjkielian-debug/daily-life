@@ -952,7 +952,7 @@
   // Modal forms stay untouched; navigation and data remain local-first.
   setInterval(()=>{
     if(document.hidden||typeof appStartupReady!=="undefined"&&!appStartupReady||
-       typeof view==="undefined"||view!=="today"||document.querySelector("#modal")||
+       typeof view==="undefined"||!(view==="today"||(view==="household"&&houseOverlayView==="today"))||document.querySelector("#modal")||
        !lifeTodayNextHandoffAt||Date.now()<lifeTodayNextHandoffAt)return;
     const scroller=document.scrollingElement||document.documentElement;
     const priorScroll=scroller?.scrollTop||0;

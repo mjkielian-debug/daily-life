@@ -221,6 +221,16 @@ window.houseVisualAddZoneTask=function(f,id){
  const room=localRoom(f,z);
  openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room"});
 };
+window.houseVisualInteractMarker=function(f,id,index){
+ if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
+ const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
+ const details='<section class="hvm-object-detail"><span class="hvm-object-icon" aria-hidden="true">✦</span><div><small>IN THIS ROOM</small><h2>'+h(p.label||"Mapped object")+'</h2></div></section>'+
+ (p.status?'<p class="hvm-object-status">'+h(p.status)+'</p>':"")+
+ (p.note?'<div class="hvm-object-note">'+h(p.note)+'</div>':"")+
+ '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">← Back to room</button>'+
+ '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">⌂ House map</button></div>';
+ modal(h(p.label||"Mapped object")+" · "+h(z.name),'<div class="hvm-object-view">'+details+'</div>',"Close",closeModal);
+};
 
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
@@ -233,11 +243,10 @@ window.houseVisualOpenZone=function(f,id){
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
  '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
  (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
- '<div class="hvm-room-inventory"><b>Confirmed inventory · '+inventory.length+' item types</b>'+
- (inventory.length?inventory.slice(0,14).map(x=>'<p>'+h(x.name)+(x.quantity!=null?' · '+h(x.quantity):'')+'</p>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
+ '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
+ (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 
- const spots=arr(z.markers).map(p=>'<div class="hvm-detail-marker"><b>'+h(p.label)+'</b><small>'+h(p.status||"")+'</small>'+
- (p.note?'<p>'+h(p.note)+'</p>':"")+'</div>').join("");
+ const spots=arr(z.markers).map((p,i)=>'<button type="button" class="hvm-object-row" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')"><span>✦</span><span><b>'+h(p.label||"Mapped object")+'</b><small>'+h(p.status||"Tap to inspect this mapped object")+'</small></span><span>›</span></button>').join("");
  const actions='<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button>'+
  '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
  (room?"Open full inventory":"+ Link inventory")+'</button>'+
@@ -245,13 +254,13 @@ window.houseVisualOpenZone=function(f,id){
  const references='<details class="hvm-room-extra"><summary>Reference photos ('+photos.length+') + mapping notes ›</summary>'+
  (photos.length?'<div class="hvm-detail-photos">'+photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join("")+'</div>':"")+
  (z.notes?'<p>'+h(z.notes)+'</p>':"")+
- (spots?'<div class="hvm-detail-markers"><strong>Mapped spots</strong>'+spots+'</div>':"")+
  '</details>';
  const isDolly=f==="Second floor"&&id==="dolly";
  const miniature=f==="Second floor"&&!isDolly&&typeof window.dailyLifeMiniScene==="function" ? (/bath/i.test(z.name||"") ? window.dailyLifeMiniScene("bathroom") : /hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";
  const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():miniature;
  const modelButton=isDolly?'<button class="btn primary" type="button" onclick="houseVisualOpenDollyModel()">🛏 Open interactive bedroom + furniture layout</button>':'';
- const markup='<div class="hvm-zone-detail">'+modelButton+furniture+progress+actions+references+'</div>';
+ const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
+ const markup='<div class="hvm-zone-detail">'+modelButton+furniture+objectPanel+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
 };
