@@ -133,6 +133,25 @@ function lifeSimStatusMarkup(label, value, percent, action) {
   </button>`;
 }
 
+function lifeSimOpenNeeds() {
+  const care = typeof selfCareTodayStats === "function" ? selfCareTodayStats() : null;
+  const mood = typeof wellnessForDate === "function" ? wellnessForDate() : null;
+  const waterNow = typeof water === "function" ? Number(water()) : 0;
+  const waterGoal = Number(state.settings?.waterTarget || 0);
+  const sleep = typeof sleepHours === "function" && typeof sleepForDate === "function" ? sleepHours(sleepForDate()) : 0;
+  const careValue = care ? `${care.done} of ${care.total} complete` : "No check-in";
+  const moodValue = mood?.mood ? moodLabel(mood.mood) : "No check-in";
+  const waterValue = waterGoal ? `${Math.round(waterNow)} of ${waterGoal} oz` : `${Math.round(waterNow)} oz logged`;
+  const sleepValue = sleep ? `${sleep.toFixed(1)} hours logged` : "No log";
+  const rows = [
+    ["♡", "Care", careValue, "setView('log')"],
+    ["☼", "Mood", moodValue, "openWellnessCheckin()"],
+    ["◉", "Water", waterValue, "openCareHubSection('water')"],
+    ["☾", "Sleep", sleepValue, "openSleep()"]
+  ];
+  modal("Your Sim needs", `<div class="life-sim-needs-panel">${rows.map(([icon,label,value,action]) => `<button type="button" class="life-sim-needs-row" onclick="closeModal();${action}"><span>${icon}</span><b>${label}</b><small>${esc(value)}</small><i>›</i></button>`).join("")}<p class="muted small">Values come from your existing check-ins and logs.</p></div>`, "Close", closeModal);
+}
+
 function lifeSimHud() {
   if (!state?.profile?.name && typeof stateHasMeaningfulLocalData === "function" && !stateHasMeaningfulLocalData()) return "";
   const roster = lifeSimRoster();
@@ -162,6 +181,15 @@ function lifeSimHud() {
     const initial = String(person.name || "?").trim().charAt(0).toUpperCase() || "?";
     return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
   }).join("");
+  if (view !== "household") {
+    const needsSummary = activeId === "self"
+      ? `<button type="button" class="life-sim-compact-needs" onclick="lifeSimOpenNeeds()">♡ Needs <span>${care ? `${care.done}/${care.total} care` : "care"}</span><span>${waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz`}</span></button>`
+      : `<span class="life-sim-compact-needs">Today · ${taskDone}/${tasks.length} tasks</span>`;
+    return `<section class="life-sim-hud life-sim-compact-hud" aria-label="Live household controls">
+      <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
+      <div class="life-sim-compact-bar"><div class="life-sim-compact-context"><span class="life-sim-compact-plumbob" aria-hidden="true">✦</span><span><small>PLAYING AS</small><b>${esc(active.name)}</b></span></div>${needsSummary}<button type="button" class="life-sim-compact-action" ${current ? `onclick="openTaskDetails(${lifeSimArg(current.id)})"` : `onclick="lifeSimOpenActionPicker()"`}><span>NOW</span><b>${current ? esc(current.title) : "Choose an action"}</b></button><button type="button" class="life-sim-compact-add" onclick="lifeSimOpenActionPicker()" aria-label="Add an action">＋</button><button type="button" class="life-sim-compact-house" onclick="setView('household')">⌂ House</button></div>
+    </section>`;
+  }
   if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
     <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
     <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}<button type="button" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
