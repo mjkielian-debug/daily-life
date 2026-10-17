@@ -4,7 +4,7 @@
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
   bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
-  dresser:{label:"Dresser",symbol:"▤",description:"Modest-width, low brown dresser with six drawers arranged two across and three down, with brass-colored handles. Positioned along the wall opposite the bed’s footboard.",location:"Opposite the bed footboard",sections:[]},
+  dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with six drawers arranged two across and three down, with brass-colored handles.",location:"Across the bottom wall, perpendicular to the bed (as shown in the approved top-down plan)",sections:[]},
   vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
   dollhouse:{label:"Barbie house",symbol:"⌂",description:"Three-story pink Barbie house with an open, playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
@@ -279,7 +279,7 @@
    '<path d="M300 44v112" stroke="#fff" stroke-width="12"/><path d="M300 198v55" stroke="#fff" stroke-width="12"/>'+
    '<text x="180" y="18" font-size="11" text-anchor="middle" fill="#594b58">Vanity window</text>'+
    '<text x="10" y="70" font-size="11" fill="#594b58">Footboard window</text>'+
-   '<text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text>'+
+   '<g class="dolly-floor-hotspot" role="button" tabindex="0" aria-label="Open Dolly’s closet" onclick="dollyOpenObject(&#39;closet&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;closet&#39;)}" style="cursor:pointer"><rect x="245" y="0" width="53" height="43" fill="transparent"/><text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text></g>'+
    '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+
    '<path d="M300 253L255 253A45 45 0 0 0 300 208" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 253L255 253" stroke="#927b85" stroke-width="3"/>'+
    '<text x="60" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
@@ -326,7 +326,7 @@
  window.dollyRoomSceneHtml=function(){
   setTimeout(floorDraw,80);setTimeout(floorDraw,350);
   return '<section class="dolly-room-card dolly-room-topdown" aria-label="Dolly’s bedroom, interactive top-down floor plan">'+
-   '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Room map</h3></div><span>Tap or move furniture</span></div>'+
+   '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Room map</h3></div><span>Tap furniture or Closet · drag to rearrange</span></div>'+
    '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
    '<button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button>'+
    '<button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button>'+
