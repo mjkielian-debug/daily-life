@@ -1,6 +1,6 @@
 {
-  "build": "20261017-floor-progress1",
+  "build": "20261017-map-fit1",
   "released": "2026-10-17",
-  "ui": "Show saved room-task progress directly on each floor map",
+  "ui": "Compact the live controls so more of the house map shows on screen",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
