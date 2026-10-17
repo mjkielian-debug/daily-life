@@ -234,14 +234,12 @@
   }
  }
  function floorClamp(v,min,max){return Math.max(min,Math.min(max,v))}
- function floorDraw(){
-  const root=document.getElementById("dollyFloorPlan");if(!root)return;
-  const svg=root.querySelector("svg");if(!svg)return;
+ function floorPlanContents(preview=false){
   const pieces=Object.keys(FLOOR_ITEMS).map(key=>{
    const p=floorData(key),turned=((p.angle/90)%2+2)%2===1;
    const w=turned?p.h:p.w,h=turned?p.w:p.h;
    const x=floorClamp(Number(p.x)||0,0,300-w),y=floorClamp(Number(p.y)||0,0,260-h);
-   const selected=floorSelected===key;
+   const selected=!preview&&floorSelected===key;
    // Draw in the object's unrotated local coordinates. Rotation changes its
    // footprint, never stretches or substitutes a different piece of furniture.
    const tx=turned?(p.angle===90?p.h:0):0;
@@ -268,24 +266,33 @@
     '<rect x="7" y="7" width="'+(p.w-14)+'" height="'+(p.h-14)+'" fill="#f9d3e7" stroke="#bc779c"/>'+
     '<path d="M'+(p.w/3)+' 7V'+(p.h-7)+'M'+(2*p.w/3)+' 7V'+(p.h-7)+'" stroke="#bb8b64" stroke-width="4"/>'+
     '<path d="M7 '+(p.h-11)+'H'+(p.w-7)+'" stroke="#b46c99" stroke-width="4"/>';
-   return '<g data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Open '+p.label+' or drag to move it" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}" style="cursor:grab;touch-action:none" transform="translate('+x+' '+y+')">'+
+   const attrs=preview?'aria-hidden="true" pointer-events="none"':'data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Open '+p.label+' or drag to move it" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}" style="cursor:grab;touch-action:none"';
+   return '<g '+attrs+' transform="translate('+x+' '+y+')">'+
     '<g transform="translate('+tx+' '+ty+') rotate('+angle+')">'+artwork+'</g>'+
     '<rect width="'+w+'" height="'+h+'" fill="transparent" stroke="'+(selected?'#be428e':'transparent')+'" stroke-width="3" rx="4"/>'+
     '<text x="'+(w/2)+'" y="'+(h/2)+'" font-size="'+(key==='dollhouse'?9:12)+'" font-weight="700" text-anchor="middle" fill="#302b33" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">'+p.label+'</text></g>';
   }).join("");
-  svg.innerHTML='<rect x="0" y="0" width="300" height="260" fill="#f8f0e8" stroke="#ad8ba9" stroke-width="5"/>'+
+  const svgMarkup='<rect x="0" y="0" width="300" height="260" fill="#f8f0e8" stroke="#ad8ba9" stroke-width="5"/>'+
    '<path d="M0 0H300V260H0Z" fill="none" stroke="#7f667d" stroke-width="7"/>'+
    '<path d="M123 0h120" stroke="#a7dcef" stroke-width="11"/><path d="M0 74v104" stroke="#a7dcef" stroke-width="11"/>'+
    '<path d="M300 44v112" stroke="#fff" stroke-width="12"/><path d="M300 198v55" stroke="#fff" stroke-width="12"/>'+
    '<text x="180" y="18" font-size="11" text-anchor="middle" fill="#594b58">Vanity window</text>'+
    '<text x="10" y="70" font-size="11" fill="#594b58">Footboard window</text>'+
-   '<g class="dolly-floor-hotspot" role="button" tabindex="0" aria-label="Open Dolly’s closet" onclick="dollyOpenObject(&#39;closet&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;closet&#39;)}" style="cursor:pointer"><rect x="245" y="0" width="53" height="43" fill="transparent"/><text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text></g>'+
+   (preview?'<text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text>':'<g class="dolly-floor-hotspot" role="button" tabindex="0" aria-label="Open Dolly’s closet" onclick="dollyOpenObject(&#39;closet&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;closet&#39;)}" style="cursor:pointer"><rect x="245" y="0" width="53" height="43" fill="transparent"/><text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text></g>')+
    '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+
    '<path d="M300 253L255 253A45 45 0 0 0 300 208" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 253L255 253" stroke="#927b85" stroke-width="3"/>'+
    '<text x="60" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
+  if(preview)return svgMarkup;
+  const root=document.getElementById("dollyFloorPlan");if(!root)return;
+  const svg=root.querySelector("svg");if(!svg)return;
+  svg.innerHTML=svgMarkup;
   dollyPerspectiveSync();
   const label=root.querySelector("#dollyFloorSelected");if(label)label.textContent="Selected: "+FLOOR_ITEMS[floorSelected].label;
  }
+ function floorDraw(){floorPlanContents(false)}
+ window.dollyRoomMapPreviewSvg=function(){
+  return '<svg viewBox="0 0 300 260" aria-hidden="true" focusable="false">'+floorPlanContents(true)+'</svg>';
+ };
  window.dollyFloorSelect=function(key){if(!FLOOR_ITEMS[key])return;floorSelected=key;floorDraw()};
  window.dollyFloorTurn=function(dir){
   const data=floorRead(),p=floorData(floorSelected);
