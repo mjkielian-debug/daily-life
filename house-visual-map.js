@@ -221,12 +221,29 @@ window.houseVisualAddZoneTask=function(f,id){
  const room=localRoom(f,z);
  openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room"});
 };
+function markerTaskKey(p,index){
+ const id=str(p?.id||"").trim(),label=str(p?.label||"").trim();
+ return "house-marker:"+(id||(label?label+"#"+index:"marker-"+index));
+}
+window.houseVisualAddMarkerTask=function(f,id,index){
+ if(!floors.includes(f)||!okId(id)||typeof openTask!=="function")return;
+ const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
+ const room=localRoom(f,z),objectName=str(p.label||"Mapped object"),objectKey=markerTaskKey(p,index);
+ closeModal();
+ openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room",objectName,objectKey});
+};
 window.houseVisualInteractMarker=function(f,id,index){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
+ const objectName=str(p.label||"Mapped object"),objectKey=markerTaskKey(p,index);
+ const objectTasks=(state.tasks||[]).filter(t=>!t.duplicateHidden&&!t.paused&&String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===id&&String(t.homeObjectKey||"")===objectKey);
+ const taskList=objectTasks.length?objectTasks.map(t=>'<div class="hvm-object-task-row"><span><b>'+h(t.title||"Task")+'</b><small>'+(t.done?"✓ Complete":"Still to do")+'</small></span>'+(t.done?'':'<button class="btn small primary" type="button" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button>')+'</div>').join(""):'<p class="muted small">No tasks are linked to this object yet.</p>';
  const details='<section class="hvm-object-detail"><span class="hvm-object-icon" aria-hidden="true">✦</span><div><small>IN THIS ROOM</small><h2>'+h(p.label||"Mapped object")+'</h2></div></section>'+
  (p.status?'<p class="hvm-object-status">'+h(p.status)+'</p>':"")+
  (p.note?'<div class="hvm-object-note">'+h(p.note)+'</div>':"")+
+ '<section class="hvm-object-tasks"><div><b>Actions for '+h(objectName)+'</b><small>'+objectTasks.length+' linked task'+(objectTasks.length===1?"":"s")+'</small></div>'+taskList+'</section>'+
+ '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddMarkerTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+Number(index)+')">＋ Add task for this object</button>'+
+ '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Open room inventory</button></div>'+
  '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">← Back to room</button>'+
  '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">⌂ House map</button></div>';
  modal(h(p.label||"Mapped object")+" · "+h(z.name),'<div class="hvm-object-view">'+details+'</div>',"Close",closeModal);
@@ -242,7 +259,7 @@ window.houseVisualOpenZone=function(f,id){
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
  '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
- (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
+ (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
  '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 
