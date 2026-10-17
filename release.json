@@ -1,6 +1,6 @@
 {
-  "build": "20261017-profile-actions1",
+  "build": "20261017-inline-room-previews1",
   "released": "2026-10-17",
-  "ui": "Make household profiles control assigned tasks and actions",
+  "ui": "Show room furniture and object layouts directly on floor maps",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
