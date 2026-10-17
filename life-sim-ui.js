@@ -192,7 +192,7 @@ function lifeSimHud() {
   }
   if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
     <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}<button type="button" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
+    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" onclick="lifeSimOpenNeeds()">♡ Needs</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}<button type="button" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
   </section>`;
   const needs = activeId === "self" ? [
     ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
