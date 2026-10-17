@@ -62,7 +62,7 @@ function inlineRoomPreview(f,z,bounds){
  if(!source||!bounds||bounds.width<48||bounds.height<48)return "";
  const view=String(source.viewBox||"").split(/\s+/).map(Number);
  if(view.length!==4||view[2]<=0||view[3]<=0)return "";
- const maxW=bounds.width*.96,maxH=bounds.height*.78;
+ const maxW=bounds.width*.97,maxH=bounds.height*.9;
  const scale=Math.min(maxW/view[2],maxH/view[3]);
  if(!Number.isFinite(scale)||scale<.16)return "";
  const width=view[2]*scale,height=view[3]*scale;
