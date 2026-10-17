@@ -35,17 +35,34 @@
  // The plan remains independently saved and editable; perspective reads it directly.
  const FLOOR_KEY="dailyLifeDollyFloorPlan_photoReference_v5"; // shared saved geometry for both views
  const FLOOR_ITEMS={
-  // Plan orientation: top = Mario/headboard + vanity window wall;
-  // left = footboard window; right = closet and entry wall;
-  // bottom = black tapestry / long dresser wall.
-  // Units are visual estimates from photographs, not inches.
-  bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:2,y:4,angle:0},
-  dresser:{label:"Dresser",w:198,h:48,color:"#a66a42",x:0,y:210,angle:0},
-  vanity:{label:"Vanity",w:118,h:46,color:"#f8f7f3",x:126,y:4,angle:0},
+  // Overhead orientation: Demitri is beyond the left shared wall; hallway is
+  // along the bottom. Dolly's headboard and vanity face the top wall; the
+  // closet and Barbie house stay along the right wall.
+  // Units are visual estimates from the supplied photos, not inches.
+  bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:52,y:4,angle:0},
+  dresser:{label:"Dresser",w:198,h:48,color:"#a66a42",x:2,y:30,angle:90},
+  vanity:{label:"Vanity",w:118,h:46,color:"#f8f7f3",x:170,y:4,angle:0},
   dollhouse:{label:"Barbie house",w:138,h:51,color:"#f3a3ce",x:245,y:51,angle:90}
  };
+ const FLOOR_ORIENTATION_VERSION="shared-wall-hall-entry-1";
+ const FLOOR_ORIENTATION={
+  bed:{x:52,y:4,angle:0},
+  dresser:{x:2,y:30,angle:90},
+  vanity:{x:170,y:4,angle:0},
+  dollhouse:{x:245,y:51,angle:90}
+ };
  let floorSelected="dresser";
- function floorRead(){try{return JSON.parse(localStorage.getItem(FLOOR_KEY)||"{}")||{}}catch(_){return {}}}
+ function floorRead(){
+  try{
+   const data=JSON.parse(localStorage.getItem(FLOOR_KEY)||"{}")||{};
+   if(data.__orientationVersion!==FLOOR_ORIENTATION_VERSION){
+    for(const [key,position] of Object.entries(FLOOR_ORIENTATION))data[key]={...(data[key]||{}),...position};
+    data.__orientationVersion=FLOOR_ORIENTATION_VERSION;
+    localStorage.setItem(FLOOR_KEY,JSON.stringify(data));
+   }
+   return data;
+  }catch(_){return {}}
+ }
  function floorSave(data){try{localStorage.setItem(FLOOR_KEY,JSON.stringify(data))}catch(_){}}
  function floorData(key){
   const saved=floorRead()[key]||{};
@@ -279,7 +296,7 @@
    '<text x="180" y="18" font-size="11" text-anchor="middle" fill="#594b58">Vanity window</text>'+
    '<text x="10" y="70" font-size="11" fill="#594b58">Footboard window</text>'+
    (preview?'<g class="dolly-floor-hotspot" role="button" tabindex="0" aria-label="Open Dolly’s closet" onclick="event.stopPropagation();dollyOpenObject(&#39;closet&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();dollyOpenObject(&#39;closet&#39;)}" style="cursor:pointer"><rect x="245" y="0" width="53" height="43" fill="transparent"/><text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text></g>':'<g class="dolly-floor-hotspot" role="button" tabindex="0" aria-label="Open Dolly’s closet" onclick="dollyOpenObject(&#39;closet&#39;)" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;closet&#39;)}" style="cursor:pointer"><rect x="245" y="0" width="53" height="43" fill="transparent"/><text x="291" y="37" text-anchor="end" font-size="12" fill="#594b58">Closet</text></g>')+
-   '<text x="291" y="189" text-anchor="end" font-size="11" fill="#594b58">Entry</text>'+
+   '<text x="250" y="244" text-anchor="middle" font-size="11" font-weight="700" fill="#594b58" stroke="#f8f0e8" stroke-width="3" paint-order="stroke">Door to hallway</text>'+
    '<path d="M300 253L255 253A45 45 0 0 0 300 208" fill="none" stroke="#b2a0a4" stroke-width="2" stroke-dasharray="4 3"/><path d="M300 253L255 253" stroke="#927b85" stroke-width="3"/>'+
    '<text x="60" y="18" font-size="12" fill="#594b58">Mario poster</text>'+pieces;
   if(preview)return svgMarkup;
