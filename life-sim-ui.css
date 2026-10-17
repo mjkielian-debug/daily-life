@@ -75,6 +75,19 @@
 .life-sim-house-map-hud{gap:5px;margin-bottom:6px}
 .life-sim-house-map-hud .life-sim-toolbar{padding:4px 0}
 .life-sim-house-map-hud .life-sim-sim{min-height:52px}
+
+/* Keep the live Sim strip compact so the house map appears sooner. */
+.life-sim-house-map-hud .life-sim-roster{gap:4px;padding:3px 0 2px;scrollbar-width:none}
+.life-sim-house-map-hud .life-sim-roster::-webkit-scrollbar{display:none}
+.life-sim-house-map-hud .life-sim-sim{flex:0 0 47px;min-width:47px;min-height:48px;gap:2px;padding:3px 2px;font-size:.58rem}
+.life-sim-house-map-hud .life-sim-avatar{width:27px;height:27px;font-size:.75rem}
+.life-sim-house-map-hud .life-sim-clock{padding:5px 7px;column-gap:4px;font-size:.58rem}
+.life-sim-house-map-hud .life-sim-clock span{font-size:.52rem}
+.life-sim-house-map-hud .life-sim-clock b{font-size:.68rem}
+.life-sim-house-map-actions{gap:3px 5px;padding:5px 8px;font-size:.68rem}
+.life-sim-house-map-actions>button{min-height:28px;padding:4px 7px}
+.life-sim-house-map-actions .life-sim-house-needs{min-height:28px}
+
 .life-sim-house-map-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:auto auto;align-items:center;gap:4px 6px;padding:7px 10px;border:1px solid var(--border);border-radius:13px;background:var(--panel);color:var(--text);font-size:.72rem}
 .life-sim-house-map-actions>span:first-child{grid-column:1;grid-row:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .life-sim-house-map-actions>button{min-height:32px;padding:5px 9px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:inherit;font:inherit;font-weight:800}
