@@ -193,13 +193,13 @@ dialog,
 <link rel="stylesheet" href="action-first.css?v=20261015-guided7">
 <link rel="stylesheet" href="today-guidance.css?v=20261016-guided26">
 <link rel="stylesheet" href="household-map-compact.css?v=20261016-map28">
-<link rel="stylesheet" href="household-map-layout.css?v=20261017-map-action-done1">
+<link rel="stylesheet" href="household-map-layout.css?v=20261017-floor-progress1">
 <link rel="stylesheet" href="household-map-details.css?v=20261016-guided32">
-<link rel="stylesheet" href="dolly-room-model.css?v=20261017-map-action-done1">
-<link rel="stylesheet" href="household-map-scroll.css?v=20261017-map-action-done1">
-<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261017-map-action-done1"></head>
+<link rel="stylesheet" href="dolly-room-model.css?v=20261017-floor-progress1">
+<link rel="stylesheet" href="household-map-scroll.css?v=20261017-floor-progress1">
+<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261017-floor-progress1"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261017-map-action-done1…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261017-floor-progress1…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -215,19 +215,19 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261017-map-action-done1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261017-floor-progress1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261017-map-action-done1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261017-floor-progress1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261017-map-action-done1").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261017-floor-progress1").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261015-grounded-progress4"></script>
-<script src="life-sim-ui.js?v=20261017-map-action-done1"></script>
+<script src="life-sim-ui.js?v=20261017-floor-progress1"></script>
 <script>
 
 const DB_NAME="daily-life-local-v2";
@@ -274,7 +274,7 @@ async function dbClear(){
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261014-chase1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
-<script src="spirituality.js?v=20261017-map-action-done1"></script>
+<script src="spirituality.js?v=20261017-floor-progress1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
 <script src="budget-coach.js?v=20261007-donext3"></script>
 <script>
@@ -5711,6 +5711,12 @@ function householdSelectFloor(floor){
  try{localStorage.setItem("dailyLifeMapFirstFloor",floor)}catch(e){}
  render();
 }
+function householdOpenRoomProgress(){
+ const details=document.querySelector(".household-map-directory");
+ if(!details)return;
+ details.open=true;
+ details.scrollIntoView({behavior:"smooth",block:"start"});
+}
 function householdMapProgress(room){
  const name=String(room.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
  const tasks=(state.tasks||[]).filter(t=>{
@@ -5729,6 +5735,7 @@ function householdMapPage(){
  return '<section class="household-map-page"><div class="household-map-title"><div><small>LIVE · HOUSEHOLD</small><h1>House</h1><span>Choose a floor, then tap a room to go inside.</span></div>'+
  '<button class="btn small primary" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+floor+'&#39;)">📷 Add photos</button></div>'+
  '<nav class="household-map-floors" aria-label="Choose a house floor">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)"><span>'+({"Basement":"▱","First floor":"⌂","Second floor":"▤","Third floor":"△"}[f])+'</span>'+esc(f==="Third floor"?"Attic":f)+'</button>').join("")+'</nav>'+
+ '<div class="household-map-floor-progress-slot">'+(typeof houseVisualFloorProgressHtml==="function"?houseVisualFloorProgressHtml(floor):'<div class="household-map-floor-progress">Room progress is loading…</div>')+'</div>'+
  '<div class="household-map-drawing">'+(typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p>Your private map will appear here after it loads.</p>')+'</div>'+
  '<details class="household-map-directory"><summary><span><b>Room progress + setup</b><small>Tasks and saved room details</small></span><span>⌄</span></summary><div class="household-map-directory-body"><div class="household-room-heading"><h2>Room progress</h2><small>Tap a room to see tasks + inventory</small></div>'+
  '<div class="household-map-room-results" data-floor="'+esc(floor)+'">'+
@@ -8136,9 +8143,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261017-map-action-done1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261017-floor-progress1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261017-map-action-done1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261017-floor-progress1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8146,7 +8153,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261017-map-action-done1";
+const DAILY_LIFE_BUILD="20261017-floor-progress1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8220,7 +8227,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261017-map-action-done1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261017-floor-progress1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8242,7 +8249,7 @@ async function registerAppWorker(){
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261016-guided18"></script>
-<script src="life-orchestrator.js?v=20261017-map-action-done1"></script>
+<script src="life-orchestrator.js?v=20261017-floor-progress1"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261016-guided33"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
@@ -8253,8 +8260,8 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261017-map-action-done1"></script>
-<script src="dolly-room-model.js?v=20261017-map-action-done1"></script>
+<script src="house-visual-map.js?v=20261017-floor-progress1"></script>
+<script src="dolly-room-model.js?v=20261017-floor-progress1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
 <script src="inventory-photo-review.js?v=20261016-guided27"></script>
