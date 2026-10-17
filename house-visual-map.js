@@ -24,16 +24,53 @@ function facts(m){
  '<div><b>✓ Confirmed</b>'+b.map(t=>'<p>'+h(t)+'</p>').join("")+'</div>'+
  '<div><b>○ To verify</b>'+n.map(t=>'<p>'+h(t)+'</p>').join("")+'</div></div></details>';
 }
+
+function zoneBounds(path){
+ const nums=(str(path).match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
+ if(nums.length<4)return null;
+ const xs=[],ys=[];
+ for(let i=0;i+1<nums.length;i+=2){xs.push(nums[i]);ys.push(nums[i+1])}
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+ return {x:minX,y:minY,width:maxX-minX,height:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
+}
+function previewSource(f,z){
+ if(f!=="Second floor")return null;
+ if(z.id==="dolly"&&typeof window.dollyRoomMapPreviewSvg==="function"){
+  const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
+  return match?{viewBox:match[1],markup:match[2]}:null;
+ }
+ const kind=/bath/i.test(z.name||"")?"bathroom":/hall/i.test(z.name||"")?"hallway":"";
+ if(!kind||typeof window.dailyLifeMiniatureSvg!=="function")return null;
+ return window.dailyLifeMiniatureSvg(kind);
+}
+function inlineRoomPreview(f,z,bounds){
+ const source=previewSource(f,z);
+ if(!source||!bounds||bounds.width<48||bounds.height<48)return "";
+ const view=String(source.viewBox||"").split(/\s+/).map(Number);
+ if(view.length!==4||view[2]<=0||view[3]<=0)return "";
+ const maxW=bounds.width*.82,maxH=bounds.height*.62;
+ const scale=Math.min(maxW/view[2],maxH/view[3]);
+ if(!Number.isFinite(scale)||scale<.16)return "";
+ const width=view[2]*scale,height=view[3]*scale;
+ const x=bounds.cx-width/2,y=bounds.y+Math.max(18,(bounds.height-height)/2+4);
+ return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false" pointer-events="none">'+
+ '<rect x="2" y="2" width="'+(view[2]-4)+'" height="'+(view[3]-4)+'" rx="18" fill="#fffaf7" stroke="#c8b9c1" stroke-width="3"/>'+source.markup+'</svg>';
+}
 function mapSketch(f,m){
  const isFirst=f==="First floor";
  const viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503";
  const limits=viewBox.split(" ").map(Number);
+ const zonePreviews=arr(m.zones).map(z=>[z.id,inlineRoomPreview(f,z,zoneBounds(z.path))]);
+ const hasPreviews=zonePreviews.some(([,preview])=>!!preview);
  const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).map(z=>{
-  const x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
-  return '<g class="hvm-zone" role="button" tabindex="0" onclick="'+onclick+
+  const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
+  const preview=zonePreviews.find(([id])=>id===z.id)?.[1]||"";
+  const labelX=preview&&bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
+  const labelY=preview&&bounds?bounds.y+14:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
+  return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+'" role="button" tabindex="0" onclick="'+onclick+
   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+'">'+
   '<path d="'+h(z.path)+'" fill="'+color(z.color)+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
-  '<text class="hvm-room-name" text-anchor="middle" x="'+Math.max(limits[0],Math.min(limits[0]+limits[2],x))+'" y="'+Math.max(limits[1],Math.min(limits[1]+limits[3],y))+'">'+h(z.short||z.name)+'</text></g>';
+  preview+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
   const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
@@ -47,11 +84,12 @@ function mapSketch(f,m){
  '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
  const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
  '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>Tap a colored area</span></div>'+
- '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram based on the original robot-vacuum screenshot. Not measured.">'+
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>Rooms shown with their mapped objects · tap a room to interact</span></div>'+
+ '<svg class="hvm-drawing'+(hasPreviews?' hvm-has-previews':'')+'" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram with room previews based on saved room layouts.">'+
  backing+paths+pins+entry+'</svg>'+
  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
 }
+
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(m.title||f)+'</strong><small>Room directory · not floor geometry</small></div>'+
  '<div class="hvm-directory-grid">'+arr(m.zones).filter(z=>okId(z.id)).map(z=>{
