@@ -1,6 +1,6 @@
 {
-  "build": "20261017-dolly-plan3",
+  "build": "20261017-live-mode1",
   "released": "2026-10-17",
-  "ui": "Make the closet tappable in Dolly’s approved top-down room plan",
+  "ui": "Keep Sims controls compact across every Daily Life section",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
