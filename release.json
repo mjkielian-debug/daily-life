@@ -1,6 +1,6 @@
 {
-  "build": "20261017-map-action-done1",
+  "build": "20261017-floor-progress1",
   "released": "2026-10-17",
-  "ui": "Complete the current action directly from the House map",
+  "ui": "Show saved room-task progress directly on each floor map",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
