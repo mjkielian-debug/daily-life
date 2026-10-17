@@ -193,14 +193,14 @@ dialog,
 <link rel="stylesheet" href="action-first.css?v=20261015-guided7">
 <link rel="stylesheet" href="today-guidance.css?v=20261016-guided26">
 <link rel="stylesheet" href="household-map-compact.css?v=20261016-map28">
-<link rel="stylesheet" href="household-map-layout.css?v=20261016-guided30">
+<link rel="stylesheet" href="household-map-layout.css?v=20261017-sim-house1">
 <link rel="stylesheet" href="household-map-details.css?v=20261016-guided32">
 <link rel="stylesheet" href="dolly-room-model.css?v=20261016-geometry1">
-<link rel="stylesheet" href="household-map-scroll.css?v=20261016-map29">
-<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261016-guided68"></head>
+<link rel="stylesheet" href="household-map-scroll.css?v=20261017-sim-house1">
+<link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261017-sim-house1"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261016-guided68…</p></main></div>
-<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=guided68">Reload Daily Life</a></div></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261017-sim-house1…</p></main></div>
+<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__DailyLifeStartupStage="Waiting for app code";
@@ -215,19 +215,19 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261016-guided68 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=guided68">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261017-sim-house1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261016-guided68 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=guided68">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261017-sim-house1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261016-guided68").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261017-sim-house1").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261015-grounded-progress4"></script>
-<script src="life-sim-ui.js?v=20261016-guided68"></script>
+<script src="life-sim-ui.js?v=20261017-sim-house1"></script>
 <script>
 
 const DB_NAME="daily-life-local-v2";
@@ -274,7 +274,7 @@ async function dbClear(){
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261014-chase1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
-<script src="spirituality.js?v=20261007-harden7"></script>
+<script src="spirituality.js?v=20261017-sim-house1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
 <script src="budget-coach.js?v=20261007-donext3"></script>
 <script>
@@ -310,7 +310,7 @@ let startupFallbackAvailable=false;
 let startupFallbackTimer=null;
 let startupStorageStalled=false;
 let startupStorageWatchdog=null;
-let state=blankState(),view="today",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
+let state=blankState(),view="household",houseOverlayView="",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Rainbow Rose","#c34d84","#9bc8ee","#f6cf8a"],
   ["Coral Sky","#b95178","#b1a9e4","#f5ce8d"],
@@ -1934,12 +1934,12 @@ function spinReaderWheel(){
 
 function openSectionLauncher(){
   const sections=[
-    ["✦","Today","One-screen daily hub","setView('today')"],
+    ["✦","Today","Today’s tasks inside the house","openHouseTodayPanel()"],
     ["◷","Day Flow","Schedule + what comes next","setView('itinerary')"],
     ["♡","People","Family, kids, birthdays + plans","setView('family')"],
     ["◫","Reading","Books, pages + Reader Wheel","setView('reading')"],
     ["◇","Food","Meals, pantry + grocery","setView('home')"],
-    ["⌂","Home + Household","Map, inventory, cleaning + pets","openHouseholdHub()"],
+    ["⌂","House map","Floors, rooms, objects + progress","setView('household')"],
     ["$","Money","Accounts, budget + bills","setView('more')"],
     ["✧","Care","Self care, work + life","setView('log')"],
     ["☾","Spirituality","Daily reading, tarot + rituals","setView('spirituality')"],
@@ -1973,7 +1973,7 @@ function render(){
     if(root)root.innerHTML='<main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Build '+esc(DAILY_LIFE_BUILD)+'</p>'+(startupStorageStalled?'<div class="warning" role="alert" style="margin:22px auto 12px;max-width:440px;text-align:left"><b>Saved information has not finished loading.</b><br>Nothing has been reset. Do not clear app data or start a new account. Try again to reopen Daily Life.</div><button class="btn primary" type="button" onclick="retryStartup()">Try again</button><p class="muted small">Your existing information stays on this phone.</p>':startupFallbackAvailable?'<div class="notice" style="margin:22px auto 12px;max-width:420px;text-align:left">Your saved information on this phone is ready. Daily Life is taking longer than usual to reconnect your account.</div><button class="btn primary" type="button" onclick="continueWithSavedData()">Open saved information on this phone</button><p class="muted small">This keeps your current records on the phone and does not start a new account.</p>':'')+'</main>';
     return;
   }
-  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#f6dbe9");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${typeof lifeSimHud==="function"?lifeSimHud():""}${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}</main><nav class="bottom-nav">${nav("today","✦","Today")}${nav("family","♡","People")}${nav("home","◇","Food")}${nav("more","$","Money")}${nav("log","✧","Care")}</nav>`}
+  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#f6dbe9");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"today-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":view==="log"?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${typeof lifeSimHud==="function"?lifeSimHud():""}${view==="today"?todayView(m,f,w,h,tk,done,nt,tr):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}${view==="household"&&houseOverlayView?houseOverlayHtml(houseOverlayView):""}</main><nav class="bottom-nav house-game-dock" aria-label="House controls"><button class="navbtn ${view==="household"?"active":""}" type="button" onclick="setView('household')"><div>⌂</div>House</button><button class="navbtn" type="button" onclick="openHouseTodayPanel()"><div>✦</div>Today</button><button class="navbtn" type="button" onclick="openHousePeoplePanel()"><div>♡</div>People</button><button class="navbtn" type="button" onclick="openSectionLauncher()"><div>☰</div>Menu</button></nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -5726,18 +5726,34 @@ function householdMapPage(){
  const floors=["Basement","First floor","Second floor","Third floor"];
  let floor="First floor";try{floor=localStorage.getItem("dailyLifeMapFirstFloor")||floor}catch(e){}
  if(!floors.includes(floor))floor="First floor";
- return '<section class="household-map-page"><div class="household-map-title"><div><small>MY HOUSE</small><h1>Rooms + inventory</h1></div>'+
+ return '<section class="household-map-page"><div class="household-map-title"><div><small>LIVE · HOUSEHOLD</small><h1>House</h1><span>Choose a floor, then tap a room to go inside.</span></div>'+
  '<button class="btn small primary" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+floor+'&#39;)">📷 Add photos</button></div>'+
- '<nav class="household-map-floors" aria-label="House floors">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)">'+esc(f==="Third floor"?"Third floor · attic":f)+'</button>').join("")+'</nav>'+
+ '<nav class="household-map-floors" aria-label="Choose a house floor">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)"><span>'+({"Basement":"▱","First floor":"⌂","Second floor":"▤","Third floor":"△"}[f])+'</span>'+esc(f==="Third floor"?"Attic":f)+'</button>').join("")+'</nav>'+
  '<div class="household-map-drawing">'+(typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p>Your private map will appear here after it loads.</p>')+'</div>'+
- '<div class="household-map-directory"><div class="household-room-heading"><h2>Room progress</h2><small>Tap a room to see tasks + inventory</small></div>'+
+ '<details class="household-map-directory"><summary><span><b>Room progress + setup</b><small>Tasks and saved room details</small></span><span>⌄</span></summary><div class="household-map-directory-body"><div class="household-room-heading"><h2>Room progress</h2><small>Tap a room to see tasks + inventory</small></div>'+
  '<div class="household-map-room-results" data-floor="'+esc(floor)+'">'+
  (typeof houseVisualRoomProgressHtml==="function"?houseVisualRoomProgressHtml(floor):'<p>Loading room progress…</p>')+
  '</div>'+
  '<div class="actions"><button class="btn" onclick="openInventoryRoom(&#39;&#39;,&#39;'+floor+'&#39;)">+ Add room</button>'+
  '<button class="btn" onclick="openInventoryPhotoReview()">Review inventory</button>'+
- '<button class="btn" onclick="openHomeAreaProjects()">Organize an area</button></div></div></section>';
+ '<button class="btn" onclick="openHomeAreaProjects()">Organize an area</button></div></div></details></section>';
 }
+
+function houseOverlayHtml(panel){
+ const titles={today:"Today",itinerary:"Day Flow",family:"People + family",reading:"Reading",pets:"Pets",garden:"Garden",hobbies:"Hobbies",gardenhobbies:"Garden + Hobbies",spirituality:"Spirituality",vault:"Vault",home:"Food + kitchen",inventory:"Inventory",more:"Money",budget:"Budget",log:"Care + work",settings:"Settings"};
+ const shells={today:"today-one-screen-shell",itinerary:"dayflow-one-screen-shell",family:"people-one-screen-shell",reading:"reading-one-screen-shell",pets:"pets-one-screen-shell",gardenhobbies:"garden-hobbies-one-screen-shell",spirituality:"spirituality-one-screen-shell",vault:"vault-one-screen-shell",home:"food-one-screen-shell",inventory:"inventory-one-screen-shell",more:"money-one-screen-shell",budget:"budget-one-screen-shell",log:"care-one-screen-shell",settings:"settings-one-screen-shell"};
+ if(!Object.prototype.hasOwnProperty.call(titles,panel))return "";
+ let body="";
+ if(panel==="today"){
+  const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();
+  body=todayView(m,f,w,h,tk,done,nt,tr);
+ }else if(panel==="vault"&&typeof vaultView==="function")body=typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView();
+ else if(typeof visualHubView==="function")body=visualHubView(panel);
+ return '<div class="house-overlay-backdrop"><section class="house-overlay" role="dialog" aria-modal="true" aria-label="'+esc(titles[panel])+' inside the house">'+
+  '<header class="house-overlay-heading"><span><small>⌂ HOUSE · INTERACTIONS</small><b>'+esc(titles[panel])+'</b></span><button type="button" aria-label="Return to house map" onclick="closeHouseOverlay()">×</button></header>'+
+  '<div class="house-overlay-content '+(shells[panel]||'')+'">'+body+'</div></section></div>';
+}
+function closeHouseOverlay(){houseOverlayView="";closeModal();render()}
 
 function householdView(){
   const rooms=(state.houseRooms||[]).length,items=(state.inventoryItems||[]).length,pets=(state.pets||[]).length,
@@ -6566,6 +6582,16 @@ async function removeBudgetSpending(index){
 }
 
 function setView(v){
+  if(v==="household"){
+    const wasOnHouse=view==="household";
+    view="household";houseOverlayView="";closeModal();render();
+    if(!wasOnHouse){window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0))}
+    return;
+  }
+  if(view==="household"){
+    if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();
+    houseOverlayView=v;render();return;
+  }
   view=v;
   if(v==="spirituality"&&typeof ensureDailyTarotSaved==="function")ensureDailyTarotSaved();
   render();
@@ -8108,9 +8134,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261016-guided68 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=guided68">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261017-sim-house1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261016-guided68 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=guided68">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261017-sim-house1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8118,7 +8144,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261016-guided68";
+const DAILY_LIFE_BUILD="20261017-sim-house1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8192,7 +8218,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261016-guided68");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261017-sim-house1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8214,7 +8240,7 @@ async function registerAppWorker(){
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261016-guided18"></script>
-<script src="life-orchestrator.js?v=20261016-guided28"></script>
+<script src="life-orchestrator.js?v=20261017-sim-house1"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261016-guided33"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
@@ -8225,7 +8251,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261016-roomlink2"></script>
+<script src="house-visual-map.js?v=20261017-sim-house1"></script>
 <script src="dolly-room-model.js?v=20261016-photo-proportions2"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>

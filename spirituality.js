@@ -195,8 +195,8 @@ function spiritualityHistoryCard(){
 function openSpiritualityPage(event){
  if(event){event.preventDefault?.();event.stopPropagation?.()}
  if(typeof closeModal==="function"&&document.querySelector("#modal"))closeModal();
- view="spirituality";
- if(typeof render==="function")render();
+ if(typeof setView==="function")setView("spirituality");
+ else{view="spirituality";if(typeof render==="function")render()}
  requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"}));
  return false;
 }

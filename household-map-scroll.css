@@ -1,7 +1,7 @@
 /* Let a four-floor map scroll above the fixed navigation. */
 html:has(.household-one-screen-shell .household-map-page),
 body:has(.household-one-screen-shell .household-map-page){height:auto!important;min-height:100dvh!important;overflow-y:auto!important}
-#app .household-one-screen-shell:has(.household-map-page){display:block!important;height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important;padding-bottom:calc(138px + env(safe-area-inset-bottom))!important}
+#app .household-one-screen-shell:has(.household-map-page){display:block!important;height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important;padding-bottom:calc(94px + env(safe-area-inset-bottom))!important}
 #app .household-map-page{max-width:920px;margin:0 auto}
-#app .household-map-directory>.actions{display:flex;flex-wrap:wrap;gap:8px}
-#app .household-map-directory>.actions>.btn{flex:1 1 130px}
+#app .household-map-directory-body>.actions{display:flex;flex-wrap:wrap;gap:8px}
+#app .household-map-directory-body>.actions>.btn{flex:1 1 130px}

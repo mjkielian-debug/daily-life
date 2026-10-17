@@ -26,6 +26,24 @@ function setLifeSim(id) {
   render();
 }
 
+function openHouseTodayPanel() {
+  if (typeof houseOverlayView !== "undefined" && houseOverlayView) { houseOverlayView = ""; closeModal(); render(); }
+  const tasks = typeof todayTasks === "function" ? todayTasks() : [];
+  const done = tasks.filter(task => task.done).length;
+  const active = tasks.filter(task => !task.done);
+  const rows = active.length
+    ? active.slice(0, 10).map(task => `<div class="house-today-row"><button type="button" class="house-today-open" onclick="closeModal();openTaskDetails(${lifeSimArg(task.id)})"><span><b>${esc(task.title || "Task")}</b><small>${esc([task.child,task.category].filter(Boolean).join(" · ") || "Household")}</small></span><span>›</span></button><button type="button" class="house-today-done" aria-label="Complete ${esc(task.title || "task")}" onclick="closeModal();toggleTask(${lifeSimArg(task.id)},true)">✓</button></div>`).join("")
+    : `<div class="notice">Nothing is waiting in today’s task list.</div>`;
+  modal("Today in the house",`<div class="house-today-panel"><div class="house-today-summary"><b>${done} done</b><span>${active.length} left</span><button type="button" class="btn small primary" onclick="closeModal();openTask()">＋ Add task</button></div>${rows}${active.length>10?`<button class="btn" onclick="closeModal();setView('today')">Open all ${active.length} tasks</button>`:""}<button class="btn" onclick="closeModal();setView('itinerary')">Open the day schedule</button></div>`,"Close",closeModal);
+}
+
+function openHousePeoplePanel() {
+  if (typeof houseOverlayView !== "undefined" && houseOverlayView) { houseOverlayView = ""; closeModal(); render(); }
+  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
+  const rows = roster.map(person => `<div class="house-people-row"><button type="button" class="house-people-select ${String(person.id)===activeId?"is-active":""}" onclick="closeModal();setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(String(person.name||"?").trim().charAt(0).toUpperCase()||"?")}</span><span><b>${esc(person.name)}</b><small>${String(person.id)===activeId?"Currently selected":"Select this Sim"}</small></span><span>›</span></button>${String(person.id)!=="self"?`<button type="button" class="btn small" onclick="closeModal();openPersonHub(${lifeSimArg(person.id)})">Profile</button>`:""}</div>`).join("");
+  modal("People in this house",`<div class="house-people-panel">${rows}<div class="actions"><button class="btn primary" onclick="closeModal();setView('family')">Family routines + calendar</button><button class="btn" onclick="closeModal();openPersonProfile()">＋ Add a person</button></div></div>`,"Close",closeModal);
+}
+
 function lifeSimAvailableTasks(person, activeId = lifeSimSelectedId()) {
   const day = ymd();
   const personName = String(person?.name || "").trim().toLowerCase();
@@ -144,6 +162,10 @@ function lifeSimHud() {
     const initial = String(person.name || "?").trim().charAt(0).toUpperCase() || "?";
     return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
   }).join("");
+  if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
+    <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
+    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}<button type="button" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
+  </section>`;
   const needs = activeId === "self" ? [
     ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
     ["☼", "Mood", mood?.mood ? moodLabel(mood.mood) : "No check-in", mood?.mood ? Number(mood.mood) * 20 : NaN, "openWellnessCheckin()"],
