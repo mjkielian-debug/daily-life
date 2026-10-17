@@ -120,6 +120,26 @@ function roomProgressHtml(f){
  (online()&&!map?'Loading mapped rooms…':'No room tasks or inventory locations are linked to this floor yet. You can tap the diagram or add a room.')+
  '</p>';
 }
+function floorTrackedTasks(f){
+ const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
+ const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
+ const localUsed=new Set(),groups=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return trackedRoomTasks(f,z,room)});
+ for(const room of floorRooms)if(!localUsed.has(str(room.id)))groups.push(trackedRoomTasks(f,null,room));
+ const byId=new Map();
+ for(const task of groups.flat())if(task?.id)byId.set(String(task.id),task);
+ return [...byId.values()];
+}
+window.houseVisualFloorProgressHtml=function(f){
+ const tasks=floorTrackedTasks(f),done=tasks.filter(task=>task.done).length;
+ const percent=tasks.length?Math.round(done*100/tasks.length):null;
+ const status=tasks.length?done+" of "+tasks.length+" room tasks complete":"No room tasks logged yet";
+ const progress=percent===null
+  ? '<span class="household-map-floor-progress-state">Start tracking ›</span>'
+  : '<span class="household-map-floor-progress-meter"><b>'+percent+'%</b><i role="progressbar" aria-label="Room tasks complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><em style="width:'+percent+'%"></em></i></span>';
+ const label="Open "+h(f)+" room progress"+(tasks.length?": "+done+" of "+tasks.length+" tasks complete":": no room tasks logged yet");
+ return '<button type="button" class="household-map-floor-progress" aria-label="'+h(label)+'" onclick="householdOpenRoomProgress()">'+
+  '<span class="household-map-floor-progress-copy"><b>'+h(f)+' progress</b><small>'+status+'</small></span>'+progress+'<span aria-hidden="true">›</span></button>';
+};
 window.houseVisualRoomProgressHtml=function(f){return roomProgressHtml(f)};
 function refreshRoomProgress(f){
  document.querySelectorAll(".household-map-room-results[data-floor]").forEach(el=>{
