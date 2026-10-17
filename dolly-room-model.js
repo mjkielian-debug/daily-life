@@ -39,10 +39,10 @@
   // left = footboard window; right = closet and entry wall;
   // bottom = black tapestry / long dresser wall.
   // Units are visual estimates from photographs, not inches.
-  bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:12,y:9,angle:0},
-  dresser:{label:"Dresser",w:148,h:48,color:"#a66a42",x:0,y:210,angle:0},
+  bed:{label:"Bed",w:109,h:200,color:"#eee9ff",x:2,y:4,angle:0},
+  dresser:{label:"Dresser",w:198,h:48,color:"#a66a42",x:0,y:210,angle:0},
   vanity:{label:"Vanity",w:118,h:46,color:"#f8f7f3",x:126,y:4,angle:0},
-  dollhouse:{label:"Barbie house",w:138,h:51,color:"#f3a3ce",x:249,y:51,angle:90}
+  dollhouse:{label:"Barbie house",w:138,h:51,color:"#f3a3ce",x:245,y:51,angle:90}
  };
  let floorSelected="dresser";
  function floorRead(){try{return JSON.parse(localStorage.getItem(FLOOR_KEY)||"{}")||{}}catch(_){return {}}}
@@ -268,7 +268,7 @@
     '<rect x="7" y="7" width="'+(p.w-14)+'" height="'+(p.h-14)+'" fill="#f9d3e7" stroke="#bc779c"/>'+
     '<path d="M'+(p.w/3)+' 7V'+(p.h-7)+'M'+(2*p.w/3)+' 7V'+(p.h-7)+'" stroke="#bb8b64" stroke-width="4"/>'+
     '<path d="M7 '+(p.h-11)+'H'+(p.w-7)+'" stroke="#b46c99" stroke-width="4"/>';
-   return '<g data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Move '+p.label+'" style="cursor:grab;touch-action:none" transform="translate('+x+' '+y+')">'+
+   return '<g data-floor-key="'+key+'" tabindex="0" role="button" aria-label="Open '+p.label+' or drag to move it" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();dollyOpenObject(&#39;'+key+'&#39;)}" style="cursor:grab;touch-action:none" transform="translate('+x+' '+y+')">'+
     '<g transform="translate('+tx+' '+ty+') rotate('+angle+')">'+artwork+'</g>'+
     '<rect width="'+w+'" height="'+h+'" fill="transparent" stroke="'+(selected?'#be428e':'transparent')+'" stroke-width="3" rx="4"/>'+
     '<text x="'+(w/2)+'" y="'+(h/2)+'" font-size="'+(key==='dollhouse'?9:12)+'" font-weight="700" text-anchor="middle" fill="#302b33" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">'+p.label+'</text></g>';
@@ -311,47 +311,33 @@
   const svg=event.currentTarget,base=floorData(key),point=svg.createSVGPoint();
   const coord=e=>{point.x=e.clientX;point.y=e.clientY;return point.matrixTransform(svg.getScreenCTM().inverse())};
   const start=coord(event),w=base.angle%180?base.h:base.w,h=base.angle%180?base.w:base.h;
+  let moved=false;
   svg.setPointerCapture(event.pointerId);event.preventDefault();floorDraw();
   const move=e=>{
    if(e.pointerId!==event.pointerId)return;
-   const now=coord(e),data=floorRead();
+   const now=coord(e);if(Math.hypot(now.x-start.x,now.y-start.y)>3)moved=true;
+   const data=floorRead();
    data[key]={...base,x:floorClamp(base.x+now.x-start.x,0,300-w),y:floorClamp(base.y+now.y-start.y,0,260-h)};
    floorSave(data);floorDraw();
   };
-  const stop=e=>{if(e.pointerId!==event.pointerId)return;svg.removeEventListener("pointermove",move);svg.removeEventListener("pointerup",stop);svg.removeEventListener("pointercancel",stop)};
+  const stop=e=>{if(e.pointerId!==event.pointerId)return;svg.removeEventListener("pointermove",move);svg.removeEventListener("pointerup",stop);svg.removeEventListener("pointercancel",stop);if(e.type==="pointerup"&&!moved)dollyOpenObject(key)};
   svg.addEventListener("pointermove",move);svg.addEventListener("pointerup",stop);svg.addEventListener("pointercancel",stop);
  };
  window.dollyRoomSceneHtml=function(){
-  const defs='<defs>'+
-   '<linearGradient id="roomFloor" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#bd865e"/><stop offset=".58" stop-color="#a56d45"/><stop offset="1" stop-color="#895731"/></linearGradient>'+
-   '<linearGradient id="roomBackWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#eee9df"/><stop offset="1" stop-color="#d9d5cd"/></linearGradient>'+
-   '<linearGradient id="roomSideWall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e6e2d9"/><stop offset="1" stop-color="#cfcac3"/></linearGradient>'+
-   '<linearGradient id="roomRightWall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e3ded5"/><stop offset="1" stop-color="#d2cec7"/></linearGradient>'+
-   '</defs>';
-  const pieces=["bed","vanity","dresser","dollhouse"].sort((a,b)=>{
-   const pa=floorData(a),pb=floorData(b);
-   const da=(Number(pa.x)||0)+(Number(pa.y)||0),db=(Number(pb.x)||0)+(Number(pb.y)||0);
-   return da-db;
-  }).map(perspectivePiece).join("");
-  const body=roomSceneBase()+wallDecor()+pieces;
-  setTimeout(dollyPerspectiveSync,80);
-  setTimeout(dollyPerspectiveSync,350);
-  return '<section class="dolly-room-card dolly-room-3d" aria-label="Dolly’s bedroom, perspective built from the saved top-down layout">'+
-   '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Her rearranged room</h3></div><span>Tap furniture</span></div>'+
-   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:9px 4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
-   '<button type="button" onclick="dollyFloorOpen()">Open top-down layout</button>'+
-   '<button type="button" onclick="dollyRestoreVanity()" id="dollyRestoreVanity" title="Restore vanity to its saved plan position">Restore vanity</button>'+
+  setTimeout(floorDraw,80);setTimeout(floorDraw,350);
+  return '<section class="dolly-room-card dolly-room-topdown" aria-label="Dolly’s bedroom, interactive top-down floor plan">'+
+   '<div class="dolly-room-heading"><div><small>DOLLY’S BEDROOM</small><h3>Room map</h3></div><span>Tap or move furniture</span></div>'+
+   '<div class="dolly-room-arrange-tools" style="position:relative;z-index:2;padding:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
+   '<button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button>'+
+   '<button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button>'+
+   '<button type="button" onclick="dollyFloorSnap()">Snap to wall</button>'+
    '</div>'+
-   '<div id="dollyFloorPlan" hidden style="display:none;padding:12px;border:1px solid #d6bcd5;border-radius:18px;margin:12px 0;background:#fff8ff">'+
-   '<strong>Dolly’s photographed room · top view</strong><p>Drag and turn furniture here. The perspective uses these same saved positions and proportions.</p>'+
-   '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><button type="button" onclick="dollyFloorTurn(-1)">↶ Turn left</button><button type="button" onclick="dollyFloorTurn(1)">↷ Turn right</button><button type="button" onclick="dollyFloorSnap()">Snap to wall</button><button type="button" onclick="dollyFloorClose()">Close layout</button></div>'+
-   '<p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 300 260" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Top-down bedroom furniture layout"></svg></div>'+
-   '<div class="dolly-room-scene dollhouse-view"><svg class="dolly-mini-svg" viewBox="150 0 410 400" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Perspective view of Dolly’s bedroom. Furniture positions and proportions follow the saved top-down plan.">'+defs+body+'</svg></div>'+
-   '<p class="dolly-room-caveat"><b>Saved arrangement:</b> bed below the Mario poster beside the side window; vanity under the far window; dresser at the bed’s foot; open Barbie house by the closet. The entry and closet share the right wall; the entry swings inward toward the dresser-side wall.</p>'+
-   '<div class="dolly-room-helper">Tap a furniture piece or the closet to open its inventory and tasks. The picture uses relative room proportions, not measured dimensions.</div>'+
+   '<div id="dollyFloorPlan" style="display:block;padding:10px;border:1px solid #d6bcd5;border-radius:18px;background:#fff8ff">'+
+   '<strong>Dolly’s room · top view</strong><p>Tap furniture to open it. Drag to rearrange; use the turn buttons to rotate.</p>'+
+   '<p id="dollyFloorSelected">Selected: Dresser</p><svg viewBox="0 0 300 260" style="display:block;width:100%;max-width:560px;touch-action:none" onpointerdown="dollyFloorPointerDown(event)" aria-label="Interactive top-down bedroom furniture layout"></svg></div>'+
+   '<div class="dolly-room-helper">This is the saved room layout, with the furniture kept in its current floor-map positions.</div>'+
    '</section>';
  };
-
  window.dollyOpenObject=function(key){
   const item=ITEMS[key];if(!item)return;
   const d=record(key),opts=sections(key),tasks=taskList(key),done=tasks.filter(t=>t.done).length;

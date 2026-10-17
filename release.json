@@ -1,6 +1,6 @@
 {
-  "build": "20261017-sim-house2",
+  "build": "20261017-dolly-plan2",
   "released": "2026-10-17",
-  "ui": "Keep the Sim action bar inside the mobile screen",
+  "ui": "Keep the approved top-down Dolly room plan as the interactive room view",
   "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
 }
