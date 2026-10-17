@@ -97,3 +97,8 @@
 .hvm-annotation:hover rect{fill:#efdefd;stroke:#593378}
 .hvm-annotation:focus-visible{outline:none;filter:drop-shadow(0 0 4px #6f439c)}
 .hvm-annotation:focus-visible rect{stroke-width:4}
+
+/* House floor-map room previews reuse each room's saved drawing. */
+.hvm-zone.has-inline-preview .hvm-room-name{font-size:12px;paint-order:stroke;stroke:#fffaf5;stroke-width:4px;stroke-linejoin:round}
+.hvm-inline-room-preview{overflow:hidden;pointer-events:none;filter:drop-shadow(0 2px 2px #44334a24)}
+.household-map-drawing .hvm-drawing.hvm-has-previews{max-height:min(68vh,600px)}
