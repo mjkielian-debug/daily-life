@@ -146,4 +146,14 @@ button.life-sim-compact-needs{cursor:pointer}
 .hvm-object-detail h2{margin:0;font-size:1.15rem}
 .hvm-object-icon{display:grid;place-items:center;width:50px;height:50px;border-radius:16px;background:#fff;font-size:1.7rem;color:#805f9a}
 .hvm-object-status,.hvm-object-note{margin:0;padding:12px;border:1px solid #e0d4e4;border-radius:13px;background:#fff9fd;color:#55445c;font-size:.83rem;line-height:1.5}
+.hvm-object-tasks{display:grid;gap:8px;padding:12px;border:1px solid #e0d4e4;border-radius:14px;background:#fff9fd;color:#55445c}
+.hvm-object-tasks>div:first-child{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.hvm-object-tasks>div:first-child>b{font-size:.82rem}
+.hvm-object-tasks>div:first-child>small{font-size:.66rem;color:#715d78}
+.hvm-object-tasks>p{margin:0}
+.hvm-object-task-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding-top:8px;border-top:1px solid #eadddf}
+.hvm-object-task-row>span{display:grid;gap:3px;min-width:0}
+.hvm-object-task-row b{font-size:.75rem;overflow-wrap:anywhere}
+.hvm-object-task-row small,.hvm-task-row span small{font-size:.65rem;color:#715d78;line-height:1.25}
+.hvm-object-task-row .btn{flex-shrink:0}
 @media(max-width:420px){.life-sim-house-map-actions{padding:6px 8px}.household-map-page{padding-left:8px;padding-right:8px}.household-map-title>button{flex:none}}
