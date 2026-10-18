@@ -50,12 +50,20 @@ window.inventoryReviewEdit=async function(id){
  const candidates=(state.inventoryItems||[]).filter(i=>clean(i.name)===clean(x.item_name));
  // A proposed photo count is evidence to review, not a verified quantity.
  const confirmedQty=existing&&Number.isInteger(Number(existing.quantity))&&Number(existing.quantity)>0?String(existing.quantity):"";
+ const inferredOwner=String(x.room_name||"").toLowerCase().includes("dolly")?"Dolly":"";
+ const wardrobeOwner=String(existing?.wardrobeOwner||inferredOwner);
+ const wardrobeType=String(existing?.wardrobeType||"");
+ const wardrobeTypes=[["long_sleeve","Long-sleeve shirts"],["short_sleeve","Short-sleeve shirts"],["hoodie_jacket","Hoodies / jackets / zip-ups"],["winter_coat","Winter coat"],["pants","Pants"],["pajamas","Pajamas"]];
+
   const dupe=candidates.length?'<div class="pi-help"><b>Possible existing match</b><p>Do these photos show an item you already counted?</p>'+
  candidates.slice(0,8).map(i=>'<button class="btn small" type="button" onclick="inventoryMarkAlreadyCounted(\''+id+'\',\''+String(i.id||"").replace(/[^a-z0-9_-]/gi,"")+'\')">Already counted: '+esc(i.name||"")+' (×'+Number(i.quantity||0)+')</button>').join(" ")+'</div>':"";
  modal("Check before adding",'<div class="stack pi-form">'+dupe+
  '<label>Item name<input id="irName" value="'+esc(x.item_name)+'"></label>'+
  '<div class="grid2"><label>Quantity you actually confirmed<input id="irQty" type="number" min="1" step="1" required placeholder="Count before saving" value="'+confirmedQty+'"></label>'+
  '<label>Category<input id="irCategory" value="'+esc(x.category||"Household")+'"></label></div>'+
+ '<div class="grid2"><label>Clothing type<select id="irWardrobeType"><option value="">Not categorized</option>'+wardrobeTypes.map(([k,v])=>'<option value="'+k+'" '+(wardrobeType===k?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
+ '<label>Belongs to<select id="irWardrobeOwner"><option value="">Not assigned</option>'+["Leo","Demitri","Dolly","Ambrose","Michelle"].map(v=>'<option value="'+v+'" '+(wardrobeOwner===v?"selected":"")+'>'+v+'</option>').join("")+'</select></label></div>'+
+ '<small class="pi-muted">Set clothing type + owner if this should count toward a child’s wardrobe targets.</small>'+
  '<div class="grid2"><label>Room<input id="irRoom" value="'+esc(x.room_name||"")+'"></label>'+
  '<label>Storage spot<input id="irStorage" value="'+esc(x.storage_spot||"")+'"></label></div>'+
  '<label>What should happen next?<select id="irDecision">'+Object.entries(DECISIONS).map(([k,v])=>'<option value="'+k+'" '+(x.decision===k?"selected":"")+'>'+esc(v)+'</option>').join("")+'</select></label>'+
@@ -83,7 +91,7 @@ window.inventoryReviewEdit=async function(id){
   }
   Object.assign(row,{name,category:get("irCategory").value.trim()||"Household",quantity:qty,status:decision==="donate"||decision==="sell"?"Donate / sell":"Have",
    roomId,locationId,notes:get("irNotes").value.trim(),organizingDecision:decision,
-   replacementCriteria:get("irReplace").value.trim(),sourceSuggestionId:id,updatedAt:new Date().toISOString()});
+   replacementCriteria:get("irReplace").value.trim(),wardrobeType:get("irWardrobeType").value,wardrobeOwner:get("irWardrobeOwner").value,sourceSuggestionId:id,updatedAt:new Date().toISOString()});
   try{await save()}catch(e){
    state.inventoryItems=snapshot.inventoryItems;
    state.houseRooms=snapshot.houseRooms;
