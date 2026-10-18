@@ -1,6 +1,6 @@
 {
-  "build": "20261018-restore-safety10",
+  "build": "20261018-ux-purpose11",
   "released": "2026-10-18",
-  "ui": "Show saved item photos and protect restore failures",
+  "ui": "Fix readable rainbow colors, Today and People navigation, and household profile actions",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
