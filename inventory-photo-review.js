@@ -37,9 +37,8 @@ window.openInventoryPhotoReview=async function(){
   '<div class="pi-map-actions"><button type="button" class="btn primary small" onclick="inventoryReviewEdit(&#39;'+x.id+'&#39;)">'+(focus?"Review this item":"Review / add")+'</button>'+
   '<button type="button" class="btn small" onclick="inventoryIgnoreSuggestion(&#39;'+x.id+'&#39;)">Not mine / skip</button></div></div>';
  target.innerHTML=pending.length?
-  '<div class="pi-review-counter"><b>One item at a time</b><span>1 of '+pending.length+' awaiting review</span><small>A suggestion is not an owned item until you confirm it.</small></div>'+
-  card(pending[0],true)+
-  (pending.length>1?'<details class="pi-review-more"><summary>Other photo suggestions ('+(pending.length-1)+') ›</summary>'+pending.slice(1).map(x=>card(x)).join("")+'</details>':""):
+  '<div class="pi-review-counter"><b>Photo suggestions</b><span>'+pending.length+' awaiting confirmation</span><small>Each card shows the photo and where it may belong. Confirm before it enters your counted inventory.</small></div>'+
+  '<div class="pi-review-grid">'+pending.map((x,i)=>card(x,i===0)).join("")+'</div>':
   '<p class="pi-muted">No pending suggestions yet. Send pictures, then ask ChatGPT to review the Photo Inbox and prepare inventory candidates.</p>';
 
 };
