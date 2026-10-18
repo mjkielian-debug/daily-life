@@ -221,7 +221,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-inventory-direct1").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261018-inventory-direct2").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -6632,6 +6632,11 @@ async function removeBudgetSpending(index){
 }
 
 function setView(v){
+  if(v==="inventory"){
+    inventoryTab="items";inventoryCategory="All";inventorySearch="";
+    localStorage.setItem("dailyLifeInventoryTab","items");
+    localStorage.setItem("dailyLifeInventoryCategory","All");
+  }
   if(v==="household"){
     const wasOnHouse=view==="household";
     view="household";houseOverlayView="";closeModal();render();
