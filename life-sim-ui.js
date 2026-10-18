@@ -206,7 +206,7 @@ function lifeSimHud() {
   if (view !== "household") {
     const needsSummary = activeId === "self"
       ? `<button type="button" class="life-sim-compact-needs" onclick="lifeSimOpenNeeds()">♡ Needs <span>${care ? `${care.done}/${care.total} care` : "care"}</span><span>${waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz`}</span></button>`
-      : `<span class="life-sim-compact-needs">Today · ${taskDone}/${tasks.length} tasks</span>`;
+      : `<button type="button" class="life-sim-compact-needs" onclick="openPersonHub(${lifeSimArg(active.id)})"><span>${esc(active.name)} · ${taskDone}/${tasks.length} tasks today</span><b>Open profile ›</b></button>`;
     return `<section class="life-sim-hud life-sim-compact-hud" aria-label="Live household controls">
       <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
       <div class="life-sim-compact-bar"><div class="life-sim-compact-context"><span class="life-sim-compact-plumbob" aria-hidden="true">✦</span><span><small>PLAYING AS</small><b>${esc(active.name)}</b></span></div>${needsSummary}<button type="button" class="life-sim-compact-action" ${current ? `onclick="openTaskDetails(${lifeSimArg(current.id)})"` : `onclick="lifeSimOpenActionPicker()"`}><span>NOW</span><b>${current ? esc(current.title) : "Choose an action"}</b></button><button type="button" class="life-sim-compact-add" onclick="lifeSimOpenActionPicker()" aria-label="Add an action">＋</button><button type="button" class="life-sim-compact-house" onclick="setView('household')">⌂ House</button></div>
