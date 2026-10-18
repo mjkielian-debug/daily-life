@@ -349,7 +349,7 @@ async function hydrateBathroomPhotoGallery(f){
  const host=document.getElementById("hvmRoomPhotoGallery");if(!host)return;
  if(!online()){host.textContent="Sign in to see your saved bathroom photos.";return}
  const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
-  .eq("category","house_map").eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
+  .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
  const current=document.getElementById("hvmRoomPhotoGallery");if(!current)return;
  if(error){current.textContent="Could not load saved bathroom photos.";return}
  const photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
