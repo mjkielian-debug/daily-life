@@ -133,18 +133,9 @@ async function hydrateRoomDirectoryPhotos(f,m){
    const saved=data||[];
    for(const ref of refs){
     if(ref.id)continue;
-    const name=str(ref.zone.name).trim();
-    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,"\\ const bath=refs.find(x=>/bath/i.test(str(x.zone.name)));
- if(bath&&!bath.id){
-  try{
-   const {data}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
-    .in("category",["house_map","home_progress"]).eq("floor_label",f)
-    .order("created_at",{ascending:false}).limit(100);
-   bath.id=(data||[]).find(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id))?.id||null;
-  }catch(e){}
- }");
-    const match=saved.find(p=>okPhoto(p.id)&&new RegExp(escaped,"i").test(str(p.title)+" "+str(p.notes)))
-      ||(/bath/i.test(name)?saved.find(p=>okPhoto(p.id)&&/bath/i.test(str(p.title)+" "+str(p.notes))):null);
+    const name=str(ref.zone.name).trim().toLowerCase();
+    let match=name?saved.find(p=>okPhoto(p.id)&&(str(p.title)+" "+str(p.notes)).toLowerCase().includes(name)):null;
+    if(!match&&name.includes("bath"))match=saved.find(p=>okPhoto(p.id)&&/bath/i.test(str(p.title)+" "+str(p.notes)));
     ref.id=match?.id||null;
    }
   }catch(e){}
