@@ -8,6 +8,42 @@ const digits=id=>/^[a-f0-9-]{36}$/i.test(String(id||""));
 function reviewedInventory(){
  return (state.inventoryItems||[]).filter(x=>x.organizingDecision&&x.organizingDecision!=="review");
 }
+const savedInventoryPhotoCache=new Map();
+function itemSuggestionIds(item){
+ return [...new Set([item?.sourceSuggestionId,...(Array.isArray(item?.sourceSuggestionIds)?item.sourceSuggestionIds:[])].filter(digits))];
+}
+const inventoryThumbStyle="width:54px;height:54px;object-fit:cover;border-radius:12px;flex:0 0 54px;background:#f5e8f0;";
+window.inventoryItemPhotoHtml=function(item){
+ if(!itemSuggestionIds(item).length)return "";
+ const src=savedInventoryPhotoCache.get(String(item.id||""));
+ if(src)return '<img src="'+esc(src)+'" alt="Photo of '+esc(item.name||"inventory item")+'" style="'+inventoryThumbStyle+'">';
+ return '<span data-inventory-thumb="'+esc(item.id||"")+'" data-inventory-name="'+esc(item.name||"inventory item")+'" aria-hidden="true" style="'+inventoryThumbStyle+'display:grid;place-items:center">📷</span>';
+};
+window.inventoryLoadSavedItemPhotos=async function(){
+ if(!signed())return;
+ const items=(state.inventoryItems||[]).filter(item=>itemSuggestionIds(item).length).slice(0,30);
+ const missing=items.filter(item=>!savedInventoryPhotoCache.has(String(item.id||"")));
+ if(!missing.length)return;
+ const suggestionIds=[...new Set(missing.flatMap(item=>itemSuggestionIds(item)))];
+ if(!suggestionIds.length)return;
+ const {data:suggestions,error}=await cloudClient.from("inventory_photo_suggestions").select("id,source_photo_id").in("id",suggestionIds);
+ if(error||!suggestions?.length)return;
+ const suggestionMap=new Map(suggestions.map(item=>[item.id,item.source_photo_id]));
+ const photoIds=[...new Set(suggestions.map(item=>item.source_photo_id).filter(digits))];
+ if(!photoIds.length)return;
+ const {data:photos}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",photoIds);
+ const photosById=new Map((photos||[]).filter(photo=>/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(photo.image_data||"")).map(photo=>[photo.id,photo.image_data]));
+ for(const item of missing){
+  const photoId=itemSuggestionIds(item).map(id=>suggestionMap.get(id)).find(id=>photosById.has(id));
+  if(photoId)savedInventoryPhotoCache.set(String(item.id||""),photosById.get(photoId));
+ }
+ document.querySelectorAll("[data-inventory-thumb]").forEach(node=>{
+  const src=savedInventoryPhotoCache.get(node.getAttribute("data-inventory-thumb")||"");
+  if(!src)return;
+  const img=document.createElement("img");img.src=src;img.alt="Photo of "+(node.getAttribute("data-inventory-name")||"inventory item");img.style.cssText=inventoryThumbStyle;node.replaceWith(img);
+ });
+};
+
 window.openInventoryPhotoReview=async function(){
  if(!signed()){
   modal("Photo inventory review",'<p class="muted">Sign in to Daily Life cloud to receive suggestions from photos you ask me to examine. Existing inventory stays on this phone.</p><button class="btn primary" onclick="openCloudAuth()">Sign in</button>',"Close",closeModal);return;
