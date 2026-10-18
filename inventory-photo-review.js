@@ -26,7 +26,7 @@ window.openInventoryPhotoReview=async function(){
  const photoById=new Map();
  if(photoIds.length){
   const {data:photos}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",photoIds);
-  for(const photo of photos||[])if(/^data:image\\/jpeg;base64,[a-z0-9+/=]+$/i.test(photo.image_data||""))photoById.set(photo.id,photo.image_data);
+  for(const photo of photos||[])if(/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(photo.image_data||""))photoById.set(photo.id,photo.image_data);
  }
  const card=(x,focus=false)=>'<div class="pi-area-card pi-inventory-choice'+(focus?' pi-inventory-choice-focus':'')+'">'+
   (photoById.has(x.source_photo_id)?'<img class="pi-inventory-photo" src="'+esc(photoById.get(x.source_photo_id))+'" alt="Photo of '+esc(x.item_name||"inventory item")+'">':"")+
