@@ -3558,3 +3558,13 @@ textarea{resize:vertical}
 @media(min-width:640px){.wardrobe-person-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .wardrobe-count-actions{display:flex;align-items:center;gap:8px}.wardrobe-count-actions>strong{font-size:1.15rem;color:#4b3656}.wardrobe-count-actions .btn{min-width:38px;min-height:36px;padding:5px 9px}
+
+
+/* Self-care page: keep bathroom products readable and easy to open on a phone. */
+.self-care-bathroom-items{display:grid;gap:8px;margin-top:12px}
+.self-care-bathroom-item{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 14px;border:1px solid rgba(113,77,113,.22);border-radius:16px;background:rgba(255,255,255,.76);color:inherit;text-align:left;cursor:pointer}
+.self-care-bathroom-item>span:nth-child(2){display:grid;gap:3px;flex:1;min-width:0}
+.self-care-bathroom-item small{opacity:.78;overflow-wrap:anywhere}
+.care-page-heading{padding:8px 4px 14px}
+.care-page-heading h1{margin:4px 0;font-family:var(--serif,Georgia,serif)}
+.care-page-heading p{margin:0;opacity:.78}
