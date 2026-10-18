@@ -337,7 +337,7 @@ window.houseVisualShowRoomPhoto=async function(photoId){
  stage.textContent="Loading saved bathroom photo…";
  const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
  const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
- if(error||!data||!/^data:image\\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
+ if(error||!data||!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
   current.textContent="This saved photo could not be displayed.";return;
  }
  const img=document.createElement("img");img.alt=data.title||"Upstairs bathroom photo";img.src=data.image_data;
