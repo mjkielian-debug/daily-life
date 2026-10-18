@@ -4810,10 +4810,18 @@ function selfCareBathroomCard(){
   '<div class="self-care-bathroom-items">'+(rows||'<div class="notice">No bathroom products are confirmed in inventory yet. Add or review them there and they’ll appear here.</div>')+'</div></section>';
 }
 function openBathroomOnMap(){
-  const room=(state.houseRooms||[]).find(r=>/bath/i.test(String(r.name||"")));
-  if(room?.floor)try{localStorage.setItem("dailyLifeMapFirstFloor",String(room.floor))}catch(_){}
+  const room=(state.houseRooms||[]).find(r=>/bath/i.test(String(r.name||""))),floor=room?.floor||"";
+  if(floor)try{localStorage.setItem("dailyLifeMapFirstFloor",String(floor))}catch(_){}
   setView("household");
-  requestAnimationFrame(()=>{if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress()});
+  requestAnimationFrame(()=>{
+    if(floor&&typeof window.houseVisualMapHydrate==="function")window.houseVisualMapHydrate(floor).then(()=>{
+      const mapRoot=[...document.querySelectorAll(".hvm-root")].find(el=>el.dataset.floor===floor);
+      const tile=[...(mapRoot?.querySelectorAll(".hvm-room-tile")||[])].find(el=>/bath/i.test(el.textContent||""));
+      if(tile){tile.click();return}
+      if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress();
+    });
+    else if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress();
+  });
 }
 function selfCarePage(){
   return '<section class="care-page-heading"><div class="eyebrow">CARE · YOUR ROUTINES</div><h1>Self care</h1><p>Shower, bathroom products and personal routines in one place.</p></section>'+selfCareBathroomCard()+selfCareCard()+careOutfitCard();
