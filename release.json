@@ -1,6 +1,6 @@
 {
-  "build": "20261018-wardrobe-review8",
+  "build": "20261018-inventory-thumbnails9",
   "released": "2026-10-18",
-  "ui": "Review unassigned clothing before it counts toward wardrobe goals",
+  "ui": "Show private photos on saved inventory items",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
