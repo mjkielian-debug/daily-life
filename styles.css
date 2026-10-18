@@ -3526,3 +3526,7 @@ textarea{resize:vertical}
   overflow-wrap:normal;
 }
 .inventory-tools .notice .btn{margin-top:9px}
+
+
+/* Photo-first item review: recognizable product image before the decision. */
+.pi-inventory-photo{display:block;width:100%;max-height:220px;object-fit:contain;background:#fffafc;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:16px;margin:0 0 12px;padding:6px}
