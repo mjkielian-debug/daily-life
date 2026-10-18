@@ -1,6 +1,6 @@
 {
-  "build": "20261017-refined-room-map1",
-  "released": "2026-10-17",
-  "ui": "Fit room layouts into floor plans and interact with mapped furniture",
-  "data_version": "unchanged local-first furniture, tasks, inventories and bedding history"
+  "build": "20261018-inventory-update3",
+  "released": "2026-10-18",
+  "ui": "Open inventory directly and make app updates reload cleanly",
+  "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
