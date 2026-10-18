@@ -1,6 +1,6 @@
 {
-  "build": "20261018-wardrobe-add-flow5",
+  "build": "20261018-wardrobe-add-flow6",
   "released": "2026-10-18",
-  "ui": "Open inventory directly and add clothing counts by child and type",
+  "ui": "Open inventory and add clothing by child and type",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
