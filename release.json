@@ -1,6 +1,6 @@
 {
-  "build": "20261018-plans-date13",
+  "build": "20261018-care-nav14",
   "released": "2026-10-18",
-  "ui": "Keep Day Flow on today and collapse duplicate family plans",
+  "ui": "Simplify section navigation, connect self care to bathroom inventory, and collapse duplicate events",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
