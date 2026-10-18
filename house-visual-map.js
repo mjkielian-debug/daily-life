@@ -277,6 +277,8 @@ window.houseVisualInventoryOpen=function(f,id){
  const z=zone(f,id);if(!z)return;
  const room=localRoom(f,z);
  if(room&&typeof homeOpenRoomInventory==="function"){homeOpenRoomInventory(room.id);return}
+ if(typeof openInventoryHubSection==="function"){openInventoryHubSection("items");return}
+ if(typeof setView==="function"){setView("inventory");return}
  if(typeof openInventoryRoom==="function")openInventoryRoom("",f);
 };
 function trackedRoomTasks(f,z,room){
@@ -345,7 +347,7 @@ window.houseVisualOpenZone=function(f,id){
  const spots=arr(z.markers).map((p,i)=>'<button type="button" class="hvm-object-row" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')"><span>✦</span><span><b>'+h(p.label||"Mapped object")+'</b><small>'+h(p.status||"Tap to inspect this mapped object")+'</small></span><span>›</span></button>').join("");
  const actions='<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button>'+
  '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
- (room?"Open full inventory":"+ Link inventory")+'</button>'+
+ (room?"Open full inventory":"Browse inventory")+'</button>'+
  '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">← Floor map</button></div>';
  const references='<details class="hvm-room-extra"><summary>Reference photos ('+photos.length+') + mapping notes ›</summary>'+
  (photos.length?'<div class="hvm-detail-photos">'+photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join("")+'</div>':"")+
