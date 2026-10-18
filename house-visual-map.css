@@ -106,3 +106,12 @@
 .hvm-stair-plan path{vector-effect:non-scaling-stroke}
 .hvm-stair-zone .hvm-room-name{paint-order:stroke;stroke:#f4e8fb;stroke-width:4px;stroke-linejoin:round}
 .household-map-drawing .hvm-drawing.hvm-has-previews{max-height:min(68vh,600px)}
+
+/* Keep real private room photos prominent in the room view. */
+.hvm-room-photo-gallery{margin:12px 0}
+.hvm-photo-gallery{display:grid;gap:9px}
+.hvm-room-photo-stage{min-height:150px;max-height:55vh;display:grid;place-items:center;overflow:hidden;border:1px solid #e7d7df;border-radius:18px;background:#f7eff3;color:#55445a}
+.hvm-room-photo-stage img{display:block;width:100%;max-height:55vh;object-fit:contain;background:#f6eef2}
+.hvm-room-photo-caption{font-weight:750;overflow-wrap:anywhere}
+.hvm-room-photo-picker{display:flex;gap:7px;overflow-x:auto;padding:3px 2px 8px}
+.hvm-room-photo-picker .btn{flex:0 0 auto;max-width:190px;white-space:normal}
