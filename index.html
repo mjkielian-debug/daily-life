@@ -5963,7 +5963,7 @@ function openInventoryItem(id=""){
     const name=$("#invname").value.trim();if(!name)return;
     const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
     let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
-    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),wardrobeType:$("#invWardrobeType").value,wardrobeOwner:$("#invWardrobeOwner").value,updatedAt:new Date().toISOString()});
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),wardrobeType:$("#invWardrobeType").value||row.wardrobeType||"",wardrobeOwner:$("#invWardrobeOwner").value||row.wardrobeOwner||"",updatedAt:new Date().toISOString()});
     await save();closeModal();render();
   });
 }
