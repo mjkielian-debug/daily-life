@@ -1,6 +1,6 @@
 {
-  "build": "20261018-wardrobe-add-flow6",
+  "build": "20261018-wardrobe-review7",
   "released": "2026-10-18",
-  "ui": "Open inventory and add clothing by child and type",
+  "ui": "Review unassigned clothing before it counts toward wardrobe goals",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
