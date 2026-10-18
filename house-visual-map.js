@@ -237,7 +237,7 @@ function refreshRoomProgress(f){
  });
 }
 
-function floorView(f,m){return f==="Second floor"?directory(f,m):draw(f,m)}
+function floorView(f,m){return directory(f,m)}
 function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
