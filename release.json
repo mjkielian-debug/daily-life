@@ -1,6 +1,6 @@
 {
-  "build": "20261018-inventory-thumbnails9",
+  "build": "20261018-restore-safety10",
   "released": "2026-10-18",
-  "ui": "Show private photos on saved inventory items",
+  "ui": "Show saved item photos and protect restore failures",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
