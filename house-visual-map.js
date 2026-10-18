@@ -358,6 +358,12 @@ window.houseVisualInteractMarker=function(f,id,index){
 };
 
 
+let activeRoomPhotoIds=[],activeRoomPhotoIndex=0;
+window.houseVisualNavigateRoomPhoto=function(step){
+ if(!activeRoomPhotoIds.length)return;
+ activeRoomPhotoIndex=(activeRoomPhotoIndex+Number(step)+activeRoomPhotoIds.length)%activeRoomPhotoIds.length;
+ window.houseVisualShowRoomPhoto(activeRoomPhotoIds[activeRoomPhotoIndex],activeRoomPhotoIndex,activeRoomPhotoIds.length);
+};
 window.houseVisualShowRoomPhoto=async function(photoId,index=0,total=activeRoomPhotoIds.length){
  const stage=document.getElementById("hvmRoomPhotoStage");
  if(!stage||!okPhoto(photoId)||!online())return;
