@@ -173,7 +173,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261018-photo-roomcards2">
+<link rel="stylesheet" href="house-visual-map.css?v=20261018-photo-real-tiles1">
 <link rel="stylesheet" href="visual-hubs.css?v=20261015-money-goals1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -221,7 +221,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-photo-review1").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261018-photo-real-tiles1").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -8235,7 +8235,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-photo-review1");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-photo-real-tiles1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8268,11 +8268,11 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261018-photo-roomcards2"></script>
+<script src="house-visual-map.js?v=20261018-photo-real-tiles1"></script>
 <script src="dolly-room-model.js?v=20261017-corrected-orientation1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
-<script src="inventory-photo-review.js?v=20261018-photo-review1"></script>
+<script src="inventory-photo-review.js?v=20261018-photo-real-tiles1"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261015-guided10"></script>
