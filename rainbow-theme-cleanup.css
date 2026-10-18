@@ -9,7 +9,10 @@
  --muted:#5b4c68;
  --cream:#34273e;
  --border:#cba6c1;
- --success:#5c6f98;
+ --success:#6d9d7c;
+ --primary:#c34d84;
+ --secondary:#9bc8ee;
+ --accent:#f6cf8a;
  --shadow:0 10px 26px rgba(72,47,91,.10),0 3px 8px rgba(72,47,91,.06);
 }
 html{
@@ -52,3 +55,69 @@ body::before{background-color:transparent}
 @media(display-mode:standalone){
  html,body{background-color:#f6dbe9!important}
 }
+
+
+/* Final readable rainbow palette: this file is intentionally loaded last. */
+:root{
+ --bg:#fff7fb!important;
+ --panel:#fffafd!important;
+ --panel2:#f6e8f4!important;
+ --text:#34273e!important;
+ --muted:#5b4c68!important;
+ --cream:#34273e!important;
+ --border:#cba6c1!important;
+ --primary:#c34d84!important;
+ --secondary:#9bc8ee!important;
+ --accent:#f6cf8a!important;
+ --success:#6d9d7c!important;
+ --shadow:0 10px 26px rgba(72,47,91,.10),0 3px 8px rgba(72,47,91,.06)!important;
+}
+body{
+ background:linear-gradient(135deg,#f6dbe9 0%,#f5e4f1 52%,#eaf4f5 100%)!important;
+ color:#34273e!important;
+}
+#app,.app{color:#34273e!important}
+#modal .modal,.modal{
+ background:linear-gradient(145deg,#fffafd 0%,#fff7fb 58%,#f1f8f3 100%)!important;
+ color:#34273e!important;
+ border-color:#cba6c1!important;
+}
+#modal .modal :is(.muted,.small,.eyebrow),
+.house-overlay :is(.muted,.small,.eyebrow){color:#5b4c68!important}
+#app :is(.life-sim-compact-bar,.life-sim-house-map-actions,.life-sim-play-panel,.life-sim-active-sim,.life-sim-need,.life-sim-compact-needs,.life-sim-compact-action,.life-sim-compact-add,.life-sim-compact-house,.life-sim-sim,.life-sim-clock,.life-sim-house-needs,.life-sim-house-next,.house-today-open,.house-people-select){
+ background:linear-gradient(135deg,#fffafd,#f1f8f3)!important;
+ color:#34273e!important;
+ border-color:#cba6c1!important;
+}
+#app .life-sim-sim.is-active,#app .house-people-select.is-active{
+ background:linear-gradient(135deg,#f8dce9,#e5f2f5)!important;
+ color:#34273e!important;
+}
+#app :is(.life-sim-sim-meta,.life-sim-sim-meta h2,.life-sim-sim-meta small,.life-sim-sim-meta .eyebrow,.life-sim-panel-label,.life-sim-needs-note,.life-sim-needs-note b,.life-sim-needs-note span){color:#34273e!important}
+#app :is(input:not([type=checkbox]):not([type=radio]),select,textarea){
+ background:#fffafd!important;
+ background-color:#fffafd!important;
+ color:#34273e!important;
+ -webkit-text-fill-color:#34273e!important;
+ border-color:#cba6c1!important;
+ color-scheme:light!important;
+}
+
+#modal .person-today-actions{
+ display:grid;gap:8px;margin:4px 0 8px;padding:12px 0;
+ border-top:1px solid #d9c4d4;border-bottom:1px solid #d9c4d4;
+ color:#34273e;
+}
+#modal .person-today-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#modal .person-today-head .mini-heading{margin:0 0 3px;color:#8b456b!important}
+#modal .person-today-count{flex:none;padding:6px 10px;border-radius:999px;background:#e6f2ea;color:#345443;font-weight:850;font-size:.78rem}
+#modal .person-action-list{display:grid;gap:5px}
+#modal .person-action-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 9px;border-radius:12px;background:#f7edf4;color:#34273e}
+#modal .person-action-row input{width:18px;height:18px;margin:0;accent-color:#b84b82}
+#modal .person-action-row span{display:grid;gap:2px;min-width:0}
+#modal .person-action-row b{font-size:.82rem;overflow-wrap:anywhere}
+#modal .person-action-row small{font-size:.68rem;color:#62546a!important;overflow-wrap:anywhere}
+#modal .person-action-row strong{font-size:.7rem;color:#754b69}
+#modal .person-action-row.is-done{background:#edf5ef}
+#modal .person-action-row.is-done b{text-decoration:line-through;color:#667268}
+@media(max-width:380px){#modal .person-action-row{grid-template-columns:20px minmax(0,1fr) auto;padding:7px}}
