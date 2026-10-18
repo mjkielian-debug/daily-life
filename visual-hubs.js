@@ -9,7 +9,7 @@ function visualHubModel(page){
  const m=(icon,label,value,action)=>({icon,label,value:String(value),action});
  const b=(date,value,known=true)=>({date,value:Math.max(0,Number(value)||0),known});
  if(page==="family"){
-  const chores=displayChoresForDate(day),done=chores.filter(x=>x.done).length,events=(s.events||[]).filter(x=>x.date>=day&&x.date<=seven&&x.status!=="cancelled");
+  const chores=displayChoresForDate(day),done=chores.filter(x=>x.done).length,events=(typeof dedupeEventList==="function"?dedupeEventList(s.events||[]):(s.events||[])).filter(x=>x.date>=day&&x.date<=seven&&x.status!=="cancelled");
   const plans=typeof peopleAgendaItems==="function"?peopleAgendaItems().filter(x=>x.date>=day):[];
   const next=plans[0],profiles=s.peopleProfiles||[],family=typeof childProfiles==="function"?childProfiles():[];
   const soonSchool=events.filter(x=>x.date<=shiftDateString(day,2)&&typeof isSchoolEvent==="function"&&isSchoolEvent(x)).length;
