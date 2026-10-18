@@ -3530,3 +3530,29 @@ textarea{resize:vertical}
 
 /* Photo-first item review: recognizable product image before the decision. */
 .pi-inventory-photo{display:block;width:100%;height:190px;max-height:220px;object-fit:contain;background:#fffafc;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:16px;margin:0 0 12px;padding:6px}.pi-review-grid{display:grid;grid-template-columns:1fr;gap:14px}.pi-review-grid .pi-inventory-choice{min-width:0}@media(min-width:680px){.pi-review-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Child wardrobe minimums inside Inventory. */
+.wardrobe-targets-card{margin:12px 0;padding:14px;border:1px solid #d7c4de;border-radius:18px;background:linear-gradient(135deg,#fff7fc,#f0f8ee);color:#49344f}
+.wardrobe-targets-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.wardrobe-targets-heading b{display:block;font-family:var(--font-heading);font-size:1.05rem}
+.wardrobe-targets-heading small{display:block;margin-top:3px;line-height:1.4;color:#68576d}
+.wardrobe-targets-heading>span{font-size:1.7rem}
+.wardrobe-person-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.wardrobe-person-card{width:100%;display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #ddcadd;border-radius:14px;background:#fffdfd;color:#49344f;text-align:left;font:inherit;cursor:pointer}
+.wardrobe-person-card>span:nth-child(2){flex:1;min-width:0}
+.wardrobe-person-card b,.wardrobe-person-card small{display:block}
+.wardrobe-person-card small{margin-top:3px;color:#6e5c73;font-size:.75rem}
+.wardrobe-person-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#cae8df;font-weight:900}
+.wardrobe-count-list{display:grid;gap:8px}
+.wardrobe-count-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px;border:1px solid #e0d4e2;border-radius:14px;background:#fff9fc}
+.wardrobe-count-row span{min-width:0}
+.wardrobe-count-row b,.wardrobe-count-row small{display:block}
+.wardrobe-count-row small{margin:4px 0 7px;color:#6c5c70;font-size:.77rem;line-height:1.35}
+.wardrobe-count-row i{display:block;height:8px;border-radius:999px;background:#eadfea;overflow:hidden}
+.wardrobe-count-row i em{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#de91bd,#8bcaba)}
+.wardrobe-count-row>strong{font-size:1.15rem;color:#4b3656}
+.wardrobe-item-fields{border:1px solid #dfd1e0;border-radius:14px;padding:9px 11px;background:#fff8fd}
+.wardrobe-item-fields summary{min-height:40px;display:flex;align-items:center;cursor:pointer;font-weight:800}
+.wardrobe-item-fields .grid2{gap:10px;padding:8px 0}
+.wardrobe-item-fields small{display:block;color:#6b5d71;line-height:1.4}
+@media(min-width:640px){.wardrobe-person-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
