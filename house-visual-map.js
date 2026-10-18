@@ -385,9 +385,9 @@ async function hydrateBathroomPhotoGallery(f){
  const photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
  if(!photos.length){current.textContent="No bathroom-titled photos were found in the saved room photos.";return}
  activeRoomPhotoIds=photos.map(p=>p.id);activeRoomPhotoIndex=0;
- current.innerHTML='<div class="hvm-photo-gallery"><div class="hvm-room-photo-frame"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved bathroom photo…</div><button type="button" class="hvm-photo-hotspot" aria-label="Open bathroom room details" onclick="houseVisualOpenZone(\'Second floor\',\'upstairs-bathroom\')">Bathroom</button></div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Browse saved bathroom photos">'+
+ current.innerHTML='<div class="hvm-photo-gallery"><div class="hvm-room-photo-frame"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved bathroom photo…</div></div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Browse saved bathroom photos">'+
   '<button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(-1)" aria-label="Previous bathroom photo">‹ Previous</button><span id="hvmRoomPhotoCount" class="hvm-room-photo-count">Photo 1 of '+photos.length+'</span><button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(1)" aria-label="Next bathroom photo">Next ›</button>'+
-  '</div><small class="muted">'+photos.length+' saved upstairs-bathroom photos · tap the photo to open room details</small></div>';
+  '</div><small class="muted">'+photos.length+' saved upstairs-bathroom photos · use Previous and Next to browse views</small></div>';
  window.houseVisualShowRoomPhoto(photos[0].id,0,photos.length);
 };
 window.houseVisualOpenZone=function(f,id){
