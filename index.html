@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261018-wardrobe-targets1">
+<link rel="stylesheet" href="styles.css?v=20261018-wardrobe-add-flow4">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -199,7 +199,7 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261017-refined-room-map1">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261017-refined-room-map1"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261018-inventory-update3…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261018-wardrobe-add-flow4…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -215,18 +215,18 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261018-inventory-update3 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261018-wardrobe-add-flow4 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261018-inventory-update3 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261018-wardrobe-add-flow4 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-inventory-update3").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261018-wardrobe-add-flow4").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261018-inventory-update3"></script>
+<script src="visual-hubs.js?v=20261018-wardrobe-add-flow4"></script>
 <script src="life-sim-ui.js?v=20261017-refined-room-map1"></script>
 <script>
 
@@ -301,7 +301,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.18-inventory-update3";
+const APP_BUILD="2026.10.18-wardrobe-add-flow4";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -5843,7 +5843,7 @@ function wardrobeTargetsHtml(){
  const cards=WARDROBE_PEOPLE.map(person=>{
   const hit=WARDROBE_TYPES.filter(t=>wardrobeCount(person,t)>=t.min).length;
   const total=WARDROBE_TYPES.reduce((n,t)=>n+wardrobeCount(person,t),0);
-  return '<button type="button" class="wardrobe-person-card" onclick="openWardrobeProgress('+JSON.stringify(person)+')"><span class="wardrobe-person-icon" aria-hidden="true">'+person.charAt(0)+'</span><span><b>'+person+'</b><small>'+hit+' of 6 minimums met · '+total+' counted</small></span><span aria-hidden="true">›</span></button>';
+  return '<button type="button" class="wardrobe-person-card" onclick="openWardrobeProgress(\''+esc(person)+'\')"><span class="wardrobe-person-icon" aria-hidden="true">'+person.charAt(0)+'</span><span><b>'+person+'</b><small>'+hit+' of 6 minimums met · '+total+' counted</small></span><span aria-hidden="true">›</span></button>';
  }).join("");
  return '<section class="wardrobe-targets-card"><div class="wardrobe-targets-heading"><div><b>Kids’ wardrobe</b><small>Confirmed clothing counts toward these minimums.</small></div><span aria-hidden="true">👕</span></div><div class="wardrobe-person-grid">'+cards+'</div></section>';
 }
@@ -5852,7 +5852,7 @@ window.openWardrobeProgress=function(person){
  const rows=WARDROBE_TYPES.map(t=>{
   const count=wardrobeCount(person,t),pct=Math.min(100,Math.round(count*100/t.min)),met=count>=t.min;
   const target=t.goal?count+' / '+t.min+' minimum · goal '+t.goal:count+' / '+t.min+' '+t.unit;
-  return '<div class="wardrobe-count-row"><span><b>'+t.label+'</b><small>'+target+(met?' · Minimum met':' · '+(t.min-count)+' more to minimum')+'</small><i><em style="width:'+pct+'%"></em></i></span><strong>'+count+'</strong></div>';
+  return '<div class="wardrobe-count-row"><span><b>'+t.label+'</b><small>'+target+(met?' · Minimum met':' · '+(t.min-count)+' more to minimum')+'</small><i><em style="width:'+pct+'%"></em></i></span><div class="wardrobe-count-actions"><strong>'+count+'</strong><button type="button" class="btn small" aria-label="Add '+esc(t.label)+' for '+esc(person)+'" onclick="closeModal();openInventoryItem(\'\',\''+esc(person)+'\',\''+esc(t.id)+'\')">＋</button></div></div>';
  }).join("");
  modal(person+' · clothing counts','<div class="wardrobe-count-list">'+rows+'</div><p class="muted small">Counts include confirmed clothing inventory assigned to '+person+'. Photos awaiting review do not count yet.</p><div class="actions"><button type="button" class="btn primary" onclick="closeModal();openInventoryItem()">＋ Add clothing</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div>',"Close",closeModal);
 };
@@ -5941,16 +5941,16 @@ function inventoryView(){
   </section>`;
 }
 
-function openInventoryItem(id=""){
-  const x=(state.inventoryItems||[]).find(v=>v.id===id)||{id:"",name:"",category:"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:""};
+function openInventoryItem(id="",wardrobeOwner="",wardrobeType=""){
+  const x=(state.inventoryItems||[]).find(v=>v.id===id)||{id:"",name:"",category:wardrobeOwner?"Clothing":"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:"",wardrobeOwner:wardrobeOwner||"",wardrobeType:wardrobeType||""};
   const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
   modal(x.id?"Inventory item":"Add inventory item",`<div class="stack">
     <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
     <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity on hand<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
     <label>Ideal quantity to keep (optional)<input id="invgoal" type="number" min="0" step="1" value="${x.targetQty===null||x.targetQty===undefined?"":Number(x.targetQty)}" placeholder="Your goal, not a required number"></label>
-    <details class="wardrobe-item-fields">
+    <details class="wardrobe-item-fields" \${wardrobeOwner?"open":""}>
       <summary>Clothing details for wardrobe counts</summary>
-      <div class="grid2"><label>Clothing type<select id="invWardrobeType"><option value="">Not categorized</option><option value="long_sleeve">Long-sleeve shirts</option><option value="short_sleeve">Short-sleeve shirts</option><option value="hoodie_jacket">Hoodies / jackets / zip-ups</option><option value="winter_coat">Winter coat</option><option value="pants">Pants</option><option value="pajamas">Pajamas</option></select></label><label>Belongs to<select id="invWardrobeOwner"><option value="">Not assigned</option><option value="Leo">Leo</option><option value="Demitri">Demitri</option><option value="Dolly">Dolly</option><option value="Ambrose">Ambrose</option><option value="Michelle">Michelle</option></select></label></div>
+      <div class="grid2"><label>Clothing type<select id="invWardrobeType"><option value="" \${!x.wardrobeType?"selected":""}>Not categorized</option><option value="long_sleeve" \${x.wardrobeType==="long_sleeve"?"selected":""}>Long-sleeve shirts</option><option value="short_sleeve" \${x.wardrobeType==="short_sleeve"?"selected":""}>Short-sleeve shirts</option><option value="hoodie_jacket" \${x.wardrobeType==="hoodie_jacket"?"selected":""}>Hoodies / jackets / zip-ups</option><option value="winter_coat" \${x.wardrobeType==="winter_coat"?"selected":""}>Winter coat</option><option value="pants" \${x.wardrobeType==="pants"?"selected":""}>Pants</option><option value="pajamas" \${x.wardrobeType==="pajamas"?"selected":""}>Pajamas</option></select></label><label>Belongs to<select id="invWardrobeOwner"><option value="" \${!x.wardrobeOwner?"selected":""}>Not assigned</option><option value="Leo" \${x.wardrobeOwner==="Leo"?"selected":""}>Leo</option><option value="Demitri" \${x.wardrobeOwner==="Demitri"?"selected":""}>Demitri</option><option value="Dolly" \${x.wardrobeOwner==="Dolly"?"selected":""}>Dolly</option><option value="Ambrose" \${x.wardrobeOwner==="Ambrose"?"selected":""}>Ambrose</option><option value="Michelle" \${x.wardrobeOwner==="Michelle"?"selected":""}>Michelle</option></select></label></div>
       <small>Assign a type and child to include confirmed clothes in wardrobe totals.</small>
     </details>
     <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
@@ -8191,9 +8191,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261018-inventory-update3 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261018-wardrobe-add-flow4 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261018-inventory-update3 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261018-wardrobe-add-flow4 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8201,7 +8201,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261018-inventory-update3";
+const DAILY_LIFE_BUILD="20261018-wardrobe-add-flow4";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8275,7 +8275,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-inventory-update3");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-wardrobe-add-flow4");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
