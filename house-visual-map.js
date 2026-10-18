@@ -17,7 +17,13 @@ function online(){return typeof cloudClient!=="undefined"&&!!cloudClient&&!!who(
 function key(f){return who()?.id+"|"+f}
 function get(f){return cache.get(key(f))}
 function where(f){return Array.from(document.querySelectorAll(".hvm-root[data-floor]")).filter(e=>e.dataset.floor===f)}
-function act(f,z){return "houseVisualOpenZone('"+f+"','"+z.id+"')"}
+function act(f,z){
+ const destination=(f==="First floor"&&z.id==="stairs_up")?"Second floor":
+  (f==="First floor"&&z.id==="basement_stairs")?"Basement":
+  (f==="Second floor"&&z.id==="stairs")?"First floor":
+  (f==="Second floor"&&z.id==="stairs_to_third")?"Third floor":"";
+ return destination?"houseVisualFollowLink('"+destination+"')":"houseVisualOpenZone('"+f+"','"+z.id+"')";
+}
 function facts(m){
  const b=arr(m.verified),n=arr(m.pending);
  return '<details class="hvm-facts"><summary>Confirmed details + what remains</summary><div class="hvm-fact-split">'+
@@ -118,7 +124,7 @@ function directory(f,m){
  return '<button type="button" class="hvm-room-tile hvm-photo-room-tile" data-room-id="'+h(z.id)+'" style="--hvm-zone:'+color(z.color)+'" onclick="'+act(f,z)+'">'+
  '<span class="hvm-room-tile-photo" data-room-photo-zone="'+h(z.id)+'" aria-hidden="true"><span class="hvm-tile-mark">⌂</span></span>'+
  '<b>'+h(z.name)+'</b><small>'+photos.length+' saved photo'+(photos.length===1?'':'s')+'</small>'+
- '<span class="hvm-tile-open">Open room photos ›</span></button>';
+ '<span class="hvm-tile-open">'+(z.id==="stairs_up"?"Go upstairs ›":z.id==="stairs_to_third"?"Go to third floor ›":"Open room photos ›")+'</span></button>';
  }).join("")+'</div></div>';
 }
 async function hydrateRoomDirectoryPhotos(f,m){
@@ -364,7 +370,7 @@ window.houseVisualInteractMarker=function(f,id,index){
 };
 
 
-let activeRoomPhotoIds=[],activeRoomPhotoIndex=0;
+let activeRoomPhotoIds=[],activeRoomPhotoIndex=0,activeRoomPhotoRoom="";
 window.houseVisualNavigateRoomPhoto=function(step){
  if(!activeRoomPhotoIds.length)return;
  activeRoomPhotoIndex=(activeRoomPhotoIndex+Number(step)+activeRoomPhotoIds.length)%activeRoomPhotoIds.length;
@@ -374,32 +380,38 @@ window.houseVisualShowRoomPhoto=async function(photoId,index=0,total=activeRoomP
  const stage=document.getElementById("hvmRoomPhotoStage");
  if(!stage||!okPhoto(photoId)||!online())return;
  activeRoomPhotoIndex=Math.max(0,Number(index)||0);
- stage.textContent="Loading saved bathroom photo…";
- const {data,error}=await cloudClient.from("photo_inbox").select("image_data").eq("id",photoId).single();
+ stage.textContent="Loading saved room photo…";
+ const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
  const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
  if(error||!data||!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
   current.textContent="This saved photo could not be displayed.";return;
  }
- const img=document.createElement("img");img.alt="Upstairs bathroom, photo "+(activeRoomPhotoIndex+1)+" of "+total;img.src=data.image_data;
- current.replaceChildren(img);
+ const img=document.createElement("img");
+ img.alt=(data.title||activeRoomPhotoRoom)+" · photo "+(activeRoomPhotoIndex+1)+" of "+total;
+ img.src=data.image_data;current.replaceChildren(img);
  const caption=document.getElementById("hvmRoomPhotoCaption");
- if(caption)caption.textContent="Upstairs bathroom · Photo "+(activeRoomPhotoIndex+1)+" of "+total;
+ let title=str(data.title||"").trim();
+ if(/^\d{10,}\.(jpe?g|png|webp)$/i.test(title))title="";
+ if(/upstairs bathroom/i.test(title)&&/photo/i.test(title))title="Upstairs bathroom · Photo "+(activeRoomPhotoIndex+1)+" of "+total;
+ if(caption)caption.textContent=title||activeRoomPhotoRoom+" · Photo "+(activeRoomPhotoIndex+1)+" of "+total;
  const count=document.getElementById("hvmRoomPhotoCount");
  if(count)count.textContent="Photo "+(activeRoomPhotoIndex+1)+" of "+total;
 };
-async function hydrateBathroomPhotoGallery(f){
+async function hydrateRoomPhotoGallery(f,z){
  const host=document.getElementById("hvmRoomPhotoGallery");if(!host)return;
- if(!online()){host.textContent="Sign in to see your saved bathroom photos.";return}
- const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
-  .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
- const current=document.getElementById("hvmRoomPhotoGallery");if(!current)return;
- if(error){current.textContent="Could not load saved bathroom photos.";return}
- const photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
- if(!photos.length){current.textContent="No bathroom-titled photos were found in the saved room photos.";return}
- activeRoomPhotoIds=photos.map(p=>p.id);activeRoomPhotoIndex=0;
- current.innerHTML='<div class="hvm-photo-gallery"><div class="hvm-room-photo-frame"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved bathroom photo…</div></div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Browse saved bathroom photos">'+
-  '<button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(-1)" aria-label="Previous bathroom photo">‹ Previous</button><span id="hvmRoomPhotoCount" class="hvm-room-photo-count">Photo 1 of '+photos.length+'</span><button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(1)" aria-label="Next bathroom photo">Next ›</button>'+
-  '</div><small class="muted">'+photos.length+' saved upstairs-bathroom photos · use Previous and Next to browse views</small></div>';
+ if(!online()){host.textContent="Sign in to see saved room photos.";return}
+ let photos=arr(z.photos).filter(okPhoto).map(id=>({id}));
+ if(/bath/i.test(str(z.name||""))){
+  const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
+   .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
+  if(error){host.textContent="Could not load saved bathroom photos.";return}
+  photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
+ }
+ if(!photos.length){host.innerHTML='<p class="muted">No room photos are linked here yet.</p>';return}
+ activeRoomPhotoIds=photos.map(p=>p.id);activeRoomPhotoIndex=0;activeRoomPhotoRoom=str(z.name||"Room");
+ host.innerHTML='<div class="hvm-photo-gallery"><div class="hvm-room-photo-frame"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved room photo…</div></div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Browse saved '+h(z.name||"room")+' photos">'+
+  '<button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(-1)" aria-label="Previous room photo">‹ Previous</button><span id="hvmRoomPhotoCount" class="hvm-room-photo-count">Photo 1 of '+photos.length+'</span><button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(1)" aria-label="Next room photo">Next ›</button>'+
+  '</div><small class="muted">'+photos.length+' saved photo'+(photos.length===1?'':'s')+' · use Previous and Next to browse</small></div>';
  window.houseVisualShowRoomPhoto(photos[0].id,0,photos.length);
 };
 window.houseVisualOpenZone=function(f,id){
@@ -421,20 +433,15 @@ window.houseVisualOpenZone=function(f,id){
  '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
  (room?"Open full inventory":"Browse inventory")+'</button>'+
  '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">← Floor map</button></div>';
- const references='<details class="hvm-room-extra"><summary>Reference photos ('+photos.length+') + mapping notes ›</summary>'+
- (photos.length?'<div class="hvm-detail-photos">'+photos.map((p,i)=>'<button type="button" class="hvm-photo-button" onclick="photoInboxView(&#39;'+p+'&#39;,&#39;map&#39;)">📷 Open photo '+(i+1)+' ›</button>').join("")+'</div>':"")+
+ const references='<details class="hvm-room-extra"><summary>Room notes ›</summary>'+
+ (photos.length?'<p>Photos are shown above.</p>':'<p>No saved room photos have been linked here yet.</p>')+
  (z.notes?'<p>'+h(z.notes)+'</p>':"")+
  '</details>';
- const isDolly=f==="Second floor"&&id==="dolly";
- const isBathroom=f==="Second floor"&&/bath/i.test(z.name||"");
- const miniature=f==="Second floor"&&!isDolly&&!isBathroom&&typeof window.dailyLifeMiniScene==="function" ? (/hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";
- const bathroomPhotos=isBathroom?'<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved bathroom photos…</p></section>':"";
- const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():(isBathroom?bathroomPhotos:miniature);
- const modelButton=isDolly?'<button class="btn primary" type="button" onclick="houseVisualOpenDollyModel()">🛏 Open interactive bedroom + furniture layout</button>':'';
+ const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+modelButton+furniture+objectPanel+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomPhotos+objectPanel+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
- if(isBathroom)Promise.resolve().then(()=>hydrateBathroomPhotoGallery(f));
+ Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
 };
 })();
