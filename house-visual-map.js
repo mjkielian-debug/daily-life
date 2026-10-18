@@ -141,7 +141,7 @@ async function hydrateRoomDirectoryPhotos(f,m){
   for(const row of data||[]){
    if(!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(row.image_data||""))continue;
    const zone=refs.find(x=>x.id===row.id)?.zone;
-   const host=zone&&document.querySelector('.hvm-room-tile-photo[data-room-photo-zone="'+CSS.escape(String(zone.id))+'"]');
+   const host=zone&&Array.from(document.querySelectorAll(".hvm-room-tile-photo")).find(node=>node.dataset.roomPhotoZone===String(zone.id));
    if(host){const img=document.createElement("img");img.alt="";img.src=row.image_data;host.replaceChildren(img);}
   }
  }catch(e){}
