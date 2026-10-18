@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261018-inventory-photo-review2">
+<link rel="stylesheet" href="styles.css?v=20261018-wardrobe-targets1">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -173,7 +173,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261018-photo-real-tiles2">
+<link rel="stylesheet" href="house-visual-map.css?v=20261018-wardrobe-targets1">
 <link rel="stylesheet" href="visual-hubs.css?v=20261015-money-goals1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -221,7 +221,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-photo-real-tiles2").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261018-wardrobe-targets1").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
@@ -5826,6 +5826,36 @@ function inventoryVisibleItems(){
     return hay.includes(q);
   }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
 }
+
+const WARDROBE_PEOPLE=["Leo","Demitri","Dolly","Ambrose"];
+const WARDROBE_TYPES=[
+ {id:"long_sleeve",label:"Long-sleeve shirts",unit:"shirts",min:7},
+ {id:"short_sleeve",label:"Short-sleeve shirts",unit:"shirts",min:7},
+ {id:"hoodie_jacket",label:"Hoodies / jackets / zip-ups",unit:"items",min:3,goal:5},
+ {id:"winter_coat",label:"Winter coat",unit:"coats",min:1},
+ {id:"pants",label:"Pants",unit:"pairs",min:7},
+ {id:"pajamas",label:"Pajamas",unit:"sets",min:5}
+];
+function wardrobeCount(person,type){
+ return (state.inventoryItems||[]).filter(x=>String(x.category||"").trim().toLowerCase()==="clothing"&&String(x.wardrobeOwner||"")===person&&String(x.wardrobeType||"")===type.id&&!["Gone","Donate / sell"].includes(String(x.status||""))&&!["donate","sell","recycle"].includes(String(x.organizingDecision||""))).reduce((n,x)=>n+Math.max(0,Number(x.quantity??1)||0),0);
+}
+function wardrobeTargetsHtml(){
+ const cards=WARDROBE_PEOPLE.map(person=>{
+  const hit=WARDROBE_TYPES.filter(t=>wardrobeCount(person,t)>=t.min).length;
+  const total=WARDROBE_TYPES.reduce((n,t)=>n+wardrobeCount(person,t),0);
+  return '<button type="button" class="wardrobe-person-card" onclick="openWardrobeProgress('+JSON.stringify(person)+')"><span class="wardrobe-person-icon" aria-hidden="true">'+person.charAt(0)+'</span><span><b>'+person+'</b><small>'+hit+' of 6 minimums met · '+total+' counted</small></span><span aria-hidden="true">›</span></button>';
+ }).join("");
+ return '<section class="wardrobe-targets-card"><div class="wardrobe-targets-heading"><div><b>Kids’ wardrobe</b><small>Confirmed clothing counts toward these minimums.</small></div><span aria-hidden="true">👕</span></div><div class="wardrobe-person-grid">'+cards+'</div></section>';
+}
+window.openWardrobeProgress=function(person){
+ if(!WARDROBE_PEOPLE.includes(person))return;
+ const rows=WARDROBE_TYPES.map(t=>{
+  const count=wardrobeCount(person,t),pct=Math.min(100,Math.round(count*100/t.min)),met=count>=t.min;
+  const target=t.goal?count+' / '+t.min+' minimum · goal '+t.goal:count+' / '+t.min+' '+t.unit;
+  return '<div class="wardrobe-count-row"><span><b>'+t.label+'</b><small>'+target+(met?' · Minimum met':' · '+(t.min-count)+' more to minimum')+'</small><i><em style="width:'+pct+'%"></em></i></span><strong>'+count+'</strong></div>';
+ }).join("");
+ modal(person+' · clothing counts','<div class="wardrobe-count-list">'+rows+'</div><p class="muted small">Counts include confirmed clothing inventory assigned to '+person+'. Photos awaiting review do not count yet.</p><div class="actions"><button type="button" class="btn primary" onclick="closeModal();openInventoryItem()">＋ Add clothing</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div>',"Close",closeModal);
+};
 function inventoryDetailedView(){
   const items=inventoryVisibleItems(),all=state.inventoryItems||[],rooms=state.houseRooms||[],locations=state.inventoryLocations||[],categories=inventoryCategories();
   const low=all.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
@@ -5844,7 +5874,7 @@ function inventoryDetailedView(){
     }).join(""):`<div class="notice">Add your first room, then add shelves, closets, bins, drawers, or other storage spots inside it.</div>`}
     </div>`;
   }
-  return `<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox('inventory')">📷 Capture belongings</button><button class="btn" onclick="openInventoryPhotoReview()">Review photo items</button><button class="btn" onclick="openUseUpPlan()">♻ Use up + reduce</button></div><div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
+  return `<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox('inventory')">📷 Capture belongings</button><button class="btn" onclick="openInventoryPhotoReview()">Review photo items</button><button class="btn" onclick="openUseUpPlan()">♻ Use up + reduce</button></div>${inventoryTab==="items"?wardrobeTargetsHtml():""}<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
   <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
   <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
   ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')"><span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}${x.targetQty!==null&&x.targetQty!==undefined?" · goal "+Number(x.targetQty):""}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.<br><button class="btn small" type="button" onclick="inventorySetSearch(&#39;&#39;);inventorySetCategory(&#39;All&#39;)">Show all inventory</button></div>`}
@@ -5918,6 +5948,11 @@ function openInventoryItem(id=""){
     <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
     <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity on hand<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
     <label>Ideal quantity to keep (optional)<input id="invgoal" type="number" min="0" step="1" value="${x.targetQty===null||x.targetQty===undefined?"":Number(x.targetQty)}" placeholder="Your goal, not a required number"></label>
+    <details class="wardrobe-item-fields">
+      <summary>Clothing details for wardrobe counts</summary>
+      <div class="grid2"><label>Clothing type<select id="invWardrobeType"><option value="">Not categorized</option><option value="long_sleeve">Long-sleeve shirts</option><option value="short_sleeve">Short-sleeve shirts</option><option value="hoodie_jacket">Hoodies / jackets / zip-ups</option><option value="winter_coat">Winter coat</option><option value="pants">Pants</option><option value="pajamas">Pajamas</option></select></label><label>Belongs to<select id="invWardrobeOwner"><option value="">Not assigned</option><option value="Leo">Leo</option><option value="Demitri">Demitri</option><option value="Dolly">Dolly</option><option value="Ambrose">Ambrose</option><option value="Michelle">Michelle</option></select></label></div>
+      <small>Assign a type and child to include confirmed clothes in wardrobe totals.</small>
+    </details>
     <div class="grid2"><label>Room<input id="invroom" list="inventoryRooms" value="${esc(roomName)}" placeholder="Kitchen"><datalist id="inventoryRooms">${(state.houseRooms||[]).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist></label><label>Location<input id="invloc" value="${esc(locName)}" placeholder="Pantry shelf, hall closet, bin 2…"></label></div>
     <label>Status<select id="invstatus">${["Have","Low","Need","Stored","Lent out","Donate / sell","Gone"].map(v=>`<option ${String(x.status||"Have")===v?"selected":""}>${v}</option>`).join("")}</select></label>
     <label>What should happen with this item?<select id="invDecision">${[["review","Decide later"],["keep","Keep + organize"],["use_up","Use up what I have"],["donate","Donate"],["sell","Sell"],["recycle","Recycle appropriately"],["replace_later","Replace only when used up"]].map(([k,v])=>`<option value="${k}" ${String(x.organizingDecision||"review")===k?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -5928,7 +5963,7 @@ function openInventoryItem(id=""){
     const name=$("#invname").value.trim();if(!name)return;
     const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
     let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
-    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),updatedAt:new Date().toISOString()});
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),wardrobeType:$("#invWardrobeType").value,wardrobeOwner:$("#invWardrobeOwner").value,updatedAt:new Date().toISOString()});
     await save();closeModal();render();
   });
 }
@@ -8235,7 +8270,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-photo-real-tiles2");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-wardrobe-targets1");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8268,11 +8303,11 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261018-photo-real-tiles2"></script>
+<script src="house-visual-map.js?v=20261018-wardrobe-targets1"></script>
 <script src="dolly-room-model.js?v=20261017-corrected-orientation1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
-<script src="inventory-photo-review.js?v=20261018-photo-real-tiles2"></script>
+<script src="inventory-photo-review.js?v=20261018-wardrobe-targets1"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261015-guided10"></script>
