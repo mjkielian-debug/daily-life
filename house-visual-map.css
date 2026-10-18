@@ -115,3 +115,14 @@
 .hvm-room-photo-caption{font-weight:750;overflow-wrap:anywhere}
 .hvm-room-photo-picker{display:flex;gap:7px;overflow-x:auto;padding:3px 2px 8px}
 .hvm-room-photo-picker .btn{flex:0 0 auto;max-width:190px;white-space:normal}
+
+
+/* Real saved photos are the second-floor room directory. */
+.hvm-photo-room-tile{padding:8px;gap:5px;min-height:0}
+.hvm-room-tile-photo{display:grid;place-items:center;width:100%;height:92px;overflow:hidden;border-radius:12px;background:color-mix(in srgb,var(--hvm-zone,#e9e3ef) 42%,#fff);color:#55445a}
+.hvm-room-tile-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.hvm-photo-room-tile .hvm-tile-open{margin-top:2px}
+.hvm-room-photo-picker{align-items:center;justify-content:space-between;overflow:visible}
+.hvm-room-photo-picker .btn{max-width:none;white-space:nowrap}
+.hvm-room-photo-count{font-size:.8rem;font-weight:800;color:#55445a;white-space:nowrap}
+@media(max-width:440px){.hvm-directory-grid{gap:7px}.hvm-room-tile-photo{height:78px}.hvm-photo-room-tile{padding:7px}}
