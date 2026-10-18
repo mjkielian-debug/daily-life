@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261018-inventory-thumbnails9">
+<link rel="stylesheet" href="styles.css?v=20261018-restore-safety10">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -199,7 +199,7 @@ dialog,
 <link rel="stylesheet" href="household-map-scroll.css?v=20261017-refined-room-map1">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261017-refined-room-map1"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261018-inventory-thumbnails9…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261018-restore-safety10…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -215,18 +215,18 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261018-inventory-thumbnails9 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261018-restore-safety10 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261018-inventory-thumbnails9 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261018-restore-safety10 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-inventory-thumbnails9").catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=20261018-restore-safety10").catch(()=>{});
 }
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261018-inventory-thumbnails9"></script>
+<script src="visual-hubs.js?v=20261018-restore-safety10"></script>
 <script src="life-sim-ui.js?v=20261017-refined-room-map1"></script>
 <script>
 
@@ -7644,7 +7644,43 @@ function stripSharedHouseholdCopies(source){
   return copy;
 }
 function backup(){const safe=stripSharedHouseholdCopies(state),blob=new Blob([JSON.stringify(safe,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`Daily_Life_Backup_${ymd()}.json`;a.click();localStorage.setItem("dailyLifeLastExportAt",new Date().toISOString());setTimeout(()=>URL.revokeObjectURL(a.href),1000);render()}
-async function restore(file){try{const j=JSON.parse(await file.text());if(!j.version||!j.profile)throw new Error();state=migrateState(stripSharedHouseholdCopies(j));await save();if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=false;if(typeof sharingInit==="function"&&typeof cloudUser==="function"&&cloudUser())await sharingInit();localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());render();alert("Daily Life backup restored. Shared household items were refreshed separately so old shared copies were not restored from the file.")}catch(e){alert("That file is not a valid Daily Life backup.")}}
+async function restore(file){
+  let imported;
+  try{
+    imported=JSON.parse(await file.text());
+    if(!imported||typeof imported!=="object"||Array.isArray(imported)||!Number.isFinite(Number(imported.version))||Number(imported.version)<1||!imported.profile||typeof imported.profile!=="object"||Array.isArray(imported.profile))throw new Error("invalid backup");
+  }catch(error){
+    alert("That file is not a valid Daily Life backup.");
+    return;
+  }
+  if(!confirm("Restore "+String(file.name||"this backup")+" and replace Daily Life data currently on this device? Export a backup first if you want to keep the current data."))return;
+  const previousState=state;
+  let restoredState;
+  try{
+    restoredState=migrateState(stripSharedHouseholdCopies(imported));
+    if(!restoredState||typeof restoredState!=="object"||!restoredState.profile)throw new Error("invalid backup state");
+  }catch(error){
+    alert("That file could not be prepared as a Daily Life backup. Your current data is unchanged.");
+    return;
+  }
+  state=restoredState;
+  try{
+    await save();
+  }catch(error){
+    state=previousState;
+    render();
+    alert("Daily Life could not save the restored data. Your current data is still on this device.");
+    return;
+  }
+  if(typeof cloudRecoveryRequired!=="undefined")cloudRecoveryRequired=false;
+  let sharedRefreshFailed=false;
+  if(typeof sharingInit==="function"&&typeof cloudUser==="function"&&cloudUser()){
+    try{await sharingInit()}catch(error){sharedRefreshFailed=true}
+  }
+  localStorage.setItem("dailyLifeLastRestoreAt",new Date().toISOString());
+  render();
+  alert("Daily Life backup restored. Shared household items were refreshed separately so old shared copies were not restored from the file."+(sharedRefreshFailed?" The shared household list could not refresh yet; your restored local data is saved.":""));
+}
 async function erase(){
   const hasVault=typeof vaultEnvelope!=="undefined"&&!!vaultEnvelope;
   const warning=hasVault
@@ -8223,9 +8259,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261018-inventory-thumbnails9 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261018-restore-safety10 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261018-inventory-thumbnails9 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261018-restore-safety10 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8233,7 +8269,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261018-inventory-thumbnails9";
+const DAILY_LIFE_BUILD="20261018-restore-safety10";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8307,7 +8343,7 @@ async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-inventory-thumbnails9");
+    const reg=await navigator.serviceWorker.register("sw.js?v=20261018-restore-safety10");
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
@@ -8344,7 +8380,7 @@ async function registerAppWorker(){
 <script src="dolly-room-model.js?v=20261017-corrected-orientation1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
-<script src="inventory-photo-review.js?v=20261018-inventory-thumbnails9"></script>
+<script src="inventory-photo-review.js?v=20261018-restore-safety10"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261015-guided10"></script>
