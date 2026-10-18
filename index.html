@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261018-inventory-readable1">
+<link rel="stylesheet" href="styles.css?v=20261018-inventory-compact1">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -173,7 +173,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261018-photo-bathroom2">
+<link rel="stylesheet" href="house-visual-map.css?v=20261018-photo-roomcards1">
 <link rel="stylesheet" href="visual-hubs.css?v=20261015-money-goals1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -5859,6 +5859,13 @@ function inventoryHubDetailHtml(tab){
 }
 function openInventoryHubSection(tab){
   const title=tab==="map"?"House Map + Storage":"Inventory";
+  if(tab!=="map"){
+    inventoryTab="items";
+    inventoryCategory="All";
+    inventorySearch="";
+    localStorage.setItem("dailyLifeInventoryTab","items");
+    localStorage.setItem("dailyLifeInventoryCategory","All");
+  }
   modal(title,`<div class="inventory-hub-modal">${inventoryHubDetailHtml(tab)}</div>`,"Close",closeModal);
 }
 function openInventoryLowStock(){
@@ -8261,7 +8268,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261018-photo-bathroom2"></script>
+<script src="house-visual-map.js?v=20261018-photo-roomcards1"></script>
 <script src="dolly-room-model.js?v=20261017-corrected-orientation1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
