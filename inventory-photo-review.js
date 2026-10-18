@@ -17,12 +17,20 @@ window.openInventoryPhotoReview=async function(){
  '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'inventory\')">+ Send inventory photos</button><button class="btn" onclick="openUseUpPlan()">Use-up + declutter plan</button></div>'+
  '<div id="inventoryReviewRows"><p class="pi-muted">Loading suggestions…</p></div></div>',"Close",closeModal);
  const {data,error}=await cloudClient.from("inventory_photo_suggestions")
-  .select("id,item_name,category,quantity_estimate,unit,room_name,storage_spot,condition_notes,decision,replacement_criteria,suggested_next_step,review_status,evidence_note,app_item_id")
+  .select("id,source_photo_id,item_name,category,quantity_estimate,unit,room_name,storage_spot,condition_notes,decision,replacement_criteria,suggested_next_step,review_status,evidence_note,app_item_id")
   .eq("review_status","pending").order("created_at",{ascending:false}).limit(150);
  const target=document.getElementById("inventoryReviewRows");if(!target)return;
  if(error){target.textContent="Could not load suggestions: "+error.message;return}
  const pending=(data||[]).filter(x=>digits(x.id));
- const card=(x,focus=false)=>'<div class="pi-area-card pi-inventory-choice'+(focus?' pi-inventory-choice-focus':'')+'"><b>'+esc(x.item_name||"Unnamed suggestion")+'</b>'+
+ const photoIds=[...new Set(pending.slice(0,6).map(x=>x.source_photo_id).filter(digits))];
+ const photoById=new Map();
+ if(photoIds.length){
+  const {data:photos}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",photoIds);
+  for(const photo of photos||[])if(/^data:image\\/jpeg;base64,[a-z0-9+/=]+$/i.test(photo.image_data||""))photoById.set(photo.id,photo.image_data);
+ }
+ const card=(x,focus=false)=>'<div class="pi-area-card pi-inventory-choice'+(focus?' pi-inventory-choice-focus':'')+'">'+
+  (photoById.has(x.source_photo_id)?'<img class="pi-inventory-photo" src="'+esc(photoById.get(x.source_photo_id))+'" alt="Photo of '+esc(x.item_name||"inventory item")+'">':"")+
+  '<b>'+esc(x.item_name||"Unnamed suggestion")+'</b>'+
   '<small>'+esc(x.category||"Household")+(x.quantity_estimate===null||x.quantity_estimate===undefined?" · quantity not verified":" · suggested count: "+esc(x.quantity_estimate)+" "+esc(x.unit||"each"))+'</small>'+
   '<p class="pi-muted">'+esc(x.room_name||"Room not verified")+(x.storage_spot?" → "+esc(x.storage_spot):"")+'</p>'+
   (x.evidence_note?'<p class="pi-muted">Seen in photo: '+esc(x.evidence_note)+'</p>':"")+
