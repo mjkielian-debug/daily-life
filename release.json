@@ -1,6 +1,6 @@
 {
-  "build": "20261018-tab-routing12",
+  "build": "20261018-plans-date13",
   "released": "2026-10-18",
-  "ui": "Fix readable rainbow colors, Today and People navigation, and household profile actions",
+  "ui": "Keep Day Flow on today and collapse duplicate family plans",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }
