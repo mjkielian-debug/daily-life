@@ -144,6 +144,9 @@ function visualPaperArtShortcuts(page){
 
 function visualHubView(page){
  const c=visualHubModel(page);if(!c.title)return"";
+ // Inventory should open to the real, usable inventory surface immediately.
+ // The generic recommendation card and collapsed detail accordion hid the actual items.
+ if(page==="inventory"&&typeof inventoryDetailedView==="function")return inventoryDetailedView();
  const progress=c.progress,usable=!!(progress&&progress.total),percent=usable?Math.min(100,Math.round(100*progress.done/progress.total)):null,main=progress?(usable?percent+"%":"—"):c.mainValue||"—";
  const meterText=progress?(usable?`${progress.done} / ${progress.total} ${page==="more"?"in next 30d":page==="home"?"planned":"marked"}`:"No items tracked yet"):c.mainLabel;
  const meterActions={home:"openFoodHubSection('week')",more:"openMoneyHubSection('bills')",log:"openCareHubSection('water')",reading:"openReadingHubSection('today')",family:"openPeopleHubSection('routines')",household:"openHouseholdSection('cleaning')",pets:"openPetsHubSection('history')",inventory:"openInventoryHubSection('items')",garden:"openGardenHobbySection('tasks')",hobbies:"openGardenHobbySection('tasks')",gardenhobbies:"openGardenHobbySection('tasks')",spirituality:"openSpiritualHubSection('practice')",budget:"openBudgetHubSection('plan')",settings:"openSettingsHubSection('backup')",vault:"openVaultHubSection('all')"};
