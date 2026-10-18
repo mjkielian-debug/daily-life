@@ -330,6 +330,35 @@ window.houseVisualInteractMarker=function(f,id,index){
  modal(h(p.label||"Mapped object")+" · "+h(z.name),'<div class="hvm-object-view">'+details+'</div>',"Close",closeModal);
 };
 
+
+window.houseVisualShowRoomPhoto=async function(photoId){
+ const stage=document.getElementById("hvmRoomPhotoStage");
+ if(!stage||!okPhoto(photoId)||!online())return;
+ stage.textContent="Loading saved bathroom photo…";
+ const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
+ const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
+ if(error||!data||!/^data:image\\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
+  current.textContent="This saved photo could not be displayed.";return;
+ }
+ const img=document.createElement("img");img.alt=data.title||"Upstairs bathroom photo";img.src=data.image_data;
+ current.replaceChildren(img);
+ const caption=document.getElementById("hvmRoomPhotoCaption");
+ if(caption)caption.textContent=data.title||"Upstairs bathroom photo";
+};
+async function hydrateBathroomPhotoGallery(f){
+ const host=document.getElementById("hvmRoomPhotoGallery");if(!host)return;
+ if(!online()){host.textContent="Sign in to see your saved bathroom photos.";return}
+ const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
+  .eq("category","house_map").eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
+ const current=document.getElementById("hvmRoomPhotoGallery");if(!current)return;
+ if(error){current.textContent="Could not load saved bathroom photos.";return}
+ const photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
+ if(!photos.length){current.textContent="No bathroom-titled photos were found in the saved room photos.";return}
+ current.innerHTML='<div class="hvm-photo-gallery"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved bathroom photo…</div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Choose a saved bathroom photo">'+
+  photos.map((p,i)=>'<button type="button" class="btn small '+(i===0?'primary':'')+'" aria-label="Show '+h(p.title||('Bathroom photo '+(i+1)))+'" onclick="houseVisualShowRoomPhoto(&#39;'+p.id+'&#39;)">'+h(p.title||('Photo '+(i+1)))+'</button>').join("")+
+  '</div><small class="muted">'+photos.length+' saved upstairs-bathroom photos</small></div>';
+ window.houseVisualShowRoomPhoto(photos[0].id);
+};
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
@@ -354,12 +383,15 @@ window.houseVisualOpenZone=function(f,id){
  (z.notes?'<p>'+h(z.notes)+'</p>':"")+
  '</details>';
  const isDolly=f==="Second floor"&&id==="dolly";
- const miniature=f==="Second floor"&&!isDolly&&typeof window.dailyLifeMiniScene==="function" ? (/bath/i.test(z.name||"") ? window.dailyLifeMiniScene("bathroom") : /hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";
- const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():miniature;
+ const isBathroom=f==="Second floor"&&/bath/i.test(z.name||"");
+ const miniature=f==="Second floor"&&!isDolly&&!isBathroom&&typeof window.dailyLifeMiniScene==="function" ? (/hall/i.test(z.name||"") ? window.dailyLifeMiniScene("hallway") : "") : "";
+ const bathroomPhotos=isBathroom?'<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved bathroom photos…</p></section>':"";
+ const furniture=isDolly&&typeof window.dollyRoomSceneHtml==="function"?window.dollyRoomSceneHtml():(isBathroom?bathroomPhotos:miniature);
  const modelButton=isDolly?'<button class="btn primary" type="button" onclick="houseVisualOpenDollyModel()">🛏 Open interactive bedroom + furniture layout</button>':'';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
  const markup='<div class="hvm-zone-detail">'+modelButton+furniture+objectPanel+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
+ if(isBathroom)Promise.resolve().then(()=>hydrateBathroomPhotoGallery(f));
 };
 })();
