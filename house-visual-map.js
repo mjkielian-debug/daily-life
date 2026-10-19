@@ -277,11 +277,16 @@ function personRoomPhotoMarkup(photo,index,total,person,f,z){
    kind==="dresser"?[["dresser","Dresser",18,52],["bed","Bed",70,56]]:
    kind==="playhouse"?[["dollhouse","Playhouse",54,54]]:
    kind==="vanity"?[["vanity","Vanity",52,58]]:[["bed","Bed",50,55]];
+ }else if(/futon|sofa bed|couch/.test(text)){
+  // A futon may be used for sleep, but it is still a futon in the room map.
+  hotspots.push(["futon","Futon",55,37]);
+ }else if(/chair/.test(text)){
+  // “Chair under bed” describes where the chair sits; it does not make the chair photo a bed photo.
+  hotspots.push(["chair","Chair + laundry",50,70]);
  }else{
   if(/dresser/.test(text))hotspots.push(["dresser","Dresser",22,58]);
   if(/vanity/.test(text))hotspots.push(["vanity","Vanity",62,48]);
-  if(/chair/.test(text))hotspots.push(["chair","Chair + laundry",50,70]);
-  if(/bed|bedroom/.test(text)||!hotspots.length)hotspots.push(["bed","Bed",55,58]);
+  if(/bed|bedroom/.test(text))hotspots.push(["bed","Bed",55,58]);
  }
  const scene='<div class="hvm-room-scene"><img src="'+h(photo.image_data)+'" alt="'+h(title)+'">'+hotspots.map(([key,label,x,y])=>
   '<button type="button" class="hvm-room-hotspot" style="left:'+x+'%;top:'+y+'%" aria-label="Open '+h(person?.name||"room")+'’s '+h(label.toLowerCase())+' details" onclick="houseVisualInspectPersonItem(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,&#39;'+h(key)+'&#39;)"><span aria-hidden="true">✦</span><b>'+h(label)+'</b></button>'
