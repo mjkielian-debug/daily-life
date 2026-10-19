@@ -115,17 +115,6 @@ async function lifeSimCompleteTask(id) {
   if (task?.done) lifeSimRemoveTask(id);
 }
 
-function lifeSimOpenActionPicker() {
-  const roster = lifeSimRoster(), activeId = lifeSimSelectedId(roster);
-  const active = roster.find(person => String(person.id) === activeId) || roster[0];
-  const queued = new Set(lifeSimTaskRows(active, activeId).map(task => String(task.id)));
-  const candidates = lifeSimAvailableTasks(active, activeId).filter(task => !queued.has(String(task.id)));
-  const rows = candidates.length
-    ? candidates.map(task => `<button class="life-sim-picker-row" type="button" onclick="lifeSimQueueTask(${lifeSimArg(task.id)})"><span><b>${esc(task.title)}</b><small>${esc(task.child || task.category || "Household task")}</small></span><span aria-hidden="true">＋</span></button>`).join("")
-    : `<p class="muted small">There are no other unfinished tasks available to add for ${esc(active.name)} today.</p>`;
-  modal("Add an action", `<div class="stack life-sim-action-picker"><p class="muted small">Choose an existing task for ${esc(active.name)}. This only changes the action queue; it does not edit or complete the task.</p><div class="life-sim-picker-list">${rows}</div></div>`, "Close", closeModal);
-}
-
 function lifeSimStatusMarkup(label, value, percent, action) {
   const measured = Number.isFinite(Number(percent));
   return `<button class="life-sim-status" type="button" onclick="${action}">
@@ -215,7 +204,7 @@ function lifeSimHud() {
   }
   if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
     <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" aria-label="${activeId === "self" ? "Open your personal needs" : `Open ${esc(active.name)}'s assigned tasks`}" onclick="${activeId === "self" ? "lifeSimOpenNeeds()" : "lifeSimOpenSelectedTasks()"}">${activeId === "self" ? "♡ Needs" : "✓ Tasks"}</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}${current?`<button type="button" class="life-sim-house-complete" aria-label="Mark ${esc(current.title)} complete" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})">✓</button>`:""}<button type="button" class="life-sim-house-queue" aria-label="Queue an action" onclick="lifeSimOpenActionPicker()">＋</button></div>
+    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" aria-label="${activeId === "self" ? "Open your personal needs" : `Open ${esc(active.name)}'s assigned tasks`}" onclick="${activeId === "self" ? "lifeSimOpenNeeds()" : "lifeSimOpenSelectedTasks()"}">${activeId === "self" ? "♡ Needs" : "✓ Tasks"}</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}${current?`<button type="button" class="life-sim-house-complete" aria-label="Mark ${esc(current.title)} complete" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})">✓</button>`:""}</div>
   </section>`;
   const needs = activeId === "self" ? [
     ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
@@ -228,7 +217,7 @@ function lifeSimHud() {
     <div class="life-sim-play-panel">
       <div class="life-sim-active-sim"><div class="life-sim-portrait" aria-hidden="true">${esc(String(active.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="life-sim-sim-meta"><span class="eyebrow">ACTIVE SIM</span><h2>${esc(active.name)}</h2><small>${taskDone} of ${tasks.length} tasks done</small><button class="btn small" type="button" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub(${lifeSimArg(active.id)})`}">${activeId === "self" ? "Your profile" : "Sim profile"} ›</button></div></div>
       <div class="life-sim-needs-block"><div class="life-sim-panel-label">${activeId==="self"?"NEEDS":"TODAY"}</div><div class="life-sim-needs">${needs}</div></div>
-      <div class="life-sim-current-block"><div class="life-sim-panel-label">CURRENT ACTION <button type="button" class="life-sim-add-action" onclick="lifeSimOpenActionPicker()" aria-label="Add an action">＋</button></div>${current?`<div class="life-sim-current-action"><span class="life-sim-plumbob" aria-hidden="true">✦</span><div><b>${esc(current.title)}</b><small>${esc(current.child||current.category||"Ready when you are")}</small></div><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(current.id)})">Open</button><button class="btn small life-sim-done" type="button" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})" aria-label="Mark ${esc(current.title)} done">✓</button></div>`:`<div class="life-sim-needs-note"><b>No current action</b><span>Choose from ${lifeSimAvailableTasks(active,activeId).length} unfinished tasks.</span></div>`}<div class="life-sim-queue">${queueMarkup}</div></div>
+      <div class="life-sim-current-block"><div class="life-sim-panel-label">CURRENT ACTION </div>${current?`<div class="life-sim-current-action"><span class="life-sim-plumbob" aria-hidden="true">✦</span><div><b>${esc(current.title)}</b><small>${esc(current.child||current.category||"Ready when you are")}</small></div><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(current.id)})">Open</button><button class="btn small life-sim-done" type="button" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})" aria-label="Mark ${esc(current.title)} done">✓</button></div>`:`<div class="life-sim-needs-note"><b>No current action</b><span>Choose from ${lifeSimAvailableTasks(active,activeId).length} unfinished tasks.</span></div>`}<div class="life-sim-queue">${queueMarkup}</div></div>
       <div class="life-sim-interactions" role="group" aria-label="Quick interactions"><button type="button" onclick="setView('household')"><span>⌂</span>House</button><button type="button" onclick="setView('family')"><span>♡</span>People</button><button type="button" onclick="setView('home')"><span>◇</span>Food</button><button type="button" onclick="setView('inventory')"><span>▦</span>Inventory</button><button type="button" onclick="setView('itinerary')"><span>◷</span>Plans</button></div>
     </div>
   </section>`;
