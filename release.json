@@ -1,6 +1,6 @@
 {
-  "build": "20261018-care-nav14",
-  "released": "2026-10-18",
-  "ui": "Simplify section navigation, connect self care to bathroom inventory, and collapse duplicate events",
+  "build": "20261019-care-nav15",
+  "released": "2026-10-19",
+  "ui": "Refresh Today focus label and make bathroom map shortcut recover when the room map cannot load",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }

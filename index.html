@@ -3549,7 +3549,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
         adminNow=nextLifeAdminAction();
   const focusTitle=activeTimed?`Now · ${activeTimed.title}`:nextTimed?`${fmtClock(nextTimed.start)} · ${nextTimed.title}`:foodNow||adminNow?.title||nt?.title||"Nothing urgent";
   const focusNote=activeTimed?(activeTimed.detail||`Until ${fmtClock(activeTimed.end)}`):nextTimed?(nextTimed.detail||itineraryTypeLabel(nextTimed)):foodNow?"Food plan is surfaced here so it does not get buried.":adminNow?.notes||nt?.notes||"Tracked list is clear.";
-  return `<div class="today-action-layout"><div class="dl-build-row"><span>GUIDED LAYOUT · OCT 15</span><button type="button" onclick="openAppUpdateTools()">Check update ↻</button></div>${typeof actionFirstTodayCard==="function"?actionFirstTodayCard():`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>`}
+  return `<div class="today-action-layout"><div class="dl-build-row"><span>DAILY FOCUS · RIGHT NOW</span><button type="button" onclick="openAppUpdateTools()">Check update ↻</button></div>${typeof actionFirstTodayCard==="function"?actionFirstTodayCard():`<div class="card glow today-focus"><div class="eyebrow">Right now</div><h2>${esc(focusTitle)}</h2><div class="muted small">${esc(focusNote)}</div></div>`}
   <details class="action-first-today-section"><summary>Dinner + family checklists</summary><div class="action-first-today-body"><div class="today-section-grid">${todayMealCard()}${todayChoresCard()}</div></div></details>
   <details class="action-first-today-section"><summary>All of today · schedule, records + advice</summary><div class="action-first-today-body">
   ${dailyAdviceCard()}
@@ -4814,13 +4814,14 @@ function openBathroomOnMap(){
   if(floor)try{localStorage.setItem("dailyLifeMapFirstFloor",String(floor))}catch(_){}
   setView("household");
   requestAnimationFrame(()=>{
-    if(floor&&typeof window.houseVisualMapHydrate==="function")window.houseVisualMapHydrate(floor).then(()=>{
+    const fallback=()=>{if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress()};
+    if(!floor||typeof window.houseVisualMapHydrate!=="function"){fallback();return}
+    Promise.resolve().then(()=>window.houseVisualMapHydrate(floor)).then(()=>{
       const mapRoot=[...document.querySelectorAll(".hvm-root")].find(el=>el.dataset.floor===floor);
       const tile=[...(mapRoot?.querySelectorAll(".hvm-room-tile")||[])].find(el=>/bath/i.test(el.textContent||""));
       if(tile){tile.click();return}
-      if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress();
-    });
-    else if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress();
+      fallback();
+    }).catch(fallback);
   });
 }
 function selfCarePage(){
