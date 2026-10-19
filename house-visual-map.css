@@ -126,3 +126,27 @@
 .hvm-room-photo-picker .btn{max-width:none;white-space:nowrap}
 .hvm-room-photo-count{font-size:.8rem;font-weight:800;color:#55445a;white-space:nowrap}
 @media(max-width:440px){.hvm-directory-grid{gap:7px}.hvm-room-tile-photo{height:78px}.hvm-photo-room-tile{padding:7px}}
+.hvm-person-room-home{padding:12px;border:1px solid #d6c6de;border-radius:20px;background:linear-gradient(145deg,#fff8ff,#edf6ff)}
+.hvm-person-room-browse>button{margin-bottom:9px}
+.hvm-person-room-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hvm-person-room-heading small,.hvm-person-room-stats small{display:block;color:#756a83;font-size:.68rem;font-weight:850;letter-spacing:.07em}
+.hvm-person-room-heading h3{margin:3px 0 0;color:#3d3151;font-size:1.2rem}
+.hvm-person-room-photo{display:grid;place-items:center;min-height:190px;max-height:55vh;overflow:hidden;border:1px solid #e7d7df;border-radius:17px;background:#f7eff3;color:#675e79}
+.hvm-person-room-photo img{display:block;width:100%;max-height:55vh;object-fit:contain;background:#f6eef2}
+.hvm-person-room-objects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.hvm-person-object{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:3px;padding:9px;border:1px solid #d9c9df;border-radius:14px;background:#fff;color:#3d3151;text-align:left;cursor:pointer}
+.hvm-person-object>span{font-size:1.1rem}.hvm-person-object b{font-size:.88rem}.hvm-person-object small{color:#675e79;font-size:.68rem;line-height:1.25}
+.hvm-person-room-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.hvm-person-room-stats>div{padding:10px;border:1px solid #e1d4e4;border-radius:13px;background:#ffffffb8}
+.hvm-person-room-stats b{display:block;margin-top:4px;color:#3d3151;font-size:.9rem}
+.hvm-person-room-task-list{padding:10px;border:1px solid #e1d4e4;border-radius:14px;background:#ffffffb8}
+.hvm-person-room-task-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.hvm-person-room-task-list .hvm-task-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #eee5ef}
+.hvm-person-room-inventory{width:100%;margin-top:9px}
+.hvm-person-tour-nav{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:7px;margin:8px 0;padding:8px;border:1px solid #d9c9df;border-radius:16px;background:#fff}
+.hvm-person-tour-nav>span{text-align:center;white-space:nowrap;color:#4f405f}
+.hvm-person-tour-nav>span b,.hvm-person-tour-nav>span small{display:block}
+.hvm-person-tour-nav>span small{font-size:.68rem;color:#756a83}
+.hvm-person-tour-nav>button:last-child{justify-self:end}
+@media(max-width:390px){.hvm-person-tour-nav{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.hvm-person-tour-nav>span{grid-column:1/-1;grid-row:1}.hvm-person-tour-nav>button:first-child{grid-column:1;grid-row:2}.hvm-person-tour-nav>button:last-child{grid-column:2;grid-row:2}}
+@media(max-width:360px){.hvm-person-room-objects{gap:5px}.hvm-person-object{padding:7px}.hvm-person-object small{font-size:.62rem}}

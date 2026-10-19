@@ -18,6 +18,7 @@ function key(f){return who()?.id+"|"+f}
 function get(f){return cache.get(key(f))}
 function where(f){return Array.from(document.querySelectorAll(".hvm-root[data-floor]")).filter(e=>e.dataset.floor===f)}
 function act(f,z){
+ if(selectedRoomProfile())return "houseVisualSelectTourRoom('"+f+"','"+z.id+"')";
  const destination=(f==="First floor"&&z.id==="stairs_up")?"Second floor":
   (f==="First floor"&&z.id==="basement_stairs")?"Basement":
   (f==="Second floor"&&z.id==="stairs")?"First floor":
@@ -153,7 +154,7 @@ async function hydrateRoomDirectoryPhotos(f,m){
   for(const row of data||[]){
    if(!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(row.image_data||""))continue;
    const zone=refs.find(x=>x.id===row.id)?.zone;
-   const host=zone&&Array.from(document.querySelectorAll(".hvm-room-tile-photo")).find(node=>node.dataset.roomPhotoZone===String(zone.id));
+   const host=zone&&Array.from(document.querySelectorAll("[data-room-photo-zone]")).find(node=>node.dataset.roomPhotoZone===String(zone.id));
    if(host){const img=document.createElement("img");img.alt="";img.src=row.image_data;host.replaceChildren(img);}
   }
  }catch(e){}
@@ -243,7 +244,63 @@ function refreshRoomProgress(f){
  });
 }
 
-function floorView(f,m){return directory(f,m)}
+function selectedRoomProfile(){
+ if(typeof lifeSimRoster!=="function"||typeof lifeSimSelectedId!=="function")return null;
+ const roster=lifeSimRoster(),id=lifeSimSelectedId(roster);
+ if(id==="self")return null;
+ return roster.find(person=>String(person.id)===String(id))||null;
+}
+function personRoomHome(f,z){
+ const person=selectedRoomProfile(),room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),done=tasks.filter(t=>t.done).length;
+ const today=(state.tasks||[]).filter(t=>t.date===ymd()&&!t.paused&&!t.waitingForFunds&&String(t.child||"").trim().toLowerCase()===String(person?.name||"").trim().toLowerCase());
+ const todayDone=today.filter(t=>t.done).length;
+ const photo='<div class="hvm-person-room-photo" data-room-photo-zone="'+h(z.id)+'"><span>Loading saved room photo…</span></div>';
+ const objects=z.id==="dolly"&&f==="Second floor"?'<div class="hvm-person-room-objects" aria-label="Dolly bedroom items">'+
+  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;bed&#39;)"><span>🛏️</span><b>Bed</b><small>Sheets and last change</small></button>'+
+  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;dresser&#39;)"><span>🧺</span><b>Dresser</b><small>Open drawers and shirts</small></button>'+
+  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;vanity&#39;)"><span>🪞</span><b>Vanity</b><small>Items on top</small></button></div>':
+  (arr(z.markers).length?'<div class="hvm-person-room-objects">'+arr(z.markers).map((p,i)=>'<button type="button" class="hvm-person-object" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')"><span>✦</span><b>'+h(p.label||"Room item")+'</b><small>'+h(p.status||"Tap to inspect")+'</small></button>').join("")+'</div>':"");
+ const roomTasks=tasks.filter(t=>!t.done).slice(0,5).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button type="button" class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">✓ Done</button></div>').join("");
+ const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
+ const tour='<nav class="hvm-person-tour-nav" aria-label="House tour navigation"><button type="button" class="btn" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,-1)">‹ Previous room</button><span><b>Room tour</b><small>'+(index+1)+' of '+zones.length+' · '+h(f)+'</small></span><button type="button" class="btn" '+(index<0||index>=zones.length-1?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,1)">Next room ›</button></nav>';
+ return '<section class="hvm-person-room-home" aria-label="'+h(person?.name||z.name)+' bedroom home">'+
+  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(z.name||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+objects+
+  '<div class="hvm-person-room-stats"><div><small>TODAY</small><b>'+(today.length?todayDone+' of '+today.length+' tasks done':"No tasks assigned today")+'</b></div><div><small>ROOM TASKS</small><b>'+(tasks.length?done+' of '+tasks.length+' complete':"No room tasks logged")+'</b></div></div>'+
+  '<section class="hvm-person-room-task-list"><div class="hvm-person-room-task-heading"><b>Room tasks</b><button type="button" class="btn small" onclick="houseVisualAddZoneTask(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">＋ Add</button></div>'+
+  (roomTasks||'<p class="muted small">No unfinished room tasks. Progress reflects completed tasks, not how clean the room looks.</p>')+'</section>'+
+  '<button type="button" class="btn hvm-person-room-inventory" onclick="houseVisualInventoryOpen(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">Open '+h(person?.name||z.name)+'’s room inventory ›</button></section>';
+}
+function floorView(f,m){
+ const person=selectedRoomProfile();
+ let browsing=false;try{browsing=localStorage.getItem("dailyLifeMapBrowseRooms")==="1"}catch(e){}
+ if(person&&!browsing){
+  let z=null;
+  try{const saved=JSON.parse(localStorage.getItem("dailyLifeMapTourRoom")||"null");if(saved?.floor===f)z=arr(m.zones).find(item=>item&&item.id===saved.id)||null}catch(e){}
+  z=z||personRoomZone(f,person.name,false);
+  if(z)return personRoomHome(f,z)
+ }
+ if(person&&browsing&&f==="Second floor")return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+directory(f,m)+'</div>';
+ return directory(f,m)
+}
+window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapBrowseRooms","1")}catch(e){};render()};
+window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapBrowseRooms")}catch(e){};render()};
+window.houseVisualSelectTourRoom=function(f,id){
+ if(!floors.includes(f)||!okId(id))return;
+ try{
+  localStorage.setItem("dailyLifeMapFirstFloor",f);
+  localStorage.setItem("dailyLifeMapBrowseRooms","0");
+  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor:f,id}));
+ }catch(e){}
+ if(typeof homeSetMapFloor==="function")homeSetMapFloor(f);
+ render();
+ window.scrollTo(0,0);
+};
+window.houseVisualPersonTourStep=function(f,id,delta){
+ const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===id),next=zones[index+Number(delta)];
+ if(!next)return;
+ window.houseVisualSelectTourRoom(f,next.id);
+ document.querySelector(".hvm-person-room-home")?.scrollIntoView({behavior:"smooth",block:"start"});
+};
 function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
@@ -331,13 +388,18 @@ function personRoomZone(f,name,isSelf){
 }
 window.houseVisualGoToPersonRoom=async function(name,isSelf=false){
  const floor=isSelf?"Third floor":"Second floor";
- try{localStorage.setItem("dailyLifeMapFirstFloor",floor)}catch(e){}
+ try{
+  localStorage.removeItem("dailyLifeMapBrowseRooms");
+  localStorage.setItem("dailyLifeMapFirstFloor",floor);
+  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor,id:""}));
+ }catch(e){}
  if(typeof setView==="function")setView("household");
+ if(typeof homeSetMapFloor==="function")homeSetMapFloor(floor);
  try{
   await window.houseVisualMapHydrate(floor);
   const z=personRoomZone(floor,name,isSelf);
-  if(z){window.houseVisualOpenZone(floor,z.id);return}
-  if(typeof modal==="function")modal("Room map not linked",'<p>The '+h(name)+" room is on the "+h(floor)+". Its map label does not match the profile yet, so I left the floor map open instead of guessing.</p>","Close",closeModal);
+  if(z){try{localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor,id:z.id}))}catch(e){};render();window.scrollTo(0,0);return}
+  if(typeof homeSetMapFloor==="function")homeSetMapFloor(floor);
  }catch(e){}
 };
 window.houseVisualTourStep=function(f,id,delta){
