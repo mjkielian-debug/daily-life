@@ -115,7 +115,7 @@
 .life-sim-compact-hud .life-sim-sim{display:flex;align-items:center;justify-content:flex-start;gap:5px;flex:0 0 auto;min-width:0;min-height:36px;padding:4px 7px;border-radius:12px;font-size:.64rem;white-space:nowrap}
 .life-sim-compact-hud .life-sim-avatar{width:23px;height:23px;border-width:1px;font-size:.68rem}
 .life-sim-compact-hud .life-sim-clock{grid-template-columns:auto auto;min-height:34px;padding:5px 7px;border-radius:12px}
-.life-sim-compact-bar{display:grid;grid-template-columns:minmax(92px,.72fr) minmax(100px,.84fr) minmax(110px,1fr) 34px 72px;align-items:center;gap:5px;padding:6px;border:1px solid var(--border);border-radius:15px;background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
+.life-sim-compact-bar{display:grid;grid-template-columns:minmax(92px,.72fr) minmax(100px,.84fr) minmax(110px,1fr) 72px;align-items:center;gap:5px;padding:6px;border:1px solid var(--border);border-radius:15px;background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
 .life-sim-compact-context{display:flex;align-items:center;gap:6px;min-width:0}
 .life-sim-compact-plumbob{display:grid;place-items:center;flex:0 0 26px;height:32px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:var(--secondary);font-size:.8rem}
 .life-sim-compact-context>span:last-child{display:grid;gap:1px;min-width:0}
@@ -136,7 +136,7 @@ button.life-sim-compact-needs{cursor:pointer}
 .life-sim-needs-row>b{font-size:.77rem}
 .life-sim-needs-row>small{font-size:.7rem;overflow-wrap:anywhere}
 .life-sim-needs-row>i{font-style:normal;font-size:1.1rem}
-@media(max-width:600px){.life-sim-compact-bar{grid-template-columns:minmax(90px,.75fr) minmax(110px,1fr) 34px 70px}.life-sim-compact-context{grid-column:1}.life-sim-compact-needs{grid-column:2/-1}.life-sim-compact-action{grid-column:1/3}}
+@media(max-width:600px){.life-sim-compact-bar{grid-template-columns:minmax(90px,.75fr) minmax(110px,1fr) 70px}.life-sim-compact-context{grid-column:1}.life-sim-compact-needs{grid-column:2/-1}.life-sim-compact-action{grid-column:1/3}.life-sim-compact-house{grid-column:3}}
 @media(max-width:360px){.life-sim-compact-bar{grid-template-columns:minmax(0,1fr) 32px 64px}.life-sim-compact-needs{grid-column:2/-1}.life-sim-compact-action{grid-column:1}}
 .house-overlay-backdrop{position:fixed;inset:0;z-index:42;display:grid;place-items:center;padding:10px 10px calc(88px + env(safe-area-inset-bottom));background:rgba(48,33,55,.24);backdrop-filter:blur(3px)}
 .house-overlay{display:grid;grid-template-rows:auto minmax(0,1fr);width:min(940px,100%);max-height:100%;overflow:hidden;border:1px solid var(--border);border-radius:24px;background:var(--panel);color:var(--text);box-shadow:0 20px 60px rgba(44,31,51,.3)}
