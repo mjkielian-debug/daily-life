@@ -180,7 +180,7 @@ dialog,
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261014-mobile-repair1">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261019-care-scroll1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -224,7 +224,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261018-care-nav14"></script>
+<script src="visual-hubs.js?v=20261019-profile-home1"></script>
 <script src="life-sim-ui.js?v=20261017-refined-room-map1"></script>
 <script>
 
@@ -5451,6 +5451,51 @@ function openPeopleHubSection(section){
   else if(section==="plans"){title="Plans + Check-ins";body=peoplePlansHub()}
   modal(title,`<div class="people-hub-modal">${body}</div>`,"Close",closeModal);
 }
+function peopleProfileHomePage(){
+  ensurePeopleProfiles();
+  const roster=typeof lifeSimRoster==="function"?lifeSimRoster():[{id:"self",name:state.profile?.name||"You"}],
+        activeId=typeof lifeSimSelectedId==="function"?lifeSimSelectedId(roster):"self",
+        active=roster.find(person=>String(person.id)===String(activeId))||roster[0],
+        isSelf=String(active.id)==="self",name=String(active.name||"You").trim(),today=ymd(),
+        childProfile=!isSelf&&isChildProfile(active),childName=name.toLowerCase(),
+        tasks=(state.tasks||[]).filter(task=>task.date===today&&!task.paused&&!task.waitingForFunds&&
+          (isSelf?!String(task.child||"").trim():String(task.child||"").trim().toLowerCase()===childName)),
+        chores=isSelf?[]:(state.chores||[]).filter(chore=>chore.date===today&&String(chore.child||"").trim().toLowerCase()===childName),
+        done=tasks.filter(task=>task.done).length+chores.filter(chore=>chore.done).length,
+        total=tasks.length+chores.length,
+        upcoming=(state.events||[]).filter(event=>event.date>=today&&event.status!=="cancelled"&&
+          (isSelf?!event.child||String(event.child).trim().toLowerCase()===childName:String(event.child||"").trim().toLowerCase()===childName))
+          .sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,6),
+        agenda=peopleAgendaItems().filter(item=>!isSelf&&String(item.person?.id)===String(active.id)).slice(0,6),
+        events=isSelf?upcoming:agenda.length?agenda:upcoming,
+        taskRows=tasks.map(task=>'<label class="vh-profile-check '+(task.done?"is-done":"")+'"><input type="checkbox" '+(task.done?"checked":"")+' onchange="toggleTask('+lifeSimArg(task.id)+',this.checked)"><span><b>'+esc(task.title||"Task")+'</b><small>'+esc(task.category||"Today")+(task.notes?" · "+esc(task.notes):"")+'</small></span><strong>'+(task.done?"Done":"To do")+'</strong></label>').join(""),
+        choreRows=chores.map(chore=>'<label class="vh-profile-check '+(chore.done?"is-done":"")+'"><input type="checkbox" '+(chore.done?"checked":"")+' onchange="toggleChore('+lifeSimArg(chore.id)+',this.checked)"><span><b>'+esc(chore.chore||"Chore")+'</b><small>Family routine</small></span><strong>'+(chore.done?"Done":"To do")+'</strong></label>').join(""),
+        agendaRows=events.map(item=>{
+          const date=item.date?new Date(item.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):"";
+          const clock=item.time||item.startTime||"";
+          const open=item.kind==="event"||item.id?"openEvent("+lifeSimArg(item.date)+","+lifeSimArg(item.id||"")+")":"openPeopleHubSection('plans')";
+          return '<button type="button" class="vh-profile-agenda-row" onclick="'+open+'"><span class="vh-profile-date">'+esc(date)+(clock?" · "+esc(fmtClock(clock)):"")+'</span><b>'+esc(item.title||"Plan")+'</b><small>'+esc(item.location||"")+'</small></button>';
+        }).join(""),
+        birthday=!isSelf?nextBirthdayInfo(active):null,
+        intro=isSelf?"Your routines, personal care, and upcoming plans in one place.":childProfile?"Today’s chores, school, activities, and profile details for "+name+".":"Plans, family connections, and details for "+name+".";
+  const actionButtons=isSelf
+    ?'<button class="btn primary" type="button" onclick="setView(\'selfcare\')">♡ Self care</button><button class="btn" type="button" onclick="setView(\'itinerary\')">Day Flow</button><button class="btn" type="button" onclick="openTask()">＋ Task</button>'
+    :'<button class="btn primary" type="button" onclick="openTask('+lifeSimArg(name)+')">＋ Task</button><button class="btn" type="button" onclick="openPersonPlan('+lifeSimArg(active.id)+')">＋ Plan</button><button class="btn" type="button" onclick="openPersonHub('+lifeSimArg(active.id)+')">Profile details</button>';
+  return '<section class="visual-hub visual-hub-family vh-profile-home" aria-label="'+esc(name)+' profile home">'+
+    '<div class="vh-heading"><div><div class="eyebrow">PROFILE HOME</div><h1>'+esc(isSelf?"Your home":name+"’s home")+'</h1><p>'+esc(intro)+'</p></div><button type="button" class="btn primary vh-add" onclick="'+(isSelf?"openWellnessCheckin()":"openPersonProfile("+lifeSimArg(active.id)+")")+'">'+(isSelf?"+ Check in":"+ Edit profile")+'</button></div>'+
+    '<div class="vh-profile-actions">'+actionButtons+'</div>'+
+    '<section class="vh-profile-card vh-profile-today"><div class="vh-profile-card-head"><div><div class="eyebrow">TODAY</div><h2>'+(total?done+' of '+total+' done':"A clear slate")+'</h2></div><span class="vh-profile-progress">'+(total?Math.round(done*100/total):100)+'%</span></div>'+
+      (taskRows||choreRows?'<div class="vh-profile-checklist">'+choreRows+taskRows+'</div>':'<p class="muted small">'+(isSelf?"No personal tasks are assigned to you today.":"Nothing is assigned to "+esc(name)+" today.")+'</p>')+
+      (childProfile?'<div class="vh-profile-reading"><span>Reading today</span><b>'+Number(personTodaySummary(active).pages||0)+' pages</b></div>':"")+
+    '</section>'+
+    (birthday?'<section class="vh-profile-card"><div class="eyebrow">BIRTHDAY</div><h2>🎂 '+esc(birthday.label)+'</h2><p class="muted small">'+(birthday.days===0?"Today":birthday.days+" days away")+(birthday.turning?" · turning "+birthday.turning:"")+'</p><button class="btn" type="button" onclick="openBirthdayPlanner('+lifeSimArg(active.id)+')">Open birthday plan</button></section>':"")+
+    '<section class="vh-profile-card"><div class="vh-profile-card-head"><div><div class="eyebrow">UP NEXT</div><h2>Plans + activities</h2></div><button class="btn small" type="button" onclick="'+(isSelf?"openPeopleHubSection(\'plans\')":"openPersonPlan("+lifeSimArg(active.id)+")")+'">＋ Add</button></div>'+
+      (agendaRows||'<p class="muted small">No upcoming plans are recorded for '+esc(name)+'.</p>')+'</section>'+
+    (!isSelf&&active.familyLinks?.length?'<section class="vh-profile-card"><div class="eyebrow">FAMILY CONNECTIONS</div><div class="person-chips">'+active.familyLinks.map(link=>'<span class="person-chip">'+esc(link.name)+' · '+esc(link.label||"family")+'</span>').join("")+'</div></section>':"")+
+    (!isSelf&&(active.grade||active.schoolName)?'<section class="vh-profile-card"><div class="eyebrow">SCHOOL</div><h2>'+esc(active.schoolName||"School")+'</h2><p class="muted small">'+esc(active.grade||"Grade not recorded")+'</p><button class="btn" type="button" onclick="openPeopleHubSection(\'school\')">School details</button></section>':"")+
+    '<section class="vh-profile-card vh-profile-family-tools"><div><div class="eyebrow">FAMILY TOOLS</div><h2>Routines and shared plans</h2><p class="muted small">Open household routines, activities, and the family schedule from this profile.</p></div><div class="vh-profile-actions"><button class="btn" type="button" onclick="openPeopleHubSection(\'routines\')">Chores + routines</button><button class="btn" type="button" onclick="openPeopleHubSection(\'activities\')">Activities</button><button class="btn" type="button" onclick="openPeopleHubSection(\'plans\')">Family plans</button></div></section>'+
+  '</section>';
+}
 function familyView(){
   ensurePeopleProfiles();
   const profiles=state.peopleProfiles||[],kids=childProfiles(),today=ymd(),end7=shiftDateString(today,7),end35=shiftDateString(today,35),
@@ -8345,7 +8390,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261019-dolly-room-photo-tour2";
+const DAILY_LIFE_BUILD="20261019-profile-home-room-corrections1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8468,7 +8513,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261015-current-rooms-thirdstairs6"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261019-dolly-room-photo-tour2"></script>
+<script src="house-visual-map.js?v=20261019-room-label-corrections3"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details1"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
