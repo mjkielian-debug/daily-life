@@ -144,6 +144,7 @@ function visualPaperArtShortcuts(page){
 
 function visualHubView(page){
  const c=visualHubModel(page);if(!c.title)return"";
+ if(page==="family"&&typeof peopleProfileHomePage==="function")return peopleProfileHomePage();
  // Inventory should open to the real, usable inventory surface immediately.
  // The generic recommendation card and collapsed detail accordion hid the actual items.
  if(page==="inventory"&&typeof inventoryDetailedView==="function")return inventoryDetailedView();
