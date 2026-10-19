@@ -254,7 +254,7 @@ function selectedRoomProfile(){
 function dollyRoomPhotoMarkup(photo,index,total){
  const title=str(photo.title),kind=/room overview/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/bed · folded laundry/i.test(title)?"bed":"overview";
  const hotspots=kind==="overview"?[
-  ["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",88,66]
+  ["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",75,66]
  ]:kind==="dresser"?[
   ["dresser","Dresser",18,52],["bed","Bed",70,56]
  ]:[["bed","Bed",50,55]];

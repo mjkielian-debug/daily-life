@@ -1,6 +1,6 @@
 {
-  "build": "20261019-dolly-room-photo-tour1",
+  "build": "20261019-dolly-room-photo-tour2",
   "released": "2026-10-19",
-  "ui": "Show Dolly’s room-wide photo tour with tappable furniture hotspots and alternate room views",
+  "ui": "Show Dolly’s full room photos with tappable furniture hotspots and alternate room views",
   "data_version": "private Dolly room photos saved in Photo Inbox; household records remain unchanged"
 }
