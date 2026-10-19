@@ -1,6 +1,6 @@
 {
-  "build": "20261019-profile-home-actual-data2",
+  "build": "20261019-profile-home-actual-data3",
   "released": "2026-10-19",
-  "ui": "Person-specific homepages show saved household, care, food, school, spiritual, and money details with compact task progress.",
+  "ui": "Profile home routes directly to the person’s room map; Dolly’s dresser shows her clothing; school, art, and award books open from the profile; redundant action prompts are removed.",
   "data_version": "No saved records removed beyond duplicate wishlist items and unconfirmed child plan/date placeholders."
 }
