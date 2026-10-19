@@ -534,3 +534,11 @@ body:has(#app .visual-hub) .life-tools-fab{
 .modal .person-editor .relationship-settings .grid3{gap:10px!important}
 .modal .person-editor .relationship-settings select,
 .modal .person-editor .relationship-settings input{color:#30233b!important;-webkit-text-fill-color:#30233b!important;background:#fff!important;color-scheme:light!important}
+
+/* Profile book cards link directly to the saved page collections. */
+.vh-profile-books{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}
+.vh-profile-book-card{display:grid;justify-items:start;gap:6px;min-height:118px;padding:12px;border:1px solid color-mix(in srgb,var(--border,#dfc9d8) 86%,white);border-radius:16px;background:rgba(255,255,255,.78);color:inherit;text-align:left;cursor:pointer}
+.vh-profile-book-card>span{font-size:1.35rem}
+.vh-profile-book-card>b{font-size:.92rem}
+.vh-profile-book-card>small{color:var(--muted,#675b6a)}
+@media(max-width:440px){.vh-profile-books{gap:6px}.vh-profile-book-card{padding:9px;min-height:106px}.vh-profile-book-card>b{font-size:.82rem}}
