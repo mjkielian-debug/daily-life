@@ -38,3 +38,12 @@ html,body{max-width:100%;overflow-x:clip!important}
 .bank-exit-steps button.done{background:#e2f1e8;border-color:#94b9a2}
 .bank-exit-note{font-size:.82rem;color:#625667}
 @media(max-width:430px){.visual-hub .vh-heading{min-width:0}.visual-hub .vh-heading h1{overflow-wrap:anywhere}.modal{max-width:calc(100vw - 14px)!important}}
+
+
+/* The Self care screen contains several stacked cards and must scroll vertically. */
+html,body{height:auto!important;min-height:100%;overflow-y:auto!important}
+#app{height:auto!important;min-height:100%;overflow-y:visible!important}
+#app>.app.care-one-screen-shell{
+  height:auto!important;min-height:100vh;overflow-x:clip!important;overflow-y:visible!important;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom))!important
+}
