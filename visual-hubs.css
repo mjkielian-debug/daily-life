@@ -492,3 +492,45 @@ body:has(#app .visual-hub) .life-tools-fab{
 .vh-profile-picker{display:grid;gap:9px}.vh-profile-picker button{display:flex;align-items:center;gap:12px;text-align:left}.vh-profile-picker button span:last-child{margin-left:auto;font-size:.8rem}
 .vh-profile-home [id^="vh-profile-"]{scroll-margin-top:20px}
 @media(max-width:440px){.vh-profile-module-grid{grid-template-columns:1fr}.vh-profile-stat-row span{font-size:.76rem}.vh-profile-home .vh-profile-card{padding:14px}}
+
+
+/* Profile home: put the saved details beside each person, with a compact chore meter. */
+.vh-profile-inline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.vh-profile-inline{min-width:0;padding:14px;border:1px solid color-mix(in srgb,var(--border,#dfc9d8) 86%,white);border-radius:20px;background:rgba(255,255,255,.74)}
+.vh-profile-inline h2{margin:3px 0 8px;font-size:1.12rem}
+.vh-profile-inline .btn{margin-top:8px}
+.vh-profile-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.vh-profile-chip{padding:5px 8px;border:1px solid var(--border,#dfc9d8);border-radius:999px;background:#fff8fc;font-size:.82rem}
+.vh-profile-ring{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--primary,#a72f70) var(--progress),color-mix(in srgb,var(--primary,#a72f70) 16%,white) 0);position:relative;font-size:.76rem;font-weight:850}
+.vh-profile-ring:before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--surface,#fff);border:1px solid color-mix(in srgb,var(--border,#dfc9d8) 70%,white)}
+.vh-profile-ring span{position:relative;z-index:1}
+.vh-profile-checklist{margin-top:10px;border-top:1px solid color-mix(in srgb,var(--border,#dfc9d8) 65%,transparent);padding-top:6px}
+.vh-profile-checklist summary{min-height:40px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:750}
+.vh-profile-checklist summary span{font-variant-numeric:tabular-nums;color:var(--muted,#675b6a)}
+.vh-profile-checklist .vh-profile-check{grid-template-columns:22px minmax(0,1fr);padding:7px 9px;gap:8px;border-radius:12px}
+.vh-profile-checklist .vh-profile-check span{display:block}
+.vh-profile-checklist .vh-profile-check input{width:18px;height:18px}
+.vh-profile-inline .vh-profile-data-row:first-of-type{margin-top:4px}
+.vh-profile-book-row,.vh-profile-art-row{display:flex;align-items:center;gap:10px;width:100%;padding:9px 0;border:0;border-top:1px solid color-mix(in srgb,var(--border,#dfc9d8) 60%,transparent);background:transparent;color:inherit;text-align:left;cursor:pointer}
+.vh-profile-book-row>span:last-child,.vh-profile-art-row>span:last-child{display:grid;gap:3px;min-width:0}
+.vh-profile-book-row small,.vh-profile-art-row small,.vh-profile-known small{color:var(--muted,#675b6a);font-size:.82rem}
+.vh-profile-book-icon{font-size:1.2rem}
+.vh-profile-art-row img,.vh-profile-art-fallback{flex:0 0 48px;width:48px;height:48px;border-radius:11px;object-fit:cover;background:#f6e8f0}
+.vh-profile-art-fallback{display:grid;place-items:center;font-size:1.3rem}
+.vh-profile-art-row img:not([hidden])+.vh-profile-art-fallback{display:none}
+.vh-profile-known{display:grid;gap:4px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--border,#dfc9d8) 60%,transparent)}
+.vh-profile-inline .vh-profile-spirit-list{grid-template-columns:1fr 1fr}
+.vh-profile-areas>.eyebrow{margin-bottom:3px}
+@media(max-width:520px){
+ .vh-profile-inline-grid{grid-template-columns:1fr}
+ .vh-profile-inline{padding:13px}
+ .vh-profile-home .vh-profile-reading{flex-wrap:wrap;gap:5px 10px}
+}
+
+/* Keep the optional adult relationship check-in readable on light profile dialogs. */
+.modal .person-editor .relationship-settings{color:#3f2942!important;background:#fff9fc!important;border:1px solid #cdaabd!important;border-radius:20px!important;padding:16px!important}
+.modal .person-editor .relationship-settings .mini-heading,
+.modal .person-editor .relationship-settings label{color:#3f2942!important;-webkit-text-fill-color:#3f2942!important;opacity:1!important;text-shadow:none!important}
+.modal .person-editor .relationship-settings .grid3{gap:10px!important}
+.modal .person-editor .relationship-settings select,
+.modal .person-editor .relationship-settings input{color:#30233b!important;-webkit-text-fill-color:#30233b!important;background:#fff!important;color-scheme:light!important}
