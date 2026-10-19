@@ -174,13 +174,13 @@ dialog,
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
 <link rel="stylesheet" href="house-visual-map.css?v=20261019-dolly-room-photo-tour2">
-<link rel="stylesheet" href="visual-hubs.css?v=20261019-profile-dashboard2">
+<link rel="stylesheet" href="visual-hubs.css?v=20261019-profile-home-actual-data1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261019-profile-dashboard2">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261019-profile-home-actual-data1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -200,7 +200,7 @@ dialog,
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261018-care-nav14">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261018-care-nav14…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261019-profile-home-actual-data1…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -216,9 +216,9 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261019-dolly-room-photo-tour2 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261019-profile-home-actual-data1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261019-dolly-room-photo-tour2 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261019-profile-home-actual-data1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 </script>
@@ -4895,6 +4895,18 @@ function ensurePeopleProfiles(){
     if(!Array.isArray(p.importantDates))p.importantDates=[];
     if(!Array.isArray(p.wishlist))p.wishlist=[];
     if(!p.sizes||typeof p.sizes!=="object")p.sizes={};
+    const wishSeen=new Set();
+    p.wishlist=p.wishlist.filter(wish=>{
+      const item=String(typeof wish==="string"?wish:(wish?.item||wish?.name||"")).trim();
+      const key=item.toLowerCase();
+      if(!key||wishSeen.has(key))return false;
+      wishSeen.add(key);return true;
+    });
+    if(isChildProfile(p)){
+      const planTitle=value=>String(typeof value==="string"?value:(value?.title||"")).split("|")[0].trim().toLowerCase();
+      p.sharedPlans=p.sharedPlans.filter(value=>!["dinner together","call about holiday plans"].includes(planTitle(value)));
+      p.importantDates=p.importantDates.filter(value=>!["anniversary","tradition"].includes(String(typeof value==="string"?value:(value?.label||value?.title||"")).split("|")[0].trim().toLowerCase()));
+    }
   }
 }
 function personById(id){return (state.peopleProfiles||[]).find(p=>p.id===id)}
@@ -5133,23 +5145,23 @@ function openPersonProfile(id=""){
     <label>Birthday<input id="pbday" value="${esc(p.birthday||"")}" placeholder="YYYY-MM-DD or MM-DD"></label>
     <label>Elfster wishlist<input id="pelfster" type="url" value="${esc(p.elfsterUrl||"")}" placeholder="https://www.elfster.com/..."></label>
     ${p.elfsterUrl?`<button type="button" class="btn" onclick="window.open('${esc(p.elfsterUrl)}','_blank','noopener')">Open Elfster wishlist</button>`:""} 
-    <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="green, pink…"></label>
-    <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Stitch, Pokémon, dinosaurs…"></label>
-    <label>Favorite foods / treats<input id="pfoods" value="${esc((p.favoriteFoods||[]).join(", "))}" placeholder="Chocolate cake, pizza, strawberries…"></label>
-    <label>Interests<input id="pints" value="${esc((p.interests||[]).join(", "))}" placeholder="music, cooking, reptiles…"></label>
+    <label>Favorite colors<input id="pcolors" value="${esc((p.favoriteColors||[]).join(", "))}" placeholder="Only enter confirmed favorites"></label>
+    <label>Favorite characters / themes<input id="pchars" value="${esc((p.favoriteCharacters||[]).join(", "))}" placeholder="Only enter confirmed favorites"></label>
+    <label>Favorite foods / treats<input id="pfoods" value="${esc((p.favoriteFoods||[]).join(", "))}" placeholder="Only enter confirmed favorites"></label>
+    <label>Interests<input id="pints" value="${esc((p.interests||[]).join(", "))}" placeholder="Only enter confirmed interests"></label>
     <div class="grid2"><label>Clothing size<input id="pclothes" value="${esc(p.sizes?.clothing||"")}"></label><label>Shoe size<input id="pshoes" value="${esc(p.sizes?.shoes||"")}"></label></div>
     <label>Gift / size notes<textarea id="pnotes" rows="3" placeholder="Clothing sizes, things they collect, gift notes…">${esc(p.giftNotes||"")}</textarea></label>
-    <label>Important dates<textarea id="pdates" rows="2" placeholder="Anniversary | 2026-05-10&#10;Tradition | 12-24">${esc((p.importantDates||[]).map(x=>`${x.label||x.title||""} | ${x.date||""}`).join("\n"))}</textarea></label>
-    <label>Plans / things to remember<textarea id="pplans" rows="3" placeholder="Dinner together | 2026-10-18&#10;Call about holiday plans">${esc((p.sharedPlans||[]).map(x=>typeof x==="string"?x:[x.title||"Plan",x.date||""].filter(Boolean).join(" | ")).join("\n"))}</textarea></label>
+    <label>Important dates<textarea id="pdates" rows="2" placeholder="Name | date">${esc((p.importantDates||[]).map(x=>`${x.label||x.title||""} | ${x.date||""}`).join("\n"))}</textarea></label>
+    <label>Plans / things to remember<textarea id="pplans" rows="3" placeholder="A specific plan | date (optional)">${esc((p.sharedPlans||[]).map(x=>typeof x==="string"?x:[x.title||"Plan",x.date||""].filter(Boolean).join(" | ")).join("\n"))}</textarea></label>
     <label>Routine / preference notes<textarea id="proutine" rows="2" placeholder="Morning shower preference, pickup notes, routines…">${esc(p.routineNotes||"")}</textarea></label>
-    <div class="relationship-settings"><div class="mini-heading">Recurring check-in (optional)</div><label class="task"><input id="pcheckenabled" type="checkbox" ${p.recurringCheckin?.enabled?"checked":""}><span>Use a recurring check-in for this person</span></label><div class="grid3"><label>Weekday<select id="pcheckday">${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<option value="${i}" ${Number(p.recurringCheckin?.weekday)===i?"selected":""}>${d}</option>`).join("")}</select></label><label>Time<input id="pchecktime" type="time" value="${esc(p.recurringCheckin?.startTime||"")}"></label><label>Minutes<input id="pcheckmins" type="number" min="15" step="5" value="${p.recurringCheckin?.durationMinutes||30}"></label></div></div>
+    ${isPartnerProfile(p)?`<div class="relationship-settings"><div class="mini-heading">Recurring check-in (optional)</div><label class="task"><input id="pcheckenabled" type="checkbox" ${p.recurringCheckin?.enabled?"checked":""}><span>Use a recurring check-in for this person</span></label><div class="grid3"><label>Weekday<select id="pcheckday">${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<option value="${i}" ${Number(p.recurringCheckin?.weekday)===i?"selected":""}>${d}</option>`).join("")}</select></label><label>Time<input id="pchecktime" type="time" value="${esc(p.recurringCheckin?.startTime||"")}"></label><label>Minutes<input id="pcheckmins" type="number" min="15" step="5" value="${p.recurringCheckin?.durationMinutes||30}"></label></div></div>`:""}
   </div>`,"Save",async()=>{
     const name=$("#pname").value.trim();if(!name)return;let x=personById(id);
     if(!x){x={id:uid(),wishlist:[],birthdayPlan:{tasks:[]}};state.peopleProfiles.push(x)}
     const importantDates=$("#pdates").value.split(/\r?\n/).map(line=>{const [label,...rest]=line.split("|");return{label:String(label||"").trim(),date:rest.join("|").trim()}}).filter(x=>x.label||x.date);
     const sharedPlans=$("#pplans").value.split(/\r?\n/).map(line=>{const parts=line.split("|");const title=String(parts.shift()||"").trim(),date=parts.join("|").trim();return date?{id:uid(),title,date}:title}).filter(x=>typeof x==="string"?x.trim():x.title);
     const familyLinks=$("#pfamilylinks").value.split(/\r?\n/).map(line=>{const [name,...rest]=line.split("|");return{name:String(name||"").trim(),label:rest.join("|").trim()}}).filter(x=>x.name);
-    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolNotes:$("#pschoolnotes").value.trim(),medicalInformation:$("#pmedicalnotes").value.trim(),allergies:$("#pallergies").value.trim(),medications:$("#pmedications").value.trim(),awards:commaList($("#pawards").value),readingGoalPages:Number($("#preadinggoal").value||0),schoolName:$("#pschoolname").value.trim(),aliases:commaList($("#paliases").value),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}});
+    Object.assign(x,{name,relationship:$("#prel").value.trim(),relatedTo:$("#prelated").value.trim(),familyLinks,school:$("#pschool").value.trim(),grade:$("#pgrade").value.trim(),schoolNotes:$("#pschoolnotes").value.trim(),medicalInformation:$("#pmedicalnotes").value.trim(),allergies:$("#pallergies").value.trim(),medications:$("#pmedications").value.trim(),awards:commaList($("#pawards").value),readingGoalPages:Number($("#preadinggoal").value||0),schoolName:$("#pschoolname").value.trim(),aliases:commaList($("#paliases").value),livesWithUser:$("#plives").checked,profileScope:$("#plives").checked?"household":"extended",birthday:$("#pbday").value.trim(),elfsterUrl:$("#pelfster").value.trim(),favoriteColors:commaList($("#pcolors").value),favoriteCharacters:commaList($("#pchars").value),favoriteFoods:commaList($("#pfoods").value),interests:commaList($("#pints").value),sizes:{clothing:$("#pclothes").value.trim(),shoes:$("#pshoes").value.trim()},giftNotes:$("#pnotes").value.trim(),importantDates,sharedPlans,routineNotes:$("#proutine").value.trim(),recurringCheckin:$("#pcheckenabled")?{enabled:$("#pcheckenabled").checked,weekday:Number($("#pcheckday").value),startTime:$("#pchecktime").value,durationMinutes:Number($("#pcheckmins").value||30),title:"Relationship check-in"}:(x.recurringCheckin||{})});
     await save();if(typeof cloudUpsertPersonProfile==="function")await cloudUpsertPersonProfile(x);closeModal();render();
   });
 }
@@ -5479,89 +5491,111 @@ function openProfileSpiritualNote(id){
     await save();closeModal();render();
   });
 }
+function openProfileArtPage(child,id,kind){
+  const awardPattern=/award|certificate|achievement|recognition|medal/i;
+  const rows=(state.kidArtworks||[]).filter(row=>String(row.child||"").trim().toLowerCase()===String(child||"").trim().toLowerCase()&&awardPattern.test(String(row.kind||row.category||row.type||row.title||""))===(kind==="achievement")).sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")));
+  const index=rows.findIndex(row=>String(row.id)===String(id));
+  if(typeof window.openChildArtBook==="function")window.openChildArtBook(child,Math.max(0,index),kind);
+}
 function peopleProfileHomePage(){
   ensurePeopleProfiles();
   const roster=typeof lifeSimRoster==="function"?lifeSimRoster():[{id:"self",name:state.profile?.name||"You"}],
-        activeId=typeof lifeSimSelectedId==="function"?lifeSimSelectedId(roster):"self",
-        active=roster.find(person=>String(person.id)===String(activeId))||roster[0],
-        isSelf=String(active.id)==="self",name=String(active.name||"You").trim(),today=ymd(),
-        childProfile=!isSelf&&isChildProfile(active),childName=name.toLowerCase(),
-        tasks=(state.tasks||[]).filter(task=>task.date===today&&!task.paused&&!task.waitingForFunds&&
-          (isSelf?!String(task.child||"").trim():String(task.child||"").trim().toLowerCase()===childName)),
-        chores=isSelf?[]:(state.chores||[]).filter(chore=>chore.date===today&&String(chore.child||"").trim().toLowerCase()===childName),
-        done=tasks.filter(task=>task.done).length+chores.filter(chore=>chore.done).length,
-        total=tasks.length+chores.length,
-        upcoming=(state.events||[]).filter(event=>event.date>=today&&event.status!=="cancelled"&&
-          (isSelf?!event.child||String(event.child).trim().toLowerCase()===childName:String(event.child||"").trim().toLowerCase()===childName))
-          .sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,6),
-        agenda=peopleAgendaItems().filter(item=>!isSelf&&String(item.person?.id)===String(active.id)).slice(0,6),
-        events=isSelf?upcoming:agenda.length?agenda:upcoming,
-        owned=row=>[row?.child,row?.reader,row?.person,row?.personName,row?.owner,row?.profile,row?.student].some(value=>String(value||"").trim().toLowerCase()===childName),
-        childAssignments=childProfile?(state.schoolAssignments||[]).filter(owned):[],
-        childGrades=childProfile?(state.schoolGrades||[]).filter(owned):[],
-        childReading=childProfile?(state.readingLogs||[]).filter(row=>String(row.reader||"").trim().toLowerCase()===childName):[],
-        readingPages=childReading.reduce((sum,row)=>sum+Number(row.pages||0),0),
-        readingPagesToday=childReading.filter(row=>row.date===today).reduce((sum,row)=>sum+Number(row.pages||0),0),
-        readingGoal=Number(active.readingGoalPages||0),
-        childPortfolio=childProfile?[...(state.kidSchoolPortfolio||[]),...(state.kidArtworks||[]),...(state.paperItems||[])].filter(owned):[],
-        schoolOpen=childAssignments.filter(row=>["missing","due","late"].includes(String(row.status||"").toLowerCase())),
-        awards=childProfile?[...(active.awards||[]),...(active.achievements||[]),...childPortfolio.filter(row=>/award|certificate|achievement/i.test(String(row.kind||row.category||row.type||row.title||"")))]:[],
-        birthday=!isSelf?nextBirthdayInfo(active):null,
-        profileDetails=[active.schoolName&&"School: "+active.schoolName,active.grade&&"Grade: "+active.grade,active.schoolNotes,active.medicalInformation,active.medicalNotes,active.healthNotes,active.allergies&&"Allergies: "+active.allergies,active.medications&&"Medications: "+active.medications].filter(Boolean),
-        spiritual=active.spiritualHome&&active.spiritualHome.date===today?active.spiritualHome:{date:today,reading:false,stillness:false,prayer:false,ritual:false},
-        spiritualNotes=Array.isArray(active.spiritualNotes)?active.spiritualNotes.slice(0,3):[],
-        inventoryCount=(state.inventoryItems||[]).length,
-        roomCount=(state.houseRooms||[]).length,
-        flowCount=(state.itineraryBlocks||[]).filter(row=>row.date===today).length,
-        foodToday=isSelf?(state.foodLogs||[]).filter(row=>row.date===today).length:0,
-        careToday=isSelf?(state.selfCare||[]).filter(row=>row.date===today).length:0,
-        moneyOpen=(state.bills||[]).filter(row=>!["paid","complete","completed"].includes(String(row.status||"").toLowerCase())).length,
-        kidMoney=(state.kidsMoneyAccounts||[]).filter(row=>String(row.child||row.person||"").trim().toLowerCase()===childName),
-        taskRows=tasks.map(task=>'<label class="vh-profile-check '+(task.done?"is-done":"")+'"><input type="checkbox" '+(task.done?"checked":"")+' onchange="toggleTask('+lifeSimArg(task.id)+',this.checked)"><span><b>'+esc(task.title||"Task")+'</b><small>'+esc(task.category||"Today")+(task.notes?" · "+esc(task.notes):"")+'</small></span><strong>'+(task.done?"Done":"To do")+'</strong></label>').join(""),
-        choreRows=chores.map(chore=>'<label class="vh-profile-check '+(chore.done?"is-done":"")+'"><input type="checkbox" '+(chore.done?"checked":"")+' onchange="toggleChore('+lifeSimArg(chore.id)+',this.checked)"><span><b>'+esc(chore.chore||"Chore")+'</b><small>Family routine</small></span><strong>'+(chore.done?"Done":"To do")+'</strong></label>').join(""),
-        agendaRows=events.map(item=>{
-          const date=item.date?new Date(item.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):"";
-          const clock=item.time||item.startTime||"";
-          const open=item.kind==="event"||item.id?"openEvent("+lifeSimArg(item.date)+","+lifeSimArg(item.id||"")+")":"openPeopleHubSection('plans')";
-          return '<button type="button" class="vh-profile-agenda-row" onclick="'+open+'"><span class="vh-profile-date">'+esc(date)+(clock?" · "+esc(fmtClock(clock)):"")+'</span><b>'+esc(item.title||"Plan")+'</b><small>'+esc(item.location||"")+'</small></button>';
-        }).join(""),
-        intro=isSelf?"Your home, routines, personal care, food, money, and plans in one place.":childProfile?"Today’s chores, reading, schoolwork, interests, and personal information for "+name+".":"Plans and personal information for "+name+".",
-        sectionButton=(title,summary,icon,action)=>'<button type="button" class="vh-profile-module" onclick="'+action+'"><span class="vh-profile-module-icon">'+icon+'</span><span><b>'+esc(title)+'</b><small>'+esc(summary)+'</small></span><strong>›</strong></button>',
-        personalSpiritual=Object.entries({reading:"Reading",stillness:"Stillness",prayer:"Prayer",ritual:"Ritual"}).map(([key,label])=>'<label class="vh-profile-spirit-check"><input type="checkbox" '+(spiritual[key]?"checked":"")+' onchange="toggleProfileSpiritualPractice('+lifeSimArg(active.id)+',\''+key+'\',this.checked)"><span>'+label+'</span></label>').join("");
+    activeId=typeof lifeSimSelectedId==="function"?lifeSimSelectedId(roster):"self",
+    active=roster.find(person=>String(person.id)===String(activeId))||roster[0],
+    isSelf=String(active.id)==="self",name=String(active.name||"You").trim(),today=ymd(),
+    childProfile=!isSelf&&isChildProfile(active),childName=name.toLowerCase(),
+    tasks=(state.tasks||[]).filter(task=>task.date===today&&!task.paused&&!task.waitingForFunds&&(isSelf?!String(task.child||"").trim():String(task.child||"").trim().toLowerCase()===childName)),
+    chores=isSelf?[]:(state.chores||[]).filter(chore=>chore.date===today&&String(chore.child||"").trim().toLowerCase()===childName),
+    done=tasks.filter(task=>task.done).length+chores.filter(chore=>chore.done).length,
+    total=tasks.length+chores.length,
+    upcoming=(state.events||[]).filter(event=>event.date>=today&&event.status!=="cancelled"&&(isSelf?!event.child||String(event.child).trim().toLowerCase()===childName:String(event.child||"").trim().toLowerCase()===childName)).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||""))).slice(0,5),
+    agenda=peopleAgendaItems().filter(item=>!isSelf&&String(item.person?.id)===String(active.id)).slice(0,5),
+    events=isSelf?upcoming:agenda.length?agenda:upcoming,
+    owned=row=>[row?.child,row?.reader,row?.person,row?.personName,row?.owner,row?.profile,row?.student].some(value=>String(value||"").trim().toLowerCase()===childName),
+    childAssignments=childProfile?(state.schoolAssignments||[]).filter(owned):[],
+    childGrades=childProfile?(state.schoolGrades||[]).filter(owned):[],
+    personReading=(state.readingLogs||[]).filter(row=>String(row.reader||"").trim().toLowerCase()===(isSelf?String(state.profile?.name||"").trim().toLowerCase():childName)),
+    readingPages=personReading.reduce((sum,row)=>sum+Number(row.pages||0),0),
+    readingPagesToday=personReading.filter(row=>row.date===today).reduce((sum,row)=>sum+Number(row.pages||0),0),
+    readingGoal=Number(active.readingGoalPages||state.profile?.readingGoalPages||0),
+    childArt=childProfile?(state.kidArtworks||[]).filter(owned).sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||""))):[],
+    childSchoolPages=childProfile?(state.kidSchoolPortfolio||[]).filter(owned):[],
+    childSchoolItems=[...childSchoolPages,...childGrades],
+    schoolOpen=childAssignments.filter(row=>["missing","due","late"].includes(String(row.status||"").toLowerCase())),
+    awards=childProfile?[...(active.awards||[]),...(active.achievements||[]),...childArt.filter(row=>/award|certificate|achievement|recognition|medal/i.test(String(row.kind||row.category||row.type||row.title||""))),...childSchoolPages.filter(row=>/award|certificate|achievement|recognition|medal/i.test(String(row.kind||row.category||row.type||row.title||"")))]:[],
+    birthday=!isSelf?nextBirthdayInfo(active):null,
+    profileDetails=[active.schoolName&&"School: "+active.schoolName,active.grade&&"Grade: "+active.grade,active.schoolNotes,active.medicalInformation,active.medicalNotes,active.healthNotes,active.allergies&&"Allergies: "+active.allergies,active.medications&&"Medications: "+active.medications].filter(Boolean),
+    spiritual=active.spiritualHome&&active.spiritualHome.date===today?active.spiritualHome:{date:today,reading:false,stillness:false,prayer:false,ritual:false},
+    spiritualNotes=Array.isArray(active.spiritualNotes)?active.spiritualNotes.slice(0,3):[],
+    rooms=(state.houseRooms||[]).slice(0,4),
+    inventory=(state.inventoryItems||[]),
+    lowInventory=inventory.filter(item=>["Low","Need"].includes(String(item.status||""))),
+    inventoryShown=(lowInventory.length?lowInventory:inventory).slice(0,4),
+    flow=(state.itineraryBlocks||[]).filter(row=>row.date===today).sort((a,b)=>String(a.startTime||a.time||"").localeCompare(String(b.startTime||b.time||""))).slice(0,4),
+    careStats=isSelf&&typeof selfCareTodayStats==="function"?selfCareTodayStats():null,
+    foodToday=isSelf?(state.foodLogs||[]).filter(row=>row.date===today).slice(0,4):[],
+    moneyRows=isSelf?(state.bills||[]).filter(row=>!["paid","complete","completed"].includes(String(row.status||"").toLowerCase())).slice(0,3):(state.kidsMoneyAccounts||[]).filter(row=>String(row.child||row.person||row.personName||"").trim().toLowerCase()===childName).slice(0,3),
+    taskRows=tasks.map(task=>'<label class="vh-profile-check '+(task.done?"is-done":"")+'"><input type="checkbox" '+(task.done?"checked":"")+' onchange="toggleTask('+lifeSimArg(task.id)+',this.checked)"><span><b>'+esc(task.title||"Task")+'</b></span></label>').join(""),
+    choreRows=chores.map(chore=>'<label class="vh-profile-check '+(chore.done?"is-done":"")+'"><input type="checkbox" '+(chore.done?"checked":"")+' onchange="toggleChore('+lifeSimArg(chore.id)+',this.checked)"><span><b>'+esc(chore.chore||"Chore")+'</b></span></label>').join(""),
+    agendaRows=events.map(item=>{
+      const date=item.date?new Date(item.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):"";
+      const clock=item.time||item.startTime||"";
+      const open=item.kind==="event"||item.id?"openEvent("+lifeSimArg(item.date)+","+lifeSimArg(item.id||"")+")":"openPeopleHubSection('plans')";
+      return '<div class="vh-profile-data-row"><span class="vh-profile-date">'+esc(date)+(clock?" · "+esc(fmtClock(clock)):"")+'</span><b>'+esc(item.title||"Plan")+'</b>'+(item.location?'<small>'+esc(item.location)+'</small>':"")+'</div>';
+    }).join(""),
+    intro=isSelf?"Your routines, plans, personal care, food, money, and home details.":childProfile?"Today’s chores, reading, schoolwork, and personal details for "+name+".":"Plans and personal details for "+name+".",
+    itemName=item=>String(item?.title||item?.name||item?.meal||item?.food||item?.item||item?.course||item?.payee||item?.accountName||"").trim(),
+    schoolGradeRows=childGrades.slice(0,3).map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.course||row.title||"Grade record")+'</b><small>'+esc([row.grade||row.percent&&String(row.percent)+"%",row.term,row.asOf||row.date].filter(Boolean).join(" · ")||"Saved grade")+'</small></div>').join(""),
+    schoolPageRows=childSchoolPages.slice(0,3).map((row,index)=>'<button type="button" class="vh-profile-book-row" onclick="openChildSchoolBook('+lifeSimArg(name)+')"><span class="vh-profile-book-icon">📚</span><span><b>'+esc(row.title||"School memory")+'</b><small>'+esc([row.kind,row.asOf,row.term].filter(Boolean).join(" · ")||"School Book")+'</small></span></button>').join(""),
+    artRows=childArt.slice(0,4).map((row,index)=>'<button type="button" class="vh-profile-art-row" onclick="openProfileArtPage('+lifeSimArg(name)+','+lifeSimArg(row.id)+','+lifeSimArg(/award|certificate|achievement|recognition|medal/i.test(String(row.kind||row.category||row.type||row.title||""))?"achievement":"art")+')"><img id="vh-profile-art-'+index+'" alt="" hidden><span class="vh-profile-art-fallback">🎨</span><span><b>'+esc(row.title||"Artwork")+'</b><small>'+esc(row.artDate||row.date||"Art Book")+'</small></span></button>').join(""),
+    spiritualChecks=Object.entries({reading:"Reading",stillness:"Stillness",prayer:"Prayer",ritual:"Ritual"}).map(([key,label])=>'<label class="vh-profile-spirit-check"><input type="checkbox" '+(spiritual[key]?"checked":"")+' onchange="toggleProfileSpiritualPractice('+lifeSimArg(active.id)+',\''+key+'\',this.checked)"><span>'+label+'</span></label>').join("");
+  if(childArt.length)setTimeout(async()=>{for(let i=0;i<Math.min(childArt.length,4);i++){try{const image=await dbGet("kid-art-photo:"+String(childArt[i].id||""));const el=document.getElementById("vh-profile-art-"+i);if(el&&typeof image==="string"&&image.startsWith("data:image/")){el.src=image;el.hidden=false;el.parentElement.querySelector(".vh-profile-art-fallback")?.setAttribute("hidden","")}}catch(e){}}},0);
   const schoolContent=childProfile
-    ?'<div class="vh-profile-stat-row"><span>'+schoolOpen.length+' due / missing</span><span>'+childGrades.length+' grade records</span><span>'+awards.length+' awards</span><span>'+childPortfolio.length+' saved school or art items</span></div><div class="vh-profile-actions"><button class="btn small" type="button" onclick="openPeopleHubSection(\'school\')">Schoolwork</button><button class="btn small" type="button" onclick="openArtLibrary()">Art + school books</button><button class="btn small" type="button" onclick="openPeopleHubSection(\'school\')">Awards + grades</button></div>'+
-      (schoolOpen.slice(0,3).map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.title||row.course||"School assignment")+'</b><small>'+esc(row.course||row.status||"School")+'</small></div>').join("")||'<p class="muted small">No due or missing schoolwork is recorded.</p>')+
-      (profileDetails.length?'<div class="vh-profile-data-row"><b>School + care details</b><small>'+profileDetails.map(esc).join(" · ")+'</small><button class="btn small" type="button" onclick="openPersonProfile('+lifeSimArg(active.id)+')">Edit details</button></div>':"")
+    ?(schoolOpen.slice(0,3).map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.title||row.course||"School assignment")+'</b><small>'+esc(row.course||row.status||"School")+'</small></div>').join("")||'<p class="muted small">No due or missing schoolwork is recorded.</p>')+
+      schoolGradeRows+schoolPageRows+artRows+
+      (awards.length?'<div class="vh-profile-known"><b>Awards + achievements</b><small>'+awards.slice(0,4).map(row=>esc(typeof row==="string"?row:row.title||row.name||"Award")).join(" · ")+'</small></div>':"")+
+      (profileDetails.length?'<div class="vh-profile-data-row"><b>School + care details</b><small>'+profileDetails.map(esc).join(" · ")+'</small><button class="btn small" type="button" onclick="openPersonProfile('+lifeSimArg(active.id)+')">Edit details</button></div>':"")+
+      (!schoolOpen.length&&!schoolGradeRows&&!schoolPageRows&&!artRows&&!awards.length?'<p class="muted small">No saved school, grade, art, or award entries yet.</p>':"")
     :(agendaRows||'<p class="muted small">No upcoming plans are recorded for '+esc(name)+'.</p>');
   const actionButtons=isSelf
     ?'<button class="btn primary" type="button" onclick="openTask()">＋ Task</button><button class="btn" type="button" onclick="openPeopleHubSection(\'plans\')">＋ Plan</button><button class="btn" type="button" onclick="openPersonProfile(\'\')">Profile details</button>'
     :'<button class="btn primary" type="button" onclick="openTask('+lifeSimArg(name)+')">＋ Task</button><button class="btn" type="button" onclick="openPersonPlan('+lifeSimArg(active.id)+')">＋ Plan</button><button class="btn" type="button" onclick="openPersonProfile('+lifeSimArg(active.id)+')">Profile details</button>';
+  const roomRows=rooms.map(room=>'<span class="vh-profile-chip">'+esc(room.name||"Room")+'</span>').join("");
+  const inventoryRows=inventoryShown.map(item=>'<div class="vh-profile-data-row"><b>'+esc(itemName(item)||"Saved item")+'</b><small>'+esc([item.status,item.category].filter(Boolean).join(" · ")||"In inventory")+'</small></div>').join("");
+  const flowRows=flow.map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.title||row.label||row.activity||"Schedule block")+'</b><small>'+esc([row.startTime||row.time,row.endTime].filter(Boolean).map(fmtClock).join("–")||"Today")+'</small></div>').join("");
+  const foodRows=foodToday.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||row.description||"Food log")+'</b><small>'+esc(row.mealType||row.meal||row.category||"Logged today")+'</small></div>').join("");
+  const moneyContent=isSelf
+    ?moneyRows.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||"Bill")+'</b><small>'+esc([row.dueDate||row.date,row.status].filter(Boolean).join(" · ")||"Open bill")+'</small></div>').join("")||'<p class="muted small">No open bills are saved.</p>'
+    :moneyRows.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||"Money account")+'</b><small>'+esc(row.type||row.kind||"Saved account")+(row.balance!==undefined&&row.balance!==null?" · "+esc(String(row.balance)):"")+'</small></div>').join("")||'<p class="muted small">No money accounts are saved for '+esc(name)+'.</p>';
+  const careContent=isSelf
+    ?'<b>'+esc(careStats?careStats.done+" completed today":"No care check-in saved today")+'</b><small>'+esc(careStats?careStats.unknown+" not reviewed"+(careStats.no?" · "+careStats.no+" marked no":""):"Log only what happened")+'</small>'
+    :(active.routineNotes?'<div class="vh-profile-data-row"><b>Routine notes</b><small>'+esc(active.routineNotes)+'</small></div>':'<p class="muted small">No personal care routines are saved yet.</p>');
+  const progress=total?Math.round(done*100/total):100;
+  const birthdayCard=birthday?'<section class="vh-profile-card"><div class="eyebrow">BIRTHDAY</div><h2>🎂 '+esc(birthday.label)+'</h2><p class="muted small">'+(birthday.days===0?"Today":birthday.days+" days away")+(birthday.turning?" · turning "+birthday.turning:"")+'</p><button class="btn" type="button" onclick="openBirthdayPlanner('+lifeSimArg(active.id)+')">Open birthday plan</button></section>':"";
+  const modules=
+    '<div class="vh-profile-inline-grid">'+
+    '<section class="vh-profile-inline"><div class="eyebrow">HOUSE + ROOMS</div><h2>'+rooms.length+' rooms</h2><div class="vh-profile-chip-row">'+(roomRows||'<span class="muted small">No rooms saved yet.</span>')+'</div><button class="btn small" type="button" onclick="setView(\'household\')">Open house map</button></section>'+
+    '<section class="vh-profile-inline"><div class="eyebrow">SELF CARE</div><h2>Personal routines</h2>'+careContent+'<button class="btn small" type="button" onclick="setView(\'selfcare\')">Open care details</button></section>'+
+    '<section class="vh-profile-inline"><div class="eyebrow">INVENTORY</div><h2>'+inventory.length+' saved items</h2>'+(lowInventory.length?'<p class="muted small">'+lowInventory.length+' marked low or needed</p>':"")+(inventoryRows||'<p class="muted small">No inventory items saved yet.</p>')+'<button class="btn small" type="button" onclick="setView(\'inventory\')">Open inventory</button></section>'+
+    '<section class="vh-profile-inline"><div class="eyebrow">DAY FLOW</div><h2>'+flow.length+' blocks today</h2>'+(flowRows||'<p class="muted small">No schedule blocks saved for today.</p>')+'<button class="btn small" type="button" onclick="setView(\'itinerary\')">Open full day flow</button></section>'+
+    '<section class="vh-profile-inline"><div class="eyebrow">SPIRITUALITY</div><h2>'+esc(isSelf?"Your practice":name+"’s practice")+'</h2><div class="vh-profile-spirit-list">'+spiritualChecks+'</div>'+(spiritualNotes.map(note=>'<p class="muted small vh-profile-note">'+esc(note.text||note.title||"Reflection")+(note.date?" · "+esc(dl(note.date)):"")+'</p>').join("")||'<p class="muted small">No reflections saved yet.</p>')+'<button class="btn small" type="button" onclick="openProfileSpiritualNote('+lifeSimArg(active.id)+')">＋ Add reflection</button></section>'+
+    '<section class="vh-profile-inline"><div class="eyebrow">MONEY</div><h2>'+(isSelf?"Bills and money":"Personal account")+'</h2>'+moneyContent+'<button class="btn small" type="button" onclick="setView(\'budget\')">Open money details</button></section>'+
+    (isSelf?'<section class="vh-profile-inline"><div class="eyebrow">FOOD</div><h2>'+foodToday.length+' food logs today</h2>'+(foodRows||'<p class="muted small">No food logs saved for today.</p>')+'<button class="btn small" type="button" onclick="setView(\'home\')">Open food</button></section>':"")+
+    '</div>';
   return '<section class="visual-hub visual-hub-family vh-profile-home" aria-label="'+esc(name)+' profile home">'+
     '<div class="vh-heading"><div><div class="eyebrow">PROFILE HOME</div><h1>'+esc(isSelf?"Your home":name+"’s home")+'</h1><p>'+esc(intro)+'</p></div><button type="button" class="btn primary vh-add" onclick="'+(isSelf?"openWellnessCheckin()":"openPersonProfile("+lifeSimArg(active.id)+")")+'">'+(isSelf?"+ Check in":"+ Edit profile")+'</button></div>'+
     '<div class="vh-profile-actions">'+actionButtons+'</div>'+
-    '<section id="vh-profile-today" class="vh-profile-card vh-profile-today"><div class="vh-profile-card-head"><div><div class="eyebrow">TODAY</div><h2>'+(total?done+' of '+total+' done':"A clear slate")+'</h2></div><span class="vh-profile-progress">'+(total?Math.round(done*100/total):100)+'%</span></div>'+
-      (taskRows||choreRows?'<div class="vh-profile-checklist">'+choreRows+taskRows+'</div>':'<p class="muted small">'+(isSelf?"No personal tasks are assigned to you today.":"Nothing is assigned to "+esc(name)+" today.")+'</p>')+
-      (childProfile?'<div class="vh-profile-reading"><span>Reading today</span><b>'+readingPagesToday+' pages'+(readingGoal?" / "+readingGoal+" goal":"")+'</b><small>'+readingPages+' pages logged all time</small><button class="btn small" type="button" onclick="openReadingHubSection(\'log\')">＋ Log pages</button></div>':"")+
+    '<section id="vh-profile-today" class="vh-profile-card vh-profile-today"><div class="vh-profile-card-head"><div><div class="eyebrow">TODAY</div><h2>'+(total?done+' of '+total+' done':"A clear slate")+'</h2></div><div class="vh-profile-ring" style="--progress:'+progress+'%" role="img" aria-label="'+done+' of '+total+' tasks and chores done"><span>'+progress+'%</span></div></div>'+
+      ((taskRows||choreRows)?'<details class="vh-profile-checklist"><summary>Tasks + chores <span>'+done+'/'+total+'</span></summary>'+(choreRows+taskRows)+'</details>':'<p class="muted small">'+(isSelf?"No personal tasks are assigned to you today.":"Nothing is assigned to "+esc(name)+" today.")+'</p>')+
+      (childProfile||readingGoal||personReading.length?'<div class="vh-profile-reading"><span>Reading today</span><b>'+readingPagesToday+' pages'+(readingGoal?" / "+readingGoal+" goal":"")+'</b><small>'+readingPages+' pages logged all time</small><button class="btn small" type="button" onclick="openReadingHubSection(\'log\')">＋ Log pages</button></div>':"")+
     '</section>'+
-    (birthday?'<section class="vh-profile-card"><div class="eyebrow">BIRTHDAY</div><h2>🎂 '+esc(birthday.label)+'</h2><p class="muted small">'+(birthday.days===0?"Today":birthday.days+" days away")+(birthday.turning?" · turning "+birthday.turning:"")+'</p><button class="btn" type="button" onclick="openBirthdayPlanner('+lifeSimArg(active.id)+')">Open birthday plan</button></section>':"")+
-    '<section class="vh-profile-card" id="vh-profile-school"><div class="vh-profile-card-head"><div><div class="eyebrow">'+(childProfile?"SCHOOL + GROWTH":"UP NEXT")+'</div><h2>'+(childProfile?"Schoolwork, awards + art books":"Plans + activities")+'</h2></div><button class="btn small" type="button" onclick="'+(childProfile?"openPeopleHubSection(\'school\')":"openPeopleHubSection(\'plans\')")+'">＋ Add</button></div>'+schoolContent+'</section>'+
-    '<section class="vh-profile-card" id="vh-profile-spirituality"><div class="vh-profile-card-head"><div><div class="eyebrow">PERSONAL PRACTICE</div><h2>'+esc(isSelf?"Your spirituality":name+"’s spirituality")+'</h2></div><button class="btn small" type="button" onclick="setView(\'spirituality\')">Explore</button></div><div class="vh-profile-spirit-list">'+personalSpiritual+'</div><button class="btn small" type="button" onclick="openProfileSpiritualNote('+lifeSimArg(active.id)+')">＋ Add reflection</button>'+
-      (spiritualNotes.map(note=>'<p class="muted small vh-profile-note">'+esc(note.text||note.title||"Reflection")+(note.date?" · "+esc(dl(note.date)):"")+'</p>').join("")||'<p class="muted small">Keep this person’s practices and reflections here.</p>')+'</section>'+
-    '<section class="vh-profile-card" id="vh-profile-areas"><div class="eyebrow">YOUR AREAS</div><h2>Everything for '+esc(isSelf?"you":name)+'</h2><div class="vh-profile-module-grid">'+
-      sectionButton("House + rooms",roomCount+" rooms · map and home progress","⌂","setView(\'household\')")+
-      sectionButton("Today",total?done+" of "+total+" tasks done":"No tasks assigned yet","✦","profileHomeJump(\'today\')")+
-      sectionButton("Self care",isSelf?careToday+" personal-care logs today":"Routines and wellbeing","♡","setView(\'selfcare\')")+
-      sectionButton("Inventory",inventoryCount+" items in the home inventory","▦","setView(\'inventory\')")+
-      sectionButton("Day Flow",flowCount+" schedule blocks today","◷","setView(\'itinerary\')")+
-      sectionButton("Spirituality","Personal practices and reflections","✧","profileHomeJump(\'spirituality\')")+
-      sectionButton("Money",isSelf?moneyOpen+" unpaid or upcoming bills":kidMoney.length+" child money accounts","＄",isSelf?"setView(\'more\')":"setView(\'budget\')")+
-      (isSelf?sectionButton("Food",foodToday+" food logs today · meals and pantry","🍽","setView(\'home\')"):"")+
-    '</div></section>'+
-    (birthday?'<section class="vh-profile-card"><div class="eyebrow">BIRTHDAY + WISHES</div><div class="vh-profile-actions"><button class="btn small" type="button" onclick="openBirthdayPlanner('+lifeSimArg(active.id)+')">Birthday plan</button><button class="btn small" type="button" onclick="openBirthdayWish('+lifeSimArg(active.id)+')">＋ Gift wish</button></div></section>':"")+
+    birthdayCard+
+    '<section class="vh-profile-card" id="vh-profile-school"><div class="vh-profile-card-head"><div><div class="eyebrow">'+(childProfile?"SCHOOL + GROWTH":"UP NEXT")+'</div><h2>'+(childProfile?"Schoolwork, grades, awards + books":"Plans + activities")+'</h2></div><button class="btn small" type="button" onclick="'+(childProfile?"openPeopleHubSection(\'school\')":"openPeopleHubSection(\'plans\')")+'">'+(childProfile?"＋ Add school entry":"＋ Add plan")+'</button></div>'+schoolContent+'</section>'+
     (!isSelf&&active.familyLinks?.length?'<section class="vh-profile-card"><div class="eyebrow">FAMILY CONNECTIONS</div><div class="person-chips">'+active.familyLinks.map(link=>'<span class="person-chip">'+esc(link.name)+' · '+esc(link.label||"family")+'</span>').join("")+'</div></section>':"")+
-    (!isSelf&&(active.favoriteColors?.length||active.favoriteCharacters?.length||active.favoriteFoods?.length||active.interests?.length||active.personNotes?.length)?'<section class="vh-profile-card"><div class="eyebrow">FAVORITES + NOTES</div><div class="person-chips">'+(active.favoriteColors||[]).map(item=>'<span class="person-chip">🎨 '+esc(item)+'</span>').join("")+(active.favoriteCharacters||[]).map(item=>'<span class="person-chip">★ '+esc(item)+'</span>').join("")+(active.favoriteFoods||[]).map(item=>'<span class="person-chip">🍰 '+esc(item)+'</span>').join("")+(active.interests||[]).map(item=>'<span class="person-chip">♡ '+esc(item)+'</span>').join("")+'</div>'+[...(active.personNotes||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,3).map(note=>'<p class="muted small">'+esc(note.text||"")+(note.date?' · '+esc(dl(note.date)):"")+'</p>').join("")+'</section>':"")+
-    (!isSelf&&active.wishlist?.length?'<section class="vh-profile-card"><div class="eyebrow">GIFT WISHES</div>'+active.wishlist.slice(0,5).map(wish=>'<div class="vh-profile-agenda-row"><b>'+esc(wish.item||"Gift idea")+'</b><small>'+esc(wish.status||"want")+'</small></div>').join("")+'</section>':"")+
+    (!isSelf&&((active.interests||[]).length||(active.personNotes||[]).length)?'<section class="vh-profile-card"><div class="eyebrow">KNOWN INTERESTS + NOTES</div><div class="person-chips">'+(active.interests||[]).map(item=>'<span class="person-chip">♡ '+esc(item)+'</span>').join("")+'</div>'+[...(active.personNotes||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,3).map(note=>'<p class="muted small">'+esc(note.text||"")+(note.date?' · '+esc(dl(note.date)):"")+'</p>').join("")+'</section>':"")+
+    (!isSelf&&active.wishlist?.length?'<section class="vh-profile-card"><div class="eyebrow">GIFT WISHES</div>'+active.wishlist.slice(0,5).map(wish=>'<div class="vh-profile-agenda-row"><b>'+esc(wish.item||wish.name||"Gift idea")+'</b><small>'+esc(wish.status||"want")+'</small></div>').join("")+'</section>':"")+
     (isPartnerProfile(active)&&active.recurringCheckin?.enabled?'<section class="vh-profile-card"><div class="eyebrow">RELATIONSHIP CHECK-IN</div><h2>'+esc(["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][Number(active.recurringCheckin.weekday)]||"")+' · '+esc(fmtClock(active.recurringCheckin.startTime||""))+'</h2><p class="muted small">'+Number(active.recurringCheckin.durationMinutes||30)+' minutes</p></section>':"")+
+    '<section class="vh-profile-card vh-profile-areas"><div class="eyebrow">AT A GLANCE</div><h2>'+esc(isSelf?"Your daily life":name+"’s daily life")+'</h2>'+modules+'</section>'+
   '</section>';
 }
 function familyView(){
@@ -8448,9 +8482,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261018-care-nav14 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261019-profile-home-actual-data1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261018-care-nav14 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261019-profile-home-actual-data1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8458,7 +8492,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261019-personalized-profile-dashboard2";
+const DAILY_LIFE_BUILD="20261019-profile-home-actual-data1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
