@@ -3,9 +3,9 @@
  "use strict";
  const ROOM="Dolly’s bedroom",FLOOR="Second floor",ZONE="dolly";
  const ITEMS={
-  bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window; pale-purple bedding and patterned blankets seen in earlier photos.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"]},
+  bed:{label:"Bed",symbol:"🛏",description:"White sleigh bed beneath Dolly’s Mario poster, beside one window.",location:"Beneath Mario poster · beside window (confirmed)",sections:["Bedding","Pillows","Blankets"],photoNote:"Saved room photo: lavender fitted sheet, white pillow, blue bedding and patterned blankets."},
   dresser:{label:"Dresser",symbol:"▤",description:"Long, low brown dresser with six drawers arranged two across and three down, with brass-colored handles.",location:"Across the bottom wall, perpendicular to the bed (as shown in the approved top-down plan)",sections:[]},
-  vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"]},
+  vanity:{label:"Vanity",symbol:"✧",description:"White vanity stays beneath the other bedroom window.",location:"Under second window (confirmed)",sections:["Vanity top","Other storage"],photoNote:"Saved room photo shows a clear tote, pink nail-and-jewelry set box, blue-and-pink case, purple container, blocks, pink open bin and a few small items. The photo shows what was there when it was taken; container contents are not identified."},
   dollhouse:{label:"Barbie house",symbol:"⌂",description:"Three-story pink Barbie house with an open, playable side facing into the bedroom.",location:"Beside closet · playable side faces into room (confirmed)",sections:["Dolls","Doll clothes","Accessories","Mini furniture"]},
   closet:{label:"Closet",symbol:"▥",description:"Closet for less frequently used toys. Shift the Barbie house slightly when access is needed.",location:"Adjacent to Barbie house · access by shifting house slightly (confirmed)",sections:["Less-used toys","Toy rotation","Other stored items"]}
  };
@@ -369,12 +369,14 @@
   if(key==="bed"){
    const history=Array.isArray(d.beddingHistory)?d.beddingHistory.filter(v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v))):[];
    const recorded=[...new Set([d.lastBeddingChanged,...history].filter(Boolean))].sort().reverse();
-   controls='<div class="dolly-detail-stat"><b>Last bedding change</b><span>'+
+   controls='<div class="dolly-detail-known"><b>On the bed</b><span>'+html(item.photoNote)+'</span></div>'+
+    '<div class="dolly-detail-stat"><b>Last sheet change</b><span>'+
     html(recorded[0]||"Not recorded")+'</span></div>'+
     '<button class="btn primary" type="button" onclick="dollyEditBeddingDate()">Record bedding change</button>'+
     '<details class="dolly-bedding-history"><summary>Previous bedding changes ('+recorded.length+')</summary>'+
     (recorded.length?recorded.map(date=>'<p>'+html(date)+'</p>').join(""):'<p>No changes recorded yet.</p>')+'</details>';
   }
+  if(key==="vanity")controls='<div class="dolly-detail-known"><b>On the vanity top</b><span>'+html(item.photoNote)+'</span></div>';
   const compartments=opts.map(section=>{
    const count=values(key,section).length;
    return '<button class="dolly-compartment" type="button" onclick="dollyOpenSection(&#39;'+key+'&#39;,&#39;'+encoded(section)+'&#39;)">'+
