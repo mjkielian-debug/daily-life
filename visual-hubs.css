@@ -475,3 +475,20 @@ body:has(#app .visual-hub) .life-tools-fab{
   .vh-profile-home .vh-heading{align-items:flex-start}
   .vh-profile-home .vh-heading .vh-add{flex:0 0 auto}
 }
+
+
+/* Personalized profile homes combine each person's daily life in one scrollable dashboard. */
+.vh-profile-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.vh-profile-module{display:grid;grid-template-columns:36px minmax(0,1fr) 18px;align-items:center;gap:10px;min-height:76px;padding:12px;border:1px solid var(--border,#dfc9d8);border-radius:18px;background:rgba(255,255,255,.72);color:var(--ink,#30233b);text-align:left}
+.vh-profile-module-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--primary,#c14786) 15%,white);font-size:1.2rem}
+.vh-profile-module span:nth-child(2){min-width:0}.vh-profile-module b,.vh-profile-module small{display:block}.vh-profile-module small{margin-top:4px;color:var(--muted,#675b6a);line-height:1.3}
+.vh-profile-module strong{font-size:1.25rem;color:var(--primary,#a72f70)}
+.vh-profile-stat-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.vh-profile-stat-row span{padding:7px 10px;border:1px solid var(--border,#dfc9d8);border-radius:999px;background:rgba(255,255,255,.7);font-size:.82rem;font-weight:700}
+.vh-profile-data-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--border,#dfc9d8) 60%,transparent)}
+.vh-profile-data-row small{flex-basis:100%;color:var(--muted,#675b6a)}.vh-profile-spirit-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.vh-profile-spirit-check{display:flex;align-items:center;gap:8px;padding:11px;border:1px solid var(--border,#dfc9d8);border-radius:14px;background:rgba(255,255,255,.72);font-weight:700}
+.vh-profile-spirit-check input{width:20px;height:20px;accent-color:var(--primary,#a72f70)}
+.vh-profile-note{padding:9px 0;border-top:1px solid color-mix(in srgb,var(--border,#dfc9d8) 55%,transparent)}
+.vh-profile-picker{display:grid;gap:9px}.vh-profile-picker button{display:flex;align-items:center;gap:12px;text-align:left}.vh-profile-picker button span:last-child{margin-left:auto;font-size:.8rem}
+.vh-profile-home [id^="vh-profile-"]{scroll-margin-top:20px}
+@media(max-width:440px){.vh-profile-module-grid{grid-template-columns:1fr}.vh-profile-stat-row span{font-size:.76rem}.vh-profile-home .vh-profile-card{padding:14px}}
