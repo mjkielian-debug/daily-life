@@ -251,10 +251,27 @@ function selectedRoomProfile(){
  const person=roster.find(person=>String(person.id)===String(id))||null;
  return person?{...person,isSelf:String(id)==="self"}:null;
 }
+function selfRoomPhotoHotspots(title){
+ const t=str(title).toLowerCase();
+ // These are Michelle's nine third-floor room photos, ordered by the photo-tour
+ // query. Keep labels tied to the object and position visible in each photograph;
+ // don't infer that a bed or dresser is present from a generic room caption.
+ if(/entry-side view/.test(t))return [["beanbag","Beanbag chair",79,56],["side_table","Small side table",72,47]];
+ if(/storage corner/.test(t))return [["storage","Storage bins",75,41],["dresser","Dresser",12,21]];
+ if(/dresser corner/.test(t))return [["tv_stand","TV stand",61,48],["floor_fan","Floor fan",83,79]];
+ if(/dresser and floor view/.test(t))return [["dresser","Dresser",12,27],["storage","Shelves + storage",73,53]];
+ if(/dresser and room view/.test(t))return [["vanity","Vanity / dressing table",24,58],["dresser","Tall dresser",59,43],["hamper","Laundry hamper",84,42]];
+ if(/dresser and bed view/.test(t))return [["bed","Bed",12,58],["vanity","Vanity / dressing table",61,51],["dresser","Low dresser",77,56]];
+ if(/room overview from bed side/.test(t))return [["bed","Bed",19,57],["vanity","Vanity / dressing table",68,43]];
+ if(/room overview/.test(t))return [["bed","Bed",15,66],["vanity","Vanity / dressing table",68,45],["dresser","Low dresser",40,47]];
+ if(/bed view/.test(t))return [["bed","Bed",36,58]];
+ return [];
+}
 function personRoomPhotoMarkup(photo,index,total,person,f,z){
  const title=str(photo.title),text=(title+" "+str(photo.notes)).toLowerCase(),isDolly=/^dolly$/i.test(str(person?.name));
  let hotspots=[];
- if(isDolly){
+ if(person?.isSelf&&f==="Third floor")hotspots=selfRoomPhotoHotspots(title);
+ else if(isDolly){
   const kind=/room overview|room corner|bed, vanity/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/playhouse/i.test(title)?"playhouse":/vanity/i.test(title)?"vanity":/bed|headboard/i.test(title)?"bed":"overview";
   hotspots=kind==="overview"?[["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",75,66]]:
    kind==="dresser"?[["dresser","Dresser",18,52],["bed","Bed",70,56]]:
