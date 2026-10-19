@@ -23,12 +23,8 @@ function setLifeSim(id) {
   const roster = lifeSimRoster();
   if (!roster.some(p => String(p.id) === String(id))) return;
   localStorage.setItem(LIFE_SIM_ACTIVE_KEY, String(id));
-  const selected = roster.find(person => String(person.id) === String(id));
-  if (typeof window.houseVisualGoToPersonRoom === "function") {
-    window.houseVisualGoToPersonRoom(selected?.name || "You", String(id) === "self");
-    return;
-  }
-  render();
+  if (typeof setView === "function") setView("family");
+  else render();
 }
 
 function openHouseTodayPanel() {
