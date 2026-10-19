@@ -377,6 +377,12 @@
     (recorded.length?recorded.map(date=>'<p>'+html(date)+'</p>').join(""):'<p>No changes recorded yet.</p>')+'</details>';
   }
   if(key==="vanity")controls='<div class="dolly-detail-known"><b>On the vanity top</b><span>'+html(item.photoNote)+'</span></div>';
+  if(key==="dresser"){
+   const wardrobe=(state.inventoryItems||[]).filter(entry=>String(entry.wardrobeOwner||"").trim().toLowerCase()==="dolly");
+   controls='<div class="dolly-detail-head"><b>Dolly’s clothes</b><span>'+wardrobe.length+' recorded</span></div>'+
+    (wardrobe.length?wardrobe.map(entry=>'<button class="dolly-compartment" type="button" onclick="openInventoryItem(\''+html(entry.id)+'\')"><span><b>'+html(entry.name||"Clothing item")+'</b><small>'+html([entry.wardrobeType,entry.category,entry.status].filter(Boolean).join(" · ")||"Dolly’s clothing")+'</small></span><span aria-hidden="true">›</span></button>').join(""):'<p class="dolly-room-caveat">No clothing has been assigned to Dolly’s dresser yet.</p>')+
+    '<button class="btn primary" type="button" onclick="openInventoryItem(\'\',\'Dolly\')">+ Add clothing to dresser</button>';
+  }
   const compartments=opts.map(section=>{
    const count=values(key,section).length;
    return '<button class="dolly-compartment" type="button" onclick="dollyOpenSection(&#39;'+key+'&#39;,&#39;'+encoded(section)+'&#39;)">'+
@@ -385,10 +391,8 @@
   const content='<div class="dolly-detail">'+
    '<div class="dolly-detail-known"><strong>'+html(item.description)+'</strong><small>'+html(item.location)+'</small></div>'+
    controls+
-   '<div class="dolly-detail-head"><b>'+ (key==="dresser"?"Clickable dresser drawers":"Inventory compartments")+'</b>'+
-   '<span>'+opts.length+' listed</span></div>'+
-   (compartments||'<p class="dolly-room-caveat">No drawers identified yet. Add them as you check them; the number and contents are not assumed.</p>')+
-   (key==="dresser"?'<button class="btn primary" onclick="dollyAddDrawer()">+ Add a drawer</button>':"")+
+   (key==="dresser"?"":'<div class="dolly-detail-head"><b>Inventory compartments</b><span>'+opts.length+' listed</span></div>'+
+   (compartments||'<p class="dolly-room-caveat">No compartments recorded yet.</p>'))+
    (key==="closet"?'<p class="dolly-closet-access">Access note: the Barbie house can slide slightly when Dolly needs to open the closet. Less-used toys and toy-rotation storage can be recorded here as you check them.</p>':"")+
    '<div class="dolly-detail-head"><b>Related tasks</b><span>'+done+' / '+tasks.length+' done</span></div>'+
    (tasks.length?tasks.slice(0,12).map(t=>'<div class="dolly-task-line"><span>'+html(t.title||"Task")+'</span><small>'+(t.done?"✓ Complete":"Not done")+'</small></div>').join(""):'<p class="dolly-room-caveat">No tasks linked to this furniture yet.</p>')+
