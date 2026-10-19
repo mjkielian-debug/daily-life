@@ -1,6 +1,6 @@
 {
-  "build": "20261019-care-nav15",
+  "build": "20261019-room-tour1",
   "released": "2026-10-19",
-  "ui": "Refresh Today focus label and make bathroom map shortcut recover when the room map cannot load",
+  "ui": "Route profile selection to a bedroom and add clickable room tour controls",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
 }

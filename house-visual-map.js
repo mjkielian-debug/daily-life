@@ -1,447 +1,13 @@
-/* Private Daily Life house map.
-   Personal names, layout, landmarks and photo IDs come from owner-only Supabase records,
-   not from this public source file. No measured geometry is inferred. */
-(function(){
-"use strict";
-const floors=["Basement","First floor","Second floor","Third floor"];
-const cache=new Map(),pending=new Map();
-const str=x=>String(x??"");
-const h=x=>str(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-const okId=x=>/^[a-z][a-z0-9_]{0,39}$/.test(str(x));
-const okPhoto=x=>/^[a-f0-9-]{36}$/i.test(str(x));
-const okPath=x=>/^[MLHVZCSQTAmlhvzcsqta0-9.,\s-]{1,800}$/.test(str(x));
-const color=x=>/^#[0-9a-f]{6}$/i.test(str(x))?x:"#d5dce9";
-const arr=x=>Array.isArray(x)?x:[];
-function who(){try{return typeof cloudUser==="function"?cloudUser():null}catch(e){return null}}
-function online(){return typeof cloudClient!=="undefined"&&!!cloudClient&&!!who()}
-function key(f){return who()?.id+"|"+f}
-function get(f){return cache.get(key(f))}
-function where(f){return Array.from(document.querySelectorAll(".hvm-root[data-floor]")).filter(e=>e.dataset.floor===f)}
-function act(f,z){
- const destination=(f==="First floor"&&z.id==="stairs_up")?"Second floor":
-  (f==="First floor"&&z.id==="basement_stairs")?"Basement":
-  (f==="Second floor"&&z.id==="stairs")?"First floor":
-  (f==="Second floor"&&z.id==="stairs_to_third")?"Third floor":"";
- return destination?"houseVisualFollowLink('"+destination+"')":"houseVisualOpenZone('"+f+"','"+z.id+"')";
-}
-function facts(m){
- const b=arr(m.verified),n=arr(m.pending);
- return '<details class="hvm-facts"><summary>Confirmed details + what remains</summary><div class="hvm-fact-split">'+
- '<div><b>âœ“ Confirmed</b>'+b.map(t=>'<p>'+h(t)+'</p>').join("")+'</div>'+
- '<div><b>â—‹ To verify</b>'+n.map(t=>'<p>'+h(t)+'</p>').join("")+'</div></div></details>';
-}
-
-
-function zoneBounds(path){
- const nums=(str(path).match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
- if(nums.length<4)return null;
- const xs=[],ys=[];
- for(let i=0;i+1<nums.length;i+=2){xs.push(nums[i]);ys.push(nums[i+1])}
- const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
- return {x:minX,y:minY,width:maxX-minX,height:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
-}
-function previewSource(f,z){
- if(f!=="Second floor"||z.id!=="dolly"||typeof window.dollyRoomMapPreviewSvg!=="function")return null;
- const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
- if(!match)return null;
- // The saved Dolly plan supplies furniture positions. The floor-zone path is
- // the room boundary, so drop the miniature's duplicate floor and wall frame.
- const markup=match[2]
-  .replace(/<rect x="0" y="0" width="300" height="260" fill="#f8f0e8" stroke="#ad8ba9" stroke-width="5"\/>/,"")
-  .replace(/<path d="M0 0H300V260H0Z" fill="none" stroke="#7f667d" stroke-width="7"\/>/,"")
-  .replace(/<text x="180" y="18"[^>]*>Vanity window<\/text>/,"")
-  .replace(/<text x="10" y="70"[^>]*>Footboard window<\/text>/,"")
-  .replace(/<text x="291" y="189"[^>]*>Entry<\/text>/,"")
-  .replace(/<text x="60" y="18"[^>]*>Mario poster<\/text>/,"");
- return {viewBox:match[1],markup,kind:"dolly"};
-}
-function inlineRoomPreview(f,z,bounds){
- const source=previewSource(f,z);
- if(!source||!bounds||bounds.width<48||bounds.height<48)return "";
- const view=String(source.viewBox||"").split(/\s+/).map(Number);
- if(view.length!==4||view[2]<=0||view[3]<=0)return "";
- const maxW=bounds.width*.99,maxH=bounds.height*.96;
- const scale=Math.min(maxW/view[2],maxH/view[3]);
- if(!Number.isFinite(scale)||scale<.16)return "";
- const width=view[2]*scale,height=view[3]*scale;
- const x=bounds.cx-width/2,y=bounds.cy-height/2;
- return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="Dolly bedroom saved furniture layout" focusable="false" pointer-events="auto">'+source.markup+'</svg>';
-}
-function zoneFloorGraphic(f,z,bounds){
- if(f!=="Second floor"||!bounds)return "";
- if(z.id!=="stairs"&&!/stairs/i.test(z.name||""))return "";
- const left=bounds.x+bounds.width*.24,right=bounds.x+bounds.width*.76;
- const top=bounds.y+bounds.height*.34,bottom=bounds.y+bounds.height*.82;
- const count=6,step=(bottom-top)/(count-1);
- const treads=Array.from({length:count},(_,i)=>{
-  const y=top+i*step;
-  return '<path d="M'+left.toFixed(1)+' '+y.toFixed(1)+'H'+right.toFixed(1)+'" stroke="#805c47" stroke-width="5" stroke-linecap="round"/>';
- }).join("");
- return '<g class="hvm-stair-plan" aria-label="Stair treads inside stair footprint" pointer-events="none">'+
-  '<rect x="'+(left-7).toFixed(1)+'" y="'+(top-8).toFixed(1)+'" width="'+(right-left+14).toFixed(1)+'" height="'+(bottom-top+16).toFixed(1)+'" rx="5" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
-}
-function mapSketch(f,m){
- const isFirst=f==="First floor";
- const viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503";
- const limits=viewBox.split(" ").map(Number);
- const zonePreviews=arr(m.zones).map(z=>[z.id,inlineRoomPreview(f,z,zoneBounds(z.path))]);
- const hasPreviews=zonePreviews.some(([,preview])=>!!preview);
- const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).map(z=>{
-  const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
-  const preview=zonePreviews.find(([id])=>id===z.id)?.[1]||"";
-  const labelX=preview&&bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
-  const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
-  const labelY=(preview||isStair)&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
-  const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
-  const floorGraphic=zoneFloorGraphic(f,z,bounds);
-  return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
-  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+'">'+
-  '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
-  preview+floorGraphic+(preview?'':'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text>')+'</g>';
- }).join("");
- const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
-  const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
-  if(x<limits[0]||x>limits[0]+limits[2]||y<limits[1]||y>limits[1]+limits[3])return "";
-  return '<g class="hvm-annotation" role="button" tabindex="0" aria-label="'+h(a.note||a.label||"Open linked floor")+'" onclick="'+on+
-   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+on+'}">'+
-   '<rect x="'+(x-39)+'" y="'+(y-15)+'" width="78" height="30" rx="14" fill="#fff9e8" stroke="#8053a7" stroke-width="2"/>'+
-   '<text x="'+x+'" y="'+(y+5)+'" class="hvm-annotation-label" text-anchor="middle">'+h(a.label||"â†‘ next")+'</text></g>';
- }).join("");
- const backing=isFirst?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#faf7fb" stroke="#d7cede" stroke-width="2"/>':
- '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
- const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
- '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door Â· street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>'+(hasPreviews?"Room layouts shown inline Â· tap a room or mapped object":"Tap a colored area")+'</span></div>'+
- '<svg class="hvm-drawing'+(hasPreviews?' hvm-has-previews':'')+'" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram with room previews based on saved room layouts.">'+
- backing+paths+pins+entry+'</svg>'+
- '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
-}
-
-function directory(f,m){
- return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(f==='Second floor'?'Second floor rooms':(m.title||f))+'</strong><small>Choose a room photo to open its saved views</small></div>'+
- '<div class="hvm-directory-grid">'+arr(m.zones).filter(z=>okId(z.id)).map(z=>{
- const photos=arr(z.photos).filter(okPhoto);
- return '<button type="button" class="hvm-room-tile hvm-photo-room-tile" data-room-id="'+h(z.id)+'" style="--hvm-zone:'+color(z.color)+'" onclick="'+act(f,z)+'">'+
- '<span class="hvm-room-tile-photo" data-room-photo-zone="'+h(z.id)+'" aria-hidden="true"><span class="hvm-tile-mark">âŒ‚</span></span>'+
- '<b>'+h(z.name)+'</b><small>'+photos.length+' saved photo'+(photos.length===1?'':'s')+'</small>'+
- '<span class="hvm-tile-open">'+(z.id==="stairs_up"?"Go upstairs â€º":z.id==="stairs_to_third"?"Go to third floor â€º":"Open room photos â€º")+'</span></button>';
- }).join("")+'</div></div>';
-}
-async function hydrateRoomDirectoryPhotos(f,m){
- if(!online()||!m)return;
- const zones=arr(m.zones).filter(z=>okId(z.id));
- const refs=zones.map(z=>({zone:z,id:arr(z.photos).find(okPhoto)||null}));
- if(refs.some(x=>!x.id)){
-  try{
-   const {data}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
-    .in("category",["house_map","home_progress"]).eq("floor_label",f)
-    .order("created_at",{ascending:false}).limit(100);
-   const saved=data||[];
-   for(const ref of refs){
-    if(ref.id)continue;
-    const name=str(ref.zone.name).trim().toLowerCase();
-    let match=name?saved.find(p=>okPhoto(p.id)&&(str(p.title)+" "+str(p.notes)).toLowerCase().includes(name)):null;
-    if(!match&&name.includes("bath"))match=saved.find(p=>okPhoto(p.id)&&/bath/i.test(str(p.title)+" "+str(p.notes)));
-    ref.id=match?.id||null;
-   }
-  }catch(e){}
- }
- const ids=refs.map(x=>x.id).filter(Boolean);
- if(!ids.length)return;
- try{
-  const {data}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",ids);
-  for(const row of data||[]){
-   if(!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(row.image_data||""))continue;
-   const zone=refs.find(x=>x.id===row.id)?.zone;
-   const host=zone&&Array.from(document.querySelectorAll(".hvm-room-tile-photo")).find(node=>node.dataset.roomPhotoZone===String(zone.id));
-   if(host){const img=document.createElement("img");img.alt="";img.src=row.image_data;host.replaceChildren(img);}
-  }
- }catch(e){}
-}
-function connect(m){
- const c=arr(m.connections).filter(x=>x&&x.label&&x.from&&x.to);
- if(!c.length)return "";
- return '<section class="hvm-connections" aria-label="House connection routes"><strong>How these spaces connect</strong>'+
- c.map(x=>'<div class="hvm-connection"><b>'+h(x.label)+'</b>'+
- '<div class="hvm-route"><span class="hvm-route-end">âŒ‚ '+h(x.from)+'</span>'+
- arr(x.via).map(v=>'<div class="hvm-route-step"><span class="hvm-step-rail" aria-hidden="true">â†“</span><span>'+h(v)+'</span></div>').join("")+
- '<span class="hvm-route-end">âŒ‚ '+h(x.to)+'</span></div>'+
- (x.status?'<p>'+h(x.status)+'</p>':"")+'</div>').join("")+'</section>';
-}
-function draw(f,m){
- const work=arr(m.flow).map(x=>'<div class="hvm-flow-line"><b>'+h(x.from)+'</b><span>â†’</span><b>'+h(x.to)+'</b>'+
- '<small>'+h(x.status)+'</small></div>').join("");
- const todo=arr(m.pending)[0];
- const original=okPhoto(m.sourcePhotoId)?'<button type="button" class="btn hvm-source-photo" onclick="photoInboxView(&#39;'+m.sourcePhotoId+'&#39;,&#39;map&#39;)">ðŸ“· Original robot map</button>':"";
- // Keep the clickable layout and tasks up front. Mapping caveats and stair
- // route evidence are supporting reference material, not the main screen.
- const references='<div class="hvm-technical-detail">'+
- (m.summary?'<p class="hvm-disclaimer">'+h(m.summary)+'</p>':"")+
- original+connect(m)+
- (work?'<section class="hvm-flow"><strong>â†— Where things went</strong>'+work+'</section>':"")+
- (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
- '<button class="btn small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+f+'&#39;)">+ Add room photos</button></div>':"")+
- facts(m)+'</div>';
- return '<div class="hvm-rendered">'+(m.kind==="schematic"?mapSketch(f,m):directory(f,m))+
- '<details class="hvm-mapping-background"><summary>Mapping notes, stair connections and evidence â€º</summary>'+
- references+'</details></div>';
-}
-function mappedRoomItems(room){
- if(!room)return [];
- const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
- return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
-}
-function mappedProgressCard(f,z,room){
- const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
- const inventory=mappedRoomItems(room);
- const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
-   'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
- const title=z?z.name:room.name;
- return '<button type="button" class="household-room-progress" onclick="'+action+'">'+
- '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
- '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
- '<span><b>'+(percent===null?'â€”':percent+'%')+'</b>'+
- '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
-}
-function roomProgressHtml(f){
- const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
- const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
- const localUsed=new Set();
- const mapped=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return mappedProgressCard(f,z,room)});
- const localOnly=floorRooms.filter(r=>!localUsed.has(str(r.id))).map(room=>mappedProgressCard(f,null,room));
- const rows=mapped.concat(localOnly);
- if(rows.length)return '<div class="household-room-progress-grid">'+rows.join("")+'</div>'+
- '<p class="household-progress-disclaimer">Percentages show completed saved room tasks, not an overall cleanliness score. Unrecorded work stays unknown.</p>';
- return '<p class="household-progress-empty">'+
- (online()&&!map?'Loading mapped roomsâ€¦':'No room tasks or inventory locations are linked to this floor yet. You can tap the diagram or add a room.')+
- '</p>';
-}
-function floorTrackedTasks(f){
- const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
- const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
- const localUsed=new Set(),groups=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return trackedRoomTasks(f,z,room)});
- for(const room of floorRooms)if(!localUsed.has(str(room.id)))groups.push(trackedRoomTasks(f,null,room));
- const byId=new Map();
- for(const task of groups.flat())if(task?.id)byId.set(String(task.id),task);
- return [...byId.values()];
-}
-window.houseVisualFloorProgressHtml=function(f){
- const tasks=floorTrackedTasks(f),done=tasks.filter(task=>task.done).length;
- const percent=tasks.length?Math.round(done*100/tasks.length):null;
- const status=tasks.length?done+" of "+tasks.length+" room tasks complete":"No room tasks logged yet";
- const progress=percent===null
-  ? '<span class="household-map-floor-progress-state">Start tracking â€º</span>'
-  : '<span class="household-map-floor-progress-meter"><b>'+percent+'%</b><i role="progressbar" aria-label="Room tasks complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><em style="width:'+percent+'%"></em></i></span>';
- const label="Open "+h(f)+" room progress"+(tasks.length?": "+done+" of "+tasks.length+" tasks complete":": no room tasks logged yet");
- return '<button type="button" class="household-map-floor-progress" aria-label="'+h(label)+'" onclick="householdOpenRoomProgress()">'+
-  '<span class="household-map-floor-progress-copy"><b>'+h(f)+' progress</b><small>'+status+'</small></span>'+progress+'<span aria-hidden="true">â€º</span></button>';
-};
-window.houseVisualRoomProgressHtml=function(f){return roomProgressHtml(f)};
-function refreshRoomProgress(f){
- document.querySelectorAll(".household-map-room-results[data-floor]").forEach(el=>{
-  if(el.dataset.floor===f)el.innerHTML=roomProgressHtml(f);
- });
-}
-
-function floorView(f,m){return directory(f,m)}
-function paint(f){
- const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layoutâ€¦":"Sign in to Daily Life cloud to view your private map.");
- where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
- if(m)hydrateRoomDirectoryPhotos(f,m);
- refreshRoomProgress(f);
-}
-window.houseVisualMapHtml=function(f){
- if(!floors.includes(f))f="First floor";
- Promise.resolve().then(()=>window.houseVisualMapHydrate(f)).catch(()=>{});
- return '<section class="hvm-root" data-floor="'+h(f)+'">'+
- (get(f)?floorView(f,get(f)):(online()?"Loading private room mapâ€¦":"Sign in to view your private room map."))+'</section>';
-};
-window.houseVisualMapHydrate=async function(f,force=false){
- if(!floors.includes(f))return;
- if(!online()){paint(f);return}
- const k=key(f);
- if(cache.has(k)&&!force){paint(f);return}
- if(pending.has(k))return pending.get(k);
- const job=(async()=>{
- try{
-  const {data,error}=await cloudClient.from("life_entries").select("payload,updated_at")
-   .eq("category","house_floor_map").eq("external_id","house-map:floor:"+f.toLowerCase().replace(/\s+/g,"-"))
-   .eq("source","chatgpt").limit(1);
-  if(error)throw error;
-  if(key(f)!==k)return;
-  const m=data?.[0]?.payload;
-  if(!m||!Array.isArray(m.zones))throw new Error("No reviewed floor details yet.");
-  cache.set(k,m);paint(f);
- }catch(e){
-  where(f).forEach(el=>{el.innerHTML='<p class="hvm-disclaimer">Map could not load: '+h(e?.message||"Please retry")+
-  '</p><button class="btn" onclick="houseVisualMapHydrate(&#39;'+f+'&#39;,true)">Retry loading</button>'});
- }finally{pending.delete(k)}
- })();
- pending.set(k,job);return job;
-};
-function zone(f,id){
- return arr(get(f)?.zones).find(z=>z.id===id)||null;
-}
-function localRoom(f,z){
- const n=x=>str(x).toLowerCase().replace(/[^a-z0-9]/g,"");
- return arr(typeof state==="undefined"?[]:state.houseRooms).find(r=>{
-  if(str(r.floor)!==f)return false;
-  const a=n(r.name),b=n(z.name),short=n(z.short||z.name);
-  return a===b||(a.includes(short)&&short.length>3)||(b.includes(a)&&a.length>5);
- });
-}
-window.houseVisualOpenDollyModel=function(){
- if(typeof modal!=="function")return;
- if(typeof window.dollyRoomSceneHtml!=="function"){
-  modal("Dolly's bedroom","<p>The interactive model has not loaded. Refresh Daily Life and try again.</p>","Close",closeModal);return;
- }
- try{
-  modal("Dolly's interactive bedroom Â· Second floor",
-   window.dollyRoomSceneHtml()+'<div class="actions"><button type="button" class="btn" onclick="houseVisualOpenZone(&#39;Second floor&#39;,&#39;dolly&#39;)">â† Room details</button></div>',
-   "Close",closeModal);
- }catch(e){modal("Dolly's bedroom","<p>Could not open the interactive model. Refresh Daily Life.</p>","Close",closeModal)}
-};
-window.houseVisualReturnToFloor=function(f){
- if(!floors.includes(f)||typeof modal!=="function")return;
- modal(f+" Â· Floor map",'<div class="hvm-floor-return">'+window.houseVisualMapHtml(f)+
- '<div class="actions"><button type="button" class="btn" onclick="closeModal()">Close map</button></div></div>',"Close",closeModal);
- Promise.resolve().then(()=>window.houseVisualMapHydrate(f)).catch(()=>{});
-};
-window.houseVisualFollowLink=function(target){
- if(!floors.includes(target))return;
- if(typeof openHouseFloorMap==="function"){openHouseFloorMap(target);return}
- if(typeof homeSetMapFloor==="function"){homeSetMapFloor(target)}
-};
-window.houseVisualInventoryOpen=function(f,id){
- const z=zone(f,id);if(!z)return;
- const room=localRoom(f,z);
- if(room&&typeof homeOpenRoomInventory==="function"){homeOpenRoomInventory(room.id);return}
- if(typeof openInventoryHubSection==="function"){openInventoryHubSection("items");return}
- if(typeof setView==="function"){setView("inventory");return}
- if(typeof openInventoryRoom==="function")openInventoryRoom("",f);
-};
-function trackedRoomTasks(f,z,room){
- const name=String(z?.name||room?.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
- return (state.tasks||[]).filter(t=>{
-  if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
-  if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
-  const assigned=String(t.homeRoomId||t.roomId||"");
-  if(assigned)return !!room&&assigned===String(room.id);
-  const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  return String(t.category||"").toLowerCase()==="home"&&name&&(" "+label+" ").includes(" "+name+" ");
- });
-}
-window.houseVisualCompleteTask=async function(taskId,f,zoneId){
- const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId));if(!t||t.done)return;
- await toggleTask(taskId,true);
- window.houseVisualOpenZone(f,zoneId);
-};
-window.houseVisualAddZoneTask=function(f,id){
- const z=zone(f,id);if(!z||typeof openTask!=="function")return;
- const room=localRoom(f,z);
- openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room"});
-};
-function markerTaskKey(p,index){
- const id=str(p?.id||"").trim(),label=str(p?.label||"").trim();
- return "house-marker:"+(id||(label?label+"#"+index:"marker-"+index));
-}
-window.houseVisualAddMarkerTask=function(f,id,index){
- if(!floors.includes(f)||!okId(id)||typeof openTask!=="function")return;
- const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
- const room=localRoom(f,z),objectName=str(p.label||"Mapped object"),objectKey=markerTaskKey(p,index);
- closeModal();
- openTask("","",false,{roomId:room?.id||"",floor:f,zoneId:id,roomName:z.name||"Room",objectName,objectKey});
-};
-window.houseVisualInteractMarker=function(f,id,index){
- if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
- const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
- const objectName=str(p.label||"Mapped object"),objectKey=markerTaskKey(p,index);
- const objectTasks=(state.tasks||[]).filter(t=>!t.duplicateHidden&&!t.paused&&String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===id&&String(t.homeObjectKey||"")===objectKey);
- const taskList=objectTasks.length?objectTasks.map(t=>'<div class="hvm-object-task-row"><span><b>'+h(t.title||"Task")+'</b><small>'+(t.done?"âœ“ Complete":"Still to do")+'</small></span>'+(t.done?'':'<button class="btn small primary" type="button" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">âœ“ Done</button>')+'</div>').join(""):'<p class="muted small">No tasks are linked to this object yet.</p>';
- const details='<section class="hvm-object-detail"><span class="hvm-object-icon" aria-hidden="true">âœ¦</span><div><small>IN THIS ROOM</small><h2>'+h(p.label||"Mapped object")+'</h2></div></section>'+
- (p.status?'<p class="hvm-object-status">'+h(p.status)+'</p>':"")+
- (p.note?'<div class="hvm-object-note">'+h(p.note)+'</div>':"")+
- '<section class="hvm-object-tasks"><div><b>Actions for '+h(objectName)+'</b><small>'+objectTasks.length+' linked task'+(objectTasks.length===1?"":"s")+'</small></div>'+taskList+'</section>'+
- '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddMarkerTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+Number(index)+')">ï¼‹ Add task for this object</button>'+
- '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Open room inventory</button></div>'+
- '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">â† Back to room</button>'+
- '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">âŒ‚ House map</button></div>';
- modal(h(p.label||"Mapped object")+" Â· "+h(z.name),'<div class="hvm-object-view">'+details+'</div>',"Close",closeModal);
-};
-
-
-let activeRoomPhotoIds=[],activeRoomPhotoIndex=0,activeRoomPhotoRoom="";
-window.houseVisualNavigateRoomPhoto=function(step){
- if(!activeRoomPhotoIds.length)return;
- activeRoomPhotoIndex=(activeRoomPhotoIndex+Number(step)+activeRoomPhotoIds.length)%activeRoomPhotoIds.length;
- window.houseVisualShowRoomPhoto(activeRoomPhotoIds[activeRoomPhotoIndex],activeRoomPhotoIndex,activeRoomPhotoIds.length);
-};
-window.houseVisualShowRoomPhoto=async function(photoId,index=0,total=activeRoomPhotoIds.length){
- const stage=document.getElementById("hvmRoomPhotoStage");
- if(!stage||!okPhoto(photoId)||!online())return;
- activeRoomPhotoIndex=Math.max(0,Number(index)||0);
- stage.textContent="Loading saved room photoâ€¦";
- const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
- const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
- if(error||!data||!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
-  current.textContent="This saved photo could not be displayed.";return;
- }
- const img=document.createElement("img");
- img.alt=(data.title||activeRoomPhotoRoom)+" Â· photo "+(activeRoomPhotoIndex+1)+" of "+total;
- img.src=data.image_data;current.replaceChildren(img);
- const caption=document.getElementById("hvmRoomPhotoCaption");
- let title=str(data.title||"").trim();
- if(/^\d{10,}\.(jpe?g|png|webp)$/i.test(title))title="";
- if(/upstairs bathroom/i.test(title)&&/photo/i.test(title))title="Upstairs bathroom Â· Photo "+(activeRoomPhotoIndex+1)+" of "+total;
- if(caption)caption.textContent=title||activeRoomPhotoRoom+" Â· Photo "+(activeRoomPhotoIndex+1)+" of "+total;
- const count=document.getElementById("hvmRoomPhotoCount");
- if(count)count.textContent="Photo "+(activeRoomPhotoIndex+1)+" of "+total;
-};
-async function hydrateRoomPhotoGallery(f,z){
- const host=document.getElementById("hvmRoomPhotoGallery");if(!host)return;
- if(!online()){host.textContent="Sign in to see saved room photos.";return}
- let photos=arr(z.photos).filter(okPhoto).map(id=>({id}));
- if(/bath/i.test(str(z.name||""))){
-  const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
-   .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
-  if(error){host.textContent="Could not load saved bathroom photos.";return}
-  photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
- }
- if(!photos.length){host.innerHTML='<p class="muted">No room photos are linked here yet.</p>';return}
- activeRoomPhotoIds=photos.map(p=>p.id);activeRoomPhotoIndex=0;activeRoomPhotoRoom=str(z.name||"Room");
- host.innerHTML='<div class="hvm-photo-gallery"><div class="hvm-room-photo-frame"><div id="hvmRoomPhotoStage" class="hvm-room-photo-stage">Loading saved room photoâ€¦</div></div><div id="hvmRoomPhotoCaption" class="hvm-room-photo-caption"></div><div class="hvm-room-photo-picker" aria-label="Browse saved '+h(z.name||"room")+' photos">'+
-  '<button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(-1)" aria-label="Previous room photo">â€¹ Previous</button><span id="hvmRoomPhotoCount" class="hvm-room-photo-count">Photo 1 of '+photos.length+'</span><button type="button" class="btn small" onclick="houseVisualNavigateRoomPhoto(1)" aria-label="Next room photo">Next â€º</button>'+
-  '</div><small class="muted">'+photos.length+' saved photo'+(photos.length===1?'':'s')+' Â· use Previous and Next to browse</small></div>';
- window.houseVisualShowRoomPhoto(photos[0].id,0,photos.length);
-};
-window.houseVisualOpenZone=function(f,id){
- if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
- const z=zone(f,id);if(!z)return;
- const photos=arr(z.photos).filter(okPhoto);
- const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
- const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
- const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
- const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
- '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
- '<div class="hvm-task-list"><b>What needs doing Â· '+pendingTasks.length+'</b>'+
- (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>â†³ '+h(t.homeObjectLabel)+'</small>':"")+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">âœ“ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
- '<div class="hvm-room-inventory"><b>Things in this room Â· '+inventory.length+' item types</b>'+
- (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>â–§</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' Â· ':'')+'Open item details</small></span><span>â€º</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
-
- const spots=arr(z.markers).map((p,i)=>'<button type="button" class="hvm-object-row" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')"><span>âœ¦</span><span><b>'+h(p.label||"Mapped object")+'</b><small>'+h(p.status||"Tap to inspect this mapped object")+'</small></span><span>â€º</span></button>').join("");
- const actions='<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddZoneTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">+ Room task</button>'+
- '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">'+
- (room?"Open full inventory":"Browse inventory")+'</button>'+
- '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">â† Floor map</button></div>';
- const references='<details class="hvm-room-extra"><summary>Room notes â€º</summary>'+
- (photos.length?'<p>Photos are shown above.</p>':'<p>No saved room photos have been linked here yet.</p>')+
- (z.notes?'<p>'+h(z.notes)+'</p>':"")+
- '</details>';
- const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photosâ€¦</p></section>';
- const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+objectPanel+progress+actions+references+'</div>';
-
- modal(z.name+" Â· "+f,markup,"Close",closeModal);
- Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
-};
-})();
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×^8í:-jZ.¶›­–)Þ³Rò¢&—fFRF–Ç’Æ–fR†÷W6RÖà¢W'6öæÂæÖW2ÂÆ–÷WBÂÆæFÖ&·2æB†÷Fò”G26öÖRg&öÒ÷væW"ÖöæÇ’7W&6R&V6÷&G2À¢æ÷Bg&öÒF†—2V&Æ–26÷W&6Rf–ÆRâæòÖV7W&VBvVöÖWG'’—2–æfW'&VBâ¢ð¢†gVæ7F–öâ‚—°¢'W6R7G&–7B#°¦6öç7BfÆö÷'3Õ²$&6VÖVçB"Â$f—'7BfÆö÷""Â%6V6öæBfÆö÷""Â%F†—&BfÆö÷"%Ó°¦6öç7B66†SÖæWrÖ‚’ÇVæF–æsÖæWrÖ‚“°¦6öç7B7G#×ƒÓå7G&–ær‡ƒóò""“°¦6öç7Bƒ×ƒÓç7G"‡‚’ç&WÆ6R‚òbörÂ"f×²"’ç&WÆ6R‚óÂörÂ"fÇC²"’ç&WÆ6R‚óâörÂ"fwC²"’ç&WÆ6R‚ò"örÂ"gV÷C²"’ç&WÆ6R‚òrörÂ"b33“²"“°¦6öç7Bö´–C×ƒÓâõå¶×¥Õ¶×£Ó•õ×³Ã3—ÒBòçFW7B‡7G"‡‚’“°¦6öç7Böµ†÷Fó×ƒÓâõå¶ÖcÓ’Õ×³3gÒBö’çFW7B‡7G"‡‚’“°¦6öç7BöµFƒ×ƒÓâõå´ÔÄ…e¤55DÖÆ‡g¦77FÓ’âÅÇ2Õ×³ÃƒÒBòçFW7B‡7G"‡‚’“°¦6öç7B6öÆ÷#×ƒÓâõâ5³Ó–Öe×³gÒBö’çFW7B‡7G"‡‚’“÷ƒ¢"6CVF6S’#°¦6öç7B'#×ƒÓä'&’æ—4'&’‡‚“÷ƒ¥µÓ°¦gVæ7F–öâv†ò‚—·G'—·&WGW&âG—Vöb6Æ÷VEW6W#ÓÓÒ&gVæ7F–öâ#ö6Æ÷VEW6W"‚“¦çVÆÇÖ6F6‚†R—·&WGW&âçVÆÇ×Ð¦gVæ7F–öâöæÆ–æR‚—·&WGW&âG—Vöb6Æ÷VD6Æ–VçBÓÒ'VæFVf–æVB"bb6Æ÷VD6Æ–VçBbbv†ò‚—Ð¦gVæ7F–öâ¶W’†b—·&WGW&âv†ò‚“òæ–B²'Â"¶gÐ¦gVæ7F–öâvWB†b—·&WGW&â66†RævWB†¶W’†b’—Ð¦gVæ7F–öâv†W&R†b—·&WGW&â'&’æg&öÒ†Fö7VÖVçBçVW'•6VÆV7F÷$ÆÂ‚"æ‡fÒ×&ö÷E¶FFÖfÆö÷%Ò"’’æf–ÇFW"†SÓæRæFF6WBæfÆö÷#ÓÓÖb—Ð¦gVæ7F–öâ7B†bÇ¢—°¢6öç7BFW7F–æF–öãÒ†cÓÓÒ$f—'7BfÆö÷""bg¢æ–CÓÓÒ'7F—'5÷W"“ò%6V6öæBfÆö÷"# ¢†cÓÓÒ$f—'7BfÆö÷""bg¢æ–CÓÓÒ&&6VÖVçE÷7F—'2"“ò$&6VÖVçB# ¢†cÓÓÒ%6V6öæBfÆö÷""bg¢æ–CÓÓÒ'7F—'2"“ò$f—'7BfÆö÷"# ¢†cÓÓÒ%6V6öæBfÆö÷""bg¢æ–CÓÓÒ'7F—'5÷Fõ÷F†—&B"“ò%F†—&BfÆö÷"#¢"#°¢&WGW&âFW7F–æF–öãò&†÷W6Uf—7VÄföÆÆ÷tÆ–æ²‚r"¶FW7F–æF–öâ²"r’#¢&†÷W6Uf—7VÄ÷Vå¦öæR‚r"¶b²"rÂr"·¢æ–B²"r’#°§Ð¦gVæ7F–öâf7G2†Ò—°¢6öç7B#Ö'"†ÒçfW&–f–VB’ÆãÖ'"†ÒçVæF–ær“°¢&WGW&âsÆFWF–Ç26Æ73Ò&‡fÒÖf7G2#ãÇ7VÖÖ'“ä6öæf—&ÖVBFWF–Ç2²v†B&VÖ–ç3Â÷7VÖÖ'“ãÆF—b6Æ73Ò&‡fÒÖf7B×7Æ—B#âr°¢sÆF—cãÆ#î)É26öæf—&ÖVCÂö#âr¶"æÖ‡CÓâsÇâr¶‚‡B’²sÂ÷âr’æ¦ö–â‚""’²sÂöF—câr°¢sÆF—cãÆ#î)x²FòfW&–g“Âö#âr¶âæÖ‡CÓâsÇâr¶‚‡B’²sÂ÷âr’æ¦ö–â‚""’²sÂöF—cãÂöF—cãÂöFWF–Ç3âs°§Ð  ¦gVæ7F–öâ¦öæT&÷VæG2‡F‚—°¢6öç7BçV×3Ò‡7G"‡F‚’æÖF6‚‚òÓõÆB²ƒó¥ÂåÆB²“òör—ÇÅµÒ’æÖ„çVÖ&W"“°¢–b†çV×2æÆVæwFƒÃB—&WGW&âçVÆÃ°¢6öç7B‡3ÕµÒÇ—3ÕµÓ°¢f÷"†ÆWB“Ó¶’³ÆçV×2æÆVæwFƒ¶’³Ó"—·‡2çW6‚†çV×5¶•Ò“·—2çW6‚†çV×5¶’³Ò—Ð¢6öç7BÖ–åƒÔÖF‚æÖ–â‚ââç‡2’ÆÖ…ƒÔÖF‚æÖ‚‚ââç‡2’ÆÖ–å“ÔÖF‚æÖ–â‚ââç—2’ÆÖ…“ÔÖF‚æÖ‚‚ââç—2“°¢&WGW&â·ƒ¦Ö–å‚Ç“¦Ö–å’Çv–GFƒ¦Ö…‚ÖÖ–å‚Æ†V–v‡C¦Ö…’ÖÖ–å’Æ7ƒ¢†Ö–å‚¶Ö…‚’ó"Æ7“¢†Ö–å’¶Ö…’’ó'Ó°§Ð¦gVæ7F–öâ&Wf–Wu6÷W&6R†bÇ¢—°¢–b†bÓÒ%6V6öæBfÆö÷"'ÇÇ¢æ–BÓÒ&FöÆÇ’'ÇÇG—Vöbv–æF÷ræFöÆÇ•&ööÔÖ&Wf–Wu7frÓÒ&gVæ7F–öâ"—&WGW&âçVÆÃ°¢6öç7BÖF6ƒ×v–æF÷ræFöÆÇ•&ööÔÖ&Wf–Wu7fr‚’æÖF6‚‚óÇ7fuÆ%µãåÒ§f–Wt&÷ƒÕ²"uÒ…µâ"uÒ²•²"uÕµãåÒ£â…µÇ5Å5Ò£ò“ÅÂ÷7fsâö’“°¢–b‚ÖF6‚—&WGW&âçVÆÃ°¢òòF†R6fVBFöÆÇ’Æâ7WÆ–W2gW&æ—GW&R÷6—F–öç2âF†RfÆö÷"×¦öæRF‚—0¢òòF†R&ööÒ&÷VæF'’Â6òG&÷F†RÖ–æ–GW&Rw2GWÆ–6FRfÆö÷"æBvÆÂg&ÖRà¢6öç7BÖ&·WÖÖF6…³%Ð¢ç&WÆ6R‚óÇ&V7BƒÒ#"“Ò#"v–GFƒÒ#3"†V–v‡CÒ##c"f–ÆÃÒ"6c†cS‚"7G&ö¶SÒ"6C†&’"7G&ö¶R×v–GFƒÒ#R%ÂóâòÂ""¢ç&WÆ6R‚óÇF‚CÒ$Óƒ3c#cƒ¢"f–ÆÃÒ&æöæR"7G&ö¶SÒ"3vcccvB"7G&ö¶R×v–GFƒÒ#r%ÂóâòÂ""¢ç&WÆ6R‚óÇFW‡BƒÒ#ƒ"“Ò#‚%µãåÒ£åfæ—G’v–æF÷sÅÂ÷FW‡CâòÂ""¢ç&WÆ6R‚óÇFW‡BƒÒ#"“Ò#s%µãåÒ£äfö÷F&ö&Bv–æF÷sÅÂ÷FW‡CâòÂ""¢ç&WÆ6R‚óÇFW‡BƒÒ##“"“Ò#ƒ’%µãåÒ£äVçG'“ÅÂ÷FW‡CâòÂ""¢ç&WÆ6R‚óÇFW‡BƒÒ#c"“Ò#‚%µãåÒ£äÖ&–ò÷7FW#ÅÂ÷FW‡CâòÂ""“°¢&WGW&â·f–Wt&÷ƒ¦ÖF6…³ÒÆÖ&·WÆ¶–æC¢&FöÆÇ’'Ó°§Ð¦gVæ7F–öâ–æÆ–æU&ööÕ&Wf–Wr†bÇ¢Æ&÷VæG2—°¢6öç7B6÷W&6S×&Wf–Wu6÷W&6R†bÇ¢“°¢–b‚6÷W&6WÇÂ&÷VæG7ÇÆ&÷VæG2çv–GFƒÃC‡ÇÆ&÷VæG2æ†V–v‡CÃC‚—&WGW&â"#°¢6öç7Bf–WsÕ7G&–ær‡6÷W&6Rçf–Wt&÷‡ÇÂ""’ç7Æ—B‚õÇ2²ò’æÖ„çVÖ&W"“°¢–b‡f–WræÆVæwF‚ÓÓGÇÇf–Wu³%ÓÃÓÇÇf–Wu³5ÓÃÓ—&WGW&â"#°¢6öç7BÖ…sÖ&÷VæG2çv–GF‚¢ã“’ÆÖ„ƒÖ&÷VæG2æ†V–v‡B¢ã“c°¢6öç7B66ÆSÔÖF‚æÖ–â†Ö…r÷f–Wu³%ÒÆÖ„‚÷f–Wu³5Ò“°¢–b‚çVÖ&W"æ—4f–æ—FR‡66ÆR—ÇÇ66ÆSÂãb—&WGW&â"#°¢6öç7Bv–GFƒ×f–Wu³%Ò§66ÆRÆ†V–v‡C×f–Wu³5Ò§66ÆS°¢6öç7BƒÖ&÷VæG2æ7‚×v–GF‚ó"Ç“Ö&÷VæG2æ7’Ö†V–v‡Bó#°¢&WGW&âsÇ7fr6Æ73Ò&‡fÒÖ–æÆ–æR×&ööÒ×&Wf–Wr"ƒÒ"r·‚çFôf—†VBƒ’²r"“Ò"r·’çFôf—†VBƒ’²r"v–GFƒÒ"r·v–GF‚çFôf—†VBƒ’²r"†V–v‡CÒ"r¶†V–v‡BçFôf—†VBƒ’²r"f–Wt&÷ƒÒ"r¶‚‡6÷W&6Rçf–Wt&÷‚’²r"&W6W'fT7V7E&F–óÒ'„Ö–E”Ö–BÖVWB"&–ÖÆ&VÃÒ$FöÆÇ’&VG&ööÒ6fVBgW&æ—GW&RÆ–÷WB"fö7W6&ÆSÒ&fÇ6R"ö–çFW"ÖWfVçG3Ò&WFò#âr·6÷W&6RæÖ&·W²sÂ÷7fsâs°§Ð¦gVæ7F–öâ¦öæTfÆö÷$w&†–2†bÇ¢Æ&÷VæG2—°¢–b†bÓÒ%6V6öæBfÆö÷"'ÇÂ&÷VæG2—&WGW&â"#°¢–b‡¢æ–BÓÒ'7F—'2"bb÷7F—'2ö’çFW7B‡¢ææÖWÇÂ""’—&WGW&â"#°¢6öç7BÆVgCÖ&÷VæG2ç‚¶&÷VæG2çv–GF‚¢ã#BÇ&–v‡CÖ&÷VæG2ç‚¶&÷VæG2çv–GF‚¢ãsc°¢6öç7BF÷Ö&÷VæG2ç’¶&÷VæG2æ†V–v‡B¢ã3BÆ&÷GFöÓÖ&÷VæG2ç’¶&÷VæG2æ†V–v‡B¢ãƒ#°¢6öç7B6÷VçCÓbÇ7FWÒ†&÷GFöÒ×F÷’ò†6÷VçBÓ“°¢6öç7BG&VG3Ô'&’æg&öÒ‡¶ÆVæwFƒ¦6÷VçGÒÂ…òÆ’“Óç°¢6öç7B“×F÷¶’§7FW°¢&WGW&âsÇF‚CÒ$Òr¶ÆVgBçFôf—†VBƒ’²rr·’çFôf—†VBƒ’²t‚r·&–v‡BçFôf—†VBƒ’²r"7G&ö¶SÒ"3ƒV3Cr"7G&ö¶R×v–GFƒÒ#R"7G&ö¶RÖÆ–æV6Ò'&÷VæB"óâs°¢Ò’æ¦ö–â‚""“°¢&WGW&âsÆr6Æ73Ò&‡fÒ×7F—"×Æâ"&–ÖÆ&VÃÒ%7F—"G&VG2–ç6–FR7F—"fö÷G&–çB"ö–çFW"ÖWfVçG3Ò&æöæR#âr°¢sÇ&V7BƒÒ"r²†ÆVgBÓr’çFôf—†VBƒ’²r"“Ò"r²‡F÷Ó‚’çFôf—†VBƒ’²r"v–GFƒÒ"r²‡&–v‡BÖÆVgB³B’çFôf—†VBƒ’²r"†V–v‡CÒ"r²†&÷GFöÒ×F÷³b’çFôf—†VBƒ’²r"'ƒÒ#R"f–ÆÃÒ"63–v""7G&ö¶SÒ"3†3fSR"7G&ö¶R×v–GFƒÒ#""óâr·G&VG2²sÂösâs°§Ð¦gVæ7F–öâÖ6¶WF6‚†bÆÒ—°¢6öç7B—4f—'7CÖcÓÓÒ$f—'7BfÆö÷"#°¢6öç7Bf–Wt&÷ƒÒõåÆB²ÆB²ÆB²ÆB²BòçFW7B‡7G"†Òçf–Wt&÷‡ÇÂ""’“öÒçf–Wt&÷ƒ¢#3ƒS2#°¢6öç7BÆ–Ö—G3×f–Wt&÷‚ç7Æ—B‚""’æÖ„çVÖ&W"“°¢6öç7B¦öæU&Wf–Ww3Ö'"†Òç¦öæW2’æÖ‡£Óå·¢æ–BÆ–æÆ–æU&ööÕ&Wf–Wr†bÇ¢Ç¦öæT&÷VæG2‡¢çF‚’•Ò“°¢6öç7B†5&Wf–Ww3×¦öæU&Wf–Ww2ç6öÖR‚…²Ç&Wf–WuÒ“Óâ&Wf–Wr“°¢6öç7BF‡3Ö'"†Òç¦öæW2’æf–ÇFW"‡£Óæö´–B‡¢æ–B’bföµF‚‡¢çF‚’’æÖ‡£Óç°¢6öç7B&÷VæG3×¦öæT&÷VæG2‡¢çF‚’ÇƒÔçVÖ&W"‡¢æ7‚—ÇÃÇ“ÔçVÖ&W"‡¢æ7’—ÇÃÆöæ6Æ–6³Ö7B†bÇ¢“°¢6öç7B&Wf–Ws×¦öæU&Wf–Ww2æf–æB‚…¶–EÒ“Óæ–CÓÓ×¢æ–B“òå³×ÇÂ"#°¢6öç7BÆ&VÅƒ×&Wf–Wrbf&÷VæG3ö&÷VæG2æ7ƒ¤ÖF‚æÖ‚†Æ–Ö—G5³ÒÄÖF‚æÖ–â†Æ–Ö—G5³Ò¶Æ–Ö—G5³%ÒÇ‚’“°¢6öç7B—57F—#ÖcÓÓÒ%6V6öæBfÆö÷""bb‡¢æ–CÓÓÒ'7F—'2'ÇÂ÷7F—'2ö’çFW7B‡¢ææÖWÇÂ""’“°¢6öç7BÆ&VÅ“Ò‡&Wf–WwÇÆ—57F—"’bf&÷VæG3ö&÷VæG2ç’³c¤ÖF‚æÖ‚†Æ–Ö—G5³ÒÄÖF‚æÖ–â†Æ–Ö—G5³Ò¶Æ–Ö—G5³5ÒÇ’’“°¢6öç7B&6Tf–ÆÃ×¢æ–CÓÓÒ&FöÆÇ’"bfcÓÓÒ%6V6öæBfÆö÷"#ò"6c†cS‚#¦6öÆ÷"‡¢æ6öÆ÷"“°¢6öç7BfÆö÷$w&†–3×¦öæTfÆö÷$w&†–2†bÇ¢Æ&÷VæG2“°¢&WGW&âsÆr6Æ73Ò&‡fÒ×¦öæRr²‡&Wf–Wsòr†2Ö–æÆ–æR×&Wf–Wrs¢rr’²†—57F—#òr‡fÒ×7F—"×¦öæRs¢rr’²r"&öÆSÒ&'WGFöâ"F&–æFWƒÒ#"öæ6Æ–6³Ò"r¶öæ6Æ–6²°¢r"öæ¶W–F÷vãÒ&–b†WfVçBæ¶W“ÓÓÒb33“´VçFW"b33“·ÇÆWfVçBæ¶W“ÓÓÒb33“²b33“²—¶WfVçBç&WfVçDFVfVÇB‚“²r¶öæ6Æ–6²²wÒ"&–ÖÆ&VÃÒ$÷Vâr¶‚‡¢ææÖR’²r#âr°¢sÇF‚CÒ"r¶‚‡¢çF‚’²r"f–ÆÃÒ"r¶&6Tf–ÆÂ²r"7G&ö¶SÒ"3fScCs‚"7G&ö¶R×v–GFƒÒ#2"7G&ö¶RÖÆ–æV¦ö–ãÒ'&÷VæB"óâr°¢&Wf–Wr¶fÆö÷$w&†–2²‡&Wf–Wsòrs¢sÇFW‡B6Æ73Ò&‡fÒ×&ööÒÖæÖR"FW‡BÖæ6†÷#Ò&Ö–FFÆR"ƒÒ"r¶Æ&VÅ‚çFôf—†VBƒ’²r"“Ò"r¶Æ&VÅ’çFôf—†VBƒ’²r#âr¶‚‡¢ç6†÷'GÇÇ¢ææÖR’²sÂ÷FW‡Câr’²sÂösâs°¢Ò’æ¦ö–â‚""“°¢6öç7B–ç3Ö'"†Òæææ÷FF–öç2’æf–ÇFW"†Óæbfö´–B†æ–B’bdçVÖ&W"æ—4f–æ—FR„çVÖ&W"†ç‚’’bdçVÖ&W"æ—4f–æ—FR„çVÖ&W"†ç’’’bffÆö÷'2æ–æ6ÇVFW2†çF&vWDfÆö÷"’’æÖ†Óç°¢6öç7BƒÔçVÖ&W"†ç‚’Ç“ÔçVÖ&W"†ç’’ÆöãÒ&†÷W6Uf—7VÄföÆÆ÷tÆ–æ²‚r"¶çF&vWDfÆö÷"²"r’#°¢–b‡ƒÆÆ–Ö—G5³×ÇÇƒæÆ–Ö—G5³Ò¶Æ–Ö—G5³%×ÇÇ“ÆÆ–Ö—G5³×ÇÇ“æÆ–Ö—G5³Ò¶Æ–Ö—G5³5Ò—&WGW&â"#°¢&WGW&âsÆr6Æ73Ò&‡fÒÖææ÷FF–öâ"&öÆSÒ&'WGFöâ"F&–æFWƒÒ#"&–ÖÆ&VÃÒ"r¶‚†ææ÷FWÇÆæÆ&VÇÇÂ$÷VâÆ–æ¶VBfÆö÷""’²r"öæ6Æ–6³Ò"r¶öâ°¢r"öæ¶W–F÷vãÒ&–b†WfVçBæ¶W“ÓÓÒb33“´VçFW"b33“·ÇÆWfVçBæ¶W“ÓÓÒb33“²b33“²—¶WfVçBç&WfVçDFVfVÇB‚“²r¶öâ²wÒ#âr°¢sÇ&V7BƒÒ"r²‡‚Ó3’’²r"“Ò"r²‡’ÓR’²r"v–GFƒÒ#s‚"†V–v‡CÒ#3"'ƒÒ#B"f–ÆÃÒ"6ffc–S‚"7G&ö¶SÒ"3ƒS6r"7G&ö¶R×v–GFƒÒ#""óâr°¢sÇFW‡BƒÒ"r·‚²r"“Ò"r²‡’³R’²r"6Æ73Ò&‡fÒÖææ÷FF–öâÖÆ&VÂ"FW‡BÖæ6†÷#Ò&Ö–FFÆR#âr¶‚†æÆ&VÇÇÂ.(iæW‡B"’²sÂ÷FW‡CãÂösâs°¢Ò’æ¦ö–â‚""“°¢6öç7B&6¶–æsÖ—4f—'7CòsÇ&V7BƒÒ#b"“Ò#’"v–GFƒÒ#3C‚"†V–v‡CÒ#Cƒ"'ƒÒ#‚"f–ÆÃÒ"6fcvf""7G&ö¶SÒ"6Cv6VFR"7G&ö¶R×v–GFƒÒ#""óâs ¢sÇ&V7BƒÒ#SR"“Ò#ƒb"v–GFƒÒ#C3"†V–v‡CÒ#Ss""'ƒÒ#r"f–ÆÃÒ"6f6c–fb"7G&ö¶SÒ"6FVCFS‚"7G&ö¶R×v–GFƒÒ#""óâs°¢6öç7BVçG'“Ö—4f—'7CòsÇF‚CÒ$ÓƒRCcgbÓ6Ó6ƒCR"7G&ö¶SÒ"33&CC’"7G&ö¶R×v–GFƒÒ#2"óâr°¢sÇFW‡BƒÒ###"“Ò#Cƒ""FW‡BÖæ6†÷#Ò&Ö–FFÆR"6Æ73Ò&‡fÒÖVçG'’ÖÆ&VÂ#äg&öçBFö÷"+r7G&VWCÂ÷FW‡Câs¢"#°¢&WGW&âsÆF—b6Æ73Ò&‡fÒ×6¶WF6‚#ãÆF—b6Æ73Ò&‡fÒ×6¶WF6‚Ö†VF–ær#ãÇ7G&öæsâr¶‚†b’²rÆ–÷WCÂ÷7G&öæsãÇ7ãâr²††5&Wf–Ww3ò%&ööÒÆ–÷WG26†÷vâ–æÆ–æR+rF&ööÒ÷"ÖVBö&¦V7B#¢%F6öÆ÷&VB&V"’²sÂ÷7ããÂöF—câr°¢sÇ7fr6Æ73Ò&‡fÒÖG&v–ærr²††5&Wf–Ww3òr‡fÒÖ†2×&Wf–Ww2s¢rr’²r"f–Wt&÷ƒÒ"r·f–Wt&÷‚²r"&öÆSÒ&w&÷W"&–ÖÆ&VÃÒ$&÷†–ÖFR&ööÒ¦öæRF–w&Òv—F‚&ööÒ&Wf–Ww2&6VBöâ6fVB&ööÒÆ–÷WG2â#âr°¢&6¶–ær·F‡2·–ç2¶VçG'’²sÂ÷7fsâr°¢sÇ6Æ73Ò&‡fÒÖF—66Æ–ÖW"#å66†VÖF–2G&6VBg&öÒ–÷W"÷&–v–æÂ67&VVç6†÷C²÷&–VçFF–öâ&W6W'fVBâ&ööÒ÷WFÆ–æW2&R&÷†–ÖFRÂæ÷BÖV7W&VBvÆÇ2ÂæBF†RF–w&Ò—2æ÷Bæf–vF–öâ÷"6fWG’ÆâãÂ÷ãÂöF—câs°§Ð ¦gVæ7F–öâF—&V7F÷'’†bÆÒ—°¢&WGW&âsÆF—b6Æ73Ò&‡fÒÖF—&V7F÷'’#ãÆF—b6Æ73Ò&‡fÒÖF—&V7F÷'’Ö†VF–ær#ãÇ7G&öæsâr¶‚†cÓÓÒu6V6öæBfÆö÷"sòu6V6öæBfÆö÷"&öö×2s¢†ÒçF—FÆWÇÆb’’²sÂ÷7G&öæsãÇ6ÖÆÃåF&ööÒFòVçFW"ÂF†VâW‡Æ÷&R—G2ÖVB—FV×2âW6R&Wf–÷W2æBæW‡BFòF÷W"F†RfÆö÷"ãÂ÷6ÖÆÃãÂöF—câr°¢sÆF—b6Æ73Ò&‡fÒÖF—&V7F÷'’Öw&–B#âr¶'"†Òç¦öæW2’æf–ÇFW"‡£Óæö´–B‡¢æ–B’’æÖ‡£Óç°¢6öç7B†÷F÷3Ö'"‡¢ç†÷F÷2’æf–ÇFW"†öµ†÷Fò“°¢&WGW&âsÆ'WGFöâG—SÒ&'WGFöâ"6Æ73Ò&‡fÒ×&ööÒ×F–ÆR‡fÒ×†÷Fò×&ööÒ×F–ÆR"FF×&ööÒÖ–CÒ"r¶‚‡¢æ–B’²r"7G–ÆSÒ"ÒÖ‡fÒ×¦öæS¢r¶6öÆ÷"‡¢æ6öÆ÷"’²r"öæ6Æ–6³Ò"r¶7B†bÇ¢’²r#âr°¢sÇ7â6Æ73Ò&‡fÒ×&ööÒ×F–ÆR×†÷Fò"FF×&ööÒ×†÷Fò×¦öæSÒ"r¶‚‡¢æ–B’²r"&–Ö†–FFVãÒ'G'VR#ãÇ7â6Æ73Ò&‡fÒ×F–ÆRÖÖ&²#î(È#Â÷7ããÂ÷7ãâr°¢sÆ#âr¶‚‡¢ææÖR’²sÂö#ãÇ6ÖÆÃâr·†÷F÷2æÆVæwF‚²r6fVB†÷Fòr²‡†÷F÷2æÆVæwFƒÓÓÓòrs¢w2r’²sÂ÷6ÖÆÃâr°¢sÇ7â6Æ73Ò&‡fÒ×F–ÆRÖ÷Vâ#âr²‡¢æ–CÓÓÒ'7F—'5÷W#ò$vòW7F—'2(¢#§¢æ–CÓÓÒ'7F—'5÷Fõ÷F†—&B#ò$vòFòF†—&BfÆö÷"(¢#¢$VçFW"&ööÒ(¢"’²sÂ÷7ããÂö'WGFöãâs°¢Ò’æ¦ö–â‚""’²sÂöF—cãÂöF—câs°§Ð¦7–æ2gVæ7F–öâ‡–G&FU&ööÔF—&V7F÷'•†÷F÷2†bÆÒ—°¢–b‚öæÆ–æR‚—ÇÂÒ—&WGW&ã°¢6öç7B¦öæW3Ö'"†Òç¦öæW2’æf–ÇFW"‡£Óæö´–B‡¢æ–B’“°¢6öç7B&Vg3×¦öæW2æÖ‡£Óâ‡·¦öæS§¢Æ–C¦'"‡¢ç†÷F÷2’æf–æB†öµ†÷Fò—ÇÆçVÆÇÒ’“°¢–b‡&Vg2ç6öÖR‡ƒÓâ‚æ–B’—°¢G'—°¢6öç7B¶FFÓÖv—B6Æ÷VD6Æ–VçBæg&öÒ‚'†÷Fõö–æ&÷‚"’ç6VÆV7B‚&–BÇF—FÆRÆæ÷FW2Æ7&VFVEöB"¢æ–â‚&6FVv÷'’"Å²&†÷W6UöÖ"Â&†öÖU÷&öw&W72%Ò’æW‚&fÆö÷%öÆ&VÂ"Æb¢æ÷&FW"‚&7&VFVEöB"Ç¶66VæF–æs¦fÇ6WÒ’æÆ–Ö—Bƒ“°¢6öç7B6fVCÖFFÇÅµÓ°¢f÷"†6öç7B&Vböb&Vg2—°¢–b‡&Vbæ–B–6öçF–çVS°¢6öç7BæÖS×7G"‡&Vbç¦öæRææÖR’çG&–Ò‚’çFôÆ÷vW$66R‚“°¢ÆWBÖF6ƒÖæÖS÷6fVBæf–æB‡Óæöµ†÷Fò‡æ–B’bb‡7G"‡çF—FÆR’²""·7G"‡ææ÷FW2’’çFôÆ÷vW$66R‚’æ–æ6ÇVFW2†æÖR’“¦çVÆÃ°¢–b‚ÖF6‚bfæÖRæ–æ6ÇVFW2‚&&F‚"’–ÖF6ƒ×6fVBæf–æB‡Óæöµ†÷Fò‡æ–B’bbö&F‚ö’çFW7B‡7G"‡çF—FÆR’²""·7G"‡ææ÷FW2’’“°¢&Vbæ–CÖÖF6ƒòæ–GÇÆçVÆÃ°¢Ð¢Ö6F6‚†R—·Ð¢Ð¢6öç7B–G3×&Vg2æÖ‡ƒÓç‚æ–B’æf–ÇFW"„&ööÆVâ“°¢–b‚–G2æÆVæwF‚—&WGW&ã°¢G'—°¢6öç7B¶FFÓÖv—B6Æ÷VD6Æ–VçBæg&öÒ‚'†÷Fõö–æ&÷‚"’ç6VÆV7B‚&–BÆ–ÖvUöFF"’æ–â‚&–B"Æ–G2“°¢f÷"†6öç7B&÷röbFFÇÅµÒ—°¢–b‚õæFF¦–ÖvUÂö§Vs¶&6ScBÅ¶×£Ó’²óÕÒ²Bö’çFW7B‡&÷ræ–ÖvUöFFÇÂ""’–6öçF–çVS°¢6öç7B¦öæS×&Vg2æf–æB‡ƒÓç‚æ–CÓÓ×&÷ræ–B“òç¦öæS°¢6öç7B†÷7C×¦öæRbd'&’æg&öÒ†Fö7VÖVçBçVW'•6VÆV7F÷$ÆÂ‚"æ‡fÒ×&ööÒ×F–ÆR×†÷Fò"’’æf–æB†æöFSÓææöFRæFF6WBç&ööÕ†÷Fõ¦öæSÓÓÕ7G&–ær‡¦öæRæ–B’“°¢–b††÷7B—¶6öç7B–ÖsÖFö7VÖVçBæ7&VFTVÆVÖVçB‚&–Ör"“¶–ÖræÇCÒ"#¶–Örç7&3×&÷ræ–ÖvUöFF¶†÷7Bç&WÆ6T6†–ÆG&Vâ†–Ör“·Ð¢Ð¢Ö6F6‚†R—·Ð§Ð¦gVæ7F–öâ6öææV7B†Ò—°¢6öç7B3Ö'"†Òæ6öææV7F–öç2’æf–ÇFW"‡ƒÓç‚bg‚æÆ&VÂbg‚æg&öÒbg‚çFò“°¢–b‚2æÆVæwF‚—&WGW&â"#°¢&WGW&âsÇ6V7F–öâ6Æ73Ò&‡fÒÖ6öææV7F–öç2"&–ÖÆ&VÃÒ$†÷W6R6öææV7F–öâ&÷WFW2#ãÇ7G&öæsä†÷rF†W6R76W26öææV7CÂ÷7G&öæsâr°¢2æÖ‡ƒÓâsÆF—b6Æ73Ò&‡fÒÖ6öææV7F–öâ#ãÆ#âr¶‚‡‚æÆ&VÂ’²sÂö#âr°¢sÆF—b6Æ73Ò&‡fÒ×&÷WFR#ãÇ7â6Æ73Ò&‡fÒ×&÷WFRÖVæB#î(È"r¶‚‡‚æg&öÒ’²sÂ÷7ãâr°¢'"‡‚çf–’æÖ‡cÓâsÆF—b6Æ73Ò&‡fÒ×&÷WFR×7FW#ãÇ7â6Æ73Ò&‡fÒ×7FW×&–Â"&–Ö†–FFVãÒ'G'VR#î(i3Â÷7ããÇ7ãâr¶‚‡b’²sÂ÷7ããÂöF—câr’æ¦ö–â‚""’°¢sÇ7â6Æ73Ò&‡fÒ×&÷WFRÖVæB#î(È"r¶‚‡‚çFò’²sÂ÷7ããÂöF—câr°¢‡‚ç7FGW3òsÇâr¶‚‡‚ç7FGW2’²sÂ÷âs¢""’²sÂöF—câr’æ¦ö–â‚""’²sÂ÷6V7F–öãâs°§Ð¦gVæ7F–öâG&r†bÆÒ—°¢6öç7Bv÷&³Ö'"†ÒæfÆ÷r’æÖ‡ƒÓâsÆF—b6Æ73Ò&‡fÒÖfÆ÷rÖÆ–æR#ãÆ#âr¶‚‡‚æg&öÒ’²sÂö#ãÇ7ãî(i#Â÷7ããÆ#âr¶‚‡‚çFò’²sÂö#âr°¢sÇ6ÖÆÃâr¶‚‡‚ç7FGW2’²sÂ÷6ÖÆÃãÂöF—câr’æ¦ö–â‚""“°¢6öç7BFöFóÖ'"†ÒçVæF–ær•³Ó°¢6öç7B÷&–v–æÃÖöµ†÷Fò†Òç6÷W&6U†÷Fô–B“òsÆ'WGFöâG—SÒ&'WGFöâ"6Æ73Ò&'Fâ‡fÒ×6÷W&6R×†÷Fò"öæ6Æ–6³Ò'†÷Fô–æ&÷…f–Wr‚b33“²r¶Òç6÷W&6U†÷Fô–B²rb33“²Âb33“¶Öb33“²’#ï	ù;r÷&–v–æÂ&ö&÷BÖÂö'WGFöãâs¢"#°¢òò¶VWF†R6Æ–6¶&ÆRÆ–÷WBæBF6·2Wg&öçBâÖ–ær6fVG2æB7F— ¢òò&÷WFRWf–FVæ6R&R7W÷'F–ær&VfW&Væ6RÖFW&–ÂÂæ÷BF†RÖ–â67&VVâà¢6öç7B&VfW&Væ6W3ÒsÆF—b6Æ73Ò&‡fÒ×FV6†æ–6ÂÖFWF–Â#âr°¢†Òç7VÖÖ'“òsÇ6Æ73Ò&‡fÒÖF—66Æ–ÖW"#âr¶‚†Òç7VÖÖ'’’²sÂ÷âs¢""’°¢÷&–v–æÂ¶6öææV7B†Ò’°¢‡v÷&³òsÇ6V7F–öâ6Æ73Ò&‡fÒÖfÆ÷r#ãÇ7G&öæsî(irv†W&RF†–æw2vVçCÂ÷7G&öæsâr·v÷&²²sÂ÷6V7F–öãâs¢""’°¢‡FöFóòsÆF—b6Æ73Ò&‡fÒÖæW‡B#ãÆ#äæW‡BÖ–ær7FWÂö#ãÇâr¶‚‡FöFò’²sÂ÷âr°¢sÆ'WGFöâ6Æ73Ò&'Fâ6ÖÆÂ"G—SÒ&'WGFöâ"öæ6Æ–6³Ò&÷Vå†÷Fô–æ&÷‚‚b33“¶†÷W6UöÖb33“²Âb33“²b33“²Âb33“²r¶b²rb33“²’#â²FB&ööÒ†÷F÷3Âö'WGFöããÂöF—câs¢""’°¢f7G2†Ò’²sÂöF—câs°¢&WGW&âsÆF—b6Æ73Ò&‡fÒ×&VæFW&VB#âr²†Òæ¶–æCÓÓÒ'66†VÖF–2#öÖ6¶WF6‚†bÆÒ“¦F—&V7F÷'’†bÆÒ’’°¢sÆFWF–Ç26Æ73Ò&‡fÒÖÖ–ærÖ&6¶w&÷VæB#ãÇ7VÖÖ'“äÖ–æræ÷FW2Â7F—"6öææV7F–öç2æBWf–FVæ6R(£Â÷7VÖÖ'“âr°¢&VfW&Væ6W2²sÂöFWF–Ç3ãÂöF—câs°§Ð¦gVæ7F–öâÖVE&ööÔ—FV×2‡&ööÒ—°¢–b‚&ööÒ—&WGW&âµÓ°¢6öç7BÆö4–G3ÖæWr6WB†'"‡7FFRæ–çfVçF÷'”Æö6F–öç2’æf–ÇFW"†Æö3Óå7G&–ær†Æö2ç&ööÔ–B“ÓÓÕ7G&–ær‡&ööÒæ–B’’æÖ†Æö3Óå7G&–ær†Æö2æ–B’’“°¢&WGW&â'"‡7FFRæ–çfVçF÷'”—FV×2’æf–ÇFW"‡ƒÓå7G&–ær‡‚ç&ööÔ–B“ÓÓÕ7G&–ær‡&ööÒæ–B—ÇÆÆö4–G2æ†2…7G&–ær‡‚æÆö6F–öä–B’’“°§Ð¦gVæ7F–öâÖVE&öw&W746&B†bÇ¢Ç&ööÒ—°¢6öç7BF6·3×G&6¶VE&ööÕF6·2†bÇ¢Ç&ööÒ’ÆFöæS×F6·2æf–ÇFW"‡ƒÓç‚æFöæR’æÆVæwF‚ÇW&6VçC×F6·2æÆVæwFƒôÖF‚ç&÷VæBƒ¦FöæR÷F6·2æÆVæwF‚“¦çVÆÃ°¢6öç7B–çfVçF÷'“ÖÖVE&ööÔ—FV×2‡&ööÒ“°¢6öç7B7F–öã×£òv†÷W6Uf—7VÄ÷Vå¦öæR‚b33“²r¶b²rb33“²Âb33“²r·¢æ–B²rb33“²’s ¢v†öÖT÷Vå&ööÔ–çfVçF÷'’‚b33“²r¶‚…7G&–ær‡&ööÒæ–GÇÂ""’’²rb33“²’s°¢6öç7BF—FÆS×£÷¢ææÖS§&ööÒææÖS°¢&WGW&âsÆ'WGFöâG—SÒ&'WGFöâ"6Æ73Ò&†÷W6V†öÆB×&ööÒ×&öw&W72"öæ6Æ–6³Ò"r¶7F–öâ²r#âr°¢sÇ7ããÆ#âr¶‚‡F—FÆR’²sÂö#ãÇ6ÖÆÃâr²‡F6·2æÆVæwFƒöFöæR²ròr·F6·2æÆVæwF‚²rF6·26ö×ÆWFRs¢tæò&ööÒF6·2&V6÷&FVBr’²sÂ÷6ÖÆÃâr°¢sÇ6ÖÆÃâr¶–çfVçF÷'’æÆVæwF‚²r6öæf—&ÖVB—FVÒG—Rr²†–çfVçF÷'’æÆVæwFƒÓÓÓò"#¢'2"’²sÂ÷6ÖÆÃãÂ÷7ãâr°¢sÇ7ããÆ#âr²‡W&6VçCÓÓÖçVÆÃò~(	Bs§W&6VçB²rRr’²sÂö#âr°¢sÆ’&–Ö†–FFVãÒ'G'VR#ãÆVÒ7G–ÆSÒ'v–GFƒ¢r²‡W&6VçGÇÃ’²rR#ãÂöVÓãÂö“ãÂ÷7ããÂö'WGFöãâs°§Ð¦gVæ7F–öâ&ööÕ&öw&W74‡FÖÂ†b—°¢6öç7BÖÖvWB†b’Æ¶æ÷vãÖ'"†Öòç¦öæW2’æf–ÇFW"‡£Óç¢bfö´–B‡¢æ–B’“°¢6öç7BfÆö÷%&öö×3Ö'"‡7FFRæ†÷W6U&öö×2’æf–ÇFW"‡#Óç7G"‡"æfÆö÷"“ÓÓÖbbg7G"‡"ææÖR’çG&–Ò‚’“°¢6öç7BÆö6ÅW6VCÖæWr6WB‚“°¢6öç7BÖVCÖ¶æ÷vâæÖ‡£Óç¶6öç7B&ööÓÖÆö6Å&ööÒ†bÇ¢“¶–b‡&ööÒ–Æö6ÅW6VBæFB‡7G"‡&ööÒæ–B’“·&WGW&âÖVE&öw&W746&B†bÇ¢Ç&ööÒ—Ò“°¢6öç7BÆö6ÄöæÇ“ÖfÆö÷%&öö×2æf–ÇFW"‡#ÓâÆö6ÅW6VBæ†2‡7G"‡"æ–B’’’æÖ‡&ööÓÓæÖVE&öw&W746&B†bÆçVÆÂÇ&ööÒ’“°¢6öç7B&÷w3ÖÖVBæ6öæ6B†Æö6ÄöæÇ’“°¢–b‡&÷w2æÆVæwF‚—&WGW&âsÆF—b6Æ73Ò&†÷W6V†öÆB×&ööÒ×&öw&W72Öw&–B#âr·&÷w2æ¦ö–â‚""’²sÂöF—câr°¢sÇ6Æ73Ò&†÷W6V†öÆB×&öw&W72ÖF—66Æ–ÖW"#åW&6VçFvW26†÷r6ö×ÆWFVB6fVB&ööÒF6·2Âæ÷Bâ÷fW&ÆÂ6ÆVæÆ–æW7266÷&RâVç&V6÷&FVBv÷&²7F—2Væ¶æ÷vâãÂ÷âs°¢&WGW&âsÇ6Æ73Ò&†÷W6V†öÆB×&öw&W72ÖV×G’#âr°¢†öæÆ–æR‚’bbÖòtÆöF–ærÖVB&öö×>(
+bs¢tæò&ööÒF6·2÷"–çfVçF÷'’Æö6F–öç2&RÆ–æ¶VBFòF†—2fÆö÷"–WBâ–÷R6âFF†RF–w&Ò÷"FB&ööÒâr’°¢sÂ÷âs°§Ð¦mxã»h‘éì¶»§q«^t°(€€Ý¥¹‘½Ü¹‘½±±åI½½µM•¹•!Ñµ° ¤¬œñ‘¥Ø±…ÍÌô‰…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰‰Ñ¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹” ˜ŒÌäíM•½¹™±½½È˜ŒÌäì°˜ŒÌäí‘½±±ä˜ŒÌäì¤ˆûŠ@I½½´‘•Ñ…¥±Ìð½‰ÕÑÑ½¸øð½‘¥Øøœ°(€€€‰±½Í”ˆ±±½Í•5½‘…°¤ì(õ…Ñ ¡”¥íµ½‘…° ‰½±±äÌ‰•‘É½½´ˆ°ˆñÀù½Õ±¹½Ð½Á•¸Ñ¡”¥¹Ñ•É…Ñ¥Ù”µ½‘•°¸I•™É•Í …¥±ä1¥™”¸ð½Àøˆ°‰±½Í”ˆ±±½Í•5½‘…°¥ô)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±I•ÑÕÉ¹Q½±½½Èõ™Õ¹Ñ¥½¸¡˜¥ì(¥˜ …™±½½ÉÌ¹¥¹±Õ‘•Ì¡˜¥ññÑåÁ•½˜µ½‘…°„ôô‰™Õ¹Ñ¥½¸ˆ¥É•ÑÕÉ¸ì(µ½‘…°¡˜¬ˆƒ
+Ü±½½Èµ…Àˆ°œñ‘¥Ø±…ÍÌô‰¡Ù´µ™±½½ÈµÉ•ÑÕÉ¸ˆøœ­Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±5…Á!Ñµ°¡˜¤¬(€œñ‘¥Ø±…ÍÌô‰…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰‰Ñ¸ˆ½¹±¥¬ô‰±½Í•5½‘…° ¤ˆù±½Í”µ…Àð½‰ÕÑÑ½¸øð½‘¥Øøð½‘¥Øøœ°‰±½Í”ˆ±±½Í•5½‘…°¤ì(AÉ½µ¥Í”¹É•Í½±Ù” ¤¹Ñ¡•¸  ¤ôùÝ¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±5…Á!å‘É…Ñ”¡˜¤¤¹…Ñ   ¤ôùíô¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±½±±½Ý1¥¹¬õ™Õ¹Ñ¥½¸¡Ñ…É•Ð¥ì(¥˜ …™±½½ÉÌ¹¥¹±Õ‘•Ì¡Ñ…É•Ð¤¥É•ÑÕÉ¸ì(¥˜¡ÑåÁ•½˜½Á•¹!½ÕÍ•±½½É5…Àôôô‰™Õ¹Ñ¥½¸ˆ¥í½Á•¹!½ÕÍ•±½½É5…À¡Ñ…É•Ð¤íÉ•ÑÕÉ¹ô(¥˜¡ÑåÁ•½˜¡½µ•M•Ñ5…Á±½½Èôôô‰™Õ¹Ñ¥½¸ˆ¥í¡½µ•M•Ñ5…Á±½½È¡Ñ…É•Ð¥ô)ôì)™Õ¹Ñ¥½¸Á•ÉÍ½¹I½½µi½¹”¡˜±¹…µ”±¥ÍM•±˜¥ì(½¹ÍÐ¹½Éµ…±¥é”õÙ…±Õ”ôùÍÑÈ¡Ù…±Õ”¤¹Ñ½1½Ý•É…Í” ¤¹É•Á±…” ½my„µèÀ´åt½œ°ˆˆ¤ì(½¹ÍÐÁ•ÉÍ½¸õ¹½Éµ…±¥é”¡¹…µ”¤±…±¥…Í•ÌõÁ•ÉÍ½¸ôôô‰‘•µ¥ÑÉ¤ˆýl‰‘•µ¥ÑÉ¤ˆ°‰‘¥µ¥ÑÉ¤‰témÁ•ÉÍ½¹tì(½¹ÍÐé½¹•Ìõ…ÉÈ¡•Ð¡˜¤ü¹é½¹•Ì¤¹™¥±Ñ•È¡èôù½­%¡è¹¥¤¤ì(½¹ÍÐ‘¥É•Ðõé½¹•Ì¹™¥¹¡èôùì(€½¹ÍÐ±…‰•°õ¹½Éµ…±¥é”¡è¹¹…µ”¤¬ˆ€ˆ­¹½Éµ…±¥é”¡è¹Í¡½ÉÑñðˆˆ¤ì(€É•ÑÕÉ¸…±¥…Í•Ì¹Í½µ”¡…±¥…Ìôù…±¥…Ì˜™±…‰•°¹¥¹±Õ‘•Ì¡…±¥…Ì¤¤ì(ô¤ì(¥˜¡‘¥É•Ð¥É•ÑÕÉ¸‘¥É•Ðì(¥˜¡¥ÍM•±˜¥ì(€½¹ÍÐ‰•‘É½½´õé½¹•Ì¹™¥¹¡èôø½µ½µñµ…ÍÑ•ÉñÁÉ¥µ…Éåñµ¥¡•±±”½¤¹Ñ•ÍÐ¡ÍÑÈ¡è¹¹…µ”¤¬ˆ€ˆ­ÍÑÈ¡è¹Í¡½ÉÐ¤¤˜˜½É½½µñ‰•½¤¹Ñ•ÍÐ¡ÍÑÈ¡è¹¹…µ”¤¬ˆ€ˆ­ÍÑÈ¡è¹Í¡½ÉÐ¤¤¤ì(€¥˜¡‰•‘É½½´¥É•ÑÕÉ¸‰•‘É½½´ì(€½¹ÍÐ‰•‘É½½µÌõé½¹•Ì¹™¥±Ñ•È¡èôø½‰•¡É½½´¤ü½¤¹Ñ•ÍÐ¡ÍÑÈ¡è¹¹…µ”¤¬ˆ€ˆ­ÍÑÈ¡è¹Í¡½ÉÐ¤¤¤ì(€¥˜¡‰•‘É½½µÌ¹±•¹Ñ ôôôÄ¥É•ÑÕÉ¸‰•‘É½½µÍlÁtì(ô(É•ÑÕÉ¸¹Õ±°ì)ô)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±½Q½A•ÉÍ½¹I½½´õ…Íå¹Œ™Õ¹Ñ¥½¸¡¹…µ”±¥ÍM•±˜õ™…±Í”¥ì(½¹ÍÐ™±½½Èõ¥ÍM•±˜ü‰Q¡¥É™±½½Èˆè‰M•½¹™±½½Èˆì(ÑÉåí±½…±MÑ½É…”¹Í•Ñ%Ñ•´ ‰‘…¥±å1¥™•5…Á¥ÉÍÑ±½½Èˆ±™±½½È¥õ…Ñ ¡”¥íô(¥˜¡ÑåÁ•½˜Í•ÑY¥•Üôôô‰™Õ¹Ñ¥½¸ˆ¥Í•ÑY¥•Ü ‰¡½ÕÍ•¡½±ˆ¤ì(ÑÉåì(€…Ý…¥ÐÝ¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±5…Á!å‘É…Ñ”¡™±½½È¤ì(€½¹ÍÐèõÁ•ÉÍ½¹I½½µi½¹”¡™±½½È±¹…µ”±¥ÍM•±˜¤ì(€¥˜¡è¥íÝ¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹”¡™±½½È±è¹¥¤íÉ•ÑÕÉ¹ô(€¥˜¡ÑåÁ•½˜µ½‘…°ôôô‰™Õ¹Ñ¥½¸ˆ¥µ½‘…° ‰I½½´µ…À¹½Ð±¥¹­•ˆ°œñÀùQ¡”€œ­ ¡¹…µ”¤¬ˆÉ½½´¥Ì½¸Ñ¡”€ˆ­ ¡™±½½È¤¬ˆ¸%ÑÌµ…À±…‰•°‘½•Ì¹½Ðµ…Ñ Ñ¡”ÁÉ½™¥±”å•Ð°Í¼$±•™ÐÑ¡”™±½½Èµ…À½Á•¸¥¹ÍÑ•…½˜Õ•ÍÍ¥¹œ¸ð½Àøˆ°‰±½Í”ˆ±±½Í•5½‘…°¤ì(õ…Ñ ¡”¥íô)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±Q½ÕÉMÑ•Àõ™Õ¹Ñ¥½¸¡˜±¥±‘•±Ñ„¥ì(½¹ÍÐé½¹•Ìõ…ÉÈ¡•Ð¡˜¤ü¹é½¹•Ì¤¹™¥±Ñ•È¡èôùè˜™½­%¡è¹¥¤¤ì(½¹ÍÐ¥¹‘•àõé½¹•Ì¹™¥¹‘%¹‘•à¡èôùè¹¥ôôõ¥¤±¹•áÐõ¥¹‘•à­9Õµ‰•È¡‘•±Ñ„¤ì(¥˜¡¹•áÐðÁññ¹•áÐøõé½¹•Ì¹±•¹Ñ ¥É•ÑÕÉ¸ì(Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹”¡˜±é½¹•Ím¹•áÑt¹¥¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±%¹Ù•¹Ñ½Éå=Á•¸õ™Õ¹Ñ¥½¸¡˜±¥¥ì(½¹ÍÐèõé½¹”¡˜±¥¤í¥˜ …è¥É•ÑÕÉ¸ì(½¹ÍÐÉ½½´õ±½…±I½½´¡˜±è¤ì(¥˜¡É½½´˜™ÑåÁ•½˜¡½µ•=Á•¹I½½µ%¹Ù•¹Ñ½Éäôôô‰™Õ¹Ñ¥½¸ˆ¥í¡½µ•=Á•¹I½½µ%¹Ù•¹Ñ½Éä¡É½½´¹¥¤íÉ•ÑÕÉ¹ô(¥˜¡ÑåÁ•½˜½Á•¹%¹Ù•¹Ñ½Éå!Õ‰M•Ñ¥½¸ôôô‰™Õ¹Ñ¥½¸ˆ¥í½Á•¹%¹Ù•¹Ñ½Éå!Õ‰M•Ñ¥½¸ ‰¥Ñ•µÌˆ¤íÉ•ÑÕÉ¹ô(¥˜¡ÑåÁ•½˜Í•ÑY¥•Üôôô‰™Õ¹Ñ¥½¸ˆ¥íÍ•ÑY¥•Ü ‰¥¹Ù•¹Ñ½Éäˆ¤íÉ•ÑÕÉ¹ô(¥˜¡ÑåÁ•½˜½Á•¹%¹Ù•¹Ñ½ÉåI½½´ôôô‰™Õ¹Ñ¥½¸ˆ¥½Á•¹%¹Ù•¹Ñ½ÉåI½½´ ˆˆ±˜¤ì)ôì)™Õ¹Ñ¥½¸ÑÉ…­•‘I½½µQ…Í­Ì¡˜±è±É½½´¥ì(½¹ÍÐ¹…µ”õMÑÉ¥¹œ¡èü¹¹…µ•ññÉ½½´ü¹¹…µ•ñðˆˆ¤¹Ñ½1½Ý•É…Í” ¤¹É•Á±…” ½my„µèÀ´åt¬½œ°ˆ€ˆ¤¹ÑÉ¥´ ¤ì(É•ÑÕÉ¸€¡ÍÑ…Ñ”¹Ñ…Í­Íññmt¤¹™¥±Ñ•È¡Ðôùì(€¥˜¡Ð¹Á…ÕÍ•‘ññÐ¹‘ÕÁ±¥…Ñ•!¥‘‘•¹ññÐ¹Ý…¥Ñ¥¹½ÉÕ¹‘Ì¥É•ÑÕÉ¸™…±Í”ì(€¥˜¡Ð¹¡½µ•5…Ái½¹•%‘ññÐ¹¡½µ•5…Á±½½È¥É•ÑÕÉ¸MÑÉ¥¹œ¡Ð¹¡½µ•5…Á±½½Éñðˆˆ¤ôôõ˜˜™MÑÉ¥¹œ¡Ð¹¡½µ•5…Ái½¹•%‘ñðˆˆ¤ôôõMÑÉ¥¹œ¡èü¹¥‘ñðˆˆ¤ì(€½¹ÍÐ…ÍÍ¥¹•õMÑÉ¥¹œ¡Ð¹¡½µ•I½½µ%‘ññÐ¹É½½µ%‘ñðˆˆ¤ì(€¥˜¡…ÍÍ¥¹•¥É•ÑÕÉ¸€„…É½½´˜™…ÍÍ¥¹•ôôõMÑÉ¥¹œ¡É½½´¹¥¤ì(€½¹ÍÐ±…‰•°õMÑÉ¥¹œ¡Ð¹Ñ¥Ñ±•ñðˆˆ¤¹Ñ½1½Ý•É…Í” ¤¹É•Á±…” ½my„µèÀ´åt¬½œ°ˆ€ˆ¤¹ÑÉ¥´ ¤ì(€É•ÑÕÉ¸MÑÉ¥¹œ¡Ð¹…Ñ•½Éåñðˆˆ¤¹Ñ½1½Ý•É…Í” ¤ôôô‰¡½µ”ˆ˜™¹…µ”˜˜ ˆ€ˆ­±…‰•°¬ˆ€ˆ¤¹¥¹±Õ‘•Ì ˆ€ˆ­¹…µ”¬ˆ€ˆ¤ì(ô¤ì)ô)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±½µÁ±•Ñ•Q…Í¬õ…Íå¹Œ™Õ¹Ñ¥½¸¡Ñ…Í­%±˜±é½¹•%¥ì(½¹ÍÐÐô¡ÍÑ…Ñ”¹Ñ…Í­Íññmt¤¹™¥¹¡àôùMÑÉ¥¹œ¡à¹¥¤ôôõMÑÉ¥¹œ¡Ñ…Í­%¤¤í¥˜ …ÑññÐ¹‘½¹”¥É•ÑÕÉ¸ì(…Ý…¥ÐÑ½±•Q…Í¬¡Ñ…Í­%±ÑÉÕ”¤ì(Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹”¡˜±é½¹•%¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±‘‘i½¹•Q…Í¬õ™Õ¹Ñ¥½¸¡˜±¥¥ì(½¹ÍÐèõé½¹”¡˜±¥¤í¥˜ …éññÑåÁ•½˜½Á•¹Q…Í¬„ôô‰™Õ¹Ñ¥½¸ˆ¥É•ÑÕÉ¸ì(½¹ÍÐÉ½½´õ±½…±I½½´¡˜±è¤ì(½Á•¹Q…Í¬ ˆˆ°ˆˆ±™…±Í”±íÉ½½µ%éÉ½½´ü¹¥‘ñðˆˆ±™±½½Èé˜±é½¹•%é¥±É½½µ9…µ”éè¹¹…µ•ñð‰I½½´‰ô¤ì)ôì)™Õ¹Ñ¥½¸µ…É­•ÉQ…Í­-•ä¡À±¥¹‘•à¥ì(½¹ÍÐ¥õÍÑÈ¡Àü¹¥‘ñðˆˆ¤¹ÑÉ¥´ ¤±±…‰•°õÍÑÈ¡Àü¹±…‰•±ñðˆˆ¤¹ÑÉ¥´ ¤ì(É•ÑÕÉ¸€‰¡½ÕÍ”µµ…É­•Èèˆ¬¡¥‘ñð¡±…‰•°ý±…‰•°¬ˆŒˆ­¥¹‘•àè‰µ…É­•È´ˆ­¥¹‘•à¤¤ì)ô)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±‘‘5…É­•ÉQ…Í¬õ™Õ¹Ñ¥½¸¡˜±¥±¥¹‘•à¥ì(¥˜ …™±½½ÉÌ¹¥¹±Õ‘•Ì¡˜¥ñð…½­%¡¥¥ññÑåÁ•½˜½Á•¹Q…Í¬„ôô‰™Õ¹Ñ¥½¸ˆ¥É•ÑÕÉ¸ì(½¹ÍÐèõé½¹”¡˜±¥¤±Àõ…ÉÈ¡èü¹µ…É­•ÉÌ¥m9Õµ‰•È¡¥¹‘•à¥tí¥˜ …éñð…À¥É•ÑÕÉ¸ì(½¹ÍÐÉ½½´õ±½…±I½½´¡˜±è¤±½‰©•Ñ9…µ”õÍÑÈ¡À¹±…‰•±ñð‰5…ÁÁ•½‰©•Ðˆ¤±½‰©•Ñ-•äõµ…É­•ÉQ…Í­-•ä¡À±¥¹‘•à¤ì(±½Í•5½‘…° ¤ì(½Á•¹Q…Í¬ ˆˆ°ˆˆ±™…±Í”±íÉ½½µ%éÉ½½´ü¹¥‘ñðˆˆ±™±½½Èé˜±é½¹•%é¥±É½½µ9…µ”éè¹¹…µ•ñð‰I½½´ˆ±½‰©•Ñ9…µ”±½‰©•Ñ-•åô¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±%¹Ñ•É…Ñ5…É­•Èõ™Õ¹Ñ¥½¸¡˜±¥±¥¹‘•à¥ì(¥˜ …™±½½ÉÌ¹¥¹±Õ‘•Ì¡˜¥ñð…½­%¡¥¥ññÑåÁ•½˜µ½‘…°„ôô‰™Õ¹Ñ¥½¸ˆ¥É•ÑÕÉ¸ì(½¹ÍÐèõé½¹”¡˜±¥¤±Àõ…ÉÈ¡èü¹µ…É­•ÉÌ¥m9Õµ‰•È¡¥¹‘•à¥tí¥˜ …éñð…À¥É•ÑÕÉ¸ì(½¹ÍÐ½‰©•Ñ9…µ”õÍÑÈ¡À¹±…‰•±ñð‰5…ÁÁ•½‰©•Ðˆ¤±½‰©•Ñ-•äõµ…É­•ÉQ…Í­-•ä¡À±¥¹‘•à¤ì(½¹ÍÐ½‰©•ÑQ…Í­Ìô¡ÍÑ…Ñ”¹Ñ…Í­Íññmt¤¹™¥±Ñ•È¡Ðôø…Ð¹‘ÕÁ±¥…Ñ•!¥‘‘•¸˜˜…Ð¹Á…ÕÍ•˜™MÑÉ¥¹œ¡Ð¹¡½µ•5…Á±½½Éñðˆˆ¤ôôõ˜˜™MÑÉ¥¹œ¡Ð¹¡½µ•5…Ái½¹•%‘ñðˆˆ¤ôôõ¥˜™MÑÉ¥¹œ¡Ð¹¡½µ•=‰©•Ñ-•åñðˆˆ¤ôôõ½‰©•Ñ-•ä¤ì(½¹ÍÐÑ…Í­1¥ÍÐõ½‰©•ÑQ…Í­Ì¹±•¹Ñ ý½‰©•ÑQ…Í­Ì¹µ…À¡Ðôøœñ‘¥Ø±…ÍÌô‰¡Ù´µ½‰©•ÐµÑ…Í¬µÉ½ÜˆøñÍÁ…¸øñˆøœ­ ¡Ð¹Ñ¥Ñ±•ñð‰Q…Í¬ˆ¤¬œð½ˆøñÍµ…±°øœ¬¡Ð¹‘½¹”ü‹ŠrL½µÁ±•Ñ”ˆè‰MÑ¥±°Ñ¼‘¼ˆ¤¬œð½Íµ…±°øð½ÍÁ…¸øœ¬¡Ð¹‘½¹”üœœèœñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸Íµ…±°ÁÉ¥µ…ÉäˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±½µÁ±•Ñ•Q…Í¬ ˜ŒÌäìœ­ ¡Ð¹¥¤¬œ˜ŒÌäì°˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆûŠrL½¹”ð½‰ÕÑÑ½¸øœ¤¬œð½‘¥Øøœ¤¹©½¥¸ ˆˆ¤èœñÀ±…ÍÌô‰µÕÑ•Íµ…±°ˆù9¼Ñ…Í­Ì…É”±¥¹­•Ñ¼Ñ¡¥Ì½‰©•Ðå•Ð¸ð½Àøœì(½¹ÍÐ‘•Ñ…¥±ÌôœñÍ•Ñ¥½¸±…ÍÌô‰¡Ù´µ½‰©•Ðµ‘•Ñ…¥°ˆøñÍÁ…¸±…ÍÌô‰¡Ù´µ½‰©•Ðµ¥½¸ˆ…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆûŠr˜ð½ÍÁ…¸øñ‘¥ØøñÍµ…±°ù%8Q!%LI==4ð½Íµ…±°øñ Èøœ­ ¡À¹±…‰•±ñð‰5…ÁÁ•½‰©•Ðˆ¤¬œð½ Èøð½‘¥Øøð½Í•Ñ¥½¸øœ¬(€¡À¹ÍÑ…ÑÕÌüœñÀ±…ÍÌô‰¡Ù´µ½‰©•ÐµÍÑ…ÑÕÌˆøœ­ ¡À¹ÍÑ…ÑÕÌ¤¬œð½Àøœèˆˆ¤¬(€¡À¹¹½Ñ”üœñ‘¥Ø±…ÍÌô‰¡Ù´µ½‰©•Ðµ¹½Ñ”ˆøœ­ ¡À¹¹½Ñ”¤¬œð½‘¥Øøœèˆˆ¤¬(€œñÍ•Ñ¥½¸±…ÍÌô‰¡Ù´µ½‰©•ÐµÑ…Í­Ìˆøñ‘¥ØøñˆùÑ¥½¹Ì™½È€œ­ ¡½‰©•Ñ9…µ”¤¬œð½ˆøñÍµ…±°øœ­½‰©•ÑQ…Í­Ì¹±•¹Ñ ¬œ±¥¹­•Ñ…Í¬œ¬¡½‰©•ÑQ…Í­Ì¹±•¹Ñ ôôôÄüˆˆè‰Ìˆ¤¬œð½Íµ…±°øð½‘¥Øøœ­Ñ…Í­1¥ÍÐ¬œð½Í•Ñ¥½¸øœ¬(€œñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ÁÉ¥µ…ÉäˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±‘‘5…É­•ÉQ…Í¬ ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì°œ­9Õµ‰•È¡¥¹‘•à¤¬œ¤ˆû¾ò,‘Ñ…Í¬™½ÈÑ¡¥Ì½‰©•Ðð½‰ÕÑÑ½¸øœ¬(€œñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±%¹Ù•¹Ñ½Éå=Á•¸ ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆù=Á•¸É½½´¥¹Ù•¹Ñ½Éäð½‰ÕÑÑ½¸øð½‘¥Øøœ¬(€œñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ÁÉ¥µ…ÉäˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹” ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆûŠ@	…¬Ñ¼É½½´ð½‰ÕÑÑ½¸øœ¬(€œñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±I•ÑÕÉ¹Q½±½½È ˜ŒÌäìœ­˜¬œ˜ŒÌäì¤ˆûŠ2!½ÕÍ”µ…Àð½‰ÕÑÑ½¸øð½‘¥Øøœì(µ½‘…°¡ ¡À¹±…‰•±ñð‰5…ÁÁ•½‰©•Ðˆ¤¬ˆƒ
+Ü€ˆ­ ¡è¹¹…µ”¤°œñ‘¥Ø±…ÍÌô‰¡Ù´µ½‰©•ÐµÙ¥•Üˆøœ­‘•Ñ…¥±Ì¬œð½‘¥Øøœ°‰±½Í”ˆ±±½Í•5½‘…°¤ì)ôì(()±•Ð…Ñ¥Ù•I½½µA¡½Ñ½%‘Ìõmt±…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•àôÀ±…Ñ¥Ù•I½½µA¡½Ñ½I½½´ôˆˆì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±9…Ù¥…Ñ•I½½µA¡½Ñ¼õ™Õ¹Ñ¥½¸¡ÍÑ•À¥ì(¥˜ ……Ñ¥Ù•I½½µA¡½Ñ½%‘Ì¹±•¹Ñ ¥É•ÑÕÉ¸ì(…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•àô¡…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à­9Õµ‰•È¡ÍÑ•À¤­…Ñ¥Ù•I½½µA¡½Ñ½%‘Ì¹±•¹Ñ ¤•…Ñ¥Ù•I½½µA¡½Ñ½%‘Ì¹±•¹Ñ ì(Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±M¡½ÝI½½µA¡½Ñ¼¡…Ñ¥Ù•I½½µA¡½Ñ½%‘Ím…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•át±…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à±…Ñ¥Ù•I½½µA¡½Ñ½%‘Ì¹±•¹Ñ ¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±M¡½ÝI½½µA¡½Ñ¼õ…Íå¹Œ™Õ¹Ñ¥½¸¡Á¡½Ñ½%±¥¹‘•àôÀ±Ñ½Ñ…°õ…Ñ¥Ù•I½½µA¡½Ñ½%‘Ì¹±•¹Ñ ¥ì(½¹ÍÐÍÑ…”õ‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ‰¡ÙµI½½µA¡½Ñ½MÑ…”ˆ¤ì(¥˜ …ÍÑ…•ñð…½­A¡½Ñ¼¡Á¡½Ñ½%¥ñð…½¹±¥¹” ¤¥É•ÑÕÉ¸ì(…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•àõ5…Ñ ¹µ…à À±9Õµ‰•È¡¥¹‘•à¥ñðÀ¤ì(ÍÑ…”¹Ñ•áÑ½¹Ñ•¹Ðô‰1½…‘¥¹œÍ…Ù•É½½´Á¡½Ñ¿Š˜ˆì(½¹ÍÐí‘…Ñ„±•ÉÉ½Éôõ…Ý…¥Ð±½Õ‘±¥•¹Ð¹™É½´ ‰Á¡½Ñ½}¥¹‰½àˆ¤¹Í•±•Ð ‰¥µ…•}‘…Ñ„±Ñ¥Ñ±”ˆ¤¹•Ä ‰¥ˆ±Á¡½Ñ½%¤¹Í¥¹±” ¤ì(½¹ÍÐÕÉÉ•¹Ðõ‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ‰¡ÙµI½½µA¡½Ñ½MÑ…”ˆ¤í¥˜ …ÕÉÉ•¹Ð¥É•ÑÕÉ¸ì(¥˜¡•ÉÉ½Éñð…‘…Ñ…ñð„½y‘…Ñ„é¥µ…•p½©Á•œí‰…Í”ØÐ±m„µèÀ´ä¬¼õt¬½¤¹Ñ•ÍÐ¡‘…Ñ„¹¥µ…•}‘…Ñ…ñðˆˆ¤¥ì(€ÕÉÉ•¹Ð¹Ñ•áÑ½¹Ñ•¹Ðô‰Q¡¥ÌÍ…Ù•Á¡½Ñ¼½Õ±¹½Ð‰”‘¥ÍÁ±…å•¸ˆíÉ•ÑÕÉ¸ì(ô(½¹ÍÐ¥µœõ‘½Õµ•¹Ð¹É•…Ñ•±•µ•¹Ð ‰¥µœˆ¤ì(¥µœ¹…±Ðô¡‘…Ñ„¹Ñ¥Ñ±•ññ…Ñ¥Ù•I½½µA¡½Ñ½I½½´¤¬ˆƒ
+ÜÁ¡½Ñ¼€ˆ¬¡…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à¬Ä¤¬ˆ½˜€ˆ­Ñ½Ñ…°ì(¥µœ¹ÍÉŒõ‘…Ñ„¹¥µ…•}‘…Ñ„íÕÉÉ•¹Ð¹É•Á±…•¡¥±‘É•¸¡¥µœ¤ì(½¹ÍÐ…ÁÑ¥½¸õ‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ‰¡ÙµI½½µA¡½Ñ½…ÁÑ¥½¸ˆ¤ì(±•ÐÑ¥Ñ±”õÍÑÈ¡‘…Ñ„¹Ñ¥Ñ±•ñðˆˆ¤¹ÑÉ¥´ ¤ì(¥˜ ½yq‘ìÄÀ±õp¸¡©Á”ýñÁ¹ñÝ•‰À¤½¤¹Ñ•ÍÐ¡Ñ¥Ñ±”¤¥Ñ¥Ñ±”ôˆˆì(¥˜ ½ÕÁÍÑ…¥ÉÌ‰…Ñ¡É½½´½¤¹Ñ•ÍÐ¡Ñ¥Ñ±”¤˜˜½Á¡½Ñ¼½¤¹Ñ•ÍÐ¡Ñ¥Ñ±”¤¥Ñ¥Ñ±”ô‰UÁÍÑ…¥ÉÌ‰…Ñ¡É½½´ƒ
+ÜA¡½Ñ¼€ˆ¬¡…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à¬Ä¤¬ˆ½˜€ˆ­Ñ½Ñ…°ì(¥˜¡…ÁÑ¥½¸¥…ÁÑ¥½¸¹Ñ•áÑ½¹Ñ•¹ÐõÑ¥Ñ±•ññ…Ñ¥Ù•I½½µA¡½Ñ½I½½´¬ˆƒ
+ÜA¡½Ñ¼€ˆ¬¡…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à¬Ä¤¬ˆ½˜€ˆ­Ñ½Ñ…°ì(½¹ÍÐ½Õ¹Ðõ‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ‰¡ÙµI½½µA¡½Ñ½½Õ¹Ðˆ¤ì(¥˜¡½Õ¹Ð¥½Õ¹Ð¹Ñ•áÑ½¹Ñ•¹Ðô‰A¡½Ñ¼€ˆ¬¡…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•à¬Ä¤¬ˆ½˜€ˆ­Ñ½Ñ…°ì)ôì)…Íå¹Œ™Õ¹Ñ¥½¸¡å‘É…Ñ•I½½µA¡½Ñ½…±±•Éä¡˜±è¥ì(½¹ÍÐ¡½ÍÐõ‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ‰¡ÙµI½½µA¡½Ñ½…±±•Éäˆ¤í¥˜ …¡½ÍÐ¥É•ÑÕÉ¸ì(¥˜ …½¹±¥¹” ¤¥í¡½ÍÐ¹Ñ•áÑ½¹Ñ•¹Ðô‰M¥¸¥¸Ñ¼Í•”Í…Ù•É½½´Á¡½Ñ½Ì¸ˆíÉ•ÑÕÉ¹ô(±•ÐÁ¡½Ñ½Ìõ…ÉÈ¡è¹Á¡½Ñ½Ì¤¹™¥±Ñ•È¡½­A¡½Ñ¼¤¹µ…À¡¥ôø¡í¥‘ô¤¤ì(¥˜ ½‰…Ñ ½¤¹Ñ•ÍÐ¡ÍÑÈ¡è¹¹…µ•ñðˆˆ¤¤¥ì(€½¹ÍÐí‘…Ñ„±•ÉÉ½Éôõ…Ý…¥Ð±½Õ‘±¥•¹Ð¹™É½´ ‰Á¡½Ñ½}¥¹‰½àˆ¤¹Í•±•Ð ‰¥±Ñ¥Ñ±”±¹½Ñ•Ì±É•…Ñ•‘}…Ðˆ¤(€€€¹¥¸ ‰…Ñ•½Éäˆ±l‰¡½ÕÍ•}µ…Àˆ°‰¡½µ•}ÁÉ½É•ÍÌ‰t¤¹•Ä ‰™±½½É}±…‰•°ˆ±˜¤¹½É‘•È ‰É•…Ñ•‘}…Ðˆ±í…Í•¹‘¥¹œé™…±Í•ô¤¹±¥µ¥Ð ÄÀÀ¤ì(€¥˜¡•ÉÉ½È¥í¡½ÍÐ¹Ñ•áÑ½¹Ñ•¹Ðô‰½Õ±¹½Ð±½…Í…Ù•‰…Ñ¡É½½´Á¡½Ñ½Ì¸ˆíÉ•ÑÕÉ¹ô(€Á¡½Ñ½Ìô¡‘…Ñ…ññmt¤¹™¥±Ñ•È¡Àôø½‰…Ñ ½¤¹Ñ•ÍÐ¡ÍÑÈ¡À¹Ñ¥Ñ±”¤¬ˆ€ˆ­ÍÑÈ¡À¹¹½Ñ•Ì¤¤˜™½­A¡½Ñ¼¡À¹¥¤¤ì(ô(¥˜ …Á¡½Ñ½Ì¹±•¹Ñ ¥í¡½ÍÐ¹¥¹¹•É!Q50ôœñÀ±…ÍÌô‰µÕÑ•ˆù9¼É½½´Á¡½Ñ½Ì…É”±¥¹­•¡•É”å•Ð¸ð½ÀøœíÉ•ÑÕÉ¹ô(…Ñ¥Ù•I½½µA¡½Ñ½%‘ÌõÁ¡½Ñ½Ì¹µ…À¡ÀôùÀ¹¥¤í…Ñ¥Ù•I½½µA¡½Ñ½%¹‘•àôÀí…Ñ¥Ù•I½½µA¡½Ñ½I½½´õÍÑÈ¡è¹¹…µ•ñð‰I½½´ˆ¤ì(¡½ÍÐ¹¥¹¹•É!Q50ôœñ‘¥Ø±…ÍÌô‰¡Ù´µÁ¡½Ñ¼µ…±±•Éäˆøñ‘¥Ø±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µ™É…µ”ˆøñ‘¥Ø¥ô‰¡ÙµI½½µA¡½Ñ½MÑ…”ˆ±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µÍÑ…”ˆù1½…‘¥¹œÍ…Ù•É½½´Á¡½Ñ¿Š˜ð½‘¥Øøð½‘¥Øøñ‘¥Ø¥ô‰¡ÙµI½½µA¡½Ñ½…ÁÑ¥½¸ˆ±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µ…ÁÑ¥½¸ˆøð½‘¥Øøñ‘¥Ø±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µÁ¥­•Èˆ…É¥„µ±…‰•°ô‰	É½ÝÍ”Í…Ù•€œ­ ¡è¹¹…µ•ñð‰É½½´ˆ¤¬œÁ¡½Ñ½Ìˆøœ¬(€€œñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰‰Ñ¸Íµ…±°ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±9…Ù¥…Ñ•I½½µA¡½Ñ¼ ´Ä¤ˆ…É¥„µ±…‰•°ô‰AÉ•Ù¥½ÕÌÉ½½´Á¡½Ñ¼ˆûŠäAÉ•Ù¥½ÕÌð½‰ÕÑÑ½¸øñÍÁ…¸¥ô‰¡ÙµI½½µA¡½Ñ½½Õ¹Ðˆ±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µ½Õ¹ÐˆùA¡½Ñ¼€Ä½˜€œ­Á¡½Ñ½Ì¹±•¹Ñ ¬œð½ÍÁ…¸øñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰‰Ñ¸Íµ…±°ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±9…Ù¥…Ñ•I½½µA¡½Ñ¼ Ä¤ˆ…É¥„µ±…‰•°ô‰9•áÐÉ½½´Á¡½Ñ¼ˆù9•áÐƒŠèð½‰ÕÑÑ½¸øœ¬(€€œð½‘¥ØøñÍµ…±°±…ÍÌô‰µÕÑ•ˆøœ­Á¡½Ñ½Ì¹±•¹Ñ ¬œÍ…Ù•Á¡½Ñ¼œ¬¡Á¡½Ñ½Ì¹±•¹Ñ ôôôÄüœœèÌœ¤¬œƒ
+ÜÕÍ”AÉ•Ù¥½ÕÌ…¹9•áÐÑ¼‰É½ÝÍ”ð½Íµ…±°øð½‘¥Øøœì(Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±M¡½ÝI½½µA¡½Ñ¼¡Á¡½Ñ½ÍlÁt¹¥°À±Á¡½Ñ½Ì¹±•¹Ñ ¤ì)ôì)Ý¥¹‘½Ü¹¡½ÕÍ•Y¥ÍÕ…±=Á•¹i½¹”õ™Õ¹Ñ¥½¸¡˜±¥¥ì(¥˜ …™±½½ÉÌ¹¥¹±Õ‘•Ì¡˜¥ñð…½­%¡¥¥ññÑåÁ•½˜µ½‘…°„ôô‰™Õ¹Ñ¥½¸ˆ¥É•ÑÕÉ¸ì(½¹ÍÐèõé½¹”¡˜±¥¤í¥˜ …è¥É•ÑÕÉ¸ì(½¹ÍÐÁ¡½Ñ½Ìõ…ÉÈ¡è¹Á¡½Ñ½Ì¤¹™¥±Ñ•È¡½­A¡½Ñ¼¤ì(½¹ÍÐÉ½½´õ±½…±I½½´¡˜±è¤±Ñ…Í­ÌõÑÉ…­•‘I½½µQ…Í­Ì¡˜±è±É½½´¤±™¥¹¥Í¡•õÑ…Í­Ì¹™¥±Ñ•È¡ÐôùÐ¹‘½¹”¤±Á•¹‘¥¹Q…Í­ÌõÑ…Í­Ì¹™¥±Ñ•È¡Ðôø…Ð¹‘½¹”¤±ÁÐõÑ…Í­Ì¹±•¹Ñ ý5…Ñ ¹É½Õ¹¡™¥¹¥Í¡•¹±•¹Ñ ½Ñ…Í­Ì¹±•¹Ñ ¨ÄÀÀ¤é¹Õ±°ì(½¹ÍÐ±½%‘Ìõ¹•ÜM•Ð ¡ÍÑ…Ñ”¹¥¹Ù•¹Ñ½Éå1½…Ñ¥½¹Íññmt¤¹™¥±Ñ•È¡àôùÉ½½´˜™à¹É½½µ%ôôõÉ½½´¹¥¤¹µ…À¡àôùà¹¥¤¤ì(½¹ÍÐ¥¹Ù•¹Ñ½ÉäõÉ½½´ü¡ÍÑ…Ñ”¹¥¹Ù•¹Ñ½Éå%Ñ•µÍññmt¤¹™¥±Ñ•È¡àôùà¹É½½µ%ôôõÉ½½´¹¥‘ññ±½%‘Ì¹¡…Ì¡à¹±½…Ñ¥½¹%¤¤émtì(½¹ÍÐÁÉ½É•ÍÌôœñ‘¥Ø±…ÍÌô‰¡Ù´µÑ…Í¬µÁÉ½É•ÍÌˆøñ‘¥Øøñˆøœ¬¡ÁÐôôõ¹Õ±°ü‰9½Ð…ÍÍ•ÍÍ•ˆéÁÐ¬ˆ”ˆ¤¬œð½ˆøñÍµ…±°øœ¬¡ÁÐôôõ¹Õ±°ü‰9¼É½½´Ñ…Í­ÌÍ…Ù•å•Ðˆé™¥¹¥Í¡•¹±•¹Ñ ¬ˆ€¼€ˆ­Ñ…Í­Ì¹±•¹Ñ ¬ˆÑ…Í­Ì½µÁ±•Ñ”ˆ¤¬œð½Íµ…±°øð½‘¥Øøœ¬(€œñ‘¥Ø±…ÍÌô‰¡Ù´µÑ…Í¬µµ•Ñ•Èˆøñ¤ÍÑå±”ô‰Ý¥‘Ñ èœ¬¡ÁÑñðÀ¤¬œ”ˆøð½¤øð½‘¥ØøñÍµ…±°ùQ…Í¬ÁÉ½É•ÍÌ½¹±äì¹½Ð„±•…¹±¥¹•ÍÌÉ…Ñ¥¹œ¸ð½Íµ…±°øð½‘¥Øøœ¬(€œñ‘¥Ø±…ÍÌô‰¡Ù´µÑ…Í¬µ±¥ÍÐˆøñˆù]¡…Ð¹••‘Ì‘½¥¹œƒ
+Ü€œ­Á•¹‘¥¹Q…Í­Ì¹±•¹Ñ ¬œð½ˆøœ¬(€¡Á•¹‘¥¹Q…Í­Ì¹±•¹Ñ ýÁ•¹‘¥¹Q…Í­Ì¹Í±¥” À°ÄÈ¤¹µ…À¡Ðôøœñ‘¥Ø±…ÍÌô‰¡Ù´µÑ…Í¬µÉ½ÜˆøñÍÁ…¸øœ­ ¡Ð¹Ñ¥Ñ±”¤¬¡Ð¹¡½µ•=‰©•Ñ1…‰•°üœñÍµ…±°ûŠÌ€œ­ ¡Ð¹¡½µ•=‰©•Ñ1…‰•°¤¬œð½Íµ…±°øœèˆˆ¤¬œð½ÍÁ…¸øñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸Íµ…±°ÁÉ¥µ…Éäˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±½µÁ±•Ñ•Q…Í¬ ˜ŒÌäìœ­ ¡Ð¹¥¤¬œ˜ŒÌäì°˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆûŠrL½¹”ð½‰ÕÑÑ½¸øð½‘¥Øøœ¤¹©½¥¸ ˆˆ¤èœñÀù9¼Õ¹™¥¹¥Í¡•ÑÉ…­•É½½´Ñ…Í­Ìå•Ð¸ð½Àøœ¤¬œð½‘¥Øøœ¬(€œñ‘¥Ø±…ÍÌô‰¡Ù´µÉ½½´µ¥¹Ù•¹Ñ½ÉäˆøñˆùQ¡¥¹Ì¥¸Ñ¡¥ÌÉ½½´ƒ
+Ü€œ­¥¹Ù•¹Ñ½Éä¹±•¹Ñ ¬œ¥Ñ•´ÑåÁ•Ìð½ˆøœ¬(€¡¥¹Ù•¹Ñ½Éä¹±•¹Ñ ý¥¹Ù•¹Ñ½Éä¹Í±¥” À°ÄÐ¤¹µ…À¡àôøœñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰¡Ù´µ½‰©•ÐµÉ½Üˆ½¹±¥¬ô‰½Á•¹%¹Ù•¹Ñ½Éå%Ñ•´ ˜ŒÌäìœ­ ¡à¹¥¤¬œ˜ŒÌäì¤ˆøñÍÁ…¸ûŠZœð½ÍÁ…¸øñÍÁ…¸øñˆøœ­ ¡à¹¹…µ”¤¬œð½ˆøñÍµ…±°øœ¬¡à¹ÅÕ…¹Ñ¥Ñä„õ¹Õ±°ý ¡à¹ÅÕ…¹Ñ¥Ñä¤¬œƒ
+Ü€œèœœ¤¬=Á•¸¥Ñ•´‘•Ñ…¥±Ìð½Íµ…±°øð½ÍÁ…¸øñÍÁ…¸ûŠèð½ÍÁ…¸øð½‰ÕÑÑ½¸øœ¤¹©½¥¸ ˆˆ¤èœñÀù9¼±½…°¥¹Ù•¹Ñ½ÉäÉ•½É‘•¡•É”å•ÐìÑ¡¥Ì‘½•Ì¹½Ðµ•…¸Ñ¡”É½½´¥Ì•µÁÑä¸ð½Àøœ¤¬œð½‘¥Øøœì((½¹ÍÐÍÁ½ÑÌõ…ÉÈ¡è¹µ…É­•ÉÌ¤¹µ…À ¡À±¤¤ôøœñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÌô‰¡Ù´µ½‰©•ÐµÉ½Üˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±%¹Ñ•É…Ñ5…É­•È ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì°œ­¤¬œ¤ˆøñÍÁ…¸ûŠr˜ð½ÍÁ…¸øñÍÁ…¸øñˆøœ­ ¡À¹±…‰•±ñð‰5…ÁÁ•½‰©•Ðˆ¤¬œð½ˆøñÍµ…±°øœ­ ¡À¹ÍÑ…ÑÕÍñð‰Q…ÀÑ¼¥¹ÍÁ•ÐÑ¡¥Ìµ…ÁÁ•½‰©•Ðˆ¤¬œð½Íµ…±°øð½ÍÁ…¸øñÍÁ…¸ûŠèð½ÍÁ…¸øð½‰ÕÑÑ½¸øœ¤¹©½¥¸ ˆˆ¤ì(½¹ÍÐé½¹•Ìõ…ÉÈ¡•Ð¡˜¤ü¹é½¹•Ì¤¹™¥±Ñ•È¡¥Ñ•´ôù¥Ñ•´˜™½­%¡¥Ñ•´¹¥¤¤±é½¹•%¹‘•àõé½¹•Ì¹™¥¹‘%¹‘•à¡¥Ñ•´ôù¥Ñ•´¹¥ôôõ¥¤ì(½¹ÍÐÑ½ÕÈôœñÍ•Ñ¥½¸±…ÍÌô‰¡Ù´µÑ½ÕÈµ¹…Øˆ…É¥„µ±…‰•°ô‰I½½´Ñ½ÕÈˆøñ‘¥ØøñˆùI½½´Ñ½ÕÈð½ˆøñÍµ…±°øœ¬¡é½¹•%¹‘•à¬Ä¤¬œ½˜€œ­é½¹•Ì¹±•¹Ñ ¬œÉ½½µÌƒ
+ÜÑ…Àµ…ÁÁ•¥Ñ•µÌÑ¼¥¹ÍÁ•ÐÑ¡•´ð½Íµ…±°øð½‘¥Øøñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ€œ¬¡é½¹•%¹‘•àðôÀü‘¥Í…‰±•œèœœ¤¬œ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±Q½ÕÉMÑ•À ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì°´Ä¤ˆûŠäAÉ•Ù¥½ÕÌÉ½½´ð½‰ÕÑÑ½¸øñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ€œ¬¡é½¹•%¹‘•àðÁññé½¹•%¹‘•àøõé½¹•Ì¹±•¹Ñ ´Äü‘¥Í…‰±•œèœœ¤¬œ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±Q½ÕÉMÑ•À ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì°Ä¤ˆù9•áÐÉ½½´ƒŠèð½‰ÕÑÑ½¸øð½‘¥Øøð½Í•Ñ¥½¸øœì(½¹ÍÐ¥¹Ñ•É…Ñ¥Ù•I½½´õ˜ôôô‰M•½¹™±½½Èˆ˜™¥ôôô‰‘½±±äˆüœñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ÁÉ¥µ…ÉäˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±=Á•¹½±±å5½‘•° ¤ˆù¹Ñ•È±¥­…‰±”‰•‘É½½´ƒŠèð½‰ÕÑÑ½¸øð½‘¥Øøœèˆˆì(½¹ÍÐ…Ñ¥½¹Ìôœñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ÁÉ¥µ…ÉäˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±‘‘i½¹•Q…Í¬ ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆø¬I½½´Ñ…Í¬ð½‰ÕÑÑ½¸øœ¬(€œñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±%¹Ù•¹Ñ½Éå=Á•¸ ˜ŒÌäìœ­˜¬œ˜ŒÌäì°˜ŒÌäìœ­¥¬œ˜ŒÌäì¤ˆøœ¬(€¡É½½´ü‰=Á•¸™Õ±°¥¹Ù•¹Ñ½Éäˆè‰	É½ÝÍ”¥¹Ù•¹Ñ½Éäˆ¤¬œð½‰ÕÑÑ½¸øœ¬(€œñ‰ÕÑÑ½¸±…ÍÌô‰‰Ñ¸ˆÑåÁ”ô‰‰ÕÑÑ½¸ˆ½¹±¥¬ô‰¡½ÕÍ•Y¥ÍÕ…±I•ÑÕÉ¹Q½±½½È ˜ŒÌäìœ­˜¬œ˜ŒÌäì¤ˆûŠ@±½½Èµ…Àð½‰ÕÑÑ½¸øð½‘¥Øøœì(½¹ÍÐÉ•™•É•¹•Ìôœñ‘•Ñ…¥±Ì±…ÍÌô‰¡Ù´µÉ½½´µ•áÑÉ„ˆøñÍÕµµ…ÉäùI½½´¹½Ñ•ÌƒŠèð½ÍÕµµ…Éäøœ¬(€¡Á¡½Ñ½Ì¹±•¹Ñ üœñÀùA¡½Ñ½Ì…É”Í¡½Ý¸…‰½Ù”¸ð½ÀøœèœñÀù9¼Í…Ù•É½½´Á¡½Ñ½Ì¡…Ù”‰••¸±¥¹­•¡•É”å•Ð¸ð½Àøœ¤¬(€¡è¹¹½Ñ•ÌüœñÀøœ­ ¡è¹¹½Ñ•Ì¤¬œð½Àøœèˆˆ¤¬(€œð½‘•Ñ…¥±Ìøœì(½¹ÍÐÉ½½µA¡½Ñ½ÌôœñÍ•Ñ¥½¸¥ô‰¡ÙµI½½µA¡½Ñ½…±±•Éäˆ±…ÍÌô‰¡Ù´µÉ½½´µÁ¡½Ñ¼µ…±±•ÉäˆøñÀù1½…‘¥¹œå½ÕÈÍ…Ù•É½½´Á¡½Ñ½ÏŠ˜ð½Àøð½Í•Ñ¥½¸øœì(½¹ÍÐ½‰©•ÑA…¹•°õÍÁ½ÑÌüœñ‘¥Ø±…ÍÌô‰¡Ù´µ‘•Ñ…¥°µµ…É­•ÉÌˆøñÍÑÉ½¹œùQ…À…¸½‰©•ÐÑ¼¥¹Ñ•É…Ðð½ÍÑÉ½¹œøœ­ÍÁ½ÑÌ¬œð½‘¥Øøœèˆˆì(½¹ÍÐµ…É­ÕÀôœñ‘¥Ø±…ÍÌô‰¡Ù´µé½¹”µ‘•Ñ…¥°ˆøœ­É½½µA¡½Ñ½Ì­Ñ½ÕÈ­¥¹Ñ•É…Ñ¥Ù•I½½´­½‰©•ÑA…¹•°­¥¹Ù•¹Ñ½Éä­ÁÉ½É•ÍÌ­…Ñ¥½¹Ì­É•™•É•¹•Ì¬œð½‘¥Øøœì((µ½‘…°¡è¹¹…µ”¬ˆƒ
+Ü€ˆ­˜±µ…É­ÕÀ°‰±½Í”ˆ±±½Í•5½‘…°¤ì(AÉ½µ¥Í”¹É•Í½±Ù” ¤¹Ñ¡•¸  ¤ôù¡å‘É…Ñ•I½½µA¡½Ñ½…±±•Éä¡˜±è¤¤ì)ôì)ô¤ ¤ì(
