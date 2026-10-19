@@ -289,7 +289,7 @@ async function hydratePersonRoomPhotoTour(){
    const rows=(data||[]).filter(p=>{
     if(!okPhoto(p.id)||p.category!=="home_progress")return false;
     const all=str(p.title)+" "+str(p.notes),normalized=normalize(all);
-    return isSelf?/bedroom|upstairs bedroom/i.test(all):name&&normalized.includes(name)&&/bedroom|bed|room|chair/i.test(all);
+    return isSelf?(/bedroom|upstairs bedroom/i.test(all)&&!/stairs|transfer point|laundry/i.test(all)):name&&normalized.includes(name)&&/bedroom|bed|room|chair/i.test(all);
    });
    const priority=p=>/room overview/i.test(str(p.title))?0:/dresser and bed/i.test(str(p.title))?1:/bedroom/i.test(str(p.title))?2:3;
    rows.sort((a,b)=>priority(a)-priority(b)||str(a.created_at).localeCompare(str(b.created_at)));
