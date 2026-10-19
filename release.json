@@ -1,6 +1,6 @@
 {
-  "build": "20261019-dolly-room-photo-tour2",
+  "build": "20261019-profile-home-actual-data1",
   "released": "2026-10-19",
-  "ui": "Show Dolly’s full room photos with tappable furniture hotspots and alternate room views",
-  "data_version": "private Dolly room photos saved in Photo Inbox; household records remain unchanged"
+  "ui": "Person-specific homepages show saved household, care, food, school, spiritual, and money details with compact task progress.",
+  "data_version": "No saved records removed beyond duplicate wishlist items and unconfirmed child plan/date placeholders."
 }
