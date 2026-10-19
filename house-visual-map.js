@@ -285,11 +285,18 @@ async function hydratePersonRoomPhotoTour(){
     .order("created_at",{ascending:true}).limit(100);
    if(error)throw error;
    const normalize=value=>str(value).toLowerCase().replace(/[^a-z0-9]/g,"");
-   const name=normalize(person.name),isSelf=!!person.isSelf;
+   const roster=typeof lifeSimRoster==="function"?lifeSimRoster():[];
+   const zoneName=normalize(z.name),zoneOwner=roster.find(candidate=>{
+    const candidateName=normalize(candidate.name);
+    return candidateName&&zoneName.includes(candidateName);
+   });
+   const name=normalize(zoneOwner?.name||person.name),isSelf=!!person.isSelf&&!zoneOwner&&zoneId==="bedroom";
    const rows=(data||[]).filter(p=>{
     if(!okPhoto(p.id)||p.category!=="home_progress")return false;
     const all=str(p.title)+" "+str(p.notes),normalized=normalize(all);
-    return isSelf?(/bedroom|upstairs bedroom/i.test(all)&&!/stairs|transfer point|laundry/i.test(all)):name&&normalized.includes(name)&&/bedroom|bed|room|chair/i.test(all);
+    if(isSelf)return /bedroom|upstairs bedroom/i.test(all)&&!/stairs|transfer point|laundry/i.test(all);
+    if(name&&normalized.includes(name))return /bedroom|bed|room|chair/i.test(all);
+    return !zoneOwner&&normalized.includes(normalize(z.name))&&/room|bed|house/i.test(all);
    });
    const priority=p=>/room overview/i.test(str(p.title))?0:/dresser and bed/i.test(str(p.title))?1:/bedroom/i.test(str(p.title))?2:3;
    rows.sort((a,b)=>priority(a)-priority(b)||str(a.created_at).localeCompare(str(b.created_at)));
@@ -342,7 +349,7 @@ function floorView(f,m){
  let browsing=false;try{browsing=localStorage.getItem("dailyLifeMapBrowseRooms")==="1"}catch(e){}
  if(person&&!browsing){
   let z=null;
-  try{const saved=JSON.parse(localStorage.getItem("dailyLifeMapTourRoom")||"null");if(saved?.floor===f)z=arr(m.zones).find(item=>item&&item.id===saved.id)||null}catch(e){}
+  try{const saved=JSON.parse(localStorage.getItem("dailyLifeMapTourRoom")||"null");if(saved?.floor===f&&saved?.profileId===String(person.id||person.name))z=arr(m.zones).find(item=>item&&item.id===saved.id)||null}catch(e){}
   z=z||personRoomZone(f,person.name,!!person.isSelf);
   if(z)return personRoomHome(f,z)
  }
@@ -353,10 +360,11 @@ window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapB
 window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapBrowseRooms")}catch(e){};render()};
 window.houseVisualSelectTourRoom=function(f,id){
  if(!floors.includes(f)||!okId(id))return;
+ const person=selectedRoomProfile();
  try{
   localStorage.setItem("dailyLifeMapFirstFloor",f);
   localStorage.setItem("dailyLifeMapBrowseRooms","0");
-  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor:f,id}));
+  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({profileId:String(person?.id||person?.name||""),floor:f,id}));
  }catch(e){}
  if(typeof homeSetMapFloor==="function")homeSetMapFloor(f);
  render();
@@ -447,6 +455,8 @@ function personRoomZone(f,name,isSelf){
  });
  if(direct)return direct;
  if(isSelf){
+  const explicit=zones.find(z=>z.id==="bedroom"||/^your bedroom$/i.test(str(z.name)));
+  if(explicit)return explicit;
   const bedroom=zones.find(z=>/mom|master|primary|michelle/i.test(str(z.name)+" "+str(z.short))&&/room|bed/i.test(str(z.name)+" "+str(z.short)));
   if(bedroom)return bedroom;
   const bedrooms=zones.filter(z=>/bed(room)?/i.test(str(z.name)+" "+str(z.short)));
@@ -459,14 +469,14 @@ window.houseVisualGoToPersonRoom=async function(name,isSelf=false){
  try{
   localStorage.removeItem("dailyLifeMapBrowseRooms");
   localStorage.setItem("dailyLifeMapFirstFloor",floor);
-  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor,id:""}));
+  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({profileId:String(selectedRoomProfile()?.id||selectedRoomProfile()?.name||""),floor,id:""}));
  }catch(e){}
  if(typeof setView==="function")setView("household");
  if(typeof homeSetMapFloor==="function")homeSetMapFloor(floor);
  try{
   await window.houseVisualMapHydrate(floor);
   const z=personRoomZone(floor,name,isSelf);
-  if(z){try{localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({floor,id:z.id}))}catch(e){};render();window.scrollTo(0,0);return}
+  if(z){try{localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({profileId:String(selectedRoomProfile()?.id||selectedRoomProfile()?.name||""),floor,id:z.id}))}catch(e){};render();window.scrollTo(0,0);return}
   if(typeof homeSetMapFloor==="function")homeSetMapFloor(floor);
  }catch(e){}
 };
