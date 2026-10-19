@@ -1,5 +1,5 @@
 {
-  "build": "20261019-room-tour2",
+  "build": "20261019-room-tour3",
   "released": "2026-10-19",
   "ui": "Route profile selection to a bedroom and add clickable room tour controls",
   "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"

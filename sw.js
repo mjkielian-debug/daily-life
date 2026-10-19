@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261019-room-tour2";
+const CACHE_NAME="daily-life-shell-20261019-room-tour3";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -89,8 +89,11 @@ self.addEventListener("install",event=>{
       const response=await fetch(url,{cache:"reload"});
       if(response.ok)await cache.put(new URL(url,self.location).pathname,response.clone());
     }));
-    await self.skipWaiting();
   })());
+});
+
+self.addEventListener("message",event=>{
+  if(event.data&&event.data.type==="ACTIVATE_NOW")event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate",event=>{

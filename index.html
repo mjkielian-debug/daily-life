@@ -216,14 +216,11 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261018-care-nav14 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261019-room-tour3 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261018-care-nav14 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261019-room-tour3 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=20261018-care-nav14").catch(()=>{});
-}
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
@@ -302,7 +299,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.18-wardrobe-add-flow6";
+const APP_BUILD="2026.10.19-room-tour3";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -8348,7 +8345,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261018-care-nav14";
+const DAILY_LIFE_BUILD="20261019-room-tour3";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8415,24 +8412,40 @@ function showAppUpdateNotice(){
   const el=document.createElement("div");
   el.id="appUpdateNotice";el.className="app-update-notice";
   el.innerHTML='<div><b>Daily Life update ready</b><div class="small">Reload when you are ready to use the newest fixes and features.</div></div><button class="btn primary" type="button">Reload now</button>';
-  el.querySelector("button").addEventListener("click",()=>{const next=new URL(location.href);next.searchParams.set("dl_refresh",String(Date.now()));location.replace(next.href)});
+  el.querySelector("button").addEventListener("click",()=>{
+    const button=el.querySelector("button");
+    button.disabled=true;button.textContent="Reloading…";
+    window.__dailyLifeReloadAfterWorkerActivation=true;
+    const worker=window.__dailyLifeWaitingWorker;
+    if(worker)worker.postMessage({type:"ACTIVATE_NOW"});
+    else location.reload();
+  });
   document.body.appendChild(el);
 }
 async function registerAppWorker(){
   if(!("serviceWorker" in navigator))return;
   const hadController=!!navigator.serviceWorker.controller;
   try{
-    const reg=await navigator.serviceWorker.register("sw.js?v=20261019-room-tour2");
+    const reg=await navigator.serviceWorker.register("sw.js?v="+DAILY_LIFE_BUILD);
+    window.__dailyLifeWaitingWorker=reg.waiting||null;
     const watch=worker=>{
       if(!worker)return;
       worker.addEventListener("statechange",()=>{
-        if(worker.state==="installed"&&hadController)showAppUpdateNotice();
+        if(worker.state==="installed"&&hadController&&reg.waiting){
+          window.__dailyLifeWaitingWorker=reg.waiting;
+          showAppUpdateNotice();
+        }
       });
     };
     if(reg.waiting&&hadController)showAppUpdateNotice();
     if(reg.installing)watch(reg.installing);
-    reg.addEventListener("updatefound",()=>watch(reg.installing));
-    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(hadController)showAppUpdateNotice()});
+    reg.addEventListener("updatefound",()=>{
+      window.__dailyLifeWaitingWorker=null;
+      watch(reg.installing);
+    });
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(window.__dailyLifeReloadAfterWorkerActivation)location.reload();
+    });
     document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update().catch(()=>{})});
     setInterval(()=>reg.update().catch(()=>{}),15*60*1000);
   }catch(e){}
