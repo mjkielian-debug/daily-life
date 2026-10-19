@@ -255,9 +255,11 @@ function personRoomPhotoMarkup(photo,index,total,person,f,z){
  const title=str(photo.title),text=(title+" "+str(photo.notes)).toLowerCase(),isDolly=/^dolly$/i.test(str(person?.name));
  let hotspots=[];
  if(isDolly){
-  const kind=/room overview/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/bed · folded laundry/i.test(title)?"bed":"overview";
+  const kind=/room overview|room corner|bed, vanity/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/playhouse/i.test(title)?"playhouse":/vanity/i.test(title)?"vanity":/bed|headboard/i.test(title)?"bed":"overview";
   hotspots=kind==="overview"?[["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",75,66]]:
-   kind==="dresser"?[["dresser","Dresser",18,52],["bed","Bed",70,56]]:[["bed","Bed",50,55]];
+   kind==="dresser"?[["dresser","Dresser",18,52],["bed","Bed",70,56]]:
+   kind==="playhouse"?[["dollhouse","Playhouse",54,54]]:
+   kind==="vanity"?[["vanity","Vanity",52,58]]:[["bed","Bed",50,55]];
  }else{
   if(/dresser/.test(text))hotspots.push(["dresser","Dresser",22,58]);
   if(/vanity/.test(text))hotspots.push(["vanity","Vanity",62,48]);
