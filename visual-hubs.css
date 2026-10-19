@@ -435,3 +435,43 @@ body:has(#app .visual-hub) .life-tools-fab{
   overflow:visible;
  }
 }
+
+
+/* Profile homes: family and people details are scoped to the selected profile. */
+.vh-profile-home{display:grid;gap:12px}
+.vh-profile-home .vh-heading{margin-bottom:0}
+.vh-profile-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vh-profile-card{
+  padding:16px;border:1px solid color-mix(in srgb,var(--border) 84%,white 16%);
+  border-radius:24px;background:color-mix(in srgb,var(--surface) 90%,white 10%);
+  box-shadow:0 8px 20px rgba(83,46,76,.07)
+}
+.vh-profile-card h2{margin:3px 0 7px}
+.vh-profile-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.vh-profile-progress{
+  display:grid;place-items:center;width:58px;height:58px;border-radius:50%;
+  border:5px solid color-mix(in srgb,var(--primary) 22%,white 78%);
+  background:color-mix(in srgb,var(--surface) 85%,white 15%);font-weight:800
+}
+.vh-profile-checklist{display:grid;gap:7px;margin-top:10px}
+.vh-profile-check{
+  display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:9px;
+  padding:10px 11px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.6)
+}
+.vh-profile-check input{width:20px;height:20px;accent-color:var(--primary)}
+.vh-profile-check span{display:grid;gap:2px;min-width:0}
+.vh-profile-check small,.vh-profile-agenda-row small{color:var(--muted);font-size:.84rem}
+.vh-profile-check.is-done b{text-decoration:line-through;opacity:.72}
+.vh-profile-reading{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.vh-profile-agenda-row{
+  display:grid;width:100%;gap:3px;text-align:left;padding:11px 2px;border:0;border-top:1px solid var(--border);
+  background:transparent;color:inherit
+}
+.vh-profile-agenda-row:first-of-type{margin-top:8px}
+.vh-profile-agenda-row .vh-profile-date{font-size:.8rem;color:var(--muted)}
+.vh-profile-family-tools .vh-profile-actions{margin-top:10px}
+@media(max-width:520px){
+  .vh-profile-card{padding:14px;border-radius:20px}
+  .vh-profile-home .vh-heading{align-items:flex-start}
+  .vh-profile-home .vh-heading .vh-add{flex:0 0 auto}
+}
