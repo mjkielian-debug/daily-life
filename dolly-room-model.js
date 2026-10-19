@@ -378,7 +378,7 @@
   }
   if(key==="vanity")controls='<div class="dolly-detail-known"><b>On the vanity top</b><span>'+html(item.photoNote)+'</span></div>';
   if(key==="dresser"){
-   const wardrobe=(state.inventoryItems||[]).filter(entry=>String(entry.wardrobeOwner||"").trim().toLowerCase()==="dolly");
+   const wardrobe=(state.inventoryItems||[]).filter(entry=>{const owner=String(entry.wardrobeOwner||"").trim().toLowerCase();return owner?owner==="dolly":String(entry.category||"").trim().toLowerCase()==="clothing"&&/size\\s*6[–-]6x/i.test(String(entry.name||""))});
    controls='<div class="dolly-detail-head"><b>Dolly’s clothes</b><span>'+wardrobe.length+' recorded</span></div>'+
     (wardrobe.length?wardrobe.map(entry=>'<button class="dolly-compartment" type="button" onclick="openInventoryItem(\''+html(entry.id)+'\')"><span><b>'+html(entry.name||"Clothing item")+'</b><small>'+html([entry.wardrobeType,entry.category,entry.status].filter(Boolean).join(" · ")||"Dolly’s clothing")+'</small></span><span aria-hidden="true">›</span></button>').join(""):'<p class="dolly-room-caveat">No clothing has been assigned to Dolly’s dresser yet.</p>')+
     '<button class="btn primary" type="button" onclick="openInventoryItem(\'\',\'Dolly\')">+ Add clothing to dresser</button>';
