@@ -1,6 +1,6 @@
 {
-  "build": "20261019-room-tour-navigation1",
+  "build": "20261019-dolly-room-photo-tour1",
   "released": "2026-10-19",
-  "ui": "Open the selected child's room home directly with in-page room-to-room navigation",
-  "data_version": "unchanged local-first furniture, tasks, photos, inventory and household records"
+  "ui": "Show Dolly’s room-wide photo tour with tappable furniture hotspots and alternate room views",
+  "data_version": "private Dolly room photos saved in Photo Inbox; household records remain unchanged"
 }

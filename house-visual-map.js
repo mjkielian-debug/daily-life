@@ -5,6 +5,7 @@
 "use strict";
 const floors=["Basement","First floor","Second floor","Third floor"];
 const cache=new Map(),pending=new Map();
+const personPhotoCache=new Map();
 const str=x=>String(x??"");
 const h=x=>str(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const okId=x=>/^[a-z][a-z0-9_]{0,39}$/.test(str(x));
@@ -250,15 +251,60 @@ function selectedRoomProfile(){
  if(id==="self")return null;
  return roster.find(person=>String(person.id)===String(id))||null;
 }
+function dollyRoomPhotoMarkup(photo,index,total){
+ const title=str(photo.title),kind=/room overview/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/bed · folded laundry/i.test(title)?"bed":"overview";
+ const hotspots=kind==="overview"?[
+  ["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",88,66]
+ ]:kind==="dresser"?[
+  ["dresser","Dresser",18,52],["bed","Bed",70,56]
+ ]:[["bed","Bed",50,55]];
+ const scene='<div class="hvm-room-scene"><img src="'+h(photo.image_data)+'" alt="'+h(title)+'">'+hotspots.map(([key,label,x,y])=>
+  '<button type="button" class="hvm-room-hotspot" style="left:'+x+'%;top:'+y+'%" aria-label="Open Dolly’s '+h(label.toLowerCase())+' details" onclick="dollyOpenObject(&#39;'+key+'&#39;)"><span aria-hidden="true">✦</span><b>'+h(label)+'</b></button>'
+ ).join("")+'</div>';
+ return scene+'<div class="hvm-room-photo-nav"><button type="button" class="btn small" '+(index<=0?'disabled':'')+' onclick="houseVisualDollyPhotoStep(-1)">‹ Previous view</button><span><b>'+h(title.replace(/^Dolly’s bedroom · /i,""))+'</b><small>View '+(index+1)+' of '+total+' · tap a room label to inspect</small></span><button type="button" class="btn small" '+(index>=total-1?'disabled':'')+' onclick="houseVisualDollyPhotoStep(1)">Next view ›</button></div>';
+}
+async function hydrateDollyRoomPhotoTour(){
+ const host=document.querySelector('[data-person-photo-tour="dolly"]');
+ if(!host||!online())return;
+ let photos=personPhotoCache.get("dolly");
+ if(!photos){
+  try{
+   const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
+    .eq("category","home_progress").eq("floor_label","Second floor")
+    .order("created_at",{ascending:true}).limit(100);
+   if(error)throw error;
+   const rows=(data||[]).filter(p=>okPhoto(p.id)&&/dolly/i.test(str(p.title)+" "+str(p.notes))&&/bedroom|bed/i.test(str(p.title)));
+   const priority=p=>/room overview/i.test(str(p.title))?0:/dresser and bed/i.test(str(p.title))?1:/bed · folded laundry/i.test(str(p.title))?2:3;
+   rows.sort((a,b)=>priority(a)-priority(b)||str(a.created_at).localeCompare(str(b.created_at)));
+   const ids=rows.map(p=>p.id);
+   if(!ids.length)throw Error("No Dolly room photos found");
+   const {data:images,error:imageError}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",ids);
+   if(imageError)throw imageError;
+   const byId=new Map((images||[]).filter(p=>/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(p.image_data||"")).map(p=>[p.id,p.image_data]));
+   photos=rows.filter(p=>byId.has(p.id)).map(p=>({...p,image_data:byId.get(p.id)}));
+   if(!photos.length)throw Error("Dolly room images could not be loaded");
+   personPhotoCache.set("dolly",photos);
+  }catch(e){host.querySelector(".hvm-person-room-photo").textContent="Add a wide Dolly bedroom photo in House · Add photos to start the room tour.";return}
+ }
+ const index=Math.max(0,Math.min(photos.length-1,Number(host.dataset.photoIndex)||0));
+ host.dataset.photoIndex=String(index);
+ const frame=host.querySelector(".hvm-person-room-photo");
+ if(frame)frame.outerHTML='<div class="hvm-person-room-photo hvm-person-room-photo-live">'+dollyRoomPhotoMarkup(photos[index],index,photos.length)+'</div>';
+}
+window.houseVisualDollyPhotoStep=function(delta){
+ const host=document.querySelector('[data-person-photo-tour="dolly"]');
+ const photos=personPhotoCache.get("dolly")||[];
+ if(!host||!photos.length)return;
+ host.dataset.photoIndex=String(Math.max(0,Math.min(photos.length-1,(Number(host.dataset.photoIndex)||0)+Number(delta||0))));
+ Promise.resolve().then(()=>hydrateDollyRoomPhotoTour());
+};
 function personRoomHome(f,z){
  const person=selectedRoomProfile(),room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),done=tasks.filter(t=>t.done).length;
  const today=(state.tasks||[]).filter(t=>t.date===ymd()&&!t.paused&&!t.waitingForFunds&&String(t.child||"").trim().toLowerCase()===String(person?.name||"").trim().toLowerCase());
  const todayDone=today.filter(t=>t.done).length;
- const photo='<div class="hvm-person-room-photo" data-room-photo-zone="'+h(z.id)+'"><span>Loading saved room photo…</span></div>';
- const objects=z.id==="dolly"&&f==="Second floor"?'<div class="hvm-person-room-objects" aria-label="Dolly bedroom items">'+
-  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;bed&#39;)"><span>🛏️</span><b>Bed</b><small>Sheets and last change</small></button>'+
-  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;dresser&#39;)"><span>🧺</span><b>Dresser</b><small>Open drawers and shirts</small></button>'+
-  '<button type="button" class="hvm-person-object" onclick="dollyOpenObject(&#39;vanity&#39;)"><span>🪞</span><b>Vanity</b><small>Items on top</small></button></div>':
+ const isDolly=z.id==="dolly"&&f==="Second floor";
+ const photo=isDolly?'<div class="hvm-person-photo-tour" data-person-photo-tour="dolly"><div class="hvm-person-room-photo"><span>Loading Dolly’s room views…</span></div></div>':'<div class="hvm-person-room-photo" data-room-photo-zone="'+h(z.id)+'"><span>Loading saved room photo…</span></div>';
+ const objects=isDolly?"":
   (arr(z.markers).length?'<div class="hvm-person-room-objects">'+arr(z.markers).map((p,i)=>'<button type="button" class="hvm-person-object" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')"><span>✦</span><b>'+h(p.label||"Room item")+'</b><small>'+h(p.status||"Tap to inspect")+'</small></button>').join("")+'</div>':"");
  const roomTasks=tasks.filter(t=>!t.done).slice(0,5).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button type="button" class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">✓ Done</button></div>').join("");
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
@@ -305,6 +351,7 @@ function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
  if(m)hydrateRoomDirectoryPhotos(f,m);
+ if(f==="Second floor"&&selectedRoomProfile()?.name?.toLowerCase()==="dolly")hydrateDollyRoomPhotoTour();
  refreshRoomProgress(f);
 }
 window.houseVisualMapHtml=function(f){
