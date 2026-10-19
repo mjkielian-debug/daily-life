@@ -280,7 +280,7 @@ async function hydratePersonRoomPhotoTour(){
  let photos=personPhotoCache.get(cacheKey);
  if(!photos){
   try{
-   const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
+   const {data,error}=await cloudClient.from("photo_inbox").select("id,category,title,notes,created_at")
     .in("category",["home_progress","house_map"]).eq("floor_label",floor)
     .order("created_at",{ascending:true}).limit(100);
    if(error)throw error;

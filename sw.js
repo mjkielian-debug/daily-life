@@ -1,4 +1,7 @@
-const CACHE_NAME="daily-life-shell-20261019-profile-room-photo-tour3";
+Warning: truncated output (original token count: 1140)
+Total output lines: 154
+
+const CACHE_NAME="daily-life-shell-20261019-profile-room-photo-tour4";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -77,23 +80,7 @@ const APP_SHELL=[
   "./daily-life-rose-512.png",
   "./botanical-corners.svg",
   "./botanical-bg.svg",
-  "./botanical-sprig.svg"
-];
-
-const LOCAL_ASSET_PATHS=new Set(APP_SHELL.filter(x=>x!=="./").map(x=>new URL(x,self.location).pathname));
-
-self.addEventListener("install",event=>{
-  event.waitUntil((async()=>{
-    const cache=await caches.open(CACHE_NAME);
-    await Promise.allSettled(APP_SHELL.map(async url=>{
-      const response=await fetch(url,{cache:"reload"});
-      if(response.ok)await cache.put(new URL(url,self.location).pathname,response.clone());
-    }));
-  })());
-});
-
-self.addEventListener("message",event=>{
-  if(event.data&&event.data.type==="ACTIVATE_NOW")event.waitUntil(self.skipWaiting());
+  …140 tokens truncated…ACTIVATE_NOW")event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate",event=>{
