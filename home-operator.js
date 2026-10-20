@@ -202,6 +202,73 @@
       <div class="actions"><button class="btn primary" onclick="homeAddInventoryItemToRoom('${room.id}')">+ Item here</button><button class="btn" onclick="closeModal();openInventoryLocation('','${room.id}')">+ Storage location</button><button class="btn" onclick="closeModal();openInventoryRoom('${room.id}')">Edit room</button></div>
     </div>`,"Close",closeModal);
   };
+  window.homeOpenInventorySpot=function(roomId,spotKey){
+    const room=(state.houseRooms||[]).find(r=>String(r.id)===String(roomId));if(!room)return;
+    const key=String(spotKey||"").toLowerCase();
+    const locations=Array.isArray(state.inventoryLocations)?state.inventoryLocations:[];
+    const items=Array.isArray(state.inventoryItems)?state.inventoryItems:[];
+    const roomLocations=locations.filter(loc=>String(loc.roomId)===String(roomId));
+    const locationFor=item=>locations.find(loc=>String(loc.id)===String(item.locationId))||null;
+    const locText=loc=>String((loc?.name||"")+" "+(loc?.notes||"")).toLowerCase();
+    const title=key==="vanity_items"||key==="personal_care"?"Personal care items":
+      key==="dresser_top"?"Items on top of the dresser":
+      /dresser|drawer/.test(key)?"Dresser contents":
+      key==="vanity"?"Vanity items":"Room items";
+    let shown=[],groups=[],emptyText="",locationName="Personal care items";
+    if(key==="vanity_items"||key==="personal_care"){
+      const bathRoomIds=new Set((state.houseRooms||[]).filter(r=>/bath/i.test(String(r.name||""))).map(r=>String(r.id)));
+      const careLocationIds=new Set(locations.filter(loc=>/bath|vanity|personal.?care|beauty|toiletries|skin.?care|hair.?care/i.test(locText(loc))).map(loc=>String(loc.id)));
+      const isCare=item=>{
+        const category=String(item.category||"").toLowerCase(),name=String(item.name||"").toLowerCase();
+        const loc=locationFor(item),inBath=bathRoomIds.has(String(item.roomId||""))||careLocationIds.has(String(item.locationId||""))||/bathroom|upstairs bath|downstairs bath/i.test(locText(loc));
+        return inBath||/^(bathroom|personal care|beauty)$/i.test(category)||
+          /shower|shampoo|conditioner|body wash|soap|exfoliat|face wash|moisturi[sz]er|skin care|skincare|toiletr|makeup|deodorant|lotion/i.test(name);
+      };
+      shown=items.filter(isCare);
+      groups=[{name:"Saved personal care",items:shown}];
+      emptyText="No personal-care products are saved in inventory yet. Add the products you want tracked and they’ll appear here.";
+      locationName="Vanity top";
+    }else if(key==="dresser_top"){
+      const matching=roomLocations.filter(loc=>/dresser.{0,16}top|top.{0,16}dresser/i.test(locText(loc)));
+      const ids=new Set(matching.map(loc=>String(loc.id)));
+      shown=items.filter(item=>ids.has(String(item.locationId||""))||
+        (String(item.roomId)===String(roomId)&&!item.locationId&&/top of dresser|dresser top/i.test(String(item.notes||""))));
+      groups=matching.map(loc=>({name:loc.name,items:shown.filter(item=>String(item.locationId)===String(loc.id))}));
+      emptyText="Nothing is saved on top of this dresser yet.";
+      locationName=matching[0]?.name||"Top of dresser";
+    }else if(/dresser|drawer/.test(key)){
+      const matching=roomLocations.filter(loc=>/dresser|drawer/i.test(locText(loc))&&!/vanity|dressing table/i.test(locText(loc)));
+      const ids=new Set(matching.map(loc=>String(loc.id)));
+      shown=items.filter(item=>ids.has(String(item.locationId||""))||
+        (String(item.roomId)===String(roomId)&&!item.locationId&&/dresser|drawer/i.test(String(item.storageSpot||"")+" "+String(item.notes||""))));
+      groups=matching.map(loc=>({name:loc.name,items:shown.filter(item=>String(item.locationId)===String(loc.id))}));
+      emptyText="No contents have been recorded for this dresser yet. Add items and assign them to a named dresser or drawer to have them show up here.";
+      locationName="Dresser drawers";
+    }else{
+      const matching=roomLocations.filter(loc=>/vanity|dressing table/i.test(locText(loc)));
+      const ids=new Set(matching.map(loc=>String(loc.id)));
+      shown=items.filter(item=>ids.has(String(item.locationId||"")));
+      groups=matching.map(loc=>({name:loc.name,items:shown.filter(item=>String(item.locationId)===String(loc.id))}));
+      emptyText="No items are saved to this vanity yet.";
+      locationName="Vanity top";
+    }
+    const itemRow=item=>'<button class="inventory-mini-item" type="button" onclick="closeModal();openInventoryItem(&#39;'+esc(item.id)+'&#39;)"><span>'+esc(item.name||"Inventory item")+'</span><b>'+(Number(item.quantity||1)>1?"×"+Number(item.quantity):"")+'</b></button>';
+    const locationCards=groups.filter(group=>group.items.length).map(group=>'<div class="inventory-location"><div class="mini-heading">'+esc(group.name)+' · '+group.items.length+'</div>'+group.items.map(itemRow).join("")+'</div>').join("");
+    const body=shown.length?locationCards:'<div class="notice">'+esc(emptyText)+' This list only shows items you’ve recorded; nothing is assumed.</div>';
+    const roomCaption=(key==="vanity_items"||key==="personal_care")?"Saved across personal-care and bathroom locations.":esc(room.name||"Room")+" · "+esc(room.floor||"");
+    modal(title,'<div class="stack"><div class="home-room-modal-head"><span class="home-room-modal-dot" style="background:'+esc(room.mapColor||"#bdeccf")+'"></span><span><b>'+esc(roomCaption)+'</b><small>'+shown.length+' saved item'+(shown.length===1?"":"s")+'</small></span></div>'+body+
+      '<div class="actions"><button class="btn primary" type="button" onclick="homeAddInventorySpotItem(&#39;'+esc(room.id)+'&#39;,&#39;'+esc(locationName)+'&#39;,&#39;'+((key==="vanity_items"||key==="personal_care")?"Personal care":/dresser/.test(key)?"Clothing":"Household")+'&#39;)">+ Add item here</button></div></div>',"Close",closeModal);
+  };
+  window.homeAddInventorySpotItem=function(roomId,locationName,category){
+    closeModal();openInventoryItem();
+    setTimeout(()=>{
+      const room=(state.houseRooms||[]).find(r=>String(r.id)===String(roomId));
+      const roomInput=document.querySelector("#invroom"),locationInput=document.querySelector("#invloc"),categoryInput=document.querySelector("#invcat");
+      if(roomInput&&room)roomInput.value=room.name||"";
+      if(locationInput)locationInput.value=locationName||"";
+      if(categoryInput)categoryInput.value=category||"Household";
+    },0);
+  };
   window.homeEnsureMichelleRoomInventory=async function(which){
     const roomIndex=Number(which)===0?0:1;
     state.houseRooms=Array.isArray(state.houseRooms)?state.houseRooms:[];
