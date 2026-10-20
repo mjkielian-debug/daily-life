@@ -6096,7 +6096,7 @@ function inventoryVisibleItems(){
   return [...(state.inventoryItems||[])].filter(x=>{
     if(cat!=="All"&&String(x.category||"Other")!==cat)return false;
     if(!q)return true;
-    const hay=[x.name,x.category,x.status,x.notes,inventoryLocationLabel(x)].join(" ").toLowerCase();
+    const hay=[x.name,x.category,x.status,x.notes,x.inventoryOwner,x.wardrobeOwner,inventoryLocationLabel(x)].join(" ").toLowerCase();
     return hay.includes(q);
   }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
 }
@@ -6113,7 +6113,7 @@ const WARDROBE_TYPES=[
 function wardrobeSuggestion(item){
  const words=(String(item?.name||"")+" "+String(item?.notes||"")).toLowerCase();
  const place=inventoryLocationLabel(item).toLowerCase();
- const owner=item?.wardrobeOwner||WARDROBE_PEOPLE.find(person=>new RegExp("\\b"+person.toLowerCase()+"\\b").test(place))||"";
+ const owner=item?.inventoryOwner||item?.wardrobeOwner||WARDROBE_PEOPLE.find(person=>new RegExp("\\b"+person.toLowerCase()+"\\b").test(place))||"";
  let type=item?.wardrobeType||"";
  if(!type){
   if(/\b(winter coat|snow coat|parka)\b/.test(words))type="winter_coat";
@@ -6182,7 +6182,7 @@ function inventoryDetailedView(){
   return `<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox('inventory')">📷 Capture belongings</button><button class="btn" onclick="openInventoryPhotoReview()">Review photo items</button><button class="btn" onclick="openUseUpPlan()">♻ Use up + reduce</button></div>${inventoryTab==="items"?wardrobeTargetsHtml():""}<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
   <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
   <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
-  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')">${typeof window.inventoryItemPhotoHtml==="function"?window.inventoryItemPhotoHtml(x):""}<span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}${x.targetQty!==null&&x.targetQty!==undefined?" · goal "+Number(x.targetQty):""}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.<br><button class="btn small" type="button" onclick="inventorySetSearch(&#39;&#39;);inventorySetCategory(&#39;All&#39;)">Show all inventory</button></div>`}
+  ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')">${typeof window.inventoryItemPhotoHtml==="function"?window.inventoryItemPhotoHtml(x):""}<span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${x.inventoryOwner?" · for "+esc(x.inventoryOwner):""}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}${x.targetQty!==null&&x.targetQty!==undefined?" · goal "+Number(x.targetQty):""}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.<br><button class="btn small" type="button" onclick="inventorySetSearch(&#39;&#39;);inventorySetCategory(&#39;All&#39;)">Show all inventory</button></div>`}
   </div>`;
 }
 function inventoryHubDetailHtml(tab){
@@ -6248,11 +6248,12 @@ function inventoryView(){
 
 function openInventoryItem(id="",wardrobeOwner="",wardrobeType=""){
   const savedItem=(state.inventoryItems||[]).find(v=>v.id===id);
-  const x=savedItem?{...savedItem,wardrobeOwner:savedItem.wardrobeOwner||wardrobeOwner||"",wardrobeType:savedItem.wardrobeType||wardrobeType||""}:{id:"",name:"",category:wardrobeOwner?"Clothing":"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:"",wardrobeOwner:wardrobeOwner||"",wardrobeType:wardrobeType||""};
+  const x=savedItem?{...savedItem,wardrobeOwner:savedItem.wardrobeOwner||wardrobeOwner||"",wardrobeType:savedItem.wardrobeType||wardrobeType||""}:{id:"",name:"",category:wardrobeOwner?"Clothing":"Household",quantity:1,status:"Have",roomId:"",locationId:"",notes:"",inventoryOwner:wardrobeOwner||"",wardrobeOwner:wardrobeOwner||"",wardrobeType:wardrobeType||""};
   const roomName=inventoryRoomLabel(x.roomId||inventoryLocationById(x.locationId)?.roomId),locName=inventoryLocationById(x.locationId)?.name||"";
   modal(x.id?"Inventory item":"Add inventory item",`<div class="stack">
     <label>Item<input id="invname" value="${esc(x.name||"")}" placeholder="Batteries, winter coats, light bulbs…"></label>
     <div class="grid2"><label>Category<input id="invcat" list="inventoryCategories" value="${esc(x.category||"Household")}"><datalist id="inventoryCategories">${inventoryCategories().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Quantity on hand<input id="invqty" type="number" min="0" step="1" value="${Number(x.quantity??1)}"></label></div>
+    <label>Who uses this item? (optional)<select id="invOwner"><option value="" ${!x.inventoryOwner?"selected":""}>Shared / not assigned</option>${["Leo","Demitri","Dolly","Ambrose","Michelle"].map(person=>`<option value="${person}" ${x.inventoryOwner===person?"selected":""}>${person}</option>`).join("")}</select></label><small class="muted small">The item stays in household inventory and appears as belonging to this person.</small>
     <label>Ideal quantity to keep (optional)<input id="invgoal" type="number" min="0" step="1" value="${x.targetQty===null||x.targetQty===undefined?"":Number(x.targetQty)}" placeholder="Your goal, not a required number"></label>
     <details class="wardrobe-item-fields" ${wardrobeOwner||x.wardrobeOwner||String(x.category||"").toLowerCase()==="clothing"?"open":""}>
       <summary>Clothing details for wardrobe counts</summary>
@@ -6269,7 +6270,7 @@ function openInventoryItem(id="",wardrobeOwner="",wardrobeType=""){
     const name=$("#invname").value.trim();if(!name)return;
     const roomId=inventoryEnsureRoom($("#invroom").value),locationId=inventoryEnsureLocation(roomId,$("#invloc").value);
     let row=(state.inventoryItems||[]).find(v=>v.id===id);if(!row){row={id:uid()};state.inventoryItems.push(row)}
-    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),wardrobeType:$("#invWardrobeType").value||row.wardrobeType||"",wardrobeOwner:$("#invWardrobeOwner").value||row.wardrobeOwner||"",updatedAt:new Date().toISOString()});
+    Object.assign(row,{name,category:$("#invcat").value.trim()||"Other",quantity:Math.max(0,Number($("#invqty").value||0)),targetQty:$("#invgoal").value.trim()===""?null:Math.max(0,Math.floor(Number($("#invgoal").value)||0)),status:$("#invstatus").value,roomId,locationId,notes:$("#invnotes").value.trim(),organizingDecision:$("#invDecision").value,replacementCriteria:$("#invReplacement").value.trim(),inventoryOwner:$("#invOwner").value,wardrobeType:$("#invWardrobeType").value||row.wardrobeType||"",wardrobeOwner:$("#invWardrobeOwner").value||row.wardrobeOwner||"",updatedAt:new Date().toISOString()});
     await save();closeModal();render();
   });
 }
@@ -8572,7 +8573,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261020-shower-log-feedback3";
+const DAILY_LIFE_BUILD="20261020-inventory-owner1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -8699,7 +8700,7 @@ async function registerAppWorker(){
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
-<script src="inventory-photo-review.js?v=20261018-care-nav14"></script>
+<script src="inventory-photo-review.js?v=20261020-inventory-owner1"></script>
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261015-guided10"></script>
