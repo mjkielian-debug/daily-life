@@ -7273,11 +7273,40 @@ async function requestWeekSuggestions(offset=foodWeekOffset){
   }
   await save();render();
 }
+function chooseDinnerIdea(name){
+  const input=$("#md");
+  if(!input)return;
+  input.value=name;
+  input.focus();
+  input.dispatchEvent(new Event("input",{bubbles:true}));
+}
+function dinnerIdeaOptions(){
+  const pantry=typeof pantryItems==="function"?pantryItems().map(pantryItemName).filter(Boolean):[];
+  const normalize=s=>String(s||"").toLowerCase();
+  const ideas=[
+    {name:"Loaded taco potato casserole",type:"Family suggestion",match:["instant mashed potatoes","shredded cheese","taco seasoning"],needs:"Check for taco meat and toppings."},
+    {name:"Tacos",type:"Family favorite",match:["taco seasoning","tortillas","ground beef","shredded cheese"],needs:"Check for tortillas and a filling."},
+    {name:"Chili",type:"Family favorite",match:["ground beef","beans","tomatoes"],needs:"Check for beans, tomatoes, and a protein."},
+    {name:"Grilled cheese + tomato soup",type:"Family favorite",match:["bread","cheese","tomato soup"],needs:"Check for bread, cheese, and soup."},
+    {name:"BLT or BLTA sandwiches",type:"Family favorite",match:["bread","bacon","lettuce","tomato","avocado"],needs:"Check for bacon, bread, and fresh toppings."},
+    {name:"Pot roast + potatoes",type:"Family favorite",match:["pot roast","beef roast","potatoes","carrots"],needs:"Check for a roast and vegetables; this needs a longer cook."},
+    {name:"Stir-fry",type:"Family favorite",match:["chicken","rice","vegetables","stir-fry"],needs:"Check for a protein, rice, and vegetables."}
+  ];
+  const cards=ideas.map(idea=>{
+    const found=pantry.filter(item=>idea.match.some(term=>normalize(item).includes(term)||term.includes(normalize(item))));
+    const pantryNote=found.length
+      ? "On hand from your latest scan: "+found.slice(0,3).join(", ")+(found.length>3?"…":"")+". "+idea.needs
+      : (pantry.length?"No matching ingredients found in your latest scan. "+idea.needs:"Pantry has not been scanned yet. "+idea.needs);
+    return '<div class="notice dinner-idea-card"><div><b>'+esc(idea.name)+'</b><div class="muted small">'+esc(idea.type)+' · '+esc(pantryNote)+'</div></div><button type="button" class="btn" onclick="chooseDinnerIdea(\''+esc(idea.name).replace(/'/g,"\\'")+'\')">Choose</button></div>';
+  }).join("");
+  return '<section class="dinner-ideas"><div class="eyebrow">DINNER IDEAS FOR YOUR FAMILY</div><div class="muted small">Based on the meals you’ve said your family likes. Choose one to fill in the dinner plan.</div><div class="dinner-idea-list">'+cards+'</div><div class="muted small dinner-memory-note">You previously mentioned instant mashed potatoes, shredded cheese, and taco seasoning. Check they’re still on hand before choosing the loaded potato casserole.</div></section>';
+}
 function openMeal(date){
   const x=state.meals.find(x=>x.date===date&&x.type==="dinner")||{};
   modal(`Dinner · ${dl(date)}`,`<div class="stack meal-editor meal-editor-v2">
+    ${dinnerIdeaOptions()}
     <div class="meal-main-field">
-      <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Pot roast, chili, tacos…"></label>
+      <label>Dinner<input id="md" value="${esc(x.dish||"")}" placeholder="Choose an idea above or enter your own"></label>
     </div>
     ${generatedMealDetails(x)}
     <details class="meal-plan-settings">
