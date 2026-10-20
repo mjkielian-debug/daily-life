@@ -384,9 +384,19 @@ window.houseVisualPersonPhotoStep=function(delta){
  host.dataset.photoIndex=String(Math.max(0,Math.min(photos.length-1,(Number(host.dataset.photoIndex)||0)+Number(delta||0))));
  Promise.resolve().then(()=>hydratePersonRoomPhotoTour());
 };
-window.houseVisualInspectPersonItem=function(f,id,item){
+window.houseVisualInspectPersonItem=async function(f,id,item){
  const person=selectedRoomProfile(),z=zone(f,id);if(!z)return;
  if(String(person?.name||"").toLowerCase()==="dolly"&&typeof dollyOpenObject==="function"){dollyOpenObject(item);return}
+ const spot=String(item||"").toLowerCase();
+ if(typeof window.homeOpenInventorySpot==="function"&&["dresser","dresser_top","vanity","vanity_items","personal_care"].includes(spot)){
+  let room=null;
+  if(person?.isSelf&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
+   const zones=arr(get(f)?.zones).filter(entry=>entry&&okId(entry.id));
+   const index=zones.findIndex(entry=>entry.id===id);
+   room=await window.homeEnsureMichelleRoomInventory(index===0?0:1);
+  }else room=localRoom(f,z);
+  if(room){window.homeOpenInventorySpot(room.id,spot);return}
+ }
  window.houseVisualInventoryOpen(f,id);
 };
 function personRoomHome(f,z){
