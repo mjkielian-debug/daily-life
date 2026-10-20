@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow3",
+  "build": "20261020-home-dayflow4",
   "released": "2026-10-20",
-  "ui": "Adds a small rotating household chore to each day and fixes Day Flow homepage startup.",
+  "ui": "Adds a small daily household chore outside the kids’ existing chores and fixes Day Flow homepage startup.",
   "data_version": "No saved records removed."
 }
