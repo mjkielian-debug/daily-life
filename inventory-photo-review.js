@@ -74,14 +74,15 @@ window.openInventoryPhotoReview=async function(roomFilter){
   '<p class="pi-muted">'+esc(x.room_name||"Room not verified")+(x.storage_spot?" → "+esc(x.storage_spot):"")+'</p>'+
   (x.evidence_note?'<p class="pi-muted">Seen in photo: '+esc(x.evidence_note)+'</p>':"")+
   '<div class="pi-map-actions"><button type="button" class="btn primary small" onclick="inventoryReviewEdit(&#39;'+x.id+'&#39;)">'+(focus?"Review this item":"Review / add")+'</button>'+
-  '<button type="button" class="btn small" onclick="inventoryIgnoreSuggestion(&#39;'+x.id+'&#39;)">Not mine / skip</button></div></div>';
+  '<button type="button" class="btn small" onclick="inventoryReviewEdit(&#39;'+x.id+'&#39;,true)">Assign to a person</button>'+
+  '<button type="button" class="btn small" onclick="inventoryIgnoreSuggestion(&#39;'+x.id+'&#39;)">Skip — not in household</button></div></div>';
  target.innerHTML=pending.length?
   '<div class="pi-review-counter"><b>Photo suggestions</b><span>'+pending.length+' awaiting confirmation</span><small>Each card shows the photo and where it may belong. Confirm before it enters your counted inventory.</small></div>'+
   '<div class="pi-review-grid">'+pending.map((x,i)=>card(x,i===0)).join("")+'</div>':
   '<p class="pi-muted">No pending suggestions yet. Send pictures, then ask ChatGPT to review the Photo Inbox and prepare inventory candidates.</p>';
 
 };
-window.inventoryReviewEdit=async function(id){
+window.inventoryReviewEdit=async function(id,assignToPerson=false){
  if(!signed()||!digits(id))return;
  const {data:x,error}=await cloudClient.from("inventory_photo_suggestions").select("*").eq("id",id).single();
  if(error||!x){alert("Could not load suggestion.");return}
@@ -89,29 +90,31 @@ window.inventoryReviewEdit=async function(id){
  const candidates=(state.inventoryItems||[]).filter(i=>clean(i.name)===clean(x.item_name));
  // A proposed photo count is evidence to review, not a verified quantity.
  const confirmedQty=existing&&Number.isInteger(Number(existing.quantity))&&Number(existing.quantity)>0?String(existing.quantity):"";
- const inferredOwner=String(x.room_name||"").toLowerCase().includes("dolly")?"Dolly":"";
- const wardrobeOwner=String(existing?.wardrobeOwner||inferredOwner);
+ const people=["Leo","Demitri","Dolly","Ambrose","Michelle"];
+ const inferredOwner=people.find(name=>String(x.room_name||"").toLowerCase().includes(name.toLowerCase()))||"";
+ const itemOwner=String(existing?.inventoryOwner||existing?.wardrobeOwner||inferredOwner);
  const wardrobeType=String(existing?.wardrobeType||"");
  const wardrobeTypes=[["long_sleeve","Long-sleeve shirts"],["short_sleeve","Short-sleeve shirts"],["hoodie_jacket","Hoodies / jackets / zip-ups"],["winter_coat","Winter coat"],["pants","Pants"],["pajamas","Pajamas"]];
 
   const dupe=candidates.length?'<div class="pi-help"><b>Possible existing match</b><p>Do these photos show an item you already counted?</p>'+
  candidates.slice(0,8).map(i=>'<button class="btn small" type="button" onclick="inventoryMarkAlreadyCounted(\''+id+'\',\''+String(i.id||"").replace(/[^a-z0-9_-]/gi,"")+'\')">Already counted: '+esc(i.name||"")+' (×'+Number(i.quantity||0)+')</button>').join(" ")+'</div>':"";
- modal("Check before adding",'<div class="stack pi-form">'+dupe+
+ modal(assignToPerson?"Assign to a person’s inventory":"Check before adding",'<div class="stack pi-form">'+dupe+
  '<label>Item name<input id="irName" value="'+esc(x.item_name)+'"></label>'+
  '<div class="grid2"><label>Quantity you actually confirmed<input id="irQty" type="number" min="1" step="1" required placeholder="Count before saving" value="'+confirmedQty+'"></label>'+
  '<label>Category<input id="irCategory" value="'+esc(x.category||"Household")+'"></label></div>'+
  '<div class="grid2"><label>Clothing type<select id="irWardrobeType"><option value="">Not categorized</option>'+wardrobeTypes.map(([k,v])=>'<option value="'+k+'" '+(wardrobeType===k?"selected":"")+'>'+v+'</option>').join("")+'</select></label>'+
- '<label>Belongs to<select id="irWardrobeOwner"><option value="">Not assigned</option>'+["Leo","Demitri","Dolly","Ambrose","Michelle"].map(v=>'<option value="'+v+'" '+(wardrobeOwner===v?"selected":"")+'>'+v+'</option>').join("")+'</select></label></div>'+
- '<small class="pi-muted">Set clothing type + owner if this should count toward a child’s wardrobe targets.</small>'+
+ '<label>Who uses this? (optional)<select id="irItemOwner"><option value="">Shared / not assigned</option>'+people.map(v=>'<option value="'+v+'" '+(itemOwner===v?"selected":"")+'>'+v+'</option>').join("")+'</select></label></div>'+
+ '<small class="pi-muted">The item stays in household inventory. Assign the person who uses it; clothing type can also count toward wardrobe targets.</small>'+
  '<div class="grid2"><label>Room<input id="irRoom" value="'+esc(x.room_name||"")+'"></label>'+
  '<label>Storage spot<input id="irStorage" value="'+esc(x.storage_spot||"")+'"></label></div>'+
  '<label>What should happen next?<select id="irDecision">'+Object.entries(DECISIONS).map(([k,v])=>'<option value="'+k+'" '+(x.decision===k?"selected":"")+'>'+esc(v)+'</option>').join("")+'</select></label>'+
  '<label>Replacement criteria (only if needed later)<textarea id="irReplace" rows="2">'+esc(x.replacement_criteria||"")+'</textarea></label>'+
  '<label>Notes / condition / next action<textarea id="irNotes" rows="2">'+esc([x.condition_notes,x.suggested_next_step].filter(Boolean).join(" · "))+'</textarea></label>'+
- '<p class="pi-muted">Confirm the item actually belongs to your household; the photo may contain packaging, advertisements or things that are not yours.</p></div>',
- "Confirm as owned",async()=>{
+ '<p class="pi-muted">Confirm the item is in your household inventory. Use “Skip — not in household” only for things you do not want tracked.</p></div>',
+ assignToPerson?"Confirm assigned item":"Confirm in household inventory",async()=>{
   const get=id=>document.getElementById(id);
-  const name=get("irName").value.trim(),qtyText=get("irQty").value.trim();
+  const name=get("irName").value.trim(),qtyText=get("irQty").value.trim(),owner=get("irItemOwner").value;
+  if(assignToPerson&&!owner){alert("Choose which person uses this item before assigning it.");return;}
   const qty=Number(qtyText);
   if(!name||qtyText===""||!Number.isSafeInteger(qty)||qty<1){
    alert("Confirm the item name and a quantity of at least 1. Leave the suggestion pending until you can count it.");return;
@@ -130,7 +133,7 @@ window.inventoryReviewEdit=async function(id){
   }
   Object.assign(row,{name,category:get("irCategory").value.trim()||"Household",quantity:qty,status:decision==="donate"||decision==="sell"?"Donate / sell":"Have",
    roomId,locationId,notes:get("irNotes").value.trim(),organizingDecision:decision,
-   replacementCriteria:get("irReplace").value.trim(),wardrobeType:get("irWardrobeType").value,wardrobeOwner:get("irWardrobeOwner").value,sourceSuggestionId:id,updatedAt:new Date().toISOString()});
+   replacementCriteria:get("irReplace").value.trim(),wardrobeType:get("irWardrobeType").value,inventoryOwner:owner,wardrobeOwner:get("irWardrobeType").value?owner:(row.wardrobeOwner||""),sourceSuggestionId:id,updatedAt:new Date().toISOString()});
   try{await save()}catch(e){
    state.inventoryItems=snapshot.inventoryItems;
    state.houseRooms=snapshot.houseRooms;
@@ -156,7 +159,7 @@ window.inventoryMarkAlreadyCounted=async function(id,itemId){
  render();window.openInventoryPhotoReview();
 };
 window.inventoryIgnoreSuggestion=async function(id){
- if(!signed()||!digits(id)||!confirm("Dismiss this proposed item? It will not be added to your inventory."))return;
+ if(!signed()||!digits(id)||!confirm("Skip this item? It will be dismissed and will not be kept in household inventory."))return;
  const {error}=await cloudClient.from("inventory_photo_suggestions").update({review_status:"ignored"}).eq("id",id);
  if(error){alert("Could not dismiss item.");return}
  window.openInventoryPhotoReview();
