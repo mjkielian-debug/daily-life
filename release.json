@@ -1,6 +1,6 @@
 {
-  "build": "20261020-directive-bathroom-tour1",
+  "build": "20261020-michelle-room-overview2",
   "released": "2026-10-20",
-  "ui": "Profile home now gives a concrete next step when no tasks are assigned. Bathroom photos open from the correct map room and photographed products can be reviewed into inventory. Dolly’s dresser photo no longer labels her bed.",
+  "ui": "Michelle’s room overview no longer shows a bed hotspot where no bed is visible. The third-floor tour separates the entryway and bedroom; opening Michelle’s room inventory opens her room-specific inventory.",
   "data_version": "No saved records removed."
 }
