@@ -299,7 +299,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.20-shower-log-feedback3";
+const APP_BUILD="2026.10.20-ups-week-schedule1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2693,6 +2693,50 @@ function migrateState(s){
         itineraryMinutes:15,itineraryPreference:"evening",itineraryStart:""});
     }
     s.settings.everettGoodieHuntOct29Version=1;
+  }
+  // User-confirmed UPS preload schedule and Dolly's Girl Scout meeting for Oct 19–24.
+  // Add these once to each existing device state; preserve actual punch times and existing event edits.
+  if(Number(s.settings.october2026WeekScheduleVersion||0)<1){
+    const posted=[
+      ["2026-10-19","05:45"],["2026-10-20","04:45"],["2026-10-21","04:15"],
+      ["2026-10-22","04:15"],["2026-10-23","04:30"],["2026-10-24","04:45"]
+    ];
+    for(const [date,scheduled] of posted){
+      let shift=(s.workShifts||[]).find(x=>String(x.date||"")===date);
+      if(!shift){shift={id:"ups-posted-"+date,date};s.workShifts.push(shift)}
+      if(!shift.start&&!shift.end){
+        Object.assign(shift,{scheduled,source:"UPS preload schedule photo",generated:"ups-week-2026-10-19",
+          notes:date==="2026-10-23"?"Posted start 4:30 AM; arrive by 4:00 AM for hazmat training.":"Posted preload start time."});
+      }
+    }
+    const addOrUpdateEvent=(match,defaults)=>{
+      let event=(s.events||[]).find(match);
+      if(!event){event={id:defaults.id,...defaults};s.events.push(event)}
+      else if(event.generated==="october-2026-week-schedule"||String(event.status||"")==="tentative"){
+        Object.assign(event,defaults);
+      }
+      return event;
+    };
+    const scout=addOrUpdateEvent(e=>String(e.date||"")==="2026-10-20"&&/girl scouts?/i.test([e.title,e.notes].filter(Boolean).join(" ")),{
+      id:"dolly-girl-scouts-20261020",date:"2026-10-20",title:"Dolly · Girl Scouts",child:"Dolly",type:"activity",
+      startTime:"18:30",endTime:"",location:"First United Methodist Church, basement, 2723 N 50th St., Lincoln",
+      status:"confirmed",source:"User-confirmed troop meeting",generated:"october-2026-week-schedule",
+      notes:"Troops 20708 and 20721 meet at 6:30 PM. End time not confirmed."
+    });
+    Object.assign(scout,{title:"Dolly · Girl Scouts",child:"Dolly",type:"activity",startTime:"18:30",
+      location:"First United Methodist Church, basement, 2723 N 50th St., Lincoln",status:"confirmed",
+      source:"User-confirmed troop meeting",generated:"october-2026-week-schedule"});
+    const hazmat=addOrUpdateEvent(e=>String(e.date||"")==="2026-10-23"&&/hazmat/i.test([e.title,e.notes].filter(Boolean).join(" ")),{
+      id:"ups-hazmat-training-20261023",date:"2026-10-23",title:"UPS · Hazmat training",child:"Michelle",type:"work",
+      startTime:"04:00",endTime:"04:30",durationMinutes:30,location:"UPS",
+      status:"confirmed",source:"User-confirmed training arrival time",generated:"october-2026-week-schedule",
+      notes:"Arrive by 4:00 AM for hazmat training; posted preload start is 4:30 AM."
+    });
+    Object.assign(hazmat,{title:"UPS · Hazmat training",child:"Michelle",type:"work",startTime:"04:00",
+      endTime:hazmat.endTime||"04:30",durationMinutes:30,location:"UPS",status:"confirmed",
+      source:"User-confirmed training arrival time",generated:"october-2026-week-schedule",
+      notes:"Arrive by 4:00 AM for hazmat training; posted preload start is 4:30 AM."});
+    s.settings.october2026WeekScheduleVersion=1;
   }
   if(Number(s.settings.knownCompletionHistoryVersion||0)<1){
     const confirmed=[
@@ -8575,7 +8619,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261020-inventory-owner1";
+const DAILY_LIFE_BUILD="20261020-ups-week-schedule1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
