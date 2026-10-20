@@ -308,7 +308,7 @@ let startupFallbackAvailable=false;
 let startupFallbackTimer=null;
 let startupStorageStalled=false;
 let startupStorageWatchdog=null;
-let state=blankState(),view="family",houseOverlayView="",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
+let state=blankState(),view="family",houseOverlayView="",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",inventoryOwnerFilter=localStorage.getItem("dailyLifeInventoryOwner")||"All",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Rainbow Rose","#c34d84","#9bc8ee","#f6cf8a"],
   ["Coral Sky","#b95178","#b1a9e4","#f5ce8d"],
@@ -6068,6 +6068,7 @@ function householdView(){
 function inventorySetTab(tab){inventoryTab=tab==="map"?"map":"items";localStorage.setItem("dailyLifeInventoryTab",inventoryTab);render()}
 function inventorySetCategory(category){inventoryCategory=category||"All";localStorage.setItem("dailyLifeInventoryCategory",inventoryCategory);render()}
 function inventorySetSearch(value){inventorySearch=String(value||"");render()}
+function inventorySetOwner(value){inventoryOwnerFilter=String(value||"All");localStorage.setItem("dailyLifeInventoryOwner",inventoryOwnerFilter);render()}
 function inventoryRoomById(id){return (state.houseRooms||[]).find(x=>x.id===id)||null}
 function inventoryLocationById(id){return (state.inventoryLocations||[]).find(x=>x.id===id)||null}
 function inventoryRoomLabel(id){return inventoryRoomById(id)?.name||""}
@@ -6092,9 +6093,10 @@ function inventoryEnsureLocation(roomId,name){
   return loc.id;
 }
 function inventoryVisibleItems(){
-  const q=String(inventorySearch||"").trim().toLowerCase(),cat=inventoryCategory||"All";
+  const q=String(inventorySearch||"").trim().toLowerCase(),cat=inventoryCategory||"All",owner=inventoryOwnerFilter||"All";
   return [...(state.inventoryItems||[])].filter(x=>{
     if(cat!=="All"&&String(x.category||"Other")!==cat)return false;
+    if(owner!=="All"&&String(x.inventoryOwner||x.wardrobeOwner||"")!==owner)return false;
     if(!q)return true;
     const hay=[x.name,x.category,x.status,x.notes,x.inventoryOwner,x.wardrobeOwner,inventoryLocationLabel(x)].join(" ").toLowerCase();
     return hay.includes(q);
@@ -6180,8 +6182,8 @@ function inventoryDetailedView(){
     </div>`;
   }
   return `<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox('inventory')">📷 Capture belongings</button><button class="btn" onclick="openInventoryPhotoReview()">Review photo items</button><button class="btn" onclick="openUseUpPlan()">♻ Use up + reduce</button></div>${inventoryTab==="items"?wardrobeTargetsHtml():""}<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Use what you already have</h2><div class="muted small">${all.length} tracked item${all.length===1?"":"s"}${low?" · "+low+" low / needed":""}</div></div><button class="btn primary" onclick="openInventoryItem()">+ Item</button></div>${tabs}</div>
-  <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
-  <div class="card"><div class="section-title"><div><h2>${inventoryCategory==="All"?"Everything":esc(inventoryCategory)}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
+  <div class="card inventory-tools"><label>Search inventory<input value="${esc(inventorySearch)}" oninput="inventorySetSearch(this.value)" placeholder="Item, room, shelf, notes…"></label><label>Show inventory for<select onchange="inventorySetOwner(this.value)"><option value="All" ${inventoryOwnerFilter==="All"?"selected":""}>Everyone / shared</option>${["Michelle","Leo","Demitri","Dolly","Ambrose"].map(person=>`<option value="${person}" ${inventoryOwnerFilter===person?"selected":""}>${person}</option>`).join("")}</select></label><div class="inventory-category-row"><button class="chip ${inventoryCategory==="All"?"active":""}" onclick="inventorySetCategory('All')">All</button>${categories.map(c=>`<button class="chip ${inventoryCategory===c?"active":""}" onclick='inventorySetCategory(${JSON.stringify(c)})'>${esc(c)}</button>`).join("")}</div></div>
+  <div class="card"><div class="section-title"><div><h2>${inventoryOwnerFilter==="All"?(inventoryCategory==="All"?"Everything":esc(inventoryCategory)):(esc(inventoryOwnerFilter)+"’s inventory")}</h2><div class="muted small">${items.length} result${items.length===1?"":"s"}</div></div><button class="btn" onclick="inventorySetTab('map')">House map</button></div>
   ${items.length?items.map(x=>{const place=inventoryLocationLabel(x),status=String(x.status||"Have"),qty=Math.max(0,Number(x.quantity||1));return `<button class="inventory-item-row" onclick="openInventoryItem('${x.id}')">${typeof window.inventoryItemPhotoHtml==="function"?window.inventoryItemPhotoHtml(x):""}<span class="grow"><b>${esc(x.name||"Unnamed item")}</b><small>${esc(x.category||"Other")}${x.inventoryOwner?" · for "+esc(x.inventoryOwner):""}${place?" · "+esc(place):""}${x.notes?" · "+esc(x.notes):""}</small></span><span class="inventory-item-meta"><b>${qty>1?"×"+qty:""}</b><small class="${["Low","Need"].includes(status)?"inventory-low":""}">${esc(status)}${x.targetQty!==null&&x.targetQty!==undefined?" · goal "+Number(x.targetQty):""}</small></span></button>`}).join(""):`<div class="notice">No inventory items match this view yet.<br><button class="btn small" type="button" onclick="inventorySetSearch(&#39;&#39;);inventorySetCategory(&#39;All&#39;)">Show all inventory</button></div>`}
   </div>`;
 }
