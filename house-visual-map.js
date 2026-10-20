@@ -263,11 +263,17 @@ function selfRoomPhotoHotspots(title){
  if(/tv and box fan side/.test(t))return [
   ["tv_stand","TV / media console",67,61],["box_fan","White box fan",83,38]
  ];
- if(/tall dresser beside the bed/.test(t))return [
-  ["bed","Bed",18,66],["dresser","Tall dresser",52,52],["vanity","Vanity",84,70]
+ if(/bed and vanity angle/.test(t))return [
+  ["bed","Bed",14,50],["vanity","Vanity / dressing table",42,53]
+ ];
+ if(/bed beside the closet doorway/.test(t))return [
+  ["closet_doorway","Closet doorway",19,43],["bed","Bed",70,65]
+ ];
+ if(/low shelves, shoes and dark side cabinet/.test(t))return [
+  ["book_shelves","Low book shelves",31,56],["shoes","Shoes",61,56]
  ];
  if(/low shelves, books and decor/.test(t))return [
-  ["book_shelves","Low book shelves",36,64],["decor","Display items",44,42],["shoes","Shoes",70,80]
+  ["book_shelves","Low book shelves",36,56],["decor","Display items",44,43]
  ];
  if(/tall dresser close-up/.test(t))return [
   ["dresser","Tall dresser",48,60],["dresser_top","Items on top",47,27]
@@ -278,15 +284,13 @@ function selfRoomPhotoHotspots(title){
  if(/vanity surface close-up/.test(t))return [
   ["vanity","Vanity / dressing table",48,73],["vanity_items","Personal-care items",53,36]
  ];
- if(/bed and vanity angle/.test(t))return [
-  ["bed","Bed",30,67],["vanity","Vanity / dressing table",70,56]
- ];
+ /* bed and vanity angle is handled above with hotspots placed on the visible bed edge and vanity. */
  if(/bed and bedding/.test(t))return [["bed","Bed",51,55]];
  if(/bed beside the doorway/.test(t))return [
-  ["bed","Bed",70,65],["bedroom_door","Bedroom doorway",20,31],["vanity","Vanity / dressing table",24,54]
+  ["bed","Bed",70,65],["bedroom_door","Bedroom doorway",20,31]
  ];
  if(/doorway and bed view/.test(t))return [
-  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69],["robovac","Robovac",42,80]
+  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69],["robovac","Robovac",29,64]
  ];
  return [];
 }
