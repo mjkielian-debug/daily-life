@@ -1,6 +1,6 @@
 {
-  "build": "20261020-michelle-room-overview2",
+  "build": "20261020-inventory-owner1",
   "released": "2026-10-20",
-  "ui": "Michelle’s room overview no longer shows a bed hotspot where no bed is visible. The third-floor tour separates the entryway and bedroom; opening Michelle’s room inventory opens her room-specific inventory.",
+  "ui": "Photo inventory review can assign household items to a person or skip items outside the household. Inventory shows who uses each item.",
   "data_version": "No saved records removed."
 }
