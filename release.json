@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow4",
+  "build": "20261020-home-dayflow5",
   "released": "2026-10-20",
-  "ui": "Adds a small daily household chore outside the kids’ existing chores and fixes Day Flow homepage startup.",
+  "ui": "Adds daily litter-box and backpack checks, weekly personal bedding laundry, monthly kids’ bedding changes, and a rotating household chore.",
   "data_version": "No saved records removed."
 }
