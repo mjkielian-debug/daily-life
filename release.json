@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow1",
+  "build": "20261020-home-dayflow2",
   "released": "2026-10-20",
-  "ui": "Shows the current or next scheduled Day Flow step on the personal homepage.",
+  "ui": "Fixes Day Flow homepage startup and shows the current or next scheduled step.",
   "data_version": "No saved records removed."
 }
