@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow2",
+  "build": "20261020-home-dayflow3",
   "released": "2026-10-20",
-  "ui": "Fixes Day Flow homepage startup and shows the current or next scheduled step.",
+  "ui": "Adds a small rotating household chore to each day and fixes Day Flow homepage startup.",
   "data_version": "No saved records removed."
 }
