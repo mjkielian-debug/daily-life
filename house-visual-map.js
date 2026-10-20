@@ -263,7 +263,7 @@ function selfRoomPhotoHotspots(title){
  if(/dresser and room view/.test(t))return [["vanity","Vanity / dressing table",24,58],["dresser","Tall dresser",59,43],["hamper","Laundry hamper",84,42]];
  if(/dresser and bed view/.test(t))return [["bed","Bed",12,58],["vanity","Vanity / dressing table",61,51],["dresser","Low dresser",77,56]];
  if(/room overview from bed side/.test(t))return [["bed","Bed",19,57],["vanity","Vanity / dressing table",68,43]];
- if(/room overview/.test(t))return [["bed","Bed",15,66],["vanity","Vanity / dressing table",68,45],["dresser","Low dresser",40,47]];
+ if(/room overview/.test(t))return [["vanity","Vanity / dressing table",68,45],["dresser","Low dresser",40,47]];
  if(/bed view/.test(t))return [["bed","Bed",36,58]];
  return [];
 }
