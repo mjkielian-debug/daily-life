@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow5",
+  "build": "20261020-home-dayflow6",
   "released": "2026-10-20",
-  "ui": "Adds daily litter-box and backpack checks, weekly personal bedding laundry, monthly kids’ bedding changes, and a rotating household chore.",
+  "ui": "Adds nightly robot vacuum, daily litter-box and backpack checks, weekly personal bedding laundry, monthly kids’ bedding changes, and a rotating household chore.",
   "data_version": "No saved records removed."
 }
