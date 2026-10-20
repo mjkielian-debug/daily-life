@@ -253,18 +253,41 @@ function selectedRoomProfile(){
 }
 function selfRoomPhotoHotspots(title){
  const t=str(title).toLowerCase();
- // These are Michelle's nine third-floor room photos, ordered by the photo-tour
- // query. Keep labels tied to the object and position visible in each photograph;
- // don't infer that a bed or dresser is present from a generic room caption.
- if(/entry-side view/.test(t))return [["beanbag","Black beanbag",79,56],["chair","Chair",48,70]];
- if(/storage corner/.test(t))return [["storage","Storage bins",75,41],["dresser","Dresser",12,21]];
- if(/dresser corner/.test(t))return [["tv_stand","TV stand",61,48],["floor_fan","Floor fan",83,79]];
- if(/dresser and floor view/.test(t))return [["dresser","Dresser",12,27],["storage","Shelves + storage",73,53]];
- if(/dresser and room view/.test(t))return [["vanity","Vanity / dressing table",24,58],["dresser","Tall dresser",59,43],["hamper","Laundry hamper",84,42]];
- if(/dresser and bed view/.test(t))return [["bed","Bed",12,58],["vanity","Vanity / dressing table",61,51],["dresser","Low dresser",77,56]];
- if(/room overview from bed side/.test(t))return [["bed","Bed",19,57],["vanity","Vanity / dressing table",68,43]];
- if(/room overview/.test(t))return [["vanity","Vanity / dressing table",68,45],["dresser","Low dresser",40,47]];
- if(/bed view/.test(t))return [["bed","Bed",36,58]];
+ if(/entryway/.test(t))return [];
+ if(/robovac and fans/.test(t))return [
+  ["robovac","Robovac",52,82],["pedestal_fan","Black pedestal fan",55,43],["box_fan","White box fan",15,42]
+ ];
+ if(/room overview from the doorway/.test(t))return [
+  ["bed","Bed",20,66],["dresser","Tall dresser",52,38],["tv_stand","TV / media console",83,61],["box_fan","White box fan",92,52]
+ ];
+ if(/tv and box fan side/.test(t))return [
+  ["tv_stand","TV / media console",67,61],["box_fan","White box fan",83,38]
+ ];
+ if(/tall dresser beside the bed/.test(t))return [
+  ["bed","Bed",18,66],["dresser","Tall dresser",52,52],["vanity","Vanity",84,70]
+ ];
+ if(/low shelves, books and decor/.test(t))return [
+  ["book_shelves","Low book shelves",36,64],["decor","Display items",44,42],["shoes","Shoes",70,80]
+ ];
+ if(/tall dresser close-up/.test(t))return [
+  ["dresser","Tall dresser",48,60],["dresser_top","Items on top",47,27]
+ ];
+ if(/vanity and stool/.test(t))return [
+  ["vanity","Vanity / dressing table",52,58],["stool","Vanity stool",49,83],["vanity_items","Personal-care items",55,39]
+ ];
+ if(/vanity surface close-up/.test(t))return [
+  ["vanity","Vanity / dressing table",48,73],["vanity_items","Personal-care items",53,36]
+ ];
+ if(/bed and vanity angle/.test(t))return [
+  ["bed","Bed",30,67],["vanity","Vanity / dressing table",70,56]
+ ];
+ if(/bed and bedding/.test(t))return [["bed","Bed",51,55]];
+ if(/bed beside the doorway/.test(t))return [
+  ["bed","Bed",70,65],["bedroom_door","Bedroom doorway",20,31],["vanity","Vanity / dressing table",24,54]
+ ];
+ if(/doorway and bed view/.test(t))return [
+  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69],["robovac","Robovac",42,80]
+ ];
  return [];
 }
 function personRoomPhotoMarkup(photo,index,total,person,f,z){
@@ -306,7 +329,7 @@ async function hydratePersonRoomPhotoTour(){
  let photos=personPhotoCache.get(cacheKey);
  if(!photos){
   try{
-   const {data,error}=await cloudClient.from("photo_inbox").select("id,category,title,notes,created_at")
+   const {data,error}=await cloudClient.from("photo_inbox").select("id,category,title,notes,phase,created_at")
     .in("category",["home_progress","house_map"]).eq("floor_label",floor)
     .order("created_at",{ascending:true}).limit(100);
    if(error)throw error;
@@ -319,13 +342,17 @@ async function hydratePersonRoomPhotoTour(){
    const name=normalize(zoneOwner?.name||person.name),isSelf=!!person.isSelf&&floor==="Third floor";
    const selfZones=arr(get(floor)?.zones).filter(item=>item&&okId(item.id));
    const selfRoomIndex=selfZones.findIndex(item=>item.id===zoneId);
-   const rows=(data||[]).filter(p=>{
-    if(!okPhoto(p.id)||p.category!=="home_progress")return false;
+   const selfRows=(data||[]).filter(p=>okPhoto(p.id)&&["home_progress","house_map"].includes(p.category));
+   const afterRows=isSelf?selfRows.filter(p=>p.phase==="after"):[];
+   const sourceRows=isSelf&&afterRows.length?afterRows:selfRows.filter(p=>p.category==="home_progress");
+   const rows=sourceRows.filter(p=>{
+    if(!okPhoto(p.id))return false;
     const all=str(p.title)+" "+str(p.notes),normalized=normalize(all);
     if(isSelf){
-     const entry=/entry.side view|entryway|beanbag/i.test(all);
-     return selfRoomIndex===0?entry:!entry&&/bedroom|upstairs bedroom|room overview|dresser|bed view|storage corner/i.test(all)&&!/laundry/i.test(all);
+     const entry=/entryway|beanbag/i.test(all);
+     return selfRoomIndex===0?entry:!entry&&/bedroom|room overview|dresser|vanity|bed|robovac|fan|shelves/i.test(all)&&!/laundry/i.test(all);
     }
+    if(p.category!=="home_progress")return false;
     if(name&&normalized.includes(name))return /bedroom|bed|room|chair/i.test(all);
     return !zoneOwner&&normalized.includes(normalize(z.name))&&/room|bed|house/i.test(all);
    });
