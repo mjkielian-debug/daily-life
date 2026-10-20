@@ -1,6 +1,6 @@
 {
-  "build": "20261020-ups-week-schedule1",
+  "build": "20261020-toothbrush-owners1",
   "released": "2026-10-20",
-  "ui": "This update adds the Oct 19–24 UPS preload schedule, Friday hazmat arrival, and Dolly’s Oct 20 Girl Scout meeting to Daily Life.",
+  "ui": "Adds one confirmed toothbrush to each child's upstairs-bathroom inventory from Michelle's photo review.",
   "data_version": "No saved records removed."
 }
