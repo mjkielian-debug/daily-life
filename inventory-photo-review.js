@@ -44,17 +44,20 @@ window.inventoryLoadSavedItemPhotos=async function(){
  });
 };
 
-window.openInventoryPhotoReview=async function(){
+window.openInventoryPhotoReview=async function(roomFilter){
+ const reviewRoom=String(roomFilter||"").trim();
  if(!signed()){
   modal("Photo inventory review",'<p class="muted">Sign in to Daily Life cloud to receive suggestions from photos you ask me to examine. Existing inventory stays on this phone.</p><button class="btn primary" onclick="openCloudAuth()">Sign in</button>',"Close",closeModal);return;
  }
- modal("📦 Review items from photos",'<div class="pi-main">'+
+ modal(reviewRoom?"📦 Review "+esc(reviewRoom)+" photo items":"📦 Review items from photos",'<div class="pi-main">'+
  '<div class="pi-help"><b>Only confirmed belongings go into inventory</b><p>After you ask ChatGPT to review your Photo Inbox, tentative items appear here. Confirm their name, quantity and location. Overlapping photos do not automatically create duplicates.</p></div>'+
  '<div class="pi-map-actions"><button class="btn primary" onclick="openPhotoInbox(\'inventory\')">+ Send inventory photos</button><button class="btn" onclick="openUseUpPlan()">Use-up + declutter plan</button></div>'+
  '<div id="inventoryReviewRows"><p class="pi-muted">Loading suggestions…</p></div></div>',"Close",closeModal);
- const {data,error}=await cloudClient.from("inventory_photo_suggestions")
+ let query=cloudClient.from("inventory_photo_suggestions")
   .select("id,source_photo_id,item_name,category,quantity_estimate,unit,room_name,storage_spot,condition_notes,decision,replacement_criteria,suggested_next_step,review_status,evidence_note,app_item_id")
-  .eq("review_status","pending").order("created_at",{ascending:false}).limit(150);
+  .eq("review_status","pending");
+ if(reviewRoom)query=query.eq("room_name",reviewRoom);
+ const {data,error}=await query.order("created_at",{ascending:false}).limit(150);
  const target=document.getElementById("inventoryReviewRows");if(!target)return;
  if(error){target.textContent="Could not load suggestions: "+error.message;return}
  const pending=(data||[]).filter(x=>digits(x.id));

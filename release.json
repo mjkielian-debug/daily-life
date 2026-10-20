@@ -1,6 +1,6 @@
 {
-  "build": "20261020-shower-log-feedback3",
+  "build": "20261020-directive-bathroom-tour1",
   "released": "2026-10-20",
-  "ui": "Shower logging now records the time, marks the care check-in complete, and visibly confirms the saved shower.",
+  "ui": "Profile home now gives a concrete next step when no tasks are assigned. Bathroom photos open from the correct map room and photographed products can be reviewed into inventory. Dolly’s dresser photo no longer labels her bed.",
   "data_version": "No saved records removed."
 }

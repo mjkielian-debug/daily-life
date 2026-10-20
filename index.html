@@ -4809,16 +4809,17 @@ function selfCareBathroomCard(){
   const showerStatus=showerCount?'<div class="notice shower-log-status" role="status">✓ Shower logged today'+(lastShowerTime?" at "+esc(fmtClock(lastShowerTime)):"")+(showerCount>1?" · "+showerCount+" showers logged":"")+"</div>":"";
   return '<section class="card self-care-bathroom"><div class="section-title"><div><div class="eyebrow">Bathroom · shower routine</div><h2>Shower + bathroom</h2><div class="muted small">Use products you’ve actually recorded. Hair wash is a separate choice; nothing is assumed used.</div></div><button class="btn" type="button" onclick="openBathroomOnMap()">⌂ Bathroom map</button></div>'+
   '<div class="actions"><button class="btn primary" type="button" onclick="logCareOccurrence(\'shower\')">＋ '+(showerCount?'Log another shower':'Log a shower')+'</button><button class="btn" type="button" onclick="setView(\'inventory\')">Open inventory</button></div>'+showerStatus+
-  '<div class="self-care-bathroom-items">'+(rows||'<div class="notice">No bathroom products are confirmed in inventory yet. Add or review them there and they’ll appear here.</div>')+'</div></section>';
+  '<div class="self-care-bathroom-items">'+(rows||'<div class="notice">Your 15 upstairs-bathroom photos are saved. They show toothpaste, floss picks, cleanser, shampoo, body wash and skin products. Confirm quantities and storage before adding them to inventory.</div>')+'</div>'+(rows?'':'<button class="btn small" type="button" onclick="openInventoryPhotoReview(\'Upstairs bathroom\')">Review bathroom items from photos</button>')+'</section>';
 }
 function openBathroomOnMap(){
-  const room=(state.houseRooms||[]).find(r=>/bath/i.test(String(r.name||""))),floor=room?.floor||"";
-  if(floor)try{localStorage.setItem("dailyLifeMapFirstFloor",String(floor))}catch(_){}
+  const room=(state.houseRooms||[]).find(r=>/bath/i.test(String(r.name||""))),floor=room?.floor||"Second floor",zoneId=floor==="Second floor"?"upstairs_bath":"bath";
+  try{localStorage.setItem("dailyLifeMapFirstFloor",String(floor))}catch(_){}
   setView("household");
   requestAnimationFrame(()=>{
     const fallback=()=>{if(typeof householdOpenRoomProgress==="function")householdOpenRoomProgress()};
-    if(!floor||typeof window.houseVisualMapHydrate!=="function"){fallback();return}
+    if(typeof window.houseVisualMapHydrate!=="function"){fallback();return}
     Promise.resolve().then(()=>window.houseVisualMapHydrate(floor)).then(()=>{
+      if(typeof window.houseVisualOpenZone==="function"){window.houseVisualOpenZone(floor,zoneId);return}
       const mapRoot=[...document.querySelectorAll(".hvm-root")].find(el=>el.dataset.floor===floor);
       const tile=[...(mapRoot?.querySelectorAll(".hvm-room-tile")||[])].find(el=>/bath/i.test(el.textContent||""));
       if(tile){tile.click();return}
@@ -5590,10 +5591,11 @@ function peopleProfileHomePage(){
   return '<section class="visual-hub visual-hub-family vh-profile-home" aria-label="'+esc(name)+' profile home">'+
     '<div class="vh-heading"><div><div class="eyebrow">PROFILE HOME</div><h1>'+esc(isSelf?"Your home":name+"’s home")+'</h1><p>'+esc(intro)+'</p></div><button type="button" class="btn primary vh-add" onclick="'+(isSelf?"openWellnessCheckin()":"openPersonProfile("+lifeSimArg(active.id)+")")+'">'+(isSelf?"+ Check in":"+ Edit profile")+'</button></div>'+
     '<div class="vh-profile-actions">'+actionButtons+'</div>'+
-    '<section id="vh-profile-today" class="vh-profile-card vh-profile-today"><div class="vh-profile-card-head"><div><div class="eyebrow">TODAY</div><h2>'+(total?done+' of '+total+' done':"A clear slate")+'</h2></div><div class="vh-profile-ring" style="--progress:'+progress+'%" role="img" aria-label="'+done+' of '+total+' tasks and chores done"><span>'+progress+'%</span></div></div>'+
-      ((taskRows||choreRows)?'<details class="vh-profile-checklist"><summary>Tasks + chores <span>'+done+'/'+total+'</span></summary>'+(choreRows+taskRows)+'</details>':'<p class="muted small">'+(isSelf?"No personal tasks are assigned to you today.":"Nothing is assigned to "+esc(name)+" today.")+'</p>')+
+    '<section id="vh-profile-today" class="vh-profile-card vh-profile-today"><div class="vh-profile-card-head"><div><div class="eyebrow">TODAY</div><h2>'+(total?done+' of '+total+' done':"Your next step")+'</h2></div><div class="vh-profile-ring" style="--progress:'+progress+'%" role="img" aria-label="'+done+' of '+total+' tasks and chores done"><span>'+(total?progress+"%":"→")+'</span></div></div>'+
+      ((taskRows||choreRows)?'<details class="vh-profile-checklist"><summary>Tasks + chores <span>'+done+'/'+total+'</span></summary>'+(choreRows+taskRows)+'</details>':'<p class="muted small">'+(isSelf?"Nothing has been assigned today. Use the next step below to shape the rest of your day.":"Nothing is assigned to "+esc(name)+" today.")+'</p>')+
       (childProfile||readingGoal||personReading.length?'<div class="vh-profile-reading"><span>Reading today</span><b>'+readingPagesToday+' pages'+(readingGoal?" / "+readingGoal+" goal":"")+'</b><small>'+readingPages+' pages logged all time</small><button class="btn small" type="button" onclick="openReadingHubSection(\'log\')">＋ Log pages</button></div>':"")+
     '</section>'+
+    (!total&&typeof actionFirstMarkup==="function"?actionFirstMarkup(isSelf?"home":"family",null):"")+
     birthdayCard+
     '<section class="vh-profile-card" id="vh-profile-school"><div class="vh-profile-card-head"><div><div class="eyebrow">'+(childProfile?"SCHOOL + GROWTH":"UP NEXT")+'</div><h2>'+(childProfile?"Schoolwork, grades, awards + books":"Plans + activities")+'</h2></div><button class="btn small" type="button" onclick="'+(childProfile?"openPeopleHubSection(\'school\')":"openPeopleHubSection(\'plans\')")+'">'+(childProfile?"＋ Add school entry":"＋ Add plan")+'</button></div>'+schoolContent+'</section>'+
     (!isSelf&&active.familyLinks?.length?'<section class="vh-profile-card"><div class="eyebrow">FAMILY CONNECTIONS</div><div class="person-chips">'+active.familyLinks.map(link=>'<span class="person-chip">'+esc(link.name)+' · '+esc(link.label||"family")+'</span>').join("")+'</div></section>':"")+
