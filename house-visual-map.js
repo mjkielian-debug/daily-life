@@ -256,7 +256,7 @@ function selfRoomPhotoHotspots(title){
  // These are Michelle's nine third-floor room photos, ordered by the photo-tour
  // query. Keep labels tied to the object and position visible in each photograph;
  // don't infer that a bed or dresser is present from a generic room caption.
- if(/entry-side view/.test(t))return [["beanbag","Beanbag chair",79,56],["side_table","Small side table",72,47]];
+ if(/entry-side view/.test(t))return [["beanbag","Black beanbag",79,56],["chair","Chair",48,70]];
  if(/storage corner/.test(t))return [["storage","Storage bins",75,41],["dresser","Dresser",12,21]];
  if(/dresser corner/.test(t))return [["tv_stand","TV stand",61,48],["floor_fan","Floor fan",83,79]];
  if(/dresser and floor view/.test(t))return [["dresser","Dresser",12,27],["storage","Shelves + storage",73,53]];
@@ -316,11 +316,16 @@ async function hydratePersonRoomPhotoTour(){
     const candidateName=normalize(candidate.name);
     return candidateName&&zoneName.includes(candidateName);
    });
-   const name=normalize(zoneOwner?.name||person.name),isSelf=!!person.isSelf&&!zoneOwner&&zoneId==="bedroom";
+   const name=normalize(zoneOwner?.name||person.name),isSelf=!!person.isSelf&&floor==="Third floor";
+   const selfZones=arr(get(floor)?.zones).filter(item=>item&&okId(item.id));
+   const selfRoomIndex=selfZones.findIndex(item=>item.id===zoneId);
    const rows=(data||[]).filter(p=>{
     if(!okPhoto(p.id)||p.category!=="home_progress")return false;
     const all=str(p.title)+" "+str(p.notes),normalized=normalize(all);
-    if(isSelf)return /bedroom|upstairs bedroom/i.test(all)&&!/stairs|transfer point|laundry/i.test(all);
+    if(isSelf){
+     const entry=/entry.side view|entryway|beanbag/i.test(all);
+     return selfRoomIndex===0?entry:!entry&&/bedroom|upstairs bedroom|room overview|dresser|bed view|storage corner/i.test(all)&&!/laundry/i.test(all);
+    }
     if(name&&normalized.includes(name))return /bedroom|bed|room|chair/i.test(all);
     return !zoneOwner&&normalized.includes(normalize(z.name))&&/room|bed|house/i.test(all);
    });
@@ -354,6 +359,11 @@ window.houseVisualInspectPersonItem=function(f,id,item){
  window.houseVisualInventoryOpen(f,id);
 };
 function personRoomHome(f,z){
+ const tourZones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
+ const tourIndex=tourZones.findIndex(item=>item.id===z.id);
+ const personForTitle=selectedRoomProfile();
+ const roomTitle=personForTitle?.isSelf&&f==="Third floor"?(tourIndex===0?"Entryway to Michelle’s room":"Michelle’s bedroom"):z.name;
+
  const person=selectedRoomProfile(),room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),done=tasks.filter(t=>t.done).length;
  const today=(state.tasks||[]).filter(t=>t.date===ymd()&&!t.paused&&!t.waitingForFunds&&String(t.child||"").trim().toLowerCase()===String(person?.name||"").trim().toLowerCase());
  const todayDone=today.filter(t=>t.done).length;
@@ -364,7 +374,7 @@ function personRoomHome(f,z){
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
  const tour='<nav class="hvm-person-tour-nav" aria-label="House tour navigation"><button type="button" class="btn" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,-1)">‹ Previous room</button><span><b>Room tour</b><small>'+(index+1)+' of '+zones.length+' · '+h(f)+'</small></span><button type="button" class="btn" '+(index<0||index>=zones.length-1?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,1)">Next room ›</button></nav>';
  return '<section class="hvm-person-room-home" aria-label="'+h(person?.name||z.name)+' bedroom home">'+
-  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(z.name||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+objects+
+  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+objects+
   '<div class="hvm-person-room-stats"><div><small>TODAY</small><b>'+(today.length?todayDone+' of '+today.length+' tasks done':"No tasks assigned today")+'</b></div><div><small>ROOM TASKS</small><b>'+(tasks.length?done+' of '+tasks.length+' complete':"No room tasks logged")+'</b></div></div>'+
   '<section class="hvm-person-room-task-list"><div class="hvm-person-room-task-heading"><b>Room tasks</b><button type="button" class="btn small" onclick="houseVisualAddZoneTask(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">＋ Add</button></div>'+
   (roomTasks||'<p class="muted small">No unfinished room tasks. Progress reflects completed tasks, not how clean the room looks.</p>')+'</section>'+
@@ -395,6 +405,19 @@ window.houseVisualSelectTourRoom=function(f,id){
  if(typeof homeSetMapFloor==="function")homeSetMapFloor(f);
  render();
  window.scrollTo(0,0);
+};
+window.houseVisualInventoryOpen=async function(f,id){
+ const person=selectedRoomProfile(),z=zone(f,id);
+ if(!z)return;
+ if(person?.isSelf&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
+  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
+  const index=zones.findIndex(item=>item.id===id);
+  const room=await window.homeEnsureMichelleRoomInventory(index===0?0:1);
+  if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
+ }
+ const room=localRoom(f,z);
+ if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
+ if(typeof openInventoryHubSection==="function")openInventoryHubSection("items");
 };
 window.houseVisualPersonTourStep=function(f,id,delta){
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===id),next=zones[index+Number(delta)];
@@ -480,6 +503,9 @@ function personRoomZone(f,name,isSelf){
   return aliases.some(alias=>alias&&label.includes(alias));
  });
  if(direct)return direct;
+ if(isSelf&&f==="Third floor"){
+  if(zones.length)return zones[0];
+ }
  if(isSelf){
   const explicit=zones.find(z=>z.id==="bedroom"||/^your bedroom$/i.test(str(z.name)));
   if(explicit)return explicit;

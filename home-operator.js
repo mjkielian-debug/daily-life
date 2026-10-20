@@ -202,6 +202,28 @@
       <div class="actions"><button class="btn primary" onclick="homeAddInventoryItemToRoom('${room.id}')">+ Item here</button><button class="btn" onclick="closeModal();openInventoryLocation('','${room.id}')">+ Storage location</button><button class="btn" onclick="closeModal();openInventoryRoom('${room.id}')">Edit room</button></div>
     </div>`,"Close",closeModal);
   };
+  window.homeEnsureMichelleRoomInventory=async function(which){
+    const roomIndex=Number(which)===0?0:1;
+    state.houseRooms=Array.isArray(state.houseRooms)?state.houseRooms:[];
+    state.inventoryItems=Array.isArray(state.inventoryItems)?state.inventoryItems:[];
+    const roomName=roomIndex===0?"Michelle’s room entryway":"Michelle’s bedroom";
+    let room=state.houseRooms.find(r=>String(r.floor||"")==="Third floor"&&String(r.name||"").trim().toLowerCase()===roomName.toLowerCase());
+    let changed=false;
+    if(!room){
+      room={id:uid(),name:roomName,floor:"Third floor",mapColor:roomIndex===0?"#c9b7e8":"#f2b8d4",notes:"Linked to Michelle’s third-floor photo tour."};
+      state.houseRooms.push(room);changed=true;
+    }
+    const names=roomIndex===0?["Black beanbag","Chair"]:["Bed","Low dresser","Vanity / dressing table"];
+    for(const name of names){
+      const exists=state.inventoryItems.some(item=>String(item.roomId||"")===String(room.id)&&String(item.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(!exists){
+        state.inventoryItems.push({id:uid(),name,category:"Household",quantity:1,status:"Have",roomId:room.id,locationId:"",notes:"Visible in Michelle’s room tour photo or identified by Michelle."});
+        changed=true;
+      }
+    }
+    if(changed)await save();
+    return room;
+  };
   function homeFloorPlanCard(){
     const floors=homeFloorList(),active=homeActiveFloor(),localSrc=homeLocalMapImage(active),imported=homeImportedMapReference(active),
           importedOnly=!localSrc&&!!imported.src,src=localSrc||imported.src,
