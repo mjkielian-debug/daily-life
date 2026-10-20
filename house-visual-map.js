@@ -264,7 +264,7 @@ function selfRoomPhotoHotspots(title){
   ["tv_stand","TV / media console",67,61],["box_fan","White box fan",83,38]
  ];
  if(/bed and vanity angle/.test(t))return [
-  ["bed","Bed",14,50],["vanity","Vanity / dressing table",42,53]
+  ["bed","Bed",12,50],["vanity","Vanity / dressing table",34,49]
  ];
  if(/bed beside the closet doorway/.test(t))return [
   ["closet_doorway","Closet doorway",19,43],["bed","Bed",70,65]
@@ -290,7 +290,7 @@ function selfRoomPhotoHotspots(title){
   ["bed","Bed",70,65],["bedroom_door","Bedroom doorway",20,31]
  ];
  if(/doorway and bed view/.test(t))return [
-  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69],["robovac","Robovac",29,64]
+  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69]
  ];
  return [];
 }
