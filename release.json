@@ -1,6 +1,6 @@
 {
-  "build": "20261020-toothbrush-owners1",
+  "build": "20261020-daily-review-revise1",
   "released": "2026-10-20",
-  "ui": "Adds one confirmed toothbrush to each child's upstairs-bathroom inventory from Michelle's photo review.",
+  "ui": "Lets you change a Daily Review answer for the same date, including changing No to Yes if the action happens later.",
   "data_version": "No saved records removed."
 }
