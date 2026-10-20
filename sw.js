@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261020-michelle-robovac-tour1";
+const CACHE_NAME="daily-life-shell-20261020-michelle-hotspots2";
 const APP_SHELL=[
   "./",
   "./index.html",
