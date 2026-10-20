@@ -268,7 +268,9 @@ function selfRoomPhotoHotspots(title){
  return [];
 }
 function personRoomPhotoMarkup(photo,index,total,person,f,z){
- const title=str(photo.title),text=(title+" "+str(photo.notes)).toLowerCase(),isDolly=/^dolly$/i.test(str(person?.name));
+ const storedTitle=str(photo.title),dresserOnly=/^dolly[’']s bedroom · dresser and bed$/i.test(storedTitle),
+  title=dresserOnly?"Dolly’s bedroom · dresser":storedTitle,
+  text=(title+" "+str(photo.notes)).toLowerCase(),isDolly=/^dolly$/i.test(str(person?.name));
  let hotspots=[];
  if(person?.isSelf&&f==="Third floor")hotspots=selfRoomPhotoHotspots(title);
  else if(isDolly){

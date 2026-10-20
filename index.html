@@ -4809,7 +4809,51 @@ function selfCareBathroomCard(){
   const showerStatus=showerCount?'<div class="notice shower-log-status" role="status">✓ Shower logged today'+(lastShowerTime?" at "+esc(fmtClock(lastShowerTime)):"")+(showerCount>1?" · "+showerCount+" showers logged":"")+"</div>":"";
   return '<section class="card self-care-bathroom"><div class="section-title"><div><div class="eyebrow">Bathroom · shower routine</div><h2>Shower + bathroom</h2><div class="muted small">Use products you’ve actually recorded. Hair wash is a separate choice; nothing is assumed used.</div></div><button class="btn" type="button" onclick="openBathroomOnMap()">⌂ Bathroom map</button></div>'+
   '<div class="actions"><button class="btn primary" type="button" onclick="logCareOccurrence(\'shower\')">＋ '+(showerCount?'Log another shower':'Log a shower')+'</button><button class="btn" type="button" onclick="setView(\'inventory\')">Open inventory</button></div>'+showerStatus+
-  '<div class="self-care-bathroom-items">'+(rows||'<div class="notice">Your 15 upstairs-bathroom photos are saved. They show toothpaste, floss picks, cleanser, shampoo, body wash and skin products. Confirm quantities and storage before adding them to inventory.</div>')+'</div>'+(rows?'':'<button class="btn small" type="button" onclick="openInventoryPhotoReview(\'Upstairs bathroom\')">Review bathroom items from photos</button>')+'</section>';
+  '<div class="self-care-bathroom-items">'+(rows||'<div class="notice">I found toothpaste, floss picks, acne cleanser, lotion, shampoo, body wash, shower oil, shaving cream, toothbrushes and shower poufs in your saved bathroom photos. Confirm the counts and locations before adding them to inventory.</div>')+'</div>'+(rows?'':'<button class="btn small" type="button" onclick="reviewBathroomPhotoInventory()">Review bathroom items from photos</button>')+'</section>';
+}
+async function reviewBathroomPhotoInventory(){
+  const items=[
+    ["Aquafresh Triple Protection toothpaste","05","Label visible on the upstairs bathroom sink in saved photo 05."],
+    ["D2 cavity-protection toothpaste","05","D2 cavity protection label visible on the upstairs bathroom sink in saved photo 05."],
+    ["Toothbrushes in sink jar (blue and pink)","05","Blue and pink toothbrushes and additional brushes are visible in the jar; exact count not verified."],
+    ["GUM Twisted Mint floss picks","06","Package label visible on the upstairs bathroom shelf in saved photo 06."],
+    ["Equate Daily Acne Control Cleanser (10% benzoyl peroxide)","06","Product label visible in the upstairs bathroom shelf photo; count and condition not verified."],
+    ["Equate Blackhead Clearing Scrub","06","Product label visible in the upstairs bathroom shelf photo; count and condition not verified."],
+    ["Eucerin Original Healing Lotion","08","Product label visible on the upstairs bathroom windowsill in saved photo 08."],
+    ["Aveeno Skin Relief Healing Ointment","07","Product label visible beside the toilet in saved photo 07."],
+    ["Dove Men+Care Extra Fresh body wash","11","Product label visible beside the upstairs bathtub in saved photo 11."],
+    ["ACURE Buildup Balancing shampoo and conditioner","11","Product label visible beside the upstairs bathtub in saved photo 11."],
+    ["eos shaving cream","11","Product label visible beside the upstairs bathtub in saved photo 11."],
+    ["Dr Teal’s Moisturizing Bath & Body Oil (Prebiotic Lemon Balm)","12","Product label visible in the shower basket in saved photo 12."],
+    ["Vibrance Nourishing Revitalizing Shampoo (Strawberry & Panthenol)","12","Product label visible in the shower basket in saved photo 12."],
+    ["Suave Professionals Deep Moisturizing Shampoo","12","Product label visible in the shower basket in saved photo 12."],
+    ["Olay body wash (blue bottle; exact variety needs review)","12","Olay/body wash text is visible on the blue bottle in saved photo 12; exact variety needs confirmation."],
+    ["Shower poufs / loofahs","09","Several bath poufs are visible on the upstairs shower rack; exact count not verified."],
+    ["Bar soap","04","A bar of soap is visible on the upstairs bathroom sink in saved photo 04."]
+  ].map(([item_name,photoNum,evidence_note])=>({item_name,photoTitle:"Upstairs bathroom · Photo "+photoNum,evidence_note}));
+  if(typeof cloudClient==="undefined"||!cloudClient||!(typeof cloudUser==="function"&&cloudUser())){
+    window.openInventoryPhotoReview("Upstairs bathroom");return;
+  }
+  const titles=[...new Set(items.map(item=>item.photoTitle))];
+  const {data:photos,error:photoError}=await cloudClient.from("photo_inbox").select("id,title")
+    .eq("category","house_map").eq("floor_label","Second floor").in("title",titles);
+  if(photoError){alert("Could not load the saved bathroom photos: "+photoError.message);return}
+  const photoByTitle=new Map((photos||[]).map(photo=>[photo.title,photo.id]));
+  const {data:existing,error:existingError}=await cloudClient.from("inventory_photo_suggestions")
+    .select("source_photo_id,item_name").eq("room_name","Upstairs bathroom");
+  if(existingError){alert("Could not check the bathroom photo inventory: "+existingError.message);return}
+  const existingKeys=new Set((existing||[]).map(row=>String(row.source_photo_id)+"|"+String(row.item_name).toLowerCase()));
+  const suggestions=items.filter(item=>photoByTitle.has(item.photoTitle))
+    .filter(item=>!existingKeys.has(String(photoByTitle.get(item.photoTitle))+"|"+item.item_name.toLowerCase()))
+    .map(item=>({source_photo_id:photoByTitle.get(item.photoTitle),item_name:item.item_name,
+      category:"Personal care",quantity_estimate:null,unit:"each",room_name:"Upstairs bathroom",storage_spot:"",
+      decision:"review",review_status:"pending",evidence_note:item.evidence_note,
+      suggested_next_step:"Confirm the item name, count, and storage spot from the saved bathroom photo."}));
+  if(suggestions.length){
+    const {error}=await cloudClient.from("inventory_photo_suggestions").insert(suggestions);
+    if(error){alert("Could not save the bathroom photo suggestions: "+error.message);return}
+  }
+  window.openInventoryPhotoReview("Upstairs bathroom");
 }
 function openBathroomOnMap(){
   const room=(state.houseRooms||[]).find(r=>/bath/i.test(String(r.name||""))),floor=room?.floor||"Second floor",zoneId=floor==="Second floor"?"upstairs_bath":"bath";
