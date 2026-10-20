@@ -1,6 +1,6 @@
 {
-  "build": "20261019-profile-home-actual-data3",
-  "released": "2026-10-19",
-  "ui": "Profile home routes directly to the person’s room map; Dolly’s dresser shows her clothing; school, art, and award books open from the profile; redundant action prompts are removed.",
-  "data_version": "No saved records removed beyond duplicate wishlist items and unconfirmed child plan/date placeholders."
+  "build": "20261020-shower-log-feedback3",
+  "released": "2026-10-20",
+  "ui": "Shower logging now records the time, marks the care check-in complete, and visibly confirms the saved shower.",
+  "data_version": "No saved records removed."
 }
