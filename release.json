@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow18",
+  "build": "20261020-home-dayflow19",
   "released": "2026-10-21",
-  "ui": "Logs Dolly's four pages of Owls, leaves Leo's reading unconfirmed, marks Demitri and Ambrose as not reading, and records that everyone brushed their teeth.",
+  "ui": "Adds tonight's planned 10:01 PM sleep start and records Dolly, Ambrose, and Demitri's sleeping arrangements with actual sleep time left pending.",
   "data_version": "No saved records removed; additive one-time migration."
 }
