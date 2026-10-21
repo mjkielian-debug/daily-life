@@ -1286,6 +1286,15 @@ function dayFlowSubtaskLabels(x){
   }
   return[String(x?.title||"Task")];
 }
+function dayFlowSemanticKey(x,date){
+  const source=String(x?.source||"item"),ref=String(source==="suggested"?(x?.templateKey||""):(x?.sourceId||x?.templateKey||"")),
+    fallback=ref?(source==="meal"?String(x?.title||""):""):String(x?.start||"")+"|"+String(x?.title||"");
+  return [String(date||x?.date||ymd()),source,ref,fallback].join("|");
+}
+function dayFlowFinishedMatch(x,date){
+  const semantic=dayFlowSemanticKey(x,date);
+  return dayFlowFinishedRows().find(r=>r.date===date&&(String(r.semanticKey||"")===semantic||(!r.semanticKey&&dayFlowSemanticKey(r,date)===semantic)))||null;
+}
 function dayFlowPartKey(itemKey,index){return itemKey+"|part:"+index}
 function dayFlowPartDone(x,date,index){
   const ref=Array.isArray(x?.subtaskRefs)?x.subtaskRefs[index]:"";
@@ -1315,31 +1324,69 @@ function dayFlowApplyNativeDone(x,done){
   }
 }
 function dayFlowSyncFinished(x,date){
-  const itemKey=dayFlowItemKey(x,date),finished=dayFlowFinishedRows(),index=finished.findIndex(r=>r.itemKey===itemKey),
+  const itemKey=dayFlowItemKey(x,date),semanticKey=dayFlowSemanticKey(x,date),finished=dayFlowFinishedRows(),
+    matches=finished.map((r,i)=>({r,i})).filter(({r})=>r.date===date&&(r.semanticKey===semanticKey||(!r.semanticKey&&(r.itemKey===itemKey||dayFlowSemanticKey(r,date)===semanticKey)))),
     done=dayFlowBlockDone(x,date);
-  if(done&&index<0){
-    finished.push({
-      id:"finished:"+uid(),itemKey,date,title:String(x.title||"Finished task"),start:String(x.start||""),end:String(x.end||""),
+  if(done){
+    let row=matches[0]?.r;
+    if(!row){
+      row={id:"finished:"+uid(),completedAt:new Date().toISOString()};
+      finished.push(row);
+    }
+    Object.assign(row,{
+      itemKey,semanticKey,date,title:String(x.title||"Finished task"),start:String(x.start||""),end:String(x.end||""),
       detail:String(x.detail||""),subtasks:dayFlowSubtaskLabels(x),source:String(x.source||""),sourceId:String(x.sourceId||""),
-      templateKey:String(x.templateKey||""),kind:String(x.kind||""),icon:String(x.icon||"✓"),completedAt:new Date().toISOString()
+      templateKey:String(x.templateKey||""),kind:String(x.kind||""),icon:String(x.icon||"✓")
     });
-  }else if(!done&&index>=0)finished.splice(index,1);
+    for(const {i} of matches.slice(1).reverse())finished.splice(i,1);
+  }else{
+    for(const {i} of matches.reverse())finished.splice(i,1);
+  }
   dayFlowApplyNativeDone(x,done);
 }
 function dayFlowOverlayFinished(date,rows){
-  const finished=dayFlowFinishedRows().filter(r=>r.date===date),keys=new Set();
+  const finished=dayFlowFinishedRows().filter(r=>r.date===date),keys=new Set(),semantics=new Set();
   for(const x of rows){
-    const key=dayFlowItemKey(x,date);keys.add(key);
-    x.done=dayFlowBlockDone(x,date)||!!x.done;
+    const key=dayFlowItemKey(x,date),semantic=dayFlowSemanticKey(x,date),
+      prior=finished.find(r=>String(r.semanticKey||dayFlowSemanticKey(r,date))===semantic);
+    keys.add(key);semantics.add(semantic);
+    if(prior){
+      const labels=dayFlowSubtaskLabels(x);
+      labels.forEach((label,index)=>{
+        const partKey=dayFlowPartKey(key,index);
+        if(!dayFlowCheckRows().some(r=>r.key===partKey))
+          dayFlowCheckRows().push({key:partKey,date,itemKey:key,index,label,completedAt:prior.completedAt||new Date().toISOString()});
+      });
+    }
+    x.done=x.source==="custom"&&itineraryBlockHasChoreChecklist(x.title)?false:(dayFlowBlockDone(x,date)||!!x.done);
   }
+  const shown=new Set();
   for(const r of finished){
-    if(keys.has(r.itemKey))continue;
+    const semantic=String(r.semanticKey||dayFlowSemanticKey(r,date));
+    if(keys.has(r.itemKey)||semantics.has(semantic)||shown.has(semantic))continue;
+    shown.add(semantic);
     rows.push({
       id:r.itemKey,title:r.title,start:r.start,end:r.end,detail:r.detail,subtasks:r.subtasks||[],
       source:r.source,sourceId:r.sourceId,templateKey:r.templateKey,kind:r.kind,icon:r.icon,done:true,archivedCompletion:true
     });
   }
   return rows;
+}
+async function setDayFlowPartDone(event,date,encodedItemKey,index,done){
+  event?.stopPropagation?.();
+  const itemKey=decodeURIComponent(String(encodedItemKey||"")),
+    x=itineraryDayItems(date).find(v=>dayFlowItemKey(v,date)===itemKey);
+  if(!x)return;
+  const partIndex=Number(index)||0,key=dayFlowPartKey(itemKey,partIndex),rows=dayFlowCheckRows(),
+    at=rows.findIndex(r=>r.key===key),wasDone=dayFlowPartDone(x,date,partIndex),nowDone=!!done;
+  if(wasDone===nowDone)return;
+  if(nowDone){
+    if(at<0)rows.push({key,date,itemKey,index:partIndex,label:dayFlowSubtaskLabels(x)[partIndex]||x.title,completedAt:new Date().toISOString()});
+  }else if(at>=0)rows.splice(at,1);
+  const ref=Array.isArray(x.subtaskRefs)?x.subtaskRefs[partIndex]:"";
+  if(ref){const chore=(state.chores||[]).find(v=>v.id===ref);if(chore){chore.done=nowDone;chore.completedAt=nowDone?new Date().toISOString():""}}
+  dayFlowSyncFinished(x,date);
+  await save();render();
 }
 async function toggleDayFlowPart(event,date,encodedItemKey,index){
   event?.preventDefault?.();event?.stopPropagation?.();
@@ -1367,7 +1414,10 @@ async function toggleDayFlowPart(event,date,encodedItemKey,index){
   await save();
 }
 function dayFlowFinishedCard(date){
-  const rows=dayFlowFinishedRows().filter(r=>r.date===date).slice().sort((a,b)=>String(a.completedAt||"").localeCompare(String(b.completedAt||"")));
+  const seen=new Set(),rows=dayFlowFinishedRows().filter(r=>r.date===date).filter(r=>{
+    const key=String(r.semanticKey||dayFlowSemanticKey(r,date));
+    if(seen.has(key))return false;seen.add(key);return true;
+  }).slice().sort((a,b)=>String(a.completedAt||"").localeCompare(String(b.completedAt||"")));
   return `<div class="card dayflow-finished-card"><div class="section-title"><div><div class="eyebrow">Finished today</div><h2>${rows.length} finished task${rows.length===1?"":"s"}</h2></div></div>
     ${rows.map(r=>`<div class="dayflow-finished-row"><span>✓</span><span class="grow"><b>${esc(r.title)}</b><small>${r.completedAt?esc(new Date(r.completedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})):""}</small></span></div>`).join("")||`<div class="muted small">Completed Day Flow items will collect here.</div>`}
   </div>`;
@@ -1488,7 +1538,11 @@ function itineraryFlowCard(date){
   let lastPhase="";
   const rows=items.map(x=>{
     const [phase,phaseIcon]=itineraryPhase(x),phaseHead=phase!==lastPhase?(lastPhase=phase,`<div class="planner-phase"><span>${phaseIcon}</span><b>${esc(phase)}</b></div>`):"",
-          duration=itineraryDurationLabel(x),type=itineraryTypeLabel(x),action=itineraryBlockOpenAction(x,date);
+          duration=itineraryDurationLabel(x),type=itineraryTypeLabel(x),action=itineraryBlockOpenAction(x,date),
+          choreGroup=x.source==="custom"&&itineraryBlockHasChoreChecklist(x.title),
+          choreList=choreGroup?(state.chores||[]).filter(c=>c.date===date):[],
+          routineLabels=x.source==="suggested"?dayFlowSubtaskLabels(x):[],
+          routineKey=encodeURIComponent(dayFlowItemKey(x,date));
     return phaseHead+`<div class="planner-row planner-${esc(x.kind||"plan")} ${x.fixed?"is-fixed":""} ${x.done?"is-done":""}" ${action}>
       <div class="planner-time"><b>${esc(fmtClock(x.start))}</b><span>${x.end?esc(fmtClock(x.end)):x.endUnknown?"End TBD":""}</span>${duration?`<small>${esc(duration)}</small>`:""}</div>
       <div class="planner-content">
@@ -1496,8 +1550,8 @@ function itineraryFlowCard(date){
         ${x.detail?`<div class="planner-detail">${esc(x.detail)}</div>`:""}${x.estimatedEnd?`<div class="planner-estimate">Estimated ${esc(itineraryDurationLabel(x))} · tap the event to set the real end time</div>`:""}${x.movedByPlanner?`<div class="planner-moved">Moved around a fixed commitment · originally ${esc(fmtClock(x.originalStart))}${x.originalEnd?"–"+esc(fmtClock(x.originalEnd)):""}</div>`:""}
         ${x.endUnknown?`<div class="planner-caution">Daily Life will not auto-schedule tasks inside this unknown work span.</div>`:""}
         ${x.source==="task"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleTask('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryTask('${x.sourceId}')">Edit timing</button></div>`:""}
-        ${x.source==="custom"?`<div class="planner-actions" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Done":"Mark done"}</span></label><button class="linkish" onclick="openItineraryBlock('${date}','${x.sourceId}')">Edit</button></div>`:""}
-        ${x.source==="suggested"?`<button class="planner-edit" onclick="event.stopPropagation();openSuggestedItineraryBlock('${date}','${x.templateKey}')">Adjust this routine</button>`:""}
+        ${x.source==="custom"?`<div class="planner-actions" onclick="event.stopPropagation()">${choreGroup?'<span class="muted small">Mark each chore individually below.</span>':`<label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleItineraryBlock('${x.sourceId}',this.checked)"><span>${x.done?"Block complete":"Mark block complete"}</span></label>`}<button class="linkish" onclick="openItineraryBlock('${date}','${x.sourceId}')">Edit</button></div>${choreGroup?(choreList.map(c=>`<div class="planner-actions planner-chore-row" onclick="event.stopPropagation()"><label class="task"><input type="checkbox" ${c.done?"checked":""} onchange="toggleChore('${esc(c.id)}',this.checked)"><span>${esc(c.child||"")}: ${esc(c.chore||"Chore")}</span></label></div>`).join("")||'<div class="muted small planner-chore-empty">No chores are assigned for this date yet.</div>'):""}`:""}
+        ${x.source==="suggested"?`<div class="planner-actions planner-routine-checks" onclick="event.stopPropagation()">${routineLabels.map((label,i)=>`<label class="task"><input type="checkbox" ${dayFlowPartDone(x,date,i)?"checked":""} onchange="setDayFlowPartDone(event,'${date}','${routineKey}',${i},this.checked)"><span>${esc(label)}</span></label>`).join("")}<button class="linkish" onclick="openSuggestedItineraryBlock('${date}','${x.templateKey}')">Adjust routine</button></div>`:""}
         ${x.kind==="gap"?`<button class="planner-edit" onclick="event.stopPropagation();openItineraryBlockAt('${date}','${x.start}','${x.end}')">Put something here</button>`:""}
       </div>
     </div>`;
@@ -1729,15 +1783,16 @@ function openTimeBlockDetails(date,id="",templateKey=""){
  document.getElementById("timeBlockEdit")?.addEventListener("click",()=>{closeModal();openItineraryBlock(date,saved?id:"",saved?null:{start:x.start,end:x.end,title:x.title,kind:x.kind||"flexible",notes:note,templateKey:x.templateKey||templateKey,icon:x.icon})});
  document.getElementById("timeBlockDone")?.addEventListener("click",async()=>{x.done=!x.done;await save();render();openTimeBlockDetails(date,id)});
 }
+function itineraryBlockHasChoreChecklist(title){return /\bchores?\b/i.test(String(title||""))}
 function openItineraryBlock(date=itineraryDate,id="",prefill=null){
   const x=(state.itineraryBlocks||[]).find(v=>v.id===id)||{id:"",date,start:prefill?.start||"",end:prefill?.end||"",title:prefill?.title||"",kind:prefill?.kind||"flexible",notes:prefill?.notes||"",done:false,templateKey:prefill?.templateKey||"",icon:prefill?.icon||"◷"};
-  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${x.templateKey?`<label class="task"><input id="ibremember" type="checkbox"><span><b>Use this timing on future ${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}))}s</b><div class="muted small">Daily Life will remember this routine's start and end time for this weekday.</div></span></label>`:""}${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>Already done</span></label>${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
+  modal(x.id?"Edit time block":"Add time block",`<div class="stack"><label>What are you doing?<input id="ibtitle" value="${esc(x.title||"")}" placeholder="Errands, homework, clean kitchen…"></label><div class="grid2"><label>Start<input id="ibstart" type="time" value="${esc(x.start||"")}"></label><label>End<input id="ibend" type="time" value="${esc(x.end||"")}"></label></div><label>Type<select id="ibkind"><option value="flexible" ${(x.kind||"flexible")==="flexible"?"selected":""}>Flexible block</option><option value="fixed" ${x.kind==="fixed"?"selected":""}>Fixed commitment</option></select></label><label>Notes / what happens in this block<textarea id="ibnotes" rows="3">${esc(x.notes||"")}</textarea></label>${x.templateKey?`<label class="task"><input id="ibremember" type="checkbox"><span><b>Use this timing on future ${esc(new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}))}s</b><div class="muted small">Daily Life will remember this routine's start and end time for this weekday.</div></span></label>`:""}${typeof sharingItineraryControl==="function"?sharingItineraryControl(x):""}${itineraryBlockHasChoreChecklist(x.title)?'<div class="notice small">Mark each child’s chore individually in the checklist on this schedule.</div>':`<label class="task"><input id="ibdone" type="checkbox" ${x.done?"checked":""}><span>This time block is complete</span></label>`}${x.id?`<button type="button" class="btn danger" onclick="removeItineraryBlock('${x.id}')">Remove block</button>`:""}</div>`,"Save",async()=>{
     const title=$("#ibtitle").value.trim(),start=$("#ibstart").value,end=$("#ibend").value;if(!title||!start)return;
     if(end&&hmMinutes(end)<=hmMinutes(start)){alert("End time must be after start time.");return}
     if($("#ibkind").value!=="fixed"&&(hmMinutes(start)<itineraryDayStart(date)||hmMinutes(start)>=itineraryDayEnd(date)||(end&&hmMinutes(end)>itineraryDayEnd(date)))){alert("Keep flexible blocks between your wake time and sleep cutoff. Use a fixed commitment only for something that cannot move.");return}
     const shareRequested=$("#ibshared")?$("#ibshared").checked:!!x.shared;
     let row=(state.itineraryBlocks||[]).find(v=>v.id===id);if(!row){row={id:uid(),date};state.itineraryBlocks.push(row)}
-    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:$("#ibdone").checked,templateKey:x.templateKey||"",icon:x.icon||"◷"});
+    Object.assign(row,{date,title,start,end,kind:$("#ibkind").value,notes:$("#ibnotes").value.trim(),done:itineraryBlockHasChoreChecklist(title)?false:!!$("#ibdone")?.checked,templateKey:x.templateKey||"",icon:x.icon||"◷"});
     if(x.templateKey&&$("#ibremember")?.checked){
       if(!state.settings.itinerary.routinePreferences||typeof state.settings.itinerary.routinePreferences!=="object")state.settings.itinerary.routinePreferences={};
       const weekday=new Date(date+"T12:00:00").getDay();
