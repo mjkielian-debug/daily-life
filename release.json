@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow19",
+  "build": "20261020-home-dayflow20",
   "released": "2026-10-21",
-  "ui": "Adds tonight's planned 10:01 PM sleep start and records Dolly, Ambrose, and Demitri's sleeping arrangements with actual sleep time left pending.",
+  "ui": "Adds Leo's confirmed Oct 20 reading of This Dark Endeavor, pages 26–34, and updates his reading status to done.",
   "data_version": "No saved records removed; additive one-time migration."
 }
