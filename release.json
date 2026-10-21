@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow13",
+  "build": "20261020-home-dayflow14",
   "released": "2026-10-20",
-  "ui": "Corrects the Oct 20 chores, Girl Scouts, return-home, and 8:30 PM spaghetti timeline without recording a nap; future naps run until the next scheduled task, duplicate routine cards collapse, and work prep stays in the evening.",
+  "ui": "Logs today’s teeth brushing with Crest toothpaste, records Olay moisturizer, marks the children’s reading in progress, and keeps homework unconfirmed while preserving individual chore completion.",
   "data_version": "No saved records removed."
 }
