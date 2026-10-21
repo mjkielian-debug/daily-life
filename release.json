@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow16",
+  "build": "20261020-home-dayflow17",
   "released": "2026-10-21",
-  "ui": "Corrects the Oct 20 skincare entry to identify Sea Breeze Sensitive Skin Astringent before Olay Active Hydrating Original Cream; prior water, Monster, teeth, and inventory entries remain unchanged.",
+  "ui": "Corrects the Oct 20 personal-care inventory location: Michelle's Crest toothpaste, Olay moisturizer, and Sea Breeze astringent are assigned to the main-floor bathroom, separate from the upstairs shelf photo.",
   "data_version": "No saved records removed; additive one-time migration."
 }
