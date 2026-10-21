@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow9",
+  "build": "20261020-home-dayflow10",
   "released": "2026-10-20",
-  "ui": "Corrects today’s shower count to one and records a quick wash with Happy Hippy body wash; also includes nightly robot vacuum, daily litter-box and backpack checks, personal bedding every other Monday, monthly kids’ bedding changes, rotating chores, and spaghetti with Leo’s $5 cooking credit.",
+  "ui": "Adds individual child chore controls to the Kids chores schedule, checkboxes for each Day Flow routine step, and deduplicates completed routines after schedule changes. Also records today’s one shower and Happy Hippy wash.",
   "data_version": "No saved records removed."
 }
