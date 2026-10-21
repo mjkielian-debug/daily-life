@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow15",
-  "released": "2026-10-20",
-  "ui": "Logs the 26 oz water bottle and another white Monster, records brushing and missed floss, logs the astringent followed by Olay moisturizer, and assigns floss picks and Crest toothpaste to Michelle in the main-floor bathroom.",
+  "build": "20261020-home-dayflow16",
+  "released": "2026-10-21",
+  "ui": "Corrects the Oct 20 skincare entry to identify Sea Breeze Sensitive Skin Astringent before Olay Active Hydrating Original Cream; prior water, Monster, teeth, and inventory entries remain unchanged.",
   "data_version": "No saved records removed; additive one-time migration."
 }
