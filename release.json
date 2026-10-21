@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow11",
+  "build": "20261020-home-dayflow12",
   "released": "2026-10-20",
-  "ui": "Corrects today’s actual chores, Girl Scouts, return-home, and dinner timeline without recording a nap; future recovery naps fill the open time until the next commitment, duplicate routine cards collapse, and work-prep blocks stay in the evening.",
+  "ui": "Corrects Oct 20 chores, Girl Scouts, return-home, and 8:30 PM spaghetti timeline without recording a nap; future recovery naps fill the open time until the next commitment, duplicate routine cards collapse, and work-prep blocks stay in the evening.",
   "data_version": "No saved records removed."
 }
