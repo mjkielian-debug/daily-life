@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow14",
+  "build": "20261020-home-dayflow15",
   "released": "2026-10-20",
-  "ui": "Logs today’s teeth brushing with Crest toothpaste, records Olay moisturizer, marks the children’s reading in progress, and keeps homework unconfirmed while preserving individual chore completion.",
-  "data_version": "No saved records removed."
+  "ui": "Logs the 26 oz water bottle and another white Monster, records brushing and missed floss, logs the astringent followed by Olay moisturizer, and assigns floss picks and Crest toothpaste to Michelle in the main-floor bathroom.",
+  "data_version": "No saved records removed; additive one-time migration."
 }
