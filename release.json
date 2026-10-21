@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow17",
+  "build": "20261020-home-dayflow18",
   "released": "2026-10-21",
-  "ui": "Corrects the Oct 20 personal-care inventory location: Michelle's Crest toothpaste, Olay moisturizer, and Sea Breeze astringent are assigned to the main-floor bathroom, separate from the upstairs shelf photo.",
+  "ui": "Logs Dolly's four pages of Owls, leaves Leo's reading unconfirmed, marks Demitri and Ambrose as not reading, and records that everyone brushed their teeth.",
   "data_version": "No saved records removed; additive one-time migration."
 }
