@@ -521,6 +521,7 @@
       const desired=hmMinutes(x.start),end=hmMinutes(x.end);
       if(desired!==null)return {start:desired,end:end!==null&&end>desired?end:desired+20};
     }
+    if(x.templateKey==="tomorrow-prep")return {start:19*60,end:Math.min(dayEnd,21*60)};
     if(x.templateKey==="chores")return {start:15*60,end:18*60+30};
     if(x.templateKey==="dolly-hair"){
       const cfg=p.dollyHairRoutine||{},schoolDay=[1,2,3,4,5].includes(lifeWeekday(date)),
@@ -648,7 +649,7 @@
 
   function lifeNapSuggestion(date){
     const p=lifeEnsureSettings(),cfg=p.napSupport||{};
-    if(cfg.enabled===false)return null;
+    if(cfg.enabled===false||(Array.isArray(cfg.skippedDates)&&cfg.skippedDates.includes(date)))return null;
     const sleep=typeof sleepForDate==="function"?sleepForDate(date):null,
       actual=typeof sleepHours==="function"?Number(sleepHours(sleep)||0):0,
       plan=itinerarySleepPlan(date),
@@ -666,7 +667,7 @@
     if(compressedTonight)reasons.push("only "+Number(plan.protectedHours||0).toFixed(1)+" h fit before tomorrow’s wake");
     if(earlierThanUsual)reasons.push("tomorrow needs an earlier-than-usual wake");
     if(heavyWeek)reasons.push(recentHours.toFixed(1)+" work hours logged in the last 7 days");
-    return {reason:reasons.join(" · "),duration:Math.max(20,Math.min(30,Number(cfg.durationMinutes||25)))};
+    return {reason:reasons.join(" · ")};
   }
 
   function lifeLunchChoice(date){
@@ -870,11 +871,17 @@
 
     const nap=lifeNapSuggestion(date);
     if(nap){
-      const cfg=p.napSupport||{},start=hmMinutes(cfg.windowStart||"10:30"),preferred=Math.max(start===null?10*60+30:start,13*60),
-        end=preferred+nap.duration;
-      add({templateKey:"recovery-nap",start:minutesHm(preferred),end:minutesHm(end),
+      const cfg=p.napSupport||{},windowStart=hmMinutes(cfg.windowStart||"10:30"),windowEnd=hmMinutes(cfg.windowEnd||"16:30"),
+        preferred=Math.max(windowStart===null?10*60+30:windowStart,13*60),
+        commitments=[...itineraryFixedItems(date),...itineraryCustomBlocks(date),...base,
+          ...(state.tasks||[]).filter(function(t){return t.date===date&&!t.done})],
+        nextStart=commitments.map(function(x){return hmMinutes(x.start||x.startTime||x.scheduled||x.itineraryStart)})
+          .filter(function(m){return Number.isFinite(m)&&m>preferred}).sort(function(a,b){return a-b})[0],
+        end=Math.min(windowEnd===null?16*60+30:windowEnd,nextStart===undefined?16*60+30:nextStart),
+        duration=end-preferred;
+      if(duration>=60)add({templateKey:"recovery-nap",start:minutesHm(preferred),end:minutesHm(end),
         title:"Recovery nap · optional",detail:"Sleep support: "+nap.reason,
-        subtasks:["Rest / nap for "+nap.duration+" minutes"],icon:"☾"});
+        subtasks:["Rest / nap until "+fmtClock(minutesHm(end))],icon:"☾"});
     }
 
     lifeKidShowerRows(date).forEach(function(row){
