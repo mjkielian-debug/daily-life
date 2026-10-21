@@ -174,13 +174,13 @@ dialog,
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
 <link rel="stylesheet" href="house-visual-map.css?v=20261019-dolly-room-photo-tour2">
-<link rel="stylesheet" href="visual-hubs.css?v=20261020-home-dayflow10">
+<link rel="stylesheet" href="visual-hubs.css?v=20261020-home-dayflow11">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261020-home-dayflow10">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261020-home-dayflow11">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -200,7 +200,7 @@ dialog,
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261018-care-nav15">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261020-home-dayflow10…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261020-home-dayflow11…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -216,9 +216,9 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261020-home-dayflow10 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261020-home-dayflow11 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261020-home-dayflow10 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261020-home-dayflow11 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 </script>
@@ -1287,8 +1287,11 @@ function dayFlowSubtaskLabels(x){
   return[String(x?.title||"Task")];
 }
 function dayFlowSemanticKey(x,date){
-  const source=String(x?.source||"item"),ref=String(source==="suggested"?(x?.templateKey||""):(x?.sourceId||x?.templateKey||"")),
-    fallback=ref?(source==="meal"?String(x?.title||""):""):String(x?.start||"")+"|"+String(x?.title||"");
+  const source=String(x?.source||"item"),title=String(x?.title||"").trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim(),
+    ref=String(source==="suggested"?(x?.templateKey||""):(x?.sourceId||x?.templateKey||""));
+  if((source==="suggested"||source==="custom")&&title)
+    return [String(date||x?.date||ymd()),"routine",title].join("|");
+  const fallback=ref?(source==="meal"?String(x?.title||""):""):String(x?.start||"")+"|"+String(x?.title||"");
   return [String(date||x?.date||ymd()),source,ref,fallback].join("|");
 }
 function dayFlowFinishedMatch(x,date){
@@ -1360,6 +1363,18 @@ function dayFlowOverlayFinished(date,rows){
     }
     x.done=x.source==="custom"&&itineraryBlockHasChoreChecklist(x.title)?false:(dayFlowBlockDone(x,date)||!!x.done);
   }
+  const visible=[],duplicateRows=new Map();
+  for(const x of rows){
+    const routineSource=x.source==="suggested"||x.source==="custom",
+      start=String(x.start||""),title=String(x.title||"").trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim(),
+      duplicateKey=routineSource&&title?[date,start,title].join("|"):"";
+    if(!duplicateKey){visible.push(x);continue}
+    const priorIndex=duplicateRows.get(duplicateKey);
+    if(priorIndex===undefined){duplicateRows.set(duplicateKey,visible.length);visible.push(x);continue}
+    const prior=visible[priorIndex];
+    if(prior.source!=="suggested"&&x.source==="suggested")visible[priorIndex]=x;
+  }
+  rows.splice(0,rows.length,...visible);
   const shown=new Set();
   for(const r of finished){
     const semantic=String(r.semanticKey||dayFlowSemanticKey(r,date));
@@ -8697,6 +8712,52 @@ function applyOct20ShowerLog(){
   return true;
 }
 
+function applyOct20ActualDayCorrection(){
+  state.settings=state.settings||{};
+  if(Number(state.settings.oct20ActualDayCorrectionVersion||0)>=1)return false;
+  const date="2026-10-20";
+  state.settings.itinerary=state.settings.itinerary||{};
+  const nap=state.settings.itinerary.napSupport||(state.settings.itinerary.napSupport={});
+  nap.skippedDates=Array.from(new Set([...(Array.isArray(nap.skippedDates)?nap.skippedDates:[]),date]));
+  if(typeof ensureFamilyDay==="function")ensureFamilyDay(date);
+  state.chores=Array.isArray(state.chores)?state.chores:[];
+  state.chores.filter(c=>c.date===date).forEach(c=>{
+    c.done=true;
+    dailyReviewSet("chore",c.id,date,"yes",String(c.chore||"Chore"),"Kids chores");
+  });
+  state.itineraryBlocks=Array.isArray(state.itineraryBlocks)?state.itineraryBlocks:[];
+  let choresBlock=state.itineraryBlocks.find(b=>b.date===date&&
+    (b.templateKey==="chores"||/kids chores/i.test(String(b.title||""))));
+  if(!choresBlock){
+    choresBlock={id:uid(),date,templateKey:"chores",kind:"flexible",icon:"✓"};
+    state.itineraryBlocks.push(choresBlock);
+  }
+  Object.assign(choresBlock,{date,title:"Kids chores after school",start:"15:30",end:"16:30",kind:"flexible",
+    notes:"Kids completed their individual chores after school. Homework completion was not confirmed.",done:false,
+    templateKey:"chores",icon:"✓"});
+  state.events=Array.isArray(state.events)?state.events:[];
+  let scouts=state.events.find(e=>e.date===date&&/girl\s*scouts?/i.test(String(e.title||"")));
+  if(!scouts){scouts={id:uid(),date,title:"Girl Scouts",type:"activity"};state.events.push(scouts)}
+  Object.assign(scouts,{date,title:String(scouts.title||"Girl Scouts"),type:scouts.type||"activity",
+    startTime:"18:00",endTime:"19:30",status:"confirmed",
+    notes:[String(scouts.notes||"").trim(),"Left home at 6:00 PM; left Girl Scouts around 7:30 PM; home around 7:45–8:00 PM."].filter(Boolean).join(" · ")});
+  let home=state.itineraryBlocks.find(b=>b.date===date&&b.templateKey==="oct20-girl-scouts-return");
+  if(!home){home={id:uid(),date};state.itineraryBlocks.push(home)}
+  Object.assign(home,{date,title:"Back home from Girl Scouts",start:"19:45",end:"20:00",kind:"fixed",
+    notes:"Left Girl Scouts around 7:30 PM; arrived home between 7:45 and 8:00 PM.",done:true,
+    templateKey:"oct20-girl-scouts-return",icon:"⌂"});
+  state.meals=Array.isArray(state.meals)?state.meals:[];
+  let meal=state.meals.find(m=>m.date===date&&String(m.type||"").toLowerCase()==="dinner");
+  if(!meal){meal={id:uid(),date,type:"dinner",dish:"Spaghetti",assigned:"Leo",status:"planned"};state.meals.push(meal)}
+  meal.dish="Spaghetti";meal.assigned="Leo";meal.serveTime="20:30";
+  meal.notes=[String(meal.notes||"").trim(),"At 8:30 PM Leo was almost done cooking spaghetti; dinner and then the kids’ bedtime were next. $5 cooking credit owed."].filter(Boolean).join(" · ");
+  state.dayFlowFinishedTasks=(state.dayFlowFinishedTasks||[]).filter(r=>!(r.date===date&&/recovery\s*nap/i.test(String(r.title||""))));
+  state.dayFlowChecks=(state.dayFlowChecks||[]).filter(r=>!(r.date===date&&/recovery\s*nap/i.test(String(r.label||r.key||""))));
+  state.itineraryBlocks=state.itineraryBlocks.filter(b=>!(b.date===date&&/recovery\s*nap/i.test(String(b.title||""))));
+  state.settings.oct20ActualDayCorrectionVersion=1;
+  return true;
+}
+
 function correctOct14PickupRecord(){
   const date="2026-10-14";
   const events=(state.events||[]).filter(e=>e.date===date&&/grandma kellie picks up dolly and demitri/i.test(String(e.title||"")));
@@ -8775,7 +8836,7 @@ async function init(){
     await cloudInit();
     ensureRecurringFamilyEvents();ensureFamilyDay();
     if(typeof cloudPullLifeEntries==="function")await cloudPullLifeEntries(false);
-    applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyOct20SpaghettiAndLeoCredit();applyOct20ShowerLog();applyTannerGiftFinished();cleanupNoRecipeMeals();
+    applyReadingLogCorrections();applyOct6PlanCorrections();applyConferencePrepCleanup();applyOct13RunzaDinner();applyOct13To15MealCorrections();correctOct14PickupRecord();applyOptionalLifeInterests();ensurePeopleProfiles();applyOct20SpaghettiAndLeoCredit();applyOct20ShowerLog();applyOct20ActualDayCorrection();applyTannerGiftFinished();cleanupNoRecipeMeals();
     await queueMissingMealRecipes();
     sanitizeWorkScheduleData(state);ensureRecurringFamilyEvents();ensureFamilyDay();
     await cloudFinanceInit();
@@ -8806,9 +8867,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261020-home-dayflow10 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261020-home-dayflow11 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261020-home-dayflow10 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261020-home-dayflow11 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -8816,7 +8877,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261020-home-dayflow10";
+const DAILY_LIFE_BUILD="20261020-home-dayflow11";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
