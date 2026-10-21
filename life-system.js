@@ -877,7 +877,7 @@
           ...(state.tasks||[]).filter(function(t){return t.date===date&&!t.done})],
         nextStart=commitments.map(function(x){return hmMinutes(x.start||x.startTime||x.scheduled||x.itineraryStart)})
           .filter(function(m){return Number.isFinite(m)&&m>preferred}).sort(function(a,b){return a-b})[0],
-        end=Math.min(windowEnd===null?16*60+30:windowEnd,nextStart===undefined?16*60+30:nextStart),
+        end=nextStart===undefined?(windowEnd===null?16*60+30:windowEnd):nextStart,
         duration=end-preferred;
       if(duration>=60)add({templateKey:"recovery-nap",start:minutesHm(preferred),end:minutesHm(end),
         title:"Recovery nap · optional",detail:"Sleep support: "+nap.reason,
