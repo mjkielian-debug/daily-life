@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow10",
+  "build": "20261020-home-dayflow11",
   "released": "2026-10-20",
-  "ui": "Adds individual child chore controls to the Kids chores schedule, checkboxes for each Day Flow routine step, and deduplicates completed routines after schedule changes. Also records today’s one shower and Happy Hippy wash.",
+  "ui": "Corrects today’s actual chores, Girl Scouts, return-home, and dinner timeline without recording a nap; future recovery naps fill the open time until the next commitment, duplicate routine cards collapse, and work-prep blocks stay in the evening.",
   "data_version": "No saved records removed."
 }
