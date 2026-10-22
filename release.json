@@ -1,6 +1,6 @@
 {
-  "build": "20261022-myschoolbucks-axos1",
+  "build": "20261022-food-intake1",
   "released": "2026-10-22",
-  "ui": "Records Amazon Prime autopay from Axos Checking and MySchoolBucks autopay from Axos Savings with the under-$5 trigger.",
-  "data_version": "Additive one-time bill migration; preserves existing bill amounts, due dates, and paid status."
+  "ui": "Adds today's reported foods and drinks to the intake log, with quantities and unestimated nutrition notes.",
+  "data_version": "One-time additive food log migration for 2026-10-22; no existing entries are removed."
 }
