@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261022-prime-axos1">
+<link rel="stylesheet" href="styles.css?v=20261022-myschoolbucks-axos1">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -174,13 +174,13 @@ dialog,
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
 <link rel="stylesheet" href="house-visual-map.css?v=20261019-dolly-room-photo-tour2">
-<link rel="stylesheet" href="visual-hubs.css?v=20261022-prime-axos1">
+<link rel="stylesheet" href="visual-hubs.css?v=20261022-myschoolbucks-axos1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261022-prime-axos1">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261022-myschoolbucks-axos1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -200,7 +200,7 @@ dialog,
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261018-care-nav15">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261022-prime-axos1…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261022-myschoolbucks-axos1…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -216,9 +216,9 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261022-prime-axos1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261022-myschoolbucks-axos1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261022-prime-axos1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261022-myschoolbucks-axos1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 </script>
@@ -2359,6 +2359,18 @@ function migrateState(s){
     if(axosChecking?.key&&primeBills.length){
       for(const bill of primeBills){bill.paymentAccountKey=axosChecking.key;bill.paymentSetup="Autopay";}
       s.settings.primeAxosPaymentAccountVersion=1;
+    }
+  }
+  if(Number(s.settings.mySchoolBucksAxosSavingsVersion||0)<1){
+    const axosSavings=(s.accounts||[]).find(a=>String(a.name||"").trim().toLowerCase()==="axos savings");
+    const schoolBills=(s.bills||[]).filter(b=>b.status!=="paid"&&/my\s*school\s*bucks/i.test(String(b.name||"")));
+    if(axosSavings?.key&&schoolBills.length){
+      for(const bill of schoolBills){
+        bill.paymentAccountKey=axosSavings.key;
+        bill.paymentSetup="Autopay";
+        bill.autopayTrigger="When any child's MySchoolBucks lunch balance falls below $5.";
+      }
+      s.settings.mySchoolBucksAxosSavingsVersion=1;
     }
   }
   for(const income of s.expectedIncome){
@@ -8091,6 +8103,7 @@ function billRowView(r){
   <details class="bill-details"><summary><span class="bill-status ${tone}">${esc(r.status)}</span><span>Payment details</span></summary><div class="small muted">Current payment: ${esc(r.account?.name||"Unassigned / unavailable account")} · Recorded setup: ${r.setup}</div>
   ${desired&&desired.key!==b.paymentAccountKey?`<div class="small muted">Desired payment account: ${esc(desired.name)}</div>`:""}
   <div class="small muted">${esc(amountType)} · ${esc(frequency)}</div>
+  ${b.autopayTrigger?`<div class="small muted">Autopay trigger: ${esc(b.autopayTrigger)}</div>`:""}
   ${billRepeat(b)?`<div class="small muted">${repeat} · next occurrence is added when marked paid.</div>`:""}
   <div class="actions">${pendingPayment?`<span class="bill-status unknown">Bank payment pending</span>`:bankMatched?`<span class="bill-status covered">Bank matched</span>`:paid?`<span class="tag">Paid manually</span>`:`<span class="bill-status ${tone}">${r.status}</span>${r.setup==="Unknown"?`<span class="bill-status unknown">Setup unknown</span>`:""}`}</div><div class="small muted">${note}</div></details></div>
   <div class="bill-actions"><b>${money(b.amount)}</b><button class="btn" aria-label="Edit bill ${esc(b.name)}" onclick="openBill(${r.index})">${pendingPayment?"View bank payment":bankMatched?"View bank match":paid?"Edit paid bill":"Edit"}</button>
@@ -8117,12 +8130,13 @@ function openBill(index=-1,sourceIndex=-1){
   <label>Current payment account<select id="billAccount"><option value="">Unassigned</option>${missing?`<option value="${esc(b.paymentAccountKey)}" selected>Previously assigned account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.paymentAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}${a.type==="credit"?" (readiness unavailable)":""}</option>`).join("")}</select></label>
   <label>Desired payment account (optional)<select id="billDesiredAccount"><option value="">No change planned</option>${desiredMissing?`<option value="${esc(b.desiredAccountKey)}" selected>Previously desired account (unavailable)</option>`:""}${accountOptions.map(a=>`<option value="${esc(a.key)}" ${a.key===b.desiredAccountKey?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("")}</select></label>
   <label>Payment setup<select id="billSetup">${BILL_SETUPS.map(setup=>`<option ${recordedBillSetup(b)===setup?"selected":""}>${setup}</option>`).join("")}</select></label>
+  <label>Autopay trigger / note (optional)<textarea id="billAutopayTrigger" rows="2">${esc(b.autopayTrigger||"")}</textarea></label>
   <label>Amount type<select id="billAmountType">${BILL_AMOUNT_TYPES.map(type=>`<option ${recordedBillAmountType(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
   <label>Bill frequency / status<select id="billFrequency" onchange="syncBillFrequencyRepeat()">${BILL_FREQUENCIES.map(type=>`<option ${recordedBillFrequency(b)===type?"selected":""}>${type}</option>`).join("")}</select></label>
   ${paid?`<input id="billRepeat" type="hidden" value="${billRepeat(b)}">`:`<label for="billRepeat">Repeat</label><select id="billRepeat" onchange="syncBillRepeatFrequency()">${BILL_REPEATS.map(([n,label])=>`<option value="${n}" ${billRepeat(b)===n?"selected":""}>${label}</option>`).join("")}</select><p class="muted small">Fixed bills can create the next occurrence when marked paid. Chase autopay is tracked with its linked current credit-card balance, not a repeated bill amount. Edits apply only to this occurrence and the next one it has not yet created.</p>`}</div>
   <p class="muted small">Accounts come from Money. Setup is your record only; this app does not schedule payments or verify autopay.</p>`,existing?"Save changes":"Add bill",async()=>{
     for(const id of ["bn","ba","bd"]){if(!$("#"+id).checkValidity()){$("#"+id).reportValidity();return}}
-    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
+    const name=$("#bn").value.trim(),amount=Number($("#ba").value),due=$("#bd").value,paymentAccountKey=$("#billAccount").value,desiredAccountKey=$("#billDesiredAccount").value,paymentSetup=$("#billSetup").value,autopayTrigger=$("#billAutopayTrigger").value.trim(),amountType=$("#billAmountType").value,frequency=$("#billFrequency").value,repeatMonths=Number($("#billRepeat").value);
     if(!name||!validBillDate(due)||!Number.isFinite(amount)||amount<0||!BILL_SETUPS.includes(paymentSetup)||!BILL_AMOUNT_TYPES.includes(amountType)||!BILL_FREQUENCIES.includes(frequency)||!BILL_REPEATS.some(([n])=>n===repeatMonths))return;
     if(paymentAccountKey&&paymentAccountKey!==b.paymentAccountKey&&!state.accounts.some(a=>a.key===paymentAccountKey)){alert("That account is no longer available. Reopen the bill and choose an account.");return}
     if(desiredAccountKey&&desiredAccountKey!==b.desiredAccountKey&&!state.accounts.some(a=>a.key===desiredAccountKey)){alert("That desired account is no longer available. Reopen the bill and choose an account.");return}
@@ -8130,7 +8144,7 @@ function openBill(index=-1,sourceIndex=-1){
     if(source&&nextBillIndex(source)>=0){alert("A next bill already exists. Close this window and use View next bill.");return}
     if(!existing&&state.bills.some(x=>x.due===due&&String(x.name||"").trim().toLowerCase()===name.toLowerCase())){alert("A bill with this name and due date already exists. Edit that bill, or use a distinct name for a separate bill.");return}
     const button=$("#saveModal");button.disabled=true;
-    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,desiredAccountKey,paymentSetup,amountType,frequency,repeatMonths,
+    const entry={...(existing||{id:uid(),status:"upcoming"}),name,amount:Math.round(amount*100)/100,due,paymentAccountKey,desiredAccountKey,paymentSetup,autopayTrigger,amountType,frequency,repeatMonths,
       repeatDay:due===b.due&&b.repeatDay?b.repeatDay:Number(due.slice(8,10))};
     if(source)entry.previousBillId=source.id;
     if(existing)state.bills[liveIndex]=entry;else state.bills.push(entry);
@@ -9095,9 +9109,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261022-prime-axos1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261022-myschoolbucks-axos1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261022-prime-axos1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261022-myschoolbucks-axos1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -9105,7 +9119,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261022-prime-axos1";
+const DAILY_LIFE_BUILD="20261022-myschoolbucks-axos1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
