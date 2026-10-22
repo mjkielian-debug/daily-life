@@ -1,6 +1,6 @@
 {
-  "build": "20261020-home-dayflow20",
-  "released": "2026-10-21",
-  "ui": "Adds Leo's confirmed Oct 20 reading of This Dark Endeavor, pages 26–34, and updates his reading status to done.",
+  "build": "20261022-profile-school-contacts1",
+  "released": "2026-10-22",
+  "ui": "Adds teacher and school contacts directly to each child's profile, including phone numbers with tap-to-call, and keeps the existing contact manager.",
   "data_version": "No saved records removed; additive one-time migration."
 }

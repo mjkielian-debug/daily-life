@@ -2504,6 +2504,12 @@ body::before{
   font-size:.52rem;
   padding:2px 5px;
 }
+.school-contact-links{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.vh-profile-school-contacts{margin-top:10px;padding:10px;border:1px solid color-mix(in srgb,var(--primary) 20%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--panel2) 88%,transparent)}
+.vh-profile-school-contacts .section-title{align-items:center}
+.vh-profile-school-contacts .section-title b{font-size:.86rem}
+.vh-profile-school-contacts .school-contact-person{grid-template-columns:minmax(0,1fr) auto}
+.vh-profile-school-contacts .school-contact-links .btn{white-space:nowrap}
 .school-contact-history{
   padding:8px 0 2px;
   border-top:1px dashed var(--border);
