@@ -1,6 +1,6 @@
 {
-  "build": "20261022-food-nutrition1",
+  "build": "20261022-frigo-combo1",
   "released": "2026-10-22",
-  "ui": "Adds estimated calories, macros, and caffeine for the Oct. 22 food and drink log.",
-  "data_version": "One-time additive estimate update for reported 2026-10-22 foods; preserves the logged items and quantities."
+  "ui": "Corrects today's meat and cheese food log to Frigo Cheese Heads Combo Pack per-stick estimates.",
+  "data_version": "One-time correction to existing 2026-10-22 food log entries; preserves logged items and quantities."
 }
