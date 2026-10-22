@@ -1,6 +1,6 @@
 {
-  "build": "20261022-food-intake1",
+  "build": "20261022-food-nutrition1",
   "released": "2026-10-22",
-  "ui": "Adds today's reported foods and drinks to the intake log, with quantities and unestimated nutrition notes.",
-  "data_version": "One-time additive food log migration for 2026-10-22; no existing entries are removed."
+  "ui": "Adds estimated calories, macros, and caffeine for the Oct. 22 food and drink log.",
+  "data_version": "One-time additive estimate update for reported 2026-10-22 foods; preserves the logged items and quantities."
 }
