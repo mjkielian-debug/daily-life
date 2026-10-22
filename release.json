@@ -1,6 +1,6 @@
 {
-  "build": "20261022-profile-school-contacts1",
+  "build": "20261022-prime-axos1",
   "released": "2026-10-22",
-  "ui": "Adds teacher and school contacts directly to each child's profile, including phone numbers with tap-to-call, and keeps the existing contact manager.",
-  "data_version": "No saved records removed; additive one-time migration."
+  "ui": "Records Amazon Prime as set up for autopay from Axos Checking.",
+  "data_version": "Additive one-time migration; preserves bill amounts, due dates, and paid status."
 }

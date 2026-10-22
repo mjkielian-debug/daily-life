@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=20261015-rainbow-cleanup2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
-<link rel="stylesheet" href="styles.css?v=20261022-profile-school-contacts1">
+<link rel="stylesheet" href="styles.css?v=20261022-prime-axos1">
 <link rel="stylesheet" href="compact-ui.css?v=20261003-cashflow2">
 <link rel="stylesheet" href="joyful-ui.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="life-system.css?v=20261003-life1">
@@ -174,13 +174,13 @@ dialog,
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
 <link rel="stylesheet" href="house-visual-map.css?v=20261019-dolly-room-photo-tour2">
-<link rel="stylesheet" href="visual-hubs.css?v=20261022-profile-school-contacts1">
+<link rel="stylesheet" href="visual-hubs.css?v=20261022-prime-axos1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261014-insights1">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261022-profile-school-contacts1">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261022-prime-axos1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -200,7 +200,7 @@ dialog,
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261018-care-nav15">
 <link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"></head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261022-profile-school-contacts1…</p></main></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261022-prime-axos1…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
@@ -216,9 +216,9 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261022-profile-school-contacts1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261022-prime-axos1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261022-profile-school-contacts1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261022-prime-axos1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
   }
 },12000);
 </script>
@@ -2353,6 +2353,14 @@ function migrateState(s){
     if(bill.amountType===undefined)bill.amountType="Fixed amount";
     if(bill.frequency===undefined)bill.frequency=Number(bill.repeatMonths)===1?"Monthly":Number(bill.repeatMonths)===12?"Annual":Number(bill.repeatMonths)>0?"Irregular":"One-time";
   }
+  if(Number(s.settings.primeAxosPaymentAccountVersion||0)<1){
+    const axosChecking=(s.accounts||[]).find(a=>String(a.name||"").trim().toLowerCase()==="axos checking");
+    const primeBills=(s.bills||[]).filter(b=>b.status!=="paid"&&/amazon\s*prime|prime\s*amazon/i.test(String(b.name||"")));
+    if(axosChecking?.key&&primeBills.length){
+      for(const bill of primeBills){bill.paymentAccountKey=axosChecking.key;bill.paymentSetup="Autopay";}
+      s.settings.primeAxosPaymentAccountVersion=1;
+    }
+  }
   for(const income of s.expectedIncome){
     if(income.frequency===undefined||!["One-time","Weekly","Every 2 weeks","Monthly"].includes(income.frequency))income.frequency="One-time";
     if(income.accountKey===undefined)income.accountKey="";
@@ -3992,7 +4000,7 @@ function dailyReviewSteps(item){
   const t=(state.tasks||[]).find(x=>String(x.id)===String(item.key));
   const raw=String(t?.notes||"");
   if(/morning personal care/i.test(item.label))return ["Brush teeth","Floss","Mouthwash","Wash face","Style hair","Deodorant","Perfume","Stretch"];
-  const segments=raw.split(/\\s*[·•;\\n]\\s*/).map(x=>x.trim()).filter(x=>x.length>2&&x.length<110);
+  const segments=raw.split(/\s*[·•;\\n]\s*/).map(x=>x.trim()).filter(x=>x.length>2&&x.length<110);
   return segments.length>=2&&segments.length<=12?segments:[];
 }
 async function dailyReviewStepAnswer(key,date,index,status){
@@ -9087,9 +9095,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261022-profile-school-contacts1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261022-prime-axos1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=sim-house1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261022-profile-school-contacts1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261022-prime-axos1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=sim-house1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -9097,7 +9105,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261022-profile-school-contacts1";
+const DAILY_LIFE_BUILD="20261022-prime-axos1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
