@@ -2372,29 +2372,29 @@ function migrateState(s){
   }
   if(Number(s.settings.oct22EveningCheckinLogVersion||0)<1){
     const date="2026-10-22";
-    state.sleepLogs=Array.isArray(state.sleepLogs)?state.sleepLogs:[];
-    let sleep=state.sleepLogs.find(x=>x.date===date);
-    if(!sleep){sleep={id:uid(),date};state.sleepLogs.push(sleep)}
+    s.sleepLogs=Array.isArray(s.sleepLogs)?s.sleepLogs:[];
+    let sleep=s.sleepLogs.find(x=>x.date===date);
+    if(!sleep){sleep={id:uid(),date};s.sleepLogs.push(sleep)}
     sleep.bedtime="20:20";
     sleep.actualSleepHours=null;
     sleep.notes=[String(sleep.notes||"").split(" · ").filter(x=>!x.startsWith("Fell asleep around 8:20 PM.")).join(" · ").trim(),"Fell asleep around 8:20 PM."].filter(Boolean).join(" · ");
     sleep.source=sleep.source||"Conversation log";
-    state.selfCare=Array.isArray(state.selfCare)?state.selfCare:[];
-    let brush=state.selfCare.find(x=>x.date===date&&x.key==="brush");
-    if(!brush){brush={id:uid(),date,key:"brush",done:true,count:1,times:[],source:"Conversation log"};state.selfCare.push(brush)}
+    s.selfCare=Array.isArray(s.selfCare)?s.selfCare:[];
+    let brush=s.selfCare.find(x=>x.date===date&&x.key==="brush");
+    if(!brush){brush={id:uid(),date,key:"brush",done:true,count:1,times:[],source:"Conversation log"};s.selfCare.push(brush)}
     brush.done=true;brush.count=Math.max(1,Number(brush.count||0));
     if(!Array.isArray(brush.times))brush.times=[];
     if(!String(brush.notes||"").includes("Brushed teeth before bed"))brush.notes=[String(brush.notes||"").trim(),"Brushed teeth before bed."].filter(Boolean).join(" ");
-    state.foodLogs=Array.isArray(state.foodLogs)?state.foodLogs:[];
+    s.foodLogs=Array.isArray(s.foodLogs)?s.foodLogs:[];
     const rows=[
       {source:"oct22-evening-yogurt-tube",name:"Good & Gather strawberry banana yogurt tube",category:"food",quantity:1,notes:"One yogurt tube, flavor remembered as strawberry or strawberry banana."},
       {source:"oct22-evening-salad",name:"Salad",category:"food",quantity:1,notes:"Ate some; portion and ingredients not specified."},
       {source:"oct22-evening-chicken-noodle-vegetable",name:"Chicken noodle vegetable soup",category:"food",quantity:1,notes:"Ate a small amount; exact product and portion not specified."}
     ];
     for(const row of rows){
-      if(!state.foodLogs.some(x=>x.date===date&&x.source===row.source))state.foodLogs.push({id:uid(),date,...row});
+      if(!s.foodLogs.some(x=>x.date===date&&x.source===row.source))s.foodLogs.push({id:uid(),date,...row});
     }
-    state.settings.oct22EveningCheckinLogVersion=1;
+    s.settings.oct22EveningCheckinLogVersion=1;
   }
   if(Number(s.settings.demitriSpellingFixVersion||0)<1){
     const fix=v=>typeof v==="string"?v.replace(/\bDimitri\b/g,"Demitri"):v;
