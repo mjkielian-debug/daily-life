@@ -285,18 +285,38 @@ function schoolAnalysisHTML(x){
   block("What this means",meaning)+block("What to focus on",focus)+block("Try next",practice,"ps-school-practice")+
   '<p class="ps-school-caution">'+esc(String(x.caution||guide.caution||""))+'</p></section>';
 }
+
+function schoolTrendChart(title,rows,unit){
+ const sorted=rows.slice().sort((a,b)=>String(a.asOf).localeCompare(String(b.asOf))),values=sorted.map(x=>Number(x.metricValue??x.percent)),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo||1;
+ const points=sorted.map((x,i)=>({x:30+(sorted.length===1?0:i*260/(sorted.length-1)),y:105-((Number(x.metricValue??x.percent)-lo)/span)*72,row:x}));
+ const line=points.map(p=>`${p.x},${p.y}`).join(" "),dots=points.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#8d6aa3"><title>${esc(p.row.asOf)} · ${esc(p.row.metricValue??p.row.percent)}${unit}</title></circle>`).join("");
+ const dates=[points[0],points[Math.floor((points.length-1)/2)],points[points.length-1]].filter((p,i,a)=>a.findIndex(q=>q.row.asOf===p.row.asOf)===i);
+ const labels=dates.map(p=>`<text x="${p.x}" y="137" text-anchor="${p.x<45?"start":p.x>275?"end":"middle"}">${esc(new Date(p.row.asOf+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"}))}</text>`).join("");
+ return `<article class="ps-trend-card"><div class="ps-trend-heading"><div><small>GROWTH OVER TIME</small><h4>${esc(title)}</h4></div><b>${esc(String(sorted[sorted.length-1].metricValue??sorted[sorted.length-1].percent))}${esc(unit)}</b></div><svg class="ps-trend-svg" viewBox="0 0 320 150" role="img" aria-label="${esc(title)} progress chart from ${esc(sorted[0].asOf)} to ${esc(sorted[sorted.length-1].asOf)}"><line x1="24" y1="105" x2="296" y2="105" stroke="#eee7f0"/><line x1="24" y1="69" x2="296" y2="69" stroke="#f1edf2"/><line x1="24" y1="33" x2="296" y2="33" stroke="#f1edf2"/><polyline points="${line}" fill="none" stroke="#9a78ae" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labels}</svg><div class="ps-trend-foot"><span>${esc(sorted[0].asOf)} · ${esc(String(sorted[0].metricValue??sorted[0].percent))}${esc(unit)}</span><span>${sorted.length} dated records</span></div></article>`;
+}
+function schoolProgressMarkup(child){
+ const grades=(state.schoolGrades||[]).filter(x=>x.child===child&&x.asOf&&x.percent!==null&&x.percent!==undefined&&x.percent!==""&&Number.isFinite(Number(x.percent))).map(x=>Object.assign({metricValue:Number(x.percent)},x));
+ const byCourse=new Map();for(const row of grades){const key=String(row.course||"Grade").trim();byCourse.set(key,[...(byCourse.get(key)||[]),row])}
+ const gradeCharts=[...byCourse.entries()].filter(([,rows])=>rows.length>=2).map(([title,rows])=>schoolTrendChart(title,rows,"%"));
+ const measures=(schoolPortfolio()||[]).filter(x=>x.child===child&&String(x.metricName||"").trim()&&x.asOf&&x.metricValue!==""&&x.metricValue!==null&&Number.isFinite(Number(x.metricValue)));
+ const byMetric=new Map();for(const row of measures){const key=String(row.metricName).trim();byMetric.set(key,[...(byMetric.get(key)||[]),row])}
+ const metricCharts=[...byMetric.entries()].filter(([,rows])=>rows.length>=2).map(([title,rows])=>schoolTrendChart(title,rows,rows[rows.length-1].metricMax?` / ${rows[rows.length-1].metricMax}`:""));
+ const recent=(state.schoolGrades||[]).filter(x=>x.child===child).sort((a,b)=>String(b.asOf||b.date||"").localeCompare(String(a.asOf||a.date||""))).slice(0,4);
+ return `<section class="ps-progress-dashboard"><style>.ps-progress-dashboard{margin:0 0 16px;padding:14px;border:1px solid #e7dfe9;border-radius:17px;background:linear-gradient(140deg,#fff,#fbf5fa)}.ps-progress-dashboard h3{margin:3px 0 10px;font-size:1.08rem}.ps-progress-dashboard .ps-trend-label{font-size:.65rem;letter-spacing:.15em;color:#9070a1;font-weight:800}.ps-grade-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.ps-grade-chip{display:grid;gap:3px;padding:10px;border-radius:12px;background:#f5edf7}.ps-grade-chip b{font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ps-grade-chip strong{font-size:1.15rem}.ps-grade-chip small{font-size:.67rem;color:#756c7b}.ps-trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.ps-trend-card{min-width:0;border:1px solid #eee7ef;border-radius:14px;padding:11px;background:white}.ps-trend-heading{display:flex;justify-content:space-between;align-items:start;gap:6px}.ps-trend-heading small{font-size:.58rem;letter-spacing:.1em;color:#9070a1;font-weight:800}.ps-trend-heading h4{margin:3px 0 0;font-size:.85rem}.ps-trend-heading>b{font-size:.94rem;color:#83649a}.ps-trend-svg{width:100%;height:auto;display:block;margin-top:6px}.ps-trend-svg text{font-size:9px;fill:#756c7b}.ps-trend-foot{display:flex;justify-content:space-between;gap:6px;color:#756c7b;font-size:.62rem}.ps-progress-note{margin:8px 0 0;font-size:.76rem;color:#756c7b}.ps-progress-add{margin-top:9px;border:0;border-radius:999px;padding:8px 12px;background:#f0e4f3;font-weight:700;color:#30283a}@media(max-width:460px){.ps-trend-grid{grid-template-columns:1fr}}</style><div class="ps-trend-label">SCHOOL PROGRESS</div><h3>Grades + learning growth</h3>${recent.length?`<div class="ps-grade-strip">${recent.map(x=>`<div class="ps-grade-chip"><b>${esc(x.course||"Grade")}</b><strong>${esc(x.grade||((x.percent!==null&&x.percent!==undefined)?x.percent+"%":"Snapshot"))}</strong><small>${esc(x.term||x.asOf||x.date||"Date not entered")}</small></div>`).join("")}</div>`:""}${gradeCharts.length||metricCharts.length?`<div class="ps-trend-grid">${gradeCharts.join("")}${metricCharts.join("")}</div>`:`<p class="ps-progress-note">Growth charts appear after two or more dated records for the same subject or skill. Add real scores or a measured skill to build a line chart.</p>`}<button type="button" class="ps-progress-add" onclick="openSchoolGrade('', '${child}')">＋ Add grade snapshot</button></section>`;
+}
+
 window.openChildSchoolBook=function(child,index=0){
  if(!KIDS.includes(child))return;
  const pages=schoolPages(child);
  if(!pages.length){
-  modal(child+"'s School Book",'<div class="ps-empty-book">📚<b>Learning and growing</b><p>No school snapshots here yet. Import the Paper Sort file or add a learning note.</p><button onclick="paperImportArtBackup()">↑ Import saved books</button><button onclick="openSchoolMemoryEntry(\''+child+'\')">+ Add a school memory</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
+  modal(child+"'s School Book",schoolProgressMarkup(child)+'<div class="ps-empty-book">📚<b>Learning and growing</b><p>No school snapshots here yet. Import the Paper Sort file or add a learning note.</p><button onclick="paperImportArtBackup()">↑ Import saved books</button><button onclick="openSchoolMemoryEntry(\''+child+'\')">+ Add a school memory</button><button onclick="openArtLibrary()">‹ All books</button></div>',"Close",closeModal);return;
  }
  const n=Math.max(0,Math.min(pages.length-1,Number(index)||0)),x=pages[n],id=qid(x.id),date=String(x.asOf||"");
  const type=x.isGrade?"🧮 Test score / school report":x.kind==="work"?"✏ Schoolwork sample":x.kind==="feedback"?"💬 Teacher feedback":"🌱 Learning right now";
  const hasDoc=x.sourcePdfId&&(state.paperDigitalDocs||[]).some(v=>v.id===x.sourcePdfId);
  const canEdit=!x.isGrade;
  modal(child+"'s School Book",
- '<div class="ps-album"><div class="ps-album-heading"><span>📚 '+esc(child)+' · school memories</span><small>Page '+(n+1)+' of '+pages.length+'</small></div>'+
+ '<div class="ps-album">'+schoolProgressMarkup(child)+'<div class="ps-album-heading"><span>📚 '+esc(child)+' · school memories</span><small>Page '+(n+1)+' of '+pages.length+'</small></div>'+
  '<div class="ps-school-page"><span class="ps-school-type">'+type+'</span><h3>'+esc(x.title||"Learning update")+'</h3>'+
  (x.value?'<div class="ps-school-score">'+esc(x.value)+'</div>':"")+
  '<p class="ps-school-date">'+esc(x.term||"")+(x.term&&date?" · ":"")+esc(date||"Date not entered")+'</p>'+
@@ -325,6 +345,8 @@ window.openSchoolMemoryEntry=function(child,id=""){
  '<label>Subject / title<input id="psSchoolTitle" value="'+esc(x.title||"")+'" placeholder="Subtraction, reading skills, science…"></label>'+
  '<label>As of<input type="date" id="psSchoolDate" value="'+esc(x.asOf||"")+'"></label>'+
  '<label>What they learned, practiced, scored or need to revisit<textarea id="psSchoolNotes" rows="5">'+esc(x.notes||"")+'</textarea></label>'+
+ '<label>Progress measure (optional)<input id="psSchoolMetric" value="'+esc(x.metricName||"")+'" placeholder="Letter sounds known"></label>'+
+ '<div class="grid2"><label>Measured value<input type="number" step="any" id="psSchoolMetricValue" value="'+esc(x.metricValue??"")+'" placeholder="e.g. 12"></label><label>Out of (optional)<input type="number" step="any" id="psSchoolMetricMax" value="'+esc(x.metricMax??"")+'" placeholder="e.g. 26"></label></div>'+
  '<label>Work sample photo (optional)<input type="file" id="psSchoolFile" accept="image/*"></label>'+
  '<small class="ps-muted">Only log what actually happened. Photos are saved on this device; keep an additional backup.</small></div>',
  "Save",async()=>{
@@ -338,7 +360,8 @@ window.openSchoolMemoryEntry=function(child,id=""){
    const chk=await dbGet(SCHOOL_PHOTO+rid);
    if(typeof chk!=="string"||chk.length<100)throw Error("not stored");
   }catch(e){alert("Could not save the work photo. Keep the original and retry.");return}}
-  const record={id:rid,child,kind:get("psSchoolKind").value,title,asOf:get("psSchoolDate").value,notes:get("psSchoolNotes").value.trim(),
+  const metricValue=get("psSchoolMetricValue").value,metricMax=get("psSchoolMetricMax").value;
+  const record={id:rid,child,kind:get("psSchoolKind").value,title,asOf:get("psSchoolDate").value,notes:get("psSchoolNotes").value.trim(),metricName:get("psSchoolMetric").value.trim(),metricValue:metricValue===""?null:Number(metricValue),metricMax:metricMax===""?null:Number(metricMax),
    photoId:f?rid:(old?.photoId||""),source:old?.source||"Parent",sourcePdfId:old?.sourcePdfId||"",createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(old)Object.assign(old,record);else schoolPortfolio().push(record);
   await save();render();window.openChildSchoolBook(child,schoolPages(child).findIndex(v=>v.id===rid));
