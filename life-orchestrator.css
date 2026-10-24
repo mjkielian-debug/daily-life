@@ -1473,17 +1473,30 @@ body:has(.reading-one-screen-shell){
 }
 
 
-/* One-screen Spirituality radial hub */
+/* Spirituality dashboard: use normal page scrolling on phones and desktop */
+html:has(.spirituality-one-screen-shell){
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+}
 body:has(.spirituality-one-screen-shell){
-  overflow:hidden!important;
+  height:auto!important;
+  min-height:100dvh!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
   background:#f3c5da!important;
 }
+#app:has(.spirituality-one-screen-shell){
+  height:auto!important;
+  min-height:100dvh!important;
+  overflow:visible!important;
+}
 .spirituality-one-screen-shell{
-  height:100dvh!important;
-  min-height:0!important;
-  overflow:hidden!important;
+  height:auto!important;
+  min-height:100dvh!important;
+  max-height:none!important;
+  overflow:visible!important;
   padding-top:6px!important;
-  padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+  padding-bottom:calc(100px + env(safe-area-inset-bottom))!important;
 }
 .spirituality-one-screen-shell>header{flex:0 0 auto!important}
 .spirituality-one-screen{
