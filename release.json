@@ -1,6 +1,6 @@
 {
-  "build": "20261023-evening-log1",
-  "released": "2026-10-23",
-  "ui": "Logs Oct. 22 evening food, toothbrushing, and sleep start.",
-  "data_version": "One-time additions to the 2026-10-22 food, self-care, and sleep logs; estimates omitted where portions or product details were uncertain."
+  "build": "20261025-monthly-push1",
+  "released": "2026-10-25",
+  "ui": "Adds calendar-month pet care repeats and optional phone push notifications.",
+  "data_version": "No data schema changes."
 }
