@@ -71,6 +71,33 @@ function dailyLifeBase64ToBytes(value){
   return bytes;
 }
 
+function openDailyLifePushSettings(){
+  const supported="Notification" in window&&"serviceWorker" in navigator&&!!window.PushManager;
+  const status=!supported?"This browser does not support phone notifications.":Notification.permission==="denied"?"Notifications are blocked in browser settings.":localStorage.getItem("dailyLifePushEnabled")==="1"?"Notifications are enabled on this device.":"Notifications are off on this device.";
+  const body=`<div class="stack"><p>${esc(status)}</p><p>Daily Life checks opted-in reminders every five minutes and sends them at the time saved on each reminder. Android controls sound and vibration.</p><div class="actions"><button class="btn primary" type="button" onclick="enableDailyLifePush()">Enable notifications</button>${localStorage.getItem("dailyLifePushEnabled")==="1"?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}</div></div>`;
+  modal("Daily Life notifications",body,"Done",()=>{});
+}
+function attachDailyLifeNotificationButton(){
+  const header=document.querySelector("#app header");
+  if(!header||header.querySelector("#dailyLifeNotificationButton"))return;
+  const settings=[...header.querySelectorAll("button")].find(button=>/settings/i.test(button.textContent||""));
+  if(!settings)return;
+  const button=document.createElement("button");
+  button.id="dailyLifeNotificationButton";button.type="button";button.className=settings.className||"btn";
+  button.setAttribute("aria-label","Daily Life notifications");button.title="Daily Life notifications";
+  button.textContent="♧";
+  button.addEventListener("click",openDailyLifePushSettings);
+  settings.insertAdjacentElement("afterend",button);
+}
+if(typeof render==="function"){
+  const dailyLifeRenderBeforeNotifications=render;
+  render=function(...args){
+    const result=dailyLifeRenderBeforeNotifications.apply(this,args);
+    setTimeout(attachDailyLifeNotificationButton,0);
+    return result;
+  };
+}
+window.addEventListener("load",attachDailyLifeNotificationButton,{once:true});
 if(typeof cloudPanel==="function"){
   const dailyLifeOriginalCloudPanel=cloudPanel;
   cloudPanel=function(){return dailyLifeOriginalCloudPanel()+dailyLifePushSettingsPanel()};
