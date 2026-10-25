@@ -1,6 +1,6 @@
 {
-  "build": "20261025-monthly-push4",
+  "build": "20261025-dayflow-todayfix2",
   "released": "2026-10-25",
-  "ui": "Adds calendar-month pet care repeats and optional phone push notifications.",
+  "ui": "Corrects Today selection, live Day Flow timing, child availability, repeated future school blocks, and the installed app status-bar color.",
   "data_version": "No data schema changes."
 }
