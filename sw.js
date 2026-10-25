@@ -1,7 +1,8 @@
-const CACHE_NAME="daily-life-shell-20261023-evening-log1";
+const CACHE_NAME="daily-life-shell-20261025-monthly-push1";
 const APP_SHELL=[
   "./",
   "./index.html",
+  "./push-notifications.js",
   "./styles.css",
   "./compact-ui.css",
   "./joyful-ui.css",
@@ -136,6 +137,35 @@ async function staticAssetResponse(request,url,event){
   return (await refresh) || (await cache.match(url.pathname)) || new Response("",{status:504});
 }
 
+self.addEventListener("push",event=>{
+  let payload={};
+  try{payload=event.data?event.data.json():{}}catch{payload={body:event.data?.text?.()||""}}
+  const title=String(payload.title||"Daily Life");
+  const options={
+    body:String(payload.body||"A Daily Life reminder is due."),
+    icon:"./daily-life-rainbow-192.png",
+    badge:"./daily-life-rainbow-192.png",
+    tag:String(payload.tag||"daily-life-reminder"),
+    renotify:false,
+    data:{url:String(payload.url||"./")}
+  };
+  event.waitUntil(self.registration.showNotification(title,options));
+});
+self.addEventListener("notificationclick",event=>{
+  event.notification.close();
+  const target=new URL(event.notification.data?.url||"./",self.location.origin).href;
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+    for(const client of windows){
+      if(client.url.startsWith(self.location.origin)){
+        await client.focus();
+        if("navigate" in client&&client.url!==target)await client.navigate(target);
+        return;
+      }
+    }
+    if(self.clients.openWindow)await self.clients.openWindow(target);
+  })());
+});
 self.addEventListener("fetch",event=>{
   const request=event.request;
   if(request.method!=="GET")return;
