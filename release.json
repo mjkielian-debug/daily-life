@@ -1,5 +1,5 @@
 {
-  "build": "20261025-monthly-push1",
+  "build": "20261025-monthly-push2",
   "released": "2026-10-25",
   "ui": "Adds calendar-month pet care repeats and optional phone push notifications.",
   "data_version": "No data schema changes."
