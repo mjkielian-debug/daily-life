@@ -4771,7 +4771,7 @@ function openPetRoutine(id=""){
   const types=["Grooming","Nail trim","Preventive care","Medication","Litter deep clean","Wash bedding","Weight check","Other"];
   modal(r.id?"Pet care routine":"Add recurring pet care",`<div class="stack"><label>Pet<select id="ptrpet"><option value="">Shared / all pets</option>${petOptions}</select></label><label>Routine<input id="ptrtitle" value="${esc(r.title||"")}" placeholder="Trim nails, deep-clean litter box…"></label><div class="grid2"><label>Care type<select id="ptrtype">${types.map(v=>`<option ${v===r.type?"selected":""}>${v}</option>`).join("")}</select></label><label>Repeat<select id="ptrrepeat"><option value="days" ${r.repeatUnit==="monthly"||r.repeatUnit==="none"?"":"selected"}>Every N days</option><option value="monthly" ${r.repeatUnit==="monthly"?"selected":""}>Every month</option><option value="none" ${r.repeatUnit==="none"?"selected":""}>One-time</option></select></label></div><div class="grid2"><label>Every N days<input id="ptrevery" type="number" min="1" value="${Number(r.everyDays||30)}"></label><label>Day of month<input id="ptrmonthday" type="number" min="1" max="31" value="${Number(r.monthDay||1)}"></label></div><div class="grid2"><label>Next date<input id="ptrnext" type="date" value="${esc(r.nextDate||"")}"></label><label>Status<select id="ptractive"><option value="1" ${r.active!==false?"selected":""}>Active</option><option value="0" ${r.active===false?"selected":""}>Paused</option></select></label></div><label>Notes<textarea id="ptrnotes" rows="3">${esc(r.notes||"")}</textarea></label><label class="check"><input id="ptrnotify" type="checkbox" ${r.notify===true?"checked":""}> Send a phone notification</label><label>Notification time<input id="ptrtime" type="time" value="${esc(r.notifyTime||"09:00")}"></label><div class="muted small">Phone alerts require Cloud sign-in and notification permission on this device.</div></div>`,"Save",async()=>{
     const title=$("#ptrtitle").value.trim();if(!title)return;let x=petRoutineById(id);if(!x){x={id:uid(),lastDone:""};state.petCareRoutines.push(x)}
-    const repeatUnit=$("#ptrrepeat").value,monthDay=Math.max(1,Math.min(31,Number($("#ptrmonthday").value||1))),everyDays=repeatUnit==="days"?Math.max(1,Number($("#ptrevery").value||30)):0;Object.assign(x,{petId:$("#ptrpet").value,title,type,repeatUnit,everyDays,monthDay,nextDate:$("#ptrnext").value,notes:$("#ptrnotes").value.trim(),notify:$("#ptrnotify").checked,notifyTime:$("#ptrtime").value||"09:00",active:$("#ptractive").value==="1"});await save();closeModal();render();
+    const repeatUnit=$("#ptrrepeat").value,type=$("#ptrtype").value,monthDay=Math.max(1,Math.min(31,Number($("#ptrmonthday").value||1))),everyDays=repeatUnit==="days"?Math.max(1,Number($("#ptrevery").value||30)):0;Object.assign(x,{petId:$("#ptrpet").value,title,type,repeatUnit,everyDays,monthDay,nextDate:$("#ptrnext").value,notes:$("#ptrnotes").value.trim(),notify:$("#ptrnotify").checked,notifyTime:$("#ptrtime").value||"09:00",active:$("#ptractive").value==="1"});await save();closeModal();render();
   });
 }
 async function completePetRoutine(id){
@@ -9207,7 +9207,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261025-monthly-push3";
+const DAILY_LIFE_BUILD="20261025-monthly-push4";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9344,7 +9344,7 @@ async function registerAppWorker(){
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
 <script src="action-first.js?v=20261016-guided20"></script>
 
-<script src="push-notifications.js?v=20261025-monthly-push3"></script>
+<script src="push-notifications.js?v=20261025-monthly-push4"></script>
 <script>
 window.addEventListener("load",()=>{
   init();
