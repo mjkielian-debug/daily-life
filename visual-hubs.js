@@ -149,7 +149,7 @@ function dayFlowSelectDate(date){setItineraryDate(date);setDayFlowRange("day")}
 function dayFlowDateLabel(date,options={weekday:"long",month:"long",day:"numeric"}){return new Date(date+"T12:00:00").toLocaleDateString(undefined,options)}
 function dayFlowRangeMarkup(mode,date){
  const today=ymd(),tomorrow=shiftDateString(today,1),modes=[["day","Today"],["tomorrow","Tomorrow"],["week","This week"],["month","This month"]];
- const buttons=modes.map(([key,label])=>`<button type="button" class="df-range ${((mode==="day"&&date===today)||(mode==="tomorrow"&&date===tomorrow)||mode===key)?"selected":""}" onclick="${key==="day"?`setItineraryDate(ymd());setDayFlowRange('day')`:key==="tomorrow"?`setItineraryDate(shiftDateString(ymd(),1));setDayFlowRange('day')`:`setDayFlowRange('${key}')`}">${label}</button>`).join("");
+ const buttons=modes.map(([key,label])=>`<button type="button" class="df-range ${((key==="day"&&mode==="day"&&date===today)||(key==="tomorrow"&&mode==="day"&&date===tomorrow)||(key==="week"&&mode==="week")||(key==="month"&&mode==="month"))?"selected":""}" onclick="${key==="day"?`setItineraryDate(ymd());setDayFlowRange('day')`:key==="tomorrow"?`setItineraryDate(shiftDateString(ymd(),1));setDayFlowRange('day')`:`setDayFlowRange('${key}')`}">${label}</button>`).join("");
  return `<div class="df-range-row" role="group" aria-label="Choose day range">${buttons}<label class="df-calendar">⌑ <span>Pick a date</span><input aria-label="Pick a calendar date" type="date" value="${esc(date)}" onchange="dayFlowSelectDate(this.value)"></label></div>`;
 }
 function dayFlowRoutineStrip(date){
