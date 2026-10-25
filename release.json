@@ -1,6 +1,6 @@
 {
-  "build": "20261025-dayflow-todayfix2",
+  "build": "20261025-dayflow-return-dedupe1",
   "released": "2026-10-25",
-  "ui": "Corrects Today selection, live Day Flow timing, child availability, repeated future school blocks, and the installed app status-bar color.",
+  "ui": "Corrects Day Flow timing and selection, suppresses duplicate family return anchors, and updates the installed app theme.",
   "data_version": "No data schema changes."
 }
