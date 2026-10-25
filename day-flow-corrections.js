@@ -106,7 +106,7 @@
   itineraryTaskPreferredRange = function(task, date){
     const text = String(task?.title || "") + " " + String(task?.notes || "");
     const normalized = text.toLowerCase();
-    const vacuum = /robot\\s*vacuum/.test(normalized);
+    const vacuum = /robot\s*vacuum/.test(normalized);
     const bedtimeErrand = /litter|backpack|tomorrow|clothes|bags|keys/.test(normalized);
     const taskMinutes = itineraryTaskMinutes(task);
     const base = baseEveningTaskRange(task, date);
@@ -133,7 +133,7 @@
       if(task.date !== date || !task.itineraryStart) continue;
       const start = hmMinutes(task.itineraryStart);
       const minutes = itineraryTaskMinutes(task);
-      const vacuum = /robot\\s*vacuum/i.test(String(task.title || ""));
+      const vacuum = /robot\s*vacuum/i.test(String(task.title || ""));
       if(start !== null && (vacuum ? start > 20 * 60 + 30 : start + minutes > 20 * 60 + 30)){
         task.itineraryStart = "";
         clearedLateStarts = true;
@@ -143,7 +143,7 @@
     return baseEveningAutoTasks(date, baseItems).filter(item=>{
       const start = hmMinutes(item.start), end = hmMinutes(item.end);
       if(start === null || end === null) return true;
-      const vacuum = /robot\\s*vacuum/i.test(String(item.title || ""));
+      const vacuum = /robot\s*vacuum/i.test(String(item.title || ""));
       return vacuum ? start <= 20 * 60 + 30 && end <= 20 * 60 + 35 : start < 20 * 60 + 30 && end <= 20 * 60 + 30;
     });
   };
