@@ -299,7 +299,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.25-household-fixes2";
+const APP_BUILD="2026.10.25-household-fixes3";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2245,7 +2245,7 @@ function ensureToday(){
   };
   addHomeRoutine("Scoop litter boxes","home","Scoop the two standard litter boxes and check the robot box; empty it if needed.",72);
   addHomeRoutine("Check kids' backpacks","family","Check each book bag for papers, homework, notices, and anything that needs to come back.",74);
-  addHomeRoutine("Run robot vacuum","home","Start the robot vacuum after everyone is in bed.",80,{itineraryStart:"21:30",itineraryMinutes:5});
+  addHomeRoutine("Run robot vacuum","home","Start the robot vacuum after everyone is in bed.",80,{itineraryStart:"20:30",itineraryMinutes:5});
   const litterTasks=state.tasks.filter(t=>t.date===date&&!t.done&&/\blitter\b/i.test(String(t.title||"")+" "+String(t.notes||"")));
   if(litterTasks.length>1){
     litterTasks.sort((a,b)=>Number(a.generated==="household-maintenance")-Number(b.generated==="household-maintenance"));
@@ -2255,7 +2255,7 @@ function ensureToday(){
   }
   for(const task of state.tasks){
     if(task.date===date&&/robot vacuum/i.test(String(task.title||""))&&!task.done){
-      task.itineraryStart="21:30";task.itineraryMinutes=5;
+      task.itineraryStart="20:30";task.itineraryMinutes=5;
       task.notes="Start the robot vacuum after everyone is in bed.";
     }
   }
@@ -9269,7 +9269,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261025-household-fixes2";
+const DAILY_LIFE_BUILD="20261025-household-fixes3";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
