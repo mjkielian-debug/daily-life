@@ -1,6 +1,6 @@
 {
-  "build": "20261025-dayflow-return-dedupe1",
+  "build": "20261025-autosync-recovery1",
   "released": "2026-10-25",
-  "ui": "Corrects Day Flow timing and selection, suppresses duplicate family return anchors, and updates the installed app theme.",
+  "ui": "Enables ongoing cloud sync with automatic conflict recovery, keeps changed device data, and retains a recovery copy of the previous cloud snapshot.",
   "data_version": "No data schema changes."
 }
