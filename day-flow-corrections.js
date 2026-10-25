@@ -51,11 +51,17 @@
   };
   const baseAutoTaskBlocks = itineraryAutoTaskBlocks;
   itineraryAutoTaskBlocks = function(date, baseItems){
+    const returnAnchor = (typeof itineraryFixedItems === "function" ? itineraryFixedItems(date) : [])
+      .filter(x => /kids? home from dad|kids? return home|home from dad/i.test(String(x.title || "")))
+      .map(x => hmMinutes(x.start)).filter(x => x !== null).sort((a,b)=>a-b)[0];
     return baseAutoTaskBlocks(date, baseItems).filter(item => {
-      if(item.source !== "task" || !item.sourceId) return true;
-      const task = (state.tasks || []).find(t => String(t.id) === String(item.sourceId));
+      const task = item.sourceId && (state.tasks || []).find(t => String(t.id) === String(item.sourceId));
       const category = String(task?.category || "").toLowerCase();
-      const isSchool = category === "school" || /homework|reading|practice|school|assignment|math/i.test(String(task?.title || ""));
+      const titleAndDetail = String(item.title || "") + " " + String(item.detail || "") + " " + String(task?.child || "");
+      const isSchool = category === "school" || /homework|reading|practice|school|assignment|math/i.test(titleAndDetail);
+      const childMention = /\b(kids?|children|leo|dolly|ambrose|demitri|tree)\b/i.test(titleAndDetail);
+      const start = hmMinutes(item.start);
+      if(returnAnchor !== undefined && start !== null && start < returnAnchor && childMention) return false;
       return !isSchool || date <= ymd() || !!task?.itineraryStart;
     });
   };
