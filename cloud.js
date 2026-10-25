@@ -562,9 +562,35 @@ async function cloudArchiveRemoteSnapshot(snapshot,reason){
   await dbSet("state",state);
 }
 
+function cloudRestoreLocalOnlyAssets(restored,local){
+  const photoKeys=["outfits","pets","plants","hobbyProjects","meals"];
+  for(const key of photoKeys){
+    if(!Array.isArray(restored[key])||!Array.isArray(local?.[key]))continue;
+    const localById=new Map(local[key].filter(x=>x?.id).map(x=>[String(x.id),x]));
+    for(const item of restored[key]){
+      const source=item?.id?localById.get(String(item.id)):null;
+      if(!source?.photo)continue;
+      item.photo=source.photo;
+      delete item.photoLocalOnly;
+    }
+  }
+  for(const key of ["vehicles","projects","gardenJournal"]){
+    if(!Array.isArray(restored[key])||!Array.isArray(local?.[key]))continue;
+    const localById=new Map(local[key].filter(x=>x?.id).map(x=>[String(x.id),x]));
+    for(const item of restored[key]){
+      const source=item?.id?localById.get(String(item.id)):null;
+      if(!Array.isArray(source?.referencePhotos)||!source.referencePhotos.length)continue;
+      item.referencePhotos=source.referencePhotos;
+      delete item.referencePhotosLocalOnly;
+    }
+  }
+}
+
 async function cloudUseRemoteSnapshot(snapshot){
   if(!snapshot?.state)return false;
+  const localState=state;
   state=migrateState(snapshot.state);
+  cloudRestoreLocalOnlyAssets(state,localState);
   await dbSet("state",state);
   cloudRemoteUpdatedAt=snapshot.updated_at||null;
   cloudSetLastPushed(cloudRemoteUpdatedAt);
@@ -608,7 +634,8 @@ async function cloudPrepareAutoSync(){
     }
   }else{
     cloudNeedsReview=false;cloudAutoCanPush=true;
-    if(!lastSignature||signature!==lastSignature)await cloudPushSnapshotInternal(true);
+    const remoteIsOlderThanLastPush=new Date(snapshot.updated_at||0).getTime()<new Date(last).getTime()-2000;
+    if(remoteIsOlderThanLastPush||!lastSignature||signature!==lastSignature)await cloudPushSnapshotInternal(true);
   }
   await cloudPullLifeEntries(false);
 }
