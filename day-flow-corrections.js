@@ -82,4 +82,70 @@
     rows.splice(0, rows.length, ...unique);
     return rows;
   };
+  // Keep the family's evening plan inside the requested 8:30 PM cutoff.
+  const baseDayEndForEveningCutoff = itineraryDayEnd;
+  itineraryDayEnd = function(date){
+    return Math.min(baseDayEndForEveningCutoff(date), 20 * 60 + 35);
+  };
+
+  const baseFinalSuggestedBlocks = itinerarySuggestedBlocks;
+  itinerarySuggestedBlocks = function(date){
+    const rows = baseFinalSuggestedBlocks(date);
+    for(const row of rows){
+      if(row.templateKey === "bedtime-settle"){
+        row.start = "19:30";
+        row.end = "19:45";
+        row.title = "Pajamas + settle into bed";
+        row.detail = "Finish pajamas and get settled in bed · 15 minutes before reading.";
+      }
+    }
+    return rows;
+  };
+
+  const baseEveningTaskRange = itineraryTaskPreferredRange;
+  itineraryTaskPreferredRange = function(task, date){
+    const text = String(task?.title || "") + " " + String(task?.notes || "");
+    const normalized = text.toLowerCase();
+    const vacuum = /robot\\s*vacuum/.test(normalized);
+    const bedtimeErrand = /litter|backpack|tomorrow|clothes|bags|keys/.test(normalized);
+    const taskMinutes = itineraryTaskMinutes(task);
+    const base = baseEveningTaskRange(task, date);
+    if(!base) return null;
+    if(vacuum){
+      const end = Math.min(base.end, 20 * 60 + 35);
+      return end - base.start >= taskMinutes ? {start:base.start, end} : null;
+    }
+    if(bedtimeErrand){
+      const now = date === ymd() ? new Date() : null;
+      const floor = now ? Math.ceil((now.getHours()*60 + now.getMinutes() + 5)/5)*5 : 0;
+      const start = Math.max(base.start, 18 * 60 + 45, floor);
+      const end = Math.min(base.end, 20 * 60 + 20);
+      return end - start >= taskMinutes ? {start, end} : null;
+    }
+    const end = Math.min(base.end, 20 * 60 + 30);
+    return end - base.start >= taskMinutes ? {start:base.start, end} : null;
+  };
+
+  const baseEveningAutoTasks = itineraryAutoTaskBlocks;
+  itineraryAutoTaskBlocks = function(date, baseItems){
+    let clearedLateStarts = false;
+    for(const task of state.tasks || []){
+      if(task.date !== date || !task.itineraryStart) continue;
+      const start = hmMinutes(task.itineraryStart);
+      const minutes = itineraryTaskMinutes(task);
+      const vacuum = /robot\\s*vacuum/i.test(String(task.title || ""));
+      if(start !== null && (vacuum ? start > 20 * 60 + 30 : start + minutes > 20 * 60 + 30)){
+        task.itineraryStart = "";
+        clearedLateStarts = true;
+      }
+    }
+    if(clearedLateStarts && typeof save === "function") Promise.resolve(save()).catch(()=>{});
+    return baseEveningAutoTasks(date, baseItems).filter(item=>{
+      const start = hmMinutes(item.start), end = hmMinutes(item.end);
+      if(start === null || end === null) return true;
+      const vacuum = /robot\\s*vacuum/i.test(String(item.title || ""));
+      return vacuum ? start <= 20 * 60 + 30 && end <= 20 * 60 + 35 : start < 20 * 60 + 30 && end <= 20 * 60 + 30;
+    });
+  };
+
 })();
