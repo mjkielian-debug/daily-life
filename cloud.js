@@ -19,7 +19,7 @@ let cloudEntryPullBusy=false;
 
 const cloudUser=()=>cloudSession?.user||null;
 const cloudMetaKey=name=>`dailyLifeCloud:${cloudUser()?.id||"guest"}:${name}`;
-const cloudAutoEnabled=()=>!!cloudUser()&&localStorage.getItem(cloudMetaKey("auto"))==="1";
+const cloudAutoEnabled=()=>!!cloudUser()&&localStorage.getItem(cloudMetaKey("auto"))!=="0";
 const cloudLastPushed=()=>cloudUser()?localStorage.getItem(cloudMetaKey("lastPushed")):null;
 const cloudSetLastPushed=value=>{if(cloudUser()&&value)localStorage.setItem(cloudMetaKey("lastPushed"),value)};
 const cloudLastSignature=()=>cloudUser()?localStorage.getItem(cloudMetaKey("lastSignature")):null;
@@ -110,8 +110,24 @@ function cloudCredentials(){
   return {email,password};
 }
 
+let cloudLocalStateCaptured=false;
+let cloudLocalStateHasData=false;
+
+function cloudStateHasMeaningfulLocalData(source=state){
+  if(!source||typeof source!=="object")return false;
+  const name=String(source.profile?.name||"").trim().toLowerCase();
+  if(name&&name!=="you")return true;
+  return ["meals","events","itineraryBlocks","tasks","inventoryItems","schoolGrades","spiritualityJournal","petCareRoutines","petRecords","selfCare","chores","bills","accounts","workShifts"].some(key=>
+    Array.isArray(source[key])&&source[key].length>0
+  );
+}
+
 async function cloudPullProfile(){
   const user=cloudUser();if(!user||!cloudClient||typeof state==="undefined")return false;
+  if(!cloudLocalStateCaptured){
+    cloudLocalStateHasData=cloudStateHasMeaningfulLocalData(state);
+    cloudLocalStateCaptured=true;
+  }
   try{
     const {data,error}=await cloudClient.from("profiles")
       .select("display_name,timezone,updated_at")
@@ -522,6 +538,42 @@ async function cloudRefreshMetadata(){
   cloudRemoteUpdatedAt=data?.updated_at||null;
 }
 
+async function cloudReadRemoteSnapshot(){
+  const user=cloudUser();if(!user||!cloudClient)return null;
+  const {data,error}=await cloudClient.from("app_snapshots")
+    .select("state,schema_version,updated_at")
+    .eq("owner_user_id",user.id)
+    .maybeSingle();
+  if(error)throw error;
+  return data||null;
+}
+
+async function cloudArchiveRemoteSnapshot(snapshot,reason){
+  if(!snapshot?.state)return;
+  state.settings=state.settings||{};
+  const archived=structuredClone(snapshot.state);
+  if(archived.settings)delete archived.settings.cloudSyncRecoveryCopy;
+  state.settings.cloudSyncRecoveryCopy={
+    capturedAt:new Date().toISOString(),
+    remoteUpdatedAt:snapshot.updated_at||"",
+    reason:String(reason||"sync conflict"),
+    state:archived
+  };
+  await dbSet("state",state);
+}
+
+async function cloudUseRemoteSnapshot(snapshot){
+  if(!snapshot?.state)return false;
+  state=migrateState(snapshot.state);
+  await dbSet("state",state);
+  cloudRemoteUpdatedAt=snapshot.updated_at||null;
+  cloudSetLastPushed(cloudRemoteUpdatedAt);
+  cloudSetLastSignature(cloudStateSignature());
+  cloudNeedsReview=false;
+  cloudAutoCanPush=true;
+  return true;
+}
+
 async function cloudPrepareAutoSync(){
   if(cloudRecoveryRequired){
     cloudAutoCanPush=false;
@@ -529,17 +581,35 @@ async function cloudPrepareAutoSync(){
     cloudNeedsReview=!!cloudRemoteUpdatedAt;
     return;
   }
-  if(!cloudAutoEnabled()||!cloudUser()){cloudAutoCanPush=false;return}
+  if(!cloudUser()||!cloudClient){cloudAutoCanPush=false;return}
+  if(localStorage.getItem(cloudMetaKey("auto"))===null)localStorage.setItem(cloudMetaKey("auto"),"1");
+  if(!cloudAutoEnabled()){cloudAutoCanPush=false;return}
   await cloudRefreshMetadata();
-  const last=cloudLastPushed();
-  if(cloudRemoteUpdatedAt&&!last){
-    cloudNeedsReview=true;cloudAutoCanPush=false;return;
+  const snapshot=cloudRemoteUpdatedAt?await cloudReadRemoteSnapshot():null;
+  const last=cloudLastPushed(),signature=cloudStateSignature(),lastSignature=cloudLastSignature();
+  if(!snapshot?.state){
+    cloudNeedsReview=false;cloudAutoCanPush=true;
+    await cloudPushSnapshotInternal(true);
+  }else if(!last){
+    if(cloudLocalStateHasData){
+      await cloudArchiveRemoteSnapshot(snapshot,"First sync from this device; local copy kept");
+      cloudNeedsReview=false;cloudAutoCanPush=true;
+      await cloudPushSnapshotInternal(true);
+    }else{
+      await cloudUseRemoteSnapshot(snapshot);
+    }
+  }else if(new Date(snapshot.updated_at||0).getTime()>new Date(last).getTime()+2000){
+    if(lastSignature&&signature===lastSignature){
+      await cloudUseRemoteSnapshot(snapshot);
+    }else{
+      await cloudArchiveRemoteSnapshot(snapshot,"Both device and cloud changed since last sync; device copy kept");
+      cloudNeedsReview=false;cloudAutoCanPush=true;
+      await cloudPushSnapshotInternal(true);
+    }
+  }else{
+    cloudNeedsReview=false;cloudAutoCanPush=true;
+    if(!lastSignature||signature!==lastSignature)await cloudPushSnapshotInternal(true);
   }
-  if(cloudRemoteUpdatedAt&&last&&new Date(cloudRemoteUpdatedAt).getTime()>new Date(last).getTime()+2000){
-    cloudNeedsReview=true;cloudAutoCanPush=false;return;
-  }
-  cloudNeedsReview=false;cloudAutoCanPush=true;
-  if(!cloudRemoteUpdatedAt)await cloudPushSnapshotInternal(true);
   await cloudPullLifeEntries(false);
 }
 
@@ -660,25 +730,21 @@ async function cloudKeepThisDevice(){
 
 async function cloudEnableAutoSync(){
   const user=cloudUser();if(!user||!cloudClient){openCloudAuth();return}
-  await cloudRefreshMetadata();
-  const last=cloudLastPushed();
-  if(cloudRemoteUpdatedAt&&!last){
-    alert("A cloud copy already exists. Restore that cloud copy first, or use Upload now if this device is the copy you intentionally want to keep.");
-    return;
-  }
-  if(!cloudRemoteUpdatedAt){
-    if(!confirm("Turn on automatic private sync and upload this device as the first cloud copy?"))return;
-    try{await cloudPushSnapshotInternal(true)}catch(error){alert("Could not create the first cloud copy: "+error.message);return}
-  }
   localStorage.setItem(cloudMetaKey("auto"),"1");
-  cloudAutoCanPush=true;cloudNeedsReview=false;
-  await cloudPullLifeEntries(false);
-  render();
+  cloudAutoCanPush=false;cloudNeedsReview=false;
+  try{
+    await cloudPrepareAutoSync();
+    render();
+  }catch(error){
+    cloudAutoCanPush=false;cloudError=error?.message||"Automatic sync could not start.";
+    render();
+    alert("Automatic sync could not start. Your local data was not replaced.");
+  }
 }
 
 function cloudDisableAutoSync(){
   if(!cloudUser())return;
-  localStorage.removeItem(cloudMetaKey("auto"));
+  localStorage.setItem(cloudMetaKey("auto"),"0");
   cloudAutoCanPush=false;
   if(cloudPushTimer){clearTimeout(cloudPushTimer);cloudPushTimer=null}
   render();
