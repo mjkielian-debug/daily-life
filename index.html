@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f4c9df">
+<meta name="theme-color" content="#f6dbe9">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
@@ -320,7 +320,7 @@ const themes=[
   ["Warm Lilac","#835cb2","#f5b6c8","#e9cb91"]
 ];
 async function save(){await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
-function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f4c9df");return t[0]}
+function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f6dbe9");return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
 const ZODIAC_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const ZODIAC_META={
@@ -2252,7 +2252,6 @@ function ensureToday(){
     const keep=litterTasks[0];
     const remove=new Set(litterTasks.slice(1).map(t=>t.id));
     state.tasks=state.tasks.filter(t=>!remove.has(t.id));
-    if(!keep.itineraryStart&&keep.title==="Scoop litter boxes")keep.itineraryStart="19:10";
   }
   for(const task of state.tasks){
     if(task.date===date&&/robot vacuum/i.test(String(task.title||""))&&!task.done){
