@@ -51,10 +51,10 @@
   dayFlowOverlayFinished = function(date, rows){
     const result = baseOverlayFinished(date, rows), seen = new Set();
     const unique = result.filter(item => {
-      const title = String(item.title || "").toLowerCase().replace(/\\b\\d+\\s*(?:minute|min)\\s*/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+      const title = String(item.title || "").toLowerCase().replace(/\b\d+\\s*(?:minute|min)\\s*/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
       if(!title) return true;
       const task = item.sourceId && (state.tasks || []).find(t => String(t.id) === String(item.sourceId));
-      const schoolText = /\\b(school|math|homework|assignment|grades?|reading|practice|course)\\b/i.test(String(item.title || "") + " " + String(item.detail || ""));
+      const schoolText = /\b(school|math|homework|assignment|grades?|reading|practice|course)\b/i.test(String(item.title || "") + " " + String(item.detail || ""));
       if(date > ymd() && schoolText && !task?.itineraryStart) return false;
       const key = String(date) + "|" + title;
       if(seen.has(key)) return false;
