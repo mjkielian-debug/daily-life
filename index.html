@@ -10,7 +10,7 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261025-pink-status1">
+  <link rel="manifest" href="manifest.webmanifest?v=20261025-pink-status2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -268,7 +268,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261025-autosync-recovery2"></script>
+<script src="cloud.js?v=20261025-household-fixes1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261014-chase1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -299,7 +299,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.25-autosync-recovery2";
+const APP_BUILD="2026.10.25-household-fixes1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2237,14 +2237,29 @@ function ensureToday(){
     state.tasks.push({id:uid(),date,title:householdTitle,category:"home",notes:householdNotes+" About 10 minutes. This daily task resets tomorrow.",done:false,order:70,generated:"daily-household-chore",dailyReset:true});
   }
   const addHomeRoutine=(title,category,notes,order,extra={})=>{
+    const semanticallySame=title==="Scoop litter boxes"&&state.tasks.some(t=>t.date===date&&/\blitter\b/i.test(String(t.title||"")+" "+String(t.notes||"")));
     const found=state.tasks.some(t=>t.date===date&&String(t.title||"").toLowerCase()===title.toLowerCase());
-    if(found)return;
+    if(found||semanticallySame)return;
     state.tasks.push({id:uid(),date,title,category,notes,done:false,order,generated:"household-maintenance",dailyReset:true,...extra});
     existing.add(title);
   };
   addHomeRoutine("Scoop litter boxes","home","Scoop the two standard litter boxes and check the robot box; empty it if needed.",72);
   addHomeRoutine("Check kids' backpacks","family","Check each book bag for papers, homework, notices, and anything that needs to come back.",74);
-  addHomeRoutine("Run robot vacuum","home","After the evening pickup, check for cords, toys, or pet mess, then start the robot vacuum.",80,{itineraryPreference:"evening",itineraryMinutes:5});
+  addHomeRoutine("Run robot vacuum","home","Start the robot vacuum after everyone is in bed.",80,{itineraryStart:"21:30",itineraryMinutes:5});
+  const litterTasks=state.tasks.filter(t=>t.date===date&&!t.done&&/\blitter\b/i.test(String(t.title||"")+" "+String(t.notes||"")));
+  if(litterTasks.length>1){
+    litterTasks.sort((a,b)=>Number(a.generated==="household-maintenance")-Number(b.generated==="household-maintenance"));
+    const keep=litterTasks[0];
+    const remove=new Set(litterTasks.slice(1).map(t=>t.id));
+    state.tasks=state.tasks.filter(t=>!remove.has(t.id));
+    if(!keep.itineraryStart&&keep.title==="Scoop litter boxes")keep.itineraryStart="19:10";
+  }
+  for(const task of state.tasks){
+    if(task.date===date&&/robot vacuum/i.test(String(task.title||""))&&!task.done){
+      task.itineraryStart="21:30";task.itineraryMinutes=5;
+      task.notes="Start the robot vacuum after everyone is in bed.";
+    }
+  }
   const beddingAnchor="2026-10-26";
   if(wd===1&&((dateDayIndex(date)-dateDayIndex(beddingAnchor))%14+14)%14===0)addHomeRoutine("Wash your bedding","home","Wash your sheets and pillowcases; make the bed with clean bedding. Scheduled every other Monday.",76);
   const dayOfMonth=new Date(date+"T12:00:00").getDate();
@@ -3020,6 +3035,47 @@ function migrateState(s){
   if(!s.itineraryNotes||typeof s.itineraryNotes!=="object"||Array.isArray(s.itineraryNotes))s.itineraryNotes={};
   if(!s.pantry||typeof s.pantry!=="object"||Array.isArray(s.pantry))s.pantry={items:[],updatedAt:"",scanId:""};
   if(!Array.isArray(s.pantry.items))s.pantry.items=[];
+  // Correct the Oct 25 dinner and household flow from Michelle's confirmed updates.
+  if(Number(s.settings.oct25HouseholdCorrectionsVersion||0)<1){
+    const dinnerDate="2026-10-25";
+    const dinner=(s.meals||[]).find(x=>x.date===dinnerDate&&x.type==="dinner");
+    const meal=dinner||{id:"meal-2026-10-25",type:"dinner",date:dinnerDate,prepDone:[]};
+    Object.assign(meal,{
+      dish:"BLTs",
+      method:"Quick dinner · stovetop bacon + assemble",
+      status:meal.status==="made"?"made":"planned",
+      recipeState:"ready",
+      ingredients:"Bacon\nLettuce\nTomatoes\nBread",
+      prepSteps:"Cook bacon and assemble BLTs when the kids get home.",
+      notes:"Confirmed dinner plan for Sunday, October 25. No crock-pot meal today."
+    });
+    if(!dinner)(s.meals||(s.meals=[])).push(meal);
+    s.tasks=Array.isArray(s.tasks)?s.tasks:[];
+    const wellsFargo=s.tasks.filter(x=>!x.done&&/wells fargo/i.test(String(x.title||"")+" "+String(x.notes||"")));
+    if(wellsFargo.length){
+      const task=wellsFargo[0];
+      task.date="2026-10-26";
+      task.title="Call Wells Fargo about linked payments and account closure";
+      task.category="finance";
+      task.notes="Wait until the bank is open. Call to review linked payments and close the Wells Fargo checking account.";
+      task.itineraryStart="09:00";
+      task.itineraryMinutes=20;
+      task.paused=false;
+      task.waitingForFunds=false;
+      for(const duplicate of wellsFargo.slice(1)){
+        if(duplicate.id!==task.id)s.tasks=s.tasks.filter(x=>x.id!==duplicate.id);
+      }
+    }
+    s.homeLogs=Array.isArray(s.homeLogs)?s.homeLogs:[];
+    const logged=s.homeLogs.some(x=>x.date===dinnerDate&&/silverware|tupperware|cups.*bowls/i.test(String(x.task||"")+" "+String(x.notes||"")));
+    if(!logged)s.homeLogs.push({
+      id:uid(),date:dinnerDate,time:"",area:"Kitchen",
+      task:"Clean silverware drawer and kitchen cabinets",
+      status:"done",
+      notes:"Cleaned out the silverware drawer and the cups, bowls, plates, Tupperware, and lids."
+    });
+    s.settings.oct25HouseholdCorrectionsVersion=1;
+  }
   // Additive state migration: keep all existing records and unknown fields.
   if(!s.budget||typeof s.budget!=="object"||Array.isArray(s.budget))s.budget={};
   if(!s.budget.months||typeof s.budget.months!=="object"||Array.isArray(s.budget.months))s.budget.months={};
@@ -9214,7 +9270,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261025-autosync-recovery2";
+const DAILY_LIFE_BUILD="20261025-household-fixes1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
