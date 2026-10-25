@@ -299,7 +299,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.10.25-household-fixes3";
+const APP_BUILD="2026.10.25-household-fixes4";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -661,7 +661,10 @@ function workForDate(date){
   return isUsualWorkday(date)||workShiftHasActual(w)?w:null;
 }
 function mealForDate(date){return (state.meals||[]).find(x=>x.date===date&&x.type==="dinner")||null}
-function itineraryCustomBlocks(date){return (state.itineraryBlocks||[]).filter(x=>x.date===date)}
+function itineraryCustomBlocks(date){
+  return (state.itineraryBlocks||[]).filter(x=>x.date===date&&!/teeth.*face.*pajama.*electronics sweep/i.test(String(x.title||"")))
+    .map(x=>/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(x.title||""))?{...x,start:"20:20",end:"20:30"}:x);
+}
 function itineraryEstimatedEventMinutes(e){
   const saved=Number(e?.durationMinutes||e?.estimatedMinutes||0);
   if(Number.isFinite(saved)&&saved>=10)return Math.min(240,Math.round(saved/5)*5);
@@ -918,7 +921,15 @@ function itinerarySuggestedBlocks(date){
   if(mealPrep.length||early.length){
     if(prepEnd-prepStart>=15)add({templateKey:"tomorrow-prep",start:minutesHm(prepStart),end:minutesHm(prepEnd),title:"Tomorrow prep · clothes + bags + keys",detail:[mealPrep.join(" · "),early.length?early.length+" early item"+(early.length===1?"":"s")+" tomorrow":""].filter(Boolean).join(" · "),icon:"✦"});
   }
-  if(bedtime-dayStart>=30)add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:kidsHomeTonight?"Night routine · electronics, teeth/pajamas, reading + settle":"Personal night routine + sleep prep",detail:[kidsHomeTonight?"Electronics sweep · teeth/floss/mouthwash · wash faces · pajamas · reading · start robot vacuums · settle with Dolly + Ambrose":"Wash up · plug in phone · set alarm · settle the house",sleepPlan.wake?"Protect sleep: bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
+  if(kidsHomeTonight&&bedtime-dayStart>=30){
+    add({templateKey:"bedtime-electronics",start:"19:30",end:"19:40",title:"Electronics sweep + all kids brush teeth",detail:"Collect the kids' electronics and have all four brush teeth. Dolly + Ambrose come upstairs; Leo + Tree finish faces and pajamas.",icon:"🪥"});
+    add({templateKey:"bedtime-settle",start:"20:00",end:"20:20",title:"Finish pajamas + settle into bed",detail:"Finish bedtime prep and get Leo + Tree settled in bed before reading.",icon:"🌙"});
+    const hasLeoTreeReading=(state.tasks||[]).some(x=>x.date===date&&!x.done&&/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(x.title||"")))||
+      (state.itineraryBlocks||[]).some(x=>x.date===date&&/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(x.title||"")));
+    if(!hasLeoTreeReading)add({templateKey:"leo-tree-reading",start:"20:20",end:"20:30",title:"Leo + Tree · reading time",detail:"Quiet reading together in bed.",icon:"📖"});
+  }else if(bedtime-dayStart>=30){
+    add({templateKey:"wind-down",start:minutesHm(windDownStart),end:minutesHm(bedtime),title:"Personal night routine + sleep prep",detail:[ "Wash up · plug in phone · set alarm · settle the house",sleepPlan.wake?"Protect sleep: bed by "+fmtClock(sleepPlan.bedtime)+" for "+fmtClock(sleepPlan.wake)+" wake":"Usual bedtime window",sleepPlan.targetHours+" h sleep target"].filter(Boolean).join(" · "),icon:"🌙"});
+  }
   const prefs=state.settings?.itinerary?.routinePreferences||{};
   return out.filter(x=>prefs[weekday+":"+x.templateKey]?.enabled!==false).map((x,i)=>{
     const saved=prefs[weekday+":"+x.templateKey]||null,start=saved?.start||x.start,duration=Number(saved?.durationMinutes||0),end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved?.end||x.end);
@@ -1497,7 +1508,26 @@ function itineraryDayItems(date){
           durationMinutes:Math.max(15,Number(r.durationMinutes||15))
         })),
         open=itineraryRestBlocks([...planningUsed,...finishedBlockers],date);
-  return dayFlowOverlayFinished(date,[...used,...open,...context]).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
+  let rows=[...used,...open,...context];
+  const sweeps=rows.filter(x=>/electronics sweep/i.test(String(x.title||""))).sort((a,b)=>(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
+  if(sweeps.length>1){
+    const keep=sweeps[0],remove=new Set(sweeps.slice(1).map(x=>x.id));
+    rows=rows.filter(x=>!remove.has(x.id));
+  }
+  const readings=rows.filter(x=>/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(x.title||"")));
+  if(readings.length){
+    const keep=readings.find(x=>x.source==="suggested")||readings[0];
+    keep.start="20:20";keep.end="20:30";
+    if(keep.source==="task"){
+      const task=(state.tasks||[]).find(x=>x.id===keep.sourceId);
+      if(task){task.itineraryStart="20:20";task.itineraryMinutes=10;task.itineraryPreference="evening"}
+    }else if(keep.source==="custom"){
+      const block=(state.itineraryBlocks||[]).find(x=>x.id===keep.sourceId);
+      if(block){block.start="20:20";block.end="20:30"}
+    }
+    rows=rows.filter(x=>!readings.includes(x)||x===keep);
+  }
+  return dayFlowOverlayFinished(date,rows).sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
 }
 
 function itineraryPlanningDiagnostics(date){
@@ -2206,7 +2236,7 @@ function ensureToday(){
     if(t.paused||/\bymca\b/i.test([t.title,t.notes].filter(Boolean).join(" ")))continue;
     const candidate={...t,generated:"recurring-task",dailyReset:Array.isArray(t.days)&&t.days.length===7};
     if(typeof itineraryIsBroadFamilyRoutineTask==="function"&&itineraryIsBroadFamilyRoutineTask(candidate))continue;
-    if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100,generated:"recurring-task",dailyReset:Array.isArray(t.days)&&t.days.length===7});existing.add(t.title)}
+    if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100,generated:"recurring-task",dailyReset:Array.isArray(t.days)&&t.days.length===7,itineraryStart:t.itineraryStart||"",itineraryMinutes:Number(t.itineraryMinutes||0),itineraryPreference:t.itineraryPreference||""});existing.add(t.title)}
   }
   sanitizeWorkScheduleData(state);
   const ws=workForDate(date);
@@ -2261,6 +2291,11 @@ function ensureToday(){
   }
   const beddingAnchor="2026-10-26";
   if(wd===1&&((dateDayIndex(date)-dateDayIndex(beddingAnchor))%14+14)%14===0)addHomeRoutine("Wash your bedding","home","Wash your sheets and pillowcases; make the bed with clean bedding. Scheduled every other Monday.",76);
+  for(const task of state.tasks){
+    if(task.date===date&&!task.done&&/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(task.title||""))){
+      task.itineraryStart="20:20";task.itineraryMinutes=10;task.itineraryPreference="evening";
+    }
+  }
   const dayOfMonth=new Date(date+"T12:00:00").getDate();
   if(wd===1&&dayOfMonth<=7)addHomeRoutine("Change kids' bedding","home","Change the kids' sheets and pillowcases; wash the used bedding.",78);
 }
@@ -3074,6 +3109,34 @@ function migrateState(s){
       notes:"Cleaned out the silverware drawer and the cups, bowls, plates, Tupperware, and lids."
     });
     s.settings.oct25HouseholdCorrectionsVersion=1;
+  }
+  if(Number(s.settings.bedtimeReadingOrderFixVersion||0)<1){
+    const today=ymd();
+    s.settings.recurringTasks=(Array.isArray(s.settings.recurringTasks)?s.settings.recurringTasks:[]).filter(rule=>
+      !/teeth.*face.*pajama.*electronics sweep/i.test(String(rule.title||""))
+    );
+    for(const rule of s.settings.recurringTasks){
+      if(/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(rule.title||""))){
+        rule.itineraryStart="20:20";rule.itineraryMinutes=10;rule.itineraryPreference="evening";
+      }
+    }
+    s.tasks=(Array.isArray(s.tasks)?s.tasks:[]).filter(task=>
+      !(task.date>=today&&!task.done&&/teeth.*face.*pajama.*electronics sweep/i.test(String(task.title||"")))
+    );
+    for(const task of s.tasks){
+      if(task.date>=today&&!task.done&&/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(task.title||""))){
+        task.itineraryStart="20:20";task.itineraryMinutes=10;task.itineraryPreference="evening";
+      }
+    }
+    s.itineraryBlocks=(Array.isArray(s.itineraryBlocks)?s.itineraryBlocks:[]).filter(block=>
+      !(block.date>=today&&/teeth.*face.*pajama.*electronics sweep/i.test(String(block.title||"")))
+    );
+    for(const block of s.itineraryBlocks){
+      if(block.date>=today&&/leo\s*(?:\+|and)\s*tree.*reading time/i.test(String(block.title||""))){
+        block.start="20:20";block.end="20:30";
+      }
+    }
+    s.settings.bedtimeReadingOrderFixVersion=1;
   }
   // Additive state migration: keep all existing records and unknown fields.
   if(!s.budget||typeof s.budget!=="object"||Array.isArray(s.budget))s.budget={};
@@ -9269,7 +9332,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261025-household-fixes3";
+const DAILY_LIFE_BUILD="20261025-household-fixes4";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
