@@ -80,7 +80,7 @@ function openDailyLifePushSettings(){
 function attachDailyLifeNotificationButton(){
   const header=document.querySelector("#app header");
   if(!header||header.querySelector("#dailyLifeNotificationButton"))return;
-  const settings=[...header.querySelectorAll("button")].find(button=>/settings/i.test(button.textContent||""));
+  const settings=[...header.querySelectorAll("button")].find(button=>/settings/i.test(button.getAttribute("aria-label")||"")||/settings/i.test(button.textContent||""));
   if(!settings)return;
   const button=document.createElement("button");
   button.id="dailyLifeNotificationButton";button.type="button";button.className=settings.className||"btn";
