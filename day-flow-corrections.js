@@ -27,6 +27,18 @@
         icon:"🐾"
       });
     }
+    // When the saved day has a custody return anchor, do not place a child's
+    // routines before the children are actually back home.
+    const returnAnchor = (typeof itineraryFixedItems === "function" ? itineraryFixedItems(date) : [])
+      .filter(x => /kids? home from dad|kids? return home|home from dad/i.test(String(x.title || "")))
+      .map(x => hmMinutes(x.start)).filter(x => x !== null).sort((a,b)=>a-b)[0];
+    if(returnAnchor !== undefined){
+      for(let i=rows.length-1;i>=0;i--){
+        const item=rows[i], start=hmMinutes(item.start);
+        const childMention=/\b(kids?|children|leo|dolly|ambrose|demitri|tree)\b/i.test(String(item.title||"")+" "+String(item.detail||""));
+        if(childMention && start !== null && start < returnAnchor) rows.splice(i,1);
+      }
+    }
     if(weekday === 0 && !String(meal?.dish || "").trim()){
       const dinnerPlan = rows.find(x => x.templateKey === "sunday-dinner-plan");
       if(dinnerPlan){
