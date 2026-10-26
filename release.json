@@ -1,6 +1,6 @@
 {
-  "build": "20261025-evening-prep5",
+  "build": "20261025-evening-prep6",
   "released": "2026-10-25",
-  "ui": "Pins the evening prep block at 7:30–8:00 PM and refreshes the blush status bar theme on the installed app.",
+  "ui": "Pins the evening prep block at 7:30–8:00 PM and prevents Android auto-darkening from recoloring the blush status bar.",
   "data_version": "No data schema changes."
 }
