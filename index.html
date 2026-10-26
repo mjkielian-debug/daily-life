@@ -3412,7 +3412,7 @@ function pantryCard(){
 function openPantryEdit(){
   const items=pantryItems().map(pantryItemName).filter(Boolean);
   modal("Edit pantry list",`<div class="stack"><p>Enter the foods currently on hand, one per line. Remove anything you no longer have.</p><label>Foods on hand<textarea id="pantryItemsEdit" rows="12" placeholder="Ground beef&#10;Rice pudding">${esc(items.join("\n"))}</textarea></label></div>`,"Save pantry list",async()=>{
-    const names=[...new Map(String($("#pantryItemsEdit")?.value||"").split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean).map(x=>[x.toLocaleLowerCase(),x])).values()];
+    const names=[...new Map(String($("#pantryItemsEdit")?.value||"").split(/\r?\n+/).map(x=>x.trim()).filter(Boolean).map(x=>[x.toLocaleLowerCase(),x])).values()];
     state.pantry=state.pantry&&typeof state.pantry==="object"?state.pantry:{};
     state.pantry.items=names;
     state.pantry.manualUpdatedAt=new Date().toISOString();
