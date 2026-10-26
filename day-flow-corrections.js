@@ -174,6 +174,43 @@
   };
 
 
+  // The household vacuum runs at bedtime. Ignore flexible-slot placement so
+  // stale local task copies cannot put it into the afternoon.
+  const baseNightVacuumDayItems = itineraryDayItems;
+  itineraryDayItems = function(date){
+    let rows = baseNightVacuumDayItems(date);
+    const hasPickupPrep = (state.tasks || []).some(task =>
+      String(task.date || "") === String(date) &&
+      /get ready to pick up demitri/i.test(String(task.title || "")) &&
+      !task.done && !task.paused
+    );
+    if(hasPickupPrep){
+      rows = rows.filter(row => !/^pack the next-stop bag$/i.test(String(row.title || "")));
+    }
+    rows = rows.filter(row => !/robot\\s*vacuum/i.test(String(row.title || "")));
+    const today = typeof ymd === "function" ? ymd() : "";
+    const vacuumTask = (state.tasks || []).filter(task => {
+      if(!/robot\\s*vacuum/i.test(String(task.title || "")) || task.paused) return false;
+      const taskDate = String(task.date || "");
+      if(taskDate === String(date)) return !task.done || String(date) > today;
+      return !!task.dailyReset && !!today && String(date) > today && taskDate <= today;
+    }).sort((a,b) => {
+      const aToday = String(a.date || "") === String(date) ? 0 : 1;
+      const bToday = String(b.date || "") === String(date) ? 0 : 1;
+      return aToday - bToday;
+    })[0];
+    if(vacuumTask){
+      rows.push({
+        id:"task:"+String(vacuumTask.id), start:"20:30", end:"20:35",
+        title:typeof taskDisplayTitle === "function" ? taskDisplayTitle(vacuumTask) : "Run robot vacuum",
+        detail:String(vacuumTask.notes || "Start after everyone is in bed."),
+        fixed:false, kind:"task", icon:"✓", source:"task", sourceId:vacuumTask.id,
+        durationMinutes:5, done:false, autoPlanned:false, carriedForward:false
+      });
+    }
+    return rows.sort((a,b) => (hmMinutes(a.start) ?? 0) - (hmMinutes(b.start) ?? 0));
+  };
+
   // Keep the family's 7:30–8:00 tomorrow-prep block visible even when the
   // routine fitter drops it while resolving other evening routines.
   const baseEveningDayItems = itineraryDayItems;
