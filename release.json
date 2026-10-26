@@ -1,6 +1,6 @@
 {
-  "build": "20261026-pink-status6",
+  "build": "20261026-pink-status7",
   "released": "2026-10-26",
-  "ui": "Uses the blush theme color in the page and installed Android app, including the status bar.",
+  "ui": "Keeps every page render and the installed Android app on the blush theme color.",
   "data_version": "No data schema changes."
 }
