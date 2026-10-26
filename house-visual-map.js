@@ -450,12 +450,13 @@ window.houseVisualSelectTourRoom=function(f,id){
 window.houseVisualInventoryOpen=async function(f,id){
  const person=selectedRoomProfile(),z=zone(f,id);
  if(!z)return;
- if(person?.isSelf&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
+ const roomLabel=(String(z.name||"")+" "+String(z.short||"")).toLowerCase();
+ const isMichelleRoom=(person?.isSelf||/michelle/.test(String(person?.name||""))||/michelle/.test(roomLabel));
+ if(isMichelleRoom&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
   const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
   const index=zones.findIndex(item=>item.id===id);
-  const label=(String(z.name||"")+" "+String(z.short||"")).toLowerCase();
-  const which=/entry|nook|beanbag|sitting/.test(label)?0:
-    /bed|bedroom|vanity/.test(label)?1:(index===0?0:1);
+  const which=/entry|nook|beanbag|sitting/.test(roomLabel)?0:
+    /bed|bedroom|vanity/.test(roomLabel)?1:(index===0?0:1);
   const room=await window.homeEnsureMichelleRoomInventory(which);
   if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
  }
