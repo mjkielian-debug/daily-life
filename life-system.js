@@ -389,16 +389,10 @@
         detail:"After school: clean rooms, homework/reading as needed, then their rotating jobs. Keep Leo + Demitri's activity time separate.",
         subtasks:younger.map(function(c){return c.child+": "+c.chore}),subtaskRefs:younger.map(function(c){return c.id}),
         fixed:false,kind:"routine",icon:"✓",source:"suggested",templateKey:"monday-younger-chores",allowParallel:true});
-      rows.push({id:"monday-older-chores:"+date,start:"16:30",end:"17:15",title:"Leo + Demitri · chores + homework",
-        detail:"After activities: clean rooms, homework, then their rotating jobs. Their 20-minute reading stays at 7:40 PM.",
+      rows.push({id:"monday-older-chores:"+date,start:"16:45",end:"17:15",title:"Leo + Demitri · chores + homework",
+        detail:"After pickup: Leo goes first, then Demitri, for quick rooms, homework, and rotating jobs before the next commitment.",
         subtasks:older.map(function(c){return c.child+": "+c.chore}),subtaskRefs:older.map(function(c){return c.id}),
         fixed:false,kind:"routine",icon:"✓",source:"suggested",templateKey:"monday-older-chores",allowParallel:true});
-      rows.push({id:"monday-dolly-shower:"+date,start:"18:00",end:"18:20",title:"Dolly · shower",
-        detail:"20 minutes · Monday evening shower before or around dinner as the schedule allows",subtasks:["Dolly shower"],
-        fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kid-shower-dolly",allowParallel:true});
-      rows.push({id:"monday-demitri-shower:"+date,start:"18:45",end:"19:05",title:"Demitri · shower",
-        detail:"20 minutes · after dinner",subtasks:["Demitri shower"],
-        fixed:false,kind:"routine",icon:"♡",source:"suggested",templateKey:"kid-shower-demitri",allowParallel:true});
     }
 
     const evening=lifeEnsureSettings().olderKidsReading||{};
