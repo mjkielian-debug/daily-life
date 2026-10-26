@@ -1,6 +1,6 @@
 {
-  "build": "20261026-assistant-sync2",
+  "build": "20261026-auto-update12",
   "released": "2026-10-26",
-  "ui": "Automatically merges assistant updates into the phone copy and checks for updates while the app is open.",
+  "ui": "Room-specific inventory routing and Michelle’s saved vanity inventory.",
   "data_version": "No data schema changes."
 }
