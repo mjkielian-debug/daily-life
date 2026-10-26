@@ -335,8 +335,9 @@
         const activityPattern=/herpetology|dungeons|d\s*&\s*d|musical|club|after[- ]?school|rehearsal|practice|activity/i,
           activityEvents=dedupeEventList((state.events||[]).filter(function(e){
             if(!e||e.date!==date||["cancelled","paused"].includes(String(e.status||"")))return false;
-            const start=hmMinutes(e.startTime),text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" ");
-            return start!==null&&start>=14*60+30&&start<=17*60&&activityPattern.test(text)&&!/pick.?up/i.test(text);
+            const start=hmMinutes(e.startTime),finish=hmMinutes(e.endTime),text=[e.child,e.title,e.type,e.notes].filter(Boolean).join(" ");
+            const afterSchoolWindow=(start!==null&&start>=14*60+30&&start<=17*60)||(start===null&&finish!==null&&finish>=15*60&&finish<=18*60);
+            return afterSchoolWindow&&activityPattern.test(text)&&!/pick.?up/i.test(text);
           })).sort(function(a,b){return String(a.startTime||"").localeCompare(String(b.startTime||""))}),
           activityFor=function(name){
             const needle=String(name||"").toLowerCase();
