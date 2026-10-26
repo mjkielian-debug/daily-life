@@ -285,6 +285,12 @@ function widget(page,model){
  '<div class="directive-after">'+others.map(function(x,i){return '<button type="button" class="directive-mini" onclick="actionFirstRun(\''+clean(page)+'\','+(i+1)+')"><span><b>'+clean(x.title)+'</b><small>'+clean(x.why)+'</small></span><span aria-hidden="true">›</span></button>'}).join("")+'</div></details>':"";
  const doneButton=canConfirm(first,page)?'<button type="button" class="directive-confirm" onclick="actionFirstConfirmDone(\''+clean(page)+'\')">✓ I finished this</button>':"";
  const label=first.id==="overview"?"CHOOSE A STEP":first.optional?"IF IT HELPS":"YOUR NEXT STEP";
+ if(page==="home"){
+  return '<section class="directive-focus directive-focus-home" aria-label="Dinner planning">'+
+   '<div class="directive-focus-home-copy"><div class="directive-kicker"><span class="directive-pulse" aria-hidden="true">●</span>TONIGHT</div>'+
+   '<h2>'+clean(first.title)+'</h2><p class="directive-reason">'+clean(first.why)+'</p></div>'+
+   '<div class="directive-buttons">'+button(page,0,first.button+' ›',"directive-primary")+'</div></section>';
+ }
  return '<section class="directive-focus" aria-label="Recommended next action">'+
  '<div class="directive-kicker"><span class="directive-pulse" aria-hidden="true">●</span>'+label+'</div>'+
  '<h2>'+clean(first.title)+'</h2><p class="directive-reason">'+clean(first.why)+'</p>'+
