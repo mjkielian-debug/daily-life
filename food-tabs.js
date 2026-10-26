@@ -64,6 +64,29 @@ function compactFoodCookingAhead(){
     '<div class="food-cook-summary"><b>Runzas · cooked separately</b><small>'+ (baked?"Marked baked · serving date is still flexible":"Beef + cabbage filling prepared Oct 13 · bake when convenient")+'</small></div>'+
     '<button class="btn" onclick="openRunzaCookingBatch()">'+(baked?"View recipe":"Recipe + status")+' ›</button></section>';
 }
+function foodDailyGoal(setting,fallback){
+  const configured=state.settings?.nutritionGoals||{},value=Number(configured[setting]??state.settings?.[setting]??fallback);
+  return value>0?value:fallback;
+}
+function foodPantryItems(){
+  return [...new Set((Array.isArray(state.pantry?.items)?state.pantry.items:[])
+    .map(x=>typeof x==="string"?x.trim():String(x?.name||x?.item||"").trim()).filter(Boolean))];
+}
+function foodPantryRecommendation(rows,nutrients){
+  const pantry=foodPantryItems(),had=name=>rows.some(x=>String(x.name||"").toLowerCase().includes(name.toLowerCase())),
+    protein=nutrients.find(x=>x.label==="Protein"),fiber=nutrients.find(x=>x.label==="Fiber");
+  if(protein?.known&&protein.value/protein.goal<.6){
+    const matches=["P3 Turkey, Ham & Cheddar Protein Snack","Bumble Bee Chicken Salad & Crackers","Great Value Colby & Monterey Jack Snacking Cheese"],
+      found=matches.map(key=>pantry.find(x=>x.toLowerCase().includes(key.toLowerCase()))).filter(Boolean).filter(x=>!had(x.split(",")[0])).slice(0,2);
+    if(found.length)return "<section class=\"food-recommendation\"><b>Protein is your biggest tracked gap</b><div>From your pantry: "+found.map(esc).join(" <span>or</span> ")+"</div></section>";
+  }
+  if(fiber?.known&&fiber.value/fiber.goal<.6){
+    const matches=["Romaine hearts","Avocados","Tomatoes","Bananas"],
+      found=matches.map(key=>pantry.find(x=>x.toLowerCase().includes(key.toLowerCase()))).filter(Boolean).filter(x=>!had(x)).slice(0,2);
+    if(found.length)return "<section class=\"food-recommendation\"><b>Fiber is still below its goal</b><div>Your pantry list includes "+found.map(esc).join(" or ")+"</div></section>";
+  }
+  return "<section class=\"food-recommendation quiet\"><b>Food idea</b><div>As more nutrition is logged, I can suggest an on-hand option for the biggest gap.</div></section>";
+}
 function foodGoalDashboardCard(){
   const f=foodTotalsForDate(ymd()),waterNow=Number(water())||0,
     configured=state.settings?.nutritionGoals||{},
@@ -74,8 +97,8 @@ function foodGoalDashboardCard(){
       let raw;
       for(const key of aliases){if(row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""){raw=row[key];break}}
       if(raw===undefined){
-        const micros=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{};
-        const match=Object.entries(micros).find(([key])=>aliases.some(a=>norm(a)===norm(key)));
+        const micros=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{},
+          match=Object.entries(micros).find(([key])=>aliases.some(a=>norm(a)===norm(key)));
         if(match)raw=match[1];
       }
       if(raw===undefined)return{known:false,value:0};
@@ -87,7 +110,7 @@ function foodGoalDashboardCard(){
       for(const row of f.rows){const found=itemValue(row,keys[name]);if(found.known){value+=found.value*foodQuantity(row);known=true}}
       return{value,known};
     },
-    macroKnown=keys=>f.rows.some(row=>keys.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),
+    macroKnown=aliases=>f.rows.some(row=>aliases.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),
     nutrients=[
       {label:"Calories",value:f.cal,known:macroKnown(["calories","cal"]),goal:goal("calTarget",2100),unit:"cal"},
       {label:"Protein",value:f.protein,known:macroKnown(["protein","proteinG"]),goal:goal("proteinTarget",100),unit:"g"},
@@ -102,30 +125,31 @@ function foodGoalDashboardCard(){
       {label:"Sodium",...microTotal("sodium"),goal:goal("sodiumLimit",2300),unit:"mg",limit:true},
       {label:"Added sugar",...microTotal("addedSugar"),goal:goal("addedSugarLimit",50),unit:"g",limit:true}
     ],
-    group=(title,list)=>"<section class=\"food-goal-group\"><h3>"+title+"</h3><div class=\"food-goal-grid\">"+list.map(bar).join("")+"</div></section>",
     bar=n=>{
-      const pct=n.known?Math.max(0,n.value/n.goal*100):null,
-        width=pct===null?0:Math.min(100,pct),
-        shown=n.known?(Math.round(n.value*10)/10).toLocaleString()+" / "+n.goal.toLocaleString()+" "+n.unit:"Not logged · goal "+n.goal.toLocaleString()+" "+n.unit,
-        percent=pct===null?"No data":Math.round(pct)+"% "+(n.limit?"of limit":"of goal"),
-        aria=n.known?Math.round(n.value)+" of "+n.goal+" "+n.unit:(n.label+" data not recorded");
-      return "<div class=\"food-goal-item\"><div class=\"food-goal-head\"><b>"+esc(n.label)+"</b><span>"+esc(shown)+"</span></div><div class=\"food-goal-meter\" role=\"progressbar\" aria-label=\""+esc(n.label+(n.limit?" daily limit":" daily goal"))+"\" aria-valuemin=\"0\" aria-valuemax=\""+n.goal+"\" "+(pct===null?"aria-valuetext=\""+esc(aria)+"\"":"aria-valuenow=\""+Math.min(n.goal,Math.round(n.value))+"\" aria-valuetext=\""+esc(aria)+"\"")+"><i style=\"width:"+width+"%\"></i></div><small>"+percent+"</small></div>";
+      const pct=n.known?Math.max(0,n.value/n.goal*100):null,width=pct===null?0:Math.min(100,pct),
+        current=n.known?(Math.round(n.value*10)/10).toLocaleString():"—",
+        caption=n.known?current+" / "+n.goal.toLocaleString()+" "+n.unit:n.goal.toLocaleString()+" "+n.unit+" · no data",
+        percent=pct===null?"—":Math.round(pct)+"%"+(n.limit?" of limit":""),
+        aria=n.known?Math.round(n.value)+" of "+n.goal+" "+n.unit:n.label+" has no recorded value";
+      return "<div class=\"food-goal-item\"><div class=\"food-goal-head\"><b>"+esc(n.label)+"</b><strong>"+percent+"</strong></div><div class=\"food-goal-number\">"+esc(caption)+"</div><div class=\"food-goal-meter\" role=\"progressbar\" aria-label=\""+esc(n.label+(n.limit?" daily limit":" daily goal"))+"\" aria-valuemin=\"0\" aria-valuemax=\""+n.goal+"\" "+(pct===null?"aria-valuetext=\""+esc(aria)+"\"":"aria-valuenow=\""+Math.min(n.goal,Math.round(n.value))+"\" aria-valuetext=\""+esc(aria)+"\"")+"><i style=\"width:"+width+"%\"></i></div></div>";
     },
     estimated=f.rows.some(x=>!!x.nutritionEstimated),
-    incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
-  return "<div class=\"card food-intake-card\"><div class=\"section-title\"><div><div class=\"eyebrow\">My intake today</div><h2>Daily goal progress</h2><div class=\"muted small\">Percentages use nutrients recorded for today. Missing label values stay unknown.</div></div><button class=\"btn primary\" onclick=\"openFood()\">+ Food / drink</button></div>"+
-    (estimated||incomplete?"<div class=\"notice\">≈ Estimates marked · missing values stay unknown</div>":"")+
-    group("Energy, macros + water",nutrients.slice(0,6))+
-    group("Vitamins, minerals + daily limits",nutrients.slice(6))+
-    "<div class=\"muted small food-goal-note\">Sodium + added sugar are daily limits.</div>"+
-    (f.rows.length?"<details class=\"food-goal-log\"><summary>Food log · "+f.rows.length+" items <span>View</span></summary><div>"+f.rows.slice().reverse().map(x=>"<div class=\"food-goal-log-row\"><b>"+esc(x.name||"Food / drink")+"</b><span>"+(foodQuantity(x)!==1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" · ≈":"")+"</span></div>").join("")+"</div></details>":"<div class=\"muted small\">No food logged today.</div>")+
-    "<div class=\"actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">Open 7-day patterns</button></div></div>";
+    incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||""))),
+    foods=f.rows.slice().reverse().map(x=>"<div class=\"food-eaten-item\"><span>"+esc(x.name||"Food / drink")+"</span><b>"+(foodQuantity(x)>1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" ≈":"")+"</b></div>").join("");
+  return "<div class=\"card food-intake-card\"><div class=\"food-intake-head\"><div><div class=\"eyebrow\">Today’s intake</div><h2>What you’ve had</h2></div><button class=\"btn primary\" onclick=\"openFood()\">+ Log food</button></div>"+
+    (foods?"<div class=\"food-eaten-list\">"+foods+"</div>":"<div class=\"muted small\">Nothing logged yet today.</div>")+
+    (estimated||incomplete?"<div class=\"food-data-note\">≈ Estimates shown · missing nutrition stays unknown</div>":"")+
+    foodPantryRecommendation(f.rows,nutrients)+
+    "<section class=\"food-goal-section\"><div class=\"food-goal-section-head\"><h3>Daily goal progress</h3><span>Sodium + added sugar are limits</span></div>"+
+    "<div class=\"food-goal-group\"><h4>Calories, macros + water</h4><div class=\"food-goal-grid\">"+nutrients.slice(0,6).map(bar).join("")+"</div></div>"+
+    "<details class=\"food-micro-fold\"><summary>Vitamins, minerals + limits <span>Show</span></summary><div class=\"food-goal-grid\">"+nutrients.slice(6).map(bar).join("")+"</div></details></section>"+
+    "<div class=\"actions food-intake-actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">7-day trends</button></div></div>";
 }
 
 (function installFoodGoalProgressStyles(){
   if(document.getElementById("foodGoalProgressStyles"))return;
   const style=document.createElement("style");style.id="foodGoalProgressStyles";
-  style.textContent=".food-goal-group{margin-top:14px}.food-goal-group h3{font-size:.83rem;margin:0 0 8px;color:var(--cream)}.food-goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.food-goal-item{min-width:0;padding:8px;border:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--panel2) 70%,transparent)}.food-goal-head{display:grid;gap:3px;min-height:34px}.food-goal-head b{font-size:.75rem}.food-goal-head span{font-size:.68rem;color:var(--muted);overflow-wrap:anywhere}.food-goal-meter{height:7px;margin:7px 0 4px;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--text) 12%,transparent)}.food-goal-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .25s ease}.food-goal-item>small{font-size:.65rem;color:var(--muted)}.food-goal-note{margin-top:7px}.food-goal-log{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}.food-goal-log summary{display:flex;justify-content:space-between;cursor:pointer;font-size:.76rem;font-weight:800;list-style:none}.food-goal-log summary::-webkit-details-marker{display:none}.food-goal-log-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.72rem}.food-goal-log-row span{color:var(--muted)}@media(max-width:360px){.food-goal-grid{grid-template-columns:1fr}}";
+  style.textContent=".food-intake-card{padding:12px!important}.food-intake-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.food-intake-head h2{font-size:1.05rem;margin:1px 0}.food-intake-head .btn{white-space:nowrap;padding:8px 10px;font-size:.75rem}.food-eaten-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.food-eaten-item{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:7px 8px;border-radius:10px;background:color-mix(in srgb,var(--primary) 8%,var(--panel));font-size:.72rem;min-width:0}.food-eaten-item span{overflow-wrap:anywhere}.food-eaten-item b{color:var(--secondary);white-space:nowrap}.food-data-note{font-size:.65rem;color:var(--muted);margin:6px 0}.food-recommendation{margin:9px 0;padding:9px 10px;border-left:3px solid var(--secondary);border-radius:9px;background:color-mix(in srgb,var(--secondary) 9%,var(--panel));font-size:.72rem}.food-recommendation b{display:block;margin-bottom:3px}.food-recommendation span{color:var(--muted);font-size:.65rem}.food-recommendation.quiet{color:var(--muted)}.food-goal-section{margin-top:9px}.food-goal-section-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px}.food-goal-section-head h3{font-size:.95rem;margin:0}.food-goal-section-head span{font-size:.6rem;color:var(--muted)}.food-goal-group{margin-top:6px}.food-goal-group h4{font-size:.72rem;margin:0 0 5px;color:var(--muted)}.food-goal-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px 12px!important}.food-goal-item{min-width:0;padding:5px 0!important;border:0!important;border-bottom:1px solid color-mix(in srgb,var(--primary) 13%,var(--border))!important;border-radius:0!important;background:transparent!important}.food-goal-head{display:flex;justify-content:space-between;align-items:center;gap:4px;min-height:0}.food-goal-head b{font-size:.7rem}.food-goal-head strong{font-size:.66rem;color:var(--secondary)}.food-goal-number{font-size:.63rem;color:var(--muted);margin-top:2px}.food-goal-meter{height:6px;margin:4px 0 0;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--text) 13%,transparent)}.food-goal-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .25s ease}.food-micro-fold{margin-top:7px;border-top:1px solid var(--border);padding-top:6px}.food-micro-fold summary{list-style:none;display:flex;justify-content:space-between;cursor:pointer;font-size:.72rem;font-weight:800}.food-micro-fold summary::-webkit-details-marker{display:none}.food-micro-fold summary span{color:var(--secondary);font-size:.67rem}.food-micro-fold[open] summary span{font-size:0}.food-micro-fold[open] summary span:after{content:'Hide';font-size:.67rem}.food-micro-fold>.food-goal-grid{margin-top:5px}.food-intake-actions{margin-top:8px;gap:6px}.food-intake-actions .btn{padding:8px 10px;font-size:.72rem}@media(max-width:380px){.food-goal-grid,.food-eaten-list{grid-template-columns:1fr!important}}";;
   document.head.appendChild(style);
 })();
 
@@ -136,7 +160,7 @@ function openFoodTrendsFromIntake(){
   requestAnimationFrame(()=>openFoodHubSection("trends"));
 }
 function compactFoodToday(){
-  return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${compactFoodCookingAhead()}${foodGoalDashboardCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
+  return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'<details class="food-fold"><summary><span><b>7-day trends</b><small>View line graph</small></span><span>View</span></summary><div class="food-fold-body">'+foodIntakeTrends()+'</div></details></div>';
 }
 
 function compactFoodMeals(){
@@ -156,6 +180,15 @@ function legacyTabbedFoodView(){
   return `<div class="food-hero"><div class="section-title"><div><div class="eyebrow">🍽 Food</div><h1>Food + kitchen</h1><div class="muted small">Today first; meal planning, shopping, and pantry details one tap away.</div></div><button class="btn" onclick="openFood()">+ Intake</button></div></div>${compactFoodTabs()}${body}`;
 };
 
+// The Food landing screen opens on Today's intake; kitchen sections remain one tap away.
+homeView=legacyTabbedFoodView;
+if(typeof window.__dailyLifeSetViewBeforeFood==="undefined"&&typeof setView==="function"){
+  window.__dailyLifeSetViewBeforeFood=setView;
+  setView=function(v){
+    if(v==="home"){foodTab="today";localStorage.setItem("dailyLifeFoodTab","today")}
+    return window.__dailyLifeSetViewBeforeFood.apply(this,arguments);
+  };
+}
 function mealVisualIcon(dish){
   const x=String(dish||"").toLowerCase();
   if(/taco|nacho|burrito|quesadilla/.test(x))return"🌮";
