@@ -78,7 +78,7 @@ function foodPantryRecommendation(rows,nutrients){
   if(protein?.known&&protein.value/protein.goal<.6){
     const matches=["P3 Turkey, Ham & Cheddar Protein Snack","Bumble Bee Chicken Salad & Crackers","Great Value Colby & Monterey Jack Snacking Cheese"],
       found=matches.map(key=>pantry.find(x=>x.toLowerCase().includes(key.toLowerCase()))).filter(Boolean).filter(x=>!had(x.split(",")[0])).slice(0,2);
-    if(found.length)return "<section class=\"food-recommendation\"><b>Protein is your biggest tracked gap</b><div>From your pantry: "+found.map(esc).join(" <span>or</span> ")+"</div></section>";
+    if(found.length)return "<section class=\"food-recommendation\"><b>Protein is still low in today’s log</b><div>From your pantry: "+found.map(esc).join(" <span>or</span> ")+"</div></section>";
   }
   if(fiber?.known&&fiber.value/fiber.goal<.6){
     const matches=["Romaine hearts","Avocados","Tomatoes","Bananas"],
