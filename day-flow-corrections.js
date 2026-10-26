@@ -187,10 +187,10 @@
     if(hasPickupPrep){
       rows = rows.filter(row => !/^pack the next-stop bag$/i.test(String(row.title || "")));
     }
-    rows = rows.filter(row => !/robot\\s*vacuum/i.test(String(row.title || "")));
+    rows = rows.filter(row => !/robot\s*vacuum/i.test(String(row.title || "")));
     const today = typeof ymd === "function" ? ymd() : "";
     const vacuumTask = (state.tasks || []).filter(task => {
-      if(!/robot\\s*vacuum/i.test(String(task.title || "")) || task.paused) return false;
+      if(!/robot\s*vacuum/i.test(String(task.title || "")) || task.paused) return false;
       const taskDate = String(task.date || "");
       if(taskDate === String(date)) return !task.done || String(date) > today;
       return !!task.dailyReset && !!today && String(date) > today && taskDate <= today;
