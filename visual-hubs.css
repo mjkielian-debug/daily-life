@@ -565,3 +565,13 @@ body:has(#app .visual-hub) .life-tools-fab{
 .visual-hub-home .directive-focus-home p{font-size:.66rem!important;margin:2px 0 0!important}
 .visual-hub-home .directive-focus-home .directive-primary{flex:0 0 auto;white-space:nowrap;padding:8px 11px!important;min-height:35px!important;font-size:.7rem}
 .visual-hub-home .directive-focus-home .directive-pulse{font-size:.48rem}
+
+.visual-hub-home .life-sim-compact-bar{display:none!important}
+.visual-hub-home .vh-heading{padding:5px 2px 7px;margin:0 0 7px;border-bottom:1px solid color-mix(in srgb,var(--primary) 20%,var(--border));align-items:center}
+.visual-hub-home .vh-heading .eyebrow{font-size:.59rem;letter-spacing:.08em}
+.visual-hub-home .vh-heading h1{font-size:1.05rem;line-height:1.1;margin:2px 0}
+.visual-hub-home .vh-heading p{display:none}
+.visual-hub-home .vh-add,.visual-hub-home .vh-home-plan{min-height:34px!important;padding:7px 9px!important;font-size:.65rem!important;line-height:1;white-space:nowrap;border-radius:999px!important;flex:0 0 auto}
+.visual-hub-home .vh-heading>div:last-child{display:flex;align-items:center;gap:5px}
+.visual-hub-home .directive-focus-home{display:none!important}
+@media(max-width:360px){.visual-hub-home .vh-heading>div:last-child{gap:3px}.visual-hub-home .vh-add,.visual-hub-home .vh-home-plan{padding:7px!important;font-size:.6rem!important}}
