@@ -173,4 +173,25 @@
     });
   };
 
+
+  // Keep the family's 7:30–8:00 tomorrow-prep block visible even when the
+  // routine fitter drops it while resolving other evening routines.
+  const baseEveningDayItems = itineraryDayItems;
+  itineraryDayItems = function(date){
+    const rows = baseEveningDayItems(date);
+    const weekday = new Date(String(date) + "T12:00:00").getDay();
+    if(weekday >= 0 && weekday <= 4 && !rows.some(row => row.templateKey === "tomorrow-prep")){
+      rows.push({
+        id:"daily-evening-prep:"+date,
+        templateKey:"tomorrow-prep",
+        start:"19:30",
+        end:"20:00",
+        title:"Check tomorrow + stage clothes / bags / keys",
+        detail:"Check tomorrow’s calendar · stage clothes/bags/keys · 5-minute kitchen / house close.",
+        icon:"✦", fixed:false, kind:"routine", source:"suggested", learnedRoutine:false
+      });
+    }
+    return rows.sort((a,b)=>String(a.start).localeCompare(String(b.start))||(a.kind==="gap"?1:-1));
+  };
+
 })();
