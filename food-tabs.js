@@ -154,6 +154,30 @@ function foodGoalDashboardCard(){
 })();
 
 
+function foodProfileQuickProgress(){
+  const totals=foodTotalsForDate(ymd()),goals=state.settings?.nutritionGoals||{},
+    goal=(key,fallback)=>{const n=Number(goals[key]??state.settings?.[key]??fallback);return n>0?n:fallback},
+    known=keys=>totals.rows.some(row=>keys.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),
+    waterNow=Number(water())||0,
+    metrics=[
+      {name:"Calories",value:totals.cal,has:known(["calories","cal"]),goal:goal("calTarget",2100),unit:"cal"},
+      {name:"Protein",value:totals.protein,has:known(["protein","proteinG"]),goal:goal("proteinTarget",100),unit:"g"},
+      {name:"Carbs",value:totals.carbs,has:known(["carbs","carbohydrates","carbsG"]),goal:goal("carbsTarget",250),unit:"g"},
+      {name:"Fat",value:totals.fat,has:known(["fat","fatG"]),goal:goal("fatTarget",70),unit:"g"},
+      {name:"Fiber",value:totals.fiber,has:known(["fiber","fiberG"]),goal:goal("fiberTarget",28),unit:"g"},
+      {name:"Water",value:waterNow,has:true,goal:goal("waterTarget",78),unit:"oz",water:true}
+    ],
+    dinner=typeof todayMeal==="function"?todayMeal():null,
+    rings=metrics.map(item=>{
+      const pct=item.has?Math.max(0,Math.round(item.value/item.goal*100)):null,shown=pct===null?"—":pct+"%",
+        amount=item.has?(Math.round(item.value*10)/10).toLocaleString()+" / "+item.goal.toLocaleString()+" "+item.unit:"No data",
+        fill=pct===null?0:Math.min(100,pct),ringColor=item.water?"#e2b943":"#bd75b6";
+      return "<div class=\"food-profile-ring-item\"><div class=\"food-profile-ring\" style=\"--food-ring:"+fill+"%;--food-ring-color:"+ringColor+"\" role=\"img\" aria-label=\""+esc(item.name)+": "+esc(shown)+" of daily goal\"><span>"+shown+"</span></div><b>"+esc(item.name)+"</b><small>"+esc(amount)+"</small></div>";
+    }).join(""),
+    logged=totals.rows.length;
+  return "<section class=\"df-glance food-profile-progress\" aria-label=\"Today’s food and water progress\"><div class=\"food-profile-progress-head\"><b>Food + water</b><span>"+logged+" item"+(logged===1?"":"s")+" logged</span></div><div class=\"food-profile-rings\">"+rings+"</div><div class=\"food-profile-dinner\"><span>DINNER</span><b>"+esc(dinner?.dish||"Not planned")+"</b></div></section>";
+}
+
 function foodHomeIntakeProgress(){
  const t=foodTotalsForDate(ymd()),waterNow=Number(water())||0,goals=state.settings?.nutritionGoals||{},
  goal=(key,fallback)=>{const v=Number(goals[key]??state.settings?.[key]??fallback);return v>0?v:fallback},
