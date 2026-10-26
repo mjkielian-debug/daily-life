@@ -634,3 +634,32 @@ body:has(#app .visual-hub) .life-tools-fab{
 .vh-profile-home .df-profile-next-row time{font-size:.61rem;color:var(--df-soft);font-variant-numeric:tabular-nums}
 .vh-profile-home .df-profile-next-row b{font-size:.68rem;font-weight:700}
 .vh-profile-home .df-profile-next-empty{font-size:.65rem;color:var(--df-soft)}
+
+/* Keep Michelle's profile and Day Flow controls together; retain the full timeline below. */
+.vh-profile-home{gap:4px!important}
+.vh-profile-home>.vh-heading{margin-bottom:0!important}
+.vh-profile-home>.vh-profile-actions{margin:0!important}
+.vh-profile-home .day-flow-dashboard{display:contents!important;margin:0!important}
+.vh-profile-home .df-heading{display:none!important}
+.vh-profile-home .df-range-row{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:4px!important;margin:0!important;min-width:0}
+.vh-profile-home .df-range-row:before{content:"Day Flow";flex:0 0 auto;margin-right:2px;color:#756c7b;font-size:.67rem;font-weight:850;white-space:nowrap}
+.vh-profile-home .df-range{flex:0 0 auto!important;min-width:0!important;min-height:27px!important;padding:4px 7px!important;border:1px solid #e9e2eb!important;border-radius:999px!important;background:#fff!important;color:#292432!important;font:inherit!important;font-size:.57rem!important;font-weight:750!important;line-height:1!important;white-space:nowrap!important}
+.vh-profile-home .df-range.selected{background:#30283a!important;border-color:#30283a!important;color:#fff!important}
+.vh-profile-home .df-calendar{position:relative;display:flex!important;flex:0 0 27px!important;align-items:center;justify-content:center;width:27px!important;height:27px!important;padding:3px!important;border:1px solid #e9e2eb!important;border-radius:50%!important;background:#fff!important;color:#292432!important;font-size:.62rem!important}
+.vh-profile-home .df-calendar span{display:none!important}
+.vh-profile-home .df-calendar input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.vh-profile-home .df-glance{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;margin:0!important}
+.vh-profile-home .df-glance-item{min-height:0!important;padding:6px 8px!important;border-radius:11px!important}
+.vh-profile-home .df-timeline{margin:5px 0!important;padding:10px!important}
+.vh-profile-home .df-timeline .df-section-head{margin-bottom:5px!important}
+.vh-profile-home .df-timeline .df-section-head>button,.vh-profile-home .df-timeline-footer,.vh-profile-home .df-open-time>button{display:none!important}
+.vh-profile-home .df-earlier{margin:3px 0 5px!important;padding:5px 8px!important;min-height:0!important}
+.vh-profile-home .df-earlier summary{padding:0!important}
+.vh-profile-home .df-block{padding:7px 0!important}
+.vh-profile-home .df-routines{margin:5px 0!important;padding:10px!important}
+@media(max-width:380px){
+ .vh-profile-home .df-range-row{gap:3px!important}
+ .vh-profile-home .df-range{padding:4px 5px!important;font-size:.53rem!important}
+ .vh-profile-home .df-range-row:before{font-size:.61rem}
+ .vh-profile-home .df-calendar{flex-basis:25px!important;width:25px!important;height:25px!important}
+}
