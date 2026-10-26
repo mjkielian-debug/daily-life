@@ -627,7 +627,12 @@ function cloudRestoreLocalOnlyAssets(restored,local){
 
 function cloudAssistantPatches(remoteState){
   const patches=remoteState?.settings?.assistantSyncPatches;
-  return Array.isArray(patches)?patches.filter(p=>p&&typeof p==="object"&&p.id&&p.collection&&p.recordId&&p.fields&&typeof p.fields==="object"):[];
+  return Array.isArray(patches)?patches.filter(p=>{
+    if(!p||typeof p!=="object"||!p.id)return false;
+    if(Array.isArray(p.path)&&p.path.length&&Object.prototype.hasOwnProperty.call(p,"value"))return true;
+    const op=String(p.operation||"update");
+    return !!p.collection&&((op==="upsert"&&!!(p.record||p.recordId))||(op==="delete"&&!!p.recordId)||(!!p.recordId&&p.fields&&typeof p.fields==="object"));
+  }):[];
 }
 
 function cloudApplyAssistantPatches(remoteState){
@@ -639,12 +644,34 @@ function cloudApplyAssistantPatches(remoteState){
   let changed=0;
   for(const patch of patches){
     const patchId=String(patch.id);
-    const collection=String(patch.collection);
-    if(appliedSet.has(patchId)||!Array.isArray(state[collection]))continue;
-    const rows=state[collection];
-    const row=rows.find(item=>String(item?.id||"")===String(patch.recordId));
-    if(!row)continue;
-    Object.assign(row,structuredClone(patch.fields));
+    if(appliedSet.has(patchId))continue;
+    if(Array.isArray(patch.path)&&patch.path.length&&Object.prototype.hasOwnProperty.call(patch,"value")){
+      let target=state;
+      for(const key of patch.path.slice(0,-1)){
+        if(!target[key]||typeof target[key]!=="object")target[key]={};
+        target=target[key];
+      }
+      target[patch.path[patch.path.length-1]]=structuredClone(patch.value);
+      applied.push(patchId);appliedSet.add(patchId);changed++;
+      continue;
+    }
+    const collection=String(patch.collection),op=String(patch.operation||"update");
+    if(!Array.isArray(state[collection]))continue;
+    const rows=state[collection],recordId=String(patch.recordId||patch.record?.id||"");
+    const index=rows.findIndex(item=>String(item?.id||"")===recordId);
+    if(op==="delete"){
+      if(index<0)continue;
+      rows.splice(index,1);
+    }else if(op==="upsert"){
+      const incoming=structuredClone(patch.record||{});
+      if(!incoming.id)incoming.id=recordId;
+      if(patch.fields&&typeof patch.fields==="object")Object.assign(incoming,structuredClone(patch.fields));
+      if(index<0)rows.push(incoming);
+      else Object.assign(rows[index],incoming);
+    }else{
+      if(index<0)continue;
+      Object.assign(rows[index],structuredClone(patch.fields));
+    }
     applied.push(patchId);appliedSet.add(patchId);changed++;
   }
   state.settings.assistantSyncPatches=patches;
@@ -654,6 +681,7 @@ function cloudApplyAssistantPatches(remoteState){
 
 let cloudAssistantPatchPollTimer=null;
 let cloudAssistantPatchPollBusy=false;
+let cloudAssistantPatchVisibilityBound=false;
 async function cloudPollAssistantPatches(){
   if(cloudAssistantPatchPollBusy||!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
   cloudAssistantPatchPollBusy=true;
@@ -678,9 +706,12 @@ function cloudStartAssistantPatchPolling(){
   if(cloudAssistantPatchPollTimer)clearInterval(cloudAssistantPatchPollTimer);
   if(!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
   cloudAssistantPatchPollTimer=setInterval(()=>cloudPollAssistantPatches(),15000);
-  document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden)cloudPollAssistantPatches();
-  });
+  if(!cloudAssistantPatchVisibilityBound){
+    cloudAssistantPatchVisibilityBound=true;
+    document.addEventListener("visibilitychange",()=>{
+      if(!document.hidden)cloudPollAssistantPatches();
+    });
+  }
 }
 
 async function cloudUseRemoteSnapshot(snapshot){
