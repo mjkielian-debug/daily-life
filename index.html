@@ -10,7 +10,7 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261026-profile-roster1">
+  <link rel="manifest" href="manifest.webmanifest?v=20261026-task-notifications1">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -225,7 +225,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261025-dayflow-todayfix2"></script>
-<script src="life-sim-ui.js?v=20261026-profile-roster1"></script>
+<script src="life-sim-ui.js?v=20261026-task-notifications1"></script>
 <script>
 
 const DB_NAME="daily-life-local-v2";
@@ -7538,6 +7538,9 @@ function openTask(person="",id="",shareDefault=false,roomContext=null){
     <label>Exact start (optional)<input id="taskstart" type="time" value="${esc(x.itineraryStart||"")}"></label>
     <label>Notes<input id="notes" value="${esc(x.notes||"")}"></label>
     <label class="task"><input id="taskdone" type="checkbox" ${x.done?"checked":""}><span>Done</span></label>
+    <label class="task"><input id="tasknotify" type="checkbox" ${x.notificationsEnabled===true?"checked":""}><span>Send a phone notification</span></label>
+    <label>Notification time<input id="tasknotifytime" type="time" value="${esc(x.notifyTime||"09:00")}"></label>
+    <div class="muted small">This reminder runs on the task date. Daily Life notifications must be enabled on this device.</div>
     ${typeof sharingTaskControl==="function"?sharingTaskControl(x):""}
     ${x.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b><div class="muted small">Sharing this task shares only the task text and timing—not the private assignment snapshot or school source link.</div></div>`:""}
     ${existing?`<button type="button" class="btn danger" onclick="removeTask('${x.id}')">Delete task</button>`:""}
@@ -7545,7 +7548,7 @@ function openTask(person="",id="",shareDefault=false,roomContext=null){
     const title=$("#task").value.trim(),date=$("#taskdate").value||ymd();if(!title)return;
     let t=existing;
     if(!t){t={id:uid(),done:false,order:100};state.tasks.push(t)}
-    Object.assign(t,{date,title,child:$("#taskperson").value.trim(),category:$("#cat").value.trim()||"life",notes:$("#notes").value.trim(),done:$("#taskdone").checked,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"",itineraryStart:$("#taskstart").value||""});
+    Object.assign(t,{date,title,child:$("#taskperson").value.trim(),category:$("#cat").value.trim()||"life",notes:$("#notes").value.trim(),done:$("#taskdone").checked,notificationsEnabled:$("#tasknotify").checked,notifyTime:$("#tasknotifytime").value||"09:00",itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"",itineraryStart:$("#taskstart").value||""});
     if(!existing&&roomContext){
       if(roomContext.roomId)t.homeRoomId=String(roomContext.roomId);
       if(roomContext.floor&&roomContext.zoneId){
@@ -9342,7 +9345,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261026-profile-roster1";
+const DAILY_LIFE_BUILD="20261026-task-notifications1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9450,7 +9453,7 @@ async function registerAppWorker(){
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261013-dominos-runza2"></script>
-<script src="daily-coach.js?v=20261026-profile-roster1"></script>
+<script src="daily-coach.js?v=20261026-task-notifications1"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261016-guided18"></script>
@@ -9479,13 +9482,13 @@ async function registerAppWorker(){
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
 <script src="action-first.js?v=20261016-guided20"></script>
 
-<script src="push-notifications.js?v=20261025-monthly-push4"></script>
+<script src="push-notifications.js?v=20261026-task-notifications1"></script>
 <script>
 window.addEventListener("load",()=>{
   init();
   registerAppWorker();
 },{once:true});
 </script>
-<script src="day-flow-corrections.js?v=20261026-profile-roster1"></script>
+<script src="day-flow-corrections.js?v=20261026-task-notifications1"></script>
 </body>
 </html>
