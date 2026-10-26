@@ -183,6 +183,7 @@ function dayFlowWeekMonthOverview(mode,date){
 }
 function dayFlowAtAGlance(date){
  if(date!==ymd())return"";
+ if(typeof view!=="undefined"&&view==="family"&&typeof foodProfileQuickProgress==="function")return foodProfileQuickProgress();
  const meal=typeof todayMeal==="function"?todayMeal():null,oz=typeof water==="function"?Math.round(water()):0,
    configured=state.settings?.nutritionGoals||{},goal=Number(configured.waterTarget||state.settings?.waterTarget)||78,pct=Math.min(100,Math.round(100*oz/goal));
  return `<section class="df-glance" aria-label="Today at a glance"><div class="df-glance-item"><span>TONIGHT</span><b>${esc(meal?.dish||"Dinner not planned")}</b><small>${meal?.dish?"Dinner is on the plan":"No dinner choice saved yet"}</small></div><div class="df-glance-item"><span>WATER</span><b>${pct}% complete</b><small>${oz} / ${goal} oz of your daily goal</small></div></section>`;
