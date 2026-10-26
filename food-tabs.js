@@ -159,6 +159,52 @@ function openFoodTrendsFromIntake(){
   closeModal();
   requestAnimationFrame(()=>openFoodHubSection("trends"));
 }
+let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
+function foodTrendValue(metric,date){
+  const totals=foodTotalsForDate(date);
+  if(metric==="water"){
+    const logs=(state.waterLogs||[]).filter(x=>x.date===date);
+    return logs.length?logs.reduce((sum,x)=>sum+Number(x.oz||0),0):null;
+  }
+  const aliases={calories:["calories","cal"],protein:["protein","proteinG"],carbs:["carbs","carbohydrates","carbsG"],fat:["fat","fatG"],fiber:["fiber","fiberG"]}[metric]||[],
+    known=totals.rows.some(row=>aliases.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""));
+  return known?Number(totals[metric]||0):null;
+}
+function setFoodTrendMetric(metric){
+  if(!["calories","protein","carbs","fat","fiber","water"].includes(metric))return;
+  foodTrendMetric=metric;localStorage.setItem("dailyLifeFoodTrendMetric",metric);
+  const root=document.getElementById("foodTrendRoot");
+  if(root)root.outerHTML=foodIntakeTrends();else openFoodHubSection("trends");
+}
+foodIntakeTrends=function(){
+  const goals={calories:foodDailyGoal("calTarget",2100),protein:foodDailyGoal("proteinTarget",100),carbs:foodDailyGoal("carbsTarget",250),fat:foodDailyGoal("fatTarget",70),fiber:foodDailyGoal("fiberTarget",28),water:foodDailyGoal("waterTarget",78)},
+    units={calories:"cal",protein:"g",carbs:"g",fat:"g",fiber:"g",water:"oz"},
+    labels={calories:"Calories",protein:"Protein",carbs:"Carbs",fat:"Fat",fiber:"Fiber",water:"Water"},
+    metric=foodTrendMetric in goals?foodTrendMetric:"calories",dates=trendDates(7),
+    points=dates.map((date,index)=>({date:date,index:index,value:foodTrendValue(metric,date),label:new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})})),
+    values=points.filter(x=>x.value!==null),average=values.length?values.reduce((sum,x)=>sum+x.value,0)/values.length:null,
+    scale=Math.max(goals[metric],1,...values.map(x=>x.value))*1.12,
+    xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/scale))*100,
+    targetY=yAt(goals[metric]),averageY=average===null?null:yAt(average),
+    segments=[],active=[];
+  for(const point of points){if(point.value===null){if(active.length)segments.push(active);active=[]}else active.push(point)}
+  if(active.length)segments.push(active);
+  const paths=segments.filter(x=>x.length>1).map(x=>"<polyline points=\""+x.map(p=>xAt(p.index)+","+yAt(p.value)).join(" ")+"\"/>").join(""),
+    dots=points.filter(x=>x.value!==null).map(p=>"<g><title>"+esc(p.label)+" · "+(Math.round(p.value*10)/10).toLocaleString()+" "+units[metric]+"</title><circle cx=\""+xAt(p.index)+"\" cy=\""+yAt(p.value)+"\" r=\"4\"/></g>").join(""),
+    days=points.map(p=>"<text x=\""+xAt(p.index)+"\" y=\"151\" text-anchor=\"middle\">"+esc(p.label.slice(0,1))+"</text>").join(""),
+    controls=Object.keys(goals).map(key=>"<button type=\"button\" class=\"food-trend-chip "+(key===metric?"active":"")+"\" aria-pressed=\""+(key===metric?"true":"false")+"\" onclick=\"setFoodTrendMetric('"+key+"')\">"+labels[key]+"</button>").join(""),
+    goalLine="<line class=\"food-goal-line\" x1=\"32\" y1=\""+targetY+"\" x2=\"328\" y2=\""+targetY+"\"/>",
+    avgLine=averageY===null?"":"<line class=\"food-average-line\" x1=\"32\" y1=\""+averageY+"\" x2=\"328\" y2=\""+averageY+"\"/>";
+  const averageText=average===null?"No logged values yet":"Average "+(Math.round(average*10)/10).toLocaleString()+" "+units[metric]+" across "+values.length+" logged day"+(values.length===1?"":"s"),
+    chart=values.length?"<svg class=\"food-line-chart\" viewBox=\"0 0 360 166\" role=\"img\" aria-label=\"Seven-day "+esc(labels[metric].toLowerCase())+" line graph; blank days have no recorded value\"><line class=\"food-chart-axis\" x1=\"32\" y1=\"25\" x2=\"32\" y2=\"126\"/><line class=\"food-chart-axis\" x1=\"32\" y1=\"126\" x2=\"328\" y2=\"126\"/><text x=\"27\" y=\"25\" text-anchor=\"end\">"+Math.round(scale).toLocaleString()+"</text><text x=\"27\" y=\"129\" text-anchor=\"end\">0</text>"+goalLine+avgLine+"<g class=\"food-chart-line\">"+paths+"</g><g class=\"food-chart-dots\">"+dots+"</g><g class=\"food-chart-days\">"+days+"</g></svg>":"<div class=\"food-trend-empty\">Log food or water to start a trend.</div>";
+  return "<section class=\"card food-trend-card\" id=\"foodTrendRoot\"><div class=\"eyebrow\">7-day food trend</div><div class=\"food-trend-head\"><h2>"+labels[metric]+"</h2><span>"+values.length+"/7 days logged</span></div><div class=\"food-trend-average\">"+averageText+"</div><div class=\"food-trend-selectors\">"+controls+"</div>"+chart+"<div class=\"food-trend-legend\"><span>Goal line</span>"+(average===null?"":"<span>Average line</span>")+"</div><div class=\"muted small food-trend-note\">Unlogged days stay blank. Average uses only recorded values.</div></section>";
+};
+(function installFoodTrendStyles(){
+  if(document.getElementById("foodTrendStyles"))return;
+  const style=document.createElement("style");style.id="foodTrendStyles";
+  style.textContent=".food-trend-card{padding:12px!important}.food-trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.food-trend-head h2{margin:2px 0;font-size:1rem}.food-trend-head span,.food-trend-average,.food-trend-note{font-size:.68rem;color:var(--muted)}.food-trend-average{margin:3px 0 8px}.food-trend-selectors{display:flex;gap:5px;overflow:auto;padding:2px 0 7px}.food-trend-chip{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;padding:5px 8px;background:transparent;color:var(--muted);font:inherit;font-size:.65rem}.food-trend-chip.active{background:color-mix(in srgb,var(--primary) 20%,var(--panel));border-color:color-mix(in srgb,var(--primary) 48%,var(--border));color:var(--text);font-weight:800}.food-line-chart{display:block;width:100%;height:auto;overflow:visible}.food-line-chart text{font:10px sans-serif;fill:var(--muted)}.food-line-chart .food-chart-axis{stroke:color-mix(in srgb,var(--text) 20%,var(--border));stroke-width:1}.food-line-chart .food-goal-line{stroke:var(--secondary);stroke-width:1.5;stroke-dasharray:4 4}.food-line-chart .food-average-line{stroke:var(--accent);stroke-width:1.4;stroke-dasharray:2 4}.food-line-chart .food-chart-line polyline{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.food-line-chart .food-chart-dots circle{fill:var(--secondary);stroke:var(--panel);stroke-width:2}.food-trend-empty{padding:25px 8px;text-align:center;color:var(--muted);font-size:.75rem}.food-trend-legend{display:flex;gap:12px;margin-top:3px;font-size:.63rem;color:var(--muted)}.food-trend-note{margin-top:6px}";
+  document.head.appendChild(style);
+})();
 function compactFoodToday(){
   return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'<details class="food-fold"><summary><span><b>7-day trends</b><small>View line graph</small></span><span>View</span></summary><div class="food-fold-body">'+foodIntakeTrends()+'</div></details></div>';
 }
