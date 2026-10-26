@@ -716,3 +716,7 @@ body:has(#app .visual-hub) .life-tools-fab{
 .life-sim-compact-hud .food-profile-ring-item>small{margin-top:2px;font-size:.46rem;line-height:1.05;color:#756c7b}
 .life-sim-compact-hud .food-profile-dinner{display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:5px;border-top:1px solid #eee4ed;font-size:.61rem}
 @media(max-width:390px){.life-sim-page-summary{padding:7px 8px}.life-sim-summary-ring{width:36px;height:36px}.life-sim-summary-item>small{font-size:.48rem}.life-sim-compact-hud .food-profile-rings{gap:3px}.life-sim-compact-hud .food-profile-ring{width:34px;height:34px}}
+
+/* The Day Flow title and add control are replaced by the shared compact summary. */
+.day-flow-dashboard>.df-heading{display:none!important}
+.day-flow-dashboard .df-add{display:none!important}
