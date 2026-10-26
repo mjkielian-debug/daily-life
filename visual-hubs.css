@@ -613,3 +613,24 @@ body:has(#app .visual-hub) .life-tools-fab{
 .vh-profile-home .df-routine{padding:7px}
 .vh-profile-home .df-routine strong{font-size:.95rem}
 .vh-profile-home .df-routine small,.vh-profile-home .df-routines>p{font-size:.58rem}
+
+/* The profile embeds a concise Day Flow preview; the dedicated page keeps the full timeline. */
+.vh-profile-home .df-profile-compact{display:grid;gap:5px;margin:0;padding:3px 0;color:var(--df-ink)}
+.vh-profile-home .df-profile-compact .df-heading{margin:0;min-height:0;gap:8px}
+.vh-profile-home .df-profile-compact .df-heading h1{font-size:1.02rem;line-height:1.05}
+.vh-profile-home .df-profile-full{border:0;border-radius:999px;padding:6px 9px;background:#f7eff8;color:var(--df-soft);font-size:.62rem;font-weight:800;white-space:nowrap}
+.vh-profile-home .df-profile-compact .df-range-row{display:flex;flex-wrap:nowrap;gap:4px;margin:0}
+.vh-profile-home .df-profile-compact .df-range{min-width:0;flex:1 1 0;padding:5px 5px;font-size:.59rem;line-height:1.05;white-space:nowrap}
+.vh-profile-home .df-profile-compact .df-calendar{flex:0 0 28px;width:28px;justify-content:center;padding:4px}
+.vh-profile-home .df-profile-compact .df-calendar span{display:none}
+.vh-profile-home .df-profile-compact .df-glance{gap:5px;margin:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+.vh-profile-home .df-profile-compact .df-glance-item{padding:6px 8px;border-radius:11px}
+.vh-profile-home .df-profile-compact .df-glance-item>span{font-size:.51rem}
+.vh-profile-home .df-profile-compact .df-glance-item>b{font-size:.7rem}
+.vh-profile-home .df-profile-compact .df-glance-item>small{font-size:.57rem}
+.vh-profile-home .df-profile-next{display:grid;gap:4px;padding:6px 8px;border-top:1px solid var(--df-line)}
+.vh-profile-home .df-profile-next .df-kicker{font-size:.52rem}
+.vh-profile-home .df-profile-next-row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:7px;align-items:center;font-size:.67rem;line-height:1.15}
+.vh-profile-home .df-profile-next-row time{font-size:.61rem;color:var(--df-soft);font-variant-numeric:tabular-nums}
+.vh-profile-home .df-profile-next-row b{font-size:.68rem;font-weight:700}
+.vh-profile-home .df-profile-next-empty{font-size:.65rem;color:var(--df-soft)}
