@@ -97,9 +97,25 @@
         row.end = "20:20";
         row.title = "Pajamas + get settled into bed";
         row.detail = "Finish pajamas and get into bed · 10 minutes before reading.";
+
+      if(row.templateKey === "tomorrow-prep"){
+        row.start = "19:30";
+        row.end = "20:00";
+        row.title = "Check tomorrow + stage clothes / bags / keys";
+        row.detail = "Check tomorrow’s calendar · stage clothes/bags/keys · 5-minute kitchen / house close.";
+      }
+
       }
     }
     return rows;
+  };
+
+
+  const baseEveningRoutineWindow = itineraryRoutineWindow;
+  itineraryRoutineWindow = function(item, date){
+    if(item?.templateKey === "tomorrow-prep") return {start:19*60+30, end:20*60};
+    if(item?.templateKey === "bedtime-settle") return {start:20*60+10, end:20*60+20};
+    return baseEveningRoutineWindow(item, date);
   };
 
   const baseEveningTaskRange = itineraryTaskPreferredRange;
@@ -118,8 +134,8 @@
     if(bedtimeErrand){
       const now = date === ymd() ? new Date() : null;
       const floor = now ? Math.ceil((now.getHours()*60 + now.getMinutes() + 5)/5)*5 : 0;
-      const start = Math.max(base.start, 19 * 60 + 30, floor);
-      const end = Math.min(base.end, 20 * 60 + 10);
+      const start = Math.max(base.start, 18 * 60 + 45, floor);
+      const end = Math.min(base.end, 19 * 60 + 30);
       return end - start >= taskMinutes ? {start, end} : null;
     }
     const end = Math.min(base.end, 20 * 60 + 30);
