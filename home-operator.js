@@ -316,13 +316,18 @@
         location.notes=detail.locationNotes;changed=true;
       }
       for(const [name,category,notes] of detail.items){
-        const exists=state.inventoryItems.some(item=>
+        const existing=state.inventoryItems.find(item=>
           normalized(item.name)===normalized(name)&&
           (String(item.roomId||"")===String(room.id)||String(item.locationId||"")===String(location.id))
         );
-        if(!exists){
+        if(!existing){
           state.inventoryItems.push({id:uid(),name,category,quantity:1,status:"Have",roomId:room.id,locationId:location.id,notes});
           changed=true;
+        }else{
+          if(String(existing.roomId||"")!==String(room.id)){existing.roomId=room.id;changed=true}
+          if(String(existing.locationId||"")!==String(location.id)){existing.locationId=location.id;changed=true}
+          if(String(existing.category||"")!==String(category)){existing.category=category;changed=true}
+          if(!existing.notes&&notes){existing.notes=notes;changed=true}
         }
       }
     }
