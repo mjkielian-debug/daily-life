@@ -145,7 +145,7 @@ theme=function(){
  const p=dailyGardenPalette(),root=document.documentElement;
  ["--bg","--panel","--panel2","--primary","--secondary","--accent"].forEach((key,i)=>root.style.setProperty(key,p[i+1]));
  root.style.setProperty("--text","#fff9f5");root.style.setProperty("--muted","#d7d5d1");root.style.setProperty("--cream","#fff5ed");
- const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",p[1]);
+ const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f6dbe9");
  return p[0];
 };
 let dailyGardenLastDate="";
