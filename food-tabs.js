@@ -153,7 +153,41 @@ function foodGoalDashboardCard(){
   document.head.appendChild(style);
 })();
 
-// Use the compact goal-bar dashboard in every Food intake entry point, including the Intake modal.
+
+function foodHomeIntakeProgress(){
+ const t=foodTotalsForDate(ymd()),waterNow=Number(water())||0,goals=state.settings?.nutritionGoals||{},
+ goal=(key,fallback)=>{const v=Number(goals[key]??state.settings?.[key]??fallback);return v>0?v:fallback},
+ aliases={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]},
+ norm=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]/g,""),
+ micro=name=>{let value=0,known=false;for(const row of t.rows){let raw;for(const key of aliases[name])if(row[key]!=null&&String(row[key]).trim()!==""){raw=row[key];break}if(raw===undefined){const source=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{},match=Object.entries(source).find(([k])=>aliases[name].some(a=>norm(a)===norm(k)));if(match)raw=match[1]}if(raw!==undefined){const n=typeof raw==="object"&&raw!==null?Number(raw.value):Number(raw);if(Number.isFinite(n)){value+=n*foodQuantity(row);known=true}}}return{value,known}},
+ known=keys=>t.rows.some(r=>keys.some(k=>r[k]!=null&&String(r[k]).trim()!=="")),
+ data=[
+ {name:"Calories",value:t.cal,known:known(["calories","cal"]),goal:goal("calTarget",2100),unit:"cal"},
+ {name:"Protein",value:t.protein,known:known(["protein","proteinG"]),goal:goal("proteinTarget",100),unit:"g"},
+ {name:"Carbs",value:t.carbs,known:known(["carbs","carbohydrates","carbsG"]),goal:goal("carbsTarget",250),unit:"g"},
+ {name:"Fat",value:t.fat,known:known(["fat","fatG"]),goal:goal("fatTarget",70),unit:"g"},
+ {name:"Fiber",value:t.fiber,known:known(["fiber","fiberG"]),goal:goal("fiberTarget",28),unit:"g"},
+ {name:"Water",value:waterNow,known:true,goal:goal("waterTarget",78),unit:"oz"},
+ {name:"Calcium",...micro("calcium"),goal:goal("calciumTarget",1300),unit:"mg"},
+ {name:"Iron",...micro("iron"),goal:goal("ironTarget",18),unit:"mg"},
+ {name:"Potassium",...micro("potassium"),goal:goal("potassiumTarget",4700),unit:"mg"},
+ {name:"Vitamin D",...micro("vitaminD"),goal:goal("vitaminDTarget",20),unit:"mcg"},
+ {name:"Sodium",...micro("sodium"),goal:goal("sodiumLimit",2300),unit:"mg",limit:true},
+ {name:"Added sugar",...micro("addedSugar"),goal:goal("addedSugarLimit",50),unit:"g",limit:true}],
+ rings=data.map(n=>{const pct=n.known?Math.max(0,Math.round(100*n.value/n.goal)):null,fill=pct===null?0:Math.min(100,pct),label=pct===null?"—":pct+"%",amt=n.known?(Math.round(n.value*10)/10).toLocaleString()+" / "+n.goal.toLocaleString()+" "+n.unit:"No data recorded",caption=n.limit?"of limit":"of goal";return '<div class="food-home-nutrient" title="'+esc(n.name+": "+amt+(n.limit?" · "+caption:""))+'"><span class="food-home-ring" style="--food-progress:'+fill+'%" role="img" aria-label="'+esc(n.name+": "+(pct===null?"no data":pct+"% "+caption))+'"><b>'+label+'</b></span><strong>'+esc(n.name)+'</strong><small>'+esc(n.known?(Math.round(n.value*10)/10).toLocaleString()+" "+n.unit:caption)+'</small></div>'}).join(""),
+ foods=t.rows.slice().reverse().map(r=>esc(r.name||"Food / drink")+(foodQuantity(r)>1?" ×"+foodQuantity(r):"")+(r.nutritionEstimated?" ≈":"")).join(" · ");
+ return '<section class="food-home-intake" aria-label="Today’s nutrition progress"><div class="food-home-intake-head"><div><div class="eyebrow">TODAY’S INTAKE</div><h2>Nutrition progress</h2></div><button type="button" onclick="openFoodHubSection(&quot;intake&quot;)">Details ›</button></div>'+
+ (foods?'<div class="food-home-eaten"><b>Had today:</b> '+foods+'</div>':'<div class="food-home-eaten">Nothing logged yet today.</div>')+
+ '<div class="food-home-nutrients">'+rings+'</div><div class="food-home-limit-note">Sodium and added sugar show the portion of your daily limit used. “—” means no value is recorded.</div></section>';
+}
+(function(){
+ if(document.getElementById("foodHomeIntakeStyles"))return;
+ const s=document.createElement("style");s.id="foodHomeIntakeStyles";
+ s.textContent=".food-home-intake{margin-top:9px;padding:13px;border-radius:20px;border:1px solid color-mix(in srgb,var(--secondary) 21%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 95%,white),color-mix(in srgb,var(--primary) 5%,var(--panel)))}.food-home-intake-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.food-home-intake-head h2{font-size:1rem;margin:2px 0}.food-home-intake-head button{border:0;background:transparent;color:var(--secondary);font:inherit;font-size:.72rem;font-weight:800;padding:7px}.food-home-eaten{margin:7px 0 10px;color:var(--muted);font-size:.69rem;line-height:1.35}.food-home-eaten b{color:var(--text)}.food-home-nutrients{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px 4px}.food-home-nutrient{display:flex;flex-direction:column;align-items:center;min-width:0;text-align:center;gap:2px}.food-home-ring{--food-progress:0%;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:conic-gradient(from -90deg,#c05b91 0 var(--food-progress),#e8dce7 var(--food-progress) 100%);position:relative}.food-home-ring:before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--panel,#fff)}.food-home-ring b{z-index:1;font-size:.65rem;color:var(--text);font-variant-numeric:tabular-nums}.food-home-nutrient strong{font-size:.62rem;line-height:1.1;max-width:100%;overflow-wrap:anywhere}.food-home-nutrient small{font-size:.55rem;line-height:1.1;color:var(--muted)}.food-home-limit-note{margin-top:8px;font-size:.58rem;color:var(--muted)}@media(max-width:350px){.food-home-nutrients{grid-template-columns:repeat(3,minmax(0,1fr))}.food-home-ring{width:45px;height:45px}}";
+ document.head.appendChild(s);
+})();
+
+// Detailed intake keeps its nutrient list; Food home uses the compact completion rings.
 todayNutritionCard=foodGoalDashboardCard;
 function openFoodTrendsFromIntake(){
   closeModal();
