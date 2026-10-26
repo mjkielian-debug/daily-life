@@ -1,6 +1,6 @@
 {
   "build": "20261025-evening-prep5",
   "released": "2026-10-25",
-  "ui": "Enables ongoing cloud sync with automatic conflict recovery, keeps changed device data, and retains a recovery copy of the previous cloud snapshot.",
+  "ui": "Pins the evening prep block at 7:30–8:00 PM and refreshes the blush status bar theme on the installed app.",
   "data_version": "No data schema changes."
 }
