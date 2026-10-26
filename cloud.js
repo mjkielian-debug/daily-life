@@ -58,13 +58,19 @@ async function cloudInit(){
           if(typeof vaultRefreshCloudMetadata==="function")await vaultRefreshCloudMetadata();
           if(typeof cloudFinanceInit==="function")await cloudFinanceInit();
           if(typeof sharingInit==="function")await sharingInit();
-        }else{cloudRemoteUpdatedAt=null;if(typeof sharingReset==="function")sharingReset()}
+          cloudStartAssistantPatchPolling();
+        }else{
+          cloudRemoteUpdatedAt=null;
+          if(cloudAssistantPatchPollTimer){clearInterval(cloudAssistantPatchPollTimer);cloudAssistantPatchPollTimer=null}
+          if(typeof sharingReset==="function")sharingReset()
+        }
         if(typeof render==="function")render();
       },0);
     });
   }catch(error){
     cloudError=error?.message||"Cloud unavailable.";
   }
+  if(cloudSession)cloudStartAssistantPatchPolling();
 }
 
 function cloudPanel(){
@@ -619,11 +625,70 @@ function cloudRestoreLocalOnlyAssets(restored,local){
   }
 }
 
+function cloudAssistantPatches(remoteState){
+  const patches=remoteState?.settings?.assistantSyncPatches;
+  return Array.isArray(patches)?patches.filter(p=>p&&typeof p==="object"&&p.id&&p.collection&&p.recordId&&p.fields&&typeof p.fields==="object"):[];
+}
+
+function cloudApplyAssistantPatches(remoteState){
+  const patches=cloudAssistantPatches(remoteState);
+  if(!patches.length)return 0;
+  state.settings=state.settings||{};
+  const applied=Array.isArray(state.settings.appliedAssistantSyncPatchIds)?state.settings.appliedAssistantSyncPatchIds:[];
+  const appliedSet=new Set(applied.map(String));
+  let changed=0;
+  for(const patch of patches){
+    const patchId=String(patch.id);
+    const collection=String(patch.collection);
+    if(appliedSet.has(patchId)||!Array.isArray(state[collection]))continue;
+    const rows=state[collection];
+    const row=rows.find(item=>String(item?.id||"")===String(patch.recordId));
+    if(!row)continue;
+    Object.assign(row,structuredClone(patch.fields));
+    applied.push(patchId);appliedSet.add(patchId);changed++;
+  }
+  state.settings.assistantSyncPatches=patches;
+  state.settings.appliedAssistantSyncPatchIds=applied.slice(-500);
+  return changed;
+}
+
+let cloudAssistantPatchPollTimer=null;
+let cloudAssistantPatchPollBusy=false;
+async function cloudPollAssistantPatches(){
+  if(cloudAssistantPatchPollBusy||!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
+  cloudAssistantPatchPollBusy=true;
+  try{
+    const snapshot=await cloudReadRemoteSnapshot();
+    const patches=cloudAssistantPatches(snapshot?.state);
+    if(!patches.length)return;
+    const changed=cloudApplyAssistantPatches(snapshot.state);
+    if(changed){
+      await dbSet("state",state);
+      cloudRemoteUpdatedAt=snapshot.updated_at||null;
+      cloudSetLastPushed(cloudRemoteUpdatedAt);
+      cloudSetLastSignature(cloudStateSignature());
+      cloudNeedsReview=false;cloudAutoCanPush=true;
+      if(typeof render==="function")render();
+    }
+  }catch(error){
+    cloudError=error?.message||"Could not check for Daily Life updates.";
+  }finally{cloudAssistantPatchPollBusy=false}
+}
+function cloudStartAssistantPatchPolling(){
+  if(cloudAssistantPatchPollTimer)clearInterval(cloudAssistantPatchPollTimer);
+  if(!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
+  cloudAssistantPatchPollTimer=setInterval(()=>cloudPollAssistantPatches(),15000);
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden)cloudPollAssistantPatches();
+  });
+}
+
 async function cloudUseRemoteSnapshot(snapshot){
   if(!snapshot?.state)return false;
   const localState=state;
   state=migrateState(snapshot.state);
   cloudRestoreLocalOnlyAssets(state,localState);
+  cloudApplyAssistantPatches(snapshot.state);
   await dbSet("state",state);
   cloudRemoteUpdatedAt=snapshot.updated_at||null;
   cloudSetLastPushed(cloudRemoteUpdatedAt);
@@ -644,7 +709,23 @@ async function cloudPrepareAutoSync(){
   if(localStorage.getItem(cloudMetaKey("auto"))===null)localStorage.setItem(cloudMetaKey("auto"),"1");
   if(!cloudAutoEnabled()){cloudAutoCanPush=false;return}
   await cloudRefreshMetadata();
-  const snapshot=cloudRemoteUpdatedAt?await cloudReadRemoteSnapshot():null;
+  let snapshot=cloudRemoteUpdatedAt?await cloudReadRemoteSnapshot():null;
+  const lastBeforePatch=cloudLastPushed(),signatureBeforePatch=cloudStateSignature(),lastSignatureBeforePatch=cloudLastSignature();
+  if(snapshot?.state&&cloudAssistantPatches(snapshot.state).length){
+    if(lastBeforePatch&&lastSignatureBeforePatch&&signatureBeforePatch===lastSignatureBeforePatch){
+      await cloudUseRemoteSnapshot(snapshot);
+    }else{
+      const appliedCount=cloudApplyAssistantPatches(snapshot.state);
+      if(appliedCount){
+        await cloudArchiveRemoteSnapshot(snapshot,"Assistant updates merged into this device");
+        await dbSet("state",state);
+        cloudRemoteUpdatedAt=snapshot.updated_at||null;
+        cloudSetLastPushed(cloudRemoteUpdatedAt);
+        cloudSetLastSignature(cloudStateSignature());
+        cloudNeedsReview=false;cloudAutoCanPush=true;
+      }
+    }
+  }
   const last=cloudLastPushed(),signature=cloudStateSignature(),lastSignature=cloudLastSignature();
   if(!snapshot?.state){
     cloudNeedsReview=false;cloudAutoCanPush=true;
