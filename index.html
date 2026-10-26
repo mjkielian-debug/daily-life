@@ -10,7 +10,7 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261026-assistant-sync1">
+  <link rel="manifest" href="manifest.webmanifest?v=20261026-assistant-sync2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -225,7 +225,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261025-dayflow-todayfix2"></script>
-<script src="life-sim-ui.js?v=20261026-assistant-sync1"></script>
+<script src="life-sim-ui.js?v=20261026-assistant-sync2"></script>
 <script>
 
 const DB_NAME="daily-life-local-v2";
@@ -268,7 +268,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261026-assistant-sync1"></script>
+<script src="cloud.js?v=20261026-assistant-sync2"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261014-chase1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -3809,10 +3809,11 @@ function ensureSchoolAssignmentTasks(date=ymd()){
     let task=state.tasks.find(t=>String(t.sourceAssignmentId||"")===String(a.id||""));
     const needs=schoolAssignmentNeedsAction(a,date);
     if(needs&&!task){
-      task={id:uid(),date,title:a.title||"School assignment",child:a.child||"",category:"school",notes:[a.course,a.due?"Due "+a.due:"",String(a.status||"").toLowerCase()==="missing"?"Missing in school snapshot":""].filter(Boolean).join(" · "),done:false,order:String(a.status||"").toLowerCase()==="missing"?20:45,sourceAssignmentId:a.id,itineraryMinutes:30,itineraryPreference:"after-school"};
+      task={id:uid(),date,title:a.title||"School assignment",child:a.child||"",category:"school",notes:[a.course,a.due?"Due "+a.due:"",String(a.status||"").toLowerCase()==="missing"?"Missing in school snapshot":""].filter(Boolean).join(" · "),done:false,order:String(a.status||"").toLowerCase()==="missing"?20:45,sourceAssignmentId:a.id,itineraryStart:String(a.itineraryStart||"16:15"),itineraryMinutes:Number(a.itineraryMinutes)||30,itineraryPreference:"after-school"};
       state.tasks.push(task);
     }else if(needs&&task&&!task.done){
       task.title=a.title||task.title;task.child=a.child||task.child;task.category="school";task.notes=[a.course,a.due?"Due "+a.due:"",String(a.status||"").toLowerCase()==="missing"?"Missing in school snapshot":""].filter(Boolean).join(" · ");
+      task.itineraryStart=String(a.itineraryStart||task.itineraryStart||"16:15");task.itineraryMinutes=Number(a.itineraryMinutes)||Number(task.itineraryMinutes)||30;task.itineraryPreference="after-school";
       if(task.date<date)task.date=date;
     }else if(!needs&&task&&!task.done){
       task.done=true;task.notes=[task.notes,"School snapshot now: "+String(a.status||"updated")].filter(Boolean).join(" · ");
@@ -9342,7 +9343,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261026-assistant-sync1";
+const DAILY_LIFE_BUILD="20261026-assistant-sync2";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9450,7 +9451,7 @@ async function registerAppWorker(){
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
 <script src="food-tabs.js?v=20261013-dominos-runza2"></script>
-<script src="daily-coach.js?v=20261026-assistant-sync1"></script>
+<script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261016-guided18"></script>
@@ -9479,13 +9480,13 @@ async function registerAppWorker(){
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
 <script src="action-first.js?v=20261016-guided20"></script>
 
-<script src="push-notifications.js?v=20261026-assistant-sync1"></script>
+<script src="push-notifications.js?v=20261026-assistant-sync2"></script>
 <script>
 window.addEventListener("load",()=>{
   init();
   registerAppWorker();
 },{once:true});
 </script>
-<script src="day-flow-corrections.js?v=20261026-assistant-sync1"></script>
+<script src="day-flow-corrections.js?v=20261026-assistant-sync2"></script>
 </body>
 </html>
