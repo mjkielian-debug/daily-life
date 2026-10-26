@@ -273,6 +273,7 @@
     const roomIndex=Number(which)===0?0:1;
     state.houseRooms=Array.isArray(state.houseRooms)?state.houseRooms:[];
     state.inventoryItems=Array.isArray(state.inventoryItems)?state.inventoryItems:[];
+    state.inventoryLocations=Array.isArray(state.inventoryLocations)?state.inventoryLocations:[];
     const roomName=roomIndex===0?"Michelle’s room entryway":"Michelle’s bedroom";
     let room=state.houseRooms.find(r=>String(r.floor||"")==="Third floor"&&String(r.name||"").trim().toLowerCase()===roomName.toLowerCase());
     let changed=false;
@@ -286,6 +287,43 @@
       if(!exists){
         state.inventoryItems.push({id:uid(),name,category:"Household",quantity:1,status:"Have",roomId:room.id,locationId:"",notes:"Visible in Michelle’s room tour photo or identified by Michelle."});
         changed=true;
+      }
+    }
+    const roomDetails=roomIndex===0?[
+      {location:"Black tote",locationNotes:"Extra linens: sheets, blankets, and curtains.",items:[["Extra linens (sheets, blankets, curtains)","Household","Stored together in the black tote."]]},
+      {location:"Amazon box",locationNotes:"Shoes not currently in use or missing their match.",items:[["Shoes not currently in use or missing a match","Household","Stored in the Amazon box."]]}
+    ]:[
+      {location:"Vanity top",locationNotes:"Personal care and supplement items seen on the vanity.",items:[
+        ["Clear L-Lysine 500 mg","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Spring Valley L-Lysine 500 mg","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Spring Valley Women’s Multi gummies","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Spring Valley Cranberry","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Nature’s Bounty Probiotic 10","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Blissmi D-Mannose & Cranberry gummies","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Trilogy Vitamin C Booster","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Force Factor Ultra Berberine","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Perfect ACAI","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Skincare, body-care, and makeup items (details not legible)","Personal care","A group of items is visible, but exact contents and counts are unknown."]
+      ]}
+    ];
+    const normalized=value=>String(value||"").trim().toLowerCase().replace(/\\s+/g," ");
+    for(const detail of roomDetails){
+      let location=state.inventoryLocations.find(loc=>String(loc.roomId||"")===String(room.id)&&normalized(loc.name)===normalized(detail.location));
+      if(!location){
+        location={id:uid(),roomId:room.id,name:detail.location,notes:detail.locationNotes};
+        state.inventoryLocations.push(location);changed=true;
+      }else if(!location.notes&&detail.locationNotes){
+        location.notes=detail.locationNotes;changed=true;
+      }
+      for(const [name,category,notes] of detail.items){
+        const exists=state.inventoryItems.some(item=>
+          normalized(item.name)===normalized(name)&&
+          (String(item.roomId||"")===String(room.id)||String(item.locationId||"")===String(location.id))
+        );
+        if(!exists){
+          state.inventoryItems.push({id:uid(),name,category,quantity:1,status:"Have",roomId:room.id,locationId:location.id,notes});
+          changed=true;
+        }
       }
     }
     if(changed)await save();
