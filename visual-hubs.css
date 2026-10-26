@@ -682,3 +682,37 @@ body:has(#app .visual-hub) .life-tools-fab{
 .vh-profile-home .food-profile-dinner>span{color:#8f6c98;font-size:.52rem;font-weight:850;letter-spacing:.08em}
 .vh-profile-home .food-profile-dinner>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:390px){.vh-profile-home .food-profile-progress{padding:7px 6px!important}.vh-profile-home .food-profile-ring{width:34px;height:34px}.vh-profile-home .food-profile-ring-item>small{font-size:.42rem}}
+
+/* Shared compact page summaries: the selected profile is already in the roster. */
+.life-sim-compact-hud{display:block!important;gap:0!important;margin:0 0 7px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.life-sim-compact-hud .life-sim-toolbar{margin:0!important}
+.life-sim-page-summary{display:block;margin:6px 0 9px;padding:9px 10px;border:1px solid #ead7e4;border-radius:17px;background:rgba(255,255,255,.9);color:#30243a}
+.life-sim-summary-head{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-bottom:6px}
+.life-sim-summary-head>b{font-size:.78rem}
+.life-sim-summary-head>small{font-size:.61rem;color:#756c7b}
+.life-sim-summary-rings{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:4px;text-align:center}
+.life-sim-summary-item{min-width:0;display:grid;justify-items:center;align-content:start}
+.life-sim-summary-ring{--life-pct:0%;--life-ring:#b875b4;position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:conic-gradient(from -90deg,var(--life-ring) 0 var(--life-pct),#eadfea var(--life-pct) 100%);color:#30243a}
+.life-sim-summary-ring:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#fffafc}
+.life-sim-summary-ring>span{position:relative;font-size:.62rem;font-weight:850}
+.life-sim-summary-item>b{margin-top:3px;font-size:.57rem;line-height:1.05}
+.life-sim-summary-item>small{margin-top:2px;color:#756c7b;font-size:.52rem;line-height:1.05}
+.life-sim-summary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.life-sim-summary-stat{min-width:0;padding:5px 6px;border-radius:9px;background:#f8eff6;text-align:center}
+.life-sim-summary-stat>small{display:block;color:#756c7b;font-size:.57rem;line-height:1.05}
+.life-sim-summary-stat>b{display:block;margin-top:2px;font-size:.67rem;line-height:1.08;overflow-wrap:anywhere}
+.visual-hub:not(.vh-profile-home)>.vh-heading,.visual-hub:not(.vh-profile-home)>.vh-focus{display:none!important}
+.care-one-screen-shell .care-page-heading,.spirit-dashboard .spirit-heading,.household-one-screen-shell .household-map-title{display:none!important}
+.life-sim-compact-hud>.food-profile-progress{display:block!important;margin:6px 0 9px!important;padding:8px 9px!important;border:1px solid #ead7e4!important;border-radius:17px!important;background:rgba(255,255,255,.9)!important}
+.life-sim-compact-hud .food-profile-progress-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;color:#30283a}
+.life-sim-compact-hud .food-profile-progress-head>b{font-size:.73rem}
+.life-sim-compact-hud .food-profile-progress-head>span{font-size:.59rem;color:#756c7b}
+.life-sim-compact-hud .food-profile-rings{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.life-sim-compact-hud .food-profile-ring-item{display:grid;justify-items:center;align-content:start;min-width:0;text-align:center}
+.life-sim-compact-hud .food-profile-ring{--food-ring:0%;position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:conic-gradient(from -90deg,var(--food-ring-color) 0 var(--food-ring),#eadfea var(--food-ring) 100%);color:#35253d}
+.life-sim-compact-hud .food-profile-ring:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#fffafc}
+.life-sim-compact-hud .food-profile-ring>span{position:relative;font-size:.58rem;font-weight:850;line-height:1}
+.life-sim-compact-hud .food-profile-ring-item>b{max-width:100%;margin-top:3px;font-size:.53rem;line-height:1.05;overflow-wrap:anywhere}
+.life-sim-compact-hud .food-profile-ring-item>small{margin-top:2px;font-size:.46rem;line-height:1.05;color:#756c7b}
+.life-sim-compact-hud .food-profile-dinner{display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:5px;border-top:1px solid #eee4ed;font-size:.61rem}
+@media(max-width:390px){.life-sim-page-summary{padding:7px 8px}.life-sim-summary-ring{width:36px;height:36px}.life-sim-summary-item>small{font-size:.48rem}.life-sim-compact-hud .food-profile-rings{gap:3px}.life-sim-compact-hud .food-profile-ring{width:34px;height:34px}}
