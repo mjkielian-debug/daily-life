@@ -108,14 +108,12 @@
         row.end = "20:20";
         row.title = "Pajamas + get settled into bed";
         row.detail = "Finish pajamas and get into bed · 10 minutes before reading.";
-
+      }
       if(row.templateKey === "tomorrow-prep"){
         row.start = "19:30";
         row.end = "20:00";
         row.title = "Check tomorrow + stage clothes / bags / keys";
         row.detail = "Check tomorrow’s calendar · stage clothes/bags/keys · 5-minute kitchen / house close.";
-      }
-
       }
     }
     return rows;
