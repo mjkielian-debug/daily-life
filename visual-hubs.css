@@ -663,3 +663,22 @@ body:has(#app .visual-hub) .life-tools-fab{
  .vh-profile-home .df-range-row:before{font-size:.61rem}
  .vh-profile-home .df-calendar{flex-basis:25px!important;width:25px!important;height:25px!important}
 }
+
+/* The selected family member is already shown in the roster; use that space for daily progress. */
+.vh-profile-home>.vh-heading,.vh-profile-home>.vh-profile-actions{display:none!important}
+.vh-profile-home .df-range-row:before{display:none!important}
+.vh-profile-home .food-profile-progress{display:block!important;grid-column:1/-1;margin:0 0 5px!important;padding:8px 9px!important;border:1px solid #eadce9!important;border-radius:15px!important;background:rgba(255,255,255,.88)!important}
+.vh-profile-home .food-profile-progress-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;color:#30283a}
+.vh-profile-home .food-profile-progress-head>b{font-size:.73rem}
+.vh-profile-home .food-profile-progress-head>span{font-size:.59rem;color:#756c7b}
+.vh-profile-home .food-profile-rings{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.vh-profile-home .food-profile-ring-item{display:grid;justify-items:center;align-content:start;min-width:0;text-align:center}
+.vh-profile-home .food-profile-ring{--food-ring:0%;position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:conic-gradient(from -90deg,var(--food-ring-color) 0 var(--food-ring),#eadfea var(--food-ring) 100%);color:#35253d}
+.vh-profile-home .food-profile-ring:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}
+.vh-profile-home .food-profile-ring>span{position:relative;font-size:.58rem;font-weight:850;line-height:1}
+.vh-profile-home .food-profile-ring-item>b{max-width:100%;margin-top:3px;font-size:.53rem;line-height:1.05;overflow-wrap:anywhere}
+.vh-profile-home .food-profile-ring-item>small{margin-top:2px;font-size:.46rem;line-height:1.05;color:#756c7b}
+.vh-profile-home .food-profile-dinner{display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:5px;border-top:1px solid #eee4ed;font-size:.61rem}
+.vh-profile-home .food-profile-dinner>span{color:#8f6c98;font-size:.52rem;font-weight:850;letter-spacing:.08em}
+.vh-profile-home .food-profile-dinner>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:390px){.vh-profile-home .food-profile-progress{padding:7px 6px!important}.vh-profile-home .food-profile-ring{width:34px;height:34px}.vh-profile-home .food-profile-ring-item>small{font-size:.42rem}}
