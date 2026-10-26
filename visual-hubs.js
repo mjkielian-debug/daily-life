@@ -162,7 +162,7 @@ function dayFlowRoutineStrip(date){
  if(date!==ymd()||typeof selfCareHabits!=="function"||typeof dailyReviewStatus!=="function")return"";
  const habits=selfCareHabits();if(!habits.length)return"";
  const groups=[["morning","Morning"],["anytime","Anytime"],["evening","Evening"]];
- return `<section class="df-routines"><div class="df-section-head"><div><span class="df-kicker">ROUTINES</span><h2>Daily check-ins</h2></div><button type="button" onclick="openCareHubSection('self')">Open routines ›</button></div><div class="df-routine-grid">${groups.map(([key,label])=>{const rows=habits.filter(h=>(h.routine||"anytime")===key),done=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="yes").length,unknown=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="unknown").length,no=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="no").length;return `<button type="button" class="df-routine" onclick="openCareHubSection('self')"><b>${label}</b><strong>${done}/${rows.length}</strong><small>${[unknown?unknown+" unmarked":"",no?no+" marked no":""].filter(Boolean).join(" · ")||"Done"}</small><span class="df-mini-track"><i style="width:${rows.length?Math.round(100*done/rows.length):0}%"></i></span></button>`}).join("")}</div><p>Unmarked check-ins stay unknown; they aren't counted as skipped.</p></section>`;
+ return `<section class="df-routines"><div class="df-section-head"><div><span class="df-kicker">ROUTINES</span><h2>Daily check-ins</h2></div><button type="button" onclick="openDailyReview('${date}')">Open routines ›</button></div><div class="df-routine-grid">${groups.map(([key,label])=>{const rows=habits.filter(h=>(h.routine||"anytime")===key),done=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="yes").length,unknown=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="unknown").length,no=rows.filter(h=>dailyReviewStatus("care",h.key,date)==="no").length;return `<button type="button" class="df-routine" onclick="openDailyReview('${date}')"><b>${label}</b><strong>${done}/${rows.length}</strong><small>${[unknown?unknown+" unmarked":"",no?no+" marked no":""].filter(Boolean).join(" · ")||"Done"}</small><span class="df-mini-track"><i style="width:${rows.length?Math.round(100*done/rows.length):0}%"></i></span></button>`}).join("")}</div><p>Unmarked check-ins stay unknown; they aren't counted as skipped.</p></section>`;
 }
 function dayFlowBlockMarkup(item,date,nowMinute){
  const start=hmMinutes(item.start),end=hmMinutes(item.end),active=date===ymd()&&start!==null&&end!==null&&start<=nowMinute&&nowMinute<end;
@@ -183,8 +183,9 @@ function dayFlowWeekMonthOverview(mode,date){
 }
 function dayFlowAtAGlance(date){
  if(date!==ymd())return"";
- const meal=typeof todayMeal==="function"?todayMeal():null,oz=typeof water==="function"?Math.round(water()):0;
- return `<section class="df-glance" aria-label="Today at a glance"><button type="button" onclick="openMeal('${date}')"><span>TONIGHT</span><b>${esc(meal?.dish||"Dinner not planned")}</b><small>Meal plan ›</small></button><button type="button" onclick="openCareHubSection('water')"><span>WATER</span><b>${oz} <small>/ 78 oz</small></b><small>Hydration log ›</small></button></section>`;
+ const meal=typeof todayMeal==="function"?todayMeal():null,oz=typeof water==="function"?Math.round(water()):0,
+   configured=state.settings?.nutritionGoals||{},goal=Number(configured.waterTarget||state.settings?.waterTarget)||78,pct=Math.min(100,Math.round(100*oz/goal));
+ return `<section class="df-glance" aria-label="Today at a glance"><div class="df-glance-item"><span>TONIGHT</span><b>${esc(meal?.dish||"Dinner not planned")}</b><small>${meal?.dish?"Dinner is on the plan":"No dinner choice saved yet"}</small></div><div class="df-glance-item"><span>WATER</span><b>${pct}% complete</b><small>${oz} / ${goal} oz of your daily goal</small></div></section>`;
 }
 function dayFlowTimeline(date){
  const items=itineraryDayItems(date),now=new Date(),isToday=date===ymd(),nowMinute=isToday?now.getHours()*60+now.getMinutes():-1;
