@@ -1,5 +1,5 @@
 {
-  "build": "20261025-household-fixes4",
+  "build": "20261025-evening-prep5",
   "released": "2026-10-25",
   "ui": "Enables ongoing cloud sync with automatic conflict recovery, keeps changed device data, and retains a recovery copy of the previous cloud snapshot.",
   "data_version": "No data schema changes."
