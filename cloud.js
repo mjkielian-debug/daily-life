@@ -521,10 +521,12 @@ function cloudStateForUpload(){
   // Attach a short rolling Day Flow plan for the push dispatcher. Generate it
   // from an isolated copy because itineraryDayItems may fill missing family-day data.
   const scheduleSource=structuredClone(copy),schedule=[],previousState=state;
+  let scheduleDate="";
   try{
     if(typeof itineraryDayItems==="function"&&typeof ymd==="function"){
       state=scheduleSource;
       const today=ymd();
+      scheduleDate=today;
       for(let offset=0;offset<7;offset++){
         const date=shiftDateString(today,offset);
         for(const row of itineraryDayItems(date)||[]){
@@ -545,12 +547,14 @@ function cloudStateForUpload(){
     state=previousState;
   }
   copy.dailyLifeNotificationSchedule=schedule;
+  copy.dailyLifeNotificationScheduleDate=scheduleDate;
   return copy;
 }
 
 function cloudStateSignature(){
   const signatureState=cloudStateForUpload();
   delete signatureState.dailyLifeNotificationSchedule;
+  delete signatureState.dailyLifeNotificationScheduleDate;
   const text=JSON.stringify(signatureState);
   let h=2166136261;
   for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}
@@ -667,6 +671,9 @@ async function cloudPrepareAutoSync(){
     if(remoteIsOlderThanLastPush||!lastSignature||signature!==lastSignature)await cloudPushSnapshotInternal(true);
   }
   await cloudPullLifeEntries(false);
+  if(cloudAutoEnabled()&&cloudAutoCanPush&&snapshot?.state&&snapshot.state.dailyLifeNotificationScheduleDate!==ymd()){
+    await cloudPushSnapshotInternal(true);
+  }
 }
 
 async function cloudPushSnapshotInternal(forceOverwrite=false){
