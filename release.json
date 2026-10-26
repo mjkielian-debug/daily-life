@@ -1,6 +1,6 @@
 {
-  "build": "20261026-reading-panel1",
+  "build": "20261026-profile-roster1",
   "released": "2026-10-26",
-  "ui": "Shows the saved reading log and hides the active player panel on Reading.",
+  "ui": "Keeps the compact profile selector visible on profile home while hiding the active player panel.",
   "data_version": "No data schema changes."
 }
