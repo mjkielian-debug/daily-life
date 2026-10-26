@@ -234,9 +234,9 @@
 
   // Keep the nightly vacuum tied to the bedtime boundary even if a stale
   // flexible-task slot would otherwise place it in the afternoon.
-  const baseNightVacuumDayItems = itineraryDayItems;
+  const baseNightVacuumWithEveningEventDayItems = itineraryDayItems;
   itineraryDayItems = function(date){
-    let rows = baseNightVacuumDayItems(date);
+    let rows = baseNightVacuumWithEveningEventDayItems(date);
     const openEveningFamilyEvent=(state.events||[]).some(event=>{
       const start=hmMinutes(event.startTime),text=[event.type,event.title,event.notes].filter(Boolean).join(" ");
       return event.date===date&&!["cancelled","paused"].includes(String(event.status||"").toLowerCase())&&start!==null&&start>=17*60&&!event.endTime&&/family|community|birthday|trunk-or-treat/i.test(text);
