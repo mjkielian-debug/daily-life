@@ -1,6 +1,6 @@
 {
-  "build": "20261026-task-notifications1",
+  "build": "20261026-auto-flow-alerts1",
   "released": "2026-10-26",
-  "ui": "Adds per-task notification controls and times for opted-in reminders.",
+  "ui": "Sends automatic Day Flow alerts around each scheduled block start.",
   "data_version": "No data schema changes."
 }
