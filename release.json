@@ -1,6 +1,6 @@
 {
-  "build": "20261026-pink-status8",
+  "build": "20261026-reading-panel1",
   "released": "2026-10-26",
-  "ui": "Keeps the app status bar blush when the daily palette refreshes.",
+  "ui": "Shows the saved reading log and hides the active player panel on Reading.",
   "data_version": "No data schema changes."
 }
