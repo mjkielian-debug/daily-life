@@ -575,3 +575,41 @@ body:has(#app .visual-hub) .life-tools-fab{
 .visual-hub-home .vh-heading>div:last-child{display:flex;align-items:center;gap:5px}
 .visual-hub-home .directive-focus-home{display:none!important}
 @media(max-width:360px){.visual-hub-home .vh-heading>div:last-child{gap:3px}.visual-hub-home .vh-add,.visual-hub-home .vh-home-plan{padding:7px!important;font-size:.6rem!important}}
+
+/* Profile home: keep the useful day context while making its controls compact. */
+.vh-profile-home{gap:7px!important}
+.vh-profile-home>.vh-heading{min-height:0;padding:3px 2px 5px;gap:7px}
+.vh-profile-home>.vh-heading .eyebrow{font-size:.58rem}
+.vh-profile-home>.vh-heading h1{font-size:1.3rem;line-height:1.08;margin:1px 0}
+.vh-profile-home>.vh-heading p{display:none}
+.vh-profile-home>.vh-heading .vh-add{font-size:.65rem!important;min-height:32px!important;padding:6px 9px!important}
+.vh-profile-home>.vh-profile-actions{gap:5px}
+.vh-profile-home>.vh-profile-actions .btn{font-size:.65rem!important;min-height:31px!important;padding:6px 9px!important;border-radius:999px!important}
+.vh-profile-home .day-flow-dashboard{margin-top:0}
+.vh-profile-home .df-heading{margin:3px 0 6px;gap:7px}
+.vh-profile-home .df-heading h1{font-size:1.02rem}
+.vh-profile-home .df-heading p{display:none}
+.vh-profile-home .df-kicker{font-size:.58rem;letter-spacing:.1em}
+.vh-profile-home .df-add{display:none!important}
+.vh-profile-home .df-range-row{display:flex;flex-wrap:nowrap;gap:4px;margin:0 0 6px}
+.vh-profile-home .df-range{min-width:0;flex:1 1 0;padding:5px 6px;font-size:.62rem;line-height:1.1;white-space:nowrap}
+.vh-profile-home .df-calendar{flex:0 0 30px;width:30px;justify-content:center;padding:5px;font-size:.7rem}
+.vh-profile-home .df-calendar span{display:none}
+.vh-profile-home .df-glance{gap:5px;margin:0 0 7px}
+.vh-profile-home .df-glance-item{display:grid;gap:2px;min-width:0;padding:7px 8px;background:#fff;border:1px solid var(--df-line);border-radius:12px}
+.vh-profile-home .df-glance-item>span{font-size:.54rem;font-weight:800;letter-spacing:.1em;color:var(--df-violet)}
+.vh-profile-home .df-glance-item>b{font-size:.74rem;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vh-profile-home .df-glance-item>small{font-size:.6rem;line-height:1.1;color:var(--df-soft)}
+.vh-profile-home .df-timeline{padding:10px;margin:7px 0}
+.vh-profile-home .df-timeline .df-section-head{margin-bottom:5px}
+.vh-profile-home .df-timeline .df-section-head h2{font-size:.85rem}
+.vh-profile-home .df-timeline .df-section-head>button,.vh-profile-home .df-timeline-footer,.vh-profile-home .df-open-time>button{display:none!important}
+.vh-profile-home .df-block{padding:7px 0;grid-template-columns:45px 12px minmax(0,1fr) 10px;gap:6px}
+.vh-profile-home .df-block-content b{font-size:.8rem}
+.vh-profile-home .df-block-content>span{font-size:.67rem}
+.vh-profile-home .df-open-time{padding:9px 0}
+.vh-profile-home .df-routines{padding:10px;margin:7px 0}
+.vh-profile-home .df-routine-grid{gap:5px}
+.vh-profile-home .df-routine{padding:7px}
+.vh-profile-home .df-routine strong{font-size:.95rem}
+.vh-profile-home .df-routine small,.vh-profile-home .df-routines>p{font-size:.58rem}
