@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261026-assistant-sync2";
+const CACHE_NAME="daily-life-shell-20261026-auto-update3";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -91,6 +91,7 @@ self.addEventListener("install",event=>{
       const response=await fetch(url,{cache:"reload"});
       if(response.ok)await cache.put(new URL(url,self.location).pathname,response.clone());
     }));
+    await self.skipWaiting();
   })());
 });
 
@@ -103,6 +104,8 @@ self.addEventListener("activate",event=>{
     const names=await caches.keys();
     await Promise.all(names.filter(name=>name.startsWith("daily-life-shell-")&&name!==CACHE_NAME).map(name=>caches.delete(name)));
     await self.clients.claim();
+    const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+    await Promise.allSettled(windows.map(client=>typeof client.navigate==="function"?client.navigate(client.url):Promise.resolve()));
   })());
 });
 
