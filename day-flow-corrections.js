@@ -239,7 +239,7 @@
     let rows = baseNightVacuumDayItems(date);
     const openEveningFamilyEvent=(state.events||[]).some(event=>{
       const start=hmMinutes(event.startTime),text=[event.type,event.title,event.notes].filter(Boolean).join(" ");
-      return event.date===date&&!/[cancelled|paused]/i.test(String(event.status||""))&&start!==null&&start>=17*60&&!event.endTime&&/family|community|birthday|trunk-or-treat/i.test(text);
+      return event.date===date&&!["cancelled","paused"].includes(String(event.status||"").toLowerCase())&&start!==null&&start>=17*60&&!event.endTime&&/family|community|birthday|trunk-or-treat/i.test(text);
     });
     if(openEveningFamilyEvent)rows=rows.filter(row=>row.templateKey!=="dinner"&&!/^dinner\s*\+\s*kitchen reset$/i.test(String(row.title||"")));
     const hasPickupPrep = (state.tasks || []).some(task =>
