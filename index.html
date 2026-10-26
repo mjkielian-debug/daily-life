@@ -2828,7 +2828,7 @@ function migrateState(s){
       Object.assign(r,seed,{status:"confirmed"});
     };
     upsert({id:"mon-demitri-everett-musical",title:"Everett musical · full cast",child:"Demitri",weekday:1,startTime:"15:00",endTime:"16:30",type:"school",location:"Everett",notes:"Monday full-cast rehearsal · pickup 4:30 PM"});
-    upsert({id:"mon-leo-herpetology",title:"Herpetology",child:"Leo",weekday:1,startTime:"14:52",endTime:"16:30",type:"activity",location:"Irving",notes:"Monday after-school club · pickup around 4:15–4:30 PM"});
+    upsert({id:"mon-leo-herpetology",title:"Herpetology",child:"Leo",weekday:2,startTime:"14:52",endTime:"16:30",type:"activity",location:"Irving",notes:"Tuesday after-school club · pickup around 4:15–4:30 PM"});
     upsert({id:"wed-demitri-after-school-club",title:"After-school club",child:"Demitri",weekday:3,startTime:"14:52",endTime:"16:00",type:"school",location:"Everett",notes:"Wednesday club · pickup 4:00 PM"});
     upsert({id:"thu-leo-dnd",title:"Dungeons & Dragons",child:"Leo",weekday:4,startTime:"14:52",endTime:"16:15",type:"activity",location:"Irving",notes:"Thursday after-school D&D · pickup about 4:15 PM"});
     upsert({id:"thu-food-fort",title:"Food Fort",child:"Family",weekday:4,startTime:"17:30",endTime:"18:30",type:"family",location:"",notes:"Thursday free meal · snack tray after if needed"});
@@ -2906,6 +2906,37 @@ function migrateState(s){
     cleaned=cleaned.filter(r=>!redundant.has(String(r.id||"")));
     s.settings.recurringFamilyEvents=cleaned;
     s.settings.familyScheduleDedupeVersion=2;
+  }
+  // Leo's corrected weekly clubs: Herpetology Tuesday and D&D Thursday.
+  // Repair old recurring rules and already generated future occurrences once.
+  if(Number(s.settings.leoClubWeekdayCorrectionVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    const herp=rules.find(r=>String(r.id||"")==="mon-leo-herpetology"||/herpetology/i.test(String(r.title||"")));
+    if(herp){
+      herp.weekday=2;
+      herp.notes="Tuesday after-school club · pickup around 4:15–4:30 PM.";
+    }
+    const dnd=rules.find(r=>String(r.id||"")==="thu-leo-dnd"||/dungeons?\s*(?:&|and)\s*dragons/i.test(String(r.title||"")));
+    if(dnd)dnd.weekday=4;
+    s.settings.recurringFamilyEvents=rules.filter(r=>String(r.id||"")!=="monday-late-kid-pickups");
+    const plusDay=date=>{
+      const d=new Date(String(date||"")+"T12:00:00Z");
+      if(Number.isNaN(d.getTime()))return String(date||"");
+      d.setUTCDate(d.getUTCDate()+1);
+      return d.toISOString().slice(0,10);
+    };
+    for(const e of s.events||[]){
+      if(String(e.recurringRuleId||"")===(herp&&herp.id||"7023b7a2-de64-478f-ae26-ac483b1ab5e8")&&
+         new Date(String(e.date||"")+"T12:00:00Z").getUTCDay()===1){
+        e.date=plusDay(e.date);
+        if(e.recurringOccurrenceDate)e.recurringOccurrenceDate=plusDay(e.recurringOccurrenceDate);
+      }
+    }
+    const clubDays=new Set((s.events||[]).filter(e=>e.child==="Leo"&&e.status!=="cancelled"&&
+      /herpetology|dungeons?\s*(?:&|and)\s*dragons/i.test(String(e.title||""))).map(e=>String(e.date||"")));
+    s.dailyLifeNotificationSchedule=(s.dailyLifeNotificationSchedule||[]).filter(item=>
+      !(String(item.id||"").startsWith("leo-school-pickup:")&&clubDays.has(String(item.date||""))));
+    s.settings.leoClubWeekdayCorrectionVersion=1;
   }
   // Quarter-one Everett club ended October 9. Retire BOTH generations of
   // Wednesday rules and pending generated events; preserve historical records.
@@ -9344,7 +9375,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261026-auto-update6";
+const DAILY_LIFE_BUILD="20261026-auto-update7";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
