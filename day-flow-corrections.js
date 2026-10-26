@@ -91,6 +91,17 @@
   const baseFinalSuggestedBlocks = itinerarySuggestedBlocks;
   itinerarySuggestedBlocks = function(date){
     const rows = baseFinalSuggestedBlocks(date);
+    const weekday = new Date(String(date) + "T12:00:00").getDay();
+    const prepEnabled = state.settings?.itinerary?.routinePreferences?.[weekday + ":tomorrow-prep"]?.enabled !== false;
+    if(weekday !== 5 && weekday !== 6 && prepEnabled && !rows.some(row => row.templateKey === "tomorrow-prep")){
+      rows.push({
+        templateKey:"tomorrow-prep", start:"19:30", end:"20:00",
+        title:"Check tomorrow + stage clothes / bags / keys",
+        detail:"Check tomorrow’s calendar · stage clothes/bags/keys · 5-minute kitchen / house close.",
+        icon:"✦", id:"suggest:"+date+":tomorrow-prep:daily",
+        fixed:false, kind:"routine", source:"suggested", learnedRoutine:false
+      });
+    }
     for(const row of rows){
       if(row.templateKey === "bedtime-settle"){
         row.start = "20:10";
