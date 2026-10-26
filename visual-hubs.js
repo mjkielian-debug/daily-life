@@ -183,6 +183,7 @@ function dayFlowWeekMonthOverview(mode,date){
 }
 function dayFlowAtAGlance(date){
  if(date!==ymd())return"";
+ if(typeof view!=="undefined"&&(view==="today"||view==="itinerary"))return"";
  if(typeof view!=="undefined"&&view==="family"&&typeof foodProfileQuickProgress==="function")return foodProfileQuickProgress();
  const meal=typeof todayMeal==="function"?todayMeal():null,oz=typeof water==="function"?Math.round(water()):0,
    configured=state.settings?.nutritionGoals||{},goal=Number(configured.waterTarget||state.settings?.waterTarget)||78,pct=Math.min(100,Math.round(100*oz/goal));
