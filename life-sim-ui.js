@@ -168,7 +168,8 @@ function lifeSimPageSummaryMarkup(){
   if(view==="family")return "";
   if(view==="home"&&typeof foodProfileQuickProgress==="function")return foodProfileQuickProgress();
   let model=null;
-  const modelPage=(view==="today"||view==="itinerary")?"itinerary":view;\n  if(typeof visualHubModel==="function")model=visualHubModel(modelPage);
+  const modelPage=(view==="today"||view==="itinerary")?"itinerary":view;
+  if(typeof visualHubModel==="function")model=visualHubModel(modelPage);
   if(view==="selfcare"){model={title:"Self care",metrics:[]};}
   if(!model||!model.title)return "";
   const configured=state.settings?.nutritionGoals||{},
