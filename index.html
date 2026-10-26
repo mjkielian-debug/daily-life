@@ -3403,11 +3403,21 @@ function pantryItems(){return Array.isArray(state.pantry?.items)?state.pantry.it
 function pantryItemName(x){return typeof x==="string"?x:String(x?.name||x?.item||"").trim()}
 function pantryCard(){
   const items=pantryItems(),latest=[...(state.pantryScans||[])].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0];
-  const status=latest?.status==="queued"||latest?.status==="uploading"?"✨ Analyzing your kitchen photos…":latest?.status==="error"?"Scan needs another try":items.length?`${items.length} items recognized`:"No kitchen scan yet";
-  return `<div class="card priority-card pantry-card"><div class="section-title"><div><div class="eyebrow">📸 Kitchen on hand</div><h2>${esc(status)}</h2><div class="muted small">Photograph your fridge, freezer, pantry, and counters. Suggestions will prioritize what you already have and show only the extras to buy.</div></div><button class="btn primary" onclick="openPantryScan()">Scan food</button></div>
-    ${items.length?`<div class="pantry-chips">${items.slice(0,36).map(x=>`<span class="pantry-chip">${esc(pantryItemName(x))}</span>`).join("")}</div>${items.length>36?`<div class="muted small">+${items.length-36} more items</div>`:""}`:`<div class="notice">Take a few overlapping photos so labels, produce, freezer food, and pantry shelves are visible.</div>`}
-    ${state.pantry?.updatedAt?`<div class="muted small" style="margin-top:8px">Last analyzed ${esc(new Date(state.pantry.updatedAt).toLocaleString())}</div>`:""}
+  const status=latest?.status==="queued"||latest?.status==="uploading"?"✨ Analyzing your kitchen photos…":latest?.status==="error"?"Scan needs another try":items.length?`${items.length} items on hand`:"No kitchen items yet";
+  return `<div class="card priority-card pantry-card"><div class="section-title"><div><div class="eyebrow">📸 Kitchen on hand</div><h2>${esc(status)}</h2><div class="muted small">Photograph your fridge, freezer, pantry, and counters. Suggestions will prioritize what you already have and show only the extras to buy.</div></div><div class="actions"><button class="btn" onclick="openPantryEdit()">Edit list</button><button class="btn primary" onclick="openPantryScan()">Scan food</button></div></div>
+    ${items.length?`<div class="pantry-chips">${items.slice(0,36).map(x=>`<span class="pantry-chip">${esc(pantryItemName(x))}</span>`).join("")}</div>${items.length>36?`<div class="muted small">+${items.length-36} more items</div>`:""}`:`<div class="notice">Add foods manually or take a few overlapping photos so labels, produce, freezer food, and pantry shelves are visible.</div>`}
+    ${state.pantry?.manualUpdatedAt?`<div class="muted small" style="margin-top:8px">List updated ${esc(new Date(state.pantry.manualUpdatedAt).toLocaleString())}</div>`:state.pantry?.updatedAt?`<div class="muted small" style="margin-top:8px">Last analyzed ${esc(new Date(state.pantry.updatedAt).toLocaleString())}</div>`:""}
   </div>`;
+}
+function openPantryEdit(){
+  const items=pantryItems().map(pantryItemName).filter(Boolean);
+  modal("Edit pantry list",`<div class="stack"><p>Enter the foods currently on hand, one per line. Remove anything you no longer have.</p><label>Foods on hand<textarea id="pantryItemsEdit" rows="12" placeholder="Ground beef&#10;Rice pudding">${esc(items.join("\n"))}</textarea></label></div>`,"Save pantry list",async()=>{
+    const names=[...new Map(String($("#pantryItemsEdit")?.value||"").split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean).map(x=>[x.toLocaleLowerCase(),x])).values()];
+    state.pantry=state.pantry&&typeof state.pantry==="object"?state.pantry:{};
+    state.pantry.items=names;
+    state.pantry.manualUpdatedAt=new Date().toISOString();
+    await save();closeModal();render();
+  });
 }
 function openPantryScan(){
   modal("Scan food on hand",`<div class="stack"><div class="notice"><b>Take several pictures.</b><br>Fridge shelves, freezer, pantry/cabinets, fruit bowl, bread, and anything else you want considered. Daily Life will identify visible food and use it for meal suggestions.</div><label>Kitchen photos<input id="pantryPhotos" type="file" accept="image/*" multiple></label><label class="task"><input id="replacePantry" type="checkbox" checked><span><b>This is a full kitchen scan</b><div class="muted small">Replace the old inventory with what these photos show. Turn this off when you are only adding one extra shelf/photo.</div></span></label><div class="muted small">Select several photos at once when possible.</div></div>`,"Analyze photos",async()=>{
