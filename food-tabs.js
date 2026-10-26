@@ -114,22 +114,27 @@ function foodGoalDashboardCard(){
     estimated=f.rows.some(x=>!!x.nutritionEstimated),
     incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
   return "<div class=\"card food-intake-card\"><div class=\"section-title\"><div><div class=\"eyebrow\">My intake today</div><h2>Daily goal progress</h2><div class=\"muted small\">Percentages use nutrients recorded for today. Missing label values stay unknown.</div></div><button class=\"btn primary\" onclick=\"openFood()\">+ Food / drink</button></div>"+
-    (estimated?"<div class=\"notice\"><b>Some nutrition is estimated.</b> Estimated values are marked in the food log.</div>":"")+
-    (incomplete?"<div class=\"notice\"><b>Some nutrition is still unknown.</b> It is not counted as zero in these totals.</div>":"")+
+    (estimated||incomplete?"<div class=\"notice\">≈ Estimates marked · missing values stay unknown</div>":"")+
     group("Energy, macros + water",nutrients.slice(0,6))+
     group("Vitamins, minerals + daily limits",nutrients.slice(6))+
-    "<div class=\"muted small food-goal-note\">Sodium and added sugar show the portion of the daily maximum used. Values reflect only recorded or estimated nutrition.</div>"+
-    (f.rows.length?"<div class=\"mini-heading\">Logged today</div>"+f.rows.slice().reverse().slice(0,8).map(x=>"<div class=\"row compact-row\"><span><b>"+esc(x.name||"Food / drink")+"</b><div class=\"muted small\">"+(foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":"")+(x.nutritionEstimated?"≈ ":"")+(Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":"")+(Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":"")+(x.notes?" · "+esc(x.notes):"")+"</div></span></div>").join(""):"<div class=\"notice\">Nothing has been logged yet today.</div>")+
-    "<div class=\"actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodHubSection('trends')\">Open 7-day patterns</button></div></div>";
+    "<div class=\"muted small food-goal-note\">Sodium + added sugar are daily limits.</div>"+
+    (f.rows.length?"<details class=\"food-goal-log\"><summary>Food log · "+f.rows.length+" items <span>View</span></summary><div>"+f.rows.slice().reverse().map(x=>"<div class=\"food-goal-log-row\"><b>"+esc(x.name||"Food / drink")+"</b><span>"+(foodQuantity(x)!==1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" · ≈":"")+"</span></div>").join("")+"</div></details>":"<div class=\"muted small\">No food logged today.</div>")+
+    "<div class=\"actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">Open 7-day patterns</button></div></div>";
 }
 
 (function installFoodGoalProgressStyles(){
   if(document.getElementById("foodGoalProgressStyles"))return;
   const style=document.createElement("style");style.id="foodGoalProgressStyles";
-  style.textContent=".food-goal-group{margin-top:14px}.food-goal-group h3{font-size:.83rem;margin:0 0 8px;color:var(--cream)}.food-goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.food-goal-item{min-width:0;padding:8px;border:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--panel2) 70%,transparent)}.food-goal-head{display:grid;gap:3px;min-height:34px}.food-goal-head b{font-size:.75rem}.food-goal-head span{font-size:.68rem;color:var(--muted);overflow-wrap:anywhere}.food-goal-meter{height:7px;margin:7px 0 4px;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--text) 12%,transparent)}.food-goal-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .25s ease}.food-goal-item>small{font-size:.65rem;color:var(--muted)}.food-goal-note{margin-top:9px}@media(max-width:360px){.food-goal-grid{grid-template-columns:1fr}}";
+  style.textContent=".food-goal-group{margin-top:14px}.food-goal-group h3{font-size:.83rem;margin:0 0 8px;color:var(--cream)}.food-goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.food-goal-item{min-width:0;padding:8px;border:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--panel2) 70%,transparent)}.food-goal-head{display:grid;gap:3px;min-height:34px}.food-goal-head b{font-size:.75rem}.food-goal-head span{font-size:.68rem;color:var(--muted);overflow-wrap:anywhere}.food-goal-meter{height:7px;margin:7px 0 4px;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--text) 12%,transparent)}.food-goal-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .25s ease}.food-goal-item>small{font-size:.65rem;color:var(--muted)}.food-goal-note{margin-top:7px}.food-goal-log{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}.food-goal-log summary{display:flex;justify-content:space-between;cursor:pointer;font-size:.76rem;font-weight:800;list-style:none}.food-goal-log summary::-webkit-details-marker{display:none}.food-goal-log-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.72rem}.food-goal-log-row span{color:var(--muted)}@media(max-width:360px){.food-goal-grid{grid-template-columns:1fr}}";
   document.head.appendChild(style);
 })();
 
+// Use the compact goal-bar dashboard in every Food intake entry point, including the Intake modal.
+todayNutritionCard=foodGoalDashboardCard;
+function openFoodTrendsFromIntake(){
+  closeModal();
+  requestAnimationFrame(()=>openFoodHubSection("trends"));
+}
 function compactFoodToday(){
   return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${compactFoodCookingAhead()}${foodGoalDashboardCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
 }
