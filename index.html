@@ -711,7 +711,7 @@ function itineraryFixedItems(date){
               if(childName&&who&&!who.includes(childName))return false;
               return endM!==null&&ps!==null&&ps<=endM+20&&(pe===null||pe>=endM-20);
             });
-      if(endM!==null&&!explicitPickup)items.push({
+      if(endM!==null&&!explicitPickup&&!childOnlyAfterSchool)items.push({
         id:"pickup:"+e.id,start:minutesHm(Math.max(0,endM-15)),end:minutesHm(Math.min(24*60-1,endM+15)),
         title:"Pick up "+String(e.child||"kid"),detail:[e.title,e.location].filter(Boolean).join(" · "),
         fixed:true,kind:"family",icon:"🚗",source:"pickup",sourceId:e.id
@@ -945,6 +945,7 @@ function itineraryRoutineWindow(x,date){
   if(/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))return{start:desired,end:requestedEnd!==null?requestedEnd:Math.min(dayEnd,desired+15)};
   if(x.templateKey==="after-work")return{start:workEnd??desired,end:Math.min(dayEnd,(workEnd??desired)+150)};
   if(/^water-[123]$/.test(String(x.templateKey||"")))return{start:Math.max(dayStart,desired-45),end:Math.min(dayEnd,desired+50)};
+  if(["bedtime-electronics","bedtime-settle","leo-tree-reading"].includes(String(x.templateKey||"")))return{start:desired,end:requestedEnd!==null?requestedEnd:Math.min(dayEnd,desired+15)};
   if(x.templateKey==="after-school-launch")return{start:14*60+30,end:17*60+15};
   if(x.templateKey==="homework")return{start:15*60,end:19*60+15};
   if(x.templateKey==="meal-prep")return{start:Math.max(dayStart,desired-60),end:Math.min(dayEnd,desired+120)};
@@ -969,7 +970,7 @@ function itineraryFitRoutines(date,blockingItems,routines){
       continue;
     }
     const rawEnd=hmMinutes(x.end),
-          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||""))||x.templateKey==="bedtime-settle")?5:15,
+          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||""))||/^bedtime-(electronics|settle)$/.test(String(x.templateKey||""))||x.templateKey==="leo-tree-reading")?5:15,
           duration=Math.max(minimum,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
           window=itineraryRoutineWindow(x,date),
           candidateGaps=x.allowParallel?baseGaps:gaps;
@@ -9343,7 +9344,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261026-auto-update4";
+const DAILY_LIFE_BUILD="20261026-auto-update5";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9457,7 +9458,7 @@ async function registerAppWorker(){
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
-<script src="life-system.js?v=20261016-guided18"></script>
+<script src="life-system.js?v=20261026-pickup-window1"></script>
 <script src="life-orchestrator.js?v=20261017-refined-room-map1"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261016-guided33"></script>
@@ -9490,7 +9491,7 @@ window.addEventListener("load",()=>{
   registerAppWorker();
 },{once:true});
 </script>
-<script src="day-flow-corrections.js?v=20261026-night-vacuum1"></script>
+<script src="day-flow-corrections.js?v=20261026-night-vacuum2"></script>
 <script src="reading-wheel-fixes.js?v=20261026-readerwheel1"></script>
 </body>
 </html>
