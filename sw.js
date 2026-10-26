@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261026-auto-update3";
+const CACHE_NAME="daily-life-shell-20261026-auto-update4";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -132,13 +132,10 @@ async function staticAssetResponse(request,url,event){
   const cached=await cache.match(key);
   const refresh=fetch(request,{cache:"no-cache"}).then(async response=>{
     if(response.ok)await cache.put(key,response.clone());
-    return response;
+    return response.ok?response:null;
   }).catch(()=>null);
   event.waitUntil(refresh.then(()=>{}));
-  if(cached){
-    return cached;
-  }
-  return (await refresh) || (await cache.match(url.pathname)) || new Response("",{status:504});
+  return (await refresh) || cached || (await cache.match(url.pathname)) || new Response("",{status:504});
 }
 
 self.addEventListener("push",event=>{
