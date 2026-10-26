@@ -453,12 +453,17 @@ window.houseVisualInventoryOpen=async function(f,id){
  if(person?.isSelf&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
   const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
   const index=zones.findIndex(item=>item.id===id);
-  const room=await window.homeEnsureMichelleRoomInventory(index===0?0:1);
+  const label=(String(z.name||"")+" "+String(z.short||"")).toLowerCase();
+  const which=/entry|nook|beanbag|sitting/.test(label)?0:
+    /bed|bedroom|vanity/.test(label)?1:(index===0?0:1);
+  const room=await window.homeEnsureMichelleRoomInventory(which);
   if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
  }
  const room=localRoom(f,z);
  if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
- if(typeof openInventoryHubSection==="function")openInventoryHubSection("items");
+ if(typeof modal==="function"){
+  modal("Room inventory · "+(z.name||"Room"),'<p>No inventory is linked to this room yet. Open the room map to add room specific items and storage locations.</p>',"Close",closeModal);
+ }
 };
 window.houseVisualPersonTourStep=function(f,id,delta){
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===id),next=zones[index+Number(delta)];
