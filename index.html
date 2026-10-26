@@ -969,7 +969,7 @@ function itineraryFitRoutines(date,blockingItems,routines){
       continue;
     }
     const rawEnd=hmMinutes(x.end),
-          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||"")))?5:15,
+          minimum=(/^work-(dress|hygiene|dayflow|stretch|gather|commute)$/.test(String(x.templateKey||""))||/^water-[123]$/.test(String(x.templateKey||""))||/^monday-(kids-dress|kids-bathroom|kids-downstairs|leo-shower|school-checklist|dolly-hair|self-ready|stretch|school-launch)$/.test(String(x.templateKey||""))||x.templateKey==="bedtime-settle")?5:15,
           duration=Math.max(minimum,(rawEnd!==null&&rawEnd>desired)?rawEnd-desired:30),
           window=itineraryRoutineWindow(x,date),
           candidateGaps=x.allowParallel?baseGaps:gaps;
