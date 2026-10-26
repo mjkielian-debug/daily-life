@@ -518,10 +518,37 @@ function cloudStateForUpload(){
       }
     }
   }
+  // Attach a short rolling Day Flow plan for the push dispatcher. Generate it
+  // from an isolated copy because itineraryDayItems may fill missing family-day data.
+  const scheduleSource=structuredClone(copy),schedule=[],previousState=state;
+  try{
+    if(typeof itineraryDayItems==="function"&&typeof ymd==="function"){
+      state=scheduleSource;
+      const today=ymd();
+      for(let offset=0;offset<7;offset++){
+        const date=shiftDateString(today,offset);
+        for(const row of itineraryDayItems(date)||[]){
+          const kind=String(row?.kind||"");
+          if(!row?.start||row.done||row.nonBlocking||row.skippedByConflict||row.openTimeFallback||["gap","sleep","context","tentative"].includes(kind))continue;
+          const task=row.source==="task"&&row.sourceId
+            ?(scheduleSource.tasks||[]).find(item=>String(item.id)===String(row.sourceId))
+            :null;
+          if(task?.notificationsEnabled===true)continue;
+          const id=String(row.id||[kind,row.start,row.title].join(":"));
+          schedule.push({id,date,start:String(row.start),title:String(row.title||"Daily Life schedule"),kind});
+        }
+      }
+    }
+  }catch(error){
+    console.warn("Could not prepare the Day Flow notification schedule.",error);
+  }finally{
+    state=previousState;
+  }
+  copy.dailyLifeNotificationSchedule=schedule;
   return copy;
 }
 
-function cloudStateSignature(){
+function cloudStateSignature(){{
   const text=JSON.stringify(cloudStateForUpload());
   let h=2166136261;
   for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}
