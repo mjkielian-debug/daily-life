@@ -93,10 +93,10 @@
     const rows = baseFinalSuggestedBlocks(date);
     for(const row of rows){
       if(row.templateKey === "bedtime-settle"){
-        row.start = "19:30";
-        row.end = "19:45";
-        row.title = "Pajamas + settle into bed";
-        row.detail = "Finish pajamas and get settled in bed · 15 minutes before reading.";
+        row.start = "20:10";
+        row.end = "20:20";
+        row.title = "Pajamas + get settled into bed";
+        row.detail = "Finish pajamas and get into bed · 10 minutes before reading.";
       }
     }
     return rows;
@@ -118,8 +118,8 @@
     if(bedtimeErrand){
       const now = date === ymd() ? new Date() : null;
       const floor = now ? Math.ceil((now.getHours()*60 + now.getMinutes() + 5)/5)*5 : 0;
-      const start = Math.max(base.start, 18 * 60 + 45, floor);
-      const end = Math.min(base.end, 20 * 60 + 20);
+      const start = Math.max(base.start, 19 * 60 + 30, floor);
+      const end = Math.min(base.end, 20 * 60 + 10);
       return end - start >= taskMinutes ? {start, end} : null;
     }
     const end = Math.min(base.end, 20 * 60 + 30);
