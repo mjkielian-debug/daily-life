@@ -306,7 +306,7 @@
         ["Skincare, body-care, and makeup items (details not legible)","Personal care","A group of items is visible, but exact contents and counts are unknown."]
       ]}
     ];
-    const normalized=value=>String(value||"").trim().toLowerCase().replace(/\\s+/g," ");
+    const normalized=value=>String(value||"").trim().toLowerCase().replace(/\s+/g," ");
     for(const detail of roomDetails){
       let location=state.inventoryLocations.find(loc=>String(loc.roomId||"")===String(room.id)&&normalized(loc.name)===normalized(detail.location));
       if(!location){
