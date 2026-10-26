@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261026-bedtime-timing7";
+const CACHE_NAME="daily-life-shell-20261026-pink-status6";
 const APP_SHELL=[
   "./",
   "./index.html",
