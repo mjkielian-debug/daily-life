@@ -294,15 +294,15 @@
       {location:"Amazon box",locationNotes:"Shoes not currently in use or missing their match.",items:[["Shoes not currently in use or missing a match","Household","Stored in the Amazon box."]]}
     ]:[
       {location:"Vanity top",locationNotes:"Personal care and supplement items seen on the vanity.",items:[
-        ["Clear L-Lysine 500 mg","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Spring Valley L-Lysine 500 mg","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Spring Valley Women’s Multi gummies","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Spring Valley Cranberry","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Nature’s Bounty Probiotic 10","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Blissmi D-Mannose & Cranberry gummies","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Trilogy Vitamin C Booster","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Force Factor Ultra Berberine","Personal care","Seen on Michelle’s bedroom vanity."],
-        ["Perfect ACAI","Personal care","Seen on Michelle’s bedroom vanity."],
+        ["Clear L-Lysine 500 mg","Supplements","Vitamin/supplement on Michelle’s bedroom vanity."],
+        ["Spring Valley L-Lysine 500 mg","Supplements","Vitamin/supplement on Michelle’s bedroom vanity."],
+        ["Spring Valley Women’s Multi gummies","Supplements","Vitamin/supplement on Michelle’s bedroom vanity."],
+        ["Spring Valley Cranberry","Supplements","Supplement on Michelle’s bedroom vanity."],
+        ["Nature’s Bounty Probiotic 10","Supplements","Supplement on Michelle’s bedroom vanity."],
+        ["Blissmi D-Mannose & Cranberry gummies","Supplements","Supplement on Michelle’s bedroom vanity."],
+        ["Trilogy Vitamin C Booster","Personal care","Vitamin C face-care product on Michelle’s bedroom vanity."],
+        ["Force Factor Ultra Berberine","Supplements","Supplement on Michelle’s bedroom vanity."],
+        ["Perfect ACAI","Supplements","Supplement on Michelle’s bedroom vanity."],
         ["Skincare, body-care, and makeup items (details not legible)","Personal care","A group of items is visible, but exact contents and counts are unknown."]
       ]}
     ];
