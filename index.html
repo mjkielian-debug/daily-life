@@ -2926,7 +2926,7 @@ function migrateState(s){
       return d.toISOString().slice(0,10);
     };
     for(const e of s.events||[]){
-      if(String(e.recurringRuleId||"")===(herp&&herp.id||"7023b7a2-de64-478f-ae26-ac483b1ab5e8")&&
+      if((String(e.recurringRuleId||"")===(herp&&herp.id||"7023b7a2-de64-478f-ae26-ac483b1ab5e8")||/herpetology/i.test(String(e.title||"")))&&
          new Date(String(e.date||"")+"T12:00:00Z").getUTCDay()===1){
         e.date=plusDay(e.date);
         if(e.recurringOccurrenceDate)e.recurringOccurrenceDate=plusDay(e.recurringOccurrenceDate);
@@ -9375,7 +9375,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261026-auto-update7";
+const DAILY_LIFE_BUILD="20261026-auto-update8";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
