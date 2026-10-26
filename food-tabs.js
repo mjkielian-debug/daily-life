@@ -64,8 +64,74 @@ function compactFoodCookingAhead(){
     '<div class="food-cook-summary"><b>Runzas · cooked separately</b><small>'+ (baked?"Marked baked · serving date is still flexible":"Beef + cabbage filling prepared Oct 13 · bake when convenient")+'</small></div>'+
     '<button class="btn" onclick="openRunzaCookingBatch()">'+(baked?"View recipe":"Recipe + status")+' ›</button></section>';
 }
+function foodGoalDashboardCard(){
+  const f=foodTotalsForDate(ymd()),waterNow=Number(water())||0,
+    configured=state.settings?.nutritionGoals||{},
+    goal=(setting,fallback)=>{const n=Number(configured[setting]??state.settings?.[setting]??fallback);return n>0?n:fallback},
+    keys={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]},
+    norm=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),
+    itemValue=(row,aliases)=>{
+      let raw;
+      for(const key of aliases){if(row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""){raw=row[key];break}}
+      if(raw===undefined){
+        const micros=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{};
+        const match=Object.entries(micros).find(([key])=>aliases.some(a=>norm(a)===norm(key)));
+        if(match)raw=match[1];
+      }
+      if(raw===undefined)return{known:false,value:0};
+      const value=typeof raw==="object"&&raw!==null?Number(raw.value):Number(raw);
+      return Number.isFinite(value)?{known:true,value}:{known:false,value:0};
+    },
+    microTotal=name=>{
+      let value=0,known=false;
+      for(const row of f.rows){const found=itemValue(row,keys[name]);if(found.known){value+=found.value*foodQuantity(row);known=true}}
+      return{value,known};
+    },
+    macroKnown=keys=>f.rows.some(row=>keys.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),
+    nutrients=[
+      {label:"Calories",value:f.cal,known:macroKnown(["calories","cal"]),goal:goal("calTarget",2100),unit:"cal"},
+      {label:"Protein",value:f.protein,known:macroKnown(["protein","proteinG"]),goal:goal("proteinTarget",100),unit:"g"},
+      {label:"Carbs",value:f.carbs,known:macroKnown(["carbs","carbohydrates","carbsG"]),goal:goal("carbsTarget",250),unit:"g"},
+      {label:"Fat",value:f.fat,known:macroKnown(["fat","fatG"]),goal:goal("fatTarget",70),unit:"g"},
+      {label:"Fiber",value:f.fiber,known:macroKnown(["fiber","fiberG"]),goal:goal("fiberTarget",28),unit:"g"},
+      {label:"Water",value:waterNow,known:true,goal:goal("waterTarget",78),unit:"oz"},
+      {label:"Calcium",...microTotal("calcium"),goal:goal("calciumTarget",1300),unit:"mg"},
+      {label:"Iron",...microTotal("iron"),goal:goal("ironTarget",18),unit:"mg"},
+      {label:"Potassium",...microTotal("potassium"),goal:goal("potassiumTarget",4700),unit:"mg"},
+      {label:"Vitamin D",...microTotal("vitaminD"),goal:goal("vitaminDTarget",20),unit:"mcg"},
+      {label:"Sodium",...microTotal("sodium"),goal:goal("sodiumLimit",2300),unit:"mg",limit:true},
+      {label:"Added sugar",...microTotal("addedSugar"),goal:goal("addedSugarLimit",50),unit:"g",limit:true}
+    ],
+    group=(title,list)=>"<section class=\"food-goal-group\"><h3>"+title+"</h3><div class=\"food-goal-grid\">"+list.map(bar).join("")+"</div></section>",
+    bar=n=>{
+      const pct=n.known?Math.max(0,n.value/n.goal*100):null,
+        width=pct===null?0:Math.min(100,pct),
+        shown=n.known?(Math.round(n.value*10)/10).toLocaleString()+" / "+n.goal.toLocaleString()+" "+n.unit:"Not logged · goal "+n.goal.toLocaleString()+" "+n.unit,
+        percent=pct===null?"No data":Math.round(pct)+"% "+(n.limit?"of limit":"of goal"),
+        aria=n.known?Math.round(n.value)+" of "+n.goal+" "+n.unit:(n.label+" data not recorded");
+      return "<div class=\"food-goal-item\"><div class=\"food-goal-head\"><b>"+esc(n.label)+"</b><span>"+esc(shown)+"</span></div><div class=\"food-goal-meter\" role=\"progressbar\" aria-label=\""+esc(n.label+(n.limit?" daily limit":" daily goal"))+"\" aria-valuemin=\"0\" aria-valuemax=\""+n.goal+"\" "+(pct===null?"aria-valuetext=\""+esc(aria)+"\"":"aria-valuenow=\""+Math.min(n.goal,Math.round(n.value))+"\" aria-valuetext=\""+esc(aria)+"\"")+"><i style=\"width:"+width+"%\"></i></div><small>"+percent+"</small></div>";
+    },
+    estimated=f.rows.some(x=>!!x.nutritionEstimated),
+    incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||"")));
+  return "<div class=\"card food-intake-card\"><div class=\"section-title\"><div><div class=\"eyebrow\">My intake today</div><h2>Daily goal progress</h2><div class=\"muted small\">Percentages use nutrients recorded for today. Missing label values stay unknown.</div></div><button class=\"btn primary\" onclick=\"openFood()\">+ Food / drink</button></div>"+
+    (estimated?"<div class=\"notice\"><b>Some nutrition is estimated.</b> Estimated values are marked in the food log.</div>":"")+
+    (incomplete?"<div class=\"notice\"><b>Some nutrition is still unknown.</b> It is not counted as zero in these totals.</div>":"")+
+    group("Energy, macros + water",nutrients.slice(0,6))+
+    group("Vitamins, minerals + daily limits",nutrients.slice(6))+
+    "<div class=\"muted small food-goal-note\">Sodium and added sugar show the portion of the daily maximum used. Values reflect only recorded or estimated nutrition.</div>"+
+    (f.rows.length?"<div class=\"mini-heading\">Logged today</div>"+f.rows.slice().reverse().slice(0,8).map(x=>"<div class=\"row compact-row\"><span><b>"+esc(x.name||"Food / drink")+"</b><div class=\"muted small\">"+(foodQuantity(x)!==1?"×"+foodQuantity(x)+" · ":"")+(x.nutritionEstimated?"≈ ":"")+(Number(x.calories)>0?Math.round(Number(x.calories)*foodQuantity(x))+" cal":"")+(Number(x.protein)>0?" · "+Math.round(Number(x.protein)*foodQuantity(x))+"g protein":"")+(x.notes?" · "+esc(x.notes):"")+"</div></span></div>").join(""):"<div class=\"notice\">Nothing has been logged yet today.</div>")+
+    "<div class=\"actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodHubSection('trends')\">Open 7-day patterns</button></div></div>";
+}
+
+(function installFoodGoalProgressStyles(){
+  if(document.getElementById("foodGoalProgressStyles"))return;
+  const style=document.createElement("style");style.id="foodGoalProgressStyles";
+  style.textContent=".food-goal-group{margin-top:14px}.food-goal-group h3{font-size:.83rem;margin:0 0 8px;color:var(--cream)}.food-goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.food-goal-item{min-width:0;padding:8px;border:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--panel2) 70%,transparent)}.food-goal-head{display:grid;gap:3px;min-height:34px}.food-goal-head b{font-size:.75rem}.food-goal-head span{font-size:.68rem;color:var(--muted);overflow-wrap:anywhere}.food-goal-meter{height:7px;margin:7px 0 4px;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--text) 12%,transparent)}.food-goal-meter i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--secondary));transition:width .25s ease}.food-goal-item>small{font-size:.65rem;color:var(--muted)}.food-goal-note{margin-top:9px}@media(max-width:360px){.food-goal-grid{grid-template-columns:1fr}}";
+  document.head.appendChild(style);
+})();
+
 function compactFoodToday(){
-  return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${compactFoodCookingAhead()}${todayNutritionCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
+  return `<div class="food-tab-panel">${compactFoodDinnerTonight()}${compactFoodCookingAhead()}${foodGoalDashboardCard()}<details class="food-fold"><summary><span><b>7-day intake patterns</b><small>Calories, protein, water, caffeine, and energy-drink logs</small></span><span>View</span></summary><div class="food-fold-body">${foodIntakeTrends()}</div></details></div>`;
 }
 
 function compactFoodMeals(){
