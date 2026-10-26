@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f3c9dc">
+<meta name="theme-color" content="#f6dbe9">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="only light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261025-pink-status4">
+  <link rel="manifest" href="manifest.webmanifest?v=20261026-pink-status6">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -320,7 +320,7 @@ const themes=[
   ["Warm Lilac","#835cb2","#f5b6c8","#e9cb91"]
 ];
 async function save(){await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
-function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f3c9dc");return t[0]}
+function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f6dbe9");return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
 const ZODIAC_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const ZODIAC_META={
@@ -9342,7 +9342,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261025-evening-prep6";
+const DAILY_LIFE_BUILD="20261026-pink-status6";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9486,6 +9486,6 @@ window.addEventListener("load",()=>{
   registerAppWorker();
 },{once:true});
 </script>
-<script src="day-flow-corrections.js?v=20261025-evening-prep6"></script>
+<script src="day-flow-corrections.js?v=20261026-pink-status6"></script>
 </body>
 </html>
