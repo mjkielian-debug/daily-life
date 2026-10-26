@@ -165,10 +165,10 @@ function lifeSimOpenSelectedTasks() {
 }
 
 function lifeSimPageSummaryMarkup(){
-  if(view==="family"||view==="today"||view==="itinerary")return "";
+  if(view==="family")return "";
   if(view==="home"&&typeof foodProfileQuickProgress==="function")return foodProfileQuickProgress();
   let model=null;
-  if(typeof visualHubModel==="function")model=visualHubModel(view);
+  const modelPage=(view==="today"||view==="itinerary")?"itinerary":view;\n  if(typeof visualHubModel==="function")model=visualHubModel(modelPage);
   if(view==="selfcare"){model={title:"Self care",metrics:[]};}
   if(!model||!model.title)return "";
   const configured=state.settings?.nutritionGoals||{},
