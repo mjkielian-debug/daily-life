@@ -197,21 +197,7 @@ function dayFlowTimeline(date){
  return `<section class="df-timeline"><div class="df-section-head"><div><span class="df-kicker">${isToday?"LIVE TIMELINE":"DAY FLOW"}</span><h2>${esc(dayFlowDateLabel(date))}</h2></div><button type="button" onclick="openItineraryBlock('${date}')">＋ Add block</button></div>${timeLine}${earlierBlock}<div class="df-block-list">${later.length?later.map(x=>dayFlowBlockMarkup(x,date,nowMinute)).join(""):`<div class="df-open-time"><span>◷</span><div><b>The rest of the day is open</b><small>Add a block when you want to plan it.</small></div><button type="button" onclick="openItineraryBlock('${date}')">＋</button></div>`}</div><div class="df-timeline-footer"><button type="button" onclick="openDayFlowSection('plan','${date}')">Edit day plan ›</button><button type="button" onclick="openDayFlowSection('unscheduled','${date}')">Unscheduled tasks ›</button></div></section>${dayFlowRoutineStrip(date)}`;
 }
 
-function visualProfileDayFlowView(){
- const date=itineraryDate||ymd(),mode=dayFlowRangeMode(),now=new Date(),nowMinute=now.getHours()*60+now.getMinutes(),
-   items=itineraryDayItems(date).filter(x=>x.kind!=="gap"&&!x.nonBlocking),
-   upcoming=date===ymd()?items.filter(x=>{const end=hmMinutes(x.end);return end===null||end>nowMinute}):items,
-   shown=upcoming.slice(0,2),
-   rows=shown.map(item=>'<div class="df-profile-next-row"><time>'+esc(item.start?fmtClock(item.start):"Flexible")+'</time><b>'+esc(item.title||item.label||"Scheduled block")+'</b></div>').join("");
- return '<section class="day-flow-dashboard df-profile-compact" aria-label="Day Flow summary">'+
-   '<header class="df-heading"><div><span class="df-kicker">YOUR DAY IN MOTION</span><h1>Day Flow</h1></div><button type="button" class="df-profile-full" onclick="setView(\'itinerary\')">Full timeline ›</button></header>'+
-   dayFlowRangeMarkup(mode,date)+dayFlowAtAGlance(date)+
-   '<div class="df-profile-next"><span class="df-kicker">'+(date===ymd()?"UP NEXT":"SCHEDULED")+'</span>'+
-   (rows||'<div class="df-profile-next-empty">No upcoming blocks saved.</div>')+'</div></section>';
-}
-
 function visualDayFlowView(){
- if(typeof view!=="undefined"&&view==="family")return visualProfileDayFlowView();
  if(!window.dayFlowClockInterval)window.dayFlowClockInterval=setInterval(()=>{if(typeof view!=="undefined"&&(view==="today"||view==="itinerary")&&!document.querySelector("#modal")&&document.querySelector(".day-flow-dashboard"))render()},60000);
  const date=itineraryDate||ymd(),mode=dayFlowRangeMode();
  const subtitle=mode==="week"?"Your week, at a glance":mode==="month"?"Your month, at a glance":date===ymd()?"Your day, in motion":date===shiftDateString(ymd(),1)?"Tomorrow’s flow":"Your day, in motion";
