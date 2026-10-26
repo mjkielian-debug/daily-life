@@ -1,6 +1,6 @@
 {
-  "build": "20261026-auto-flow-alerts3",
+  "build": "20261026-assistant-sync1",
   "released": "2026-10-26",
-  "ui": "Sends automatic Day Flow alerts around each scheduled block start.",
+  "ui": "Automatically merges assistant updates into the phone copy and checks for updates while the app is open.",
   "data_version": "No data schema changes."
 }
