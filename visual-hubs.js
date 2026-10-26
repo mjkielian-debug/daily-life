@@ -31,7 +31,13 @@ function visualHubModel(page){
    focusNote:meal?.startBy?"Start by "+fmtClock(meal.startBy):meal?.dish?"See the dinner plan.":"Nothing chosen yet.",
    focusAction:`openMeal('${day}')`,focusExtra:cookAhead?{label:"🥟 Runzas · update cooking status",action:"openRunzaCookingBatch()"}:null,
    progress:vhProgress(planned,dates.length,"Dinners planned"),
-   metrics:[m("🛒","Grocery",shop.length+" needed","openFoodHubSection('grocery')"),m("▤","Recipes",ready+" ready","openFoodHubSection('recipes')"),m("◇","Pantry",(s.pantry?.items||[]).length+" items","openFoodHubSection('pantry')"),m("💧","Water",Math.round(typeof water==="function"?water():0)+" / 78 oz","openCareHubSection('water')")],
+   metrics:[
+    { ...m("🍽","Dinner",dates.length?Math.round(planned/dates.length*100)+"%":"—","openFoodHubSection('week')"),percent:dates.length?Math.round(planned/dates.length*100):null,detail:planned+" / "+dates.length+" planned" },
+    m("🛒","Groceries",shop.length+" needed","openFoodHubSection('grocery')"),
+    m("▤","Recipes",ready+" ready","openFoodHubSection('recipes')"),
+    m("◇","Pantry",(s.pantry?.items||[]).length+" items","openFoodHubSection('pantry')"),
+    { ...m("💧","Water",(typeof water==="function"?Math.round(water()):0)+" / "+(Number(s.settings?.nutritionGoals?.waterTarget||s.settings?.waterTarget)||78)+" oz","openCareHubSection('water')"),percent:Math.min(100,Math.round(100*(typeof water==="function"?water():0)/(Number(s.settings?.nutritionGoals?.waterTarget||s.settings?.waterTarget)||78))),detail:Math.min(100,Math.round(100*(typeof water==="function"?water():0)/(Number(s.settings?.nutritionGoals?.waterTarget||s.settings?.waterTarget)||78)))+"% of goal" }
+   ],
    links:[vhLink("Week plan","◫","openFoodHubSection('week')"),vhLink("Groceries","🛒","openFoodHubSection('grocery')"),vhLink("Recipes","▤","openFoodHubSection('recipes')"),vhLink("Pantry","◇","openFoodHubSection('pantry')"),vhLink("Intake","＋","openFoodHubSection('intake')"),vhLink("Trends","↗","openFoodHubSection('trends')"),vhLink("Orders","⌂","openFoodHubSection('orders')"),vhLink("Favorites","♡","openFoodHubSection('favorites')")],
    bottomTitle:"Next meals",bottomDetail:`${planned} of ${dates.length} remaining days planned`,barTitle:"Dinner plan · this week"});
   base.bars=dates.map(d=>b(d,mealForDate(d)?.dish?100:0));
@@ -213,7 +219,9 @@ function visualHubView(page){
  const meterText=progress?(usable?`${progress.done} / ${progress.total} ${page==="more"?"in next 30d":page==="home"?"planned":"marked"}`:"No items tracked yet"):c.mainLabel;
  const meterActions={home:"openFoodHubSection('week')",more:"openMoneyHubSection('bills')",log:"openCareHubSection('water')",reading:"openReadingHubSection('today')",family:"openPeopleHubSection('routines')",household:"openHouseholdSection('cleaning')",pets:"openPetsHubSection('history')",inventory:"openInventoryHubSection('items')",garden:"openGardenHobbySection('tasks')",hobbies:"openGardenHobbySection('tasks')",gardenhobbies:"openGardenHobbySection('tasks')",spirituality:"openSpiritualHubSection('practice')",budget:"openBudgetHubSection('plan')",settings:"openSettingsHubSection('backup')",vault:"openVaultHubSection('all')"};
  const mainAction=page==="itinerary"?"openDayFlowSection('plan','"+(itineraryDate||ymd())+"')":meterActions[page]||c.focusAction;
- const tiles=(c.metrics||[]).map((x,i)=>`<button type="button" class="vh-orb vh-orb-${i+1}" onclick="${x.action}" aria-label="${esc(x.label)}: ${esc(x.value)}"><span class="vh-orb-icon">${x.icon}</span><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong></button>`).join("");
+ const tiles=(c.metrics||[]).map((x,i)=>`<button type="button" class="vh-orb vh-orb-${i+1}" onclick="${x.action}" aria-label="${esc(x.label)}: ${esc(x.detail||x.value)}"><span class="vh-orb-icon">${x.icon}</span><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong></button>`).join("");
+ const homeTiles=(c.metrics||[]).map((x,i)=>`<button type="button" class="vh-home-orb vh-home-orb-${i+1}" onclick="${x.action}" style="--vh-home-pct:${x.percent===null||x.percent===undefined?0:x.percent}%" aria-label="${esc(x.label)}: ${esc(x.detail||x.value)}"><span class="vh-home-orb-core"><span class="vh-home-orb-icon">${x.icon}</span><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong><small>${esc(x.detail||"")}</small></span></button>`).join("");
+ const homeOverview=page==="home"?`<section class="vh-home-overview" aria-label="Food and nutrition progress"><div class="vh-home-orbs">${homeTiles}</div>${typeof foodHomeIntakeProgress==="function"?foodHomeIntakeProgress():""}</section>`:"";
  const displayedLinks=(c.links||[]).slice(0,4),moreLinks=(c.links||[]).slice(4);
  const allLinks=arr=>arr.map(x=>`<button type="button" onclick="${x.action}" class="vh-link"><span>${x.icon}</span><b>${esc(x.label)}</b><span aria-hidden="true">›</span></button>`).join("");
  const bars=c.bars||[],max=Math.max(1,...bars.map(x=>x.value)),graph=bars.length?`<div class="vh-graph" role="img" aria-label="${esc(c.barTitle)}">${bars.map(x=>`<div class="vh-bar-column ${x.known===false?"vh-untracked":""}" title="${esc(x.date)}: ${x.known===false?"no record":x.value+" logged"}"><div class="vh-bar-track"><span style="height:${Math.max(0,Math.min(100,Math.round(100*x.value/max)))}%"></span></div><small>${esc(new Date(x.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}).slice(0,2))}</small></div>`).join("")}</div>`:"";
@@ -222,6 +230,7 @@ function visualHubView(page){
   <div class="vh-heading"><div><div class="eyebrow">${esc(c.title.toUpperCase())} AT A GLANCE</div><h1>${esc(c.title)}</h1><p>${esc(c.subtitle)}</p></div><button type="button" class="btn primary vh-add" onclick="${c.addAction}">${esc(c.addLabel)}</button></div>
   ${titleSuffix}
   ${typeof actionFirstMarkup==="function"?actionFirstMarkup(page,c):`<div class="vh-focus"><div class="eyebrow">${esc(c.focusLabel)}</div><h2>${esc(c.focusTitle)}</h2><p>${esc(c.focusNote)}</p><div class="vh-focus-actions"><button type="button" class="btn primary" onclick="${c.focusAction}">${esc(c.focusButton)} ›</button>${c.focusExtra?`<button type="button" class="vh-focus-extra" onclick="${c.focusExtra.action}">${esc(c.focusExtra.label)}</button>`:""}</div></div>`}
+  ${homeOverview}
   <details class="vh-explore" ${typeof actionFirstOverviewOpen==="function"&&actionFirstOverviewOpen(page)?"open":""} ontoggle="if(typeof actionFirstRememberOverview===\'function\')actionFirstRememberOverview(\'${esc(page)}\',this.open)"><summary>Progress, sections + full details</summary><div class="vh-explore-body">
   ${visualPaperArtShortcuts(page)}
   <div class="vh-summary">
