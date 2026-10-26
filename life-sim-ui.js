@@ -164,61 +164,60 @@ function lifeSimOpenSelectedTasks() {
   modal(`${esc(active.name)} · Today`, `<div class="house-today-panel"><div class="house-today-summary"><b>${done} done</b><span>${remaining} left</span></div>${rows}<button type="button" class="btn small primary" onclick="closeModal();openTask(${lifeSimArg(active.name)})">＋ Add task for ${esc(active.name)}</button><button type="button" class="btn" onclick="closeModal();openPersonHub(${lifeSimArg(active.id)})">Open ${esc(active.name)}'s profile</button></div>`, "Close", closeModal);
 }
 
+function lifeSimPageSummaryMarkup(){
+  if(view==="family"||view==="today"||view==="itinerary")return "";
+  if(view==="home"&&typeof foodProfileQuickProgress==="function")return foodProfileQuickProgress();
+  let model=null;
+  if(typeof visualHubModel==="function")model=visualHubModel(view);
+  if(view==="selfcare"){model={title:"Self care",metrics:[]};}
+  if(!model||!model.title)return "";
+  const configured=state.settings?.nutritionGoals||{},
+    waterGoal=Number(configured.waterTarget??state.settings?.waterTarget??78)||78,
+    ringData=[],
+    stats=(model.metrics||[]).slice(0,3);
+  if(view==="log"||view==="selfcare"){
+    const care=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},
+      ounces=typeof water==="function"?Number(water())||0:0,
+      sleep=typeof sleepHours==="function"&&typeof sleepForDate==="function"?sleepHours(sleepForDate()):0,
+      workouts=(state.workouts||[]).filter(x=>x.date>=shiftDateString(ymd(),-6)&&x.date<=ymd()).length;
+    if(care.total)ringData.push({label:"Care",value:care.done,goal:care.total,detail:care.done+" / "+care.total});
+    ringData.push({label:"Water",value:ounces,goal:waterGoal,detail:Math.round(ounces)+" / "+waterGoal+" oz",water:true});
+    stats.length=0;
+    if(sleep)stats.push({label:"Sleep",value:sleep.toFixed(1)+" hr"});
+    stats.push({label:"Movement",value:workouts+" this week"});
+  }else if(view==="inventory"){
+    const items=state.inventoryItems||[],rooms=state.houseRooms||[],low=items.filter(x=>["Low","Need"].includes(String(x.status||""))).length;
+    stats.length=0;stats.push({label:"Items",value:String(items.length)},{label:"Low / needed",value:String(low)},{label:"Rooms",value:String(rooms.length)});
+  }else if(view==="pets"){
+    const pets=(state.pets||[]).filter(x=>x.status!=="Archived"),due=typeof duePetRoutines==="function"?duePetRoutines():[],logs=(state.petLogs||[]).filter(x=>x.date===ymd());
+    stats.length=0;stats.push({label:"Pets",value:String(pets.length)},{label:"Care due",value:String(due.length)},{label:"Logged today",value:String(logs.length)});
+  }else if(view==="household"){
+    const tasks=(state.tasks||[]).filter(x=>x.date===ymd()&&String(x.category||"").toLowerCase()==="home"),done=tasks.filter(x=>x.done).length;
+    if(tasks.length)ringData.push({label:"Home tasks",value:done,goal:tasks.length,detail:done+" / "+tasks.length});
+    stats.length=0;stats.push({label:"Rooms",value:String((state.houseRooms||[]).length)},{label:"Items",value:String((state.inventoryItems||[]).length)});
+  }else if(view==="spirituality"||view==="budget"||view==="settings"||view==="vault"){
+    if(view==="spirituality")stats=(model.metrics||[]).filter(x=>["Tarot","Journal","Reading"].includes(x.label)).slice(0,3);
+  }else if(model.progress&&Number(model.progress.total)>0){
+    ringData.push({label:model.progress.label||model.title,value:Number(model.progress.done)||0,goal:Number(model.progress.total),detail:(Number(model.progress.done)||0)+" / "+Number(model.progress.total)});
+  }
+  const rings=ringData.map(item=>{
+    const pct=Math.max(0,Math.round(item.value/item.goal*100)),fill=Math.min(100,pct),shown=pct+"%",
+      current=typeof item.detail==="string"?item.detail:item.value+" / "+item.goal,
+      color=item.water?"#e1b844":"#b875b4";
+    return "<div class=\"life-sim-summary-item\"><div class=\"life-sim-summary-ring\" style=\"--life-pct:"+fill+"%;--life-ring:"+color+"\" role=\"img\" aria-label=\""+esc(item.label)+": "+shown+"\"><span>"+shown+"</span></div><b>"+esc(item.label)+"</b><small>"+esc(current)+"</small></div>";
+  }).join(""),
+    statMarkup=stats.map(x=>"<div class=\"life-sim-summary-stat\"><small>"+esc(x.label||"")+"</small><b>"+esc(x.value||"—")+"</b></div>").join(""),
+    note=view==="spirituality"?"Saved reflection details":"Saved progress";
+  return "<section class=\"life-sim-page-summary\" aria-label=\""+esc(model.title)+" summary\"><div class=\"life-sim-summary-head\"><b>"+esc(model.title)+"</b><small>"+note+"</small></div>"+(rings?"<div class=\"life-sim-summary-rings\">"+rings+"</div>":"")+(statMarkup?"<div class=\"life-sim-summary-stats\">"+statMarkup+"</div>":"")+"</section>";
+}
+
 function lifeSimHud() {
   if (!state?.profile?.name && typeof stateHasMeaningfulLocalData === "function" && !stateHasMeaningfulLocalData()) return "";
-  const roster = lifeSimRoster();
-  const activeId = lifeSimSelectedId(roster);
-  const active = roster.find(p => String(p.id) === activeId) || roster[0];
-  const activeName = String(active.name || "").trim().toLowerCase();
-  const tasks = (state.tasks || []).filter(task => {
-    if (task.date !== ymd() || task.paused || task.waitingForFunds) return false;
-    const assigned = String(task.child || "").trim().toLowerCase();
-    return assigned === activeName || (activeId === "self" && !assigned);
-  });
-  const taskDone = tasks.filter(task => task.done).length;
-  const care = typeof selfCareTodayStats === "function" ? selfCareTodayStats() : null;
-  const mood = typeof wellnessForDate === "function" ? wellnessForDate() : null;
-  const waterNow = typeof water === "function" ? Number(water()) : 0;
-  const waterGoal = Number(state.settings?.waterTarget || 0);
-  const sleep = typeof sleepHours === "function" && typeof sleepForDate === "function" ? sleepHours(sleepForDate()) : 0;
-  const queued = lifeSimTaskRows(active, activeId);
-  const now = new Date();
-  const clock = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const current = queued[0];
-  const queueMarkup = queued.length > 1
-    ? queued.slice(1).map((task, index) => `<div class="life-sim-queue-item"><span class="life-sim-queue-order">${index + 2}</span><span class="life-sim-queue-copy"><b>${esc(task.title)}</b></span><span class="life-sim-queue-controls"><button class="btn small" type="button" aria-label="Move ${esc(task.title)} up" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},-1)">↑</button><button class="btn small" type="button" aria-label="Move ${esc(task.title)} down" onclick="lifeSimMoveTask(${lifeSimArg(task.id)},1)" ${index===queued.length-2?"disabled":""}>↓</button><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(task.id)})">Open</button><button class="btn small" type="button" aria-label="Remove ${esc(task.title)} from queue" onclick="lifeSimRemoveTask(${lifeSimArg(task.id)})">×</button></span></div>`).join("")
-    : `<p class="muted small life-sim-empty">No more queued actions.</p>`;
-  const rosterMarkup = roster.map(person => {
-    const selected = String(person.id) === activeId;
-    const initial = String(person.name || "?").trim().charAt(0).toUpperCase() || "?";
-    return `<button class="life-sim-sim ${selected ? "is-active" : ""}" type="button" aria-pressed="${selected}" aria-label="Select ${esc(person.name)}" onclick="setLifeSim(${lifeSimArg(person.id)})"><span class="life-sim-avatar">${esc(initial)}</span><span>${esc(person.name)}</span></button>`;
-  }).join("");
-  if (view !== "household") {
-    const needsSummary = activeId === "self"
-      ? `<button type="button" class="life-sim-compact-needs" onclick="lifeSimOpenNeeds()">♡ Needs <span>${care ? `${care.done}/${care.total} care` : "care"}</span><span>${waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz`}</span></button>`
-      : `<button type="button" class="life-sim-compact-needs" onclick="openPersonHub(${lifeSimArg(active.id)})"><span>${esc(active.name)} · ${taskDone}/${tasks.length} tasks today</span><b>Open profile ›</b></button>`;
-    return `<section class="life-sim-hud life-sim-compact-hud" aria-label="Live household controls">
-      <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-      ${view === "reading" || view === "family" || view === "home" ? "" : `<div class="life-sim-compact-bar"><div class="life-sim-compact-context"><span class="life-sim-compact-plumbob" aria-hidden="true">✦</span><span><small>PLAYING AS</small><b>${esc(active.name)}</b></span></div>${needsSummary}${current ? `<button type="button" class="life-sim-compact-action" onclick="openTaskDetails(${lifeSimArg(current.id)})"><span>NOW</span><b>${esc(current.title)}</b></button>` : ""}<button type="button" class="life-sim-compact-house" onclick="setView('household')">⌂ House</button></div>`}
-    </section>`;
-  }
-  if (view === "household") return `<section class="life-sim-hud life-sim-house-map-hud" aria-label="Household live mode">
-    <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-    <div class="life-sim-house-map-actions"><span>⌂ <b>${esc(active.name)}</b> · House view</span><button type="button" class="life-sim-house-needs" aria-label="${activeId === "self" ? "Open your personal needs" : `Open ${esc(active.name)}'s assigned tasks`}" onclick="${activeId === "self" ? "lifeSimOpenNeeds()" : "lifeSimOpenSelectedTasks()"}">${activeId === "self" ? "♡ Needs" : "✓ Tasks"}</button>${current?`<button type="button" class="life-sim-house-next" onclick="openTaskDetails(${lifeSimArg(current.id)})">Next · ${esc(current.title)} ›</button>`:`<span class="life-sim-house-next">${taskDone} of ${tasks.length} tasks done</span>`}${current?`<button type="button" class="life-sim-house-complete" aria-label="Mark ${esc(current.title)} complete" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})">✓</button>`:""}</div>
-  </section>`;
-  const needs = activeId === "self" ? [
-    ["♡", "Care", care ? `${care.done}/${care.total}` : "No check-in", care?.total ? care.done * 100 / care.total : NaN, "setView('log')"],
-    ["☼", "Mood", mood?.mood ? moodLabel(mood.mood) : "No check-in", mood?.mood ? Number(mood.mood) * 20 : NaN, "openWellnessCheckin()"],
-    ["◉", "Water", waterGoal ? `${Math.round(waterNow)}/${waterGoal} oz` : `${Math.round(waterNow)} oz`, waterGoal ? waterNow * 100 / waterGoal : NaN, "openCareHubSection('water')"],
-    ["☾", "Sleep", sleep ? `${sleep.toFixed(1)} hr` : "No log", NaN, "openSleep()"]
-  ].map(([icon,label,value,percent,action]) => `<button class="life-sim-need" type="button" onclick="${action}"><span class="life-sim-need-icon">${icon}</span><span class="life-sim-need-copy"><b>${label}</b><small>${esc(value)}</small></span><span class="life-sim-meter"><i style="width:${Math.max(0,Math.min(100,Number(percent)||0))}%"></i></span></button>`).join("") : `<div class="life-sim-needs-note"><b>Personal needs are not tracked for ${esc(active.name)}.</b><span>Showing assigned tasks and action progress only.</span></div>`;
-  return `<section class="life-sim-hud" aria-label="Household live mode">
-    <div class="life-sim-toolbar"><div class="life-sim-roster" role="group" aria-label="Household Sims">${rosterMarkup}</div><div class="life-sim-clock"><i></i><span>LIVE</span><b>${clock}</b></div></div>
-    <div class="life-sim-play-panel">
-      <div class="life-sim-active-sim"><div class="life-sim-portrait" aria-hidden="true">${esc(String(active.name||"?").trim().charAt(0).toUpperCase()||"?")}</div><div class="life-sim-sim-meta"><span class="eyebrow">ACTIVE SIM</span><h2>${esc(active.name)}</h2><small>${taskDone} of ${tasks.length} tasks done</small><button class="btn small" type="button" onclick="${activeId === "self" ? "setView('settings')" : `openPersonHub(${lifeSimArg(active.id)})`}">${activeId === "self" ? "Your profile" : "Sim profile"} ›</button></div></div>
-      <div class="life-sim-needs-block"><div class="life-sim-panel-label">${activeId==="self"?"NEEDS":"TODAY"}</div><div class="life-sim-needs">${needs}</div></div>
-      <div class="life-sim-current-block"><div class="life-sim-panel-label">CURRENT ACTION </div>${current?`<div class="life-sim-current-action"><span class="life-sim-plumbob" aria-hidden="true">✦</span><div><b>${esc(current.title)}</b><small>${esc(current.child||current.category||"Ready when you are")}</small></div><button class="btn small" type="button" onclick="openTaskDetails(${lifeSimArg(current.id)})">Open</button><button class="btn small life-sim-done" type="button" onclick="lifeSimCompleteTask(${lifeSimArg(current.id)})" aria-label="Mark ${esc(current.title)} done">✓</button></div>`:`<div class="life-sim-needs-note"><b>No current action</b><span>Choose from ${lifeSimAvailableTasks(active,activeId).length} unfinished tasks.</span></div>`}<div class="life-sim-queue">${queueMarkup}</div></div>
-      <div class="life-sim-interactions" role="group" aria-label="Quick interactions"><button type="button" onclick="setView('household')"><span>⌂</span>House</button><button type="button" onclick="setView('family')"><span>♡</span>People</button><button type="button" onclick="setView('home')"><span>◇</span>Food</button><button type="button" onclick="setView('inventory')"><span>▦</span>Inventory</button><button type="button" onclick="setView('itinerary')"><span>◷</span>Plans</button></div>
-    </div>
-  </section>`;
+  const roster=lifeSimRoster(),activeId=lifeSimSelectedId(roster),now=new Date(),
+    clock=now.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}),
+    rosterMarkup=roster.map(person=>{
+      const selected=String(person.id)===activeId,initial=String(person.name||"?").trim().charAt(0).toUpperCase()||"?";
+      return "<button class=\"life-sim-sim "+(selected?"is-active":"")+"\" type=\"button\" aria-pressed=\""+selected+"\" aria-label=\"Select "+esc(person.name)+"\" onclick=\"setLifeSim("+lifeSimArg(person.id)+")\"><span class=\"life-sim-avatar\">"+esc(initial)+"</span><span>"+esc(person.name)+"</span></button>";
+    }).join("");
+  return "<section class=\"life-sim-hud life-sim-compact-hud\" aria-label=\"Household profiles\"><div class=\"life-sim-toolbar\"><div class=\"life-sim-roster\" role=\"group\" aria-label=\"Household profiles\">"+rosterMarkup+"</div><div class=\"life-sim-clock\"><i></i><span>LIVE</span><b>"+clock+"</b></div></div>"+lifeSimPageSummaryMarkup()+"</section>";
 }
