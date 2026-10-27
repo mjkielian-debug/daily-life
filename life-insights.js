@@ -161,7 +161,8 @@ function lifeTrendChart(title,series,unit,days,meaning,emptyLabel,scaleMax,value
        yLabels=ticks.map(v=>{const y=(top+usableH-(v/max)*usableH+3).toFixed(1);return '<text x="2" y="'+y+'" class="life-trend-axis-label">'+esc(number(v))+'</text>'}).join("");
  const labels=lifeTrendChart.dates.map((d,i)=>({d,i})).filter(({i})=>days<=7||i===0||i===days-1||(i+1)%7===0)
   .map(({d})=>'<span>'+esc(dateLabel(d))+'</span>').join("");
- const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):(emptyLabel||"No entries in this period"),
+ const average=unit==="hours/night"&&seen.length?seen.reduce((sum,v)=>sum+v,0)/seen.length:null,
+       summary=seen.length?seen.length+(unit==="hours/night"?" logged night":" logged day")+(seen.length===1?"":"s")+(average===null?"":" · "+days+"-day avg "+average.toFixed(1)+" h/night"):(emptyLabel||"No entries in this period"),
        unitText=unit||"count",
        exact=series.map((v,i)=>({v,d:lifeTrendChart.dates[i]})).filter(x=>x.v!==null&&Number.isFinite(Number(x.v)))
         .map(x=>'<span><time>'+esc(dateLabel(x.d))+'</time><b>'+esc((valueNames&&valueNames[Number(x.v)]?valueNames[Number(x.v)]:number(x.v))+(unit?" "+unit:""))+'</b></span>').join(""),
@@ -240,6 +241,21 @@ function lifeTrendContent(days){
    if(statuses.some(x=>["completed","completed-late","completed-needs-end"].includes(x))||rows.some(x=>!!(x.timecardVerified||(x.start&&x.end))))return 1;
    return null;
  });
+ const workTimeVals=dates.map(d=>{
+   const rows=daily(work,d),statuses=rows.map(x=>String(x.status||"").toLowerCase());
+   if(statuses.some(x=>["missed","no-show","absent"].includes(x)))return 0;
+   const row=rows.find(x=>["completed","completed-late","completed-needs-end"].includes(String(x.status||"").toLowerCase())||x.timecardVerified||!!(x.start&&x.end));
+   if(!row)return null;
+   const toMinutes=value=>{const m=String(value||"").match(/^(\\d{1,2}):(\\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null;};
+   let start=toMinutes(row.start)||toMinutes(row.scheduled),end=toMinutes(row.end)||toMinutes("09:00");
+   if(start===null||end===null)return null;
+   if(!row.start&&String(row.status||"").toLowerCase()==="completed-late"){
+     const late=String(row.notes||"").match(/(?:about|approximately|~)?\\s*(\\d+)\\s*minutes? late/i);
+     if(late)start+=Number(late[1]);
+   }
+   let minutes=end-start;if(minutes<0)minutes+=1440;
+   return minutes>0&&minutes<960?Math.round(minutes/6)/10:null;
+ });
  const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>lifeTrendNutrientKnown(x,key)),
        foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
@@ -252,7 +268,7 @@ function lifeTrendContent(days){
  return '<div class="life-trends">'+
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
   '<p class="li-intro">Missing dates stay blank. Solid lines connect consecutive logged days; dashed lines bridge to the next recorded value across a gap. Work attendance is 1 = attended, 0 = missed. Sleep wake times one hour before a saved shift are estimates.</p>'+
-  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy rating",energyVals,"self-rating out of 5",dates,days,"Your answer to “Energy today” in the Sleep + energy log.","No energy ratings logged",5)+lifeTrendCard("Work attendance",workAttendanceVals,"scheduled shift(s)",dates,days,"One point per scheduled shift. 1 = attended, 0 = missed; shift hours are not inferred.","No confirmed scheduled shifts",1,{0:"Missed",1:"Attended"})+'</div>'+
+  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy rating",energyVals,"self-rating out of 5",dates,days,"Your answer to “Energy today” in the Sleep + energy log.","No energy ratings logged",5)+lifeTrendCard("Work hours (estimate)",workTimeVals,"hours/shift",dates,days,"Attended shifts use recorded start/end times when available; missing ends assume 9:00 AM and missing starts use the scheduled start. Missed shifts show 0; unconfirmed shifts stay blank.","No confirmed shifts")+lifeTrendCard("Work attendance",workAttendanceVals,"scheduled shift(s)",dates,days,"One point per scheduled shift. 1 = attended, 0 = missed.","No confirmed scheduled shifts",1,{0:"Missed",1:"Attended"})+'</div>'+
   '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"kcal/day",dates,days)+lifeTrendCard("Protein",proteinVals,"g/day",dates,days)+lifeTrendCard("Caffeine logged",caffeineVals,"mg/day",dates,days,"Daily sum of logged caffeine with known amounts; unlogged or unknown amounts stay blank.")+lifeTrendCard("Water",waterVals,"oz/day",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
   '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals,"minutes/day",dates,days)+lifeTrendCard("Reading",readingVals,"pages/day",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"days",dates,days)+'</div>'+
