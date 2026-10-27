@@ -1,6 +1,6 @@
 {
-  "build": "20261026-auto-update13",
-  "released": "2026-10-26",
-  "ui": "Room-specific inventory routing and Michelle’s saved vanity inventory.",
+  "build": "20261027-intake-caffeine-history1",
+  "released": "2026-10-27",
+  "ui": "Caffeine and date-based nutrition history; daily nutrient trends; vehicle service and routine cleanup.",
   "data_version": "No data schema changes."
 }
