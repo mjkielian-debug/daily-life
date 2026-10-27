@@ -151,11 +151,8 @@ function lifeTrendChart(title,series,unit,days){
    const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=Number(v).toFixed(Number(v)%1?1:0);
    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.2"><title>'+esc(date)+': '+esc(display)+' '+esc(unit)+'</title></circle>';
  }).join("");
- const labels=lifeTrendChart.dates.map((d,i)=>{
-   const show=days<=7||i===0||i===days-1||(i+1)%7===0;
-   if(!show)return '<span></span>';
-   return '<span>'+esc(days<=7?new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}):String(Number(d.slice(8))))+'</span>';
- }).join("");
+ const labels=lifeTrendChart.dates.map((d,i)=>({d,i})).filter(({i})=>days<=7||i===0||i===days-1||(i+1)%7===0)
+  .map(({d,i})=>'<span>'+esc(days<=7?new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}):String(Number(d.slice(8))))+'</span>').join("");
  const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):"No entries in this period";
  return '<section class="life-trend-chart"><div class="life-trend-heading"><b>'+esc(title)+'</b><small>'+esc(summary)+'</small></div>'+
   '<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(title)+' over '+days+' days; gaps indicate no entry">'+
@@ -195,7 +192,8 @@ function lifeTrendContent(days){
        chores=entries("chores"),tasks=entries("tasks");
  const daily=(rows,d,filter=()=>true)=>rows.filter(x=>x.date===d&&filter(x));
  const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
- const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null});
+ const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null}),
+       energyVals=dates.map(d=>{const row=sleep.find(x=>x.date===d),value=Number(row?.energy||0);return value>0?value:null});
  const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
  const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!==""),
        foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
@@ -210,7 +208,7 @@ function lifeTrendContent(days){
  return '<div class="life-trends">'+
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
   '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity.</p>'+
-  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals," h",dates,days)+lifeTrendCard("Work hours",workVals," h",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals," h",dates,days)+lifeTrendCard("Energy",energyVals," / 5",dates,days)+lifeTrendCard("Work hours",workVals," h",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"",dates,days)+lifeTrendCard("Protein",proteinVals," g",dates,days)+lifeTrendCard("Water",waterVals," oz",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
   '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals," min",dates,days)+lifeTrendCard("Reading",readingVals," pages",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"",dates,days)+lifeTrendCard("Home resets",homeVals,"",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"",dates,days)+'</div>'+
