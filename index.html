@@ -2060,7 +2060,7 @@ function openSectionLauncher(){
     ["⌂","House map","Floors, rooms, objects + progress","setView('household')"],
     ["$","Money","Accounts, budget + bills","setView('more')"],
     ["✧","Care","Self care, shower items + wellbeing","setView('selfcare')"],
-    ["☾","Spirituality","Daily reading, tarot + rituals","setView('spirituality')"],
+    ["☾","Spirituality","Daily reading, tarot + rituals","return openSpiritualityPage(event)"],
     ["⌁","Garden + Hobbies","Plants, crafts, projects + supplies","setView('gardenhobbies')"],
     ["▣","Vault","Encrypted documents + logins","setView('vault')"],
     ["⚙","Settings","Routines, cloud + backup","setView('settings')"]
@@ -9407,7 +9407,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261027-food-nutrients1";
+const DAILY_LIFE_BUILD="20261027-spirituality-route1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
