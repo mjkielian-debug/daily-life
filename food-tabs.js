@@ -232,11 +232,10 @@ todayNutritionCard=foodGoalDashboardCard;
 function openFoodTrendsFromIntake(){
   closeModal();
   setView("home");
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const fold=document.querySelector(".food-fold");
-    if(fold)fold.open=true;
-    document.getElementById("foodTrendRoot")?.scrollIntoView({behavior:"smooth",block:"center"});
-  }));
+  const fold=document.querySelector(".food-fold");
+  if(fold)fold.open=true;
+  const chart=document.getElementById("foodTrendRoot");
+  if(chart)chart.scrollIntoView({behavior:"smooth",block:"center"});
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
