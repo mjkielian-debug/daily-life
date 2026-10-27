@@ -55,3 +55,6 @@
 .life-trend-values>strong{grid-column:1/-1;color:#745777;font-size:.68rem}
 .life-trend-values>span{display:flex;justify-content:space-between;gap:6px;padding:3px 6px;border-radius:8px;background:#fbf6fa}
 .life-trend-values time{font-variant-numeric:tabular-nums;color:#756879}.life-trend-values b{font-variant-numeric:tabular-nums}
+
+/* Dashed spans connect saved points across unlogged dates without treating gaps as zero. */
+.life-trend-gap-line{stroke-dasharray:5 5;opacity:.78}

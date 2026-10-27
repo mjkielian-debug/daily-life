@@ -138,19 +138,23 @@ function lifeTrendDates(days){
  for(let i=days-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}
  return out;
 }
-function lifeTrendChart(title,series,unit,days,meaning,emptyLabel,scaleMax){
+function lifeTrendChart(title,series,unit,days,meaning,emptyLabel,scaleMax,valueNames){
  const seen=series.filter(v=>v!==null&&Number.isFinite(Number(v))).map(Number),
        max=Math.max(Number(scaleMax)||1,...seen),mid=max/2,w=320,h=120,left=42,right=6,top=10,bottom=20,
        usableW=w-left-right,usableH=h-top-bottom,
        xy=(v,i)=>[left+(series.length<2?usableW/2:i*usableW/(series.length-1)),top+usableH-(Number(v)||0)/max*usableH],
        number=v=>Number(v).toLocaleString("en-US",{maximumFractionDigits:1}),
        dateLabel=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",days<=7?{weekday:"short",day:"numeric"}:{month:"short",day:"numeric"});
- let path="",last=-2;
- series.forEach((v,i)=>{if(v===null||!Number.isFinite(Number(v))){last=-2;return}
-   const [x,y]=xy(v,i);path+=(last===i-1?" L ":" M ")+x.toFixed(1)+" "+y.toFixed(1);last=i;
+ let solidPath="",gapPaths=[],lastPoint=null;
+ series.forEach((v,i)=>{if(v===null||!Number.isFinite(Number(v))){return}
+   const [x,y]=xy(v,i),point={x,y,i};
+   if(lastPoint){const segment="M"+lastPoint.x.toFixed(1)+" "+lastPoint.y.toFixed(1)+" L "+x.toFixed(1)+" "+y.toFixed(1);
+     if(i-lastPoint.i===1)solidPath+=(solidPath?" ":"")+segment;else gapPaths.push(segment);
+   }
+   lastPoint=point;
  });
  const dots=series.map((v,i)=>{if(v===null||!Number.isFinite(Number(v)))return"";
-   const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=number(v),spoken=display+(unit?" "+unit:"");
+   const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=valueNames&&valueNames[Number(v)]?valueNames[Number(v)]:number(v),spoken=display+(unit?" "+unit:"");
    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" aria-label="'+esc(dateLabel(date)+": "+spoken)+'"><title>'+esc(dateLabel(date)+": "+spoken)+'</title></circle>';
  }).join("");
  const ticks=[max,mid,0],grid=ticks.map(v=>{const y=(top+usableH-(v/max)*usableH).toFixed(1);return "M"+left+" "+y+" H"+(w-right)}).join(" "),
@@ -160,18 +164,19 @@ function lifeTrendChart(title,series,unit,days,meaning,emptyLabel,scaleMax){
  const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):(emptyLabel||"No entries in this period"),
        unitText=unit||"count",
        exact=series.map((v,i)=>({v,d:lifeTrendChart.dates[i]})).filter(x=>x.v!==null&&Number.isFinite(Number(x.v)))
-        .map(x=>'<span><time>'+esc(dateLabel(x.d))+'</time><b>'+esc(number(x.v)+(unit?" "+unit:""))+'</b></span>').join(""),
+        .map(x=>'<span><time>'+esc(dateLabel(x.d))+'</time><b>'+esc((valueNames&&valueNames[Number(x.v)]?valueNames[Number(x.v)]:number(x.v))+(unit?" "+unit:""))+'</b></span>').join(""),
        valueList=exact?'<div class="life-trend-values"><strong>Daily values</strong>'+exact+'</div>':"";
  return '<section class="life-trend-chart"><div class="life-trend-heading"><b>'+esc(title)+'</b><small>'+esc(unitText)+' · '+esc(summary)+'</small></div>'+
   (meaning?'<div class="life-trend-meaning">'+esc(meaning)+'</div>':"")+
   '<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(title)+' in '+esc(unitText)+' over '+days+' days; missing dates mean no saved entry">'+
   '<path class="life-trend-grid" d="'+grid+'"/>'+yLabels+
-  (path?'<path class="life-trend-line" d="'+path+'"/>':"")+
+  (solidPath?'<path class="life-trend-line" d="'+solidPath+'"/>':"")+
+  gapPaths.map(d=>'<path class="life-trend-line life-trend-gap-line" d="'+d+'"/>').join("")+
   '<g class="life-trend-dots">'+dots+'</g></svg><div class="life-trend-labels">'+labels+'</div>'+valueList+'</section>';
 }
-function lifeTrendCard(title,values,unit,dates,days,meaning,emptyLabel,scaleMax){
+function lifeTrendCard(title,values,unit,dates,days,meaning,emptyLabel,scaleMax,valueNames){
  lifeTrendChart.dates=dates;
- return lifeTrendChart(title,values,unit,days,meaning,emptyLabel,scaleMax);
+ return lifeTrendChart(title,values,unit,days,meaning,emptyLabel,scaleMax,valueNames);
 }
 function lifeTrendSelfCare(dates){
  const habits=typeof selfCareHabits==="function"?selfCareHabits():[],
@@ -180,9 +185,12 @@ function lifeTrendSelfCare(dates){
  return '<div class="life-trend-selfcare">'+habits.map(h=>{
    const values=dates.map(d=>{
      const row=logs.find(x=>x.date===d&&String(x.key)===String(h.key));
-     if(row&&(row.done||Number(row.count||0)>0))return Math.max(0,Number(row.count!==undefined?row.count:1)||0);
+     if(row)return row.done||Number(row.count||0)>0?Math.max(0,Number(row.count!==undefined?row.count:1)||0):0;
      const review=reviews.find(x=>x.date===d&&x.kind==="care"&&String(x.key)===String(h.key));
-     return review&&["no","na","n/a"].includes(String(review.status||"").toLowerCase())?0:null;
+     const status=String(review?.status||"").trim().toLowerCase();
+     if(["yes","done","completed"].includes(status))return 1;
+     if(["no","na","n/a"].includes(status))return 0;
+     return null;
    });
    const known=values.filter(v=>v!==null),daysDone=values.filter(v=>Number(v)>0).length,
          occurrences=values.reduce((n,v)=>n+(v===null?0:Number(v)||0),0),
@@ -201,7 +209,7 @@ function lifeTrendSleepPoint(date,sleepRows,workRows){
  if(row.wakeTime&&typeof sleepWindowHours==="function"){
    const hours=Number(sleepWindowHours(row));return hours>0?hours:null;
  }
- const shift=workRows.find(x=>x.date===date),start=String(shift?.start||shift?.scheduled||"");
+ const shift=workRows.find(x=>x.date===date&&String(x.status||"").toLowerCase()!=="missed"),start=String(shift?.start||shift?.scheduled||"");
  if(!row.bedtime||!/^\d{2}:\d{2}$/.test(start))return null;
  const [sh,sm]=start.split(":").map(Number),[bh,bm]=String(row.bedtime).split(":").map(Number);
  const wake=(sh*60+sm-60+1440)%1440,bed=bh*60+bm;
@@ -221,31 +229,33 @@ function lifeTrendContent(days){
        food=entries("foodLogs"),water=entries("waterLogs"),
        sleep=entries("sleepLogs"),work=entries("workShifts"),
        workouts=entries("workouts"),reading=entries("readingLogs"),
-       outfits=entries("outfits"),home=entries("homeLogs"),
-       chores=entries("chores"),tasks=entries("tasks");
+       outfits=entries("outfits");
  const daily=(rows,d,filter=()=>true)=>rows.filter(x=>x.date===d&&filter(x));
  const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
  const sleepVals=dates.map(d=>lifeTrendSleepPoint(d,sleep,work)),
        energyVals=dates.map(d=>{const row=sleep.filter(x=>x.date===d).find(x=>x.bedtime&&x.wakeTime)||sleep.find(x=>x.date===d),value=Number(row?.energy||0);return value>0?value:null});
- const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.timecardVerified||(x.start&&x.end)));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
- const foodRows=dates.map(d=>daily(food,d)),foodCountVals=foodRows.map(rows=>rows.length?rows.length:null),knownMetric=(rows,key)=>rows.some(x=>lifeTrendNutrientKnown(x,key)),
+ const workAttendanceVals=dates.map(d=>{
+   const rows=daily(work,d),statuses=rows.map(x=>String(x.status||"").toLowerCase());
+   if(statuses.some(x=>["missed","no-show","absent"].includes(x)))return 0;
+   if(statuses.some(x=>["completed","completed-late","completed-needs-end"].includes(x))||rows.some(x=>!!(x.timecardVerified||(x.start&&x.end))))return 1;
+   return null;
+ });
+ const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>lifeTrendNutrientKnown(x,key)),
        foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        caffeineVals=foodRows.map(rows=>{const known=rows.filter(x=>lifeTrendNutrientKnown(x,"caffeineMg")&&Number(x.caffeineMg)>0);return known.length?known.reduce((n,x)=>n+Number(x.caffeineMg||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null}),
        waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
        workoutVals=measured(workouts,"minutes",rows=>rows.reduce((n,x)=>n+Number(x.minutes||0),0)),
        readingVals=measured(reading,"pages",rows=>rows.reduce((n,x)=>n+Number(x.pages||0),0)),
-       outfitVals=dates.map(d=>outfits.some(x=>x.date===d)?1:null),
-       homeVals=dates.map(d=>{const rows=daily(home,d);return rows.length?rows.filter(x=>x.status==="done").length:null}),
-       taskVals=dates.map(d=>{const rows=[...daily(chores,d),...daily(tasks,d)];return rows.length?rows.filter(x=>x.done).length:null});
+       outfitVals=dates.map(d=>outfits.some(x=>x.date===d)?1:null);
  const period=days===7?"Past 7 days":"Past 30 days";
  return '<div class="life-trends">'+
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
-  '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity. Sleep estimates wake one hour before a saved work start when only bedtime was logged.</p>'+
-  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy rating",energyVals,"self-rating out of 5",dates,days,"Your answer to “Energy today” in the Sleep + energy log.","No energy ratings logged",5)+lifeTrendCard("Work hours",workVals,"hours/day",dates,days)+'</div>'+
-  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Food entries",foodCountVals,"entries/day",dates,days)+lifeTrendCard("Calories",foodVals,"kcal/day",dates,days)+lifeTrendCard("Protein",proteinVals,"g/day",dates,days)+lifeTrendCard("Caffeine logged",caffeineVals,"mg/day",dates,days,"Daily sum of logged caffeine with known amounts; unlogged or unknown amounts stay blank.")+lifeTrendCard("Water",waterVals,"oz/day",dates,days)+'</div>'+
+  '<p class="li-intro">Missing dates stay blank. Solid lines connect consecutive logged days; dashed lines bridge to the next recorded value across a gap. Work attendance is 1 = attended, 0 = missed. Sleep wake times one hour before a saved shift are estimates.</p>'+
+  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy rating",energyVals,"self-rating out of 5",dates,days,"Your answer to “Energy today” in the Sleep + energy log.","No energy ratings logged",5)+lifeTrendCard("Work attendance",workAttendanceVals,"scheduled shift(s)",dates,days,"One point per scheduled shift. 1 = attended, 0 = missed; shift hours are not inferred.","No confirmed scheduled shifts",1,{0:"Missed",1:"Attended"})+'</div>'+
+  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"kcal/day",dates,days)+lifeTrendCard("Protein",proteinVals,"g/day",dates,days)+lifeTrendCard("Caffeine logged",caffeineVals,"mg/day",dates,days,"Daily sum of logged caffeine with known amounts; unlogged or unknown amounts stay blank.")+lifeTrendCard("Water",waterVals,"oz/day",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
-  '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals,"minutes/day",dates,days)+lifeTrendCard("Reading",readingVals,"pages/day",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"days",dates,days)+lifeTrendCard("Home resets",homeVals,"completed/day",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"completed/day",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals,"minutes/day",dates,days)+lifeTrendCard("Reading",readingVals,"pages/day",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"days",dates,days)+'</div>'+
  '</div>';
 }
 window.openLifeTrends=function(days=30){
