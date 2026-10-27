@@ -99,7 +99,7 @@ function setFoodIntakeDate(date){
  foodIntakeDate=date;localStorage.setItem("dailyLifeFoodIntakeDate",date);localStorage.setItem("dailyLifeFoodIntakeDateBase",ymd());
  const home=document.getElementById("foodHomeIntakeRoot");if(home)home.outerHTML=foodHomeIntakeProgress();
  const full=document.getElementById("foodIntakeDashboardRoot");if(full)full.outerHTML=foodGoalDashboardCard();
- const trend=document.getElementById("foodTrendRoot");if(trend)trend.outerHTML=foodIntakeTrends();
+ const trend=document.getElementById("foodTrendRoot");if(trend)trend.outerHTML=foodIntakeTrendsV2();
 }
 function foodGoalDashboardCard(){
   const f=foodTotalsForDate(foodIntakeDate),waterNow=foodWaterForDate(foodIntakeDate),
@@ -231,7 +231,7 @@ function foodHomeIntakeProgress(){
 todayNutritionCard=foodGoalDashboardCard;
 function openFoodTrendsFromIntake(){
   closeModal();
-  modal("Food + Water Trends",`<div class="food-hub-modal">${foodIntakeTrends()}</div>`,"Close",closeModal);
+  modal("Food + Water Trends",`<div class="food-hub-modal">${foodIntakeTrendsV2()}</div>`,"Close",closeModal);
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
@@ -252,9 +252,9 @@ function setFoodTrendMetric(metric){
   if(!["calories","protein","carbs","fat","fiber","water","caffeine","calcium","iron","potassium","vitaminD","sodium","addedSugar"].includes(metric))return;
   foodTrendMetric=metric;localStorage.setItem("dailyLifeFoodTrendMetric",metric);
   const root=document.getElementById("foodTrendRoot");
-  if(root)root.outerHTML=foodIntakeTrends();else openFoodHubSection("trends");
+  if(root)root.outerHTML=foodIntakeTrendsV2();else openFoodHubSection("trends");
 }
-foodIntakeTrends=function(){
+function foodIntakeTrendsV2(){
  const goals={calories:foodDailyGoal("calTarget",2100),protein:foodDailyGoal("proteinTarget",100),carbs:foodDailyGoal("carbsTarget",250),fat:foodDailyGoal("fatTarget",70),fiber:foodDailyGoal("fiberTarget",28),water:foodDailyGoal("waterTarget",78),caffeine:foodDailyGoal("caffeineLimit",400),calcium:foodDailyGoal("calciumTarget",1300),iron:foodDailyGoal("ironTarget",18),potassium:foodDailyGoal("potassiumTarget",4700),vitaminD:foodDailyGoal("vitaminDTarget",20),sodium:foodDailyGoal("sodiumLimit",2300),addedSugar:foodDailyGoal("addedSugarLimit",50)},
  units={calories:"cal",protein:"g",carbs:"g",fat:"g",fiber:"g",water:"oz",caffeine:"mg",calcium:"mg",iron:"mg",potassium:"mg",vitaminD:"mcg",sodium:"mg",addedSugar:"g"},
  labels={calories:"Calories",protein:"Protein",carbs:"Carbs",fat:"Fat",fiber:"Fiber",water:"Water",caffeine:"Caffeine",calcium:"Calcium",iron:"Iron",potassium:"Potassium",vitaminD:"Vitamin D",sodium:"Sodium",addedSugar:"Added sugar"},
@@ -284,7 +284,7 @@ foodIntakeTrends=function(){
   document.head.appendChild(style);
 })();
 function compactFoodToday(){
-  return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'<details class="food-fold"><summary><span><b>7-day trends</b><small>View line graph</small></span><span>View</span></summary><div class="food-fold-body">'+foodIntakeTrends()+'</div></details></div>';
+  return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'<details class="food-fold"><summary><span><b>7-day trends</b><small>View line graph</small></span><span>View</span></summary><div class="food-fold-body">'+foodIntakeTrendsV2()+'</div></details></div>';
 }
 
 function compactFoodMeals(){
