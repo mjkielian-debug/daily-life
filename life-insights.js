@@ -246,11 +246,11 @@ function lifeTrendContent(days){
    if(statuses.some(x=>["missed","no-show","absent"].includes(x)))return 0;
    const row=rows.find(x=>["completed","completed-late","completed-needs-end"].includes(String(x.status||"").toLowerCase())||x.timecardVerified||!!(x.start&&x.end));
    if(!row)return null;
-   const toMinutes=value=>{const m=String(value||"").match(/^(\\d{1,2}):(\\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null;};
+   const toMinutes=value=>{const m=String(value||"").match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null;};
    let start=toMinutes(row.start)||toMinutes(row.scheduled),end=toMinutes(row.end)||toMinutes("09:00");
    if(start===null||end===null)return null;
    if(!row.start&&String(row.status||"").toLowerCase()==="completed-late"){
-     const late=String(row.notes||"").match(/(?:about|approximately|~)?\\s*(\\d+)\\s*minutes? late/i);
+     const late=String(row.notes||"").match(/(?:about|approximately|~)?\s*(\d+)\s*minutes? late/i);
      if(late)start+=Number(late[1]);
    }
    let minutes=end-start;if(minutes<0)minutes+=1440;
