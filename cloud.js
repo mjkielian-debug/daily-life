@@ -1026,7 +1026,8 @@ function cloudApplyLifeEntry(row){
       const sleepDate=String(p.date||date),bedtime=String(p.bedtime||""),wakeTime=String(p.wakeTime||""),energy=Number(p.energy||0);
       let x=state.sleepLogs.find(x=>x.date===sleepDate&&x.cloudEntryId===row.id);
       if(!x){x={...common,date:sleepDate};state.sleepLogs.push(x)}
-      Object.assign(x,{bedtime,wakeTime,energy:Number.isFinite(energy)?energy:0,notes:String(p.notes||""),cloudEntryId:row.id});
+      const actualSleepHours=Number(p.actualSleepHours);
+      Object.assign(x,{bedtime,wakeTime,energy:Number.isFinite(energy)?energy:0,actualSleepHours:Number.isFinite(actualSleepHours)&&actualSleepHours>0&&actualSleepHours<=24?actualSleepHours:null,wakeTimeEstimated:!!p.wakeTimeEstimated,notes:String(p.notes||""),cloudEntryId:row.id});
       return true;
     }
     case "work_shift":{
