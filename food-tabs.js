@@ -287,7 +287,8 @@ function foodIntakeTrendsV2(){
  values=points.filter(x=>x.value!==null),average=values.length?values.reduce((sum,x)=>sum+x.value,0)/values.length:null,
  scale=Math.max(goals[metric],1,...values.map(x=>x.value))*1.12,
  xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/scale))*100,
- targetY=yAt(goals[metric]),averageY=average===null?null:yAt(average),segments=[],active=[];
+ targetY=yAt(goals[metric]),averageY=average===null?null:yAt(average);
+ const segments=[];let active=[];
  for(const point of points){if(point.value===null){if(active.length)segments.push(active);active=[]}else active.push(point)}if(active.length)segments.push(active);
  const paths=segments.filter(x=>x.length>1).map(x=>"<polyline points=\""+x.map(p=>xAt(p.index)+","+yAt(p.value)).join(" ")+"\"/>").join(""),
  dots=points.filter(x=>x.value!==null).map(p=>"<g><title>"+esc(p.label)+" · "+(Math.round(p.value*10)/10).toLocaleString()+" "+units[metric]+"</title><circle cx=\""+xAt(p.index)+"\" cy=\""+yAt(p.value)+"\" r=\"4\"/></g>").join(""),
