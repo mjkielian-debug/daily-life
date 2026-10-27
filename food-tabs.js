@@ -263,9 +263,9 @@ let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories"
 function foodTrendValue(metric,date){
  const totals=foodTotalsForDate(date),microAliases={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]};
  if(metric==="water"){const logs=(state.waterLogs||[]).filter(x=>x.date===date);return logs.length?logs.reduce((sum,x)=>sum+Number(x.oz||0),0):null}
- if(metric==="caffeine"){const known=totals.rows.some(row=>row.caffeineMg!==undefined&&row.caffeineMg!==null&&String(row.caffeineMg).trim()!=="");return known?totals.caffeineMg:null}
+ if(metric==="caffeine"){const known=totals.rows.some(row=>typeof lifeTrendNutrientKnown==="function"?lifeTrendNutrientKnown(row,"caffeineMg"):row.caffeineMg!==undefined&&row.caffeineMg!==null&&String(row.caffeineMg).trim()!=="");return known?totals.caffeineMg:null}
  const macros={calories:["calories","cal"],protein:["protein","proteinG"],carbs:["carbs","carbohydrates","carbsG"],fat:["fat","fatG"],fiber:["fiber","fiberG"]};
- if(macros[metric]){const keys=macros[metric],known=totals.rows.some(row=>keys.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),totalKey=metric==="calories"?"cal":metric;return known?Number(totals[totalKey]||0):null}
+ if(macros[metric]){const keys=macros[metric],known=totals.rows.some(row=>keys.some(key=>typeof lifeTrendNutrientKnown==="function"?lifeTrendNutrientKnown(row,key):row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")),totalKey=metric==="calories"?"cal":metric;return known?Number(totals[totalKey]||0):null}
  const aliases=microAliases[metric];if(!aliases)return null;let value=0,known=false;
  const norm=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
  for(const row of totals.rows){let raw;for(const key of aliases)if(row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""){raw=row[key];break}
