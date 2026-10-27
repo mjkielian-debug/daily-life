@@ -10,7 +10,7 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261026-assistant-sync2">
+  <link rel="manifest" href="manifest.webmanifest?v=20261027-food-nutrients1">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -198,7 +198,15 @@ dialog,
 <link rel="stylesheet" href="dolly-room-model.css?v=20261017-refined-room-map1">
 <link rel="stylesheet" href="household-map-scroll.css?v=20261017-refined-room-map1">
 <link rel="stylesheet" href="second-floor-miniatures.css?v=20261016-mini1"><link rel="stylesheet" href="life-sim-ui.css?v=20261018-care-nav15">
-<link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"></head>
+<link rel="stylesheet" href="rainbow-theme-cleanup.css?v=20261018-care-nav14"><style id="compact-profile-food-nutrients">
+.vh-profile-food h2{font-size:1.2rem;margin:.2rem 0 .55rem}
+.vh-profile-food .vh-food-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);align-items:baseline;gap:4px 9px;padding:6px 0}
+.vh-profile-food .vh-food-row>b{font-size:.88rem;line-height:1.25;overflow-wrap:anywhere}
+.vh-profile-food .vh-food-qty{font-size:.76em;white-space:nowrap}
+.vh-profile-food .vh-food-nutrients{font-size:.68rem;line-height:1.3;text-align:right;overflow-wrap:anywhere}
+@media(max-width:420px){.vh-profile-food .vh-food-row{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:4px 6px}.vh-profile-food .vh-food-nutrients{font-size:.64rem}}
+</style>
+</head>
 <body>
 <div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261023-evening-log1…</p></main></div>
 <div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=sim-house1">Reload Daily Life</a></div></div>
@@ -6072,7 +6080,7 @@ function peopleProfileHomePage(){
     rooms=(state.houseRooms||[]).slice(0,4),
     flow=isSelf?itineraryDayItems(today):(state.itineraryBlocks||[]).filter(row=>row.date===today).sort((a,b)=>String(a.startTime||a.time||"").localeCompare(String(b.startTime||b.time||""))).slice(0,4),
     careStats=isSelf&&typeof selfCareTodayStats==="function"?selfCareTodayStats():null,
-    foodToday=isSelf?(state.foodLogs||[]).filter(row=>row.date===today).slice(0,4):[],
+    foodToday=isSelf?(state.foodLogs||[]).filter(row=>row.date===today):[],
     moneyRows=isSelf?(state.bills||[]).filter(row=>!["paid","complete","completed"].includes(String(row.status||"").toLowerCase())).slice(0,3):(state.kidsMoneyAccounts||[]).filter(row=>String(row.child||row.person||row.personName||"").trim().toLowerCase()===childName).slice(0,3),
     taskRows=tasks.map(task=>'<label class="vh-profile-check '+(task.done?"is-done":"")+'"><input type="checkbox" '+(task.done?"checked":"")+' onchange="toggleTask('+lifeSimArg(task.id)+',this.checked)"><span><b>'+esc(task.title||"Task")+'</b></span></label>').join(""),
     choreRows=chores.map(chore=>'<label class="vh-profile-check '+(chore.done?"is-done":"")+'"><input type="checkbox" '+(chore.done?"checked":"")+' onchange="toggleChore('+lifeSimArg(chore.id)+',this.checked)"><span><b>'+esc(chore.chore||"Chore")+'</b></span></label>').join(""),
@@ -6106,7 +6114,26 @@ function peopleProfileHomePage(){
     ?'<button class="btn primary" type="button" onclick="openTask()">＋ Task</button><button class="btn" type="button" onclick="openPeopleHubSection(\'plans\')">＋ Plan</button><button class="btn" type="button" onclick="openPersonProfile(\'\')">Profile details</button>'
     :'<button class="btn primary" type="button" onclick="openTask('+lifeSimArg(name)+')">＋ Task</button><button class="btn" type="button" onclick="openPersonPlan('+lifeSimArg(active.id)+')">＋ Plan</button><button class="btn" type="button" onclick="openPersonProfile('+lifeSimArg(active.id)+')">Profile details</button>';
   const roomRows=rooms.map(room=>'<span class="vh-profile-chip">'+esc(room.name||"Room")+'</span>').join("");
-  const flowRows=(isSelf?flow.filter(x=>!x.done&&!x.nonBlocking&&x.kind!=="gap"&&x.kind!=="sleep"):flow).slice(0,4).map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.title||row.label||row.activity||"Schedule block")+'</b><small>'+esc([row.start||row.startTime||row.time,row.end||row.endTime].filter(Boolean).map(fmtClock).join("–")||"Today")+'</small></div>').join(""),foodRows=foodToday.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||row.description||"Food log")+'</b><small>'+esc(row.mealType||row.meal||row.category||"Logged today")+'</small></div>').join("");
+  const flowRows=(isSelf?flow.filter(x=>!x.done&&!x.nonBlocking&&x.kind!=="gap"&&x.kind!=="sleep"):flow).slice(0,4).map(row=>'<div class="vh-profile-data-row"><b>'+esc(row.title||row.label||row.activity||"Schedule block")+'</b><small>'+esc([row.start||row.startTime||row.time,row.end||row.endTime].filter(Boolean).map(fmtClock).join("–")||"Today")+'</small></div>').join(""),foodRows=foodToday.map(row=>{
+    const quantity=Number(row.quantity)>0?Number(row.quantity):1,micros=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{},normKey=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),
+      read=(keys)=>{
+        for(const key of keys)if(row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")return row[key];
+        const match=Object.entries(micros).find(([key])=>keys.some(alias=>normKey(alias)===normKey(key)));
+        return match?match[1]:undefined;
+      },
+      fmt=v=>{const n=Number(v);return Number.isInteger(n)?String(n):n.toFixed(1)},
+      parts=[];
+    const add=(label,keys,unit)=>{
+      const raw=read(keys),value=raw&&typeof raw==="object"&&raw!==null?raw.value:raw,n=Number(value);
+      if(value!==undefined&&value!==null&&String(value).trim()!==""&&Number.isFinite(n))parts.push((label?label+" ":"")+fmt(n*quantity)+unit);
+    };
+    add("",["calories","cal"]," cal");add("P",["protein","proteinG"],"g");add("C",["carbs","carbohydrates","carbsG"],"g");
+    add("F",["fat","fatG"],"g");add("Fiber",["fiber","fiberG"],"g");
+    add("Ca",["calcium","calciumMg"],"mg");add("Fe",["iron","ironMg"],"mg");add("K",["potassium","potassiumMg"],"mg");
+    add("D",["vitaminD","vitamin_d","vitaminDMcg"],"mcg");add("Na",["sodium","sodiumMg"],"mg");
+    add("Added sugar",["addedSugar","added_sugar","addedSugars"],"g");
+    return '<div class="vh-profile-data-row vh-food-row"><b>'+esc(itemName(row)||row.description||"Food log")+(quantity>1?' <span class="vh-food-qty">×'+esc(String(quantity))+'</span>':'')+'</b><small class="vh-food-nutrients">'+esc(parts.join(" · ")||"Nutrition not recorded")+'</small></div>';
+  }).join("");
   const moneyContent=isSelf
     ?moneyRows.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||"Bill")+'</b><small>'+esc([row.dueDate||row.date,row.status].filter(Boolean).join(" · ")||"Open bill")+'</small></div>').join("")||'<p class="muted small">No open bills are saved.</p>'
     :moneyRows.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||"Money account")+'</b><small>'+esc(row.type||row.kind||"Saved account")+(row.balance!==undefined&&row.balance!==null?" · "+esc(String(row.balance)):"")+'</small></div>').join("")||'<p class="muted small">No money accounts are saved for '+esc(name)+'.</p>';
@@ -6130,7 +6157,7 @@ function peopleProfileHomePage(){
     '<section class="vh-profile-inline"><div class="eyebrow">DAY FLOW</div><h2>'+(isSelf?dayFlowPending.length:flow.length)+' '+(isSelf?'steps left today':'blocks today')+'</h2>'+(flowRows||'<p class="muted small">No schedule blocks saved for today.</p>')+'<button class="btn small" type="button" onclick="setView(\'itinerary\')">Open full day flow</button></section>'+
     '<section class="vh-profile-inline"><div class="eyebrow">SPIRITUAL NOTES</div><h2>'+esc(isSelf?"Your saved reflections":name+"’s saved reflections")+'</h2>'+(spiritualNotes.map(note=>'<p class="muted small vh-profile-note">'+esc(note.text||note.title||"Reflection")+(note.date?" · "+esc(dl(note.date)):"")+'</p>').join("")||'<p class="muted small">No spiritual notes saved.</p>')+'<button class="btn small" type="button" onclick="openProfileSpiritualNote('+lifeSimArg(active.id)+')">＋ Add note</button></section>'+
     '<section class="vh-profile-inline"><div class="eyebrow">MONEY</div><h2>'+(isSelf?"Bills and money":"Personal account")+'</h2>'+moneyContent+'<button class="btn small" type="button" onclick="setView(\'budget\')">Open money details</button></section>'+
-    (isSelf?'<section class="vh-profile-inline"><div class="eyebrow">FOOD</div><h2>'+foodToday.length+' food logs today</h2>'+(foodRows||'<p class="muted small">No food logs saved for today.</p>')+'<button class="btn small" type="button" onclick="setView(\'home\')">Open food</button></section>':"")+
+    (isSelf?'<section class="vh-profile-inline vh-profile-food"><div class="eyebrow">FOOD</div><h2>'+foodToday.length+' food logs today</h2>'+(foodRows||'<p class="muted small">No food logs saved for today.</p>')+'<button class="btn small" type="button" onclick="setView(\'home\')">Open food</button></section>':"")+
     '</div>';
   return '<section class="visual-hub visual-hub-family vh-profile-home" aria-label="'+esc(name)+' profile home">'+
     '<div class="vh-heading"><div><div class="eyebrow">PROFILE HOME</div><h1>'+esc(name+"’s home")+'</h1><p>'+esc(intro)+'</p></div><button type="button" class="btn primary vh-add" onclick="'+(isSelf?"openWellnessCheckin()":"openPersonProfile("+lifeSimArg(active.id)+")")+'">'+(isSelf?"+ Check in":"+ Edit profile")+'</button></div>'+
