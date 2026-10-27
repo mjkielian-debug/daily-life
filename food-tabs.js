@@ -87,7 +87,7 @@ function foodPantryRecommendation(rows,nutrients){
   }
   return "<section class=\"food-recommendation quiet\"><b>Food idea</b><div>As more nutrition is logged, I can suggest an on-hand option for the biggest gap.</div></section>";
 }
-let foodIntakeDate=(()=>{const saved=localStorage.getItem("dailyLifeFoodIntakeDate")||ymd();return saved<=ymd()?saved:ymd()})();
+let foodIntakeDate=(()=>{const today=ymd(),saved=localStorage.getItem("dailyLifeFoodIntakeDate"),base=localStorage.getItem("dailyLifeFoodIntakeDateBase");localStorage.setItem("dailyLifeFoodIntakeDateBase",today);return base===today&&saved&&saved<=today?saved:today})();
 function foodWaterForDate(date){return(state.waterLogs||[]).filter(x=>x.date===date).reduce((sum,x)=>sum+Number(x.oz||0),0)}
 function foodIntakeDateControls(){
  const date=foodIntakeDate,selected=new Date(date+"T12:00:00"),label=date===ymd()?"Today":selected.toLocaleDateString("en-US",{month:"short",day:"numeric"});
@@ -96,7 +96,7 @@ function foodIntakeDateControls(){
 function shiftFoodIntakeDate(delta){const d=new Date(foodIntakeDate+"T12:00:00");d.setDate(d.getDate()+Number(delta||0));setFoodIntakeDate(ymd(d))}
 function setFoodIntakeDate(date){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))||date>ymd())return;
- foodIntakeDate=date;localStorage.setItem("dailyLifeFoodIntakeDate",date);
+ foodIntakeDate=date;localStorage.setItem("dailyLifeFoodIntakeDate",date);localStorage.setItem("dailyLifeFoodIntakeDateBase",ymd());
  const home=document.getElementById("foodHomeIntakeRoot");if(home)home.outerHTML=foodHomeIntakeProgress();
  const full=document.getElementById("foodIntakeDashboardRoot");if(full)full.outerHTML=foodGoalDashboardCard();
  const trend=document.getElementById("foodTrendRoot");if(trend)trend.outerHTML=foodIntakeTrends();
