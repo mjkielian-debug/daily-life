@@ -6444,6 +6444,7 @@ function foodFavoritesCard(){
   return `<div class="card"><div class="eyebrow">♡ Meal memory</div><h2>What your family likes</h2>${dishes.map(d=>`<div class="row"><span>${esc(d)}</span><b>${feedbackScoreLabel(dishFeedbackScore(d))}</b></div>`).join("")||`<div class="notice">Rate meals after dinner and Daily Life will learn what to repeat more often.</div>`}</div>`;
 }
 function openFoodHubSection(section){
+  if(section==="trends"&&typeof openFoodTrendsFromIntake==="function"){openFoodTrendsFromIntake();return}
   let title="Food",body="";
   if(section==="week"){title="Week Plan";body=foodWeekCard()}
   else if(section==="pantry"){title="Pantry";body=pantryCard()}
@@ -9517,7 +9518,7 @@ async function registerAppWorker(){
 }
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
-<script src="food-tabs.js?v=20261027-intake-caffeine-history1"></script>
+<script src="food-tabs.js?v=20261027-trends-open-fix1"></script>
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
