@@ -87,8 +87,22 @@ function foodPantryRecommendation(rows,nutrients){
   }
   return "<section class=\"food-recommendation quiet\"><b>Food idea</b><div>As more nutrition is logged, I can suggest an on-hand option for the biggest gap.</div></section>";
 }
+let foodIntakeDate=(()=>{const saved=localStorage.getItem("dailyLifeFoodIntakeDate")||ymd();return saved<=ymd()?saved:ymd()})();
+function foodWaterForDate(date){return(state.waterLogs||[]).filter(x=>x.date===date).reduce((sum,x)=>sum+Number(x.oz||0),0)}
+function foodIntakeDateControls(){
+ const date=foodIntakeDate,selected=new Date(date+"T12:00:00"),label=date===ymd()?"Today":selected.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+ return '<div class="food-date-controls"><button type="button" aria-label="Previous day" onclick="shiftFoodIntakeDate(-1)">‹</button><label>'+esc(label)+'<input type="date" max="'+ymd()+'" value="'+date+'" aria-label="Choose intake date" onchange="setFoodIntakeDate(this.value)"></label><button type="button" onclick="setFoodIntakeDate(ymd())">Today</button></div>';
+}
+function shiftFoodIntakeDate(delta){const d=new Date(foodIntakeDate+"T12:00:00");d.setDate(d.getDate()+Number(delta||0));setFoodIntakeDate(ymd(d))}
+function setFoodIntakeDate(date){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))||date>ymd())return;
+ foodIntakeDate=date;localStorage.setItem("dailyLifeFoodIntakeDate",date);
+ const home=document.getElementById("foodHomeIntakeRoot");if(home)home.outerHTML=foodHomeIntakeProgress();
+ const full=document.getElementById("foodIntakeDashboardRoot");if(full)full.outerHTML=foodGoalDashboardCard();
+ const trend=document.getElementById("foodTrendRoot");if(trend)trend.outerHTML=foodIntakeTrends();
+}
 function foodGoalDashboardCard(){
-  const f=foodTotalsForDate(ymd()),waterNow=Number(water())||0,
+  const f=foodTotalsForDate(foodIntakeDate),waterNow=foodWaterForDate(foodIntakeDate),
     configured=state.settings?.nutritionGoals||{},
     goal=(setting,fallback)=>{const n=Number(configured[setting]??state.settings?.[setting]??fallback);return n>0?n:fallback},
     keys={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]},
@@ -118,6 +132,7 @@ function foodGoalDashboardCard(){
       {label:"Fat",value:f.fat,known:macroKnown(["fat","fatG"]),goal:goal("fatTarget",70),unit:"g"},
       {label:"Fiber",value:f.fiber,known:macroKnown(["fiber","fiberG"]),goal:goal("fiberTarget",28),unit:"g"},
       {label:"Water",value:waterNow,known:true,goal:goal("waterTarget",78),unit:"oz"},
+      {label:"Caffeine",value:f.caffeineMg||0,known:f.rows.some(row=>row.caffeineMg!==undefined&&row.caffeineMg!==null&&String(row.caffeineMg).trim()!==""),goal:goal("caffeineLimit",400),unit:"mg",limit:true},
       {label:"Calcium",...microTotal("calcium"),goal:goal("calciumTarget",1300),unit:"mg"},
       {label:"Iron",...microTotal("iron"),goal:goal("ironTarget",18),unit:"mg"},
       {label:"Potassium",...microTotal("potassium"),goal:goal("potassiumTarget",4700),unit:"mg"},
@@ -136,14 +151,14 @@ function foodGoalDashboardCard(){
     estimated=f.rows.some(x=>!!x.nutritionEstimated),
     incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||""))),
     foods=f.rows.slice().reverse().map(x=>"<div class=\"food-eaten-item\"><span>"+esc(x.name||"Food / drink")+"</span><b>"+(foodQuantity(x)>1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" ≈":"")+"</b></div>").join("");
-  return "<div class=\"card food-intake-card\"><div class=\"food-intake-head\"><div><div class=\"eyebrow\">Today’s intake</div><h2>What you’ve had</h2></div><button class=\"btn primary\" onclick=\"openFood()\">+ Log food</button></div>"+
-    (foods?"<div class=\"food-eaten-list\">"+foods+"</div>":"<div class=\"muted small\">Nothing logged yet today.</div>")+
+  return "<div class=\"card food-intake-card\" id=\"foodIntakeDashboardRoot\"><div class=\"food-intake-head\"><div><div class=\"eyebrow\">"+(foodIntakeDate===ymd()?"Today’s intake":new Date(foodIntakeDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" intake")+"</div><h2>What you’ve had</h2></div>"+(foodIntakeDate===ymd()?"<button class=\"btn primary\" onclick=\"openFood()\">+ Log food</button>":"<span class=\"muted small\">Past day · view only</span>")+"</div>"+foodIntakeDateControls()+
+    (foods?"<div class=\"food-eaten-list\">"+foods+"</div>":"<div class=\"muted small\">Nothing logged on this date.</div>")+
     (estimated||incomplete?"<div class=\"food-data-note\">≈ Estimates shown · missing nutrition stays unknown</div>":"")+
-    foodPantryRecommendation(f.rows,nutrients)+
-    "<section class=\"food-goal-section\"><div class=\"food-goal-section-head\"><h3>Daily goal progress</h3><span>Sodium + added sugar are limits</span></div>"+
-    "<div class=\"food-goal-group\"><h4>Calories, macros + water</h4><div class=\"food-goal-grid\">"+nutrients.slice(0,6).map(bar).join("")+"</div></div>"+
-    "<details class=\"food-micro-fold\"><summary>Vitamins, minerals + limits <span>Show</span></summary><div class=\"food-goal-grid\">"+nutrients.slice(6).map(bar).join("")+"</div></details></section>"+
-    "<div class=\"actions food-intake-actions\"><button class=\"btn\" onclick=\"customWater()\">+ Water</button><button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">7-day trends</button></div></div>";
+    (foodIntakeDate===ymd()?foodPantryRecommendation(f.rows,nutrients):"")+
+    "<section class=\"food-goal-section\"><div class=\"food-goal-section-head\"><h3>Daily goal progress</h3><span>Sodium, added sugar + caffeine are limits</span></div>"+
+    "<div class=\"food-goal-group\"><h4>Calories, macros, water + caffeine</h4><div class=\"food-goal-grid\">"+nutrients.slice(0,7).map(bar).join("")+"</div></div>"+
+    "<details class=\"food-micro-fold\"><summary>Vitamins, minerals + limits <span>Show</span></summary><div class=\"food-goal-grid\">"+nutrients.slice(7).map(bar).join("")+"</div></details></section>"+
+    "<div class=\"actions food-intake-actions\">"+(foodIntakeDate===ymd()?"<button class=\"btn\" onclick=\"customWater()\">+ Water</button>":"")+"<button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">7-day trends</button></div></div>";
 }
 
 (function installFoodGoalProgressStyles(){
@@ -179,7 +194,7 @@ function foodProfileQuickProgress(){
 }
 
 function foodHomeIntakeProgress(){
- const t=foodTotalsForDate(ymd()),waterNow=Number(water())||0,goals=state.settings?.nutritionGoals||{},
+ const t=foodTotalsForDate(foodIntakeDate),waterNow=foodWaterForDate(foodIntakeDate),goals=state.settings?.nutritionGoals||{},
  goal=(key,fallback)=>{const v=Number(goals[key]??state.settings?.[key]??fallback);return v>0?v:fallback},
  aliases={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]},
  norm=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]/g,""),
@@ -192,6 +207,7 @@ function foodHomeIntakeProgress(){
  {name:"Fat",value:t.fat,known:known(["fat","fatG"]),goal:goal("fatTarget",70),unit:"g"},
  {name:"Fiber",value:t.fiber,known:known(["fiber","fiberG"]),goal:goal("fiberTarget",28),unit:"g"},
  {name:"Water",value:waterNow,known:true,goal:goal("waterTarget",78),unit:"oz"},
+ {name:"Caffeine",value:t.caffeineMg||0,known:t.rows.some(r=>r.caffeineMg!==undefined&&r.caffeineMg!==null&&String(r.caffeineMg).trim()!==""),goal:goal("caffeineLimit",400),unit:"mg",limit:true},
  {name:"Calcium",...micro("calcium"),goal:goal("calciumTarget",1300),unit:"mg"},
  {name:"Iron",...micro("iron"),goal:goal("ironTarget",18),unit:"mg"},
  {name:"Potassium",...micro("potassium"),goal:goal("potassiumTarget",4700),unit:"mg"},
@@ -200,9 +216,9 @@ function foodHomeIntakeProgress(){
  {name:"Added sugar",...micro("addedSugar"),goal:goal("addedSugarLimit",50),unit:"g",limit:true}],
  rings=data.map(n=>{const pct=n.known?Math.max(0,Math.round(100*n.value/n.goal)):null,fill=pct===null?0:Math.min(100,pct),label=pct===null?"—":pct+"%",amt=n.known?(Math.round(n.value*10)/10).toLocaleString()+" / "+n.goal.toLocaleString()+" "+n.unit:"No data recorded",caption=n.limit?"of limit":"of goal";return '<div class="food-home-nutrient" title="'+esc(n.name+": "+amt+(n.limit?" · "+caption:""))+'"><span class="food-home-ring" style="--food-progress:'+fill+'%" role="img" aria-label="'+esc(n.name+": "+(pct===null?"no data":pct+"% "+caption))+'"><b>'+label+'</b></span><strong>'+esc(n.name)+'</strong><small>'+esc(n.known?(Math.round(n.value*10)/10).toLocaleString()+" "+n.unit:caption)+'</small></div>'}).join(""),
  foods=t.rows.slice().reverse().map(r=>esc(r.name||"Food / drink")+(foodQuantity(r)>1?" ×"+foodQuantity(r):"")+(r.nutritionEstimated?" ≈":"")).join(" · ");
- return '<section class="food-home-intake" aria-label="Today’s nutrition progress"><div class="food-home-intake-head"><div><div class="eyebrow">TODAY’S INTAKE</div><h2>Nutrition progress</h2></div><button type="button" onclick="openFoodHubSection(&quot;intake&quot;)">Details ›</button></div>'+
- (foods?'<div class="food-home-eaten"><b>Had today:</b> '+foods+'</div>':'<div class="food-home-eaten">Nothing logged yet today.</div>')+
- '<div class="food-home-nutrients">'+rings+'</div><div class="food-home-limit-note">Sodium and added sugar show the portion of your daily limit used. “—” means no value is recorded.</div></section>';
+ return '<section class="food-home-intake" id="foodHomeIntakeRoot" aria-label="Nutrition progress"><div class="food-home-intake-head"><div><div class="eyebrow">'+(foodIntakeDate===ymd()?"TODAY’S INTAKE":new Date(foodIntakeDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}).toUpperCase())+'</div><h2>Nutrition progress</h2></div><div class="food-home-intake-actions"><button type="button" onclick="openFoodHubSection(&quot;intake&quot;)">Details ›</button><button type="button" onclick="openFoodHubSection(&quot;trends&quot;)">Trends ›</button></div></div>'+foodIntakeDateControls()+
+ (foods?'<div class="food-home-eaten"><b>Had '+(foodIntakeDate===ymd()?"today":new Date(foodIntakeDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))+':</b> '+foods+'</div>':'<div class="food-home-eaten">Nothing logged on this date.</div>')+
+ '<div class="food-home-nutrients">'+rings+'</div><div class="food-home-limit-note">Sodium, added sugar, and caffeine show the portion of your daily limit used. “—” means no value is recorded.</div></section>';
 }
 (function(){
  if(document.getElementById("foodHomeIntakeStyles"))return;
@@ -219,44 +235,48 @@ function openFoodTrendsFromIntake(){
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
-  const totals=foodTotalsForDate(date);
-  if(metric==="water"){
-    const logs=(state.waterLogs||[]).filter(x=>x.date===date);
-    return logs.length?logs.reduce((sum,x)=>sum+Number(x.oz||0),0):null;
-  }
-  const aliases={calories:["calories","cal"],protein:["protein","proteinG"],carbs:["carbs","carbohydrates","carbsG"],fat:["fat","fatG"],fiber:["fiber","fiberG"]}[metric]||[],
-    known=totals.rows.some(row=>aliases.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""));
-  return known?Number(totals[metric]||0):null;
+ const totals=foodTotalsForDate(date),microAliases={calcium:["calcium","calciumMg"],iron:["iron","ironMg"],potassium:["potassium","potassiumMg"],vitaminD:["vitaminD","vitamin_d","vitaminDMcg"],sodium:["sodium","sodiumMg"],addedSugar:["addedSugar","added_sugar","addedSugars"]};
+ if(metric==="water"){const logs=(state.waterLogs||[]).filter(x=>x.date===date);return logs.length?logs.reduce((sum,x)=>sum+Number(x.oz||0),0):null}
+ if(metric==="caffeine"){const known=totals.rows.some(row=>row.caffeineMg!==undefined&&row.caffeineMg!==null&&String(row.caffeineMg).trim()!=="");return known?totals.caffeineMg:null}
+ const macros={calories:["calories","cal"],protein:["protein","proteinG"],carbs:["carbs","carbohydrates","carbsG"],fat:["fat","fatG"],fiber:["fiber","fiberG"]};
+ if(macros[metric]){const keys=macros[metric],known=totals.rows.some(row=>keys.some(key=>row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""));return known?Number(totals[metric]||0):null}
+ const aliases=microAliases[metric];if(!aliases)return null;let value=0,known=false;
+ const norm=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+ for(const row of totals.rows){let raw;for(const key of aliases)if(row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!==""){raw=row[key];break}
+  if(raw===undefined){const source=row.micronutrients&&typeof row.micronutrients==="object"?row.micronutrients:{},match=Object.entries(source).find(([key])=>aliases.some(a=>norm(a)===norm(key)));if(match)raw=match[1]}
+  if(raw!==undefined){const n=typeof raw==="object"&&raw!==null?Number(raw.value):Number(raw);if(Number.isFinite(n)){value+=n*foodQuantity(row);known=true}}
+ }
+ return known?value:null;
 }
 function setFoodTrendMetric(metric){
-  if(!["calories","protein","carbs","fat","fiber","water"].includes(metric))return;
+  if(!["calories","protein","carbs","fat","fiber","water","caffeine","calcium","iron","potassium","vitaminD","sodium","addedSugar"].includes(metric))return;
   foodTrendMetric=metric;localStorage.setItem("dailyLifeFoodTrendMetric",metric);
   const root=document.getElementById("foodTrendRoot");
   if(root)root.outerHTML=foodIntakeTrends();else openFoodHubSection("trends");
 }
 foodIntakeTrends=function(){
-  const goals={calories:foodDailyGoal("calTarget",2100),protein:foodDailyGoal("proteinTarget",100),carbs:foodDailyGoal("carbsTarget",250),fat:foodDailyGoal("fatTarget",70),fiber:foodDailyGoal("fiberTarget",28),water:foodDailyGoal("waterTarget",78)},
-    units={calories:"cal",protein:"g",carbs:"g",fat:"g",fiber:"g",water:"oz"},
-    labels={calories:"Calories",protein:"Protein",carbs:"Carbs",fat:"Fat",fiber:"Fiber",water:"Water"},
-    metric=foodTrendMetric in goals?foodTrendMetric:"calories",dates=trendDates(7),
-    points=dates.map((date,index)=>({date:date,index:index,value:foodTrendValue(metric,date),label:new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})})),
-    values=points.filter(x=>x.value!==null),average=values.length?values.reduce((sum,x)=>sum+x.value,0)/values.length:null,
-    scale=Math.max(goals[metric],1,...values.map(x=>x.value))*1.12,
-    xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/scale))*100,
-    targetY=yAt(goals[metric]),averageY=average===null?null:yAt(average),
-    segments=[],active=[];
-  for(const point of points){if(point.value===null){if(active.length)segments.push(active);active=[]}else active.push(point)}
-  if(active.length)segments.push(active);
-  const paths=segments.filter(x=>x.length>1).map(x=>"<polyline points=\""+x.map(p=>xAt(p.index)+","+yAt(p.value)).join(" ")+"\"/>").join(""),
-    dots=points.filter(x=>x.value!==null).map(p=>"<g><title>"+esc(p.label)+" · "+(Math.round(p.value*10)/10).toLocaleString()+" "+units[metric]+"</title><circle cx=\""+xAt(p.index)+"\" cy=\""+yAt(p.value)+"\" r=\"4\"/></g>").join(""),
-    days=points.map(p=>"<text x=\""+xAt(p.index)+"\" y=\"151\" text-anchor=\"middle\">"+esc(p.label.slice(0,1))+"</text>").join(""),
-    controls=Object.keys(goals).map(key=>"<button type=\"button\" class=\"food-trend-chip "+(key===metric?"active":"")+"\" aria-pressed=\""+(key===metric?"true":"false")+"\" onclick=\"setFoodTrendMetric('"+key+"')\">"+labels[key]+"</button>").join(""),
-    goalLine="<line class=\"food-goal-line\" x1=\"32\" y1=\""+targetY+"\" x2=\"328\" y2=\""+targetY+"\"/>",
-    avgLine=averageY===null?"":"<line class=\"food-average-line\" x1=\"32\" y1=\""+averageY+"\" x2=\"328\" y2=\""+averageY+"\"/>";
-  const averageText=average===null?"No logged values yet":"Average "+(Math.round(average*10)/10).toLocaleString()+" "+units[metric]+" across "+values.length+" logged day"+(values.length===1?"":"s"),
-    chart=values.length?"<svg class=\"food-line-chart\" viewBox=\"0 0 360 166\" role=\"img\" aria-label=\"Seven-day "+esc(labels[metric].toLowerCase())+" line graph; blank days have no recorded value\"><line class=\"food-chart-axis\" x1=\"32\" y1=\"25\" x2=\"32\" y2=\"126\"/><line class=\"food-chart-axis\" x1=\"32\" y1=\"126\" x2=\"328\" y2=\"126\"/><text x=\"27\" y=\"25\" text-anchor=\"end\">"+Math.round(scale).toLocaleString()+"</text><text x=\"27\" y=\"129\" text-anchor=\"end\">0</text>"+goalLine+avgLine+"<g class=\"food-chart-line\">"+paths+"</g><g class=\"food-chart-dots\">"+dots+"</g><g class=\"food-chart-days\">"+days+"</g></svg>":"<div class=\"food-trend-empty\">Log food or water to start a trend.</div>";
-  return "<section class=\"card food-trend-card\" id=\"foodTrendRoot\"><div class=\"eyebrow\">7-day food trend</div><div class=\"food-trend-head\"><h2>"+labels[metric]+"</h2><span>"+values.length+"/7 days logged</span></div><div class=\"food-trend-average\">"+averageText+"</div><div class=\"food-trend-selectors\">"+controls+"</div>"+chart+"<div class=\"food-trend-legend\"><span>Goal line</span>"+(average===null?"":"<span>Average line</span>")+"</div><div class=\"muted small food-trend-note\">Unlogged days stay blank. Average uses only recorded values.</div></section>";
+ const goals={calories:foodDailyGoal("calTarget",2100),protein:foodDailyGoal("proteinTarget",100),carbs:foodDailyGoal("carbsTarget",250),fat:foodDailyGoal("fatTarget",70),fiber:foodDailyGoal("fiberTarget",28),water:foodDailyGoal("waterTarget",78),caffeine:foodDailyGoal("caffeineLimit",400),calcium:foodDailyGoal("calciumTarget",1300),iron:foodDailyGoal("ironTarget",18),potassium:foodDailyGoal("potassiumTarget",4700),vitaminD:foodDailyGoal("vitaminDTarget",20),sodium:foodDailyGoal("sodiumLimit",2300),addedSugar:foodDailyGoal("addedSugarLimit",50)},
+ units={calories:"cal",protein:"g",carbs:"g",fat:"g",fiber:"g",water:"oz",caffeine:"mg",calcium:"mg",iron:"mg",potassium:"mg",vitaminD:"mcg",sodium:"mg",addedSugar:"g"},
+ labels={calories:"Calories",protein:"Protein",carbs:"Carbs",fat:"Fat",fiber:"Fiber",water:"Water",caffeine:"Caffeine",calcium:"Calcium",iron:"Iron",potassium:"Potassium",vitaminD:"Vitamin D",sodium:"Sodium",addedSugar:"Added sugar"},
+ metric=foodTrendMetric in goals?foodTrendMetric:"calories",endDate=foodIntakeDate,base=new Date(endDate+"T12:00:00"),
+ dates=Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(d.getDate()-6+i);return ymd(d)}),
+ points=dates.map((date,index)=>({date,index,value:foodTrendValue(metric,date),label:new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})})),
+ values=points.filter(x=>x.value!==null),average=values.length?values.reduce((sum,x)=>sum+x.value,0)/values.length:null,
+ scale=Math.max(goals[metric],1,...values.map(x=>x.value))*1.12,
+ xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/scale))*100,
+ targetY=yAt(goals[metric]),averageY=average===null?null:yAt(average),segments=[],active=[];
+ for(const point of points){if(point.value===null){if(active.length)segments.push(active);active=[]}else active.push(point)}if(active.length)segments.push(active);
+ const paths=segments.filter(x=>x.length>1).map(x=>"<polyline points=\""+x.map(p=>xAt(p.index)+","+yAt(p.value)).join(" ")+"\"/>").join(""),
+ dots=points.filter(x=>x.value!==null).map(p=>"<g><title>"+esc(p.label)+" · "+(Math.round(p.value*10)/10).toLocaleString()+" "+units[metric]+"</title><circle cx=\""+xAt(p.index)+"\" cy=\""+yAt(p.value)+"\" r=\"4\"/></g>").join(""),
+ days=points.map(p=>"<text x=\""+xAt(p.index)+"\" y=\"151\" text-anchor=\"middle\">"+esc(p.label.slice(0,1))+"</text>").join(""),
+ controls=Object.keys(goals).map(key=>"<button type=\"button\" class=\"food-trend-chip "+(key===metric?"active":"")+"\" aria-pressed=\""+(key===metric?"true":"false")+"\" onclick=\"setFoodTrendMetric('"+key+"')\">"+labels[key]+"</button>").join(""),
+ goalLine="<line class=\"food-goal-line\" x1=\"32\" y1=\""+targetY+"\" x2=\"328\" y2=\""+targetY+"\"/>",
+ avgLine=averageY===null?"":"<line class=\"food-average-line\" x1=\"32\" y1=\""+averageY+"\" x2=\"328\" y2=\""+averageY+"\"/>";
+ const averageText=average===null?"No logged values yet":"Average "+(Math.round(average*10)/10).toLocaleString()+" "+units[metric]+" across "+values.length+" logged day"+(values.length===1?"":"s"),
+ chart=values.length?"<svg class=\"food-line-chart\" viewBox=\"0 0 360 166\" role=\"img\" aria-label=\"Seven-day "+esc(labels[metric].toLowerCase())+" line graph; blank days have no recorded value\"><line class=\"food-chart-axis\" x1=\"32\" y1=\"25\" x2=\"32\" y2=\"126\"/><line class=\"food-chart-axis\" x1=\"32\" y1=\"126\" x2=\"328\" y2=\"126\"/><text x=\"27\" y=\"25\" text-anchor=\"end\">"+Math.round(scale).toLocaleString()+"</text><text x=\"27\" y=\"129\" text-anchor=\"end\">0</text>"+goalLine+avgLine+"<g class=\"food-chart-line\">"+paths+"</g><g class=\"food-chart-dots\">"+dots+"</g><g class=\"food-chart-days\">"+days+"</g></svg>":"<div class=\"food-trend-empty\">No intake recorded in this 7-day period yet.</div>";
+ return "<section class=\"card food-trend-card\" id=\"foodTrendRoot\"><div class=\"eyebrow\">7-day food trend</div><div class=\"food-trend-head\"><h2>"+labels[metric]+"</h2><span>"+values.length+"/7 days logged</span></div>"+foodIntakeDateControls()+"<div class=\"food-trend-average\">"+averageText+"</div><div class=\"food-trend-selectors\">"+controls+"</div>"+chart+"<div class=\"food-trend-legend\"><span>Daily goal / limit</span>"+(average===null?"":"<span>Average line</span>")+"</div><div class=\"muted small food-trend-note\">Unlogged days stay blank. Average uses only recorded values. Choose a date to move the 7-day window.</div></section>";
 };
+
 (function installFoodTrendStyles(){
   if(document.getElementById("foodTrendStyles"))return;
   const style=document.createElement("style");style.id="foodTrendStyles";
@@ -410,3 +430,5 @@ generatedMealDetails=function(m){
   `;
   document.head.appendChild(style);
 })();
+
+(function installFoodDateControlStyles(){if(document.getElementById("foodDateControlStyles"))return;const s=document.createElement("style");s.id="foodDateControlStyles";s.textContent=".food-date-controls{display:flex;align-items:center;gap:6px;margin:7px 0 9px}.food-date-controls button{border:1px solid var(--border);border-radius:999px;background:var(--panel);color:var(--text);padding:5px 9px;font:inherit;font-size:.68rem;font-weight:750}.food-date-controls label{position:relative;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:5px 9px;font-size:.68rem;font-weight:750;background:color-mix(in srgb,var(--primary) 8%,var(--panel));color:var(--text)}.food-date-controls input{width:18px;border:0;padding:0;background:transparent;color:transparent;opacity:.02;position:absolute;inset:0;cursor:pointer}.food-home-intake-actions{display:flex;gap:7px}.food-home-intake-actions button{border:0;background:transparent;color:var(--secondary);font:inherit;font-size:.72rem;font-weight:800;white-space:nowrap}";document.head.appendChild(s)})();
