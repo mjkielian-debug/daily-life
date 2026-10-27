@@ -254,7 +254,7 @@ function foodHomeIntakeProgress(){
 
 // Detailed intake keeps its nutrient list; Food home uses the compact completion rings.
 todayNutritionCard=foodGoalDashboardCard;
-function openFoodTrendsFromIntake(){openLifeTrends()}
+function openFoodTrendsFromIntake(){modal("Food + Water Trends",foodIntakeTrendsV2(),"Close",closeModal)}
 function openLifeTrends(){
   closeModal();
   modal("Your Trends",`<div class="food-hub-modal">${foodIntakeTrendsV2()}${sleepWorkTrendCard()}${outfitTrendCard()}</div>`,"Close",closeModal);
