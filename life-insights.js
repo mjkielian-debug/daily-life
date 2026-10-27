@@ -165,9 +165,7 @@ function lifeTrendChart(title,series,unit,days){
 }
 function lifeTrendCard(title,values,unit,dates,days){
  lifeTrendChart.dates=dates;
- const formatted=values.map(v=>v===null?"—":(Number(v)%1?Number(v).toFixed(1):Number(v))+unit);
- return lifeTrendChart(title,values,unit,days)+'<div class="life-trend-values" aria-label="'+esc(title)+' daily values">'+
-  dates.map((d,i)=>'<span title="'+esc(d)+'">'+esc(formatted[i])+'</span>').join("")+'</div>';
+ return lifeTrendChart(title,values,unit,days);
 }
 function lifeTrendKnownCount(logs,dates,doneOnly=false){
  return dates.map(d=>{
@@ -193,7 +191,7 @@ function lifeTrendSelfCare(dates){
          frequency=known.length?daysDone+"/"+known.length+" confirmed days":"No confirmed entries",
          metric=occurrences+" occurrence"+(occurrences===1?"":"s");
    lifeTrendChart.dates=dates;
-   return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart("",values,"",dates.length)+'</div>';
+   return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart(h.label||h.key,values,"",dates.length)+'</div>';
  }).join("")+'</div>';
 }
 function lifeTrendContent(days){
