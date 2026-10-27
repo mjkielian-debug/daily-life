@@ -139,26 +139,34 @@ function lifeTrendDates(days){
  return out;
 }
 function lifeTrendChart(title,series,unit,days){
- const seen=series.filter(v=>v!==null&&Number.isFinite(Number(v))).map(Number);
- const max=Math.max(1,...seen),min=0,w=300,h=96,left=6,right=6,top=8,bottom=9,
+ const seen=series.filter(v=>v!==null&&Number.isFinite(Number(v))).map(Number),
+       max=Math.max(1,...seen),mid=max/2,w=320,h=120,left=42,right=6,top=10,bottom=20,
        usableW=w-left-right,usableH=h-top-bottom,
-       xy=(v,i)=>[left+(series.length<2?usableW/2:i*usableW/(series.length-1)),top+usableH-(Number(v)||0)/max*usableH];
+       xy=(v,i)=>[left+(series.length<2?usableW/2:i*usableW/(series.length-1)),top+usableH-(Number(v)||0)/max*usableH],
+       number=v=>Number(v).toLocaleString("en-US",{maximumFractionDigits:1}),
+       dateLabel=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",days<=7?{weekday:"short",day:"numeric"}:{month:"short",day:"numeric"});
  let path="",last=-2;
  series.forEach((v,i)=>{if(v===null||!Number.isFinite(Number(v))){last=-2;return}
    const [x,y]=xy(v,i);path+=(last===i-1?" L ":" M ")+x.toFixed(1)+" "+y.toFixed(1);last=i;
  });
  const dots=series.map((v,i)=>{if(v===null||!Number.isFinite(Number(v)))return"";
-   const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=Number(v).toFixed(Number(v)%1?1:0);
-   return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.2"><title>'+esc(date)+': '+esc(display)+' '+esc(unit)+'</title></circle>';
+   const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=number(v),spoken=display+(unit?" "+unit:"");
+   return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" aria-label="'+esc(dateLabel(date)+": "+spoken)+'"><title>'+esc(dateLabel(date)+": "+spoken)+'</title></circle>';
  }).join("");
+ const ticks=[max,mid,0],grid=ticks.map(v=>{const y=(top+usableH-(v/max)*usableH).toFixed(1);return "M"+left+" "+y+" H"+(w-right)}).join(" "),
+       yLabels=ticks.map(v=>{const y=(top+usableH-(v/max)*usableH+3).toFixed(1);return '<text x="2" y="'+y+'" class="life-trend-axis-label">'+esc(number(v))+'</text>'}).join("");
  const labels=lifeTrendChart.dates.map((d,i)=>({d,i})).filter(({i})=>days<=7||i===0||i===days-1||(i+1)%7===0)
-  .map(({d,i})=>'<span>'+esc(days<=7?new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}):String(Number(d.slice(8))))+'</span>').join("");
- const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):"No entries in this period";
- return '<section class="life-trend-chart"><div class="life-trend-heading"><b>'+esc(title)+'</b><small>'+esc(summary)+'</small></div>'+
-  '<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(title)+' over '+days+' days; gaps indicate no entry">'+
-  '<path class="life-trend-grid" d="M'+left+' '+(top+usableH)+' H'+(w-right)+' M'+left+' '+(top+usableH/2)+' H'+(w-right)+'"/>'+
+  .map(({d})=>'<span>'+esc(dateLabel(d))+'</span>').join("");
+ const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):"No entries in this period",
+       unitText=unit||"count",
+       exact=series.map((v,i)=>({v,d:lifeTrendChart.dates[i]})).filter(x=>x.v!==null&&Number.isFinite(Number(x.v)))
+        .map(x=>'<span><b>'+esc(dateLabel(x.d))+'</b><span>'+esc(number(x.v)+(unit?" "+unit:""))+'</span></span>').join("");
+ return '<section class="life-trend-chart"><div class="life-trend-heading"><b>'+esc(title)+'</b><small>'+esc(unitText)+' · '+esc(summary)+'</small></div>'+
+  '<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(title)+' in '+esc(unitText)+' over '+days+' days; missing dates mean no saved entry">'+
+  '<path class="life-trend-grid" d="'+grid+'"/>'+yLabels+
   (path?'<path class="life-trend-line" d="'+path+'"/>':"")+
-  '<g class="life-trend-dots">'+dots+'</g></svg><div class="life-trend-labels">'+labels+'</div></section>';
+  '<g class="life-trend-dots">'+dots+'</g></svg><div class="life-trend-labels">'+labels+'</div>'+
+  (exact?'<details class="life-trend-exact"><summary>See dates and exact values</summary><div>'+exact+'</div></details>':"")+'</section>';
 }
 function lifeTrendCard(title,values,unit,dates,days){
  lifeTrendChart.dates=dates;
@@ -180,7 +188,7 @@ function lifeTrendSelfCare(dates){
          frequency=known.length?daysDone+"/"+known.length+" confirmed days":"No confirmed entries",
          metric=occurrences+" occurrence"+(occurrences===1?"":"s");
    lifeTrendChart.dates=dates;
-   return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart(h.label||h.key,values,"",dates.length)+'</div>';
+   return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart(h.label||h.key,values,"times/day",dates.length)+'</div>';
  }).join("")+'</div>';
 }
 function lifeTrendSleepPoint(date,sleepRows,workRows){
@@ -231,10 +239,10 @@ function lifeTrendContent(days){
  return '<div class="life-trends">'+
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
   '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity. Sleep estimates wake one hour before a saved work start when only bedtime was logged.</p>'+
-  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals," h",dates,days)+lifeTrendCard("Energy",energyVals," / 5",dates,days)+lifeTrendCard("Work hours",workVals," h",dates,days)+'</div>'+
-  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Food entries",foodCountVals,"",dates,days)+lifeTrendCard("Calories",foodVals,"",dates,days)+lifeTrendCard("Protein",proteinVals," g",dates,days)+lifeTrendCard("Water",waterVals," oz",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy",energyVals,"score out of 5",dates,days)+lifeTrendCard("Work hours",workVals,"hours/day",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Food entries",foodCountVals,"entries/day",dates,days)+lifeTrendCard("Calories",foodVals,"kcal/day",dates,days)+lifeTrendCard("Protein",proteinVals,"g/day",dates,days)+lifeTrendCard("Water",waterVals,"oz/day",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
-  '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals," min",dates,days)+lifeTrendCard("Reading",readingVals," pages",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"",dates,days)+lifeTrendCard("Home resets",homeVals,"",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals,"minutes/day",dates,days)+lifeTrendCard("Reading",readingVals,"pages/day",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"days",dates,days)+lifeTrendCard("Home resets",homeVals,"completed/day",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"completed/day",dates,days)+'</div>'+
  '</div>';
 }
 window.openLifeTrends=function(days=30){
