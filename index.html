@@ -174,7 +174,7 @@ dialog,
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
 <link rel="stylesheet" href="house-visual-map.css?v=20261019-dolly-room-photo-tour2">
-<link rel="stylesheet" href="visual-hubs.css?v=20261023-evening-log1">
+<link rel="stylesheet" href="visual-hubs.css?v=20261027-intake-caffeine-history1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
@@ -779,10 +779,10 @@ function itinerarySuggestedBlocks(date){
       step("work-hygiene",55,45,"Teeth + face + hair","Brush teeth · floss · mouthwash · wash face · hair/ponytail or another quick hairstyle · deodorant · perfume","🪥");
       step("work-dayflow",45,30,"Check Day Flow","Review today’s schedule, changes, Do Next, and anything that needs to leave the house with you","✦");
       step("work-stretch",30,25,"5-minute stretch","Quick whole-body stretch before work","↗");
-      step("work-gather",25,15,"Water + gather + tire check","Fill water bottle · gather keys/phone/work items · check tire before leaving","💧");
+      step("work-gather",25,15,"Gather work things","Water bottle · Earbuds · Energy drink · Jacket · Bag","💧");
       step("work-commute",15,0,"Leave for UPS + clock in","Drive to UPS and be ready to clock in at the scheduled start","📦");
     }else if(available>=30){
-      add({templateKey:"work-morning",start:minutesHm(launchStart),end:minutesHm(workStart),title:"Get ready + leave for UPS",detail:"Dress · teeth/face/hair · check Day Flow · stretch · water/items · tire check · commute",icon:"☕"});
+      add({templateKey:"work-morning",start:minutesHm(launchStart),end:minutesHm(workStart),title:"Get ready + leave for UPS",detail:"Dress · teeth/face/hair · check Day Flow · stretch · water/items · commute",icon:"☕"});
     }
   }
   if(w?.end){
@@ -941,7 +941,7 @@ function itinerarySuggestedBlocks(date){
   const prefs=state.settings?.itinerary?.routinePreferences||{};
   return out.filter(x=>prefs[weekday+":"+x.templateKey]?.enabled!==false).map((x,i)=>{
     const saved=prefs[weekday+":"+x.templateKey]||null,start=saved?.start||x.start,duration=Number(saved?.durationMinutes||0),end=duration>0?minutesHm((hmMinutes(start)||0)+duration):(saved?.end||x.end);
-    return {...x,start,end,detail:saved?.detail||x.detail,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested",learnedRoutine:!!saved};
+    const cleanText=value=>String(value||"").replace(/(?:\s*[·•]\s*)?(?:and\s+)?(?:check tire(?: pressure)?|tire check)(?:\s*[·•]\s*)?/ig," · ").replace(/\s+·\s+·/g," · ").replace(/^[·\s]+|[·\s]+$/g,"").trim(),detail=cleanText(saved?.detail||x.detail),title=x.templateKey==="work-gather"?"Gather work things":String(x.title||"").replace(/\s*(?:\\+|and)?\s*tire check/ig,"").trim(); return {...x,title,start,end,detail,id:"suggest:"+date+":"+x.templateKey+":"+i,fixed:false,kind:"routine",source:"suggested",learnedRoutine:!!saved};
   });
 }
 
@@ -6316,7 +6316,7 @@ function openOrder(id=''){
 }
 function foodTotalsForDate(date){
   const rows=(state.foodLogs||[]).filter(x=>x.date===date),sum=k=>rows.reduce((n,x)=>n+Number(x?.[k]||0)*foodQuantity(x),0);
-  return{rows,cal:sum("calories"),protein:sum("protein"),carbs:sum("carbs"),fat:sum("fat"),fiber:sum("fiber"),caffeineMg:sum("caffeineMg"),knownCaffeine:rows.some(x=>Number(x.caffeineMg)>0),monsters:rows.filter(x=>x.category==="monster").reduce((n,x)=>n+foodQuantity(x),0)};
+  return{rows,cal:sum("calories"),protein:sum("protein"),carbs:sum("carbs"),fat:sum("fat"),fiber:sum("fiber"),caffeineMg:sum("caffeineMg"),knownCaffeine:rows.some(x=>x.caffeineMg!==undefined&&x.caffeineMg!==null&&String(x.caffeineMg).trim()!==""),monsters:rows.filter(x=>x.category==="monster").reduce((n,x)=>n+foodQuantity(x),0)};
 }
 function intakeGoalBar(label,value,target,unit){
   const actual=Math.max(0,Number(value)||0),goal=Number(target)||0,pct=goal>0?Math.min(100,Math.round(actual*100/goal)):0,
@@ -9407,7 +9407,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261027-spirituality-route1";
+const DAILY_LIFE_BUILD="20261027-intake-caffeine-history1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9517,7 +9517,7 @@ async function registerAppWorker(){
 }
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
-<script src="food-tabs.js?v=20261013-dominos-runza2"></script>
+<script src="food-tabs.js?v=20261027-intake-caffeine-history1"></script>
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
