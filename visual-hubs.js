@@ -215,7 +215,12 @@ function visualHubView(page){
  if(page==="itinerary")return visualDayFlowView();
  if(page==="spirituality")return visualSpiritualityView();
  const c=visualHubModel(page);if(!c.title)return"";
- if(page==="family"&&typeof peopleProfileHomePage==="function")return peopleProfileHomePage();
+ if(page==="family"&&typeof peopleProfileHomePage==="function"){
+  const roster=typeof lifeSimRoster==="function"?lifeSimRoster():[],
+        selected=typeof lifeSimSelectedId==="function"?String(lifeSimSelectedId(roster)):"self",
+        trendLink=selected==="self"?'<button type="button" class="vh-home-all-trends" onclick="openLifeTrends(30)" style="display:block;width:100%;margin:0 0 9px;padding:11px 14px;text-align:left;border:1px solid #d9c8dc;border-radius:15px;background:linear-gradient(100deg,#f8dce9,#e2eff4);color:#47364b;font:inherit;font-weight:750">↗ All trends<small style="display:block;margin-top:3px;font-size:.72rem;font-weight:500;color:#6f6473">Sleep · work · food · water · self-care and more</small></button>':"";
+  return trendLink+peopleProfileHomePage();
+}
  // Inventory should open to the real, usable inventory surface immediately.
  // The generic recommendation card and collapsed detail accordion hid the actual items.
  if(page==="inventory"&&typeof inventoryDetailedView==="function")return inventoryDetailedView();
