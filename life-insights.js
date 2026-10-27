@@ -183,6 +183,22 @@ function lifeTrendSelfCare(dates){
    return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart(h.label||h.key,values,"",dates.length)+'</div>';
  }).join("")+'</div>';
 }
+function lifeTrendSleepPoint(date,sleepRows,workRows){
+ const candidates=sleepRows.filter(x=>x.date===date);
+ const row=candidates.find(x=>Number(x.actualSleepHours)>0||(x.bedtime&&x.wakeTime))||candidates.find(x=>x.bedtime);
+ if(!row)return null;
+ const actual=Number(row.actualSleepHours);
+ if(Number.isFinite(actual)&&actual>0)return actual;
+ if(row.wakeTime&&typeof sleepWindowHours==="function"){
+   const hours=Number(sleepWindowHours(row));return hours>0?hours:null;
+ }
+ const shift=workRows.find(x=>x.date===date),start=String(shift?.start||shift?.scheduled||"");
+ if(!row.bedtime||!/^\\d{2}:\\d{2}$/.test(start))return null;
+ const [sh,sm]=start.split(":").map(Number),[bh,bm]=String(row.bedtime).split(":").map(Number);
+ const wake=(sh*60+sm-60+1440)%1440,bed=bh*60+bm;
+ let minutes=wake-bed;if(minutes<0)minutes+=1440;
+ return minutes>0?minutes/60:null;
+}
 function lifeTrendContent(days){
  const dates=lifeTrendDates(days),
        food=entries("foodLogs"),water=entries("waterLogs"),
@@ -192,10 +208,10 @@ function lifeTrendContent(days){
        chores=entries("chores"),tasks=entries("tasks");
  const daily=(rows,d,filter=()=>true)=>rows.filter(x=>x.date===d&&filter(x));
  const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
- const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null}),
-       energyVals=dates.map(d=>{const row=sleep.find(x=>x.date===d),value=Number(row?.energy||0);return value>0?value:null});
- const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
- const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!==""),
+ const sleepVals=dates.map(d=>lifeTrendSleepPoint(d,sleep,work)),
+       energyVals=dates.map(d=>{const row=sleep.filter(x=>x.date===d).find(x=>x.bedtime&&x.wakeTime)||sleep.find(x=>x.date===d),value=Number(row?.energy||0);return value>0?value:null});
+ const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.timecardVerified||(x.start&&x.end)));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
+ const foodRows=dates.map(d=>daily(food,d)),foodCountVals=foodRows.map(rows=>rows.length?rows.length:null),knownMetric=(rows,key)=>rows.some(x=>x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!==""),
        foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
@@ -207,25 +223,25 @@ function lifeTrendContent(days){
  const period=days===7?"Past 7 days":"Past 30 days";
  return '<div class="life-trends">'+
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
-  '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity.</p>'+
+  '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity. Sleep estimates wake one hour before a saved work start when only bedtime was logged.</p>'+
   '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals," h",dates,days)+lifeTrendCard("Energy",energyVals," / 5",dates,days)+lifeTrendCard("Work hours",workVals," h",dates,days)+'</div>'+
-  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"",dates,days)+lifeTrendCard("Protein",proteinVals," g",dates,days)+lifeTrendCard("Water",waterVals," oz",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Food entries",foodCountVals,"",dates,days)+lifeTrendCard("Calories",foodVals,"",dates,days)+lifeTrendCard("Protein",proteinVals," g",dates,days)+lifeTrendCard("Water",waterVals," oz",dates,days)+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
   '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals," min",dates,days)+lifeTrendCard("Reading",readingVals," pages",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"",dates,days)+lifeTrendCard("Home resets",homeVals,"",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"",dates,days)+'</div>'+
  '</div>';
 }
-window.openLifeTrends=function(days=7){
- const span=Number(days)===30?30:7;
+window.openLifeTrends=function(days=30){
+ const span=Number(days)===7?7:30;
  modal("All life trends",lifeTrendContent(span),"Close",closeModal);
 };
 window.sevenDayTrends=function(){
- return '<div class="card"><div class="eyebrow">Trends</div><h2>Your tracked patterns</h2><div class="muted small">Sleep, work, food, water, self-care and more.</div><button class="btn small primary" style="margin-top:10px" onclick="openLifeTrends(7)">View trends ›</button></div>';
+ return typeof selfCareCard==="function"?selfCareCard():"";
 };
-if(typeof window.openFoodHubSection==="function"){
- const originalOpenFoodHubSection=window.openFoodHubSection;
- window.openFoodHubSection=function(section){
-   if(section==="trends"){window.openLifeTrends(7);return}
-   return originalOpenFoodHubSection(section);
- };
-}
+window.carePatternsHub=function(){
+ const previous=typeof selfCareTab!=="undefined"?selfCareTab:null;
+ if(typeof selfCareTab!=="undefined")selfCareTab="track";
+ const card=typeof selfCareCard==="function"?selfCareCard():"";
+ if(previous!==null)selfCareTab=previous;
+ return card+(typeof sleepCard==="function"?sleepCard():"")+(typeof careOutfitCard==="function"?careOutfitCard():"");
+};
 })();
