@@ -6297,15 +6297,40 @@ function readingView(){
   </section>`;
 }
 function week(offset=0){const b=new Date(),wd=b.getDay(),diff=wd===0?-6:1-wd,m=new Date(b);m.setDate(b.getDate()+diff+(Number(offset)||0)*7);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return ymd(d)})}
+function orderIsClosed(o){
+  const status=String(o?.status||"").trim().toLowerCase();
+  return ["complete","cancelled"].includes(status)||(status==="delivered"&&!!o?.perishablesAway);
+}
+function orderTimeLabel(value){
+  const raw=String(value||"").trim();
+  if(!raw)return "";
+  if(/^\d{4}-\d\d-\d\dT/.test(raw)){
+    const d=new Date(raw);
+    if(Number.isFinite(d.getTime()))return new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(d);
+  }
+  return raw;
+}
 function activeOrders(){
-  return [...(state.orders||[])].filter(o=>!["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
+  return [...(state.orders||[])].filter(o=>!orderIsClosed(o)).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||"")));
 }
 function groceryOrdersCard(){
-  const rows=activeOrders(),recent=[...(state.orders||[])].filter(o=>["complete","cancelled"].includes(String(o.status||""))).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||""))).slice(0,3);
-  let html='<div class="card"><div class="section-title"><div><div class="eyebrow">🛍 Grocery orders</div><h2>'+(rows.length?rows.length+' active':'No active order')+'</h2></div><button class="btn" onclick="openOrder()">+ Order</button></div>';
-  if(rows.length){for(const o of rows){const unavailable=(o.items||[]).filter(i=>i.status==='unavailable').length,sub=(o.items||[]).filter(i=>i.status==='substituted').length;html+='<div class="order-row" onclick="openOrder(\''+o.id+'\')"><div class="grow"><b>'+esc(o.store||'Grocery order')+'</b><div class="muted small">'+esc(o.status||'ordered')+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.total?' · '+money(o.total):'')+'</div><div class="muted small">'+(o.items||[]).length+' items'+(unavailable?' · '+unavailable+' unavailable':'')+(sub?' · '+sub+' substituted':'')+(o.perishablesAway?' · perishables put away':'')+'</div></div><span class="tag">'+esc(o.status||'ordered')+'</span></div>';}}
-  else if(recent.length){html+='<details><summary>Recent orders</summary>';for(const o of recent)html+='<div class="row" onclick="openOrder(\''+o.id+'\')"><span>'+esc(o.store||'Order')+' · '+esc(dl(o.orderDate||ymd()))+'</span><b>'+(o.total?money(o.total):'')+'</b></div>';html+='</details>';}
-  else html+='<div class="notice">Track Walmart/Sam’s grocery orders, unavailable items, substitutions, refunds, and putting perishables away.</div>';
+  const rows=activeOrders(),recent=[...(state.orders||[])].filter(orderIsClosed).sort((a,b)=>String(b.orderDate||"").localeCompare(String(a.orderDate||""))).slice(0,5);
+  let html='<div class="card"><div class="section-title"><div><div class="eyebrow">🛍 Grocery orders</div><h2>'+(rows.length?rows.length+' active':'No active orders')+'</h2></div><button class="btn" onclick="openOrder()">+ Order</button></div>';
+  if(rows.length){
+    for(const o of rows){
+      const unavailable=(o.items||[]).filter(i=>i.status==='unavailable').length,sub=(o.items||[]).filter(i=>i.status==='substituted').length,time=orderTimeLabel(o.deliveryTime);
+      html+='<div class="order-row" onclick="openOrder(\''+o.id+'\')"><div class="grow"><b>'+esc(o.store||'Grocery order')+'</b><div class="muted small">'+esc(o.status||'ordered')+(time?' · '+esc(time):'')+(o.total?' · '+money(o.total):'')+'</div><div class="muted small">'+(o.items||[]).length+' items'+(unavailable?' · '+unavailable+' unavailable':'')+(sub?' · '+sub+' substituted':'')+(o.perishablesAway?' · perishables put away':'')+'</div></div><span class="tag">'+esc(o.status||'ordered')+'</span></div>';
+    }
+  }
+  if(recent.length){
+    html+='<details class="order-history"><summary>Recent orders · '+recent.length+'</summary>';
+    for(const o of recent){
+      const time=orderTimeLabel(o.deliveryTime),date=o.orderDate?dl(o.orderDate):"",items=(o.items||[]).length;
+      html+='<div class="order-row" onclick="openOrder(\''+o.id+'\')"><div class="grow"><b>'+esc(o.store||'Grocery order')+'</b><div class="muted small">'+esc(o.status||'complete')+(date?' · '+esc(date):'')+(time?' · '+esc(time):'')+(o.total?' · '+money(o.total):'')+'</div><div class="muted small">'+items+' item'+(items===1?'':'s')+(o.perishablesAway?' · perishables put away':'')+'</div></div><span class="tag">'+esc(o.status||'complete')+'</span></div>';
+    }
+    html+='</details>';
+  }
+  if(!rows.length&&!recent.length)html+='<div class="notice">Track grocery orders, unavailable items, substitutions, refunds, and putting perishables away.</div>';
   return html+'</div>';
 }
 function openOrder(id=''){
