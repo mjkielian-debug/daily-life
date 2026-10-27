@@ -167,14 +167,6 @@ function lifeTrendCard(title,values,unit,dates,days){
  lifeTrendChart.dates=dates;
  return lifeTrendChart(title,values,unit,days);
 }
-function lifeTrendKnownCount(logs,dates,doneOnly=false){
- return dates.map(d=>{
-   const rows=logs.filter(x=>x.date===d&&(!doneOnly||x.done||x.status==="done"));
-   if(rows.length)return rows.length;
-   const hadAny=logs.some(x=>x.date===d);
-   return hadAny?0:null;
- });
-}
 function lifeTrendSelfCare(dates){
  const habits=typeof selfCareHabits==="function"?selfCareHabits():[],
        logs=entries("selfCare"),reviews=entries("dailyReviews");
@@ -182,7 +174,7 @@ function lifeTrendSelfCare(dates){
  return '<div class="life-trend-selfcare">'+habits.map(h=>{
    const values=dates.map(d=>{
      const row=logs.find(x=>x.date===d&&String(x.key)===String(h.key));
-     if(row)return Math.max(0,Number(row.count!==undefined?row.count:(row.done?1:0))||0);
+     if(row&&(row.done||Number(row.count||0)>0))return Math.max(0,Number(row.count!==undefined?row.count:1)||0);
      const review=reviews.find(x=>x.date===d&&x.kind==="care"&&String(x.key)===String(h.key));
      return review&&["no","na","n/a"].includes(String(review.status||"").toLowerCase())?0:null;
    });
@@ -195,7 +187,7 @@ function lifeTrendSelfCare(dates){
  }).join("")+'</div>';
 }
 function lifeTrendContent(days){
- const dates=lifeTrendDates(days),inRange=x=>dates.includes(String(x?.date||"")),
+ const dates=lifeTrendDates(days),
        food=entries("foodLogs"),water=entries("waterLogs"),
        sleep=entries("sleepLogs"),work=entries("workShifts"),
        workouts=entries("workouts"),reading=entries("readingLogs"),
@@ -205,8 +197,9 @@ function lifeTrendContent(days){
  const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
  const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null});
  const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
- const foodRows=dates.map(d=>daily(food,d)),foodVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
-       proteinVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+ const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!==""),
+       foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+       proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
        workoutVals=measured(workouts,"minutes",rows=>rows.reduce((n,x)=>n+Number(x.minutes||0),0)),
        readingVals=measured(reading,"pages",rows=>rows.reduce((n,x)=>n+Number(x.pages||0),0)),
