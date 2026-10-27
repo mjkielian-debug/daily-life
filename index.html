@@ -10,7 +10,7 @@
 <meta name="application-name" content="Daily Life">
 <meta name="supported-color-schemes" content="light">
 <meta name="description" content="Daily Life — local-first personal command center">
-  <link rel="manifest" href="manifest.webmanifest?v=20261027-food-nutrients1">
+  <link rel="manifest" href="manifest.webmanifest?v=20261027-food-nutrients2">
 <link rel="icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9" type="image/png">
 <link rel="apple-touch-icon" href="daily-life-rainbow-192.png?v=20261012-rainbow9">
 <link rel="stylesheet" href="styles.css?v=20261023-evening-log1">
@@ -6132,7 +6132,7 @@ function peopleProfileHomePage(){
     add("Ca",["calcium","calciumMg"],"mg");add("Fe",["iron","ironMg"],"mg");add("K",["potassium","potassiumMg"],"mg");
     add("D",["vitaminD","vitamin_d","vitaminDMcg"],"mcg");add("Na",["sodium","sodiumMg"],"mg");
     add("Added sugar",["addedSugar","added_sugar","addedSugars"],"g");
-    return '<div class="vh-profile-data-row vh-food-row"><b>'+esc(itemName(row)||row.description||"Food log")+(quantity>1?' <span class="vh-food-qty">×'+esc(String(quantity))+'</span>':'')+'</b><small class="vh-food-nutrients">'+esc(parts.join(" · ")||"Nutrition not recorded")+'</small></div>';
+    return '<div class="vh-profile-data-row vh-food-row"><b>'+esc(itemName(row)||row.description||"Food log")+(quantity>1?' <span class="vh-food-qty">×'+esc(String(quantity))+'</span>':'')+'</b><small class="vh-food-nutrients">'+esc(parts.length?(row.nutritionEstimated?"≈ ":"")+parts.join(" · "):"Nutrition not recorded")+'</small></div>';
   }).join("");
   const moneyContent=isSelf
     ?moneyRows.map(row=>'<div class="vh-profile-data-row"><b>'+esc(itemName(row)||"Bill")+'</b><small>'+esc([row.dueDate||row.date,row.status].filter(Boolean).join(" · ")||"Open bill")+'</small></div>').join("")||'<p class="muted small">No open bills are saved.</p>'
