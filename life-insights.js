@@ -186,7 +186,7 @@ function lifeTrendSelfCare(dates){
      const row=logs.find(x=>x.date===d&&String(x.key)===String(h.key));
      if(row)return Math.max(0,Number(row.count!==undefined?row.count:(row.done?1:0))||0);
      const review=reviews.find(x=>x.date===d&&x.kind==="care"&&String(x.key)===String(h.key));
-     return review&&["no","na"].includes(String(review.status||"").toLowerCase())?0:null;
+     return review&&["no","na","n/a"].includes(String(review.status||"").toLowerCase())?0:null;
    });
    const known=values.filter(v=>v!==null),daysDone=values.filter(v=>Number(v)>0).length,
          occurrences=values.reduce((n,v)=>n+(v===null?0:Number(v)||0),0),
@@ -206,7 +206,7 @@ function lifeTrendContent(days){
  const daily=(rows,d,filter=()=>true)=>rows.filter(x=>x.date===d&&filter(x));
  const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
  const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null});
- const workVals=dates.map(d=>{const rows=daily(work,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
+ const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
  const foodRows=dates.map(d=>daily(food,d)),foodVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        proteinVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
