@@ -231,11 +231,7 @@ function foodHomeIntakeProgress(){
 todayNutritionCard=foodGoalDashboardCard;
 function openFoodTrendsFromIntake(){
   closeModal();
-  setView("home");
-  const fold=document.querySelector(".food-fold");
-  if(fold)fold.open=true;
-  const chart=document.getElementById("foodTrendRoot");
-  if(chart)chart.scrollIntoView({behavior:"smooth",block:"center"});
+  modal("Food + Water Trends",`<div class="food-hub-modal">${foodIntakeTrends()}</div>`,"Close",closeModal);
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
