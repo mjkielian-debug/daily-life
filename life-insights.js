@@ -193,11 +193,18 @@ function lifeTrendSleepPoint(date,sleepRows,workRows){
    const hours=Number(sleepWindowHours(row));return hours>0?hours:null;
  }
  const shift=workRows.find(x=>x.date===date),start=String(shift?.start||shift?.scheduled||"");
- if(!row.bedtime||!/^\\d{2}:\\d{2}$/.test(start))return null;
+ if(!row.bedtime||!/^\d{2}:\d{2}$/.test(start))return null;
  const [sh,sm]=start.split(":").map(Number),[bh,bm]=String(row.bedtime).split(":").map(Number);
  const wake=(sh*60+sm-60+1440)%1440,bed=bh*60+bm;
  let minutes=wake-bed;if(minutes<0)minutes+=1440;
  return minutes>0?minutes/60:null;
+}
+function lifeTrendNutrientKnown(row,key){
+ const value=row?.[key];
+ if(value===undefined||value===null||String(value).trim()==="")return false;
+ const uncertain=/unknown|not confirmed|not specified|not supplied|not yet|do not estimate|not independently verified|amount.*unknown|portion.*unknown/i.test(String(row.notes||""));
+ if(Number(value)===0&&uncertain)return false;
+ return Number.isFinite(Number(value));
 }
 function lifeTrendContent(days){
  const dates=lifeTrendDates(days),
@@ -211,7 +218,7 @@ function lifeTrendContent(days){
  const sleepVals=dates.map(d=>lifeTrendSleepPoint(d,sleep,work)),
        energyVals=dates.map(d=>{const row=sleep.filter(x=>x.date===d).find(x=>x.bedtime&&x.wakeTime)||sleep.find(x=>x.date===d),value=Number(row?.energy||0);return value>0?value:null});
  const workVals=dates.map(d=>{const rows=daily(work,d,x=>!!(x.timecardVerified||(x.start&&x.end)));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
- const foodRows=dates.map(d=>daily(food,d)),foodCountVals=foodRows.map(rows=>rows.length?rows.length:null),knownMetric=(rows,key)=>rows.some(x=>x[key]!==null&&x[key]!==undefined&&String(x[key]).trim()!==""),
+ const foodRows=dates.map(d=>daily(food,d)),foodCountVals=foodRows.map(rows=>rows.length?rows.length:null),knownMetric=(rows,key)=>rows.some(x=>lifeTrendNutrientKnown(x,key)),
        foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
