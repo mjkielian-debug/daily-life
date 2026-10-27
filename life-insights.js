@@ -131,4 +131,112 @@ window.lifeInsightHide=async function(id){
  const d=new Date(current()+"T12:00:00");d.setDate(d.getDate()+7);state.settings.insightSnoozes[id]=ymd(d);
  await save();window.openLifeInsights();
 };
+
+/* All-life trends reuse saved Daily Life logs. Missing records stay as gaps. */
+function lifeTrendDates(days){
+ const out=[],d=new Date(current()+"T12:00:00");
+ for(let i=days-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}
+ return out;
+}
+function lifeTrendChart(title,series,unit,days){
+ const seen=series.filter(v=>v!==null&&Number.isFinite(Number(v))).map(Number);
+ const max=Math.max(1,...seen),min=0,w=300,h=96,left=6,right=6,top=8,bottom=9,
+       usableW=w-left-right,usableH=h-top-bottom,
+       xy=(v,i)=>[left+(series.length<2?usableW/2:i*usableW/(series.length-1)),top+usableH-(Number(v)||0)/max*usableH];
+ let path="",last=-2;
+ series.forEach((v,i)=>{if(v===null||!Number.isFinite(Number(v))){last=-2;return}
+   const [x,y]=xy(v,i);path+=(last===i-1?" L ":" M ")+x.toFixed(1)+" "+y.toFixed(1);last=i;
+ });
+ const dots=series.map((v,i)=>{if(v===null||!Number.isFinite(Number(v)))return"";
+   const [x,y]=xy(v,i),date=lifeTrendChart.dates[i]||"",display=Number(v).toFixed(Number(v)%1?1:0);
+   return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.2"><title>'+esc(date)+': '+esc(display)+' '+esc(unit)+'</title></circle>';
+ }).join("");
+ const labels=lifeTrendChart.dates.map((d,i)=>{
+   const show=days<=7||i===0||i===days-1||(i+1)%7===0;
+   if(!show)return '<span></span>';
+   return '<span>'+esc(days<=7?new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"}):String(Number(d.slice(8))))+'</span>';
+ }).join("");
+ const summary=seen.length?seen.length+" logged day"+(seen.length===1?"":"s"):"No entries in this period";
+ return '<section class="life-trend-chart"><div class="life-trend-heading"><b>'+esc(title)+'</b><small>'+esc(summary)+'</small></div>'+
+  '<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(title)+' over '+days+' days; gaps indicate no entry">'+
+  '<path class="life-trend-grid" d="M'+left+' '+(top+usableH)+' H'+(w-right)+' M'+left+' '+(top+usableH/2)+' H'+(w-right)+'"/>'+
+  (path?'<path class="life-trend-line" d="'+path+'"/>':"")+
+  '<g class="life-trend-dots">'+dots+'</g></svg><div class="life-trend-labels">'+labels+'</div></section>';
+}
+function lifeTrendCard(title,values,unit,dates,days){
+ lifeTrendChart.dates=dates;
+ const formatted=values.map(v=>v===null?"—":(Number(v)%1?Number(v).toFixed(1):Number(v))+unit);
+ return lifeTrendChart(title,values,unit,days)+'<div class="life-trend-values" aria-label="'+esc(title)+' daily values">'+
+  dates.map((d,i)=>'<span title="'+esc(d)+'">'+esc(formatted[i])+'</span>').join("")+'</div>';
+}
+function lifeTrendKnownCount(logs,dates,doneOnly=false){
+ return dates.map(d=>{
+   const rows=logs.filter(x=>x.date===d&&(!doneOnly||x.done||x.status==="done"));
+   if(rows.length)return rows.length;
+   const hadAny=logs.some(x=>x.date===d);
+   return hadAny?0:null;
+ });
+}
+function lifeTrendSelfCare(dates){
+ const habits=typeof selfCareHabits==="function"?selfCareHabits():[],
+       logs=entries("selfCare"),reviews=entries("dailyReviews");
+ if(!habits.length)return '<p class="li-intro">No self-care habits are configured yet.</p>';
+ return '<div class="life-trend-selfcare">'+habits.map(h=>{
+   const values=dates.map(d=>{
+     const row=logs.find(x=>x.date===d&&String(x.key)===String(h.key));
+     if(row)return Math.max(0,Number(row.count!==undefined?row.count:(row.done?1:0))||0);
+     const review=reviews.find(x=>x.date===d&&x.kind==="care"&&String(x.key)===String(h.key));
+     return review&&["no","na"].includes(String(review.status||"").toLowerCase())?0:null;
+   });
+   const known=values.filter(v=>v!==null),daysDone=values.filter(v=>Number(v)>0).length,
+         occurrences=values.reduce((n,v)=>n+(v===null?0:Number(v)||0),0),
+         frequency=known.length?daysDone+"/"+known.length+" confirmed days":"No confirmed entries",
+         metric=occurrences+" occurrence"+(occurrences===1?"":"s");
+   lifeTrendChart.dates=dates;
+   return '<div class="life-trend-habit"><div><b>'+esc(h.label||h.key)+'</b><small>'+esc(metric)+' · '+esc(frequency)+'</small></div>'+lifeTrendChart("",values,"",dates.length)+'</div>';
+ }).join("")+'</div>';
+}
+function lifeTrendContent(days){
+ const dates=lifeTrendDates(days),inRange=x=>dates.includes(String(x?.date||"")),
+       food=entries("foodLogs"),water=entries("waterLogs"),
+       sleep=entries("sleepLogs"),work=entries("workShifts"),
+       workouts=entries("workouts"),reading=entries("readingLogs"),
+       outfits=entries("outfits"),home=entries("homeLogs"),
+       chores=entries("chores"),tasks=entries("tasks");
+ const daily=(rows,d,filter=()=>true)=>rows.filter(x=>x.date===d&&filter(x));
+ const measured=(rows,key,mapper)=>dates.map(d=>{const found=daily(rows,d);return found.length?mapper(found):null});
+ const sleepVals=dates.map(d=>{const row=sleep.find(x=>x.date===d);const value=row&&typeof sleepHours==="function"?Number(sleepHours(row)):0;return value>0?value:null});
+ const workVals=dates.map(d=>{const rows=daily(work,x=>!!(x.start||x.timecardVerified));return rows.length?rows.reduce((n,x)=>n+(typeof workCreditedHours==="function"?Number(workCreditedHours(x)):(Number(x.hours)||0)),0):null});
+ const foodRows=dates.map(d=>daily(food,d)),foodVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+       proteinVals=foodRows.map(rows=>rows.length?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+       waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
+       workoutVals=measured(workouts,"minutes",rows=>rows.reduce((n,x)=>n+Number(x.minutes||0),0)),
+       readingVals=measured(reading,"pages",rows=>rows.reduce((n,x)=>n+Number(x.pages||0),0)),
+       outfitVals=dates.map(d=>outfits.some(x=>x.date===d)?1:null),
+       homeVals=dates.map(d=>{const rows=daily(home,d);return rows.length?rows.filter(x=>x.status==="done").length:null}),
+       taskVals=dates.map(d=>{const rows=[...daily(chores,d),...daily(tasks,d)];return rows.length?rows.filter(x=>x.done).length:null});
+ const period=days===7?"Past 7 days":"Past 30 days";
+ return '<div class="life-trends">'+
+  '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
+  '<p class="li-intro">These charts use saved entries. Gaps mean no entry was recorded; they do not mean you skipped the activity.</p>'+
+  '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals," h",dates,days)+lifeTrendCard("Work hours",workVals," h",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"",dates,days)+lifeTrendCard("Protein",proteinVals," g",dates,days)+lifeTrendCard("Water",waterVals," oz",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
+  '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals," min",dates,days)+lifeTrendCard("Reading",readingVals," pages",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"",dates,days)+lifeTrendCard("Home resets",homeVals,"",dates,days)+lifeTrendCard("Tasks + chores completed",taskVals,"",dates,days)+'</div>'+
+ '</div>';
+}
+window.openLifeTrends=function(days=7){
+ const span=Number(days)===30?30:7;
+ modal("All life trends",lifeTrendContent(span),"Close",closeModal);
+};
+window.sevenDayTrends=function(){
+ return '<div class="card"><div class="eyebrow">Trends</div><h2>Your tracked patterns</h2><div class="muted small">Sleep, work, food, water, self-care and more.</div><button class="btn small primary" style="margin-top:10px" onclick="openLifeTrends(7)">View trends ›</button></div>';
+};
+if(typeof window.openFoodHubSection==="function"){
+ const originalOpenFoodHubSection=window.openFoodHubSection;
+ window.openFoodHubSection=function(section){
+   if(section==="trends"){window.openLifeTrends(7);return}
+   return originalOpenFoodHubSection(section);
+ };
+}
 })();
