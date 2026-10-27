@@ -100,6 +100,8 @@ function setFoodIntakeDate(date){
  const home=document.getElementById("foodHomeIntakeRoot");if(home)home.outerHTML=foodHomeIntakeProgress();
  const full=document.getElementById("foodIntakeDashboardRoot");if(full)full.outerHTML=foodGoalDashboardCard();
  const trend=document.getElementById("foodTrendRoot");if(trend)trend.outerHTML=foodIntakeTrendsV2();
+ const sleepWork=document.getElementById("sleepWorkTrendRoot");if(sleepWork)sleepWork.outerHTML=sleepWorkTrendCard();
+ const outfits=document.getElementById("outfitTrendRoot");if(outfits)outfits.outerHTML=outfitTrendCard();
 }
 function foodGoalDashboardCard(){
   const f=foodTotalsForDate(foodIntakeDate),waterNow=foodWaterForDate(foodIntakeDate),
@@ -181,7 +183,7 @@ function foodGoalDashboardCard(){
     "<section class=\"food-goal-section\"><div class=\"food-goal-section-head\"><h3>Daily goal progress</h3><span>Sodium, added sugar + caffeine are limits</span></div>"+
     "<div class=\"food-goal-group\"><h4>Calories, macros, water + caffeine</h4><div class=\"food-goal-grid\">"+nutrients.slice(0,7).map(bar).join("")+"</div></div>"+
     "<details class=\"food-micro-fold\"><summary>Vitamins, minerals + limits <span>Show</span></summary><div class=\"food-goal-grid\">"+nutrients.slice(7).map(bar).join("")+"</div></details></section>"+
-    "<div class=\"actions food-intake-actions\">"+(foodIntakeDate===ymd()?"<button class=\"btn\" onclick=\"customWater()\">+ Water</button>":"")+"<button class=\"btn\" onclick=\"openFoodTrendsFromIntake()\">7-day trends</button></div></div>";
+    "<div class=\"actions food-intake-actions\">"+(foodIntakeDate===ymd()?"<button class=\"btn\" onclick=\"customWater()\">+ Water</button>":"")+"</div></div>";
 }
 
 (function installFoodGoalProgressStyles(){
@@ -252,9 +254,10 @@ function foodHomeIntakeProgress(){
 
 // Detailed intake keeps its nutrient list; Food home uses the compact completion rings.
 todayNutritionCard=foodGoalDashboardCard;
-function openFoodTrendsFromIntake(){
+function openFoodTrendsFromIntake(){openLifeTrends()}
+function openLifeTrends(){
   closeModal();
-  modal("Food + Water Trends",`<div class="food-hub-modal">${foodIntakeTrendsV2()}</div>`,"Close",closeModal);
+  modal("Your Trends",`<div class="food-hub-modal">${foodIntakeTrendsV2()}${sleepWorkTrendCard()}${outfitTrendCard()}</div>`,"Close",closeModal);
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
@@ -270,6 +273,35 @@ function foodTrendValue(metric,date){
   if(raw!==undefined){const n=typeof raw==="object"&&raw!==null?Number(raw.value):Number(raw);if(Number.isFinite(n)){value+=n*foodQuantity(row);known=true}}
  }
  return known?value:null;
+}
+function sleepWorkTrendCard(){
+ const dates=Array.from({length:7},(_,i)=>{const d=new Date(foodIntakeDate+"T12:00:00");d.setDate(d.getDate()-6+i);return ymd(d)}),
+   points=dates.map((date,index)=>{
+     const log=(state.sleepLogs||[]).find(x=>x.date===date),rawSleep=log?(typeof sleepHours==="function"?Number(sleepHours(log)):Number(log.actualSleepHours||0)):0,
+       shift=(state.workShifts||[]).find(x=>x.date===date),rawWork=shift&&typeof workShiftHasActual==="function"&&workShiftHasActual(shift)?(typeof workCreditedHours==="function"?Number(workCreditedHours(shift)||0):0):0;
+     return{date,index,sleep:rawSleep>0?rawSleep:null,work:rawWork>0?rawWork:null,label:new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})};
+   }),
+   sleepPoints=points.filter(x=>x.sleep!==null),workPoints=points.filter(x=>x.work!==null),
+   average=rows=>rows.length?rows.reduce((sum,x)=>sum+x,0)/rows.length,
+   sleepAvg=average(sleepPoints.map(x=>x.sleep)),workAvg=average(workPoints.map(x=>x.work)),
+   max=Math.max(10,...sleepPoints.map(x=>x.sleep),...workPoints.map(x=>x.work))*1.08,
+   xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/max))*100,
+   segments=key=>{const out=[];let active=[];for(const p of points){if(p[key]===null){if(active.length)out.push(active);active=[]}else active.push(p)}if(active.length)out.push(active);return out},
+   path=(key,klass)=>segments(key).filter(s=>s.length>1).map(s=>'<polyline class="'+klass+'" points="'+s.map(p=>xAt(p.index)+','+yAt(p[key])).join(' ')+'"/>').join(''),
+   dots=(key,klass)=>points.filter(p=>p[key]!==null).map(p=>'<g><title>'+esc(p.label)+' · '+p[key].toFixed(1)+' h</title><circle class="'+klass+'" cx="'+xAt(p.index)+'" cy="'+yAt(p[key])+'" r="4"/></g>').join(''),
+   days=points.map(p=>'<text x="'+xAt(p.index)+'" y="151" text-anchor="middle">'+esc(p.label.slice(0,1))+'</text>').join(''),
+   dateRange=foodIntakeDate===ymd()?"last 7 days":"7 days ending "+new Date(foodIntakeDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}),
+   averageText='Sleep avg '+(sleepAvg===null?'—':sleepAvg.toFixed(1)+' h · '+sleepPoints.length+'/7')+'  |  Work avg '+(workAvg===null?'—':workAvg.toFixed(1)+' h · '+workPoints.length+'/7'),
+   chart=sleepPoints.length||workPoints.length?'<svg class="food-line-chart sleep-work-chart" viewBox="0 0 360 166" role="img" aria-label="Sleep and work hours by day, '+esc(dateRange)+'"><line class="food-chart-axis" x1="32" y1="25" x2="32" y2="126"/><line class="food-chart-axis" x1="32" y1="126" x2="328" y2="126"/><text x="27" y="25" text-anchor="end">'+Math.ceil(max)+'</text><text x="27" y="129" text-anchor="end">0</text><g class="sleep-work-lines">'+path("sleep","sleep-line")+path("work","work-line")+'</g><g>'+dots("sleep","sleep-dot")+dots("work","work-dot")+'</g>'+days+'</svg>':'<div class="food-trend-empty">No sleep or completed work shifts logged in this 7-day period yet.</div>';
+ return '<section class="card food-trend-card sleep-work-trend-card" id="sleepWorkTrendRoot"><div class="eyebrow">Sleep + work</div><div class="food-trend-head"><h2>Hours by day</h2><span>'+dateRange+'</span></div><div class="food-trend-average">'+averageText+'</div>'+chart+'<div class="food-trend-legend sleep-work-legend"><span><i class="sleep-legend-dot"></i>Sleep</span><span><i class="work-legend-dot"></i>Work</span></div><div class="muted small food-trend-note">Only logged sleep and completed shifts are plotted; blank days stay blank. Uses the same date range selected above.</div></section>';
+}
+function outfitTrendCard(){
+ const start=new Date(foodIntakeDate+"T12:00:00");start.setDate(start.getDate()-29);const from=ymd(start),
+   rows=(state.outfits||[]).filter(x=>String(x.date||"")>=from&&String(x.date||"")<=foodIntakeDate),
+   categories=[["Top","top"],["Bottom","bottom"],["Shoes","shoes"],["Accessories","accessories"]],
+   rankings=categories.map(([label,key])=>{const counts=new Map();for(const row of rows){const value=String(row[key]||"").trim();if(value)counts.set(value,(counts.get(value)||0)+1)}const top=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];return{label,top}}).filter(x=>x.top),
+   details=rankings.length?'<div class="outfit-trend-list">'+rankings.map(x=>'<div><span>'+esc(x.label)+'</span><b>'+esc(x.top[0])+'</b><small>'+x.top[1]+' wear'+(x.top[1]===1?'':'s')+'</small></div>').join('')+'</div>':rows.length?'<div class="food-trend-empty">'+rows.length+' outfit log'+(rows.length===1?'':'s')+' saved in the last 30 days. Add clothing details to see your most-worn pieces.</div>':'<div class="food-trend-empty">No outfits logged yet. When you start logging them, this will show the pieces you wear most often.</div>';
+ return '<section class="card food-trend-card outfit-trend-card" id="outfitTrendRoot"><div class="eyebrow">Style</div><div class="food-trend-head"><h2>Most worn · last 30 days</h2><span>'+rows.length+' outfit log'+(rows.length===1?'':'s')+'</span></div>'+details+'</section>';
 }
 function setFoodTrendMetric(metric){
   if(!["calories","protein","carbs","fat","fiber","water","caffeine","calcium","iron","potassium","vitaminD","sodium","addedSugar"].includes(metric))return;
@@ -304,11 +336,11 @@ function foodIntakeTrendsV2(){
 (function installFoodTrendStyles(){
   if(document.getElementById("foodTrendStyles"))return;
   const style=document.createElement("style");style.id="foodTrendStyles";
-  style.textContent=".food-trend-card{padding:12px!important}.food-trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.food-trend-head h2{margin:2px 0;font-size:1rem}.food-trend-head span,.food-trend-average,.food-trend-note{font-size:.68rem;color:var(--muted)}.food-trend-average{margin:3px 0 8px}.food-trend-selectors{display:flex;gap:5px;overflow:auto;padding:2px 0 7px}.food-trend-chip{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;padding:5px 8px;background:transparent;color:var(--muted);font:inherit;font-size:.65rem}.food-trend-chip.active{background:color-mix(in srgb,var(--primary) 20%,var(--panel));border-color:color-mix(in srgb,var(--primary) 48%,var(--border));color:var(--text);font-weight:800}.food-line-chart{display:block;width:100%;height:auto;overflow:visible}.food-line-chart text{font:10px sans-serif;fill:var(--muted)}.food-line-chart .food-chart-axis{stroke:color-mix(in srgb,var(--text) 20%,var(--border));stroke-width:1}.food-line-chart .food-goal-line{stroke:var(--secondary);stroke-width:1.5;stroke-dasharray:4 4}.food-line-chart .food-average-line{stroke:var(--accent);stroke-width:1.4;stroke-dasharray:2 4}.food-line-chart .food-chart-line polyline{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.food-line-chart .food-chart-dots circle{fill:var(--secondary);stroke:var(--panel);stroke-width:2}.food-trend-empty{padding:25px 8px;text-align:center;color:var(--muted);font-size:.75rem}.food-trend-legend{display:flex;gap:12px;margin-top:3px;font-size:.63rem;color:var(--muted)}.food-trend-note{margin-top:6px}";
+  style.textContent=".food-trend-card{padding:12px!important}.food-trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.food-trend-head h2{margin:2px 0;font-size:1rem}.food-trend-head span,.food-trend-average,.food-trend-note{font-size:.68rem;color:var(--muted)}.food-trend-average{margin:3px 0 8px}.food-trend-selectors{display:flex;gap:5px;overflow:auto;padding:2px 0 7px}.food-trend-chip{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;padding:5px 8px;background:transparent;color:var(--muted);font:inherit;font-size:.65rem}.food-trend-chip.active{background:color-mix(in srgb,var(--primary) 20%,var(--panel));border-color:color-mix(in srgb,var(--primary) 48%,var(--border));color:var(--text);font-weight:800}.food-line-chart{display:block;width:100%;height:auto;overflow:visible}.food-line-chart text{font:10px sans-serif;fill:var(--muted)}.food-line-chart .food-chart-axis{stroke:color-mix(in srgb,var(--text) 20%,var(--border));stroke-width:1}.food-line-chart .food-goal-line{stroke:var(--secondary);stroke-width:1.5;stroke-dasharray:4 4}.food-line-chart .food-average-line{stroke:var(--accent);stroke-width:1.4;stroke-dasharray:2 4}.food-line-chart .food-chart-line polyline{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.food-line-chart .food-chart-dots circle{fill:var(--secondary);stroke:var(--panel);stroke-width:2}.food-trend-empty{padding:25px 8px;text-align:center;color:var(--muted);font-size:.75rem}.food-trend-legend{display:flex;gap:12px;margin-top:3px;font-size:.63rem;color:var(--muted)}.food-trend-note{margin-top:6px}.sleep-work-trend-card,.outfit-trend-card{margin-top:10px}.sleep-work-chart .sleep-line{fill:none;stroke:#bd5594;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.sleep-work-chart .work-line{fill:none;stroke:#5e94c7;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.sleep-work-chart .sleep-dot{fill:#bd5594;stroke:var(--panel);stroke-width:2}.sleep-work-chart .work-dot{fill:#5e94c7;stroke:var(--panel);stroke-width:2}.sleep-work-legend{gap:14px}.sleep-work-legend span{display:flex;align-items:center;gap:4px}.sleep-legend-dot,.work-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}.sleep-legend-dot{background:#bd5594}.work-legend-dot{background:#5e94c7}.outfit-trend-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.outfit-trend-list>div{display:grid;grid-template-columns:1fr auto;gap:2px 6px;padding:7px;border-radius:9px;background:color-mix(in srgb,var(--primary) 7%,var(--panel));font-size:.7rem}.outfit-trend-list>div span,.outfit-trend-list>div small{color:var(--muted)}.outfit-trend-list>div small{grid-column:1/-1;font-size:.62rem}.outfit-trend-list>div b{overflow-wrap:anywhere;text-align:right}";
   document.head.appendChild(style);
 })();
 function compactFoodToday(){
-  return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'<details class="food-fold"><summary><span><b>7-day trends</b><small>View line graph</small></span><span>View</span></summary><div class="food-fold-body">'+foodIntakeTrendsV2()+'</div></details></div>';
+  return '<div class="food-tab-panel">'+foodGoalDashboardCard()+compactFoodDinnerTonight()+compactFoodCookingAhead()+'</div>';
 }
 
 function compactFoodMeals(){
