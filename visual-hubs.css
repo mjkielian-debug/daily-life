@@ -720,3 +720,6 @@ body:has(#app .visual-hub) .life-tools-fab{
 /* The Day Flow title and add control are replaced by the shared compact summary. */
 .day-flow-dashboard>.df-heading{display:none!important}
 .day-flow-dashboard .df-add{display:none!important}
+
+/* Keep the timeline rail centered on the marker when the profile view uses a narrower grid. */
+.vh-profile-home .df-block-list:before,.vh-profile-home .df-earlier-items:before{left:57px}
