@@ -1011,6 +1011,9 @@ function cloudApplyLifeEntry(row){
         const existing=(state.foodLogs||[]).find(x=>x.date===date&&key(x.name)===key(name));
         if(existing){
           const keepId=existing.id;
+          for(const field of ["category","quantity","calories","protein","carbs","fat","fiber","caffeineMg","micronutrients","notes","nutritionEstimated","nutritionSource"]){
+            if(p[field]===undefined)next[field]=existing[field];
+          }
           Object.assign(existing,next,{id:keepId,cloudEntryId:row.id});
           return true;
         }
