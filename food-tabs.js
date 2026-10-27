@@ -230,8 +230,13 @@ function foodHomeIntakeProgress(){
 // Detailed intake keeps its nutrient list; Food home uses the compact completion rings.
 todayNutritionCard=foodGoalDashboardCard;
 function openFoodTrendsFromIntake(){
-  const body=foodIntakeTrends();
-  modal("Food + Water Trends",`<div class="food-hub-modal">${body}</div>`,"Close",closeModal);
+  closeModal();
+  setView("home");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const fold=document.querySelector(".food-fold");
+    if(fold)fold.open=true;
+    document.getElementById("foodTrendRoot")?.scrollIntoView({behavior:"smooth",block:"center"});
+  }));
 }
 let foodTrendMetric=localStorage.getItem("dailyLifeFoodTrendMetric")||"calories";
 function foodTrendValue(metric,date){
