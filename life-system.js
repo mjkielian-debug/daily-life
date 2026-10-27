@@ -178,8 +178,8 @@
             subtasks:["Check Day Flow"],icon:"✦"},
           {key:"stretch",from:-30,to:-25,title:"5-minute stretch",detail:"Stretch for 5 minutes",
             subtasks:["Stretch for 5 minutes"],icon:"✦"},
-          {key:"gather",from:-25,to:-15,title:"Gather work things + check tire",detail:"Water bottle · Earbuds · Energy drink · Jacket · Bag · Check tire pressure",
-            subtasks:["Water bottle","Earbuds","Energy drink","Jacket","Bag","Check tire pressure"],icon:"✓"},
+          {key:"gather",from:-25,to:-15,title:"Gather work things",detail:"Water bottle · Earbuds · Energy drink · Jacket · Bag",
+            subtasks:["Water bottle","Earbuds","Energy drink","Jacket","Bag"],icon:"✓"},
           {key:"commute",from:-15,to:0,title:"Leave for UPS · drive · park · clock in",detail:"Leave at the 15-minute mark · about 12 minutes to UPS plus parking / clock-in buffer",
             subtasks:["Leave for UPS","Drive to work","Park","Clock in"],icon:"🚗"}
         ]
