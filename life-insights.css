@@ -46,11 +46,12 @@
 .life-trend-habit svg{margin:0}
 @media(max-width:420px){.life-trend-habit{grid-template-columns:minmax(96px,.9fr) minmax(130px,1.1fr)}.life-trend-habit b{font-size:.76rem}.life-trend-habit small{font-size:.66rem}}
 
-/* Readable scales and exact daily trend values */
+
+/* Direct labels that make every trend readable in place */
 .life-trend-axis-label{fill:#756879;font-size:10px;font-family:system-ui,sans-serif}
 .life-trend-heading small{text-align:right}
-.life-trend-exact{margin-top:7px;border-top:1px solid #eee4ed;padding-top:6px;font-size:.72rem;color:#756879}
-.life-trend-exact summary{cursor:pointer;font-weight:650;color:#745777}
-.life-trend-exact>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;margin-top:8px}
-.life-trend-exact>div>span{display:flex;justify-content:space-between;gap:6px}
-.life-trend-exact>div>span>span{text-align:right}
+.life-trend-meaning{margin-top:3px;color:#756879;font-size:.7rem;line-height:1.3}
+.life-trend-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px;margin-top:8px;padding-top:7px;border-top:1px solid #eee4ed;font-size:.68rem;color:#594a5c}
+.life-trend-values>strong{grid-column:1/-1;color:#745777;font-size:.68rem}
+.life-trend-values>span{display:flex;justify-content:space-between;gap:6px;padding:3px 6px;border-radius:8px;background:#fbf6fa}
+.life-trend-values time{font-variant-numeric:tabular-nums;color:#756879}.life-trend-values b{font-variant-numeric:tabular-nums}
