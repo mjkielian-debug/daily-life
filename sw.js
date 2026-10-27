@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261027-trends-inline-fix4";
+const CACHE_NAME="daily-life-shell-20261027-remove-tire-check1";
 const APP_SHELL=[
   "./",
   "./index.html",
