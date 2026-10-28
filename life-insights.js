@@ -162,7 +162,8 @@ function lifeTrendChart(title,series,unit,days,meaning,emptyLabel,scaleMax,value
  const labels=lifeTrendChart.dates.map((d,i)=>({d,i})).filter(({i})=>days<=7||i===0||i===days-1||(i+1)%7===0)
   .map(({d})=>'<span>'+esc(dateLabel(d))+'</span>').join("");
  const average=unit==="hours/night"&&seen.length?seen.reduce((sum,v)=>sum+v,0)/seen.length:null,
-       summary=seen.length?seen.length+(unit==="hours/night"?" logged night":" logged day")+(seen.length===1?"":"s")+(average===null?"":" · "+days+"-day avg "+average.toFixed(1)+" h/night"):(emptyLabel||"No entries in this period"),
+       countLabel=unit==="hours/night"?" logged night":(["kcal/day","g/day","mg/day"].includes(unit)?" day with known values":" logged day"),
+       summary=seen.length?seen.length+countLabel+(seen.length===1?"":"s")+(average===null?"":" · "+days+"-day avg "+average.toFixed(1)+" h/night"):(emptyLabel||"No entries in this period"),
        unitText=unit||"count",
        exact=series.map((v,i)=>({v,d:lifeTrendChart.dates[i]})).filter(x=>x.v!==null&&Number.isFinite(Number(x.v)))
         .map(x=>'<span><time>'+esc(dateLabel(x.d))+'</time><b>'+esc((valueNames&&valueNames[Number(x.v)]?valueNames[Number(x.v)]:number(x.v))+(unit?" "+unit:""))+'</b></span>').join(""),
@@ -217,6 +218,10 @@ function lifeTrendSleepPoint(date,sleepRows,workRows){
  let minutes=wake-bed;if(minutes<0)minutes+=1440;
  return minutes>0?minutes/60:null;
 }
+function lifeTrendFoodConsumed(row){
+ const notes=String(row?.notes||"").toLowerCase();
+ return !/(?:opened|started|in progress).{0,100}(?:not confirmed finished|completion was not reported|not reported finishing|not finished)/i.test(notes);
+}
 function lifeTrendNutrientKnown(row,key){
  const value=row?.[key];
  if(value===undefined||value===null||String(value).trim()==="")return false;
@@ -257,10 +262,11 @@ function lifeTrendContent(days){
    return minutes>0&&minutes<960?Math.round(minutes/6)/10:null;
  });
  const foodRows=dates.map(d=>daily(food,d)),knownMetric=(rows,key)=>rows.some(x=>lifeTrendNutrientKnown(x,key)),
-       foodVals=foodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
-       proteinVals=foodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+       consumedFoodRows=foodRows.map(rows=>rows.filter(lifeTrendFoodConsumed)),
+       foodVals=consumedFoodRows.map(rows=>knownMetric(rows,"calories")?rows.reduce((n,x)=>n+Number(x.calories||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
+       proteinVals=consumedFoodRows.map(rows=>knownMetric(rows,"protein")?rows.reduce((n,x)=>n+Number(x.protein||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null),
        caffeineVals=foodRows.map(rows=>{const known=rows.filter(x=>lifeTrendNutrientKnown(x,"caffeineMg")&&Number(x.caffeineMg)>0);return known.length?known.reduce((n,x)=>n+Number(x.caffeineMg||0)*(typeof foodQuantity==="function"?foodQuantity(x):Number(x.quantity||1)),0):null}),
-       waterVals=measured(water,"oz",rows=>rows.reduce((n,x)=>n+Number(x.oz||0),0)),
+       waterVals=measured(water,"oz",rows=>{const known=rows.filter(x=>x.oz!==null&&x.oz!==undefined&&x.oz!=="");return known.length?known.reduce((n,x)=>n+Number(x.oz),0):null}),
        workoutVals=measured(workouts,"minutes",rows=>rows.reduce((n,x)=>n+Number(x.minutes||0),0)),
        readingVals=measured(reading,"pages",rows=>rows.reduce((n,x)=>n+Number(x.pages||0),0)),
        outfitVals=dates.map(d=>outfits.some(x=>x.date===d)?1:null);
@@ -269,7 +275,7 @@ function lifeTrendContent(days){
   '<div class="life-trends-toolbar"><div class="li-tabs"><button class="'+(days===7?"active":"")+'" onclick="openLifeTrends(7)">7 days</button><button class="'+(days===30?"active":"")+'" onclick="openLifeTrends(30)">30 days</button></div><span class="muted small">'+esc(period)+'</span></div>'+
   '<p class="li-intro">Missing dates stay blank. Solid lines connect consecutive logged days; dashed lines bridge to the next recorded value across a gap. Work attendance is 1 = attended, 0 = missed. Sleep wake times one hour before a saved shift are estimates.</p>'+
   '<div class="life-trends-group"><h3>Sleep + work</h3>'+lifeTrendCard("Sleep",sleepVals,"hours/night",dates,days)+lifeTrendCard("Energy rating",energyVals,"self-rating out of 5",dates,days,"Your answer to “Energy today” in the Sleep + energy log.","No energy ratings logged",5)+lifeTrendCard("Work hours (estimate)",workTimeVals,"hours/shift",dates,days,"Attended shifts use recorded start/end times when available; missing ends assume 9:00 AM and missing starts use the scheduled start. Missed shifts show 0; unconfirmed shifts stay blank.","No confirmed shifts")+lifeTrendCard("Work attendance",workAttendanceVals,"scheduled shift(s)",dates,days,"One point per scheduled shift. 1 = attended, 0 = missed.","No confirmed scheduled shifts",1,{0:"Missed",1:"Attended"})+'</div>'+
-  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories",foodVals,"kcal/day",dates,days)+lifeTrendCard("Protein",proteinVals,"g/day",dates,days)+lifeTrendCard("Caffeine logged",caffeineVals,"mg/day",dates,days,"Daily sum of logged caffeine with known amounts; unlogged or unknown amounts stay blank.")+lifeTrendCard("Water",waterVals,"oz/day",dates,days)+'</div>'+
+  '<div class="life-trends-group"><h3>Food + hydration</h3>'+lifeTrendCard("Calories subtotal",foodVals,"kcal/day",dates,days,"Known or estimated calories from confirmed consumed entries with calorie data. Foods with unknown calories are excluded, so a day may be incomplete.","No calorie values entered")+lifeTrendCard("Protein subtotal",proteinVals,"g/day",dates,days,"Known or estimated protein from confirmed consumed entries with protein data. Foods with unknown protein are excluded, so a day may be incomplete.","No protein values entered")+lifeTrendCard("Caffeine logged",caffeineVals,"mg/day",dates,days,"Daily sum of logged caffeine with known amounts; unlogged or unknown amounts stay blank.")+lifeTrendCard("Water confirmed",waterVals,"oz/day",dates,days,"Only confirmed ounces are counted. A started bottle with no confirmed amount stays blank.","No confirmed water amount entered")+'</div>'+
   '<div class="life-trends-group"><h3>Daily routines</h3><div class="muted small">Habit rows show recorded occurrences and confirmed days.</div>'+lifeTrendSelfCare(dates)+'</div>'+
   '<div class="life-trends-group"><h3>Other tracked activity</h3>'+lifeTrendCard("Movement",workoutVals,"minutes/day",dates,days)+lifeTrendCard("Reading",readingVals,"pages/day",dates,days)+lifeTrendCard("Outfit logged",outfitVals,"days",dates,days)+'</div>'+
  '</div>';
