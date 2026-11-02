@@ -310,6 +310,11 @@
       if(assignment.itineraryStart!=="15:30"){assignment.itineraryStart="15:30";changed=true}
       if(!Number(assignment.itineraryMinutes)){assignment.itineraryMinutes=20;changed=true}
     }
+    const removeFromList=title=>/YMCA Winter Indoor Sports Clinic|Confirm Leo visit and pickup plans with Grandma Kellie/i.test(String(title||""));
+    if(Array.isArray(state.tasks)){
+      const activeTasks=state.tasks.filter(task=>!removeFromList(task.title));
+      if(activeTasks.length!==state.tasks.length){state.tasks=activeTasks;changed=true}
+    }
     for(const task of state.tasks||[]){
       const title=String(task.title||"");
       if(/sunday litter reset/i.test(title)&&String(task.date||"")<today&&!task.done&&!task.paused){
@@ -335,6 +340,7 @@
       for(const item of schedule){
         const title=String(item.title||"");
         const date=String(item.date||"");
+        if(/YMCA Winter Indoor Sports Clinic|Confirm Leo visit and pickup plans with Grandma Kellie/i.test(title)){changed=true;continue}
         if(/goodie hunt/i.test(title)){changed=true;continue}
         if(/sunday litter reset/i.test(title)){
           const weekday=date?new Date(date+"T12:00:00").getDay():-1;
