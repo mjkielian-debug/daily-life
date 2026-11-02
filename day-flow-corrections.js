@@ -346,7 +346,7 @@
             title.toLowerCase().includes(String(a.title||"").toLowerCase())
           );
           const due=String(assignment?.due||"");
-          if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true||due&&date&&due<date)){
+          if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true)){
             changed=true;continue;
           }
           const start=hmMinutes(item.start);
@@ -376,14 +376,14 @@
           title.toLowerCase().includes(String(a.title||"").toLowerCase())
         );
         const due=String(assignment?.due||"");
-        if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true||due&&due<String(date))) return false;
+        if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true)) return false;
         if([1,2,3,4,5].includes(weekday)&&hmMinutes(item.start)!==null&&hmMinutes(item.start)<15*60+15){
           item.start="15:30";
           if(item.end&&hmMinutes(item.end)!==null&&hmMinutes(item.end)<=15*60+15)item.end=minutesHm(15*60+15);
         }
       }
       return true;
-    });
+    }).sort((a,b)=>(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0));
   };
   const baseHouseholdCleanupRender=render;
   render=function(){
