@@ -275,3 +275,120 @@
     return rows.sort((a,b) => (hmMinutes(a.start) ?? 0) - (hmMinutes(b.start) ?? 0));
   };
 })();
+
+/* Household schedule corrections: prevent stale carryovers and keep Dolly's
+   homework in a time when she is home. This runs against the local copy too. */
+(function(){
+  "use strict";
+  function householdScheduleCleanup(){
+    if(!state || typeof state!=="object") return false;
+    const today=typeof ymd==="function"?ymd():"";
+    let changed=false;
+    const settings=state.settings||(state.settings={});
+    const itinerary=settings.itinerary||(settings.itinerary={});
+    if(Number(itinerary.householdScheduleCorrectionsVersion||0)<1){
+      const patterns=itinerary.taskPatterns||(itinerary.taskPatterns={});
+      patterns["Scoop litter boxes"]={
+        days:[1,2,3,4,5,6],
+        notes:"Once daily Monday through Saturday; Sunday's litter reset includes scooping.",
+        itineraryMinutes:15,
+        itineraryPreference:"evening"
+      };
+      patterns["Sunday litter reset: empty robot + scoop boxes"]={
+        days:[0],
+        notes:"Weekly Sunday reset only; includes the regular boxes.",
+        itineraryMinutes:15,
+        itineraryPreference:"morning"
+      };
+      itinerary.householdScheduleCorrectionsVersion=1;
+      changed=true;
+    }
+    for(const assignment of state.schoolAssignments||[]){
+      if(String(assignment.child||"").toLowerCase()!=="dolly") continue;
+      if(String(assignment.status||"").toLowerCase()==="completed"||String(assignment.status||"").toLowerCase()==="archived") continue;
+      if(assignment.itineraryPreference!=="after-school"){assignment.itineraryPreference="after-school";changed=true}
+      if(assignment.itineraryStart!=="15:30"){assignment.itineraryStart="15:30";changed=true}
+      if(!Number(assignment.itineraryMinutes)){assignment.itineraryMinutes=20;changed=true}
+    }
+    for(const task of state.tasks||[]){
+      const title=String(task.title||"");
+      if(/sunday litter reset/i.test(title)&&String(task.date||"")<today&&!task.done&&!task.paused){
+        task.paused=true;
+        task.carryForward=false;
+        changed=true;
+      }
+      if(/goodie hunt/i.test(title)&&!task.done&&!task.paused){
+        task.paused=true;
+        task.carryForward=false;
+        changed=true;
+      }
+    }
+    for(const event of state.events||[]){
+      if(/goodie hunt/i.test(String(event.title||""))&&String(event.date||"")<=today&&String(event.status||"").toLowerCase()!=="archived"){
+        event.status="archived";
+        changed=true;
+      }
+    }
+    const schedule=state.dailyLifeNotificationSchedule;
+    if(Array.isArray(schedule)){
+      const cleaned=[];
+      for(const item of schedule){
+        const title=String(item.title||"");
+        const date=String(item.date||"");
+        if(/goodie hunt/i.test(title)){changed=true;continue}
+        if(/sunday litter reset/i.test(title)){
+          const weekday=date?new Date(date+"T12:00:00").getDay():-1;
+          if(weekday!==0){changed=true;continue}
+        }
+        if(/dolly/i.test(title)&&/math|homework|assignment|practice/i.test(title)){
+          const assignment=(state.schoolAssignments||[]).find(a=>
+            String(a.child||"").toLowerCase()==="dolly"&&
+            title.toLowerCase().includes(String(a.title||"").toLowerCase())
+          );
+          const due=String(assignment?.due||"");
+          if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true||due&&date&&due<date)){
+            changed=true;continue;
+          }
+          const start=hmMinutes(item.start);
+          if(date&&[1,2,3,4,5].includes(new Date(date+"T12:00:00").getDay())&&start!==null&&start<15*60+15&&item.start!=="15:30"){
+            item.start="15:30";
+            changed=true;
+          }
+        }
+        cleaned.push(item);
+      }
+      if(cleaned.length!==schedule.length) state.dailyLifeNotificationSchedule=cleaned;
+    }
+    return changed;
+  }
+  const baseHouseholdDayItems=itineraryDayItems;
+  itineraryDayItems=function(date){
+    householdScheduleCleanup();
+    const rows=baseHouseholdDayItems(date);
+    const weekday=new Date(String(date)+"T12:00:00").getDay();
+    return rows.filter(item=>{
+      const title=String(item.title||"");
+      if(/goodie hunt/i.test(title)) return false;
+      if(/sunday litter reset/i.test(title)&&weekday!==0) return false;
+      if(/dolly/i.test(title)&&/math|homework|assignment|practice/i.test(title)){
+        const assignment=(state.schoolAssignments||[]).find(a=>
+          String(a.child||"").toLowerCase()==="dolly"&&
+          title.toLowerCase().includes(String(a.title||"").toLowerCase())
+        );
+        const due=String(assignment?.due||"");
+        if(assignment&&(String(assignment.status||"").toLowerCase()==="archived"||assignment.scheduleExcluded===true||due&&due<String(date))) return false;
+        if([1,2,3,4,5].includes(weekday)&&hmMinutes(item.start)!==null&&hmMinutes(item.start)<15*60+15){
+          item.start="15:30";
+          if(item.end&&hmMinutes(item.end)!==null&&hmMinutes(item.end)<=15*60+15)item.end=minutesHm(15*60+15);
+        }
+      }
+      return true;
+    });
+  };
+  const baseHouseholdCleanupRender=render;
+  render=function(){
+    const changed=householdScheduleCleanup();
+    if(changed&&typeof save==="function") Promise.resolve().then(()=>save()).catch(()=>{});
+    return baseHouseholdCleanupRender.apply(this,arguments);
+  };
+})();
