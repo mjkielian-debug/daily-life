@@ -1,6 +1,6 @@
 {
-  "build": "20261102-homework-after-school1",
+  "build": "20261102-household-cleanup2",
   "released": "2026-11-02",
-  "ui": "Dolly homework after school; litter schedule without duplicate Sunday carryover; retired Goodie Hunt cleanup.",
-  "data_version": "Local schedule cleanup for stale homework and litter carryovers."
+  "ui": "Remove expired YMCA and Leo visit carryovers; retain homework after school and correct litter schedule.",
+  "data_version": "Local cleanup for stale carryover tasks and household schedule corrections."
 }
