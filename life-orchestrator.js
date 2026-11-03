@@ -282,7 +282,7 @@
       if(date>=cutoff||t.keepInToday===true||lifeIsDailyResetTask(t))return false;
       if(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(t,today))return false;
       const due=String(t.dueDate||t.due||"");
-      return !(/^\\d{4}-\\d{2}-\\d{2}$/.test(due)&&due>=today);
+      return !(/^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today);
     })).sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100));
   }
 
@@ -295,7 +295,7 @@
         if(d<today&&(lifeIsDailyResetTask(t)||(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(t,today))))return false;
         if(d<staleCutoff&&t.keepInToday!==true){
           const due=String(t.dueDate||t.due||"");
-          if(!(/^\\d{4}-\\d{2}-\\d{2}$/.test(due)&&due>=today))return false;
+          if(!(/^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today))return false;
         }
         return true;
       }))
