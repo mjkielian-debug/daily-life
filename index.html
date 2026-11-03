@@ -2097,6 +2097,9 @@ function render(){
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
 }
+function changeBudgetMonthToCurrent(){
+  budgetMonth=ymd().slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
+}
 
 function dailyLifeAdvice(){
   const items=[...weatherPrepAdvice()];
@@ -7000,7 +7003,7 @@ function moneyRunNextAction(){
 function openMoneyHubSection(section){
   let title="Money",body="";
   if(section==="bills"){title="Bills";body=`${typeof chaseBalancePanel==="function"?chaseBalancePanel():""}${typeof moneyNextStepsCard==="function"?moneyNextStepsCard():""}${dueDateOutlookCard()}<details class="money-more-details"><summary>Show bill calendar + full list</summary><div class="money-more-details-body">${billCalendarCard()}${upcomingBillsView()}</div></details>`}
-  else if(section==="budget"){closeModal();setView("budget");return}
+  else if(section==="budget"){budgetMonth=ymd().slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);closeModal();setView("budget");return}
   else if(section==="income"){title="Income";body=moneyIncomeHub()}
   else if(section==="accounts"){title="Accounts";body=moneyAccountsCard()}
   else if(section==="transfers"){title="Transfers + Next Steps";body=moneyTransfersCard()}
@@ -7011,13 +7014,17 @@ function openMoneyHubSection(section){
   modal(title,`<div class="money-hub-modal">${body}</div>`,"Close",closeModal);
 }
 function moreView(){
-  const today=ymd(),end30=shiftDateString(today,30),
+  const today=ymd(),end30=shiftDateString(today,30),month=today.slice(0,7),
+        monthEnd=ymd(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0)),
         bills=(state.bills||[]).filter(b=>billForecastIncluded(b)&&b.status!=="paid"&&validBillDate(b.due)&&b.due>=today&&b.due<=end30),
         income=expectedIncomeOccurrences(end30).filter(x=>x.date>=today),
+        cashMonthIncome=expectedIncomeOccurrences(monthEnd).filter(x=>!/\b(ebt|snap|food benefit)\b/i.test(x.name||"")),
+        monthTotals=budgetTotals(month),cashIncomeTotal=cashMonthIncome.reduce((n,x)=>n+Math.round(Number(x.amount||0)*100),0),
+        upcomingBillTotal=bills.reduce((n,b)=>n+budgetCents(b.amount),0),
         accounts=(state.accounts||[]).length,
         activeGoals=(state.savingsGoals||[]).filter(g=>!g.done).length,
         actions=billReadiness().filter(r=>r.bill.status!=="paid"&&["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status)).length+(typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0),
-        month=budgetMonth||today.slice(0,7),spend=(state.budget?.spending||[]).filter(x=>String(x.date||"").startsWith(month)).length,
+        spend=(state.budget?.spending||[]).filter(x=>String(x.date||"").startsWith(month)).length,
         paychecks=(state.paychecks||[]).filter(p=>p.payDate&&p.payDate>=shiftDateString(today,-60)).length,
         next=moneyNextActionSummary(),
         segments=[
@@ -7030,11 +7037,26 @@ function moreView(){
           {icon:"▣",title:"UPS Pay",detail:paychecks?paychecks+" recent":"Pay history",section:"pay"},
           {icon:"↕",title:"Spending",detail:spend?spend+" logged":"Activity",section:"spending"}
         ];
+  const ebtUnset=monthTotals.plan.ebt===null&&monthTotals.plan.ebtStart===null,
+        ebtValue=ebtUnset?"Not set":budgetMoney(Math.max(0,monthTotals.ebtAvailable)),
+        cashLeft=monthTotals.plan.income===null?"Cash income not set":budgetMoney(monthTotals.left),
+        recordedSpend=budgetMoney(monthTotals.spent);
   return `<section class="money-one-screen"><div class="money-one-topline"><div><div class="eyebrow">Money at a glance</div><b>Plan + bills + income</b></div><button class="btn small primary" onclick="openBill()">＋ Bill</button></div>
     <div class="life-wheel money-wheel" role="group" aria-label="Money dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openMoneyHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
       <button type="button" class="life-wheel-center money-wheel-center" onclick="event.stopPropagation();moneyRunNextAction();return false;"><span class="eyebrow">NEXT MONEY MOVE</span><b>${esc(next.title)}</b><strong>${esc(next.detail)}</strong><small>Tap for details</small></button>
     </div>
+    <section style="margin-top:18px;padding:16px;border:1px solid var(--line,#eadde8);border-radius:18px;background:rgba(255,255,255,.72)" aria-label="This month money snapshot">
+      <div class="eyebrow">This month · ${new Date(month+"-01T12:00:00").toLocaleDateString("en-US",{month:"long"})}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:12px">
+        <div><small>Expected cash deposits saved</small><div><b>${cashMonthIncome.length?budgetMoney(cashIncomeTotal):"None entered"}</b></div><small>${cashMonthIncome.length?cashMonthIncome.length+" scheduled deposit"+(cashMonthIncome.length===1?"":"s"):"No cash deposits saved for the rest of this month"}</small></div>
+        <div><small>Cash spending logged</small><div><b>${esc(recordedSpend)}</b></div><small>${monthTotals.logs.filter(x=>x.category!=="ebt").length} recorded purchase(s)</small></div>
+        <div><small>Unpaid bills in next 30 days</small><div><b>${bills.length?budgetMoney(upcomingBillTotal):"None entered"}</b></div><small>${bills.length} saved bill(s) due by ${new Date(end30+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div>
+        <div><small>Cash left to assign</small><div><b>${esc(cashLeft)}</b></div><small>Based on saved income, bills, and category limits</small></div>
+        <div><small>EBT available · separate from cash</small><div><b>${esc(ebtValue)}</b></div><small>Based only on the saved EBT balance and spending</small></div>
+      </div>
+      <div class="muted small" style="margin-top:12px">Only saved income, bill, and spending records are counted. “Not set” means no amount is recorded; it does not mean $0.</div>
+    </section>
   </section>`;
 }
 function connectionsCard(){
@@ -7431,6 +7453,7 @@ function budgetView(){
     <div class="life-today-topline budget-hub-topline">
       <div><div class="eyebrow">Budget</div><b>${esc(label)}</b></div>
       <div class="life-today-top-actions budget-month-actions">
+        ${budgetMonth!==ymd().slice(0,7)?'<button class="btn small" onclick="changeBudgetMonthToCurrent()">This month</button>':""}
         <button class="btn small" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button>
         <button class="btn small" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button>
       </div>
@@ -7663,7 +7686,26 @@ async function removeTask(id){
   state.tasks=(state.tasks||[]).filter(x=>x.id!==id);
   await save();closeModal();render();
 }
-function openFood(){modal("Add food",`<div class="stack"><label>Food or drink<input id="fn"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="1"></label><label>Calories each<input id="fc" type="number"></label><label>Protein g each<input id="fp" type="number"></label></div><div class="grid3"><label>Carbs g each<input id="fcarb" type="number"></label><label>Fat g each<input id="ffat" type="number"></label><label>Fiber g each<input id="ffiber" type="number"></label></div><label>Known caffeine mg each<input id="fcaf" type="number"></label></div>`,"Save",async()=>{const name=$("#fn").value.trim();if(!name)return;const quantity=Math.max(.1,Number($("#fq").value||1));state.foodLogs.push({id:uid(),date:ymd(),name,category:"food",quantity,calories:Number($("#fc").value||0),protein:Number($("#fp").value||0),carbs:Number($("#fcarb").value||0),fat:Number($("#ffat").value||0),fiber:Number($("#ffiber").value||0),caffeineMg:Number($("#fcaf").value||0)});await save();closeModal();render()})}
+function openFood(foodId=""){
+  const logs=state.foodLogs||[],existing=logs.find(x=>String(x.id||"")===String(foodId||""))||null;
+  const fields=[
+    ["calories","Calories","cal"],["protein","Protein g","proteinG"],["carbs","Carbs g","carbohydrates","carbsG"],["fat","Fat g","fatG"],["fiber","Fiber g","fiberG"],
+    ["calcium","Calcium mg","calciumMg"],["iron","Iron mg","ironMg"],["potassium","Potassium mg","potassiumMg"],["vitaminD","Vitamin D mcg","vitamin_d","vitaminDMcg"],
+    ["sodium","Sodium mg","sodiumMg"],["addedSugar","Added sugar g","added_sugar","addedSugarG"],["caffeineMg","Caffeine mg","caffeine","caffeine_mg"]
+  ];
+  const valueFor=(row,keys)=>{for(const key of keys){if(row?.[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=="")return row[key]}return""},
+        input=(field)=>`<label>${field[1]} each<input type="number" step="any" id="food-${field[0]}" value="${esc(valueFor(existing,field.slice(0,1).concat(field.slice(2))))}"></label>`,
+        title=existing?"Edit food":"Add food",
+        legacyNote=existing&&!existing.nutritionVersion?'<div class="muted small">Older entries may have saved blank nutrition as 0. Clear any amounts you don’t know.</div>':"";
+  modal(title,`<div class="stack"><label>Food or drink<input id="fn" value="${esc(existing?.name||"")}"></label><div class="grid3"><label>Quantity<input id="fq" type="number" min=".1" step=".1" value="${esc(existing?.quantity??1)}"></label>${fields.slice(0,3).map(input).join("")}</div><div class="grid3">${fields.slice(3,6).map(input).join("")}</div><div class="grid3">${fields.slice(6,9).map(input).join("")}</div><div class="grid3">${fields.slice(9).map(input).join("")}</div><div class="muted small">Leave unknown nutrients blank. Enter 0 only when you know the value is zero.</div>${legacyNote}<label>Notes<input id="food-notes" value="${esc(existing?.notes||"")}" placeholder="Optional details"></label></div>`,existing?"Save changes":"Save",async()=>{
+    const name=$("#fn").value.trim();if(!name)return;
+    const row=existing?{...existing}:{id:uid(),date:ymd(),category:"food"};
+    row.name=name;row.quantity=Math.max(.1,Number($("#fq").value||1));row.nutritionVersion=2;row.notes=$("#food-notes").value.trim();
+    for(const field of fields){const [key,...aliases]=field,raw=String($("#food-"+key).value||"").trim();for(const alias of [key,...aliases])delete row[alias];if(raw!==""){const value=Number(raw);if(Number.isFinite(value)&&value>=0)row[key]=value}}
+    if(existing){const position=logs.findIndex(x=>String(x.id||"")===String(existing.id||""));if(position>=0)logs[position]=row}else logs.push(row);
+    state.foodLogs=logs;await save();closeModal();render()
+  })
+}
 function parsePunchDate(text){
   const iso=String(text||"").match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);if(iso)return iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
   const us=String(text||"").match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);return us?us[3]+"-"+String(us[1]).padStart(2,"0")+"-"+String(us[2]).padStart(2,"0"):"";
@@ -9544,7 +9586,7 @@ async function registerAppWorker(){
 }
 </script>
 <script src="settings-tabs.js?v=20261003-settings1"></script>
-<script src="food-tabs.js?v=20261027-homealltrends2"></script>
+<script src="food-tabs.js?v=20261103-nutritionedit1"></script>
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>

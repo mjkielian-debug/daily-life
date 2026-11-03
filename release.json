@@ -1,6 +1,6 @@
 {
-  "build": "20261103-todayreview1",
+  "build": "20261103-moneyfood1",
   "released": "2026-11-03",
-  "ui": "Hide one-off carryovers older than a week behind an explicit review and collapse overlapping household tasks.",
-  "data_version": "Persistent stale-task review decisions and household task deduplication."
+  "ui": "Make Money month-aware with clear saved cash and separate EBT totals; let food logs be edited with unknown nutrients left blank.",
+  "data_version": "Food nutrition fields are optional and blank remains unknown; no financial values are hard-coded."
 }

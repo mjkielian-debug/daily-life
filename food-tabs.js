@@ -151,7 +151,7 @@ function foodGoalDashboardCard(){
       return "<div class=\"food-goal-item\"><div class=\"food-goal-head\"><b>"+esc(n.label)+"</b><strong>"+percent+"</strong></div><div class=\"food-goal-number\">"+esc(caption)+"</div><div class=\"food-goal-meter\" role=\"progressbar\" aria-label=\""+esc(n.label+(n.limit?" daily limit":" daily goal"))+"\" aria-valuemin=\"0\" aria-valuemax=\""+n.goal+"\" "+(pct===null?"aria-valuetext=\""+esc(aria)+"\"":"aria-valuenow=\""+Math.min(n.goal,Math.round(n.value))+"\" aria-valuetext=\""+esc(aria)+"\"")+"><i style=\"width:"+width+"%\"></i></div></div>";
     },
     estimated=f.rows.some(x=>!!x.nutritionEstimated),
-    incomplete=f.rows.some(x=>!x.nutritionEstimated&&/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||""))),
+    incomplete=f.rows.some(x=>!x.nutritionEstimated&&(/not estimated|unknown|not confirmed|not available/i.test(String(x.notes||""))||[["calories","cal"],["protein","proteinG"],["carbs","carbohydrates","carbsG"],["fat","fatG"],["fiber","fiberG"]].some(keys=>!keys.some(key=>x[key]!==undefined&&x[key]!==null&&String(x[key]).trim()!=="")))),
     rowNutrient=(row,aliases)=>{
       for(const key of aliases){const raw=row[key];if(raw!==undefined&&raw!==null&&String(raw).trim()!==""){const value=Number(raw);if(Number.isFinite(value))return value*foodQuantity(row)}}
       return null;
@@ -175,7 +175,11 @@ function foodGoalDashboardCard(){
       const units={cal:"cal",P:"g",C:"g",F:"g",fiber:"g",Ca:"mg",Fe:"mg",K:"mg",D:"mcg",Na:"mg",sugar:"g",caffeine:"mg"};
       return entries.length?entries.map(([label,value])=>label+" "+nutrientText(value,units[label])).join(" · "):"Nutrition not recorded";
     },
-    foods=f.rows.slice().reverse().map(x=>"<div class=\"food-eaten-item\"><div class=\"food-eaten-line\"><span>"+esc(x.name||"Food / drink")+"</span><b>"+(foodQuantity(x)>1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" ≈":"")+"</b></div><small>"+esc(foodRowSummary(x))+"</small></div>").join("");
+    foods=f.rows.slice().reverse().map(x=>{
+      const coreKnown=[["calories","cal"],["protein","proteinG"],["carbs","carbohydrates","carbsG"],["fat","fatG"],["fiber","fiberG"]].every(keys=>keys.some(key=>x[key]!==undefined&&x[key]!==null&&String(x[key]).trim()!=="")),
+            editButton=foodIntakeDate===ymd()?" <button type='button' class='btn small' style='margin-top:6px' onclick='openFood("+JSON.stringify(String(x.id||""))+")'>Edit</button>":"";
+      return "<div class=\\"food-eaten-item\\"><div class=\\"food-eaten-line\\"><span>"+esc(x.name||"Food / drink")+"</span><b>"+(foodQuantity(x)>1?"×"+foodQuantity(x):"")+(x.nutritionEstimated?" ≈":"")+"</b></div><small>"+esc(foodRowSummary(x))+(coreKnown?"":" · Some nutrition not recorded")+"</small>"+editButton+"</div>"
+    }).join("");
   return "<div class=\"card food-intake-card\" id=\"foodIntakeDashboardRoot\"><div class=\"food-intake-head\"><div><div class=\"eyebrow\">"+(foodIntakeDate===ymd()?"Today’s intake":new Date(foodIntakeDate+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+" intake")+"</div><h2>What you’ve had</h2></div>"+(foodIntakeDate===ymd()?"<button class=\"btn primary\" onclick=\"openFood()\">+ Log food</button>":"<span class=\"muted small\">Past day · view only</span>")+"</div>"+foodIntakeDateControls()+
     (foods?"<div class=\"food-eaten-list\">"+foods+"</div>":"<div class=\"muted small\">Nothing logged on this date.</div>")+
     (estimated||incomplete?"<div class=\"food-data-note\">≈ Estimates shown · missing nutrition stays unknown</div>":"")+
