@@ -2063,6 +2063,7 @@ function openSectionLauncher(){
     ["☾","Spirituality","Daily reading, tarot + rituals","return openSpiritualityPage(event)"],
     ["⌁","Garden + Hobbies","Plants, crafts, projects + supplies","setView('gardenhobbies')"],
     ["▣","Vault","Encrypted documents + logins","setView('vault')"],
+    ["✉","Texts","Private message inbox","openTextInbox()"],
     ["⚙","Settings","Routines, cloud + backup","setView('settings')"]
   ];
   modal("Daily Life sections",`<div class="section-launcher-tools"><button class="btn primary" onclick="closeModal();openLifeCapture()">＋ Quick capture</button><button class="btn" onclick="closeModal();openLifeSearch()">⌕ Search everything</button><button class="btn" onclick="closeModal();openAppUpdateTools()">↻ Check app version</button></div><div class="section-launcher">${sections.map(([icon,title,detail,action])=>`<button onclick="closeModal();${action}"><span class="section-launch-icon">${icon}</span><span><b>${title}</b><small>${detail}</small></span><span>›</span></button>`).join("")}</div>`,"Close",closeModal);
@@ -9582,5 +9583,6 @@ window.addEventListener("load",()=>{
 </script>
 <script src="day-flow-corrections.js?v=20261102-household-cleanup2"></script>
 <script src="reading-wheel-fixes.js?v=20261026-readerwheel1"></script>
+<script src="text-inbox.js?v=20261103-private1"></script>
 </body>
 </html>
