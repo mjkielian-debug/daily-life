@@ -1,6 +1,6 @@
 {
-  "build": "20261103-private-text-inbox1",
+  "build": "20261103-todayreview1",
   "released": "2026-11-03",
-  "ui": "Add a private text notification inbox with revocable Android bridge setup.",
-  "data_version": "Private text inbox storage and per-user access policies."
+  "ui": "Hide one-off carryovers older than a week behind an explicit review and collapse overlapping household tasks.",
+  "data_version": "Persistent stale-task review decisions and household task deduplication."
 }

@@ -47,13 +47,18 @@
   }
   function lifeTaskDisplayKey(t){
     const child=String(t?.child||"").trim().toLowerCase();
-    let title=String(t?.title||"").trim().toLowerCase();
-    if(/myschoolbucks|(?:school|student).*meal\s+balance/.test(title+" "+String(t?.notes||"").toLowerCase()))title="school meal balance";
-    title=title.replace(/\b(?:today|tomorrow)\b/g," ")
+    const title=String(t?.title||"").trim().toLowerCase();
+    const detail=title+" "+String(t?.notes||"").toLowerCase();
+    if(/myschoolbucks|(?:school|student).*meal\s+balance/.test(detail))return"school-meal-balance";
+    if(/scoop(?:ing)?\s+(?:the\s+)?litter|litter\s+(?:boxes?|reset)|cat litter|pet area reset/.test(detail))return(child||"household")+"|litter";
+    if(/bathroom reset|clean (?:one|a|the) toilet|toilet.{0,20}clean/.test(detail))return(child||"household")+"|bathroom";
+    if(/change.{0,20}bedding|kids['’]? bedding|bedroom.{0,20}linens|change.{0,20}sheets/.test(detail))return(child||"household")+"|bedding";
+    let normalized=title;
+    normalized=normalized.replace(/\b(?:today|tomorrow)\b/g," ")
       .replace(/\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b/g," ")
       .replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g," ")
       .replace(/[^a-z0-9]+/g," ").trim();
-    return child+"|"+title;
+    return child+"|"+normalized;
   }
   function lifeDedupeTasks(rows){
     const map=new Map();
@@ -269,13 +274,29 @@
     await save();render();
   };
 
+  function lifeStaleTaskRows(){
+    const today=ymd(),cutoff=lifeShift(today,-7);
+    return lifeDedupeTasks((state.tasks||[]).filter(t=>{
+      if(!lifeTaskOpen(t))return false;
+      const date=lifeTaskDate(t);
+      if(date>=cutoff||t.keepInToday===true||lifeIsDailyResetTask(t))return false;
+      if(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(t,today))return false;
+      const due=String(t.dueDate||t.due||"");
+      return !(/^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today);
+    })).sort((a,b)=>lifeTaskDate(a).localeCompare(lifeTaskDate(b))||Number(a.order||100)-Number(b.order||100));
+  }
+
   function lifeQueue(){
-    const today=ymd(),weekEnd=lifeShift(today,7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
+    const today=ymd(),weekEnd=lifeShift(today,7),staleCutoff=lifeShift(today,-7),tasks=(state.tasks||[]).filter(lifeTaskOpen),
       todayRows=lifeDedupeTasks(tasks.filter(t=>{
         const d=lifeTaskDate(t);
         if(d>today)return false;
         if(String(t.title||"").trim().toLowerCase()==="ups shift")return false;
         if(d<today&&(lifeIsDailyResetTask(t)||(typeof itineraryIsExpiredEventPrepTask==="function"&&itineraryIsExpiredEventPrepTask(t,today))))return false;
+        if(d<staleCutoff&&t.keepInToday!==true){
+          const due=String(t.dueDate||t.due||"");
+          if(!(/^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today))return false;
+        }
         return true;
       }))
         .sort((a,b)=>Number(a.order||100)-Number(b.order||100)||lifeTaskDate(a).localeCompare(lifeTaskDate(b))),
@@ -310,8 +331,12 @@
   }
 
   function lifeNextTask(){
-    const q=lifeQueue(),oldest=lifeShift(ymd(),-30),
-      usable=q.todayRows.filter(t=>lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator"),
+    const q=lifeQueue(),oldest=lifeShift(ymd(),-30),today=ymd(),
+      usable=q.todayRows.filter(t=>{
+        if(lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator"||t.keepInToday===true)return true;
+        const due=String(t.dueDate||t.due||"");
+        return /^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today;
+      }),
       ready=usable.filter(t=>!(lifeTaskDate(t)<ymd()&&t.itineraryStart));
     // Old one-day times stay open for deliberate rescheduling, not TODAY's focus.
     return ready.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
@@ -482,11 +507,40 @@
   window.lifeToggleHubChore=async function(id,done){await toggleChore(id,done);openTodayTasksHub()};
   window.lifeToggleHubTask=async function(id,done){await toggleTask(id,done);openTodayTasksHub()};
 
+  window.openStaleTaskReview=function(){
+    const rows=lifeStaleTaskRows();
+    const content=rows.length?'<div class="stack">'+rows.map(t=>{
+      const id=String(t.id||"");
+      return '<article class="card compact-drawer-card">'+
+        '<b>'+esc(lifeTaskTitle(t))+'</b>'+
+        '<small class="muted">Last planned '+esc(dl(lifeTaskDate(t)))+(t.category?' · '+esc(t.category):'')+'</small>'+
+        (t.notes?'<p class="muted">'+esc(t.notes)+'</p>':'')+
+        '<div class="row wrap">'+
+          '<button class="btn primary" onclick="lifeResolveStaleTask(\''+esc(id)+'\',\'today\')">Put on Today</button>'+
+          '<button class="btn" onclick="lifeResolveStaleTask(\''+esc(id)+'\',\'keep\')">Keep showing</button>'+
+          '<button class="btn" onclick="lifeResolveStaleTask(\''+esc(id)+'\',\'pause\')">Pause</button>'+
+        '</div></article>';
+    }).join("")+'</div>':'<div class="notice"><b>No older open tasks.</b><p>Older tasks remain in your records; choose which ones should return to Today.</p></div>';
+    modal("Older tasks · review",'<div class="stack"><p>Unfinished one-time tasks older than a week stay in your records but stop being auto-added to Today. Choose which ones still matter.</p>'+content+'</div>',"Close",closeModal);
+  };
+
+  window.lifeResolveStaleTask=async function(id,action){
+    const task=(state.tasks||[]).find(t=>String(t.id)===String(id));
+    if(!task)return;
+    if(action==="today"){task.date=ymd();task.itineraryStart="";task.keepInToday=false}
+    else if(action==="keep"){task.keepInToday=true}
+    else if(action==="pause"){task.paused=true}
+    else return;
+    try{await Promise.resolve(save());render();window.openStaleTaskReview()}
+    catch(e){alert("Could not save this task change: "+(e?.message||e))}
+  };
+
   window.openTodayTasksHub=function(){
     const q=lifeQueue(),rows=q.todayRows.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a)),
       chores=displayChoresForDate(ymd()),openChores=chores.filter(x=>!x.done).length,totalOpen=rows.length+openChores,
       review=typeof dailyReviewSummary==="function"?dailyReviewSummary(ymd()):{unknown:0},
-      hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length;
+      hidden=(state.tasks||[]).filter(t=>!t.done&&(t.paused||t.waitingForFunds||t.duplicateHidden)).length,
+      staleCount=lifeStaleTaskRows().length;
     const categoryOrder=["Personal","Home","School","Car","Money","Food","Pets","Garden","Work","Life"],
       groups=new Map();
     for(const t of rows){
@@ -518,13 +572,14 @@
     }).join("");
     const statusBits=[
       review.unknown?review.unknown+' unanswered daily check'+(review.unknown===1?'':'s'):'',
-      hidden?hidden+' waiting / paused hidden':''
+      hidden?hidden+' waiting / paused hidden':'',
+      staleCount?staleCount+' older tasks to review':''
     ].filter(Boolean).join(" · ");
     modal("Today · Tasks",
       '<div class="stack life-task-hub">'+
         '<div class="life-task-hub-head"><div><div class="eyebrow">Today</div><h2>'+totalOpen+' open item'+(totalOpen===1?'':'s')+'</h2>'+
           (statusBits?'<div class="life-task-hub-status">'+esc(statusBits)+'</div>':'')+
-        '</div><div class="life-task-hub-actions"><button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add</button></div></div>'+
+        '</div><div class="life-task-hub-actions">'+(staleCount?'<button class="btn" onclick="closeModal();openStaleTaskReview()">Older · '+staleCount+'</button>':'')+'<button class="btn" onclick="closeModal();openDailyReview()">? Review</button><button class="btn primary" onclick="closeModal();openTask()">+ Add</button></div></div>'+
         (rows.length?'<div class="life-task-hub-list">'+rowHtml+'</div>':'')+lifeFamilyRoutinesHtml()+(totalOpen?'':'<div class="notice"><b>Today’s tracked tasks + routines are clear.</b></div>')+
         '<button class="btn life-task-dayflow" onclick="closeModal();openTodayDayFlow()">Open Day Flow</button>'+
       '</div>',"Close",closeModal);
