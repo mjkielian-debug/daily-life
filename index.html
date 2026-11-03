@@ -2247,9 +2247,12 @@ function ensureToday(){
   ensureFamilyDay(date);ensureRecurringFamilyEvents();ensureBirthdayEvents();ensureRelationshipCheckinEvents();ensureSchoolAssignmentTasks(date);ensureVehicleMaintenanceTasks(date);
   for(const t of state.settings.recurringTasks||[]){
     if(t.paused||/\bymca\b/i.test([t.title,t.notes].filter(Boolean).join(" ")))continue;
-    const candidate={...t,generated:"recurring-task",dailyReset:Array.isArray(t.days)&&t.days.length===7};
+    const candidate={...t,generated:"recurring-task",dailyReset:t.recurrence!=="monthly"&&Array.isArray(t.days)&&t.days.length===7};
     if(typeof itineraryIsBroadFamilyRoutineTask==="function"&&itineraryIsBroadFamilyRoutineTask(candidate))continue;
-    if((t.days||[]).includes(wd)&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100,generated:"recurring-task",dailyReset:Array.isArray(t.days)&&t.days.length===7,itineraryStart:t.itineraryStart||"",itineraryMinutes:Number(t.itineraryMinutes||0),itineraryPreference:t.itineraryPreference||""});existing.add(t.title)}
+    const routineDue=t.recurrence==="monthly"
+      ? Number(date.slice(8,10))===Math.min(Math.max(1,Number(t.dayOfMonth||1)),new Date(Number(date.slice(0,4)),Number(date.slice(5,7)),0).getDate())
+      : (Array.isArray(t.days)&&t.days.length?t.days:[0,1,2,3,4,5,6]).includes(wd);
+    if(routineDue&&!existing.has(t.title)){state.tasks.push({id:uid(),date,title:t.title,category:t.category||"life",notes:t.notes||"",done:false,order:t.order||100,generated:"recurring-task",dailyReset:t.recurrence!=="monthly"&&Array.isArray(t.days)&&t.days.length===7,itineraryStart:t.itineraryStart||"",itineraryMinutes:Number(t.itineraryMinutes||0),itineraryPreference:t.itineraryPreference||""});existing.add(t.title)}
   }
   sanitizeWorkScheduleData(state);
   const ws=workForDate(date);
@@ -8538,8 +8541,20 @@ async function toggleBill(id,paid){
 function openPeople(){
   modal("Reading list",`<div class="stack"><label>Names, comma-separated<input id="people" value="${esc((state.settings.readers||[]).join(", "))}"></label></div>`,"Save",async()=>{const names=$("#people").value.split(",").map(x=>x.trim()).filter(Boolean);if(names.length)state.settings.readers=names;await save();closeModal();render()})
 }
+function syncRoutineRepeatFields(){
+  const monthly=$("#rrepeat")?.value==="monthly",weeklyWrap=$("#rr-weekly"),monthlyWrap=$("#rr-monthly");
+  if(weeklyWrap)weeklyWrap.hidden=monthly;
+  if(monthlyWrap)monthlyWrap.hidden=!monthly;
+}
 function openRoutine(){
-  modal("Add recurring task",`<div class="stack"><label>Task<input id="rt"></label><label>Category<input id="rc" value="life"></label><label>Days<select id="rd" multiple size="7"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label><label>Notes<input id="rn"></label></div>`,"Add",async()=>{const title=$("#rt").value.trim();if(!title)return;const days=[...$("#rd").selectedOptions].map(o=>Number(o.value));state.settings.recurringTasks.push({title,category:$("#rc").value||"life",days:days.length?days:[0,1,2,3,4,5,6],order:100,notes:$("#rn").value});await save();closeModal();render()})
+  const days=Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+  modal("Add recurring task",`<div class="stack"><label>Task<input id="rt"></label><label>Category<input id="rc" value="life"></label><label>Repeats<select id="rrepeat" onchange="syncRoutineRepeatFields()"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label><div id="rr-weekly"><label>Days<select id="rd" multiple size="7"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></label></div><div id="rr-monthly" hidden><label>Day of month<select id="rdom">${days}</select></label><div class="muted small">In shorter months, it repeats on the last day of that month.</div></div><label>Notes<input id="rn"></label></div>`,"Add",async()=>{
+    const title=$("#rt").value.trim();if(!title)return;
+    const recurrence=$("#rrepeat").value,selectedDays=[...$("#rd").selectedOptions].map(o=>Number(o.value)),
+          rule={title,category:$("#rc").value||"life",recurrence,days:recurrence==="monthly"?[]:(selectedDays.length?selectedDays:[0,1,2,3,4,5,6]),order:100,notes:$("#rn").value.trim()};
+    if(recurrence==="monthly")rule.dayOfMonth=Number($("#rdom").value||1);
+    state.settings.recurringTasks.push(rule);await save();closeModal();render()
+  })
 }
 async function removeRoutine(i){if(confirm("Remove this recurring task?")){state.settings.recurringTasks.splice(i,1);await save();render()}}
 function openMealPattern(){
@@ -9585,7 +9600,7 @@ async function registerAppWorker(){
   }catch(e){}
 }
 </script>
-<script src="settings-tabs.js?v=20261003-settings1"></script>
+<script src="settings-tabs.js?v=20261103-monthlyroutines1"></script>
 <script src="food-tabs.js?v=20261103-nutritionedit1"></script>
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>

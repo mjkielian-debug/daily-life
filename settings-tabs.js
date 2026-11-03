@@ -33,7 +33,7 @@ function compactSettingsRoutines(){
   return `<div class="settings-tab-panel">
     <section class="settings-flat-section">
       <div class="section-title"><div><div class="eyebrow">Recurring routines</div><h2>${routines.length?routines.length+" recurring task"+(routines.length===1?"":"s"):"No routines yet"}</h2></div><button class="btn primary" onclick="openRoutine()">+ Routine</button></div>
-      ${routines.length?routines.map((x,i)=>`<div class="settings-list-row"><span><b>${esc(x.title)}</b><small>${(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")||"Every day"}${x.notes?" · "+esc(x.notes):""}</small></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join(""):`<div class="muted small">Add the repeating things Daily Life should remember automatically.</div>`}
+      ${routines.length?routines.map((x,i)=>`<div class="settings-list-row"><span><b>${esc(x.title)}</b><small>${x.recurrence==="monthly"?"Monthly · day "+Math.min(Math.max(1,Number(x.dayOfMonth||1)),31):(x.days||[]).map(d=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")||"Every day"}${x.notes?" · "+esc(x.notes):""}</small></span><button class="btn small" onclick="removeRoutine(${i})">Remove</button></div>`).join(""):`<div class="muted small">Add the repeating things Daily Life should remember automatically.</div>`}
     </section>
     <section class="settings-flat-section">
       <div class="section-title"><div><div class="eyebrow">Weekly meal patterns</div><h2>${meals.length?meals.length+" meal rule"+(meals.length===1?"":"s"):"No meal patterns yet"}</h2></div><button class="btn" onclick="openMealPattern()">+ Pattern</button></div>

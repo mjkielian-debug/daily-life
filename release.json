@@ -1,6 +1,6 @@
 {
-  "build": "20261103-moneyfood1",
+  "build": "20261103-monthlyroutines1",
   "released": "2026-11-03",
-  "ui": "Make Money month-aware with clear saved cash and separate EBT totals; let food logs be edited with unknown nutrients left blank.",
-  "data_version": "Food nutrition fields are optional and blank remains unknown; no financial values are hard-coded."
+  "ui": "Add monthly cadence to recurring tasks and handle short calendar months.",
+  "data_version": "Recurring routine records may specify a weekly day set or monthly day of month; existing weekly routines remain unchanged."
 }
