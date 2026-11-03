@@ -50,9 +50,9 @@
     const title=String(t?.title||"").trim().toLowerCase();
     const detail=title+" "+String(t?.notes||"").toLowerCase();
     if(/myschoolbucks|(?:school|student).*meal\s+balance/.test(detail))return"school-meal-balance";
-    if(/scoop(?:ing)?\s+(?:the\s+)?litter|litter\s+(?:boxes?|reset)|cat litter|pet area reset/.test(detail))return"household|litter";
-    if(/bathroom reset|clean (?:one|a|the) toilet|toilet.{0,20}clean/.test(detail))return"household|bathroom";
-    if(/change.{0,20}bedding|kids['’]? bedding|bedroom.{0,20}linens|change.{0,20}sheets/.test(detail))return"household|bedding";
+    if(/scoop(?:ing)?\s+(?:the\s+)?litter|litter\s+(?:boxes?|reset)|cat litter|pet area reset/.test(detail))return(child||"household")+"|litter";
+    if(/bathroom reset|clean (?:one|a|the) toilet|toilet.{0,20}clean/.test(detail))return(child||"household")+"|bathroom";
+    if(/change.{0,20}bedding|kids['’]? bedding|bedroom.{0,20}linens|change.{0,20}sheets/.test(detail))return(child||"household")+"|bedding";
     let normalized=title;
     normalized=normalized.replace(/\b(?:today|tomorrow)\b/g," ")
       .replace(/\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b/g," ")
