@@ -23,13 +23,11 @@ create table if not exists public.text_inbox_messages (
   body text not null check (char_length(body) between 1 and 10000),
   received_at timestamptz not null default now(),
   source_app text,
-  external_id text,
-  created_at timestamptz not null default now()
+  external_id text not null default gen_random_uuid()::text,
+  created_at timestamptz not null default now(),
+  unique(owner_user_id, external_id)
 );
 
-create unique index if not exists text_inbox_messages_dedupe_idx
-  on public.text_inbox_messages(owner_user_id, external_id)
-  where external_id is not null;
 create index if not exists text_inbox_messages_owner_received_idx
   on public.text_inbox_messages(owner_user_id, received_at desc);
 
