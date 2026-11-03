@@ -7051,7 +7051,7 @@ function moreView(){
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:12px">
         <div><small>Expected cash deposits saved</small><div><b>${cashMonthIncome.length?budgetMoney(cashIncomeTotal):"None entered"}</b></div><small>${cashMonthIncome.length?cashMonthIncome.length+" scheduled deposit"+(cashMonthIncome.length===1?"":"s"):"No cash deposits saved for the rest of this month"}</small></div>
         <div><small>Cash spending logged</small><div><b>${esc(recordedSpend)}</b></div><small>${monthTotals.logs.filter(x=>x.category!=="ebt").length} recorded purchase(s)</small></div>
-        <div><small>Unpaid bills in next 30 days</small><div><b>${bills.length?budgetMoney(upcomingBillTotal):"None entered"}</b></div><small>${bills.length} saved bill(s) due by ${new Date(end30+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div>
+        <div><small>Unpaid bills in next 30 days</small><div><b>${bills.length?budgetMoney(upcomingBillTotal):"No saved bills due"}</b></div><small>${bills.length} saved bill(s) due by ${new Date(end30+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div>
         <div><small>Cash left to assign</small><div><b>${esc(cashLeft)}</b></div><small>Based on saved income, bills, and category limits</small></div>
         <div><small>EBT available · separate from cash</small><div><b>${esc(ebtValue)}</b></div><small>Based only on the saved EBT balance and spending</small></div>
       </div>
