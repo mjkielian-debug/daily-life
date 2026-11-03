@@ -34,22 +34,17 @@ create index if not exists text_inbox_messages_owner_received_idx
 alter table public.text_inbox_tokens enable row level security;
 alter table public.text_inbox_messages enable row level security;
 
-drop policy if exists text_inbox_tokens_select_owner on public.text_inbox_tokens;
 create policy text_inbox_tokens_select_owner on public.text_inbox_tokens
   for select to authenticated using (owner_user_id = (select auth.uid()));
-drop policy if exists text_inbox_tokens_insert_owner on public.text_inbox_tokens;
 create policy text_inbox_tokens_insert_owner on public.text_inbox_tokens
   for insert to authenticated with check (owner_user_id = (select auth.uid()));
-drop policy if exists text_inbox_tokens_update_owner on public.text_inbox_tokens;
 create policy text_inbox_tokens_update_owner on public.text_inbox_tokens
   for update to authenticated
   using (owner_user_id = (select auth.uid()))
   with check (owner_user_id = (select auth.uid()));
 
-drop policy if exists text_inbox_messages_select_owner on public.text_inbox_messages;
 create policy text_inbox_messages_select_owner on public.text_inbox_messages
   for select to authenticated using (owner_user_id = (select auth.uid()));
-drop policy if exists text_inbox_messages_delete_owner on public.text_inbox_messages;
 create policy text_inbox_messages_delete_owner on public.text_inbox_messages
   for delete to authenticated using (owner_user_id = (select auth.uid()));
 
