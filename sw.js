@@ -1,8 +1,9 @@
-const CACHE_NAME="daily-life-shell-20261102-household-cleanup2";
+const CACHE_NAME="daily-life-shell-20261103-private-text-inbox1";
 const APP_SHELL=[
   "./",
   "./index.html",
   "./push-notifications.js",
+  "./text-inbox.js",
   "./day-flow-corrections.js",
   "./styles.css",
   "./compact-ui.css",
