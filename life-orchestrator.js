@@ -331,8 +331,12 @@
   }
 
   function lifeNextTask(){
-    const q=lifeQueue(),oldest=lifeShift(ymd(),-30),
-      usable=q.todayRows.filter(t=>lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator"),
+    const q=lifeQueue(),oldest=lifeShift(ymd(),-30),today=ymd(),
+      usable=q.todayRows.filter(t=>{
+        if(lifeTaskDate(t)>=oldest||t.generated==="life-orchestrator"||t.keepInToday===true)return true;
+        const due=String(t.dueDate||t.due||"");
+        return /^\d{4}-\d{2}-\d{2}$/.test(due)&&due>=today;
+      }),
       ready=usable.filter(t=>!(lifeTaskDate(t)<ymd()&&t.itineraryStart));
     // Old one-day times stay open for deliberate rescheduling, not TODAY's focus.
     return ready.slice().sort((a,b)=>lifeScoreTask(b)-lifeScoreTask(a))[0]||q.soonRows[0]||null;
