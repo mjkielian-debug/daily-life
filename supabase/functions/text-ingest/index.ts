@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   const sender = (req.headers.get("x-inbox-sender") || "Unknown").trim().slice(0, 250) || "Unknown";
   const sourceApp = (req.headers.get("x-inbox-source") || "").trim().slice(0, 200) || null;
-  const externalId = (req.headers.get("x-inbox-event-id") || "").trim().slice(0, 200) || null;
+  const externalId = (req.headers.get("x-inbox-event-id") || "").trim().slice(0, 200) || crypto.randomUUID();
 
   const row = {
     owner_user_id: tokenRow.owner_user_id,
