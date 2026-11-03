@@ -115,7 +115,7 @@
             <pre>apikey: sb_publishable_S8rk3-LkoyPLuyw2p_v7gA_yskyW--m
 x-daily-life-token: YOUR_TOKEN
 x-inbox-sender: {not_title}
-x-inbox-event-id: {system_time_ms}
+x-inbox-event-id: {not_timestamp}
 x-inbox-source: {not_app_name}</pre>
           </li>
           <li>Allow MacroDroid notification access when Android prompts. Filter the trigger to your messaging app; the inbox starts receiving new notification previews after setup.</li>
