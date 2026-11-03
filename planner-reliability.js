@@ -4,7 +4,18 @@
   itineraryTaskCandidates = function(date) {
     const rows = baseTaskCandidates(date);
     if (String(date) !== String(ymd())) return rows;
-    const cutoff = shiftDateString(date, -7);
+    const cutoff = shiftDateString(date, -7), weekday = new Date(String(date) + "T12:00:00").getDay();
+    let movedDollyHomework = false;
+    if (weekday >= 1 && weekday <= 5) {
+      for (const task of rows) {
+        const description = String(task.title || "") + " " + String(task.notes || "") + " " + String(task.child || "");
+        if (!/dolly/i.test(description) || !/math|homework|assignment|practice/i.test(description)) continue;
+        if (task.itineraryPreference !== "after-school") { task.itineraryPreference = "after-school"; movedDollyHomework = true; }
+        const scheduled = hmMinutes(task.itineraryStart);
+        if (scheduled !== null && scheduled < 15 * 60 + 15) { task.itineraryStart = ""; movedDollyHomework = true; }
+      }
+    }
+    if (movedDollyHomework && typeof save === "function") Promise.resolve(save()).catch(() => {});
     return rows.filter(task => {
       const taskDate = String(task.date || "");
       if (task.keepInToday === true || taskDate >= cutoff) return true;
