@@ -1,6 +1,6 @@
 {
-  "build": "20261102-household-cleanup2",
-  "released": "2026-11-02",
-  "ui": "Remove expired YMCA and Leo visit carryovers; retain homework after school and correct litter schedule.",
-  "data_version": "Local cleanup for stale carryover tasks and household schedule corrections."
+  "build": "20261103-private-text-inbox1",
+  "released": "2026-11-03",
+  "ui": "Add a private text notification inbox with revocable Android bridge setup.",
+  "data_version": "Private text inbox storage and per-user access policies."
 }
