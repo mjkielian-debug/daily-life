@@ -26,7 +26,7 @@ function moneyInsightCard(){
   il=income?income.name+" · "+dl(income.date)+(income.confidence==="estimate"?" · estimate":" · expected"):"No expected income entered";
  return '<div class="card money-clarity-card"><div class="section-title"><div><div class="eyebrow">Money at a glance · '+esc(new Date(month+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}))+'</div><h2>What’s recorded right now</h2></div><span class="tag">Entered data</span></div>'+
  '<div class="money-clarity-grid">'+
- '<div class="money-clarity-metric"><small>Balances entered</small><b>'+esc(cv)+'</b><span>'+esc(cl)+'</span></div>'+
+ '<div class="money-clarity-metric"><small>Checking + savings</small><b>'+esc(cv)+'</b><span>'+esc(cl)+'</span></div>'+
  '<div class="money-clarity-metric"><small>Spending logged</small><b>'+esc(sv)+'</b><span>'+esc(sl)+'</span></div>'+
  '<div class="money-clarity-metric"><small>Bills due in 30 days</small><b>'+esc(bv)+'</b><span>'+esc(bl)+'</span></div>'+
  '<div class="money-clarity-metric"><small>Next expected income</small><b>'+esc(iv)+'</b><span>'+esc(il)+'</span></div></div>'+
