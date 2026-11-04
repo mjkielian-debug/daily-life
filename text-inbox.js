@@ -193,8 +193,8 @@ x-inbox-source: {not_app_name}</pre>
         '<div id="textInboxMessages">' + (messages || []).map((m) => {
           const bodyId = "textInboxBody_" + String(m.id).replace(/[^A-Za-z0-9_-]/g, ""),
                 searchText = [m.sender, m.source_app, m.body].filter(Boolean).join(" "),
-                isPackageNotice = /\\b(package|tracking|shipment|shipped|shipping|delivery|delivered|out for delivery|arriving)\\b/i.test(String(m.body || "")) ||
-                  (/walmart/i.test(String(m.sender || "") + " " + String(m.source_app || "")) && /\\b(order|package|delivery)\\b/i.test(String(m.body || ""))),
+                isPackageNotice = /\b(package|tracking|shipment|shipped|shipping|delivery|delivered|out for delivery|arriving)\b/i.test(String(m.body || "")) ||
+                  (/walmart/i.test(String(m.sender || "") + " " + String(m.source_app || "")) && /\b(order|package|delivery)\b/i.test(String(m.body || ""))),
                 alreadyAdded = (state.deliveries || []).some(x => String(x.sourceInboxMessageId || "") === String(m.id));
           return '<article class="card text-inbox-message" data-search="' + h(searchText) + '" style="margin:10px 0;padding:14px">' +
             '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b class="text-inbox-sender">' + h(m.sender) + '</b><span class="actions">' +
