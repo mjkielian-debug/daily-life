@@ -82,10 +82,15 @@ function cloudPanel(){
     return `<div class="card"><div class="section-title"><h2>Cloud account</h2><span class="tag">optional</span></div><p class="muted">Sign in to keep a private cloud copy and later use the same Daily Life account on another device. Local data stays on this device until you explicitly upload it.</p>${cloudError?`<div class="notice">${esc(cloudError)}</div>`:""}<button class="btn primary" onclick="openCloudAuth()">Sign in / create account</button></div>`;
   }
   const updated=cloudRemoteUpdatedAt?new Date(cloudRemoteUpdatedAt).toLocaleString():"No cloud copy yet";
-  const auto=cloudAutoEnabled(),lastLifePull=localStorage.getItem(cloudMetaKey("lastLifePull")),lastLifePullText=lastLifePull?new Date(lastLifePull).toLocaleString():"Not scanned yet";
+  const auto=cloudAutoEnabled(),lastLifePull=localStorage.getItem(cloudMetaKey("lastLifePull")),lastLifePullText=lastLifePull?new Date(lastLifePull).toLocaleString():"Not scanned yet",
+    lastSignature=cloudLastSignature(),currentSignature=cloudStateSignature(),lastSync=cloudLastPushed(),
+    syncStatus=cloudRecoveryRequired?"Paused while recovery is needed":cloudNeedsReview?"Needs your review":!auto?"Automatic sync is off":!cloudRemoteUpdatedAt?"No full cloud backup yet":cloudBusy||cloudPushTimer?"Syncing changes":!lastSignature?"Sync status not confirmed yet":currentSignature!==lastSignature?"Changes waiting to sync":"Up to date",
+    lastSyncText=lastSync?new Date(lastSync).toLocaleString():"No successful sync recorded yet";
   return `<div class="card glow"><div class="section-title"><h2>Cloud account</h2><span class="tag">${auto?"auto sync on":"signed in"}</span></div>
   <div class="row"><span>Account</span><b>${esc(user.email||"Signed in")}</b></div>
   <div class="row"><span>Cloud copy</span><b>${esc(updated)}</b></div>
+  <div class="row"><span>Sync status</span><b>${esc(syncStatus)}</b></div>
+  <div class="row"><span>Last successful sync</span><b>${esc(lastSyncText)}</b></div>
   <div class="row"><span>ChatGPT log scan</span><b>${esc(lastLifePullText)}</b></div>
   ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
