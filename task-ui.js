@@ -63,7 +63,7 @@
         (meta.length?'<small>'+meta.map(taskUiEsc).join(' · ')+'</small>':'')+
         (note?'<small class="task-ui-note">'+taskUiEsc(note)+'</small>':'')+
       '</button>'+
-      '<button class="task-ui-more" type="button" aria-label="Edit '+taskUiEsc(displayTitle)+'" onclick="openTask(\'\',\''+taskUiEsc(t.id)+'\')">•••</button>'+
+      '<button class="task-ui-more" type="button" aria-label="Manage task carryover" onclick="taskUiManageCarryover(\''+taskUiEsc(t.id)+'\')">•••</button>'+
     '</div>';
   }
   function taskUiGroups(rows){
@@ -90,6 +90,14 @@
     const doneRows=rows.filter(x=>x.done).sort(taskUiSort);
     if(!doneRows.length)return"";
     return '<details class="task-ui-completed"><summary><span>✓ Completed today</span><b>'+doneRows.length+'</b></summary><div>'+doneRows.map(taskUiRow).join("")+'</div></details>';
+  }
+
+  function taskUiRetired(){
+    const rows=(state.tasks||[]).filter(x=>x.retiredAt||x.carryoverPolicy==="retired");
+    if(!rows.length)return "";
+    return '<details class="task-ui-retired"><summary><span>Retired tasks</span><b>'+rows.length+'</b></summary><div>'+rows.map(t=>
+      '<div class="task-ui-retired-row"><span><b>'+taskUiEsc(t.title||"Task")+'</b>'+(t.child?'<small>'+taskUiEsc(t.child)+'</small>':'')+'</span><button type="button" class="btn small" data-task-id="'+taskUiEsc(t.id)+'" onclick="taskUiRestoreRetired(this.dataset.taskId)">Restore</button></div>'
+    ).join("")+'</div></details>';
   }
 
   function taskUiFamilyRoutines(){
@@ -133,7 +141,7 @@
         content='<div class="card compact-drawer-card task-ui-card">'+
           '<div class="task-ui-toolbar"><div><div class="eyebrow">Today</div><h2>Tasks</h2><small>'+open+' open · '+done+' done</small></div><div class="task-ui-toolbar-actions"><button class="btn small" onclick="openDailyReview()">Review</button><button class="btn primary small" onclick="openTask()">+ Add</button></div></div>'+
           (tk.length&&typeof todayProgress==="function"?todayProgress(done,tk.length,"Tasks complete"):"")+
-          taskBody+taskUiFamilyRoutines()+
+          taskBody+taskUiFamilyRoutines()+taskUiRetired()+
         '</div>'+
         '<div class="today-metrics compact-metrics task-ui-metrics">'+
           '<div class="metric"><div class="eyebrow">UPS</div><div class="big">'+taskUiEsc(workSummary)+'</div><div class="muted small">'+taskUiEsc(workStatusText(w))+(actual&&Number(w.rate)>0?' · '+money(h*Number(w.rate))+' est. gross':'')+'</div><button class="btn small" onclick="openWork()">Edit work</button></div>'+
