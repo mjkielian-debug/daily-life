@@ -4043,8 +4043,9 @@ function sleepWindowHours(log){
   return mins/60;
 }
 function sleepHours(log){
-  const actual=Number(log?.actualSleepHours);
-  return Number.isFinite(actual)&&actual>0?actual:sleepWindowHours(log);
+  const actual=Number(log?.actualSleepHours),night=Number.isFinite(actual)&&actual>0?actual:sleepWindowHours(log),
+        nap=Number(log?.napSleepHours);
+  return Math.max(0,night+(Number.isFinite(nap)&&nap>0?nap:0));
 }
 const DEFAULT_SELF_CARE_HABITS=[
   {key:"brush",label:"Brush teeth",group:"Essentials",routine:"anytime",builtin:true},
@@ -4532,7 +4533,7 @@ function selfCareCount(key,days=7){
 }
 function openSleep(){
   const x=sleepForDate()||{},windowHours=sleepWindowHours(x);
-  modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Estimated actual sleep (hours)<input id="slactual" type="number" min="0" max="14" step="0.25" value="${x.actualSleepHours!==undefined&&x.actualSleepHours!==null?esc(x.actualSleepHours):""}" placeholder="${windowHours?windowHours.toFixed(2):"Leave blank to use bedtime–wake time"}"></label><div class="muted small">Use this when you were awake during the night. Daily Life keeps the full sleep window but uses estimated actual sleep in your trends.</div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="3" placeholder="Wake-ups, tossing and turning, how rested you felt…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}const actualRaw=$("#slactual").value.trim(),actual=actualRaw===""?null:Number(actualRaw);Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,actualSleepHours:Number.isFinite(actual)&&actual>0?actual:null,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
+  modal("Sleep + energy",`<div class="stack"><div class="grid2"><label>Bedtime<input id="slbed" type="time" value="${esc(x.bedtime||"")}"></label><label>Wake time<input id="slwake" type="time" value="${esc(x.wakeTime||"")}"></label></div><label>Estimated actual sleep (hours)<input id="slactual" type="number" min="0" max="14" step="0.25" value="${x.actualSleepHours!==undefined&&x.actualSleepHours!==null?esc(x.actualSleepHours):""}" placeholder="${windowHours?windowHours.toFixed(2):"Leave blank to use bedtime–wake time"}"></label><div class="muted small">Use this when you were awake during the night. Daily Life keeps the full sleep window but uses estimated actual sleep in your trends.</div><label>Nap sleep today (hours, optional)<input id="slnap" type="number" min="0" max="14" step="0.25" value="${x.napSleepHours!==undefined&&x.napSleepHours!==null?esc(x.napSleepHours):""}" placeholder="Leave blank if not recorded"></label><div class="muted small">Nap hours are added to your nighttime sleep for daily totals and trends.</div><label>Energy today<select id="slenergy"><option value="0">Not rated</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(x.energy)===n?"selected":""}>${n} / 5</option>`).join("")}</select></label><label>Notes<textarea id="slnotes" rows="3" placeholder="Wake-ups, tossing and turning, how rested you felt…">${esc(x.notes||"")}</textarea></label></div>`,"Save",async()=>{let r=sleepForDate();if(!r){r={id:uid(),date:ymd()};state.sleepLogs.push(r)}const actualRaw=$("#slactual").value.trim(),actual=actualRaw===""?null:Number(actualRaw);const napRaw=$("#slnap").value.trim(),nap=napRaw===""?null:Number(napRaw);Object.assign(r,{bedtime:$("#slbed").value,wakeTime:$("#slwake").value,actualSleepHours:Number.isFinite(actual)&&actual>0?actual:null,napSleepHours:Number.isFinite(nap)&&nap>=0?nap:null,energy:Number($("#slenergy").value||0),notes:$("#slnotes").value.trim()});await save();closeModal();render()});
 }
 function lastHomeTask(task){
   return [...(state.homeLogs||[])].filter(x=>String(x.task||"").toLowerCase()===String(task||"").toLowerCase()&&x.status==="done").sort((a,b)=>(b.date+(b.time||"")).localeCompare(a.date+(a.time||"")))[0]||null;
@@ -4613,10 +4614,23 @@ function sevenDayTrends(){
   const row=(title,vals,max,fmt)=>`<div class="trend-row"><div class="trend-title">${esc(title)}</div><div class="trend-bars">${vals.map((v,i)=>trendBar(v,max,labels[i],fmt(v))).join("")}</div></div>`;
   return `<div class="card"><div class="eyebrow">7-day trends</div><h2>Your actual patterns</h2><div class="muted small">A visual history of what you logged — no judgment and no reminder schedule.</div>${row("Water",waterVals,maxWater,v=>Math.round(v)+" oz")}${row("Calories",foodVals,maxFood,v=>Math.round(v)+"")}${row("Protein",proteinVals,maxProtein,v=>Math.round(v)+"g")}${row("Sleep",sleepVals,maxSleep,v=>v?v.toFixed(1)+"h":"—")}</div>`;
 }
+function sleepWorkPeriodSummaryCard(){
+  const summarize=days=>{
+    const dates=trendDates(days),
+      sleepRows=dates.map(date=>({date,log:sleepForDate(date)})).filter(x=>x.log&&sleepHours(x.log)>0),
+      shiftRows=dates.map(date=>({date,shift:(state.workShifts||[]).find(w=>w.date===date)})).filter(x=>x.shift&&workShiftHasActual(x.shift)),
+      sleepAvg=sleepRows.length?sleepRows.reduce((sum,x)=>sum+sleepHours(x.log),0)/sleepRows.length:null,
+      workHours=shiftRows.reduce((sum,x)=>sum+Math.max(0,Number(workCreditedHours(x.shift)||0)),0);
+    return {days,sleepAvg,sleepCount:sleepRows.length,shiftCount:shiftRows.length,workHours};
+  },
+  periods=[summarize(7),summarize(30)];
+  return `<section class="card"><div class="eyebrow">Sleep + work</div><h2>Weekly + monthly view</h2><div class="grid2">${periods.map(p=>`<div><b>Past ${p.days} days</b><div class="row"><span>Sleep average</span><b>${p.sleepAvg===null?"No data":p.sleepAvg.toFixed(1)+" h"}</b></div><small class="muted">${p.sleepCount} logged day${p.sleepCount===1?"":"s"}</small><div class="row"><span>Work logged</span><b>${p.shiftCount} shift${p.shiftCount===1?"":"s"}</b></div><small class="muted">${p.workHours.toFixed(1)} h total</small></div>`).join("")}</div><p class="muted small">Sleep averages use days with sleep records. Unlogged days remain unknown; they are not counted as zero or as missed work.</p></section>`;
+}
 function sleepCard(){
   const x=sleepForDate(),hours=sleepHours(x),window=sleepWindowHours(x),
-        hasActual=Number(x?.actualSleepHours)>0&&window>0&&Math.abs(Number(x.actualSleepHours)-window)>.04;
-  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${hasActual?` · ${window.toFixed(2)} h sleep window`:""}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
+        hasActual=Number(x?.actualSleepHours)>0&&window>0&&Math.abs(Number(x.actualSleepHours)-window)>.04,
+        nap=Number(x?.napSleepHours)>0?Number(x.napSleepHours):0;
+  return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${hasActual?` · ${window.toFixed(2)} h sleep window`:""}${nap?` · includes ${nap.toFixed(1)} h nap`:""}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
 }
 function activeDeliveries(){
   const today=ymd();
@@ -5392,7 +5406,7 @@ function careLifeAdminHub(tr){
   return `${lifeAdminCard()}${vehicleCard()}${tireHistoryCard(tr)}${mailDeliveryCard()}`;
 }
 function carePatternsHub(){
-  return `${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}`;
+  return `${weeklyWinsCard()}${monthOverviewCard()}${sevenDayTrends()}${sleepWorkPeriodSummaryCard()}`;
 }
 function openCareHubSection(section){
   if(section==="review"){openDailyReview();return}
