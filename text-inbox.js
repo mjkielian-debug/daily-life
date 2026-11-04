@@ -37,6 +37,15 @@
     }
   };
 
+  window.textInboxCopyMessage = (button) => {
+    const card = button.closest(".text-inbox-message");
+    if (!card) return;
+    const sender = card.querySelector(".text-inbox-sender")?.innerText.trim();
+    const meta = card.querySelector(".text-inbox-meta")?.innerText.trim();
+    const body = card.querySelector(".text-inbox-body")?.innerText.trim();
+    window.textInboxCopy([sender, meta, body].filter(Boolean).join("\n"));
+  };
+
   window.textInboxFilter = (query) => {
     const needle = String(query || "").trim().toLowerCase();
     const cards = Array.from(document.querySelectorAll("#textInboxMessages .text-inbox-message"));
@@ -147,11 +156,11 @@ x-inbox-source: {not_app_name}</pre>
           const bodyId = "textInboxBody_" + String(m.id).replace(/[^A-Za-z0-9_-]/g, ""),
                 searchText = [m.sender, m.source_app, m.body].filter(Boolean).join(" ");
           return '<article class="card text-inbox-message" data-search="' + h(searchText) + '" style="margin:10px 0;padding:14px">' +
-            '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>' + h(m.sender) + '</b><span class="actions">' +
-            '<button class="btn" data-copy-target="' + h(bodyId) + '" onclick="textInboxCopy(document.getElementById(this.dataset.copyTarget).innerText)">Copy preview</button>' +
+            '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b class="text-inbox-sender">' + h(m.sender) + '</b><span class="actions">' +
+            '<button class="btn" onclick="textInboxCopyMessage(this)">Copy message</button>' +
             '<button class="btn" data-message-id="' + h(m.id) + '" onclick="textInboxDelete(this.dataset.messageId)">Delete</button></span></div>' +
-            '<small>' + h(new Date(m.received_at).toLocaleString()) + (m.source_app ? " · " + h(m.source_app) : "") + '</small>' +
-            '<p id="' + h(bodyId) + '" style="white-space:pre-wrap;overflow-wrap:anywhere">' + h(m.body) + '</p>' +
+            '<small class="text-inbox-meta">' + h(new Date(m.received_at).toLocaleString()) + (m.source_app ? " · " + h(m.source_app) : "") + '</small>' +
+            '<p class="text-inbox-body" id="' + h(bodyId) + '" style="white-space:pre-wrap;overflow-wrap:anywhere">' + h(m.body) + '</p>' +
           '</article>';
         }).join("") + '</div><p id="textInboxNoMatches" hidden>No recent messages match that search.</p>'
       : "<p>No forwarded messages yet.</p>";
