@@ -100,6 +100,22 @@
     ).join("")+'</div></details>';
   }
 
+  function taskUiStale(){
+    const today=ymd(),cutoffDate=new Date(today+"T12:00:00");
+    cutoffDate.setDate(cutoffDate.getDate()-14);
+    const cutoff=[cutoffDate.getFullYear(),String(cutoffDate.getMonth()+1).padStart(2,"0"),String(cutoffDate.getDate()).padStart(2,"0")].join("-");
+    const rows=(state.tasks||[]).filter(t=>{
+      const taskDate=String(t.date||"");
+      return taskDate&&taskDate<cutoff&&!t.done&&!t.paused&&!t.dailyReset&&!t.recurring&&
+        t.carryoverPolicy!=="today-only"&&!t.retiredAt&&t.carryoverPolicy!=="retired";
+    }).sort(taskUiSort);
+    if(!rows.length)return "";
+    return '<details class="task-ui-stale"><summary><span>Needs review · older tasks</span><b>'+rows.length+'</b></summary>'+
+      '<p class="muted small">These unfinished one-off tasks are over 14 days old, so they no longer repeat in today’s schedule. They are still saved. Review each one to keep, reschedule, or retire it.</p>'+
+      rows.slice(0,30).map(t=>'<div class="task-ui-retired-row"><span><b>'+taskUiEsc(taskUiSpecificTitle(t))+'</b><small>From '+taskUiEsc(t.date||"an earlier date")+(t.child?' · '+taskUiEsc(t.child):"")+'</small></span><button type="button" class="btn small" data-task-id="'+taskUiEsc(t.id)+'" onclick="taskUiManageCarryover(this.dataset.taskId)">Review</button></div>').join("")+
+      (rows.length>30?'<p class="muted small">Showing 30 of '+rows.length+' old tasks.</p>':'')+'</details>';
+  }
+
   function taskUiFamilyRoutines(){
     const rows=(state.chores||[]).filter(x=>x.date===ymd());
     if(!rows.length)return "";
@@ -141,7 +157,7 @@
         content='<div class="card compact-drawer-card task-ui-card">'+
           '<div class="task-ui-toolbar"><div><div class="eyebrow">Today</div><h2>Tasks</h2><small>'+open+' open · '+done+' done</small></div><div class="task-ui-toolbar-actions"><button class="btn small" onclick="openDailyReview()">Review</button><button class="btn primary small" onclick="openTask()">+ Add</button></div></div>'+
           (tk.length&&typeof todayProgress==="function"?todayProgress(done,tk.length,"Tasks complete"):"")+
-          taskBody+taskUiFamilyRoutines()+taskUiRetired()+
+          taskBody+taskUiStale()+taskUiFamilyRoutines()+taskUiRetired()+
         '</div>'+
         '<div class="today-metrics compact-metrics task-ui-metrics">'+
           '<div class="metric"><div class="eyebrow">UPS</div><div class="big">'+taskUiEsc(workSummary)+'</div><div class="muted small">'+taskUiEsc(workStatusText(w))+(actual&&Number(w.rate)>0?' · '+money(h*Number(w.rate))+' est. gross':'')+'</div><button class="btn small" onclick="openWork()">Edit work</button></div>'+
