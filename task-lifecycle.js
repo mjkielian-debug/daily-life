@@ -1,6 +1,7 @@
 /* Daily Life task lifecycle: resolve stale carryovers without deleting history. */
 (function(){
 "use strict";
+let currentTaskId="";
 function safeText(v){return typeof esc==="function"?esc(String(v??"")):String(v??"")}
 const baseCandidates=itineraryTaskCandidates;
 itineraryTaskCandidates=function(date){return baseCandidates(date).filter(task=>{
@@ -8,14 +9,15 @@ itineraryTaskCandidates=function(date){return baseCandidates(date).filter(task=>
   if(task.carryoverPolicy==="today-only"&&String(task.date||"")<String(date))return false;
   return true;
 })};
+window.taskUiEditCarryover=function(){closeModal();openTask("",currentTaskId)};
 window.taskUiManageCarryover=function(id){
- const task=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!task)return;
+ const task=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!task)return;currentTaskId=String(task.id);
  modal("What should happen with this task?",'<div class="stack task-lifecycle-dialog">'+
   '<b>'+safeText(task.title||"Task")+'</b>'+
   '<div class="muted small">Choose whether it belongs today, on another date, or should stop appearing. Retiring keeps its saved record.</div>'+
   '<label>Decision<select id="taskLifecycleAction"><option value="keep">Keep on today’s list only</option><option value="reschedule">Reschedule to a date</option><option value="retire">Retire; stop bringing it forward</option></select></label>'+
   '<label>New date<input id="taskLifecycleDate" type="date" min="'+safeText(ymd())+'" value="'+safeText(task.date&&task.date>=ymd()?task.date:ymd())+'"></label>'+
-  '<div class="muted small">“Keep today” removes it from tomorrow’s carryover. Retiring preserves the saved record.</div></div>',"Save decision",async()=>{
+  '<button type="button" class="btn small" onclick="taskUiEditCarryover()">Edit task details</button><div class="muted small">“Keep today” removes it from tomorrow’s carryover. Retiring preserves the saved record.</div></div>',"Save decision",async()=>{
    const action=document.querySelector("#taskLifecycleAction")?.value||"keep",selectedDate=document.querySelector("#taskLifecycleDate")?.value||"";
    task.done=false;task.paused=false;task.itineraryStart="";
    if(action==="retire"){task.retiredAt=ymd();task.carryoverPolicy="retired"}
