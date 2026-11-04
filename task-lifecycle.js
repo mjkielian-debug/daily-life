@@ -7,6 +7,11 @@ const baseCandidates=itineraryTaskCandidates;
 itineraryTaskCandidates=function(date){return baseCandidates(date).filter(task=>{
   if(task.retiredAt||task.carryoverPolicy==="retired")return false;
   if(task.carryoverPolicy==="today-only"&&String(task.date||"")<String(date))return false;
+  const today=ymd(),target=String(date||today),taskDate=String(task.date||"");
+  const cutoffObj=new Date(today+"T12:00:00");cutoffObj.setDate(cutoffObj.getDate()-14);
+  const cutoff=[cutoffObj.getFullYear(),String(cutoffObj.getMonth()+1).padStart(2,"0"),String(cutoffObj.getDate()).padStart(2,"0")].join("-");
+  const stale=taskDate&&taskDate<cutoff&&!task.done&&!task.paused&&!task.dailyReset&&!task.recurring&&task.carryoverPolicy!=="today-only";
+  if(stale&&target>=today)return false;
   return true;
 })};
 window.taskUiEditCarryover=function(){closeModal();openTask("",currentTaskId)};
