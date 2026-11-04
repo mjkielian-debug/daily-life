@@ -4025,7 +4025,7 @@ function todayView(m,f,w,h,tk,done,nt,tr){
   ${dailyAdviceCard()}
   ${todayUpcomingCard()}${typeof sharingTodayCard==="function"?sharingTodayCard():""}${todaySleepPlanCard()}${todayCarePeopleDrawer()}
   ${activeOrders().some(o=>["shopping","on the way","delivered"].includes(o.status))?'<div class="card priority-card"><div class="eyebrow">🛍 Grocery order</div>'+activeOrders().filter(o=>["shopping","on the way","delivered"].includes(o.status)).slice(0,2).map(o=>'<div class="row" onclick="openOrder(\''+o.id+'\')"><span><b>'+esc(o.store)+'</b><div class="muted small">'+esc(o.status)+(o.deliveryTime?' · '+esc(o.deliveryTime):'')+(o.status==="delivered"&&!o.perishablesAway?' · put perishables away':'')+'</div></span><span class="tag">'+esc(o.status)+'</span></div>').join('')+'</div>':""}
-  ${activeDeliveries().some(x=>x.expectedDate===ymd()||x.status==="out for delivery")?`<div class="card priority-card"><div class="eyebrow">📦 Delivery today</div>${activeDeliveries().filter(x=>x.expectedDate===ymd()||x.status==="out for delivery").slice(0,3).map(x=>`<div class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(x.status||"expected")}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"package")}</span></div>`).join("")}</div>`:""}
+  ${todayDeliveryCard()}
   ${birthdayPrepCard()}
   ${todayTimelineCard()}
   ${tonightPrepCard()}
@@ -4633,8 +4633,21 @@ function sleepCard(){
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🌙 Sleep + energy</div><h2>${hours?hours.toFixed(1)+" h":"Not logged"}</h2></div><button class="btn" onclick="openSleep()">${x?"Edit":"Log"}</button></div><div class="muted small">${x?.bedtime&&x?.wakeTime?`${fmtClock(x.bedtime)}–${fmtClock(x.wakeTime)}`:"Add bedtime and wake time"}${hasActual?` · ${window.toFixed(2)} h sleep window`:""}${nap?` · includes ${nap.toFixed(1)} h nap`:""}${x?.energy?` · energy ${x.energy}/5`:""}</div>${x?.notes?`<div class="muted small">${esc(x.notes)}</div>`:""}</div>`;
 }
 function activeDeliveries(){
-  const today=ymd();
-  return [...(state.deliveries||[])].filter(x=>!["delivered","cancelled"].includes(String(x.status||"").toLowerCase())&&(String(x.expectedDate||"")>=today||!x.expectedDate)).sort((a,b)=>String(a.expectedDate||"9999").localeCompare(String(b.expectedDate||"9999")));
+  return [...(state.deliveries||[])].filter(x=>!["delivered","cancelled"].includes(String(x.status||"").toLowerCase()))
+    .sort((a,b)=>String(a.expectedDate||"9999").localeCompare(String(b.expectedDate||"9999")));
+}
+function todayDeliveryCard(){
+  const today=ymd(),horizonDate=new Date(today+"T12:00:00");
+  horizonDate.setDate(horizonDate.getDate()+7);
+  const horizon=ymd(horizonDate),rows=activeDeliveries().filter(x=>{
+    const status=String(x.status||"").toLowerCase();
+    return status==="out for delivery"||!x.expectedDate||String(x.expectedDate)<=horizon;
+  });
+  if(!rows.length)return "";
+  return `<div class="card priority-card"><div class="section-title"><div><div class="eyebrow">📦 Packages · next 7 days</div><h2>${rows.length} to watch</h2></div><button class="btn small" onclick="openDelivery()">+ Add</button></div>
+    ${rows.slice(0,5).map(x=>{const status=String(x.status||"expected"),past=x.expectedDate&&x.expectedDate<today&&status.toLowerCase()!=="out for delivery",detail=past?"Past expected date · "+dl(x.expectedDate):x.expectedDate?"Expected "+dl(x.expectedDate):"Expected date not recorded";return `<button type="button" class="row" onclick="openDelivery('${x.id}')"><span><b>${esc(x.sender||x.carrier||"Package")}</b><div class="muted small">${esc(status)} · ${esc(detail)}${x.notes?" · "+esc(x.notes):""}</div></span><span class="tag">${esc(x.carrier||"delivery")}</span></button>`}).join("")}
+    ${rows.length>5?`<div class="muted small">+${rows.length-5} more in Mail + packages.</div>`:""}
+  </div>`;
 }
 function mailDeliveryCard(){
   const today=ymd(),digests=(state.deliveries||[]).filter(x=>x.kind==="mail-digest"&&x.date===today),mailCount=digests.reduce((n,x)=>n+Number(x.mailpieceCount||0),0),packages=activeDeliveries();
