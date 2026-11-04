@@ -22,7 +22,7 @@ window.taskUiManageCarryover=function(id){
    else if(action==="reschedule"){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)||selectedDate<ymd())return;
     task.retiredAt="";task.carryoverPolicy="normal";if(task.date&&task.date!==selectedDate){task.previousDates=Array.isArray(task.previousDates)?task.previousDates:[];if(!task.previousDates.includes(task.date))task.previousDates.push(task.date)}task.date=selectedDate;
-   }else{task.retiredAt="";task.carryoverPolicy="today-only";task.date=ymd()}
+   }else{task.retiredAt="";task.carryoverPolicy="today-only";if(task.date&&task.date!==ymd()){task.previousDates=Array.isArray(task.previousDates)?task.previousDates:[];if(!task.previousDates.includes(task.date))task.previousDates.push(task.date)}task.date=ymd()}
    await save();closeModal();render();
  });
 };
