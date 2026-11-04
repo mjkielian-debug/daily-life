@@ -1,6 +1,6 @@
 {
-  "build": "20261103-monthlyroutines1",
-  "released": "2026-11-03",
-  "ui": "Add monthly cadence to recurring tasks and handle short calendar months.",
-  "data_version": "Recurring routine records may specify a weekly day set or monthly day of month; existing weekly routines remain unchanged."
+  "build": "20261104-deliverywindow2",
+  "released": "2026-11-04",
+  "ui": "Upcoming package visibility, weekly and monthly sleep/work summaries, and Spirituality journal controls.",
+  "data_version": "No saved data format changes in this release."
 }
