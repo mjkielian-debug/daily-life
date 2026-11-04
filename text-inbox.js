@@ -99,6 +99,12 @@
         .eq("owner_user_id", user.id).order("received_at", { ascending: false }).limit(100),
     ]);
     const token = (tokens || []).find((x) => !x.revoked_at);
+    const latestMessage = (messages || [])[0] || null;
+    const connectionHealth = token
+      ? latestMessage
+        ? `<div class="notice"><b>Last preview received:</b> ${h(new Date(latestMessage.received_at).toLocaleString())}${latestMessage.source_app ? " · " + h(latestMessage.source_app) : ""}</div>`
+        : '<div class="notice"><b>Connection token active; no preview received yet.</b> After saving and enabling the MacroDroid macro, send a short test message. This confirms delivery; an active token alone does not.</div>'
+      : '<div class="notice">No active phone connection. Create one to receive new notification previews.</div>';
     const setup = token
       ? `<div class="card" style="margin:12px 0;padding:14px">
           <b>Phone connection active</b><p>Token ${h(token.token_prefix)}… · created ${h(new Date(token.created_at).toLocaleDateString())}</p>
@@ -109,7 +115,7 @@
     const steps = `
       <details open style="margin:14px 0"><summary><b>Connect this Android phone (MacroDroid)</b></summary>
         <ol>
-          <li>In MacroDroid, create a macro with trigger <b>Notification Received</b> and select your SMS app (Samsung Messages or Google Messages).</li>
+          <li>In MacroDroid, create a macro with trigger <b>Notification Received</b> and select both your messaging app (Samsung Messages or Google Messages) and <b>Messenger</b>.</li>
           <li>Add an <b>HTTP Request</b> action: method <b>POST</b>, URL <code>${endpoint()}</code>, content type <code>text/plain; charset=utf-8</code>, body <code>{notification}</code>.</li>
           <li>Add these request headers. Replace the token with the one shown above:
             <pre>apikey: sb_publishable_S8rk3-LkoyPLuyw2p_v7gA_yskyW--m
@@ -118,7 +124,7 @@ x-inbox-sender: {not_title}
 x-inbox-event-id: {not_timestamp}
 x-inbox-source: {not_app_name}</pre>
           </li>
-          <li>Allow MacroDroid notification access when Android prompts. Filter the trigger to your messaging app; the inbox starts receiving new notification previews after setup.</li>
+          <li>Allow MacroDroid notification access when Android prompts. For Messenger, make sure message previews are enabled. Then send yourself a short test message and check for it below; only new notification previews are forwarded.</li>
         </ol>
         <p>Only notifications exposed by Android are forwarded. This does not import old messages or MMS photos. Notification access can reveal message previews to MacroDroid, so keep the app filter narrow. You can revoke this connection here or disable the macro in MacroDroid.</p>
       </details>`;
@@ -132,7 +138,7 @@ x-inbox-source: {not_app_name}</pre>
     modal("Texts · private inbox", `
       <div style="max-height:70vh;overflow:auto">
         <p>New SMS notification previews forwarded from your phone stay in this private inbox until you delete them.</p>
-        ${tokenError ? "<p>Could not load connection status.</p>" : setup}
+        ${tokenError ? "<p>Could not load connection status.</p>" : setup + connectionHealth}
         ${steps}
         <h3>Recent messages</h3>
         ${messageError ? "<p>Could not load messages.</p>" : messageList}
