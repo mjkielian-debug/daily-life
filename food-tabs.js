@@ -286,7 +286,7 @@ function sleepWorkTrendCard(){
      return{date,index,sleep:rawSleep>0?rawSleep:null,work:rawWork>0?rawWork:null,label:new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})};
    }),
    sleepPoints=points.filter(x=>x.sleep!==null),workPoints=points.filter(x=>x.work!==null),
-   average=rows=>rows.length?rows.reduce((sum,x)=>sum+x,0)/rows.length,
+   average=rows=>rows.length?rows.reduce((sum,x)=>sum+x,0)/rows.length:null,
    sleepAvg=average(sleepPoints.map(x=>x.sleep)),workAvg=average(workPoints.map(x=>x.work)),
    max=Math.max(10,...sleepPoints.map(x=>x.sleep),...workPoints.map(x=>x.work))*1.08,
    xAt=i=>32+i*(296/6),yAt=v=>126-Math.max(0,Math.min(1,v/max))*100,
