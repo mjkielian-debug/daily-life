@@ -10,6 +10,11 @@ itineraryTaskCandidates=function(date){return baseCandidates(date).filter(task=>
   return true;
 })};
 window.taskUiEditCarryover=function(){closeModal();openTask("",currentTaskId)};
+window.taskUiRestoreRetired=async function(id){
+ const task=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!task)return;
+ task.retiredAt="";task.carryoverPolicy="normal";task.paused=false;task.done=false;task.date=ymd();task.itineraryStart="";
+ await save();render();
+};
 window.taskUiManageCarryover=function(id){
  const task=(state.tasks||[]).find(x=>String(x.id)===String(id));if(!task)return;currentTaskId=String(task.id);
  modal("What should happen with this task?",'<div class="stack task-lifecycle-dialog">'+
@@ -28,5 +33,5 @@ window.taskUiManageCarryover=function(id){
    await save();closeModal();render();
  });
 };
-if(!document.getElementById("taskLifecycleStyles")){const style=document.createElement("style");style.id="taskLifecycleStyles";style.textContent=".task-ui-more{font-size:1rem!important;min-width:34px}.task-lifecycle-dialog{line-height:1.45}";document.head.appendChild(style)}
+if(!document.getElementById("taskLifecycleStyles")){const style=document.createElement("style");style.id="taskLifecycleStyles";style.textContent=".task-ui-more{font-size:1rem!important;min-width:34px}.task-lifecycle-dialog{line-height:1.45}.task-ui-retired{margin-top:10px;border-top:1px solid var(--border)}.task-ui-retired summary{cursor:pointer;padding:10px 2px;display:flex;justify-content:space-between;font-weight:800}.task-ui-retired-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0}.task-ui-retired-row span{display:grid;min-width:0}.task-ui-retired-row small{color:var(--muted)}";document.head.appendChild(style)}
 })();
