@@ -37,6 +37,19 @@
     }
   };
 
+  window.textInboxFilter = (query) => {
+    const needle = String(query || "").trim().toLowerCase();
+    const cards = Array.from(document.querySelectorAll("#textInboxMessages .text-inbox-message"));
+    let visible = 0;
+    for (const card of cards) {
+      const match = String(card.dataset.search || "").toLowerCase().includes(needle);
+      card.hidden = !match;
+      if (match) visible++;
+    }
+    const empty = document.getElementById("textInboxNoMatches");
+    if (empty) empty.hidden = visible > 0;
+  };
+
   window.textInboxCreateToken = async () => {
     if (!(await inboxReady())) return;
     const { data: active, error: readError } = await cloudClient
@@ -129,11 +142,18 @@ x-inbox-source: {not_app_name}</pre>
         <p>Only notifications exposed by Android are forwarded. This does not import old messages or MMS photos. Notification access can reveal message previews to MacroDroid, so keep the app filter narrow. You can revoke this connection here or disable the macro in MacroDroid.</p>
       </details>`;
     const messageList = (messages || []).length
-      ? (messages || []).map((m) => `<article class="card" style="margin:10px 0;padding:14px">
-          <div style="display:flex;justify-content:space-between;gap:10px"><b>${h(m.sender)}</b><button class="btn" onclick="textInboxDelete('${h(m.id)}')">Delete</button></div>
-          <small>${h(new Date(m.received_at).toLocaleString())}${m.source_app ? " · " + h(m.source_app) : ""}</small>
-          <p style="white-space:pre-wrap;overflow-wrap:anywhere">${h(m.body)}</p>
-        </article>`).join("")
+      ? '<label>Find a recent message<input type="search" placeholder="Sender or message text" oninput="textInboxFilter(this.value)"></label>' +
+        '<div id="textInboxMessages">' + (messages || []).map((m) => {
+          const bodyId = "textInboxBody_" + String(m.id).replace(/[^A-Za-z0-9_-]/g, ""),
+                searchText = [m.sender, m.source_app, m.body].filter(Boolean).join(" ");
+          return '<article class="card text-inbox-message" data-search="' + h(searchText) + '" style="margin:10px 0;padding:14px">' +
+            '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>' + h(m.sender) + '</b><span class="actions">' +
+            '<button class="btn" data-copy-target="' + h(bodyId) + '" onclick="textInboxCopy(document.getElementById(this.dataset.copyTarget).innerText)">Copy preview</button>' +
+            '<button class="btn" data-message-id="' + h(m.id) + '" onclick="textInboxDelete(this.dataset.messageId)">Delete</button></span></div>' +
+            '<small>' + h(new Date(m.received_at).toLocaleString()) + (m.source_app ? " · " + h(m.source_app) : "") + '</small>' +
+            '<p id="' + h(bodyId) + '" style="white-space:pre-wrap;overflow-wrap:anywhere">' + h(m.body) + '</p>' +
+          '</article>';
+        }).join("") + '</div><p id="textInboxNoMatches" hidden>No recent messages match that search.</p>'
       : "<p>No forwarded messages yet.</p>";
     modal("Texts · private inbox", `
       <div style="max-height:70vh;overflow:auto">
