@@ -63,7 +63,7 @@
         (meta.length?'<small>'+meta.map(taskUiEsc).join(' · ')+'</small>':'')+
         (note?'<small class="task-ui-note">'+taskUiEsc(note)+'</small>':'')+
       '</button>'+
-      '<button class="task-ui-more" type="button" aria-label="Manage task carryover" onclick="taskUiManageCarryover('${taskUiEsc(t.id)}')">•••</button>'+
+      '<button class="task-ui-more" type="button" aria-label="Manage task carryover" onclick="taskUiManageCarryover(\''+taskUiEsc(t.id)+'\')">•••</button>'+
     '</div>';
   }
   function taskUiGroups(rows){
