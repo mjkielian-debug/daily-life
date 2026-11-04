@@ -135,10 +135,15 @@ function openTarotReflection(date){
  date=date||ymd();ensureDailyTarotSaved(date);const x=(state.tarotDraws||[]).find(v=>v.date===date),t=tarotForDate(date);
  modal("Tarot reflection · "+t.name,'<div class="stack">'+tarotArtwork(t)+tarotDeepReading(t)+'<label>My first reaction<textarea id="tarotReaction" rows="2" placeholder="Before interpreting it, what stood out?">'+esc(x.reaction||"")+'</textarea></label><label>One small intention for today<textarea id="tarotIntention" rows="2" placeholder="Something kind, practical, and within reach">'+esc(x.intention||"")+'</textarea></label><label>Your reflection<textarea id="tarotNote" rows="4" placeholder="How does the card connect with your day?">'+esc(x.note||"")+'</textarea></label><label>Looking back this evening<textarea id="tarotEvening" rows="3" placeholder="What happened? What would you like to carry into tomorrow?">'+esc(x.evening||"")+'</textarea></label></div>',"Save",async()=>{const before={...x};x.note=$("#tarotNote").value.trim();x.reaction=$("#tarotReaction").value.trim();x.intention=$("#tarotIntention").value.trim();x.evening=$("#tarotEvening").value.trim();try{await save();closeModal();render()}catch(error){Object.assign(x,before);throw error}})
 }
-function openSpiritualJournal(type){
- type=type||"Reflection";
- const opts=["Reflection","Gratitude","Intention","Ritual","Dream","Question"].map(v=>'<option '+(v===type?"selected":"")+'>'+v+'</option>').join("");
- modal("Spiritual journal",'<div class="stack"><div class="grid2"><label>Date<input id="sjDate" type="date" value="'+ymd()+'"></label><label>Type<select id="sjType">'+opts+'</select></label></div><label>Entry<textarea id="sjNote" rows="7" placeholder="Write what you want to remember, question, or explore."></textarea></label></div>',"Save",async()=>{const note=$("#sjNote").value.trim();if(!note)return;state.spiritualityJournal.push({id:uid(),date:$("#sjDate").value||ymd(),type:$("#sjType").value,note:note,createdAt:new Date().toISOString()});await save();closeModal();render()})
+function openSpiritualJournal(type,entryId=""){
+ const entry=(state.spiritualityJournal||[]).find(v=>v.id===entryId)||null,selectedType=entry?.type||type||"Reflection",
+       date=entry?.date||ymd(),note=entry?.note||entry?.question||entry?.text||"";
+ const opts=["Reflection","Gratitude","Intention","Ritual","Dream","Question"].map(v=>'<option '+(v===selectedType?"selected":"")+'>'+v+'</option>').join("");
+ modal(entry?"Edit spiritual journal":"Spiritual journal",'<div class="stack"><div class="grid2"><label>Date<input id="sjDate" type="date" value="'+esc(date)+'"></label><label>Type<select id="sjType">'+opts+'</select></label></div><label>Entry<textarea id="sjNote" rows="7" placeholder="Write what you want to remember, question, or explore.">'+esc(note)+'</textarea></label>'+(entry?'<button type="button" class="btn danger" data-spiritual-delete="'+esc(entry.id)+'">Delete this entry</button>':"")+'</div>',"Save",async()=>{const text=$("#sjNote").value.trim();if(!text)return;const fields={date:$("#sjDate").value||ymd(),type:$("#sjType").value,note:text};if(entry)Object.assign(entry,fields);else{state.spiritualityJournal=Array.isArray(state.spiritualityJournal)?state.spiritualityJournal:[];state.spiritualityJournal.push({id:uid(),...fields,createdAt:new Date().toISOString()})}await save();closeModal();render()})
+}
+async function removeSpiritualJournal(entryId){
+ const entry=(state.spiritualityJournal||[]).find(v=>v.id===entryId);if(!entry||!confirm("Delete this spiritual journal entry?"))return;
+ state.spiritualityJournal=state.spiritualityJournal.filter(v=>v.id!==entryId);await save();closeModal();render()
 }
 function tarotCardMarkup(date,compact){
  date=date||ymd();ensureDailyTarotSaved(date);const t=tarotForDate(date),revealed=tarotRevealed(date);
@@ -165,7 +170,7 @@ function spiritualityRitualsPanel(){
 }
 function spiritualityJournalPanel(){
  const rows=[...(state.spiritualityJournal||[])].sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||"")));
- return'<div class="card floral-card"><div class="section-title"><div><div class="eyebrow">Journal</div><h2>Spiritual reflections</h2><div class="muted small">Questions, gratitude, intentions, dreams, rituals, or whatever feels meaningful.</div></div><button class="btn primary" onclick="openSpiritualJournal()">+ Entry</button></div>'+(rows.slice(0,30).map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+' · '+esc(x.note)+'</div></span></div>').join("")||'<div class="notice">No journal entries yet.</div>')+'</div>'
+ return'<div class="card floral-card"><div class="section-title"><div><div class="eyebrow">Journal</div><h2>Spiritual reflections</h2><div class="muted small">Questions, gratitude, intentions, dreams, rituals, or whatever feels meaningful.</div></div><button class="btn primary" onclick="openSpiritualJournal()">+ Entry</button></div>'+(rows.slice(0,30).map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+' · '+esc(x.note||x.question||x.text||"")+'</div></span><button type="button" class="btn small" data-spiritual-entry="'+esc(x.id||"")+'">Edit</button></div>').join("")||'<div class="notice">No journal entries yet.</div>')+'</div>'
 }
 function spiritualityReadingCard(){
  const r=dailySpiritualReading();
@@ -188,7 +193,7 @@ function spiritualityHistoryCard(){
  const journals=[...(state.spiritualityJournal||[])].sort((a,b)=>(String(b.date||"")+String(b.createdAt||"")).localeCompare(String(a.date||"")+String(a.createdAt||""))).slice(0,16),
        cards=[...(state.tarotDraws||[])].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,10);
  return'<div class="card"><div class="eyebrow">History</div><h2>Recent spiritual notes + cards</h2>'+
-   (journals.length?journals.map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+(x.question?' · '+esc(x.question):x.note?' · '+esc(x.note):'')+'</div></span></div>').join(""):'')+
+   (journals.length?journals.map(x=>'<div class="row"><span><b>'+esc(x.type||"Reflection")+'</b><div class="muted small">'+esc(dl(x.date))+(x.question?' · '+esc(x.question):x.note?' · '+esc(x.note):'')+'</div></span><button type="button" class="btn small" data-spiritual-entry="'+esc(x.id||"")+'">Edit</button></div>').join(""):'')+
    (cards.length?'<div class="mini-heading">Daily tarot</div>'+cards.map(x=>{const t=tarotForDate(x.date);return'<button class="row" onclick="openTarotReflection(\''+x.date+'\')"><span><b>'+esc(t.name)+(x.reversed?" · reversed":"")+'</b><div class="muted small">'+esc(dl(x.date))+'</div></span><span>›</span></button>'}).join(""):'')+
    (!journals.length&&!cards.length?'<div class="notice">No spiritual history yet.</div>':'')+'</div>'
 }
@@ -251,6 +256,10 @@ window.openTarotReflection=openTarotReflection;
 if(!window.__dailyLifeSpiritualityDelegates){
  window.__dailyLifeSpiritualityDelegates=true;
  document.addEventListener("click",event=>{
+    const entry=event.target.closest?.("[data-spiritual-entry]");
+    if(entry){event.preventDefault();event.stopPropagation();openSpiritualJournal("",entry.getAttribute("data-spiritual-entry")||"");return}
+    const remove=event.target.closest?.("[data-spiritual-delete]");
+    if(remove){event.preventDefault();event.stopPropagation();removeSpiritualJournal(remove.getAttribute("data-spiritual-delete")||"");return}
    const reveal=event.target.closest?.("[data-tarot-reveal]");
    if(reveal){
      event.preventDefault();event.stopPropagation();
