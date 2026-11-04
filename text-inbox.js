@@ -46,6 +46,44 @@
     window.textInboxCopy([sender, meta, body].filter(Boolean).join("\n"));
   };
 
+  window.textInboxReviewPackage = (button) => {
+    const card = button.closest(".text-inbox-message");
+    if (!card || typeof modal !== "function" || typeof state !== "object") return;
+    const messageId = String(button.dataset.messageId || "");
+    if ((state.deliveries || []).some(x => String(x.sourceInboxMessageId || "") === messageId)) {
+      alert("This message is already saved as a delivery.");
+      return;
+    }
+    const sender = card.querySelector(".text-inbox-sender")?.innerText.trim() || "";
+    const body = card.querySelector(".text-inbox-body")?.innerText.trim() || "";
+    modal("Review package notice",
+      '<div class="stack"><p>Check the details, then save this as a package in Mail + Packages. Nothing is added until you tap Save.</p>' +
+      '<label>Carrier (optional)<input id="textPackageCarrier" placeholder="UPS, USPS, FedEx…"></label>' +
+      '<label>Sender / order<input id="textPackageSender" value="' + h(sender) + '"></label>' +
+      '<label>Expected date (optional)<input id="textPackageDate" type="date"></label>' +
+      '<label>Notes<textarea id="textPackageNotes" rows="4">' + h(body.slice(0, 1200)) + '</textarea></label></div>',
+      "Save package", async () => {
+        const deliveries = state.deliveries || (state.deliveries = []);
+        if (deliveries.some(x => String(x.sourceInboxMessageId || "") === messageId)) {
+          closeModal();
+          alert("This message is already saved as a delivery.");
+          return;
+        }
+        deliveries.push({
+          id: uid(), kind: "package", date: ymd(),
+          carrier: document.querySelector("#textPackageCarrier")?.value.trim() || "",
+          sender: document.querySelector("#textPackageSender")?.value.trim() || "",
+          status: "expected",
+          expectedDate: document.querySelector("#textPackageDate")?.value || "",
+          notes: document.querySelector("#textPackageNotes")?.value.trim() || "",
+          sourceInboxMessageId: messageId
+        });
+        await save();
+        closeModal();
+        render();
+      });
+  };
+
   window.textInboxFilter = (query) => {
     const needle = String(query || "").trim().toLowerCase();
     const cards = Array.from(document.querySelectorAll("#textInboxMessages .text-inbox-message"));
@@ -154,9 +192,13 @@ x-inbox-source: {not_app_name}</pre>
       ? '<label>Find a recent message<input type="search" placeholder="Sender or message text" oninput="textInboxFilter(this.value)"></label>' +
         '<div id="textInboxMessages">' + (messages || []).map((m) => {
           const bodyId = "textInboxBody_" + String(m.id).replace(/[^A-Za-z0-9_-]/g, ""),
-                searchText = [m.sender, m.source_app, m.body].filter(Boolean).join(" ");
+                searchText = [m.sender, m.source_app, m.body].filter(Boolean).join(" "),
+                isPackageNotice = /\\b(package|tracking|shipment|shipped|shipping|delivery|delivered|out for delivery|arriving)\\b/i.test(String(m.body || "")) ||
+                  (/walmart/i.test(String(m.sender || "") + " " + String(m.source_app || "")) && /\\b(order|package|delivery)\\b/i.test(String(m.body || ""))),
+                alreadyAdded = (state.deliveries || []).some(x => String(x.sourceInboxMessageId || "") === String(m.id));
           return '<article class="card text-inbox-message" data-search="' + h(searchText) + '" style="margin:10px 0;padding:14px">' +
             '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b class="text-inbox-sender">' + h(m.sender) + '</b><span class="actions">' +
+            (isPackageNotice ? '<button class="btn" data-message-id="' + h(m.id) + '" onclick="textInboxReviewPackage(this)">' + (alreadyAdded ? "Already saved" : "Review package") + '</button>' : '') +
             '<button class="btn" onclick="textInboxCopyMessage(this)">Copy message</button>' +
             '<button class="btn" data-message-id="' + h(m.id) + '" onclick="textInboxDelete(this.dataset.messageId)">Delete</button></span></div>' +
             '<small class="text-inbox-meta">' + h(new Date(m.received_at).toLocaleString()) + (m.source_app ? " · " + h(m.source_app) : "") + '</small>' +
