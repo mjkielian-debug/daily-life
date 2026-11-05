@@ -174,8 +174,8 @@ function lifeSimPageSummaryMarkup(){
   if(!model||!model.title)return "";
   const configured=state.settings?.nutritionGoals||{},
     waterGoal=Number(configured.waterTarget??state.settings?.waterTarget??78)||78,
-    ringData=[],
-    stats=(model.metrics||[]).slice(0,3);
+    ringData=[];
+  let stats=(model.metrics||[]).slice(0,3);
   if(view==="log"||view==="selfcare"){
     const care=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},
       ounces=typeof water==="function"?Number(water())||0:0,
