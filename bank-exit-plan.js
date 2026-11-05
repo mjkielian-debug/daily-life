@@ -46,12 +46,11 @@ window.openBankExitPlan=function(id=""){
   button("check-savings","Confirm whether linked savings also needs closing",!!x.savingsReviewed)+
   button("closed","Mark bank account closed only after bank confirmation",isClosed)+'</div>';
  const closedStatus=isClosed
-  ?'<div class="notice"><b>Confirmed closed</b><div class="muted small">Wells Fargo confirmed deposit account ending '+escText(x.closedAccountLast4||"2993")+' closed on '+escText(x.closureEffectiveDate||"2026-11-02")+'. The linked savings account is separate and is not marked closed.</div></div>'
+  ?'<div class="notice"><b>Confirmed closed</b><div class="muted small">' + escText(x.institution) + ' confirmed deposit account ending '+escText(x.closedAccountLast4||"the account previously listed")+' closed on '+escText(x.closureEffectiveDate||"2026-11-02")+'. The linked savings account is separate and is not marked closed.</div></div>'
   :'<p><b>Priority:</b> resolve before '+escText(x.renewalDate||"next withdrawal")+'. No account has been closed through this app.</p>';
  const renewalStatus=x.renewalName
   ?'<p><b>'+escText(x.renewalName)+'</b>: '+(isCancelled?"You reported cancellation/no renewal. Check confirmation in your account.":(x.renewalPaidDate
-    ?'The $'+Number(x.renewalPaidAmount||0).toFixed(2)+' charge posted '+escText(x.renewalPaidDate)+' from '+escText(x.renewalPaymentAccountLabel||"the account shown in transaction history")+'. The next renewal is estimated '+escText(x.renewalDate||""); 
-    : "Still needs a decision; renewal is not marked canceled."))+'</p>'
+    ?'The $'+Number(x.renewalPaidAmount||0).toFixed(2)+' charge posted '+escText(x.renewalPaidDate)+' from '+escText(x.renewalPaymentAccountLabel||"the account shown in transaction history")+'. The next renewal is estimated '+escText(x.renewalDate||"") : "Still needs a decision; renewal is not marked canceled."))+'</p>'
   : "";
  const savingsNote=x.savingsReviewNote?'<p class="muted small">'+escText(x.savingsReviewNote)+'</p>':"";
  modal(escText(x.institution)+" · account closure",
