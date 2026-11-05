@@ -33,8 +33,26 @@ function moneyInsightCard(){
  (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
  '<p class="muted small">This summarizes what is entered. Missing balances and bill amounts stay marked unknown; expected income is not counted as cash already available.</p></div>';
 }
+window.moneyCloudStatusNote=function(){
+ const signedIn=typeof cloudUser==="function"&&!!cloudUser();
+ const clientReady=typeof cloudClient!=="undefined"&&!!cloudClient;
+ const pending=typeof cloudNeedsReview!=="undefined"&&!!cloudNeedsReview;
+ const busy=typeof cloudBusy!=="undefined"&&!!cloudBusy;
+ const error=typeof cloudError!=="undefined"&&!!cloudError;
+ const synced=typeof cloudRemoteUpdatedAt!=="undefined"&&!!cloudRemoteUpdatedAt;
+ let message="";
+ if(!clientReady)message="Cloud status is unavailable. These totals only reflect information saved on this device.";
+ else if(!signedIn)message="This browser is signed out. These totals only reflect information saved on this device; your private cloud copy is not included.";
+ else if(error)message="Cloud data could not be confirmed. Treat missing balances and bills as unknown until sync is checked.";
+ else if(pending)message="Your cloud copy needs review. These totals may not include the latest saved budget.";
+ else if(busy)message="Cloud sync is in progress. These totals may not include the latest saved budget yet.";
+ else if(!synced)message="No cloud copy has been confirmed for this account. Missing budget details are not confirmed zeros.";
+ if(!message)return "";
+ return '<div class="money-cloud-status" role="status"><b>Budget data status</b><span>'+esc(message)+'</span></div>';
+};
+if(!document.getElementById("moneyCloudStatusStyles")){const style=document.createElement("style");style.id="moneyCloudStatusStyles";style.textContent=".money-cloud-status{display:grid;gap:4px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--border));border-radius:15px;background:color-mix(in srgb,var(--accent) 9%,var(--panel));font-size:.8rem;line-height:1.4}.money-cloud-status b{font-size:.82rem}.money-cloud-status span{color:var(--muted)}";document.head.appendChild(style)}
 const previous=window.moneyTransfersCard;
-if(typeof previous==="function")window.moneyTransfersCard=function(){return moneyInsightCard()+previous.apply(this,arguments)};
+if(typeof previous==="function")window.moneyTransfersCard=function(){return window.moneyCloudStatusNote()+moneyInsightCard()+previous.apply(this,arguments)};
 if(!document.getElementById("moneyClarityStyles")){const style=document.createElement("style");style.id="moneyClarityStyles";style.textContent=".money-clarity-card{display:grid;gap:10px}.money-clarity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.money-clarity-metric{display:grid;gap:4px;min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,var(--primary) 12%)}.money-clarity-metric small,.money-clarity-metric span{color:var(--muted);font-size:.68rem;line-height:1.35}.money-clarity-metric b{font-size:1.02rem;overflow-wrap:anywhere}.money-clarity-categories{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--border)}.money-clarity-category{display:flex;justify-content:space-between;gap:8px;font-size:.78rem}.money-clarity-category b{text-align:right}@media(max-width:370px){.money-clarity-grid{grid-template-columns:1fr}}";document.head.appendChild(style)}
 })();
 /* Replace the compressed Money snapshot with explicit recorded, assigned, and unknown states. */
@@ -45,6 +63,7 @@ if(!document.getElementById("moneyClarityStyles")){const style=document.createEl
  window.moreView=function(){
   let html=prior.apply(this,arguments);
   if(typeof budgetTotals!=="function"||typeof budgetPlan!=="function"||typeof BUDGET_CATEGORIES==="undefined")return html;
+  html=window.moneyCloudStatusNote()+html;
   const today=ymd(),month=today.slice(0,7),end=shiftDateString(today,30),totals=budgetTotals(month),plan=totals.plan||{},
    cashAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase())),
    knownAccounts=cashAccounts.filter(a=>a.balance!==null&&a.balance!==undefined&&a.balance!==""&&Number.isFinite(Number(a.balance))),
@@ -73,7 +92,7 @@ if(!document.getElementById("moneyClarityStyles")){const style=document.createEl
    incomeCents=incomeRows.reduce((n,x)=>n+Math.round(Number(x.amount||0)*100),0),
    incomeValue=incomeRows.length?budgetMoney(incomeCents):"None entered",
    incomeDetail=incomeRows.length?incomeRows.length+" expected cash deposit"+(incomeRows.length===1?"":"s"):"No expected cash deposits saved for the rest of this month",
-   ebtUnset=plan.ebt===null&&plan.ebtStart===null,
+   ebtUnset=(plan.ebt===null||plan.ebt===undefined||plan.ebt==="")&&(plan.ebtStart===null||plan.ebtStart===undefined||plan.ebtStart===""),
    ebtValue=ebtUnset?"Not set":budgetMoney(Math.max(0,totals.ebtAvailable)),
    ebtDetail="Kept separate from cash";
   const tile=(label,value,detail)=>'<div class="money-clarity-metric"><small>'+esc(label)+'</small><b>'+esc(value)+'</b><span>'+esc(detail)+'</span></div>';
@@ -88,6 +107,13 @@ if(!document.getElementById("moneyClarityStyles")){const style=document.createEl
   const gridStart=html.indexOf('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:12px">'),
         gridEnd=html.indexOf('<div class="muted small" style="margin-top:12px">',gridStart);
   if(gridStart>=0&&gridEnd>gridStart)html=html.slice(0,gridStart)+grid+html.slice(gridEnd);
+  if(!incomeRows.length)html=html.replace(/(<div class="card budget-income-compact">[\\s\\S]*?<h2>)\\$0\\.00(<\\/h2>[\\s\\S]*?<div class="muted small">)0 upcoming deposits/,"$1Not entered$2No expected cash deposits saved");
+  if(ebtUnset){
+   html=html.replace(/(<span>Starting balance \\/ carryover<\\/span><b>)[^<]*(<\\/b><\\/div>)/,"$1Not entered$2");
+   html=html.replace(/(<span>Monthly benefit<\\/span><b>)[^<]*(<\\/b><\\/div>)/,"$1Not entered$2");
+   html=html.replace(/(<span>(?:Over available EBT|EBT available)<\\/span><b[^>]*>)[^<]*(<\\/b>)/,"$1Not calculated$2");
+   html=html.replace(/<progress class="budget-progress [^"]*" max="100" value="[^"]+" aria-label="EBT spending" aria-valuetext="[^"]*">[^<]*<\\/progress>/,'<p class="muted small">Enter a starting balance and monthly benefit to calculate EBT availability.</p>');
+  }
   return html;
  };
 })();
