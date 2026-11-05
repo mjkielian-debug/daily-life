@@ -296,20 +296,21 @@ function visualHubView(page){
  </section>`;
 }
 function visualBudgetHubModel(base){
- const t=budgetTotals(),month=budgetMonth||ymd().slice(0,7),
+ const cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"",
+       t=budgetTotals(),month=budgetMonth||ymd().slice(0,7),
        monthLabel=new Date(month+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
        categoryCount=BUDGET_CATEGORIES.filter(cat=>budgetCents(t.plan.limits[cat.id])>0).length,
        focusTitle=t.plan.income===null?"Set expected income":t.remaining<0?"Review money shortfall":t.left<0?"Rebalance category limits":"Review spending pace",
        focusNote=t.plan.income===null?"Add income before planning flexible spending.":t.remaining<0?"Your current plan needs attention; check upcoming bills.":t.left<0?"More is assigned than planned.":"See the budget plan and what remains unassigned.",
        focusAction=t.plan.income===null?"openBudgetHubSection('plan')":t.remaining<0?"openBudgetHubSection('bills')":t.left<0?"openBudgetHubSection('categories')":"openBudgetHubSection('activity')";
  Object.assign(base,{title:"Budget",subtitle:monthLabel+" · Plan without the clutter",addLabel:"+ Spending",addAction:"openBudgetSpending()",
- focusLabel:"BUDGET FOCUS",focusTitle,focusNote,focusAction,mainValue:t.plan.income===null?"—":budgetMoney(t.left),mainLabel:"Left to assign",
- metrics:[{icon:"↥",label:"Income",value:t.plan.income===null?"Not set":budgetMoney(t.income),action:"openBudgetHubSection('plan')"},
- {icon:"▤",label:"Bills",value:t.bills.length+" recorded",action:"openBudgetHubSection('bills')"},
- {icon:"◫",label:"Categories",value:categoryCount+" funded",action:"openBudgetHubSection('categories')"},
- {icon:"↕",label:"Activity",value:t.logs.length+" entries",action:"openBudgetHubSection('activity')"}],
+ focusLabel:"BUDGET FOCUS",focusTitle:cloudStatus?"Sync budget data":focusTitle,focusNote:cloudStatus?"Sign in and sync your cloud copy before relying on budget totals.":focusNote,focusAction:cloudStatus?"openSettingsHubSection('cloud')":focusAction,mainValue:cloudStatus?"Not loaded":t.plan.income===null?"Not calculated":budgetMoney(t.left),mainLabel:"Left to assign",
+ metrics:[{icon:"↥",label:"Income",value:cloudStatus?"Not loaded":t.plan.income===null?"Not set":budgetMoney(t.income),action:"openBudgetHubSection('plan')"},
+ {icon:"▤",label:"Bills",value:cloudStatus?"Not loaded":t.bills.length?t.bills.length+" recorded":"None recorded",action:"openBudgetHubSection('bills')"},
+ {icon:"◫",label:"Categories",value:cloudStatus?"Not loaded":categoryCount+" funded",action:"openBudgetHubSection('categories')"},
+ {icon:"↕",label:"Activity",value:cloudStatus?"Not loaded":t.logs.length+" entries",action:"openBudgetHubSection('activity')"}],
  links:[vhLink("Plan","✦","openBudgetHubSection('plan')"),vhLink("Bills","▤","openBudgetHubSection('bills')"),vhLink("Categories","◫","openBudgetHubSection('categories')"),vhLink("Activity","↕","openBudgetHubSection('activity')"),vhLink("Expected income","↥","openBudgetIncome()"),vhLink("Log spending","＋","openBudgetSpending()"),vhLink("Previous month","←","changeBudgetMonth(-1)"),vhLink("Next month","→","changeBudgetMonth(1)")],
- bottomTitle:"Monthly plan",bottomDetail:"Amounts come from your saved budget. Open Plan to review income, benefits and transfers."});
+ bottomTitle:"Monthly plan",bottomDetail:cloudStatus?"Cloud data is not loaded in this browser. Check Settings → Cloud before treating counts as complete.":"Amounts come from your saved budget. Open Plan to review income, benefits and transfers."});
  return base;
 }
 
