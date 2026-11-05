@@ -1,4 +1,4 @@
-const CACHE_NAME="daily-life-shell-20261104-deliverywindow2";
+const CACHE_NAME="daily-life-shell-20261105-spirituality-money1";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -48,6 +48,7 @@ const APP_SHELL=[
   "./modal-form-readability.css",
   "./inventory-goals.css",
   "./visual-hubs.js",
+  "./money-clarity.js",
   "./chase-balance.js",
   "./chase-balance.css",
   "./readability-fix.css",
