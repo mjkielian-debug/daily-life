@@ -33,20 +33,23 @@ function moneyInsightCard(){
  (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
  '<p class="muted small">This summarizes what is entered. Missing balances and bill amounts stay marked unknown; expected income is not counted as cash already available.</p></div>';
 }
-window.moneyCloudStatusNote=function(){
+window.moneyCloudStatusText=function(){
  const signedIn=typeof cloudUser==="function"&&!!cloudUser();
  const clientReady=typeof cloudClient!=="undefined"&&!!cloudClient;
  const pending=typeof cloudNeedsReview!=="undefined"&&!!cloudNeedsReview;
  const busy=typeof cloudBusy!=="undefined"&&!!cloudBusy;
  const error=typeof cloudError!=="undefined"&&!!cloudError;
  const synced=typeof cloudRemoteUpdatedAt!=="undefined"&&!!cloudRemoteUpdatedAt;
- let message="";
- if(!clientReady)message="Cloud status is unavailable. These totals only reflect information saved on this device.";
- else if(!signedIn)message="This browser is signed out. These totals only reflect information saved on this device; your private cloud copy is not included.";
- else if(error)message="Cloud data could not be confirmed. Treat missing balances and bills as unknown until sync is checked.";
- else if(pending)message="Your cloud copy needs review. These totals may not include the latest saved budget.";
- else if(busy)message="Cloud sync is in progress. These totals may not include the latest saved budget yet.";
- else if(!synced)message="No cloud copy has been confirmed for this account. Missing budget details are not confirmed zeros.";
+ if(!clientReady)return "Cloud status is unavailable. These totals only reflect information saved on this device.";
+ if(!signedIn)return "This browser is signed out. These totals only reflect information saved on this device; your private cloud copy is not included.";
+ if(error)return "Cloud data could not be confirmed. Treat missing balances and bills as unknown until sync is checked.";
+ if(pending)return "Your cloud copy needs review. These totals may not include the latest saved budget.";
+ if(busy)return "Cloud sync is in progress. These totals may not include the latest saved budget yet.";
+ if(!synced)return "No cloud copy has been confirmed for this account. Missing budget details are not confirmed zeros.";
+ return "";
+};
+window.moneyCloudStatusNote=function(){
+ const message=window.moneyCloudStatusText();
  if(!message)return "";
  return '<div class="money-cloud-status" role="status"><b>Budget data status</b><span>'+esc(message)+'</span></div>';
 };
