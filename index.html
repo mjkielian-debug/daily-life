@@ -307,7 +307,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.11.05-spirituality-money5";
+const APP_BUILD="2026.11.05-wells-amazon1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7000,28 +7000,20 @@ function moneySpendingHub(){
   return html;
 }
 function moneyNextActionSummary(){
-  const closure=Array.isArray(state.settings?.bankExitPlans)?state.settings.bankExitPlans.find(x=>x.priority&&x.status!=="closed"):null;
-  if(closure)return {title:"Review "+closure.institution+" closure and "+(closure.renewalName||"linked payments"),
-    detail:"Decide before "+(closure.renewalDate||"next bill")+". No transfer or closure is confirmed.",
-    bankExit:true};
-  const likelyBillCount=typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0;
-  if(likelyBillCount){
-    return{title:"Confirm possible bill payment",detail:likelyBillCount+" bank transaction"+(likelyBillCount===1?" may":"s may")+" already cover a bill.",reviewBill:true};
-  }
-  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due));
-  const urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
-  if(!urgent)return{title:"No money move needed",detail:"Upcoming bills look covered."};
-  if(urgent.status==="Transfer needed"){
-    const instruction=typeof transferInstruction==="function"?transferInstruction(urgent):"";
-    return{title:"Move money for "+urgent.bill.name,detail:instruction||("Due "+dl(urgent.bill.due)),index:urgent.index};
-  }
-  if(urgent.status==="Projected short"){
-    const short=Math.max(0,-Number(urgent.projectedAfter||0))/100;
-    return{title:"Short for "+urgent.bill.name,detail:(short>0?money(short)+" short · ":"")+"due "+dl(urgent.bill.due),index:urgent.index};
-  }
-  if(urgent.status==="Needs account")return{title:"Choose payment account",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
-  if(urgent.status==="Balance unavailable")return{title:"Update account balance",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
-  return{title:"Fix bill details",detail:urgent.bill.name,index:urgent.index};
+ const plans=Array.isArray(state.settings?.bankExitPlans)?state.settings.bankExitPlans:[],
+   closure=plans.find(x=>x.priority&&x.status!=="closed");
+ if(closure)return {title:"Review "+closure.institution+" closure and "+(closure.renewalName||"linked payments"),detail:"Resolve the remaining checks before "+(closure.renewalDate||"the next withdrawal")+".",bankExit:true};
+ const renewal=plans.find(x=>x.priority&&x.status==="closed"&&x.subscriptionStatus==="decision_pending"&&x.renewalName);
+ if(renewal)return {title:"Review "+renewal.renewalName+" renewal",detail:"$"+Number(renewal.renewalPaidAmount||0).toFixed(2)+" posted "+(renewal.renewalPaidDate||"recently")+" from "+(renewal.renewalPaymentAccountLabel||"the recorded payment account")+"; next renewal estimated "+(renewal.renewalDate||"date not set")+".",bankExit:true};
+ const likelyBillCount=typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0;
+ if(likelyBillCount)return{title:"Confirm possible bill payment",detail:likelyBillCount+" bank transaction"+(likelyBillCount===1?" may":"s may")+" already cover a bill.",reviewBill:true};
+ const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)),urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
+ if(!urgent)return{title:"No money move needed",detail:"Upcoming bills look covered."};
+ if(urgent.status==="Transfer needed"){const instruction=typeof transferInstruction==="function"?transferInstruction(urgent):"";return{title:"Move money for "+urgent.bill.name,detail:instruction||("Due "+dl(urgent.bill.due)),index:urgent.index};}
+ if(urgent.status==="Projected short"){const short=Math.max(0,-Number(urgent.projectedAfter||0))/100;return{title:"Short for "+urgent.bill.name,detail:(short>0?money(short)+" short · ":"")+"due "+dl(urgent.bill.due),index:urgent.index};}
+ if(urgent.status==="Needs account")return{title:"Choose payment account",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+ if(urgent.status==="Balance unavailable")return{title:"Update account balance",detail:urgent.bill.name+" · due "+dl(urgent.bill.due),index:urgent.index};
+ return{title:"Fix bill details",detail:urgent.bill.name,index:urgent.index};
 }
 function moneyRunNextAction(){
   const next=moneyNextActionSummary();
@@ -9520,7 +9512,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261105-spirituality-money5";
+const DAILY_LIFE_BUILD="20261105-wellsamazon1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9654,7 +9646,7 @@ async function registerAppWorker(){
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261027-trendclarity3"></script>
-<script src="bank-exit-plan.js?v=20261014-bank-exit1"></script>
+<script src="bank-exit-plan.js?v=20261105-bankexit-followup1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 <script src="budget-forecast-2026.js?v=20261015-2"></script>
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
