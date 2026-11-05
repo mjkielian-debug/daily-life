@@ -37,3 +37,57 @@ const previous=window.moneyTransfersCard;
 if(typeof previous==="function")window.moneyTransfersCard=function(){return moneyInsightCard()+previous.apply(this,arguments)};
 if(!document.getElementById("moneyClarityStyles")){const style=document.createElement("style");style.id="moneyClarityStyles";style.textContent=".money-clarity-card{display:grid;gap:10px}.money-clarity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.money-clarity-metric{display:grid;gap:4px;min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,var(--primary) 12%)}.money-clarity-metric small,.money-clarity-metric span{color:var(--muted);font-size:.68rem;line-height:1.35}.money-clarity-metric b{font-size:1.02rem;overflow-wrap:anywhere}.money-clarity-categories{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--border)}.money-clarity-category{display:flex;justify-content:space-between;gap:8px;font-size:.78rem}.money-clarity-category b{text-align:right}@media(max-width:370px){.money-clarity-grid{grid-template-columns:1fr}}";document.head.appendChild(style)}
 })();
+/* Replace the compressed Money snapshot with explicit recorded, assigned, and unknown states. */
+(function(){
+ "use strict";
+ const prior=window.moreView;
+ if(typeof prior!=="function")return;
+ window.moreView=function(){
+  let html=prior.apply(this,arguments);
+  if(typeof budgetTotals!=="function"||typeof budgetPlan!=="function"||typeof BUDGET_CATEGORIES==="undefined")return html;
+  const today=ymd(),month=today.slice(0,7),end=shiftDateString(today,30),totals=budgetTotals(month),plan=totals.plan||{},
+   cashAccounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase())),
+   knownAccounts=cashAccounts.filter(a=>a.balance!==null&&a.balance!==undefined&&a.balance!==""&&Number.isFinite(Number(a.balance))),
+   accountTotal=knownAccounts.reduce((n,a)=>n+Number(a.balance),0),
+   monthBills=(state.bills||[]).filter(b=>(typeof billForecastIncluded!=="function"||billForecastIncluded(b))&&String(b.due||"").slice(0,7)===month),
+   upcoming=(state.bills||[]).filter(b=>(typeof billForecastIncluded!=="function"||billForecastIncluded(b))&&b.status!=="paid"&&validBillDate(b.due)&&b.due>=today&&b.due<=end),
+   upcomingKnown=upcoming.filter(b=>b.amount!==null&&b.amount!==undefined&&b.amount!==""&&Number.isFinite(Number(b.amount))),
+   upcomingCents=upcomingKnown.reduce((n,b)=>n+budgetCents(b.amount),0),
+   monthBillMissing=monthBills.some(b=>b.amount===null||b.amount===undefined||b.amount===""||!Number.isFinite(Number(b.amount))),
+   enteredLimits=BUDGET_CATEGORIES.filter(c=>plan.limits&&plan.limits[c.id]!==null&&plan.limits[c.id]!==undefined&&plan.limits[c.id]!==""&&Number.isFinite(Number(plan.limits[c.id]))),
+   assignedCents=enteredLimits.reduce((n,c)=>n+budgetCents(plan.limits[c.id]),0),
+   cashLogs=(totals.logs||[]).filter(x=>x.category!=="ebt"),
+   incomeMissing=plan.income===null||plan.income===undefined||plan.income==="",
+   currentBalances=!cashAccounts.length?"Not entered":knownAccounts.length===cashAccounts.length?money(accountTotal):knownAccounts.length?money(accountTotal)+" known":"Balances not entered",
+   balanceDetail=!cashAccounts.length?"No checking or savings accounts recorded":knownAccounts.length===cashAccounts.length?knownAccounts.length+" balance"+(knownAccounts.length===1?"":"s")+" recorded":knownAccounts.length+" of "+cashAccounts.length+" balances recorded",
+   spendValue=cashLogs.length?budgetMoney(totals.spent):"No entries",
+   spendDetail=cashLogs.length?cashLogs.length+" purchase"+(cashLogs.length===1?"":"s")+" logged this month":"No spending entries recorded this month",
+   billValue=!upcoming.length?"No saved bills due":upcomingKnown.length===upcoming.length?budgetMoney(upcomingCents):budgetMoney(upcomingCents)+" known",
+   billDetail=!upcoming.length?"Nothing recorded due in the next 30 days":upcoming.length+" bill"+(upcoming.length===1?"":"s")+" due · "+(upcoming.length-upcomingKnown.length?upcoming.length-upcomingKnown.length+" amount"+(upcoming.length-upcomingKnown.length===1?"":"s")+" missing":"all amounts entered"),
+   assignedValue=enteredLimits.length?budgetMoney(assignedCents):"Not set",
+   assignedDetail=enteredLimits.length+" of "+BUDGET_CATEGORIES.length+" category limits entered",
+   monthlyBillCents=monthBills.reduce((n,b)=>n+budgetCents(b.amount),0),
+   leftValue=incomeMissing?"Income not set":monthBillMissing?"Bill amounts needed":budgetMoney(totals.income-monthlyBillCents-assignedCents),
+   leftDetail=incomeMissing?"Enter monthly cash income to calculate this":monthBillMissing?"A current-month bill has no recorded amount":"After saved bills and entered category amounts",
+   incomeRows=expectedIncomeOccurrences(ymd(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0))).filter(x=>x.date>=today&&!/\b(ebt|snap|food benefit)\b/i.test(x.name||"")),
+   incomeCents=incomeRows.reduce((n,x)=>n+Math.round(Number(x.amount||0)*100),0),
+   incomeValue=incomeRows.length?budgetMoney(incomeCents):"None entered",
+   incomeDetail=incomeRows.length?incomeRows.length+" expected cash deposit"+(incomeRows.length===1?"":"s"):"No expected cash deposits saved for the rest of this month",
+   ebtUnset=plan.ebt===null&&plan.ebtStart===null,
+   ebtValue=ebtUnset?"Not set":budgetMoney(Math.max(0,totals.ebtAvailable)),
+   ebtDetail="Kept separate from cash";
+  const tile=(label,value,detail)=>'<div class="money-clarity-metric"><small>'+esc(label)+'</small><b>'+esc(value)+'</b><span>'+esc(detail)+'</span></div>';
+  const grid='<div class="money-clarity-grid" aria-label="Recorded money, upcoming bills, and monthly assignments">'+
+   tile("Checking + savings recorded",currentBalances,balanceDetail)+
+   tile("Expected cash deposits",incomeValue,incomeDetail)+
+   tile("Cash spending recorded",spendValue,spendDetail)+
+   tile("Bills due in next 30 days",billValue,billDetail)+
+   tile("Assigned to categories",assignedValue,assignedDetail)+
+   tile("Cash left to assign",leftValue,leftDetail)+
+   tile("EBT available",ebtValue,ebtDetail)+'</div>';
+  const gridStart=html.indexOf('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:12px">'),
+        gridEnd=html.indexOf('<div class="muted small" style="margin-top:12px">',gridStart);
+  if(gridStart>=0&&gridEnd>gridStart)html=html.slice(0,gridStart)+grid+html.slice(gridEnd);
+  return html;
+ };
+})();
