@@ -107,12 +107,12 @@ if(!document.getElementById("moneyClarityStyles")){const style=document.createEl
   const gridStart=html.indexOf('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:12px">'),
         gridEnd=html.indexOf('<div class="muted small" style="margin-top:12px">',gridStart);
   if(gridStart>=0&&gridEnd>gridStart)html=html.slice(0,gridStart)+grid+html.slice(gridEnd);
-  if(!incomeRows.length)html=html.replace(/(<div class="card budget-income-compact">[\\s\\S]*?<h2>)\\$0\\.00(<\\/h2>[\\s\\S]*?<div class="muted small">)0 upcoming deposits/,"$1Not entered$2No expected cash deposits saved");
+  if(!incomeRows.length)html=html.replace(/(<div class="card budget-income-compact">[\s\S]*?<h2>)\$0\.00(<\/h2>[\s\S]*?<div class="muted small">)0 upcoming deposits/,"$1Not entered$2No expected cash deposits saved");
   if(ebtUnset){
-   html=html.replace(/(<span>Starting balance \\/ carryover<\\/span><b>)[^<]*(<\\/b><\\/div>)/,"$1Not entered$2");
-   html=html.replace(/(<span>Monthly benefit<\\/span><b>)[^<]*(<\\/b><\\/div>)/,"$1Not entered$2");
-   html=html.replace(/(<span>(?:Over available EBT|EBT available)<\\/span><b[^>]*>)[^<]*(<\\/b>)/,"$1Not calculated$2");
-   html=html.replace(/<progress class="budget-progress [^"]*" max="100" value="[^"]+" aria-label="EBT spending" aria-valuetext="[^"]*">[^<]*<\\/progress>/,'<p class="muted small">Enter a starting balance and monthly benefit to calculate EBT availability.</p>');
+   html=html.replace(/(<span>Starting balance \/ carryover<\/span><b>)[^<]*(<\/b><\/div>)/,"$1Not entered$2");
+   html=html.replace(/(<span>Monthly benefit<\/span><b>)[^<]*(<\/b><\/div>)/,"$1Not entered$2");
+   html=html.replace(/(<span>(?:Over available EBT|EBT available)<\/span><b[^>]*>)[^<]*(<\/b>)/,"$1Not calculated$2");
+   html=html.replace(/<progress class="budget-progress [^"]*" max="100" value="[^"]+" aria-label="EBT spending" aria-valuetext="[^"]*">[^<]*<\/progress>/,'<p class="muted small">Enter a starting balance and monthly benefit to calculate EBT availability.</p>');
   }
   return html;
  };
