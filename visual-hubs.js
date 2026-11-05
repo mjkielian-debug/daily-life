@@ -44,14 +44,15 @@ function visualHubModel(page){
  }else if(page==="more"){
   const bills=(s.bills||[]).filter(x=>billForecastIncluded(x)&&x.due>=day&&x.due<=shiftDateString(day,30)),paid=bills.filter(x=>x.status==="paid").length,actions=typeof moneyNextActionSummary==="function"?moneyNextActionSummary():null;
   const urgent=typeof billReadiness==="function"?billReadiness().filter(x=>x.bill?.status!=="paid"&&x.bill?.due>=shiftDateString(day,-7)&&x.bill?.due<=seven&&/Transfer needed|Projected short|Needs account|Balance unavailable|Check bill/.test(x.status)):[],goals=(s.savingsGoals||[]).filter(x=>!x.done).length;
-  const outstanding=bills.filter(x=>x.status!=="paid").length;
-  Object.assign(base,{title:"Money",subtitle:"Bills, budget and accounts",addLabel:"+ Bill",addAction:"openBill()",focusLabel:"NEXT MONEY MOVE",focusTitle:actions?.title||"Check your bill plan",focusNote:actions?.detail||"Review upcoming payments and account readiness.",
-   focusAction:"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills paid"),
-   metrics:[m("▤","Bills",outstanding+" unpaid","openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",(s.accounts||[]).length+" tracked","openMoneyHubSection('accounts')"),m("✦","Goals",(s.settings?.financialRoadmap||[]).length+" plans","openMoneyHubSection('goals')")],
+  const outstanding=bills.filter(x=>x.status!=="paid").length,cloudStatusText=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"";
+  const accountCount=(s.accounts||[]).length,missingDataLabel=cloudStatusText?"Not loaded":"None recorded";
+  Object.assign(base,{title:"Money",subtitle:"Bills, budget and accounts",addLabel:"+ Bill",addAction:"openBill()",focusLabel:"NEXT MONEY MOVE",focusTitle:cloudStatusText?"Check cloud status":actions?.title||"Check your bill plan",focusNote:cloudStatusText||actions?.detail||"Review upcoming payments and account readiness.",
+   focusAction:cloudStatusText?"setView('settings')":"moneyRunNextAction()",progress:vhProgress(paid,bills.length,"Bills paid"),
+   metrics:[m("▤","Bills",bills.length?outstanding+" unpaid":missingDataLabel,"openMoneyHubSection('bills')"),m("!","Review",urgent.length?urgent.length+" near-term":"See bills","openMoneyHubSection('transfers')"),m("◇","Accounts",accountCount?accountCount+" tracked":missingDataLabel,"openMoneyHubSection('accounts')"),m("✦","Goals",(s.settings?.financialRoadmap||[]).length+" plans","openMoneyHubSection('goals')")],
    links:[vhLink("Bills","▤","openMoneyHubSection('bills')"),vhLink("Budget","◫","openMoneyHubSection('budget')"),vhLink("Goals","✦","openMoneyHubSection('goals')"),vhLink("Accounts","◇","openMoneyHubSection('accounts')"),vhLink("Transfers","↔","openMoneyHubSection('transfers')"),vhLink("Income","↥","openMoneyHubSection('income')"),vhLink("Savings","♡","openMoneyHubSection('savings')"),vhLink("UPS pay","▣","openMoneyHubSection('pay')"),vhLink("Spending","↕","openMoneyHubSection('spending')")],
-   bottomTitle:"Bills ahead",bottomDetail:`${outstanding} unpaid bill${outstanding===1?"":"s"} due within 30 days. Tap Bills for dates and amounts.`,barTitle:"Bills due · next 7 days"});
+   bottomTitle:"Bills ahead",bottomDetail:cloudStatusText?"Bills and accounts have not been confirmed from a cloud copy. Check Settings → Cloud before treating these counts as complete.":outstanding+" unpaid bill"+(outstanding===1?"":"s")+" due within 30 days. Tap Bills for dates and amounts.",barTitle:"Bills due · next 7 days"});
   base.bars=Array.from({length:7},(_,i)=>{const dt=shiftDateString(day,i);return b(dt,bills.filter(x=>x.due===dt).length)});
- }else if(page==="log"){
+}else if(page==="log"){
   const oz=Math.round(typeof water==="function"?water():0),self=typeof selfCareTodayStats==="function"?selfCareTodayStats():{done:0,total:0},review=typeof dailyReviewSummary==="function"?dailyReviewSummary(day):{unknown:0},sleep=typeof sleepForDate==="function"?sleepForDate(day):null;
   const hours=typeof sleepHours==="function"?sleepHours(sleep):0,workouts=(s.workouts||[]).filter(x=>x.date>=shiftDateString(day,-6)&&x.date<=day).length;
   Object.assign(base,{title:"My care",subtitle:"Rest, hydration and wellbeing",addLabel:"+ Check-in",addAction:"openWellnessCheckin()",
