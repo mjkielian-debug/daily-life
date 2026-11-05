@@ -218,25 +218,21 @@ function openSpiritualHubSection(section){
  modal(title,'<div class="spirituality-hub-modal">'+body+'</div>',"Close",closeModal)
 }
 function spiritualityView(m){
- m=m||moon();ensureDailyTarotSaved();const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),log=spiritualityLogFor()||{},ml=moonLens(m),
-   touched=["reading","tarot","stillness","ritual"].filter(k=>log[k]).length,
-   journalCount=(state.spiritualityJournal||[]).length,
-   moonLabel=ml.sign+(Number.isFinite(ml.degree)?" "+ml.degree.toFixed(0)+"°":""),
-   segments=[
-    {icon:"✦",title:"Reading",detail:r.title,section:"reading"},
-    {icon:"☾",title:"Tarot",detail:tarotRevealed()?t.name:"Reveal card",section:"tarot"},
-    {icon:"◇",title:"Spread",detail:"1 · 3 · 5 cards",section:"spread"},
-    {icon:"❧",title:"Rituals",detail:s.title,section:"rituals"},
-    {icon:"▤",title:"Journal",detail:journalCount?journalCount+" entries":"Write",section:"journal"},
-    {icon:m?.[1]||"☾",title:"Moon",detail:moonLabel,section:"moon"},
-    {icon:"○",title:"Practice",detail:touched+"/4 touched",section:"practice"},
-    {icon:"↕",title:"History",detail:"Cards + notes",section:"history"}
-   ];
- return'<section class="spirituality-one-screen"><div class="spirituality-one-topline"><div><div class="eyebrow">Spirituality at a glance</div><b>Reflection + tarot + moon</b></div><button class="btn small primary" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
-   '<div class="life-wheel spirituality-wheel" role="group" aria-label="Spirituality dashboard">'+
-   segments.map((x,i)=>'<button type="button" class="life-wheel-segment" style="--i:'+i+';--seg:'+i+'" onclick="openSpiritualHubSection(\''+x.section+'\')" aria-label="'+esc(x.title)+': '+esc(x.detail)+'"><span><i>'+x.icon+'</i><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></span></button>').join("")+
-   '<button type="button" class="life-wheel-center spirituality-wheel-center" onclick="event.stopPropagation();openSpiritualHubSection(\'moon\');return false;"><span class="eyebrow">MOON RIGHT NOW</span><b>'+esc(moonLabel)+'</b><strong>'+esc(m?.[0]||"Moon")+' · '+esc(ml.element||"")+'</strong><small>'+esc(ml.question||"Tap for today’s Moon reading")+'</small></button>'+
-   '</div></section>'
+  m=m||moon();
+  ensureDailyTarotSaved();
+  const panels={
+    today:spiritualityTodayPanel(m),
+    tarot:spiritualityTarotPanel(),
+    rituals:spiritualityRitualsPanel(),
+    journal:spiritualityJournalPanel()
+  };
+  const active=["today","tarot","rituals","journal"].includes(spiritualityTab)?spiritualityTab:"today";
+  return '<section class="spirituality-page">'+
+    '<div class="spirituality-page-heading"><div><div class="eyebrow">Spirituality</div><h2>Reflection at your pace</h2><p class="muted small">Explore a daily reading, tarot, rituals, or your saved journal.</p></div>'+
+    '<button class="btn small primary" type="button" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
+    spiritualityTabs()+
+    '<div class="spirituality-page-content" aria-live="polite">'+panels[active]+'</div>'+
+  '</section>';
 }
 function spiritualityLaunchCard(){
  const r=dailySpiritualReading(),t=tarotForDate(),s=spiritualitySeason(),tarotLabel=tarotRevealed()?t.name:"Tarot ready to reveal";
@@ -431,3 +427,11 @@ async function saveSelectedTarotSpread(){
 }
 const tarotChooserBeforeSelection=tarotSpreadChooser;
 tarotSpreadChooser=function(){let html=tarotChooserBeforeSelection().replace('<button class="btn primary" onclick="startTarotSpread()">Draw cards & read</button>','<div class="actions"><button class="btn primary" onclick="beginTarotSelection()">Choose my cards</button><button class="btn" onclick="startTarotSpread()">Quick draw & read</button></div>');if(tarotSelectionDraft)html='<div class="notice"><button class="btn" onclick="showTarotSelection()">Continue my card selection</button></div>'+html;return html};
+
+(function installSpiritualityPageStyles(){
+  if(document.getElementById("spiritualityPageStyles"))return;
+  const style=document.createElement("style");
+  style.id="spiritualityPageStyles";
+  style.textContent=".spirituality-page{display:grid;gap:12px;max-width:900px;margin:0 auto;padding:0 0 calc(96px + env(safe-area-inset-bottom));}.spirituality-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:20px;background:linear-gradient(130deg,color-mix(in srgb,#f3b6cf 35%,var(--panel)),color-mix(in srgb,#cce8d3 35%,var(--panel)),color-mix(in srgb,#d8c8f0 30%,var(--panel)));color:var(--text)}.spirituality-page-heading h2{margin:3px 0;font-family:var(--font-heading,Georgia,serif)}.spirituality-page-heading p{margin:2px 0}.spirituality-page .spirituality-tabs{position:sticky;top:0;z-index:8;background:var(--panel);box-shadow:0 4px 14px rgba(80,50,80,.08)}.spirituality-page-content{display:grid;gap:12px;min-width:0}.spirituality-page-content>.card{margin:0}.spirituality-tabs button{min-height:44px;touch-action:manipulation}@media(max-width:480px){.spirituality-page-heading{align-items:flex-start}.spirituality-page-heading .btn{flex:0 0 auto}.spirituality-page .spirituality-tabs{gap:3px}.spirituality-page .spirituality-tabs button{padding:6px 3px;font-size:.78rem}}";
+  document.head.appendChild(style);
+})();
