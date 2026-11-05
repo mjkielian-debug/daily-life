@@ -7423,9 +7423,9 @@ function budgetDetailedView(){
   const plan=`${typeof budgetCoachCard==="function"?budgetCoachCard():""}${budgetExpectedIncomeCard()}
     ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported</span><b>${money(actual.imported)}</b></div><p class="muted small">Income only counts transactions the provider classifies as income; refunds and transfers are not silently treated as earnings.</p></div>`:""}
     <div class="card"><div class="section-title"><div><h2>EBT / grocery benefit</h2><div class="muted small">Kept separate from cash.</div></div><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
-      <div class="row"><span>Starting balance / carryover</span><b>${budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
-      ${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}
-      <div class="row"><span>${t.ebtAvailable<0?"Over available EBT":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
+      <div class="row"><span>Starting balance / carryover</span><b>${t.plan.ebtStart===null?"Not entered":budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${t.plan.ebt===null?"Not entered":budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
+      ${t.plan.ebtStart===null&&t.plan.ebt===null?`<p class="muted small">Enter a starting balance and monthly benefit to calculate EBT availability.</p>`:`${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}`}
+      <div class="row"><span>${t.plan.ebtStart===null&&t.plan.ebt===null?"EBT available":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${t.plan.ebtStart===null&&t.plan.ebt===null?"Not calculated":budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
       <p class="muted small">Available = starting carryover + monthly benefit − EBT spending.</p>
     </div>`;
 
@@ -8315,7 +8315,7 @@ function budgetExpectedIncomeCard(month=budgetMonth){
         total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0),current=month===today.slice(0,7),
         rowHtml=x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<button class="budget-income-row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><small>${esc(dl(x.date))} · ${esc(a?.name||"account needed")}${x.confidence==="estimate"?" · estimate":""}</small></span><b>+${money(x.amount)}</b></button>`};
   return `<div class="card budget-income-compact">
-    <div class="section-title"><div><div class="eyebrow">${current?"Expected before month-end":"Expected this month"}</div><h2>${money(total)}</h2><div class="muted small">${rows.length} upcoming deposit${rows.length===1?"":"s"} · kept separate from the monthly budget total</div></div><button class="btn" onclick="closeModal();setView('more');openMoneyHubSection('income')">Income</button></div>
+    <div class="section-title"><div><div class="eyebrow">${current?"Expected before month-end":"Expected this month"}</div><h2>${rows.length?money(total):"Not entered"}</h2><div class="muted small">${rows.length?rows.length+" upcoming deposit"+(rows.length===1?"":"s"):"No expected cash deposits saved"} · kept separate from the monthly budget total</div></div><button class="btn" onclick="closeModal();setView('more');openMoneyHubSection('income')">Income</button></div>
     ${rows.length?rows.slice(0,3).map(rowHtml).join(""):`<div class="notice">No expected income scheduled.</div>`}
     ${rows.length>3?`<details class="compact-more"><summary>Show ${rows.length-3} more</summary>${rows.slice(3).map(rowHtml).join("")}</details>`:""}
   </div>`;
