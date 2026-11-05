@@ -1,6 +1,6 @@
 {
-  "build": "20261105-budget-values4",
+  "build": "20261105-spirituality-money5",
   "released": "2026-11-05",
-  "ui": "Corrected Money unknown states, clarified cloud sync status, and refreshed Spirituality + Money page labels.",
+  "ui": "Added working scrollable Spirituality tabs and made missing Money account mappings display as not calculated instead of zero.",
   "data_version": "No saved data format changes in this release."
 }
