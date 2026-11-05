@@ -105,6 +105,7 @@ function budgetCoachSnapshot(){
     ? safeToSpendSnapshot()
     : {safe:0,incomplete:true,horizon:"",reserved:0,cushion:0};
   const totals=typeof budgetTotals==="function"?budgetTotals():null;
+  const balanceCount=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase())&&a.balance!==null&&a.balance!==undefined&&a.balance!==""&&Number.isFinite(Number(a.balance))).length;
   const cash=(state.accounts||[]).filter(a=>
     ["checking","savings"].includes(a.type)&&
     a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance))&&
@@ -167,7 +168,7 @@ function budgetCoachSnapshot(){
   if(target&&accountStrategy(target)!=="Interest-first savings")transferIssues.push("The destination savings account is not marked as the preferred Interest-first savings account.");
   const transferConfidence=transferIssues.length?"review":"ready";
 
-  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats,futureBills,transferIssues,transferConfidence};
+  return {safe,totals,target,sourceRows,movable,monthRemaining,weeklyPlan,dailyPlan,todayGuardrail,weekGuardrail,balanceCount,categoryStatus,assignedSpendableCents,cashFlexibleSpentCents,categoryPlanRemaining,guardrailUsesCategories,unassignedPlanCash,over,nearLimit,repeats,futureBills,transferIssues,transferConfidence};
 }
 
 function budgetCoachGoalPlan(x){
@@ -318,6 +319,9 @@ function budgetCoachPrimaryAction(x,goalPlan){
 
 function budgetCoachCard(){
   const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x),primary=budgetCoachPrimaryAction(x,goalPlan),
+        cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"",
+        amountsKnown=x.balanceCount>0&&!cloudStatus,
+        planIncomeKnown=x.totals?.plan?.income!==null&&x.totals?.plan?.income!==undefined&&!cloudStatus,
         transferReady=x.transferConfidence==="ready",
         transferLabel=x.movable>0?(transferReady?money(x.movable)+" ready":money(x.movable)+" review"):"None",
         setupWarning=x.safe.incomplete
@@ -327,7 +331,7 @@ function budgetCoachCard(){
   return `<div class="card budget-coach-card budget-coach-compact money-do-now">
     <div class="money-coach-heading">
       <div><div class="eyebrow">✦ Money coach</div><h2>Do this next</h2></div>
-      <span class="tag">${x.safe.incomplete?"check setup":"bill-aware"}</span>
+      <span class="tag">${x.safe.incomplete||!amountsKnown?"check setup":"bill-aware"}</span>
     </div>
 
     <div class="money-coach-primary ${primary.tone}">
@@ -339,16 +343,16 @@ function budgetCoachCard(){
     ${setupWarning}
 
     <div class="money-coach-snapshot" aria-label="Money snapshot">
-      <span><small>Safe today</small><b>${money(x.todayGuardrail)}</b></span>
-      <span><small>Safe this week</small><b>${money(x.weekGuardrail)}</b></span>
+      <span><small>Safe today</small><b>${amountsKnown?money(x.todayGuardrail):cloudStatus?"Not loaded":"Not available"}</b></span>
+      <span><small>Safe this week</small><b>${amountsKnown?money(x.weekGuardrail):cloudStatus?"Not loaded":"Not available"}</b></span>
       <span><small>Savings move</small><b>${esc(transferLabel)}</b></span>
     </div>
 
     <details class="money-coach-details">
       <summary>Why / more details</summary>
       <div class="money-coach-detail-body"><div class="muted small money-coach-reason">${esc(primary.detail)}</div>
-        <div class="coach-compact-row"><span>Safe cash ceiling</span><b>${money(Math.max(0,Number(x.safe.safe||0)))}</b></div>
-        <div class="coach-compact-row"><span>Unassigned monthly plan</span><b>${money(Math.max(0,Number(x.unassignedPlanCash||0)))}</b></div>
+        <div class="coach-compact-row"><span>Safe cash ceiling</span><b>${amountsKnown?money(Math.max(0,Number(x.safe.safe||0))):cloudStatus?"Not loaded":"Not available"}</b></div>
+        <div class="coach-compact-row"><span>Unassigned monthly plan</span><b>${planIncomeKnown?money(Math.max(0,Number(x.unassignedPlanCash||0))):cloudStatus?"Not loaded":"Not calculated"}</b></div>
         ${x.movable>0?`<div class="coach-compact-row"><span>Possible savings move</span><b>${esc(transferLabel)}</b></div>`:""}
         ${budgetCoachTransferIssues(x)}
         ${budgetCoachFutureBillsSection(x)}
