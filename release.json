@@ -1,6 +1,6 @@
 {
-  "build": "20261105-spirituality-money5",
+  "build": "20261105-wellsamazon1",
   "released": "2026-11-05",
-  "ui": "Added working scrollable Spirituality tabs and made missing Money account mappings display as not calculated instead of zero.",
+  "ui": "Wells Fargo closure follow-ups remain editable; confirmed closure and Prime payment account are recorded, and the next renewal date is labeled as an estimate.",
   "data_version": "No saved data format changes in this release."
 }
