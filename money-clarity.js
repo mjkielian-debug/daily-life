@@ -120,3 +120,35 @@ if(!document.getElementById("moneyClarityStyles")){const style=document.createEl
   return html;
  };
 })();
+/* Distinguish missing Money mappings from a real zero balance. */
+(function installMoneyAccountEmptyStates(){
+  const priorAccounts=window.moneyAccountsCard;
+  if(typeof priorAccounts==="function"){
+    window.moneyAccountsCard=function(){
+      let html=priorAccounts();
+      const local=Array.isArray(state.accounts)?state.accounts:[];
+      if(local.length)return html;
+      const linked=typeof cloudFinancialAccounts!=="undefined"&&Array.isArray(cloudFinancialAccounts)?cloudFinancialAccounts:[];
+      const cashLinked=linked.filter(a=>a.account_type==="depository"&&["checking","savings"].includes(String(a.account_subtype||"").toLowerCase())).length;
+      const note=cashLinked
+        ?'<div class="notice"><b>Synced accounts are available, but not mapped into Money yet.</b><div class="muted small">'+cashLinked+' checking or savings account(s) are connected. Review the list below and tap “Use in Money” only for accounts you still use; closed accounts stay out of your spending totals.</div></div>'
+        :'<div class="notice"><b>No Money accounts are set up yet.</b><div class="muted small">Add an account or connect and map a checking or savings account before using balance-based estimates.</div></div>';
+      return html.replace('<div class="notice">No accounts entered.</div>',note);
+    };
+  }
+  const priorSafeCard=window.safeToSpendCard;
+  if(typeof priorSafeCard==="function"){
+    window.safeToSpendCard=function(){
+      const local=Array.isArray(state.accounts)?state.accounts:[];
+      const cash=local.filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase()));
+      const known=cash.some(a=>a.balance!==null&&a.balance!==undefined&&a.balance!==""&&Number.isFinite(Number(a.balance)));
+      if(known)return priorSafeCard();
+      const linked=typeof cloudFinancialAccounts!=="undefined"&&Array.isArray(cloudFinancialAccounts)?cloudFinancialAccounts:[];
+      const cashLinked=linked.filter(a=>a.account_type==="depository"&&["checking","savings"].includes(String(a.account_subtype||"").toLowerCase())).length;
+      const detail=cashLinked
+        ?cashLinked+' synced checking or savings account(s) are not counted until you map the accounts you still use in Accounts.'
+        :'Add or map a checking or savings balance to calculate this. A missing balance should not look like $0.';
+      return '<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">Available now</div><h2>Not calculated</h2></div><span class="tag">needs account setup</span></div><p class="muted small">'+esc(detail)+'</p><button class="btn" type="button" onclick="openMoneyHubSection(\'accounts\')">Review Money accounts</button></div>';
+    };
+  }
+})();
