@@ -7407,25 +7407,26 @@ function budgetTabs(){
 }
 function budgetDetailedView(){
   const t=budgetTotals(),label=new Date(budgetMonth+"-01T12:00:00").toLocaleDateString("en-US",{month:"long",year:"numeric"}),
-        actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0};
+        actual=typeof cloudBudgetActuals==="function"?cloudBudgetActuals(budgetMonth):{income:0,outflow:0,imported:0,count:0},
+        cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"";
 
   const hero=`<div class="budget-hero"><div class="section-title"><div><div class="eyebrow">Budget</div><h1>${esc(label)}</h1><div class="muted small">Monthly cash plan · local-first.</div></div><button class="btn" onclick="setView('more')">Money</button></div>
     <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
     <div class="actions"><button class="btn primary" onclick="openBudgetIncome()">Edit income & benefits</button><button class="btn" onclick="openBudgetSpending()">+ Spending</button></div>
-    <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected cash income</div><div class="big">${budgetMoney(t.income)}</div></div>
-      <div class="metric"><div class="eyebrow">Known bills</div><div class="big">${budgetMoney(t.billTotal)}</div></div>
-      <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${budgetMoney(t.left)}</div><div class="muted small">Income − bills − category limits</div></div>
-      <div class="metric"><div class="eyebrow">Flexible / week</div><div class="big">${t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`${t.daysLeft} days remain including today.`:"View another month to plan ahead."}</div></div></div>
+    <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected cash income</div><div class="big">${cloudStatus?"Not loaded":t.plan.income===null?"Not entered":budgetMoney(t.income)}</div></div>
+      <div class="metric"><div class="eyebrow">Known bills</div><div class="big">${cloudStatus?"Not loaded":t.bills.length?budgetMoney(t.billTotal):"None recorded"}</div></div>
+      <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${cloudStatus?"Not loaded":t.plan.income===null?"Not calculated":budgetMoney(t.left)}</div><div class="muted small">Income − bills − category limits</div></div>
+      <div class="metric"><div class="eyebrow">Flexible / week</div><div class="big">${cloudStatus?"Not loaded":t.plan.income===null?"Not calculated":t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`${t.daysLeft} days remain including today.`:"View another month to plan ahead."}</div></div></div>
     ${t.plan.income===null?`<div class="notice">Enter expected cash income to begin. EBT does not increase cash available.</div>`:""}
     ${t.remaining<0?`<div class="warning">Cash plan shortfall: ${budgetMoney(-t.remaining)} after bills and logged spending.</div>`:""}
   </div>`;
 
-  const plan=`${typeof budgetCoachCard==="function"?budgetCoachCard():""}${budgetExpectedIncomeCard()}
+  const plan=`${typeof window.moneyCloudStatusNote==="function"?window.moneyCloudStatusNote():""}${typeof budgetCoachCard==="function"?budgetCoachCard():""}${budgetExpectedIncomeCard()}
     ${actual.count?`<div class="card"><div class="section-title"><h2>Bank-linked actuals</h2><span class="tag">posted transactions</span></div><div class="row"><span>Bank-identified income</span><b>${money(actual.income)}</b></div><div class="row"><span>All posted non-transfer outflows</span><b>${money(actual.outflow)}</b></div><div class="row"><span>Flexible spending imported</span><b>${money(actual.imported)}</b></div><p class="muted small">Income only counts transactions the provider classifies as income; refunds and transfers are not silently treated as earnings.</p></div>`:""}
     <div class="card"><div class="section-title"><div><h2>EBT / grocery benefit</h2><div class="muted small">Kept separate from cash.</div></div><button class="btn" onclick="openBudgetSpending('ebt')">Log EBT purchase</button></div>
-      <div class="row"><span>Starting balance / carryover</span><b>${t.plan.ebtStart===null?"Not entered":budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${t.plan.ebt===null?"Not entered":budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
-      ${t.plan.ebtStart===null&&t.plan.ebt===null?`<p class="muted small">Enter a starting balance and monthly benefit to calculate EBT availability.</p>`:`${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}`}
-      <div class="row"><span>${t.plan.ebtStart===null&&t.plan.ebt===null?"EBT available":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${t.plan.ebtStart===null&&t.plan.ebt===null?"Not calculated":budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
+      <div class="row"><span>Starting balance / carryover</span><b>${cloudStatus?"Not loaded":t.plan.ebtStart===null?"Not entered":budgetMoney(t.ebtStart)}</b></div><div class="row"><span>Monthly benefit</span><b>${cloudStatus?"Not loaded":t.plan.ebt===null?"Not entered":budgetMoney(t.ebt)}</b></div><div class="row"><span>Spent</span><b>${budgetMoney(t.ebtSpent)}</b></div>
+      ${t.plan.ebtStart===null&&t.plan.ebt===null?`<p class="muted small">${cloudStatus?"Sign in and sync your cloud copy to load benefit details.":"Enter a starting balance and monthly benefit to calculate EBT availability."}</p>`:`${budgetProgress(t.ebtSpent,t.ebtStart+t.ebt,"EBT spending")}`}
+      <div class="row"><span>${t.plan.ebtStart===null&&t.plan.ebt===null?"EBT available":"EBT available"}</span><b class="${t.ebtAvailable<0?"budget-negative":""}">${cloudStatus||t.plan.ebtStart===null&&t.plan.ebt===null?"Not calculated":budgetMoney(Math.abs(t.ebtAvailable))}</b></div>
       <p class="muted small">Available = starting carryover + monthly benefit − EBT spending.</p>
     </div>`;
 
@@ -8311,11 +8312,12 @@ function expectedIncomeTotalBefore(date){
 }
 function budgetExpectedIncomeCard(month=budgetMonth){
   const today=ymd(),start=month+"-01",[year,mo]=month.split("-").map(Number),end=ymd(new Date(year,mo,0,12)),
+        cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"",
         from=month===today.slice(0,7)?today:start,rows=month<today.slice(0,7)?[]:expectedIncomeWindow(from,end),
         total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0),current=month===today.slice(0,7),
         rowHtml=x=>{const a=state.accounts.find(a=>a.key===x.accountKey);return `<button class="budget-income-row" onclick="openExpectedIncome('${x.sourceId}')"><span><b>${esc(x.name)}</b><small>${esc(dl(x.date))} · ${esc(a?.name||"account needed")}${x.confidence==="estimate"?" · estimate":""}</small></span><b>+${money(x.amount)}</b></button>`};
   return `<div class="card budget-income-compact">
-    <div class="section-title"><div><div class="eyebrow">${current?"Expected before month-end":"Expected this month"}</div><h2>${rows.length?money(total):"Not entered"}</h2><div class="muted small">${rows.length?rows.length+" upcoming deposit"+(rows.length===1?"":"s"):"No expected cash deposits saved"} · kept separate from the monthly budget total</div></div><button class="btn" onclick="closeModal();setView('more');openMoneyHubSection('income')">Income</button></div>
+    <div class="section-title"><div><div class="eyebrow">${current?"Expected before month-end":"Expected this month"}</div><h2>${rows.length?money(total):cloudStatus?"Not loaded":"Not entered"}</h2><div class="muted small">${rows.length?rows.length+" upcoming deposit"+(rows.length===1?"":"s"):cloudStatus?"Cloud copy not included":"No expected cash deposits saved"} · kept separate from the monthly budget total</div></div><button class="btn" onclick="closeModal();setView('more');openMoneyHubSection('income')">Income</button></div>
     ${rows.length?rows.slice(0,3).map(rowHtml).join(""):`<div class="notice">No expected income scheduled.</div>`}
     ${rows.length>3?`<details class="compact-more"><summary>Show ${rows.length-3} more</summary>${rows.slice(3).map(rowHtml).join("")}</details>`:""}
   </div>`;
