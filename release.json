@@ -1,6 +1,6 @@
 {
-  "build": "20261104-deliverywindow2",
-  "released": "2026-11-04",
-  "ui": "Upcoming package visibility, weekly and monthly sleep/work summaries, and Spirituality journal controls.",
+  "build": "20261105-budget-values4",
+  "released": "2026-11-05",
+  "ui": "Corrected Money unknown states, clarified cloud sync status, and refreshed Spirituality + Money page labels.",
   "data_version": "No saved data format changes in this release."
 }
