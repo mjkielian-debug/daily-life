@@ -51,6 +51,22 @@
   };
   const baseAutoTaskBlocks = itineraryAutoTaskBlocks;
   itineraryAutoTaskBlocks = function(date, baseItems){
+    // Pin backpack checks after pickup every school weekday. The persisted
+    // reminder list can lag behind task preferences, so repair both sources.
+    const weekday = new Date(String(date) + "T12:00:00").getDay();
+    let backpackChanged = false;
+    if(weekday >= 1 && weekday <= 5){
+      for(const task of state.tasks || []){
+        if(String(task.date || "") !== String(date) || task.done || task.paused ||
+           !/check kids['’]? backpacks/i.test(String(task.title || ""))) continue;
+        if(task.itineraryPreference !== "after-school"){ task.itineraryPreference = "after-school"; backpackChanged = true; }
+        if(task.itineraryStart !== "15:15"){ task.itineraryStart = "15:15"; backpackChanged = true; }
+        if(Number(task.itineraryMinutes) !== 15){ task.itineraryMinutes = 15; backpackChanged = true; }
+        const notes = "Check each book bag after the kids get home from school. Do not check backpacks while they are at school.";
+        if(task.notes !== notes){ task.notes = notes; backpackChanged = true; }
+      }
+    }
+    if(backpackChanged && typeof save === "function") Promise.resolve(save()).catch(()=>{});
     const returnAnchor = (typeof itineraryFixedItems === "function" ? itineraryFixedItems(date) : [])
       .filter(x => /kids? home from dad|kids? return home|home from dad/i.test(String(x.title || "")))
       .map(x => hmMinutes(x.start)).filter(x => x !== null).sort((a,b)=>a-b)[0];
@@ -345,6 +361,14 @@
         if(/sunday litter reset/i.test(title)){
           const weekday=date?new Date(date+"T12:00:00").getDay():-1;
           if(weekday!==0){changed=true;continue}
+        }
+        if(/check kids['’]? backpacks/i.test(title) && date >= today){
+          const weekday=date?new Date(date+"T12:00:00").getDay():-1;
+          const start=hmMinutes(item.start);
+          if(weekday>=1&&weekday<=5&&(start===null||start<15*60+15)){
+            item.start="15:15";
+            changed=true;
+          }
         }
         if(/dolly/i.test(title)&&/math|homework|assignment|practice/i.test(title)){
           const assignment=(state.schoolAssignments||[]).find(a=>
