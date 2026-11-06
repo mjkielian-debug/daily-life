@@ -1,4 +1,5 @@
-const CACHE_NAME="daily-life-shell-20261106-backpackafterpickup2";
+const CACHE_VERSION=new URL(self.location.href).searchParams.get("v")||"unversioned";
+const CACHE_NAME="daily-life-shell-"+CACHE_VERSION;
 const APP_SHELL=[
   "./",
   "./index.html",

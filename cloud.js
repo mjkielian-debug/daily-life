@@ -807,6 +807,27 @@ async function cloudPrepareAutoSync(){
 
 async function cloudPushSnapshotInternal(forceOverwrite=false){
   if(cloudRecoveryRequired)throw new Error("Previous Daily Life data needs recovery. Cloud upload is paused to protect your earlier backup.");
+  // Reject writes from a stale cached app so old phone data cannot replace a newer cloud snapshot.
+  try{
+    const releaseUrl=new URL("release.json",location.href);
+    releaseUrl.searchParams.set("_",String(Date.now()));
+    const releaseResponse=await fetch(releaseUrl,{cache:"no-store",headers:{"Cache-Control":"no-cache"}});
+    if(!releaseResponse.ok)throw new Error("Could not verify the current app release.");
+    const published=await releaseResponse.json();
+    if(!published?.build||published.build!==DAILY_LIFE_BUILD){
+      cloudAutoCanPush=false;
+      cloudNeedsReview=true;
+      cloudError="This device is running an older Daily Life version. Update the app before syncing so an old schedule cannot replace the current one.";
+      if(typeof render==="function")render();
+      throw new Error(cloudError);
+    }
+  }catch(error){
+    if(error?.message?.includes("older Daily Life version"))throw error;
+    cloudAutoCanPush=false;
+    cloudError="Could not verify the current Daily Life version. Your changes are saved on this device; cloud sync is paused until the release can be checked.";
+    if(typeof render==="function")render();
+    throw new Error(cloudError);
+  }
   const user=cloudUser();if(!user||!cloudClient)return false;
   if(!forceOverwrite){
     const {data,error}=await cloudClient.from("app_snapshots")
