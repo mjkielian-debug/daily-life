@@ -8468,7 +8468,8 @@ function syncBillRepeatFrequency(){
 function billRowView(r){
   const b=r.bill,paid=b.status==="paid",pendingPayment=paid&&b.paymentPending===true,bankMatched=paid&&b.paidSource==="bank",tone=["Covered now","Covered by due date"].includes(r.status)?"covered":r.status==="Projected short"?"short":r.status==="Transfer needed"?"transfer":"unknown";
   let note="";
-  if(r.currentAfter!==undefined){
+  if(b.paymentReviewRequired)note=b.paymentReviewReason||"A bank match needs review before this bill can be treated as paid.";
+  else if(r.currentAfter!==undefined){
     if(r.status==="Covered now")note=`${money(r.currentBefore/100)} available now before this bill · ${money(r.currentAfter/100)} left after reserving it now.`;
     else if(r.status==="Covered by due date")note=`${money(r.currentBefore/100)} available now · +${money(r.projectedIncome/100)} expected into ${r.account?.name||"this account"} by ${dl(b.due)} · ${money(r.projectedAfter/100)} projected left after the bill.`;
     else if(r.status==="Transfer needed")note=`${transferInstruction(r)} by ${dl(b.due)}. After reserving that transfer and bills due through this date, ${money(Math.max(0,r.globalProjectedAfter)/100)} of additional transferable capacity is projected to remain.`;
@@ -8505,6 +8506,7 @@ function openBill(index=-1,sourceIndex=-1){
   const paid=existing?.status==="paid",pendingPayment=paid&&existing?.paymentPending===true,bankMatched=paid&&existing?.paidSource==="bank";
   const accountOptions=state.accounts.filter(a=>a.key&&(!a.avoidNewBills||a.key===b.paymentAccountKey||a.key===b.desiredAccountKey)).sort((a,b)=>accountSortForBills(a)-accountSortForBills(b)||String(a.name||"").localeCompare(String(b.name||""))),missing=b.paymentAccountKey&&!accountOptions.some(a=>a.key===b.paymentAccountKey),desiredMissing=b.desiredAccountKey&&!accountOptions.some(a=>a.key===b.desiredAccountKey);
   modal(pendingPayment?"Edit payment pending":paid?"Edit paid bill":existing?"Edit bill":source?"Create next bill":"Add bill",`
+  ${existing?.paymentReviewRequired?`<div class="warning"><b>Payment needs review</b><div>${esc(existing.paymentReviewReason||"The bank match was not verified as this bill payment.")}</div></div>`:""}
   ${pendingPayment?`<p class="notice">This payment is still pending at the bank. It is not being reserved again because it is already reflected in available cash.</p>`:bankMatched?`<div class="notice bank-match-notice"><b>Matched from your bank</b><div class="muted small">${existing?.paidDate?"Posted "+esc(dl(existing.paidDate)):""}${existing?.paidMerchant?" · "+esc(existing.paidMerchant):""}${Number.isFinite(Number(existing?.paidAmount))?" · "+money(existing.paidAmount):""}</div><button class="btn small" type="button" onclick="undoBankBillMatch('${existing.id}')">This is not this bill</button></div>`:paid?`<p class="notice">You are editing a past payment. To record a future payment without changing this history, close this window and use Create next bill.</p>`:""}
   <div class="stack"><label>Bill name<input id="bn" required maxlength="200" value="${esc(b.name)}"></label><label>Amount<input id="ba" type="number" inputmode="decimal" min="0" max="999999999" step=".01" required value="${esc(b.amount??"")}"></label>
   <div><label for="bd">Due date</label><div class="bill-date-control"><input id="bd" type="date" required value="${esc(b.due)}"><button class="btn" type="button" onclick="pickBillDate()" aria-label="Choose bill due date">Choose date</button></div></div>
@@ -8556,6 +8558,7 @@ async function toggleBill(id,paid){
   if(!paid&&x.paidSource==="bank"){await undoBankBillMatch(id,true);return}
   const before=structuredClone(state.bills);x.status=paid?"paid":"upcoming";
   if(!paid){x.paymentPending=false;delete x.paidByBankTransactionId;delete x.paidSource;delete x.paidDate;delete x.paidAmount;delete x.paidMerchant}
+  if(paid){delete x.paymentReviewRequired;delete x.paymentReviewReason}
   if(paid&&billRepeat(x))appendNextBill(x);
   try{await save();render()}catch(error){state.bills=before;render();alert("Could not save this payment on this device. Please try again.")}
 }
