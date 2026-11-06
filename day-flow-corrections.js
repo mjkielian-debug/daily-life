@@ -51,26 +51,33 @@
   };
   const baseAutoTaskBlocks = itineraryAutoTaskBlocks;
   itineraryAutoTaskBlocks = function(date, baseItems){
-    // Pin backpack checks after pickup every school weekday. The persisted
-    // reminder list can lag behind task preferences, so repair both sources.
     const weekday = new Date(String(date) + "T12:00:00").getDay();
+    const backpacks = weekday >= 1 && weekday <= 5
+      ? itineraryTaskCandidates(date).filter(task => !task.done && !task.paused && /check kids['’]? backpacks/i.test(String(task.title || "")))
+      : [];
+    const originalTasks = state.tasks || [];
+    const backpackIds = new Set(backpacks.map(task => String(task.id)));
     let backpackChanged = false;
-    if(weekday >= 1 && weekday <= 5){
-      for(const task of state.tasks || []){
-        if(String(task.date || "") !== String(date) || task.done || task.paused ||
-           !/check kids['’]? backpacks/i.test(String(task.title || ""))) continue;
-        if(task.itineraryPreference !== "after-school"){ task.itineraryPreference = "after-school"; backpackChanged = true; }
-        if(task.itineraryStart !== "15:15"){ task.itineraryStart = "15:15"; backpackChanged = true; }
-        if(Number(task.itineraryMinutes) !== 15){ task.itineraryMinutes = 15; backpackChanged = true; }
-        const notes = "Check each book bag after the kids get home from school. Do not check backpacks while they are at school.";
-        if(task.notes !== notes){ task.notes = notes; backpackChanged = true; }
-      }
+    for(const candidate of backpacks){
+      const task = originalTasks.find(row => String(row.id) === String(candidate.id));
+      if(!task) continue;
+      if(task.itineraryPreference !== "after-school"){ task.itineraryPreference = "after-school"; backpackChanged = true; }
+      if(task.itineraryStart !== ""){ task.itineraryStart = ""; backpackChanged = true; }
+      if(Number(task.itineraryMinutes) !== 15){ task.itineraryMinutes = 15; backpackChanged = true; }
+      const notes = "Check each book bag after the kids get home from school. Do not check backpacks while they are at school.";
+      if(task.notes !== notes){ task.notes = notes; backpackChanged = true; }
     }
-    if(backpackChanged && typeof save === "function") Promise.resolve(save()).catch(()=>{});
+    const latestPickup = (typeof itineraryFixedItems === "function" ? itineraryFixedItems(date) : [])
+      .filter(item => /^pick\s*up\b|^school pickup\b|^kids? (?:return|home from school)\b/i.test(String(item.title || "")))
+      .map(item => hmMinutes(item.start)).filter(value => value !== null)
+      .reduce((latest, value) => Math.max(latest, value), 0);
+    const minimumStart = Math.max(15 * 60 + 15, latestPickup ? latestPickup + 15 : 0);
+    const firstAfterPickup = Math.ceil(minimumStart / 5) * 5;
+    if(backpackIds.size) state.tasks = originalTasks.filter(task => !backpackIds.has(String(task.id)));
     const returnAnchor = (typeof itineraryFixedItems === "function" ? itineraryFixedItems(date) : [])
       .filter(x => /kids? home from dad|kids? return home|home from dad/i.test(String(x.title || "")))
       .map(x => hmMinutes(x.start)).filter(x => x !== null).sort((a,b)=>a-b)[0];
-    return baseAutoTaskBlocks(date, baseItems).filter(item => {
+    let scheduled = baseAutoTaskBlocks(date, baseItems).filter(item => {
       const task = item.sourceId && (state.tasks || []).find(t => String(t.id) === String(item.sourceId));
       const category = String(task?.category || "").toLowerCase();
       const titleAndDetail = String(item.title || "") + " " + String(item.detail || "") + " " + String(task?.child || "");
@@ -80,6 +87,37 @@
       if(returnAnchor !== undefined && start !== null && start < returnAnchor && childMention) return false;
       return !isSchool || date <= ymd() || !!task?.itineraryStart;
     });
+    if(backpackIds.size) state.tasks = originalTasks;
+    for(const candidate of backpacks){
+      const task = originalTasks.find(row => String(row.id) === String(candidate.id)) || candidate;
+      const minutes = 15;
+      let chosen = null;
+      for(let start = firstAfterPickup; start + minutes <= 18 * 60 + 30; start += 5){
+        const occupied = [...(baseItems || []), ...scheduled].filter(item => !item.nonBlocking && item.kind !== "gap");
+        const conflict = occupied.some(item => {
+          const s = hmMinutes(item.start);
+          if(s === null) return false;
+          const end = hmMinutes(item.end);
+          const e = end !== null && end > s ? end : s + Math.max(15, Number(item.durationMinutes || 15));
+          return start < e && start + minutes > s;
+        });
+        if(!conflict){ chosen = start; break; }
+      }
+      if(chosen === null){
+        if(task.date === date && task.itineraryStart !== ""){ task.itineraryStart = ""; backpackChanged = true; }
+        continue;
+      }
+      if(task.date === date && task.itineraryStart !== minutesHm(chosen)){ task.itineraryStart = minutesHm(chosen); backpackChanged = true; }
+      scheduled.push({
+        id:"task:"+String(task.id), start:minutesHm(chosen), end:minutesHm(chosen+minutes),
+        title:typeof taskDisplayTitle === "function" ? taskDisplayTitle(task) : String(task.title || "Check kids' backpacks"),
+        detail:String(task.notes || "Check backpacks after the kids are home from school."),
+        fixed:false, kind:"task", icon:"✓", source:"task", sourceId:task.id,
+        durationMinutes:minutes, done:!!task.done, autoPlanned:true, carriedForward:String(task.date || "") < String(date)
+      });
+    }
+    if(backpackChanged && typeof save === "function") Promise.resolve(save()).catch(()=>{});
+    return scheduled;
   };
   const baseOverlayFinished = dayFlowOverlayFinished;
   dayFlowOverlayFinished = function(date, rows){
