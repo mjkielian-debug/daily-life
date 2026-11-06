@@ -144,8 +144,10 @@ function cloudFinancePanel(){
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
     const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id),strategy=cloudFinanceStrategy(r);
-    const fresh=r.balance_as_of||c.last_synced_at;
-    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")}${fresh?` · synced ${esc(new Date(fresh).toLocaleString())}`:""}</div>${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
+    const balanceDate=r.balance_as_of?new Date(r.balance_as_of):null,linkDate=c.last_synced_at?new Date(c.last_synced_at):null,
+      balanceLabel=balanceDate?"balance as of "+balanceDate.toLocaleDateString():"balance date unavailable",
+      linkLabel=linkDate?"connection checked "+linkDate.toLocaleDateString():"connection date unavailable";
+    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")} · ${esc(balanceLabel)} · ${esc(linkLabel)}</div>${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
   }).join(""):`<div class="notice">No financial accounts connected yet.</div>`}</div>`;
 }
 
