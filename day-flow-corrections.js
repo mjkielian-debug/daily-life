@@ -328,6 +328,43 @@
     }
     return rows.sort((a,b) => (hmMinutes(a.start) ?? 0) - (hmMinutes(b.start) ?? 0));
   };
+
+  // SSD driving days continue directly from preload; do not place home/school work in the route day.
+  const ssdDeliveryForDate=date=>(state.events||[]).find(e=>e.date===date&&!["cancelled","paused"].includes(String(e.status||""))&&/SSD driver delivery/i.test(String(e.title||"")));
+  const baseSSDContextItems=itineraryContextItems;
+  itineraryContextItems=function(date){
+    const rows=baseSSDContextItems(date),delivery=ssdDeliveryForDate(date);
+    if(!delivery)return rows;
+    return rows.map(item=>item.id==="context:tanner-home:"+date
+      ?{...item,detail:"Tanner handles the kids’ school-morning coverage while you are at UPS, then you go directly to SSD driver delivery."}
+      :item);
+  };
+  const baseSSDSuggestedBlocks=itinerarySuggestedBlocks;
+  itinerarySuggestedBlocks=function(date){
+    const rows=baseSSDSuggestedBlocks(date),delivery=ssdDeliveryForDate(date);
+    if(!delivery)return rows;
+    const work=typeof workForDate==="function"?workForDate(date):null;
+    const workEnd=hmMinutes(work?.end),routeStart=hmMinutes(delivery.startTime);
+    return rows.filter(item=>{
+      const key=String(item.templateKey||""),text=String(item.title||"")+" "+String(item.detail||"");
+      if(key==="after-work"||/home from UPS|kitchen counter|entryway reset|check grades|school paperwork/i.test(text))return false;
+      if(/^water-[123]$/.test(key))return true;
+      const start=hmMinutes(item.start);
+      return !(workEnd!==null&&routeStart!==null&&start!==null&&start>=workEnd&&start<routeStart);
+    });
+  };
+  const baseSSDTaskBlocks=itineraryAutoTaskBlocks;
+  itineraryAutoTaskBlocks=function(date,baseItems){
+    const rows=baseSSDTaskBlocks(date,baseItems),delivery=ssdDeliveryForDate(date);
+    if(!delivery)return rows;
+    return rows.filter(item=>{
+      if(!item.autoPlanned)return true;
+      const task=item.sourceId&&(state.tasks||[]).find(t=>String(t.id)===String(item.sourceId));
+      if(!task)return true;
+      const category=String(task.category||"").toLowerCase(),text=String(task.title||"")+" "+String(task.notes||"");
+      return category!=="home"&&category!=="school"&&!/check grades|school paperwork|kitchen counter|entryway reset/i.test(text);
+    });
+  };
 })();
 
 /* Household schedule corrections: prevent stale carryovers and keep Dolly's
