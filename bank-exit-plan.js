@@ -37,14 +37,14 @@ window.openBankExitPlan=function(id=""){
  activePlanId=x.id;
  const subStatus=String(x.subscriptionStatus||"decision_pending"),isCancelled=["cancelled","not_renewing"].includes(subStatus),
    isClosed=x.status==="closed";
- const button=(key,label,done)=>'<button type="button" class="'+(done?'done':'')+'" onclick="bankExitMark(\''+key+'\')">'+(done?'✓ ':'○ ')+escText(label)+'</button>';
+ const checkbox=(key,label,done)=>'<label class="bank-exit-check'+(done?' is-done':'')+'"><input type="checkbox" '+(done?'checked':'')+' onchange="bankExitToggle(\''+key+'\',this.checked)"><span>'+escText(label)+'</span></label>';
  const steps='<div class="bank-exit-steps">'+
-  button("review-renewal",x.renewalName?("Renewal decision: "+x.renewalName):"Review linked subscriptions",isCancelled)+
-  button("check-autopays","Review autopays and recurring withdrawals",!!x.autopaysReviewed)+
-  button("check-deposits","Review direct deposits and incoming payments",!!x.depositsReviewed)+
-  button("check-pending","Check pending transactions and any overdrafts",!!x.pendingReviewed)+
-  button("check-savings","Confirm whether linked savings also needs closing",!!x.savingsReviewed)+
-  button("closed","Mark bank account closed only after bank confirmation",isClosed)+'</div>';
+  '<div class="bank-exit-renewal"><b>Renewal decision: '+escText(x.renewalName||"linked subscriptions")+'</b><small>'+(subStatus==="renewing"?'You chose to keep the renewal.':(isCancelled?'Cancellation recorded; verify it in your account.':'Choose whether to keep or cancel.'))+'</small><div class="bank-exit-renewal-actions"><button type="button" onclick="bankExitRecordRenewal(\'keep\')">Keep '+escText(x.renewalName||"subscription")+'</button><button type="button" onclick="bankExitRecordRenewal(\'cancelled\')">I canceled it</button></div></div>'+
+  checkbox("check-autopays","Review autopays and recurring withdrawals",!!x.autopaysReviewed)+
+  checkbox("check-deposits","Review direct deposits and incoming payments",!!x.depositsReviewed)+
+  checkbox("check-pending","Check pending transactions and any overdrafts",!!x.pendingReviewed)+
+  checkbox("check-savings","Confirm whether linked savings also needs closing",!!x.savingsReviewed)+
+  '<button type="button" class="bank-exit-close-check'+(isClosed?' done':'')+'" onclick="bankExitMark(\'closed\')">'+(isClosed?'✓ ':'○ ')+'Mark bank account closed only after bank confirmation</button></div>';
  const closedStatus=isClosed
   ?'<div class="notice"><b>Confirmed closed</b><div class="muted small">' + escText(x.institution) + ' confirmed deposit account ending '+escText(x.closedAccountLast4||"the account previously listed")+' closed on '+escText(x.closureEffectiveDate||"2026-11-02")+'. The linked savings account is separate and is not marked closed.</div></div>'
   :'<p><b>Priority:</b> resolve before '+escText(x.renewalDate||"next withdrawal")+'. No account has been closed through this app.</p>';
@@ -57,6 +57,15 @@ window.openBankExitPlan=function(id=""){
  '<div class="bank-exit-view">'+closedStatus+renewalStatus+steps+savingsNote+
  '<p class="bank-exit-note">'+(isClosed?'Checking the remaining items records follow-up review only; it does not close the separate savings account or change the subscription.':'Close checking and savings only after you verify deposits, linked payments, posted transactions, and any minimum balance or bank requirements. A credit card at the same bank is a separate account.')+'</p></div>',
  "Close",closeModal);
+};
+window.bankExitToggle=async function(action,checked){
+ const x=plans().find(p=>p.id===activePlanId)||current();if(!x)return;
+ const key={"check-autopays":"autopaysReviewed","check-deposits":"depositsReviewed",
+   "check-pending":"pendingReviewed","check-savings":"savingsReviewed"}[action];
+ if(!key)return;
+ x[key]=!!checked;
+ if(key==="savingsReviewed")x.savingsReviewedAt=x[key]?new Date().toISOString():"";
+ x.updatedAt=new Date().toISOString();await save();render();window.openBankExitPlan(x.id);
 };
 window.bankExitMark=async function(action){
  const x=plans().find(p=>p.id===activePlanId)||current();if(!x)return;
