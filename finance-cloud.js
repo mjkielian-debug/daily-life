@@ -325,12 +325,17 @@ function bankTransactionReviewFor(t){
   return (transactionId&&reviews[transactionId])||(pendingId&&reviews[pendingId])||null;
 }
 
+function bankTransactionIsGenericAccountFee(t){
+  const description=String((t?.merchant_name||"")+" "+(t?.name||""));
+  return /\b(?:monthly\s+)?(?:service|maintenance|overdraft|returned\s+item|minimum\s+balance|account)\s+fee\b/i.test(description);
+}
+
 function bankBillReviewCandidates(t){
   const review=bankTransactionReviewFor(t),
         amount=Number(t?.provider_amount||0),
         posted=new Date(String(t?.posted_date||"")+"T12:00:00");
   if(review?.action==="not_bill"||review?.action==="ignored"||!Number.isFinite(amount)||amount<=0||isNaN(posted))return[];
-  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
+  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||""))),genericAccountFee=bankTransactionIsGenericAccountFee(t);
   return (state.bills||[]).filter(b=>billForecastIncluded(b)).map(b=>{
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
     if((b.status==="paid"&&!awaitingPost)||!b.due)return null;
@@ -348,6 +353,7 @@ function bankBillReviewCandidates(t){
           allowedDiff=flexibleAmount?Math.max(10,billAmount*.12):Math.max(3,billAmount*.03),
           exactAmount=amountDiff<=.01;
     if(!exactAmount&&amountDiff>allowedDiff)return null;
+    if(genericAccountFee&&!nameMatch)return null;
     const days=Math.abs(signedDays),
           amountScore=exactAmount?6:Math.max(1,4-(amountDiff/Math.max(1,allowedDiff))*3),
           score=(accountMatch?8:0)+(nameMatch?6:0)+amountScore+Math.max(0,4-days/3)-(accountConflict?5:0);
@@ -364,7 +370,7 @@ function bankBillMatch(t){
         amount=Number(t.provider_amount||0),posted=new Date(String(t.posted_date||"")+"T12:00:00");
   if(reviewedBill&&!(reviewedBill.status==="paid"&&!reviewedBill.paymentPending))return reviewedBill;
   if(rejected||!Number.isFinite(amount)||amount<=0||isNaN(posted))return null;
-  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||"")));
+  const words=new Set(normalizeBillWords((t.merchant_name||"")+" "+(t.name||""))),genericAccountFee=bankTransactionIsGenericAccountFee(t);
   const candidates=(state.bills||[]).filter(b=>{
     if(!billForecastIncluded(b))return false;
     const awaitingPost=b.status==="paid"&&b.paymentPending===true;
@@ -378,6 +384,8 @@ function bankBillMatch(t){
     if(signedDays < -14 || signedDays > 10)return false;
     const local=(state.accounts||[]).find(a=>a.key&&a.key===b.paymentAccountKey);
     if(local?.cloudAccountId&&String(local.cloudAccountId)!==String(t.account_id||""))return false;
+    const nameMatch=normalizeBillWords(b.name).some(w=>words.has(w));
+    if(genericAccountFee&&!nameMatch)return false;
     return true;
   });
   if(!candidates.length)return null;
