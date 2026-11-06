@@ -30,7 +30,8 @@ function moneyRecurringChargeSuggestions(){
   if(!latestDate||latestDate>today)continue;
   const nextDate=new Date(latestDate+"T12:00:00");nextDate.setDate(nextDate.getDate()+gap);
   const account=typeof cloudFinancialAccounts!=="undefined"&&Array.isArray(cloudFinancialAccounts)?cloudFinancialAccounts.find(a=>String(a.id)===String(latest.account_id||"")):null;
-  out.push({name:String(latest.merchant_name||latest.name||"Recurring charge"),count:rows.length,amount:Number(latest.provider_amount||0),latestDate,nextDate:ymd(nextDate),account:account?[account.display_name,account.mask?"••••"+account.mask:""].filter(Boolean).join(" "):"linked account"});
+  const scheduledDate=new Date(latestDate+"T12:00:00"),scheduledDay=scheduledDate.getDate();scheduledDate.setDate(1);scheduledDate.setMonth(scheduledDate.getMonth()+1);scheduledDate.setDate(Math.min(scheduledDay,new Date(scheduledDate.getFullYear(),scheduledDate.getMonth()+1,0,12).getDate()));
+  out.push({name:String(latest.merchant_name||latest.name||"Recurring charge"),count:rows.length,amount:Number(latest.provider_amount||0),latestDate,nextDate:ymd(scheduledDate),account:account?(account.display_name||(account.account_subtype||"account")+(account.mask?" ••••"+account.mask:"")):"linked account"});
  }
  return out.sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).slice(0,5);
 }
