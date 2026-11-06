@@ -24,21 +24,20 @@ function moneyRecurringChargeSuggestions(){
   }
   const sorted=gaps.slice().sort((a,b)=>a-b),gap=sorted[Math.floor(sorted.length/2)]||0;
   if(gap<27||gap>34||gaps.some(x=>x<24||x>38))continue;
-  const amounts=rows.map(x=>Number(x.provider_amount||0)),low=Math.min(...amounts),high=Math.max(...amounts);
-  if(high-low>Math.max(4,high*.25))continue;
+  const amounts=rows.map(x=>Number(x.provider_amount||0)),low=Math.min(...amounts),high=Math.max(...amounts),variable=high-low>Math.max(4,high*.25);
   const latest=rows[rows.length-1],latestDate=String(latest.posted_date||"");
   const age=Math.round((new Date(today+"T12:00:00")-new Date(latestDate+"T12:00:00"))/86400000);if(!latestDate||latestDate>today||age>45)continue;
   const account=typeof cloudFinancialAccounts!=="undefined"&&Array.isArray(cloudFinancialAccounts)?cloudFinancialAccounts.find(a=>String(a.id)===String(latest.account_id||"")):null;
   const scheduledDate=new Date(latestDate+"T12:00:00"),scheduledDay=scheduledDate.getDate();scheduledDate.setDate(1);scheduledDate.setMonth(scheduledDate.getMonth()+1);scheduledDate.setDate(Math.min(scheduledDay,new Date(scheduledDate.getFullYear(),scheduledDate.getMonth()+1,0,12).getDate()));
-  out.push({name:String(latest.merchant_name||latest.name||"Recurring charge"),count:rows.length,amount:Number(latest.provider_amount||0),latestDate,nextDate:ymd(scheduledDate),account:account?(account.display_name||(account.account_subtype||"account")+(account.mask?" ••••"+account.mask:"")):"linked account"});
+  out.push({name:String(latest.merchant_name||latest.name||"Recurring payment"),count:rows.length,amount:Number(latest.provider_amount||0),low,high,variable,latestDate,nextDate:ymd(scheduledDate),account:account?(account.display_name||(account.account_subtype||"account")+(account.mask?" ••••"+account.mask:"")):"linked account"});
  }
  return out.sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).slice(0,5);
 }
 function moneyRecurringChargeCard(){
  const rows=moneyRecurringChargeSuggestions();if(!rows.length)return "";
- return '<div class="card money-recurring-charge-card"><div class="section-title"><div><div class="eyebrow">From posted bank history</div><h2>Possible monthly charges</h2></div><span class="tag">estimate</span></div>'+
- rows.map(x=>'<div class="row"><span><b>'+esc(x.name)+' · latest '+esc(money(x.amount))+'</b><div class="muted small">'+x.count+' similar charges · last '+esc(dl(x.latestDate))+' · '+esc(x.account)+'</div></span><b>~'+esc(dl(x.nextDate))+'</b></div>').join("")+
- '<p class="muted small">These patterns are estimates, not confirmed subscriptions. They are not included in saved bill totals or cash forecasts.</p></div>';
+ return '<div class="card money-recurring-charge-card"><div class="section-title"><div><div class="eyebrow">From posted bank history</div><h2>Possible monthly payments</h2></div><span class="tag">estimate</span></div>'+
+ rows.map(x=>'<div class="row"><span><b>'+esc(x.name)+' · latest '+esc(money(x.amount))+'</b><div class="muted small">'+x.count+' monthly payments · last '+esc(dl(x.latestDate))+' · '+esc(x.account)+(x.variable?' · observed range '+esc(money(x.low))+'–'+esc(money(x.high)):'')+'</div></span><b>~'+esc(dl(x.nextDate))+'</b></div>').join("")+
+ '<p class="muted small">Patterns and next dates are estimated from posted transactions. These are not confirmed bills and are excluded from bill totals and cash forecasts.</p></div>';
 }
 function moneyInsightCard(){
  const today=ymd(),end=new Date(today+"T12:00:00");end.setDate(end.getDate()+30);
