@@ -1,6 +1,6 @@
 {
-  "build": "20261106-moneyvisibility1",
+  "build": "20261106-wfclosed1",
   "released": "2026-11-06",
-  "ui": "SSD delivery is shown 10:30 AM–2:30 PM Monday–Saturday through Dec 26; backpack checks are limited to weekdays after school. Cleared project actions stay cleared, sync conflicts pause automatic overwrites for review, the Money account-exit checklist now uses working tap controls, Spirituality shortcuts keep consistent full-page navigation, and Money distinguishes linked accounts from budget-mapped accounts and separates balance dates from connection sync dates.",
+  "ui": "SSD delivery is shown 10:30 AM–2:30 PM Monday–Saturday through Dec 26; backpack checks are limited to weekdays after school. Cleared project actions stay cleared, sync conflicts pause automatic overwrites for review, the Money account-exit checklist now uses working tap controls, Spirituality shortcuts keep consistent full-page navigation, and Money distinguishes linked accounts from budget-mapped accounts and separates balance dates from connection sync dates, and blocks confirmed-closed checking from available-cash mapping.",
   "data_version": "No saved data format changes in this release."
 }
