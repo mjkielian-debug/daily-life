@@ -98,9 +98,11 @@ async function revealTarot(date){
 }
 function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
 async function toggleSpiritualPractice(key){
+ const allowed=["reading","tarot","stillness","ritual"];if(!allowed.includes(key))return;
  state.spiritualityPracticeLogs=state.spiritualityPracticeLogs||[];
- let x=spiritualityLogFor();if(!x){x={id:uid(),date:ymd(),reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(x)}
- x[key]=!x[key];await save();render()
+ let x=spiritualityLogFor(),created=false;if(!x){x={id:uid(),date:ymd(),reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(x);created=true}
+ const before=!!x[key];x[key]=!before;
+ try{await save();render()}catch(error){if(created)state.spiritualityPracticeLogs=state.spiritualityPracticeLogs.filter(v=>v!==x);else x[key]=before;alert("Daily Life could not save this practice on this device. The change was undone; please try again.");render()}
 }
 function setSpiritualityTab(tab){
  if(!["today","tarot","rituals","journal"].includes(tab))tab="today";
@@ -139,11 +141,11 @@ function openSpiritualJournal(type,entryId=""){
  const entry=(state.spiritualityJournal||[]).find(v=>v.id===entryId)||null,selectedType=entry?.type||type||"Reflection",
        date=entry?.date||ymd(),note=entry?.note||entry?.question||entry?.text||"";
  const opts=["Reflection","Gratitude","Intention","Ritual","Dream","Question"].map(v=>'<option '+(v===selectedType?"selected":"")+'>'+v+'</option>').join("");
- modal(entry?"Edit spiritual journal":"Spiritual journal",'<div class="stack"><div class="grid2"><label>Date<input id="sjDate" type="date" value="'+esc(date)+'"></label><label>Type<select id="sjType">'+opts+'</select></label></div><label>Entry<textarea id="sjNote" rows="7" placeholder="Write what you want to remember, question, or explore.">'+esc(note)+'</textarea></label>'+(entry?'<button type="button" class="btn danger" data-spiritual-delete="'+esc(entry.id)+'">Delete this entry</button>':"")+'</div>',"Save",async()=>{const text=$("#sjNote").value.trim();if(!text)return;const fields={date:$("#sjDate").value||ymd(),type:$("#sjType").value,note:text};if(entry)Object.assign(entry,fields);else{state.spiritualityJournal=Array.isArray(state.spiritualityJournal)?state.spiritualityJournal:[];state.spiritualityJournal.push({id:uid(),...fields,createdAt:new Date().toISOString()})}await save();closeModal();render()})
+ modal(entry?"Edit spiritual journal":"Spiritual journal",'<div class="stack"><div class="grid2"><label>Date<input id="sjDate" type="date" value="'+esc(date)+'"></label><label>Type<select id="sjType">'+opts+'</select></label></div><label>Entry<textarea id="sjNote" rows="7" placeholder="Write what you want to remember, question, or explore.">'+esc(note)+'</textarea></label>'+(entry?'<button type="button" class="btn danger" data-spiritual-delete="'+esc(entry.id)+'">Delete this entry</button>':"")+'</div>',"Save",async()=>{const text=$("#sjNote").value.trim();if(!text){alert("Write an entry before saving.");return;}const fields={date:$("#sjDate").value||ymd(),type:$("#sjType").value,note:text},before=entry?{...entry}:null;let created=null;if(entry)Object.assign(entry,fields);else{state.spiritualityJournal=Array.isArray(state.spiritualityJournal)?state.spiritualityJournal:[];created={id:uid(),...fields,createdAt:new Date().toISOString()};state.spiritualityJournal.push(created)}try{await save();closeModal();render()}catch(error){if(entry)Object.assign(entry,before);else state.spiritualityJournal=state.spiritualityJournal.filter(v=>v!==created);alert("Daily Life could not save this journal entry on this device. The draft is still open; please try Save again.")}})
 }
 async function removeSpiritualJournal(entryId){
  const entry=(state.spiritualityJournal||[]).find(v=>v.id===entryId);if(!entry||!confirm("Delete this spiritual journal entry?"))return;
- state.spiritualityJournal=state.spiritualityJournal.filter(v=>v.id!==entryId);await save();closeModal();render()
+ const index=(state.spiritualityJournal||[]).findIndex(v=>v.id===entryId);if(index<0||!confirm("Delete this spiritual journal entry?"))return;const [entry]=state.spiritualityJournal.splice(index,1);try{await save();closeModal();render()}catch(error){state.spiritualityJournal.splice(index,0,entry);alert("Daily Life could not delete this journal entry on this device. The entry was restored; please try again.")}
 }
 function tarotCardMarkup(date,compact){
  date=date||ymd();ensureDailyTarotSaved(date);const t=tarotForDate(date),revealed=tarotRevealed(date);
