@@ -208,8 +208,8 @@ dialog,
 </style>
 </head>
 <body>
-<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261106-versionconsistency1…</p></main></div>
-<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=20261106-versionconsistency1">Reload Daily Life</a></div></div>
+<div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261106-moneyemptyclarity1…</p></main></div>
+<div id="startupFailsafe" role="alert" aria-live="assertive"><div class="panel"><b>Daily Life is taking longer to open.</b><p>Your saved information has not been cleared. If the page remains here, try reloading the app.</p><a href="index.html?dl_retry=20261106-moneyemptyclarity1">Reload Daily Life</a></div></div>
 <script>
 window.__dailyLifeCoreStarted=false;window.__DailyLifeAppReady=false;
 window.__DailyLifeStartupStage="Waiting for app code";
@@ -224,15 +224,15 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
   if(root.textContent.includes("Opening your Daily Life")){
     const stage=String(window.__DailyLifeStartupStage||"Starting Daily Life");
     const detail=String(window.__DailyLifeStartupDetail||"Your saved information has not been changed.");
-    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261106-versionconsistency1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=20261106-versionconsistency1">Reload Daily Life</a></main>';
+    root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Daily Life has not finished opening.</p><p class="muted small">Build 20261106-moneyemptyclarity1 · '+stage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">'+detail+' Your saved information remains on this phone.</div><p class="muted small">If another Daily Life page is open, close it before retrying.</p><a class="btn primary" href="./?dl_retry=20261106-moneyemptyclarity1">Reload Daily Life</a></main>';
     const panel=document.querySelector("#startupFailsafe .panel");
-    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261106-versionconsistency1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=20261106-versionconsistency1">Reload Daily Life</a>';
+    if(panel)panel.innerHTML='<b>Daily Life has not finished opening.</b><p>Build 20261106-moneyemptyclarity1 · '+stage+'</p><p>'+detail+' Your saved information remains on this phone.</p><p>If another Daily Life page is open, close it before retrying.</p><a href="./?dl_retry=20261106-moneyemptyclarity1">Reload Daily Life</a>';
   }
 },12000);
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261106-versionconsistency1"></script>
+<script src="visual-hubs.js?v=20261106-moneyemptyclarity1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -276,11 +276,11 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261106-versionconsistency1"></script>
+<script src="cloud.js?v=20261106-moneyemptyclarity1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
-<script src="finance-cloud.js?v=20261106-versionconsistency1"></script>
+<script src="finance-cloud.js?v=20261106-moneyemptyclarity1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
-<script src="spirituality.js?v=20261106-versionconsistency1"></script>
+<script src="spirituality.js?v=20261106-moneyemptyclarity1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
 <script src="budget-coach.js?v=20261105-budgetunknown2"></script>
 <script>
@@ -307,7 +307,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="2026.11.06-versionconsistency1";
+const APP_BUILD="2026.11.06-moneyemptyclarity1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -6981,7 +6981,7 @@ function moneyTabs(){
   return `<div class="money-tabs" role="tablist" aria-label="Money sections">${tabs.map(([key,icon,label])=>`<button type="button" role="tab" aria-selected="${moneyTab===key?"true":"false"}" class="${moneyTab===key?"active":""}" onclick="setMoneyTab('${key}')"><span>${icon}</span><b>${label}</b></button>`).join("")}</div>`;
 }
 function moneyAccountsCard(){
-  const accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">No accounts entered.</div>`}</div>`;
+  const accountList=`<div class="card money-account-list"><div class="section-title"><div><div class="eyebrow">Accounts</div><h2>Recorded balances</h2></div><button class="btn" onclick="openAccount()">+ Account</button></div>${state.accounts.map(a=>`<div class="row" onclick="openAccount('${a.key}')"><span>${esc(a.name)}<div class="muted small">${esc(a.type)}${accountStrategy(a)!=="Standard"?` · ${esc(accountStrategy(a))}`:""}${a.syncSource?` · synced`:""}${a.balanceAsOf?` · ${esc(new Date(a.balanceAsOf).toLocaleString())}`:""}</div></span><b>${money(a.balance)}</b></div>`).join("")||`<div class="notice">${typeof cloudFinancialAccounts!=="undefined"&&cloudFinancialAccounts.length?"No budget accounts are mapped yet. Synced accounts appear below.":"No accounts entered."}</div>`}</div>`;
   return accountList+cloudFinancePanel()+netWorthCard();
 }
 function moneyTransfersCard(){
@@ -7406,7 +7406,7 @@ function budgetDetailedView(){
     <div class="budget-month"><button class="btn" aria-label="Previous month" onclick="changeBudgetMonth(-1)">←</button><h2>${label}</h2><button class="btn" aria-label="Next month" onclick="changeBudgetMonth(1)">→</button></div>
     <div class="actions"><button class="btn primary" onclick="openBudgetIncome()">Edit income & benefits</button><button class="btn" onclick="openBudgetSpending()">+ Spending</button></div>
     <div class="grid2 budget-summary"><div class="metric"><div class="eyebrow">Expected cash income</div><div class="big">${cloudStatus?"Not loaded":t.plan.income===null?"Not entered":budgetMoney(t.income)}</div></div>
-      <div class="metric"><div class="eyebrow">Known bills</div><div class="big">${cloudStatus?"Not loaded":t.bills.length?budgetMoney(t.billTotal):"None recorded"}</div></div>
+      <div class="metric"><div class="eyebrow">Known bills</div><div class="big">${cloudStatus?"Not loaded":t.bills.length?budgetMoney(t.billTotal):(state.bills||[]).some(b=>billForecastIncluded(b))?"None due this month":"None recorded"}</div></div>
       <div class="metric"><div class="eyebrow">Left to assign</div><div class="big ${t.left<0?"budget-negative":""}">${cloudStatus?"Not loaded":t.plan.income===null?"Not calculated":budgetMoney(t.left)}</div><div class="muted small">Income − bills − category limits</div></div>
       <div class="metric"><div class="eyebrow">Flexible / week</div><div class="big">${cloudStatus?"Not loaded":t.plan.income===null?"Not calculated":t.daysLeft?budgetMoney(t.weekly):"Month ended"}</div><div class="muted small">${t.daysLeft?`${t.daysLeft} days remain including today.`:"View another month to plan ahead."}</div></div></div>
     ${t.plan.income===null?`<div class="notice">Enter expected cash income to begin. EBT does not increase cash available.</div>`:""}
@@ -9505,9 +9505,9 @@ async function init(){
       window.__DailyLifeStartupStage="Dashboard display failed ("+String(error?.name||"error")+"): "+String(error?.message||"No error message")+" · while "+String(window.__DailyLifeStartupStage||"startup stage unknown");
       window.__DailyLifeStartupDetail="Your saved information loaded, but the dashboard hit a display error. The information remains on this phone.";
       const root=document.querySelector("#app");
-      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261106-versionconsistency1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=20261106-versionconsistency1">Reload Daily Life</a></main>';
+      if(root)root.innerHTML='<main class="app" role="alert" aria-live="assertive" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Saved information loaded; the dashboard could not display.</p><p class="muted small">Build 20261106-moneyemptyclarity1 · '+window.__DailyLifeStartupStage+'</p><div class="warning" style="margin:22px auto 12px;max-width:440px;text-align:left">Your saved information remains on this phone and has not been cleared.</div><p class="muted small">Please send this screen so I can fix the display error.</p><a class="btn primary" href="./?dl_retry=20261106-moneyemptyclarity1">Reload Daily Life</a></main>';
       const panel=document.querySelector("#startupFailsafe .panel");
-      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261106-versionconsistency1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=20261106-versionconsistency1">Reload Daily Life</a>';
+      if(panel)panel.innerHTML='<b>Saved information loaded; dashboard display failed.</b><p>Build 20261106-moneyemptyclarity1 · '+window.__DailyLifeStartupStage+'</p><p>Your saved information remains on this phone and has not been cleared.</p><a href="./?dl_retry=20261106-moneyemptyclarity1">Reload Daily Life</a>';
     }else{
       // The saved dashboard is already available; leave it usable if account
       // sync or another optional startup service fails afterward.
@@ -9515,7 +9515,7 @@ async function init(){
     }
   }
 }
-const DAILY_LIFE_BUILD="20261106-versionconsistency1";
+const DAILY_LIFE_BUILD="20261106-moneyemptyclarity1";
 function openAppUpdateTools(){
  const controlled=!!navigator.serviceWorker?.controller;
  modal("App version + update",'<div class="stack dl-update-panel">'+
@@ -9649,7 +9649,7 @@ async function registerAppWorker(){
 <script src="practice-proof.js?v=20261014-photo-proof1"></script>
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261027-trendclarity3"></script>
-<script src="bank-exit-plan.js?v=20261106-versionconsistency1"></script>
+<script src="bank-exit-plan.js?v=20261106-moneyemptyclarity1"></script>
 <script src="money-fix.js?v=20261007-action3"></script>
 <script src="budget-forecast-2026.js?v=20261015-2"></script>
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
@@ -9667,6 +9667,6 @@ window.addEventListener("load",()=>{
 <script src="reading-wheel-fixes.js?v=20261026-readerwheel1"></script>
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
-<script src="money-clarity.js?v=20261106-versionconsistency1"></script>
+<script src="money-clarity.js?v=20261106-moneyemptyclarity1"></script>
 </body>
 </html>
