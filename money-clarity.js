@@ -37,7 +37,7 @@ function moneyRecurringChargeSuggestions(){
 function moneyRecurringChargeCard(){
  const rows=moneyRecurringChargeSuggestions();if(!rows.length)return "";
  return '<div class="card money-recurring-charge-card"><div class="section-title"><div><div class="eyebrow">From posted bank history</div><h2>Possible monthly charges</h2></div><span class="tag">estimate</span></div>'+
- rows.map(x=>'<div class="row"><span><b>'+esc(x.name)+' · '+esc(money(x.amount))+'</b><div class="muted small">'+x.count+' similar charges · last '+esc(dl(x.latestDate))+' · '+esc(x.account)+'</div></span><b>~'+esc(dl(x.nextDate))+'</b></div>').join("")+
+ rows.map(x=>'<div class="row"><span><b>'+esc(x.name)+' · latest '+esc(money(x.amount))+'</b><div class="muted small">'+x.count+' similar charges · last '+esc(dl(x.latestDate))+' · '+esc(x.account)+'</div></span><b>~'+esc(dl(x.nextDate))+'</b></div>').join("")+
  '<p class="muted small">These patterns are estimates, not confirmed subscriptions. They are not included in saved bill totals or cash forecasts.</p></div>';
 }
 function moneyInsightCard(){
