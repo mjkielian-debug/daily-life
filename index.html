@@ -307,7 +307,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261106-cacheguard1";
+const APP_BUILD="20261106-fridaydancefix1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2849,6 +2849,16 @@ function migrateState(s){
     upsert({id:"thu-food-fort",title:"Food Fort",child:"Family",weekday:4,startTime:"17:30",endTime:"18:30",type:"family",location:"",notes:"Thursday free meal · snack tray after if needed"});
     upsert({id:"sun-kids-return-dad",title:"Kids return from Dad's",child:"Kids",weekday:0,startTime:"17:30",endTime:"18:00",type:"family",location:"",notes:"Sunday return around 5:30 PM · plan dinner ready because they usually come back hungry"});
     s.settings.knownFamilyAnchorsVersion=1;
+  }
+  if(Number(s.settings.fridayDollyDanceTimeVersion||0)<1){
+    const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
+    const dance=rules.find(r=>String(r.id||"")==="6635ef45-21e9-4aa3-b929-b0ac2b8e79b9")
+      ||rules.find(r=>Number(r.weekday)===5&&/dance.*turns.*jumps.*leaps/i.test(String(r.title||"")));
+    if(dance){
+      dance.startTime="16:30";
+      dance.notes="Friday Dolly dance starts at 4:30 PM. Class end time and transportation still need confirmation.";
+    }
+    s.settings.fridayDollyDanceTimeVersion=1;
   }
   if(Number(s.settings.fridayHandoffTimeVersion||0)<2){
     const rules=Array.isArray(s.settings.recurringFamilyEvents)?s.settings.recurringFamilyEvents:(s.settings.recurringFamilyEvents=[]);
@@ -9662,7 +9672,7 @@ window.addEventListener("load",()=>{
   registerAppWorker();
 },{once:true});
 </script>
-<script src="day-flow-corrections.js?v=20261106-cacheguard1"></script>
+<script src="day-flow-corrections.js?v=20261106-fridaydancefix1"></script>
 <script src="planner-reliability.js?v=20261103-todayreview1"></script>
 <script src="reading-wheel-fixes.js?v=20261026-readerwheel1"></script>
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
