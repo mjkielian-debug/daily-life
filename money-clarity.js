@@ -1,6 +1,45 @@
 /* Daily Life Money clarity: summarize entered data, activity, and unknowns. */
 (function(){
 "use strict";
+function moneyRecurringChargeSuggestions(){
+ const tx=typeof cloudRecentTransactions!=="undefined"&&Array.isArray(cloudRecentTransactions)?cloudRecentTransactions:[],
+  normalize=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim(),
+  excluded=[...(state.bills||[]),...(state.settings?.bankExitPlans||[])].map(x=>normalize(x.name||x.renewalName)).filter(Boolean),
+  groups=new Map(),today=ymd();
+ for(const t of tx){
+  const amount=Number(t.provider_amount||0),date=String(t.posted_date||""),name=String(t.merchant_name||"").trim();
+  if(t.pending||t.is_transfer||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!name)continue;
+  if(typeof bankTransactionIsGenericAccountFee==="function"&&bankTransactionIsGenericAccountFee(t))continue;
+  const key=normalize(name);if(key.length<3)continue;
+  if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);
+ }
+ const out=[];
+ for(const [key,rows] of groups){
+  if(rows.length<3||excluded.some(name=>name===key||name.includes(key)||key.includes(name)))continue;
+  rows.sort((a,b)=>String(a.posted_date).localeCompare(String(b.posted_date)));
+  const gaps=[];
+  for(let i=1;i<rows.length;i++){
+   const a=new Date(rows[i-1].posted_date+"T12:00:00"),b=new Date(rows[i].posted_date+"T12:00:00");
+   gaps.push(Math.round((b-a)/86400000));
+  }
+  const sorted=gaps.slice().sort((a,b)=>a-b),gap=sorted[Math.floor(sorted.length/2)]||0;
+  if(gap<27||gap>34||gaps.some(x=>x<24||x>38))continue;
+  const amounts=rows.map(x=>Number(x.provider_amount||0)),low=Math.min(...amounts),high=Math.max(...amounts);
+  if(high-low>Math.max(4,high*.25))continue;
+  const latest=rows[rows.length-1],latestDate=String(latest.posted_date||"");
+  if(!latestDate||latestDate>today)continue;
+  const nextDate=new Date(latestDate+"T12:00:00");nextDate.setDate(nextDate.getDate()+gap);
+  const account=typeof cloudFinancialAccounts!=="undefined"&&Array.isArray(cloudFinancialAccounts)?cloudFinancialAccounts.find(a=>String(a.id)===String(latest.account_id||"")):null;
+  out.push({name:String(latest.merchant_name||latest.name||"Recurring charge"),count:rows.length,amount:Number(latest.provider_amount||0),latestDate,nextDate:ymd(nextDate),account:account?[account.display_name,account.mask?"••••"+account.mask:""].filter(Boolean).join(" "):"linked account"});
+ }
+ return out.sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).slice(0,5);
+}
+function moneyRecurringChargeCard(){
+ const rows=moneyRecurringChargeSuggestions();if(!rows.length)return "";
+ return '<div class="card money-recurring-charge-card"><div class="section-title"><div><div class="eyebrow">From posted bank history</div><h2>Possible monthly charges</h2></div><span class="tag">estimate</span></div>'+
+ rows.map(x=>'<div class="row"><span><b>'+esc(x.name)+' · '+esc(money(x.amount))+'</b><div class="muted small">'+x.count+' similar charges · last '+esc(dl(x.latestDate))+' · '+esc(x.account)+'</div></span><b>~'+esc(dl(x.nextDate))+'</b></div>').join("")+
+ '<p class="muted small">These patterns are estimates, not confirmed subscriptions. They are not included in saved bill totals or cash forecasts.</p></div>';
+}
 function moneyInsightCard(){
  const today=ymd(),end=new Date(today+"T12:00:00");end.setDate(end.getDate()+30);
  const through=ymd(end),cash=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase())),
@@ -34,7 +73,7 @@ function moneyInsightCard(){
  '<div class="money-clarity-metric"><small>Bills due in 30 days</small><b>'+esc(bv)+'</b><span>'+esc(bl)+'</span></div>'+
  '<div class="money-clarity-metric"><small>Next expected income</small><b>'+esc(iv)+'</b><span>'+esc(il)+'</span></div></div>'+
  (renewal?'<div class="notice money-renewal-estimate"><b>'+esc(renewal.renewalName)+(renewalIsEstimate?' · estimated renewal':' · renewal to review')+'</b><div>'+esc(renewal.renewalPaidAmount!=null?money(Number(renewal.renewalPaidAmount)):'Amount not recorded')+' · '+esc(renewalDate?renewalDate.toLocaleDateString():'date not recorded')+(renewal.renewalPaymentAccountLabel?' · charged to '+esc(renewal.renewalPaymentAccountLabel):'')+'</div><small>'+esc(renewal.subscriptionStatus==="decision_pending"?'Keep/cancel decision still pending.':'Renewal is recorded as active.')+' This estimate is separate from saved bill totals.</small></div>':'')+
- (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
+ moneyRecurringChargeCard()+\n (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
  '<p class="muted small">This summarizes what is entered. Missing balances and bill amounts stay marked unknown; expected income is not counted as cash already available.</p></div>';
 }
 window.moneyCloudStatusText=function(){
