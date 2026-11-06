@@ -245,7 +245,8 @@ function todaySpiritualityCard(){
 
 // Keep inline controls reliable in the installed Android PWA as well as the browser tab.
 window.openSpiritualityPage=openSpiritualityPage;
-window.openSpiritualHubSection=openSpiritualHubSection;
+// visual-hubs.js owns this route and loads first; preserve its full-page navigation.
+if(typeof window.openSpiritualHubSection!=="function")window.openSpiritualHubSection=openSpiritualHubSection;
 window.revealTarot=revealTarot;
 window.openTarotReflection=openTarotReflection;
 
