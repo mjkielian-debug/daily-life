@@ -897,6 +897,7 @@ async function cloudRestoreSnapshot(){
     cloudRemoteUpdatedAt=data.updated_at||null;
     cloudSetLastPushed(cloudRemoteUpdatedAt);
     cloudSetLastSignature(cloudStateSignature());
+    localStorage.removeItem(cloudMetaKey("pendingConflictAt"));
     cloudNeedsReview=false;cloudAutoCanPush=cloudAutoEnabled();
     await cloudPullHouseholdMembers();
     await cloudPullLifeEntries(false);
@@ -914,7 +915,8 @@ async function cloudKeepThisDevice(){
   if(!confirm("Keep this device's copy and overwrite the newer cloud snapshot? Use this only if this device really has the version you want."))return;
   try{
     await cloudPushSnapshotInternal(true);
-    cloudAutoCanPush=cloudAutoEnabled();render();
+    localStorage.removeItem(cloudMetaKey("pendingConflictAt"));
+    cloudNeedsReview=false;cloudAutoCanPush=cloudAutoEnabled();render();
   }catch(error){
     cloudError=error?.message||"Could not replace the cloud copy.";render();
   }
