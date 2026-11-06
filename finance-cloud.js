@@ -66,6 +66,24 @@ function cloudFinanceBalance(row){
   return Number(row.current_balance||0);
 }
 
+function cloudFinanceClosedAccountReason(row){
+  if(row?.account_type!=="depository"||String(row?.account_subtype||"").toLowerCase()!=="checking")return "";
+  const institution=String(row?.financial_connections?.institution_name||"").trim().toLowerCase(),
+    mask=String(row?.mask||"").replace(/\D/g,"");
+  if(!institution||!mask)return "";
+  for(const plan of state.settings?.bankExitPlans||[]){
+    if(plan?.status!=="closed"||String(plan?.institution||"").trim().toLowerCase()!==institution)continue;
+    const explicit=String(plan.closedAccountLast4||"").replace(/\D/g,""),
+      fromNote=String(plan.notes||"").match(/(?:deposit|checking) account ending\s*(\d{4})\s+(?:was\s+)?closed\s+on\s+(\d{4}-\d{2}-\d{2})/i);
+    const closedLast4=explicit||fromNote?.[1]||"";
+    if(closedLast4&&mask.endsWith(closedLast4)){
+      const closedOn=plan.closureEffectiveDate||fromNote?.[2]||"";
+      return "Marked closed"+(closedOn?" · "+closedOn:"")+"; excluded from available-cash mapping.";
+    }
+  }
+  return "";
+}
+
 async function cloudFinanceInit(){
   if(!cloudUser?.()||!cloudClient)return;
   await cloudRefreshFinancialAccounts(true);
@@ -143,11 +161,11 @@ function cloudFinancePanel(){
   ${cloudLikelyBillTransactions.length?`<div class="warning"><b>${cloudLikelyBillTransactions.length} bank transaction${cloudLikelyBillTransactions.length===1?" may":"s may"} be bill payment${cloudLikelyBillTransactions.length===1?"":"s"}.</b> Daily Life is holding ${cloudLikelyBillTransactions.length===1?"it":"them"} out of flexible spending until you confirm. <button class="btn small" onclick="openLikelyBillPaymentReview(0)">Review</button></div>`:""}
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
   ${rows.length?rows.map(r=>{
-    const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id),strategy=cloudFinanceStrategy(r);
+    const c=r.financial_connections||{},mapped=(state.accounts||[]).find(a=>a.cloudAccountId===r.id),strategy=cloudFinanceStrategy(r),closedReason=cloudFinanceClosedAccountReason(r);
     const balanceDate=r.balance_as_of?new Date(r.balance_as_of):null,linkDate=c.last_synced_at?new Date(c.last_synced_at):null,
       balanceLabel=balanceDate?"balance as of "+balanceDate.toLocaleDateString():"balance date unavailable",
       linkLabel=linkDate?"connection checked "+linkDate.toLocaleDateString():"connection date unavailable";
-    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")} · ${esc(balanceLabel)} · ${esc(linkLabel)}</div>${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b><button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button></div></div>`;
+    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")} · ${esc(balanceLabel)} · ${esc(linkLabel)}</div>${closedReason?`<div class="warning small" role="status">${esc(closedReason)}</div>`:""}${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b>${closedReason?'<span class="tag">Closed</span>':`<button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button>`}</div></div>`;
   }).join(""):`<div class="notice">No financial accounts connected yet.</div>`}</div>`;
 }
 
@@ -236,6 +254,8 @@ async function cloudSyncBanks(showAlert=false){
 
 function openCloudAccountMap(remoteId){
   const remote=cloudFinancialAccounts.find(x=>x.id===remoteId);if(!remote)return;
+  const closedReason=cloudFinanceClosedAccountReason(remote);
+  if(closedReason){alert("This account is recorded as closed and cannot be mapped to available cash. Its connected transaction history remains available.");return}
   const mapped=(state.accounts||[]).find(a=>a.cloudAccountId===remoteId);
   const options=(state.accounts||[]).map(a=>`<option value="${esc(a.key)}" ${mapped?.key===a.key?"selected":""}>${esc(a.name)} · ${esc(a.type)}</option>`).join("");
   modal("Use synced account in Money",`<p><b>${esc(remote.display_name)}</b>${remote.mask?` · ••••${esc(remote.mask)}`:""}</p><div class="stack"><label>Daily Life account<select id="cloudMapLocal"><option value="__new__">Create a new Money account</option>${options}</select></label></div><p class="muted small">Once mapped, the account's balance updates from the synced financial account. Bills can keep using the existing Daily Life account key.</p>`,"Map account",async()=>{
