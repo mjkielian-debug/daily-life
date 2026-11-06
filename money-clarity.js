@@ -8,7 +8,7 @@ function moneyRecurringChargeSuggestions(){
   groups=new Map(),today=ymd();
  for(const t of tx){
   const amount=Number(t.provider_amount||0),date=String(t.posted_date||""),name=String(t.merchant_name||"").trim();
-  if(t.pending||t.is_transfer||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!name)continue;
+  if(t.pending||t.is_transfer||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!name)continue;
   if(typeof bankTransactionIsGenericAccountFee==="function"&&bankTransactionIsGenericAccountFee(t))continue;
   const key=normalize(name);if(key.length<3)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);
@@ -73,7 +73,8 @@ function moneyInsightCard(){
  '<div class="money-clarity-metric"><small>Bills due in 30 days</small><b>'+esc(bv)+'</b><span>'+esc(bl)+'</span></div>'+
  '<div class="money-clarity-metric"><small>Next expected income</small><b>'+esc(iv)+'</b><span>'+esc(il)+'</span></div></div>'+
  (renewal?'<div class="notice money-renewal-estimate"><b>'+esc(renewal.renewalName)+(renewalIsEstimate?' · estimated renewal':' · renewal to review')+'</b><div>'+esc(renewal.renewalPaidAmount!=null?money(Number(renewal.renewalPaidAmount)):'Amount not recorded')+' · '+esc(renewalDate?renewalDate.toLocaleDateString():'date not recorded')+(renewal.renewalPaymentAccountLabel?' · charged to '+esc(renewal.renewalPaymentAccountLabel):'')+'</div><small>'+esc(renewal.subscriptionStatus==="decision_pending"?'Keep/cancel decision still pending.':'Renewal is recorded as active.')+' This estimate is separate from saved bill totals.</small></div>':'')+
- moneyRecurringChargeCard()+\n (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
+ moneyRecurringChargeCard()+
+ (categories.length?'<div class="money-clarity-categories"><b>Logged by category</b>'+categories.map(c=>'<div class="money-clarity-category"><span>'+esc(c.label)+'</span><b>'+esc(budgetMoney(c.spent))+(c.limit>0?' of '+esc(budgetMoney(c.limit)):'')+'</b></div>').join("")+'</div>':'')+
  '<p class="muted small">This summarizes what is entered. Missing balances and bill amounts stay marked unknown; expected income is not counted as cash already available.</p></div>';
 }
 window.moneyCloudStatusText=function(){
