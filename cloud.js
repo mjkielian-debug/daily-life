@@ -747,6 +747,14 @@ async function cloudPrepareAutoSync(){
   await cloudRefreshMetadata();
   let snapshot=cloudRemoteUpdatedAt?await cloudReadRemoteSnapshot():null;
   const lastBeforePatch=cloudLastPushed(),signatureBeforePatch=cloudStateSignature(),lastSignatureBeforePatch=cloudLastSignature();
+  const conflictKey=cloudMetaKey("pendingConflictAt");
+  const pendingConflictAt=localStorage.getItem(conflictKey);
+  if(pendingConflictAt&&snapshot?.updated_at===pendingConflictAt){
+    cloudNeedsReview=true;cloudAutoCanPush=false;
+    if(typeof render==="function")render();
+    return;
+  }
+  if(pendingConflictAt&&snapshot?.updated_at!==pendingConflictAt)localStorage.removeItem(conflictKey);
   if(snapshot?.state&&cloudAssistantPatches(snapshot.state).length){
     if(lastBeforePatch&&lastSignatureBeforePatch&&signatureBeforePatch===lastSignatureBeforePatch){
       await cloudUseRemoteSnapshot(snapshot);
@@ -768,9 +776,11 @@ async function cloudPrepareAutoSync(){
     await cloudPushSnapshotInternal(true);
   }else if(!last){
     if(cloudLocalStateHasData){
-      await cloudArchiveRemoteSnapshot(snapshot,"First sync from this device; local copy kept");
-      cloudNeedsReview=false;cloudAutoCanPush=true;
-      await cloudPushSnapshotInternal(true);
+      await cloudArchiveRemoteSnapshot(snapshot,"First sync conflict; automatic overwrite paused");
+      localStorage.setItem(conflictKey,snapshot.updated_at||"");
+      cloudNeedsReview=true;cloudAutoCanPush=false;
+      if(typeof render==="function")render();
+      return;
     }else{
       await cloudUseRemoteSnapshot(snapshot);
     }
@@ -778,9 +788,11 @@ async function cloudPrepareAutoSync(){
     if(lastSignature&&signature===lastSignature){
       await cloudUseRemoteSnapshot(snapshot);
     }else{
-      await cloudArchiveRemoteSnapshot(snapshot,"Both device and cloud changed since last sync; device copy kept");
-      cloudNeedsReview=false;cloudAutoCanPush=true;
-      await cloudPushSnapshotInternal(true);
+      await cloudArchiveRemoteSnapshot(snapshot,"Both device and cloud changed since last sync; automatic overwrite paused");
+      localStorage.setItem(conflictKey,snapshot.updated_at||"");
+      cloudNeedsReview=true;cloudAutoCanPush=false;
+      if(typeof render==="function")render();
+      return;
     }
   }else{
     cloudNeedsReview=false;cloudAutoCanPush=true;
@@ -1589,7 +1601,16 @@ function cloudApplyLifeEntry(row){
       const title=String(p.title||"").trim();if(!title)return false;
       let x=state.projects.find(x=>x.cloudEntryId===row.id||String(x.externalId||"")===String(row.external_id||""));
       if(!x){x={id:uid(),cloudEntryId:row.id,externalId:String(row.external_id||"")};state.projects.push(x)}
-      Object.assign(x,{title,status:String(p.status||x.status||"open"),due:String(p.due||x.due||date||""),nextAction:String(p.nextAction||x.nextAction||""),notes:String(p.notes||x.notes||""),source:String(p.source||x.source||row.source||""),tasks:Array.isArray(p.tasks)?p.tasks:(x.tasks||[])});
+      const has=(key)=>Object.prototype.hasOwnProperty.call(p,key);
+      Object.assign(x,{
+        title,
+        status:String(has("status")?p.status:(x.status||"open")),
+        due:String(has("due")?p.due:(x.due||date||"")),
+        nextAction:String(has("nextAction")?p.nextAction:(x.nextAction||"")),
+        notes:String(has("notes")?p.notes:(x.notes||"")),
+        source:String(has("source")?p.source:(x.source||row.source||"")),
+        tasks:Array.isArray(p.tasks)?p.tasks:(x.tasks||[])
+      });
       return true;
     }
     case "vehicle_profile":{
