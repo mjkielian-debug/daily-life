@@ -76,8 +76,8 @@ function dueItems(state: any, now: Date, timeZone: string) {
     const startDate = String(habit.reminderStartDate || "");
     const endDate = String(habit.reminderEndDate || "");
     const reminderTime = String(habit.reminderTime || "");
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(endDate)) continue;
-    if (today < startDate || today > endDate || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(reminderTime)) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) continue;
+    if (today < startDate || today > endDate || !/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)) continue;
     const [hour, minute] = reminderTime.split(":").map(Number);
     const reminderMinute = hour * 60 + minute;
     const currentMinute = Number(p.hour) * 60 + Number(p.minute);
@@ -91,8 +91,8 @@ function dueItems(state: any, now: Date, timeZone: string) {
     out.push({
       key: `habit:${habit.id}`, dueDate: today,
       title: (`Habit: ${String(habit.name || "Practice").trim()}`).slice(0, 120),
-      body: (minimum ? `Small version: ${minimum}` : cue ? `Cue: ${cue}` : "A small practice for today.") +
-        (cue && minimum ? ` · Cue: ${cue}` : "")
+      body: ((minimum ? `Small version: ${minimum}` : cue ? `Cue: ${cue}` : "A small practice for today.") +
+        (cue && minimum ? ` · Cue: ${cue}` : "")).slice(0, 220)
     });
   }
   return out;
