@@ -1,17 +1,17 @@
 /* Monster High collection tracker for Daily Life. Photos show dolls/products, not character art. */
 const MONSTER_HIGH_STARTER = [
-  {id:"g1-basic-clawdeen",name:"Clawdeen Wolf",line:"Basic",generation:"G1",year:"2010",image:"https://i.etsystatic.com/7843813/r/il/b65216/7402213287/il_1080xN.7402213287_r6pp.jpg",source:"MH Merch archive"},
-  {id:"g1-basic-draculaura",name:"Draculaura",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/tH8AAeSw865ounm4/s-l500.png",source:"MH Merch archive"},
-  {id:"g1-basic-frankie",name:"Frankie Stein",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/HMsAAOSwFdFjj~h6/s-l1200.jpg",source:"MH Merch archive"},
-  {id:"g1-basic-lagoona",name:"Lagoona Blue",line:"Basic",generation:"G1",year:"2010",image:"https://media-photos.depop.com/b1/17256346/1942356383_213a87100de54668952fe3b5197f474f/P0.jpg",source:"MH Merch archive"},
-  {id:"g1-basic-cleo",name:"Cleo de Nile",line:"Basic",generation:"G1",year:"2010",image:"https://u-mercari-images.mercdn.net/photos/m68511841687_3.jpg?_=1760919083&quality=75&width=2560",source:"MH Merch archive"},
-  {id:"g1-basic-ghoulia",name:"Ghoulia Yelps",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/2HkAAeSw2OplaHQS/s-l1200.jpg",source:"MH Merch archive"},
-  {id:"g3-core-draculaura",name:"Draculaura",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i5.walmartimages.com/asr/471059c0-d9ac-469e-ba99-570ff7f32f4c.8dde0621664ee8266994d8dec1caee83.jpeg",source:"MH Merch archive"},
-  {id:"g3-core-frankie",name:"Frankie Stein",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://static.insales-cdn.com/images/products/1/7146/625114090/large_monster-high-frankie-stein-watzie-pet-01.jpg",source:"MH Merch archive"},
-  {id:"g3-core-clawdeen",name:"Clawdeen Wolf",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i.ebayimg.com/images/g/LAIAAOSwEIBjYb7X/s-l1200.jpg",source:"MH Merch archive"},
-  {id:"g3-core-lagoona",name:"Lagoona Blue",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://cdn11.bigcommerce.com/s-ptvounu/images/stencil/1280x1280/products/953/23918/HHK55__43557.1670161104.jpg?c=2",source:"MH Merch archive"},
-  {id:"g3-core-cleo",name:"Cleo de Nile",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://www.iperbimbo.it/cdn/shop/files/Mattel-HXH74-Copia1-Iperbimbo.jpg?v=1753860970&width=3840",source:"MH Merch archive"},
-  {id:"g3-core-ghoulia",name:"Ghoulia Yelps",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i5.walmartimages.com/seo/Monster-High-Ghoulia-Yelps-Doll-Monster-High-G3-2022_be2bb1b3-0a22-426f-b0fa-530d688e3327.b2746ea76cc4f8cda7feb1b1a60ce399.jpeg",source:"MH Merch archive"}
+  {id:"g1-basic-clawdeen",name:"Clawdeen Wolf",line:"Basic",generation:"G1",year:"2010",image:"https://i.etsystatic.com/7843813/r/il/b65216/7402213287/il_1080xN.7402213287_r6pp.jpg",source:"Public doll listing"},
+  {id:"g1-basic-draculaura",name:"Draculaura",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/tH8AAeSw865ounm4/s-l500.png",source:"Public doll listing"},
+  {id:"g1-basic-frankie",name:"Frankie Stein",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/HMsAAOSwFdFjj~h6/s-l1200.jpg",source:"Public doll listing"},
+  {id:"g1-basic-lagoona",name:"Lagoona Blue",line:"Basic",generation:"G1",year:"2010",image:"https://media-photos.depop.com/b1/17256346/1942356383_213a87100de54668952fe3b5197f474f/P0.jpg",source:"Public doll listing"},
+  {id:"g1-basic-cleo",name:"Cleo de Nile",line:"Basic",generation:"G1",year:"2010",image:"https://u-mercari-images.mercdn.net/photos/m68511841687_3.jpg?_=1760919083&quality=75&width=2560",source:"Public doll listing"},
+  {id:"g1-basic-ghoulia",name:"Ghoulia Yelps",line:"Basic",generation:"G1",year:"2010",image:"https://i.ebayimg.com/images/g/2HkAAeSw2OplaHQS/s-l1200.jpg",source:"Public doll listing"},
+  {id:"g3-core-draculaura",name:"Draculaura",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i5.walmartimages.com/asr/471059c0-d9ac-469e-ba99-570ff7f32f4c.8dde0621664ee8266994d8dec1caee83.jpeg",source:"Public doll listing"},
+  {id:"g3-core-frankie",name:"Frankie Stein",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://static.insales-cdn.com/images/products/1/7146/625114090/large_monster-high-frankie-stein-watzie-pet-01.jpg",source:"Public doll listing"},
+  {id:"g3-core-clawdeen",name:"Clawdeen Wolf",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i.ebayimg.com/images/g/LAIAAOSwEIBjYb7X/s-l1200.jpg",source:"Public doll listing"},
+  {id:"g3-core-lagoona",name:"Lagoona Blue",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://cdn11.bigcommerce.com/s-ptvounu/images/stencil/1280x1280/products/953/23918/HHK55__43557.1670161104.jpg?c=2",source:"Public doll listing"},
+  {id:"g3-core-cleo",name:"Cleo de Nile",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://www.iperbimbo.it/cdn/shop/files/Mattel-HXH74-Copia1-Iperbimbo.jpg?v=1753860970&width=3840",source:"Public doll listing"},
+  {id:"g3-core-ghoulia",name:"Ghoulia Yelps",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i5.walmartimages.com/seo/Monster-High-Ghoulia-Yelps-Doll-Monster-High-G3-2022_be2bb1b3-0a22-426f-b0fa-530d688e3327.b2746ea76cc4f8cda7feb1b1a60ce399.jpeg",source:"Public doll listing"}
 ];
 
 let monsterHighSearch="",monsterHighGeneration="All",monsterHighOwnedFilter="All";
