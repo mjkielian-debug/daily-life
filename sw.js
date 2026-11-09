@@ -49,6 +49,8 @@ const APP_SHELL=[
   "./modal-form-readability.css",
   "./inventory-goals.css",
   "./visual-hubs.js",
+  "./habit-focus.js",
+  "./habit-focus.css",
   "./money-clarity.js",
   "./chase-balance.js",
   "./chase-balance.css",

@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="life-tools.css?v=20261013-fab-dedupe1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
 <link rel="stylesheet" href="visual-density.css?v=20261015-rainbow-cleanup2">
+<link rel="stylesheet" href="habit-focus.css?v=20261109-habit-focus1">
 
 <title>Daily Life</title>
 <style id="startup-failsafe-style">#startupFailsafe{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:rgba(246,219,233,.96);opacity:0;visibility:hidden;animation:dlRevealFailsafe .01s linear 12s forwards}#startupFailsafe .panel{max-width:440px;padding:24px;border-radius:24px;background:#fffafc;color:#30233b;box-shadow:0 16px 50px rgba(48,35,59,.18);text-align:center}#startupFailsafe p{line-height:1.5}#startupFailsafe a{display:inline-block;margin-top:10px;padding:12px 18px;border-radius:999px;background:#cce9e2;color:#30233b;font-weight:800;text-decoration:none}@keyframes dlRevealFailsafe{to{opacity:1;visibility:visible}}</style><style id="status-bar-root-tint">html{background:#f6dbe9!important;color-scheme:only light}body{background-color:#f6dbe9}</style>
@@ -307,7 +308,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261106-worktransition1";
+const APP_BUILD="20261109-habit-focus1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -316,7 +317,7 @@ let startupFallbackAvailable=false;
 let startupFallbackTimer=null;
 let startupStorageStalled=false;
 let startupStorageWatchdog=null;
-let state=blankState(),view="family",houseOverlayView="",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",inventoryOwnerFilter=localStorage.getItem("dailyLifeInventoryOwner")||"All",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
+let state=blankState(),view="today",houseOverlayView="",installPrompt=null,weather=null,appLocalDay=ymd(),selfCareTab=localStorage.getItem("dailyLifeSelfCareTab")||"today",spiritualityTab=localStorage.getItem("dailyLifeSpiritualityTab")||"today",careTab=localStorage.getItem("dailyLifeCareTab")||"me",peopleTab=localStorage.getItem("dailyLifePeopleTab")||"people",peopleFilter=localStorage.getItem("dailyLifePeopleFilter")||"all",peopleSearch="",petsTab=localStorage.getItem("dailyLifePetsTab")||"overview",gardenTab=localStorage.getItem("dailyLifeGardenTab")||"plants",itineraryDate=localStorage.getItem("dailyLifeItineraryDate")||ymd(),inventoryTab=localStorage.getItem("dailyLifeInventoryTab")||"items",inventoryCategory=localStorage.getItem("dailyLifeInventoryCategory")||"All",inventorySearch="",inventoryOwnerFilter=localStorage.getItem("dailyLifeInventoryOwner")||"All",moneyTab=localStorage.getItem("dailyLifeMoneyTab")||"overview";
 const themes=[
   ["Rainbow Rose","#c34d84","#9bc8ee","#f6cf8a"],
   ["Coral Sky","#b95178","#b1a9e4","#f5ce8d"],
@@ -9700,5 +9701,6 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261106-recurringpaymentreview1"></script>
+<script src="habit-focus.js?v=20261109-habit-focus1"></script>
 </body>
 </html>
