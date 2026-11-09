@@ -28,6 +28,9 @@
 .hf-week-summary{font-size:.68rem;font-weight:750;color:#514455}
 .hf-muted{font-weight:500;color:#8a818e}
 .hf-today-label{font-size:.68rem;font-weight:800;color:#68576c;margin:2px 0 6px}
+.hf-reminder{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:7px 0;padding:7px 9px;border-radius:12px;background:#f4eef8;color:#675273;font-size:.67rem;font-weight:750}
+.hf-reminder-check{display:flex!important;align-items:center;gap:9px!important;padding:10px;border-radius:12px;background:#f4eef8;font-weight:800}
+.hf-reminder-check input{width:20px;height:20px;flex:0 0 20px}
 .hf-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .hf-action,.hf-more,.hf-preset,.hf-area-chips button{
   min-height:34px;border:1px solid #e4d8e4;border-radius:999px;background:#fff;color:#44354b;
