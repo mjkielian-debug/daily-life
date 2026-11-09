@@ -28,7 +28,7 @@ function monsterHighOwnedCount(rows,owner){
 function monsterHighCard(x,data){
   const owned=data.ownership[x.id]||{};
   const source=x.source||"Added by you";
-  return `<article class="mh-doll-card">
+  return `<article class="mh-doll-card" data-name="${esc(x.name).toLowerCase()}" data-line="${esc(x.line||"").toLowerCase()}" data-generation="${esc(x.generation||"")}" data-michelle="${owned.Michelle?"1":"0"}" data-dolly="${owned.Dolly?"1":"0"}">
     <div class="mh-photo-wrap">${x.image?'<img loading="lazy" src="'+esc(x.image)+'" alt="'+esc(x.name)+' doll" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="mh-photo-fallback" hidden>🦇<small>Photo unavailable</small></div>':'<div class="mh-photo-fallback">🦇<small>Add a product photo URL</small></div>'}</div>
     <div class="mh-doll-info"><div class="mh-badges"><span>${esc(x.generation||"")}</span><span>${esc(x.year||"")}</span></div><h3>${esc(x.name)}</h3><p>${esc(x.line||"Release")}</p>
       <label class="mh-owned"><input type="checkbox" ${owned.Michelle?"checked":""} onchange="toggleMonsterHighOwned('${esc(x.id)}','Michelle',this.checked)"><span>Michelle has it</span></label>
@@ -36,6 +36,16 @@ function monsterHighCard(x,data){
       <small class="mh-photo-source">Doll photo · ${esc(source)}</small>
     </div>
   </article>`;
+}
+function filterMonsterHighCards(){
+  const q=monsterHighSearch.trim().toLowerCase();let visible=0;
+  document.querySelectorAll(".mh-doll-card").forEach(card=>{
+    const text=[card.dataset.name,card.dataset.line,card.dataset.generation].join(" ");
+    const gen=monsterHighGeneration==="All"||card.dataset.generation===monsterHighGeneration;
+    const owner=monsterHighOwnedFilter==="All"||(monsterHighOwnedFilter==="Michelle"&&card.dataset.michelle==="1")||(monsterHighOwnedFilter==="Dolly"&&card.dataset.dolly==="1")||(monsterHighOwnedFilter==="Needed"&&card.dataset.michelle!=="1"&&card.dataset.dolly!=="1");
+    const show=(!q||text.includes(q))&&gen&&owner;card.hidden=!show;if(show)visible++;
+  });
+  const empty=document.querySelector(".mh-no-matches");if(empty)empty.hidden=visible>0;
 }
 function monsterHighCollectionView(){
   const data=monsterHighData(),rows=[...MONSTER_HIGH_STARTER,...data.custom];
@@ -55,11 +65,11 @@ function monsterHighCollectionView(){
       <div class="mh-actions"><button class="btn primary" onclick="openMonsterHighAdd()">＋ Add a doll</button><a class="btn" href="https://www.mh-merch.com/dolls/all/" target="_blank" rel="noopener">Browse full visual archive ↗</a></div>
       <p class="mh-note">The linked archive covers 1,000+ releases with release and series photos. The in-app starter catalog is smaller; add any other release you find at Goodwill.</p>
     </div>
-    <div class="card mh-controls"><label>Search dolls<input type="search" value="${esc(monsterHighSearch)}" placeholder="Name or series" oninput="monsterHighSearch=this.value;render()"></label>
+    <div class="card mh-controls"><label>Search dolls<input type="search" value="${esc(monsterHighSearch)}" placeholder="Name or series" oninput="monsterHighSearch=this.value;filterMonsterHighCards()"></label>
       <label>Generation<select onchange="monsterHighGeneration=this.value;render()"><option ${monsterHighGeneration==="All"?"selected":""}>All</option><option ${monsterHighGeneration==="G1"?"selected":""}>G1</option><option ${monsterHighGeneration==="G2"?"selected":""}>G2</option><option ${monsterHighGeneration==="G3"?"selected":""}>G3</option></select></label>
       <label>Show<select onchange="monsterHighOwnedFilter=this.value;render()"><option value="All" ${monsterHighOwnedFilter==="All"?"selected":""}>All dolls</option><option value="Michelle" ${monsterHighOwnedFilter==="Michelle"?"selected":""}>Michelle has</option><option value="Dolly" ${monsterHighOwnedFilter==="Dolly"?"selected":""}>Dolly has</option><option value="Needed" ${monsterHighOwnedFilter==="Needed"?"selected":""}>Neither has</option></select></label>
     </div>
-    <div class="mh-doll-grid">${filtered.map(x=>monsterHighCard(x,data)).join("")||'<div class="notice">No dolls match these filters. Try “All” or add a release.</div>'}</div>
+    <div class="mh-doll-grid">${filtered.map(x=>monsterHighCard(x,data)).join("")}</div><div class="notice mh-no-matches" hidden>No dolls match these filters. Try “All” or add a release.</div>
     <p class="mh-credit">The product photos are hotlinked from public doll listings for identification. Photo availability can change; use the full archive for more releases and variants.</p>
   </section>`;
 }
