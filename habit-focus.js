@@ -63,7 +63,7 @@
     var dots=[];
     for(var i=0;i<7;i++){
       var date=dateShift(start,i),entry=logOn(habit.id,date),day=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"});
-      var cls=entry?(" "+entry.status):" empty";
+      var cls=entry&&STATUS[entry.status]?(" "+entry.status):" empty";
       dots.push('<span class="hf-dot'+cls+'" title="'+esc(day+" "+date+": "+(entry?(STATUS[entry.status]||"Logged"):"Not recorded"))+'">'+esc(day.slice(0,1))+'</span>')
     }
     return '<div class="hf-week"><div class="hf-week-dots">'+dots.join("")+'</div><span class="hf-week-summary">'+esc(summary)+' <span class="hf-muted">· unlogged days stay open</span></span></div>'
@@ -187,6 +187,7 @@
   function mount(){
     var root=document.querySelector("#app"),main=root&&root.querySelector("main.app"),area=currentArea();
     if(!root||!main)return;
+    if(typeof appStartupReady!=="undefined"&&!appStartupReady)return;
     var old=main.querySelector("[data-habit-focus]");
     if(!area){if(old)old.remove();return}
     if(old&&old.dataset.area===area)return;
