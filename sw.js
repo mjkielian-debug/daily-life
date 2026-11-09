@@ -50,7 +50,7 @@ const APP_SHELL=[
   "./inventory-goals.css",
   "./visual-hubs.js",
   "./habit-focus.js",
-  "./habit-focus.css",
+  "./habit-focus.css",\n  "./monster-high-collection.css",\n  "./monster-high-collection.js",
   "./money-clarity.js",
   "./chase-balance.js",
   "./chase-balance.css",
