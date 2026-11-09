@@ -68,6 +68,16 @@
     }
     return '<div class="hf-week"><div class="hf-week-dots">'+dots.join("")+'</div><span class="hf-week-summary">'+esc(summary)+' <span class="hf-muted">· unlogged days stay open</span></span></div>'
   }
+  function dateLabel(value){
+    var d=new Date(String(value||"")+"T12:00:00");
+    return isNaN(d.getTime())?String(value||""):d.toLocaleDateString("en-US",{month:"short",day:"numeric"})
+  }
+  function reminderMarkup(habit){
+    if(habit.reminderEnabled!==true)return "";
+    var active=!!habit.reminderEndDate&&today()<=habit.reminderEndDate;
+    var label=active?"14-day reminder trial · until "+dateLabel(habit.reminderEndDate):"Your 14-day reminder trial has ended";
+    return '<div class="hf-reminder"><span>♧ '+esc(label)+'</span><button type="button" class="hf-more" data-hf-action="'+(active?"stop-reminder":"edit")+'" data-habit-id="'+esc(habit.id)+'">'+(active?"Turn off":"Review")+'</button></div>'
+  }
   function habitCard(habit){
     var todayLog=logOn(habit.id,today()),status=todayLog?(STATUS[todayLog.status]||"Logged"):"Not logged";
     var cue=String(habit.cue||"").trim(),small=String(habit.minimum||"").trim();
@@ -77,7 +87,7 @@
       (cue?'<p><b>Cue:</b> '+esc(cue)+'</p>':'')+
       (small?'<p><b>Small version:</b> '+esc(small)+'</p>':'')+
       '</div><span class="hf-area-label">'+esc(areaLabel(habit.area))+'</span></div>'+
-      weekLine(habit)+
+      weekLine(habit)+reminderMarkup(habit)+
       '<div class="hf-today-label">Today · '+esc(status)+'</div>'+
       '<div class="hf-actions" role="group" aria-label="Log '+esc(habit.name)+' for today">'+
       '<button type="button" class="hf-action hf-done'+(todayLog&&todayLog.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="done">Done</button>'+
@@ -135,15 +145,19 @@
       '<label>Habit you want to build<input id="hfName" maxlength="100" value="'+esc(p.name||"")+'" placeholder="A small action you want to repeat"></label>'+
       '<label>What will cue it?<input id="hfCue" maxlength="180" value="'+esc(p.cue||"")+'" placeholder="After I… / Before I… / When…"></label>'+
       '<label>What is the smallest version that counts?<input id="hfMinimum" maxlength="180" value="'+esc(p.minimum||"")+'" placeholder="The easy version for busy days"></label>'+
-      '<div class="hf-form-note">The cue can be a routine or a time. Missed or unrecorded days do not reset your progress.</div></div>';
+      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(p.reminderEnabled?'checked':'')+'> Try phone reminders for 14 days</label>'+
+      '<label>Reminder time <input id="hfReminderTime" type="time" value="'+esc(p.reminderTime||'')+'"></label>'+
+      '<div class="hf-form-note">Phone reminders require Daily Life notifications to be enabled. A trial stops after 14 days; unlogged days stay open.</div></div>';
     modal("Build a habit",body,"Save habit",async function(){
       var areaValue=document.getElementById("hfArea")?.value||"";
       var name=String(document.getElementById("hfName")?.value||"").trim();
       if(!AREAS.some(function(a){return a.id===areaValue})){alert("Choose the life area for this habit.");return}
       if(!name){alert("Give the habit a short name so it is easy to recognize.");return}
       var s=appState();if(!s)return;
-      var id=(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
-      s.habits.push({id:id,area:areaValue,name:name,cue:String(document.getElementById("hfCue")?.value||"").trim(),minimum:String(document.getElementById("hfMinimum")?.value||"").trim(),status:"active",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+      var remind=!!document.getElementById("hfRemind")?.checked,reminderTime=String(document.getElementById("hfReminderTime")?.value||"");
+      if(remind&&!reminderTime){alert("Choose a reminder time, or turn off the 14-day reminder trial.");return}
+      var id=(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),createdAt=new Date().toISOString();
+      s.habits.push({id:id,area:areaValue,name:name,cue:String(document.getElementById("hfCue")?.value||"").trim(),minimum:String(document.getElementById("hfMinimum")?.value||"").trim(),status:"active",reminderEnabled:remind,reminderTime:reminderTime,reminderStartDate:remind?today():"",reminderEndDate:remind?dateShift(today(),13):"",createdAt:createdAt,updatedAt:createdAt});
       await save();closeModal();render()
     })
   }
@@ -155,7 +169,9 @@
       '<label>Habit<input id="hfName" maxlength="100" value="'+esc(habit.name||"")+'"></label>'+
       '<label>Cue<input id="hfCue" maxlength="180" value="'+esc(habit.cue||"")+'" placeholder="After I… / Before I… / When…"></label>'+
       '<label>Smallest version<input id="hfMinimum" maxlength="180" value="'+esc(habit.minimum||"")+'" placeholder="The easy version for busy days"></label>'+
-      '<div class="hf-form-note">Your practice history stays saved if you edit or pause this habit.</div></div>';
+      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(habit.reminderEnabled===true&&habit.reminderEndDate>=today()?'checked':'')+'> Try phone reminders for 14 days</label>'+
+      '<label>Reminder time <input id="hfReminderTime" type="time" value="'+esc(habit.reminderTime||'')+'"></label>'+
+      '<div class="hf-form-note">Phone reminders require Daily Life notifications to be enabled. Saving an expired trial starts a new 14-day period.</div></div>';
     modal("Edit habit",body,"Save changes",async function(){
       var areaValue=document.getElementById("hfArea")?.value||"";
       var name=String(document.getElementById("hfName")?.value||"").trim();
@@ -163,6 +179,11 @@
       habit.area=areaValue;habit.name=name;
       habit.cue=String(document.getElementById("hfCue")?.value||"").trim();
       habit.minimum=String(document.getElementById("hfMinimum")?.value||"").trim();
+      var remind=!!document.getElementById("hfRemind")?.checked,reminderTime=String(document.getElementById("hfReminderTime")?.value||"");
+      if(remind&&!reminderTime){alert("Choose a reminder time, or turn off the 14-day reminder trial.");return}
+      var trialActive=habit.reminderEnabled===true&&habit.reminderEndDate>=today(),restartTrial=remind&&(!trialActive||reminderTime!==habit.reminderTime);
+      habit.reminderEnabled=remind;habit.reminderTime=reminderTime;
+      if(restartTrial){habit.reminderStartDate=today();habit.reminderEndDate=dateShift(today(),13)}
       habit.updatedAt=new Date().toISOString();
       await save();closeModal();render()
     })
@@ -173,6 +194,12 @@
     var date=today(),entry=s.habitLogs.find(function(x){return x&&String(x.habitId)===String(id)&&x.localDate===date});
     if(entry){entry.status=status;entry.updatedAt=new Date().toISOString()}
     else s.habitLogs.push({id:(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-log-"+Date.now(),habitId:id,localDate:date,status:status,createdAt:new Date().toISOString()});
+    await save();render()
+  }
+  async function setReminder(id,enabled){
+    var s=appState(),habit=s&&s.habits.find(function(h){return String(h.id)===String(id)});
+    if(!habit)return;
+    habit.reminderEnabled=!!enabled;habit.updatedAt=new Date().toISOString();
     await save();render()
   }
   async function setPaused(id,paused){
@@ -207,6 +234,7 @@
     else if(action==="edit")openEdit(id);
     else if(action==="pause")setPaused(id,true);
     else if(action==="resume")setPaused(id,false);
+    else if(action==="stop-reminder")setReminder(id,false);
     else if(action==="log")logHabit(id,button.dataset.status);
     else if(action==="preset-water")addWaterPreset()
   }
