@@ -6,3 +6,10 @@
 .dl-completion-copy small{font-size:.76rem;color:#706273}
 @keyframes dlCheckPop{from{transform:scale(.55) rotate(-14deg)}to{transform:scale(1) rotate(0)}}
 @media(prefers-reduced-motion:reduce){.dl-completion-toast,.dl-completion-mark{transition:none;animation:none}}
+
+.hf-quick-track{height:5px;overflow:hidden;border-radius:99px;background:#eadde8}
+.hf-quick-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a84f83,#70b4ad);transition:width .28s ease}
+.app button:not(:disabled){cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app button:not(:disabled):active{transform:translateY(1px) scale(.99)}
+.app button:focus-visible,.app a:focus-visible{outline:3px solid #9b5b9d;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.hf-quick-track span{transition:none}.app button:not(:disabled):active{transform:none}}
