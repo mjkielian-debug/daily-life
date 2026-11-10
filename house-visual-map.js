@@ -95,11 +95,16 @@ function mapSketch(f,m){
   const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
   const labelY=(preview||isStair)&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
+  const organized=roomDeclutterSessions(f,z.id).length;
+  const tint=organized?Math.min(.48,.1+Math.log2(organized+1)*.1):0;
+  const declutterOverlay=organized?'<path class="hvm-declutter-wash" d="'+h(z.path)+'" fill="#ef9fc2" fill-opacity="'+tint.toFixed(2)+'" pointer-events="none"/>':"";
+  const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?
+   '<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
-  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+'">'+
-  '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+
-  preview+floorGraphic+(preview?'':'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text>')+'</g>';
+  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+(organized?' · '+organized+' areas organized':'')+'">'+
+  '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+declutterOverlay+
+  preview+floorGraphic+declutterBadge+(preview?'':'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text>')+'</g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
   const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
