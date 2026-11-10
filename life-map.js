@@ -15,10 +15,13 @@ function region(name,detail,icon,fill,area){
 }
 function avatarMark(label,icon,x,y,pct,color,area){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- return '<a class="lm-avatar-mark" href="#" aria-label="'+h(label)+'" title="'+h(label)+'" onclick="lifeMapSelectArea(&quot;'+h(area)+'&quot;);return false">'+
+ return '<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="'+h(label)+'" title="'+h(label)+'" onclick="lifeMapSelectArea(\\''+h(area)+'\\')" onkeydown="if(event.key===\\'Enter\\'||event.key===\\' \\'){event.preventDefault();lifeMapSelectArea(\\''+h(area)+'\\')}">'+
  '<circle cx="'+x+'" cy="'+y+'" r="14" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
- '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></a>';
+ '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></g>';
+}
+function avatarHotspot(area,label,path){
+ return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" onclick="lifeMapSelectArea('${h(area)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lifeMapSelectArea('${h(area)}')}"/>`;
 }
 function view(){
  const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
@@ -128,15 +131,22 @@ function view(){
  '<path d="M101 91 L101 109 L119 109 L119 91Z" fill="#f7dfd4"/>'+
  '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
  '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L134 218 L86 218Z" fill="#df9fbb" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z" fill="#f7dfd4" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
+ '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#bd829e" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
  '<path d="M89 289 L104 289 L104 292 Q98 296 84 294 Q84 291 89 289Z M116 289 L131 289 Q137 291 140 294 Q127 297 116 293Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<g clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
  '<g clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
  '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
  '<g clip-path="url(#lmLeftClip)"><rect x="52" y="'+(188-45*pctFor("people")/100)+'" width="42" height="'+(45*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="126" y="'+(188-45*pctFor("hobbies")/100)+'" width="42" height="'+(45*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
  '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
- '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+avatarMarks+'</svg>'+
+ '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its tracker">'+
+ avatarHotspot("mind","Mind & self-care","M83 43 Q81 55 81 68 Q82 93 110 97 Q138 93 139 68 L138 44 Q125 37 110 39 Q96 40 83 43Z")+
+ avatarHotspot("spirituality","Spirituality","M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 76 Q140 48 125 40 Q104 34 87 43 Q84 53 78 78Z")+
+ avatarHotspot("body","Body & health","M87 110 Q110 101 133 110 L138 179 Q110 187 82 179Z")+
+ avatarHotspot("people","Relationships","M81 112 Q66 120 60 143 L53 177 Q54 186 62 188 L78 146 L94 135Z")+
+ avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
+ avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
+ '</g>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">A little picture of a life being cared for</p></div>'+
  '<div class="lm-regions" aria-label="Avatar areas"><div class="lm-avatar-zones-heading"><span class="lm-kicker">PARTS OF YOU · TAP TO OPEN</span><b>Each area belongs on your avatar</b></div>'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"mind")+
  region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"body")+
