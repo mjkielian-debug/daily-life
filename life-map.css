@@ -53,3 +53,8 @@
 .lm-inline-last{margin:0;padding:8px 10px;border-radius:11px;background:#fff;color:#69566f;font-size:.82rem}
 .lm-inline-panel .lm-list{max-height:340px;overflow:auto}
 .lm-inline-room .hvm-room-declutter-quick{width:100%}
+
+.lm-avatar-hotspot{cursor:pointer;pointer-events:all;touch-action:manipulation}
+.lm-avatar-hotspot:focus-visible{stroke:#77506f;stroke-width:4}
+.lm-avatar-mark{cursor:pointer;pointer-events:all;touch-action:manipulation}
+.lm-avatar-mark:focus-visible circle:first-child{stroke-width:4}
