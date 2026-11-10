@@ -208,8 +208,8 @@ dialog,
 .vh-profile-food .vh-food-nutrients{font-size:.68rem;line-height:1.3;text-align:right;overflow-wrap:anywhere}
 @media(max-width:420px){.vh-profile-food .vh-food-row{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:4px 6px}.vh-profile-food .vh-food-nutrients{font-size:.64rem}}
 </style>
-<link rel="stylesheet" href="sync-status.css?v=20261110-completion-joy2">
-<link rel="stylesheet" href="completion-feedback.css?v=20261110-completion-joy2">
+<link rel="stylesheet" href="sync-status.css?v=20261110-hobby-studio1">
+<link rel="stylesheet" href="completion-feedback.css?v=20261110-hobby-studio1">
 </head>
 <body>
 <div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261106-recurringpaymentreview1…</p></main></div>
@@ -237,7 +237,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261110-mobile-scrollfix1"></script>
-<script src="monster-high-collection.js?v=20261110-completion-joy2"></script>
+<script src="monster-high-collection.js?v=20261110-hobby-studio1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -281,7 +281,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261110-completion-joy2"></script>
+<script src="cloud.js?v=20261110-hobby-studio1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261106-recurringpaymentreview1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -312,7 +312,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261110-completion-joy2";
+const APP_BUILD="20261110-hobby-studio1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7225,12 +7225,21 @@ function hobbyProjectById(id){return (state.hobbyProjects||[]).find(x=>x.id===id
 function hobbyProjectStatusRank(status){
   return ({"In progress":0,"Planned":1,"Idea":2,"Waiting":3,"Paused":4,"Finished":5})[String(status||"Idea")]??3;
 }
+const HOBBY_STARTER_TEMPLATES={
+  yoga:{name:"Beginner yoga reset",category:"Yoga",status:"Idea",nextStep:"Try an easy 8–10-minute beginner session",notes:"For enjoyment, mobility, relaxation, strength and body awareness. Use gentle modifications and skip anything that does not feel right. No streak or appearance goals."},
+  kombucha:{name:"First homemade kombucha batch",category:"Kombucha",status:"Idea",nextStep:"Choose a small first experiment and note its start date",materials:"Starter culture and a tested recipe",notes:"Keep a simple batch log for ingredients, dates and tasting notes. Trace alcohol is okay; this is for enjoying homemade kombucha, not for an intoxicating effect."},
+  craft:{name:"A fun craft project",category:"Craft",status:"Idea",nextStep:"Pick one small project that sounds enjoyable",notes:"A flexible place to save craft ideas, supplies and progress. This is for fun, not another chore."}
+};
+function hobbyStarterShelf(){
+  const starters=[["yoga","🧘","Yoga reset","An easy 8–10-minute start"],["kombucha","🫙","Kombucha","Plan and record a small first batch"],["craft","✂️","Crafting","Save one enjoyable project idea"]];
+  return `<div class="hobby-starter-shelf" style="margin:12px 0;padding:14px;border:1px solid #ead8e8;border-radius:18px;background:linear-gradient(125deg,#fff8fc,#edf8f6)"><div style="margin-bottom:9px"><div class="eyebrow">A little time for you</div><b>Pick a fun next step</b><div class="muted small">Start gently, save it as a project, or leave it for later.</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px">${starters.map(x=>`<button type="button" class="btn hobby-starter-tile" style="display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:66px;text-align:left;white-space:normal;border-radius:15px;padding:10px;background:#fffdfd" onclick="openHobbyProject('', '${x[0]}')"><span style="font-size:1.25rem">${x[1]}</span><span style="flex:1"><b>${x[2]}</b><small style="display:block;font-weight:500;opacity:.76;line-height:1.3">${x[3]}</small></span><span aria-hidden="true">＋</span></button>`).join("")}</div></div>`;
+}
 function hobbyProjectsCard(){
   const rows=[...(state.hobbyProjects||[])].sort((a,b)=>hobbyProjectStatusRank(a.status)-hobbyProjectStatusRank(b.status)||String(a.targetDate||"9999").localeCompare(String(b.targetDate||"9999"))||String(a.name||"").localeCompare(String(b.name||""))),
         active=rows.filter(x=>!["Finished","Paused"].includes(String(x.status||""))).length,
         finished=rows.filter(x=>x.status==="Finished").length;
   return `<div class="card hobby-workspace"><div class="section-title"><div><div class="eyebrow">✂ Hobbies + crafts</div><h2>${active?active+" active / upcoming project"+(active===1?"":"s"):"Make space for something fun"}</h2><div class="muted small">Crafts, creative ideas, materials, costs, photos, and the next tiny step — separate from life-admin Projects.</div></div><button class="btn primary" onclick="openHobbyProject()">+ Project</button></div>
-    <div class="hobby-summary"><span><b>${rows.length}</b><small>total</small></span><span><b>${rows.filter(x=>x.status==="In progress").length}</b><small>in progress</small></span><span><b>${finished}</b><small>finished</small></span></div>
+    <div class="hobby-summary"><span><b>${rows.length}</b><small>total</small></span><span><b>${rows.filter(x=>x.status==="In progress").length}</b><small>in progress</small></span><span><b>${finished}</b><small>finished</small></span></div>${hobbyStarterShelf()}
 <div class="notice mh-collection-entry" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:14px;background:linear-gradient(110deg,#f8dce9,#e5f0f4);border:1px solid #d9b4cf;border-radius:18px"><div><div class="eyebrow">Monster High collection</div><b>Michelle + Dolly collection tracker</b><div class="muted small">Browse dolls, view product photos, and mark who owns each one.</div></div><button type="button" class="btn primary small" onclick="closeModal();openMonsterHighCollection()">Open tracker</button></div>
         ${rows.length?`<div class="hobby-project-grid">${rows.slice(0,8).map(hobbyProjectCard).join("")}</div>${rows.length>8?`<details class="compact-more"><summary>Show ${rows.length-8} more project${rows.length-8===1?"":"s"}</summary><div class="hobby-project-grid">${rows.slice(8).map(hobbyProjectCard).join("")}</div></details>`:""}`:`<div class="notice">Add anything you want to make, learn, repair, decorate, sew, paint, build, scrapbook, or experiment with. No productivity pressure required.</div>`}
   </div>`;
@@ -7291,8 +7300,8 @@ function hobbyProjectCard(x){
     <span class="hobby-project-copy"><span class="hobby-project-top"><b>${esc(x.name||"Untitled project")}</b><em>${esc(x.status||"Idea")}</em></span><small>${esc(x.category||"Craft")}${x.targetDate?" · target "+esc(dl(x.targetDate)):""}${cost?" · "+esc(cost):""}</small>${next?`<strong>Next: ${esc(next)}</strong>`:materials.length?`<strong>${materials.length} material${materials.length===1?"":"s"} listed</strong>`:""}</span>
   </button>`;
 }
-function openHobbyProject(id=""){
-  const existing=hobbyProjectById(id),x=existing||{id:"",name:"",category:"Craft",status:"Idea",startDate:"",targetDate:"",materials:"",nextStep:"",estimatedCost:"",actualCost:"",notes:"",photo:""};
+function openHobbyProject(id="",templateKey=""){
+  const existing=hobbyProjectById(id),x=existing||{id:"",name:"",category:"Craft",status:"Idea",startDate:"",targetDate:"",materials:"",nextStep:"",estimatedCost:"",actualCost:"",notes:"",photo:"",...(HOBBY_STARTER_TEMPLATES[templateKey]||{})};
   modal(existing?"Hobby project":"New hobby project",`<div class="stack">
     <label>Project<input id="hpname" value="${esc(x.name||"")}" placeholder="Halloween wreath, crochet blanket, paint dresser…"></label>
     <div class="grid2"><label>Type<input id="hpcat" value="${esc(x.category||"Craft")}" placeholder="Craft, sewing, DIY, art…"></label><label>Status<select id="hpstatus">${["Idea","Planned","In progress","Waiting","Paused","Finished"].map(v=>`<option ${String(x.status||"Idea")===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
@@ -9702,9 +9711,9 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261106-recurringpaymentreview1"></script>
-<script src="habit-focus.js?v=20261110-completion-joy2"></script>
-<script src="completion-feedback.js?v=20261110-completion-joy2"></script>
-<script src="workday-focus.js?v=20261110-completion-joy2"></script>
-<script src="sync-status.js?v=20261110-completion-joy2"></script>
+<script src="habit-focus.js?v=20261110-hobby-studio1"></script>
+<script src="completion-feedback.js?v=20261110-hobby-studio1"></script>
+<script src="workday-focus.js?v=20261110-hobby-studio1"></script>
+<script src="sync-status.js?v=20261110-hobby-studio1"></script>
 </body>
 </html>
