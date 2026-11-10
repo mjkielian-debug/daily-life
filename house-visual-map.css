@@ -166,7 +166,11 @@
 @media(max-width:360px){.hvm-person-room-objects{gap:5px}.hvm-person-object{padding:7px}.hvm-person-object small{font-size:.62rem}}
 
 
-/* Let saved room organizing progress tint each real photo tile without obscuring it. */
-.hvm-room-tile-photo{position:relative}
-.hvm-room-tile-photo::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1);opacity:var(--hvm-organized-tint,0);mix-blend-mode:soft-light;transition:opacity .2s ease}
-.hvm-room-tile-photo .hvm-tile-mark{position:relative;z-index:1}
+/* Room progress fills upward in the same soft color language as the Life Map avatar. */
+.hvm-room-tile-photo{position:relative;isolation:isolate;overflow:hidden;border-radius:14px}
+.hvm-room-tile-photo::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1);opacity:var(--hvm-organized-tint,0);mix-blend-mode:soft-light;transition:opacity .2s ease;z-index:1}
+.hvm-room-progress-fill{position:absolute;left:0;right:0;bottom:0;height:var(--hvm-progress,0%);background:linear-gradient(180deg,color-mix(in srgb,var(--hvm-zone,#e98cb0) 52%,#fff),var(--hvm-zone,#e98cb0));opacity:.72;transition:height .35s ease;pointer-events:none;z-index:2}
+.hvm-room-tile-photo .hvm-tile-mark{position:relative;z-index:3}
+.hvm-room-tile{border:1.5px solid #ca9bb7;border-radius:20px;background:linear-gradient(135deg,color-mix(in srgb,var(--hvm-zone,#e98cb0) 42%,#fff),#fffaff 58%,#eef8f4);box-shadow:0 4px 12px #65445a18;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.hvm-room-tile:hover{transform:translateY(-2px);border-color:#ad6b91;box-shadow:0 7px 18px #65445a22}
+.hvm-room-tile:focus-visible{outline:3px solid #8d5a85;outline-offset:3px}
