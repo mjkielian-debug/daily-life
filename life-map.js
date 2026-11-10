@@ -27,7 +27,7 @@ function view(areaOverride,tasksOnly){
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
  const terms={
   mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
-  body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin/i,
+  body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin|safety|vehicle|car|volvo|keys?|driver|delivery|lockout/i,
   people:/relationship|family|together|read with|time with|spend time|play with|connect with|hang out with|check.?in with|date night/i,
   home:/home|house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean/i,
   spirituality:/spiritual|tarot|ritual|meditat|affirmation/i,
@@ -43,14 +43,14 @@ function view(areaOverride,tasksOnly){
  const avatarMarks=[
   avatarMark("Mind and self-care","✿",81,56,carePct,"#c89ad7","mind"),
   avatarMark("Spirituality","☾",141,42,pctFor("spirituality"),"#f2b85b","spirituality"),
-  avatarMark("Body and health","♡",110,133,pctFor("body"),"#f2ae85","body"),
+  avatarMark("Body, health & safety","♡",110,133,pctFor("body"),"#f2ae85","body"),
   avatarMark("Relationships","♥",78,168,pctFor("people"),"#e98cb0","people"),
   avatarMark("Hobbies and projects","✎",166,166,pctFor("hobbies"),"#82c6a4","hobbies"),
   avatarMark("Money and planning","✧",112,266,moneyFill,"#83b8df","money")
  ].join("");
  const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTask(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
- const areaTitles={mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning"};
+ const areaTitles={mind:"Mind & self-care",body:"Body, health & safety",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning"};
  const areaSelection=areaOverride||activeArea;
  const areaText=t=>String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"");
  const areaHistory=areaSelection&&terms[areaSelection]?list(state&&state.tasks).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&terms[areaSelection].test(areaText(t))).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
@@ -69,7 +69,7 @@ function view(areaOverride,tasksOnly){
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifearea-'+areaSelection+'&#39;)">‹ '+h(areaTitles[areaSelection]||"Life area")+'</button><span class="lm-kicker">TODAY · AREA TASKS</span><h1>Today’s '+h(taskTitle)+'</h1><p>Only tasks linked to this area appear here.</p></header><section class="lm-inline-panel lm-area-page-content">'+taskList+'</section></section>';
  }
  if(areaOverride){
-  const descriptions={mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and the everyday care you track for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories."};
+  const descriptions={mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines, everyday body care, and practical safety tasks.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories."};
   const trackerViews={mind:"selfcare",body:"log",people:"family",spirituality:"spirituality",hobbies:"gardenhobbies",money:"budget"};
   const trackerLabels={mind:"Self-care",body:"Health logs",people:"Family",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Finish budget setup"};
   const pagePanel=activeAreaPanel.replace('class="lm-inline-panel"','class="lm-inline-panel lm-area-page-content"').replace('<button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button>','');
@@ -153,7 +153,7 @@ function view(areaOverride,tasksOnly){
  '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+
  avatarHotspot("mind","Mind & self-care","M83 43 Q81 55 81 68 Q82 93 110 97 Q138 93 139 68 L138 44 Q125 37 110 39 Q96 40 83 43Z")+
  avatarHotspot("spirituality","Spirituality","M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 76 Q140 48 125 40 Q104 34 87 43 Q84 53 78 78Z")+
- avatarHotspot("body","Body & health","M87 110 Q110 101 133 110 L138 179 Q110 187 82 179Z")+
+ avatarHotspot("body","Body, health & safety","M87 110 Q110 101 133 110 L138 179 Q110 187 82 179Z")+
  avatarHotspot("people","Relationships","M81 112 Q66 120 60 143 L53 177 Q54 186 62 188 L78 146 L94 135Z")+
  avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
  avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
