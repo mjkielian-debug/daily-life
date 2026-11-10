@@ -113,3 +113,26 @@ body:has(#app>.app.people-one-screen-shell){
     padding-bottom:calc(140px + env(safe-area-inset-bottom))!important;
   }
 }
+
+/* Day Flow controls need generous tap targets above the fixed mobile navigation. */
+.dayflow-phase-row .dayflow-step-word,
+.dayflow-phase-row .dayflow-open-detail,
+.dayflow-phase-row input[type="checkbox"]{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  position:relative;
+  z-index:2;
+}
+.dayflow-phase-row .dayflow-step-word{
+  min-height:44px;
+  padding:7px 4px;
+  cursor:pointer;
+}
+.dayflow-phase-row .dayflow-open-detail{
+  min-width:44px;
+  min-height:44px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.dayflow-phase-row .grow{min-width:0;overflow-wrap:anywhere}
