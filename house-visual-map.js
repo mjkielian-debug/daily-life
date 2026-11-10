@@ -122,10 +122,12 @@ function mapSketch(f,m){
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(f==='Second floor'?'Second floor rooms':(m.title||f))+'</strong><small>Tap a room to enter, then explore its mapped items. Use Previous and Next to tour the floor.</small></div>'+
  '<div class="hvm-directory-grid">'+arr(m.zones).filter(z=>okId(z.id)).map(z=>{
- const photos=arr(z.photos).filter(okPhoto);
+ const photos=arr(z.photos).filter(okPhoto),count=roomDeclutterSessions(f,z.id).length;
+ const blooms=count?'<span class="hvm-declutter-sparks" aria-hidden="true">'+Array.from({length:Math.min(count,6)},()=>'<i>✦</i>').join("")+(count>6?'<b>+'+(count-6)+'</b>':'')+'</span>':'<span class="hvm-declutter-sparks is-empty" aria-hidden="true">✦</span>';
+ const declutter='<span class="hvm-room-tile-declutter">'+blooms+'<small>Declutter · '+count+' area'+(count===1?"":"s")+' organized</small></span>';
  return '<button type="button" class="hvm-room-tile hvm-photo-room-tile" data-room-id="'+h(z.id)+'" style="--hvm-zone:'+color(z.color)+'" onclick="'+act(f,z)+'">'+
  '<span class="hvm-room-tile-photo" data-room-photo-zone="'+h(z.id)+'" aria-hidden="true"><span class="hvm-tile-mark">⌂</span></span>'+
- '<b>'+h(z.name)+'</b><small>'+photos.length+' saved photo'+(photos.length===1?'':'s')+'</small>'+
+ '<b>'+h(z.name)+'</b>'+declutter+'<small>'+photos.length+' saved photo'+(photos.length===1?'':'s')+'</small>'+
  '<span class="hvm-tile-open">'+(z.id==="stairs_up"?"Go upstairs ›":z.id==="stairs_to_third"?"Go to third floor ›":"Enter room ›")+'</span></button>';
  }).join("")+'</div></div>';
 }
@@ -193,17 +195,52 @@ function mappedRoomItems(room){
  const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
  return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
 }
+function roomDeclutterSessions(f,id){
+ const key=String(f||"")+"::"+String(id||"");
+ const entry=state.settings?.roomDeclutterProgress?.[key];
+ return arr(entry?.sessions);
+}
+function roomInsightParts(tasks,f,id){
+ const declutter=tasks.filter(t=>/declutter|organis|organize|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
+ const declutterDone=declutter.filter(t=>t.done).length;
+ const isDate=value=>{const v=str(value);return v.length===10&&v[4]==="-"&&v[7]==="-"};
+ const completed=tasks.filter(t=>t.done&&isDate(t.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
+ const sessions=roomDeclutterSessions(f,id).filter(x=>isDate(x.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date))||str(b.at).localeCompare(str(a.at)));
+ const dateLabel=value=>isDate(value)?new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
+ const summary=[];
+ if(sessions.length)summary.push(sessions.length+" room areas organized");
+ if(declutter.length)summary.push(declutterDone+" of "+declutter.length+" saved declutter/organizing tasks done");
+ return {
+  declutter:summary.join(" · ")||"No room declutter progress logged yet",
+  last:completed[0]?"Last room task marked done: "+str(completed[0].title||"Task")+" · "+dateLabel(completed[0].date):"No completed room task in saved history",
+  lastOrganized:sessions[0]?"Last area organized: "+dateLabel(sessions[0].date):""
+ };
+}
+window.houseVisualLogDeclutter=async function(f,id){
+ if(!floors.includes(f)||!okId(id))return;
+ if(!state.settings||typeof state.settings!=="object")state.settings={};
+ if(!state.settings.roomDeclutterProgress||typeof state.settings.roomDeclutterProgress!=="object")state.settings.roomDeclutterProgress={};
+ const key=String(f)+"::"+String(id),entry=state.settings.roomDeclutterProgress[key]||(state.settings.roomDeclutterProgress[key]={sessions:[]});
+ if(!Array.isArray(entry.sessions))entry.sessions=[];
+ entry.sessions.push({date:typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),at:new Date().toISOString()});
+ await save();
+ if(typeof window.houseVisualOpenZone==="function")window.houseVisualOpenZone(f,id);
+}
 function mappedProgressCard(f,z,room){
  const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
- const inventory=mappedRoomItems(room);
+ const inventory=mappedRoomItems(room),insights=roomInsightParts(tasks,f,z?.id||"room:"+String(room?.id||""));
  const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
    'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
  const title=z?z.name:room.name;
- return '<button type="button" class="household-room-progress" onclick="'+action+'">'+
+ const details='<button type="button" class="household-room-progress" onclick="'+action+'">'+
  '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
+ '<small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+
+ (insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+
  '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
  '<span><b>'+(percent===null?'—':percent+'%')+'</b>'+
  '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
+ const quick=z?'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)">＋ I organized one area</button>':'';
+ return '<div class="hvm-room-progress-item">'+details+quick+'</div>';
 }
 function roomProgressHtml(f){
  const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
@@ -694,6 +731,8 @@ window.houseVisualOpenZone=function(f,id){
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
  const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
  const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
+ const insights=roomInsightParts(tasks,f,id);
+ const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+(insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+'<small>This is separate from item inventory and does not remove room records.</small><button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">＋ I organized one area</button></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
  '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
@@ -715,7 +754,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+interactiveRoom+objectPanel+inventory+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
