@@ -62,8 +62,8 @@ function monsterHighCollectionView(){
     <div class="card mh-hero"><div class="mh-topline"><button class="btn small" onclick="setView('hobbies')">‹ Hobbies</button><span class="eyebrow">GROWTH & HOBBIES · DOLL COLLECTION</span></div>
       <h1>${title}</h1><p>Keep track of your dolls together. These are actual doll/product photos, not character portraits.</p>
       <div class="mh-stats"><div><b>${rows.length}</b><span>in this starter catalog</span></div><div><b>${monsterHighOwnedCount(rows,"Michelle")}</b><span>Michelle has</span></div><div><b>${monsterHighOwnedCount(rows,"Dolly")}</b><span>Dolly has</span></div></div>
-      <div class="mh-actions"><button class="btn primary" onclick="openMonsterHighAdd()">＋ Add a doll</button><a class="btn" href="https://www.mh-merch.com/dolls/all/" target="_blank" rel="noopener">Browse full visual archive ↗</a></div>
-      <p class="mh-note">The linked archive covers 1,000+ releases with release and series photos. The in-app starter catalog is smaller; add any other release you find at Goodwill.</p>
+      <div class="mh-actions"><button class="btn primary" onclick="openMonsterHighAdd()">＋ Add a doll</button></div>
+      <p class="mh-note">Browse this catalog here, and use “Add a doll” to include another release you find.</p>
     </div>
     <div class="card mh-controls"><label>Search dolls<input type="search" value="${esc(monsterHighSearch)}" placeholder="Name or series" oninput="monsterHighSearch=this.value;filterMonsterHighCards()"></label>
       <label>Generation<select onchange="monsterHighGeneration=this.value;render()"><option ${monsterHighGeneration==="All"?"selected":""}>All</option><option ${monsterHighGeneration==="G1"?"selected":""}>G1</option><option ${monsterHighGeneration==="G2"?"selected":""}>G2</option><option ${monsterHighGeneration==="G3"?"selected":""}>G3</option></select></label>
