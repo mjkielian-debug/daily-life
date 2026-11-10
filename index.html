@@ -235,7 +235,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261110-mobile-scrollfix1"></script>
-<script src="monster-high-collection.js?v=20261110-update-control1"></script>
+<script src="monster-high-collection.js?v=20261110-update-safeguard1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -279,7 +279,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261110-update-control1"></script>
+<script src="cloud.js?v=20261110-update-safeguard1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261106-recurringpaymentreview1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -310,7 +310,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261110-update-control1";
+const APP_BUILD="20261110-update-safeguard1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -9591,13 +9591,10 @@ async function dailyLifeRefreshShell(){
    say("The website is still finishing its update (version "+remoteBuild+", page "+(pageBuild||"not ready")+"). Try again in a minute. Nothing was changed.");
    return;
   }
-  const order=build=>{
-   const match=build.match(/^(20[0-9]{6})-guided([0-9]+)$/);
-   return match?Number(match[1])*10000+Number(match[2]):null;
-  };
-  const newer=order(remoteBuild),current=order(DAILY_LIFE_BUILD);
-  if(newer!==null&&current!==null&&newer<current){
-   say("This website is serving an older version ("+remoteBuild+") than the app on your phone ("+DAILY_LIFE_BUILD+"). No changes were made.");
+  const remoteDate=Number((remoteBuild.match(/^(20[0-9]{6})-/)||[])[1]||0);
+  const currentDate=Number((DAILY_LIFE_BUILD.match(/^(20[0-9]{6})-/)||[])[1]||0);
+  if(remoteDate&&currentDate&&remoteDate<currentDate){
+   say("This website is serving an older dated version ("+remoteBuild+") than the app on your phone ("+DAILY_LIFE_BUILD+"). No changes were made.");
    return;
   }
   say(remoteBuild===DAILY_LIFE_BUILD?
@@ -9703,6 +9700,6 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261106-recurringpaymentreview1"></script>
-<script src="habit-focus.js?v=20261110-update-control1"></script>
+<script src="habit-focus.js?v=20261110-update-safeguard1"></script>
 </body>
 </html>
