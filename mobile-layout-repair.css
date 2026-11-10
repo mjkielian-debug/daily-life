@@ -82,3 +82,34 @@ body:has(#app>.app.people-one-screen-shell){
   overflow-y:visible!important;
   padding-bottom:calc(110px + env(safe-area-inset-bottom))!important;
 }
+
+/* Keep the shared app shell page-scrollable on phones. The bottom nav is fixed
+   over the page; no app section should become a clipped, non-scrolling panel. */
+@media(max-width:760px){
+  html,body{
+    height:auto!important;
+    min-height:100%!important;
+    overflow-x:clip!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+  }
+  body{min-height:100vh!important}
+  #app{
+    height:auto!important;
+    min-height:100vh!important;
+    max-height:none!important;
+    overflow-x:clip!important;
+    overflow-y:visible!important;
+    touch-action:pan-y!important;
+  }
+  #app>.app{
+    height:auto!important;
+    min-height:100vh!important;
+    max-height:none!important;
+    overflow-x:clip!important;
+    overflow-y:visible!important;
+    touch-action:pan-y!important;
+    padding-bottom:calc(140px + env(safe-area-inset-bottom))!important;
+  }
+}
