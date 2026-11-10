@@ -76,3 +76,9 @@
 .lm-area-shortcuts>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .lm-area-shortcuts .lm-region{display:flex;align-items:center;justify-content:center;min-height:54px;text-align:center;font-weight:800}
 @media(max-width:420px){.lm-area-shortcuts>div{grid-template-columns:1fr}.lm-area-page-heading{padding:16px}}
+
+
+/* Keep the Life Map focused on its clickable avatar. */
+.lm-scene-grid.lm-avatar-only{grid-template-columns:minmax(0,1fr);justify-items:center}
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:100%;max-width:430px}
+.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,240px)}
