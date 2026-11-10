@@ -138,7 +138,8 @@
     }).join("");
     return '<section class="hf-quickbar" data-habit-quickbar data-signature="'+esc(quickBarSignature())+'"><div class="hf-quick-head"><span class="hf-quick-sparkle" aria-hidden="true">✦</span><div class="hf-quick-title"><b>Today’s habits</b><span>'+esc(title)+'</span></div>'+
       (active.length?'<button type="button" class="hf-quick-toggle" data-hf-action="quick-toggle">'+(quickBarOpen?"Hide":"Check in")+'</button>':'<button type="button" class="hf-quick-toggle" data-hf-action="add" data-area="health">＋ Start</button>')+
-      '</div>'+(quickBarOpen&&active.length?'<div class="hf-quick-list">'+rows+'</div>':"")+'</section>';
+      '</div>'+(active.length?'<div class="hf-quick-track" aria-label="'+completed+' of '+active.length+' habits checked in"><span style="width:'+Math.round(completed/active.length*100)+'%"></span></div>':"")+
+      (quickBarOpen&&active.length?'<div class="hf-quick-list">'+rows+'</div>':"")+'</section>';
   }
   function renderPanel(area){
     var s=appState();if(!s||!area)return "";
@@ -218,9 +219,11 @@
     else {entry={id:(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-log-"+Date.now(),habitId:id,localDate:date,status:status,createdAt:new Date().toISOString()};s.habitLogs.push(entry)}
     try{
       await save();render();
-      if((status==="done"||status==="partial")&&typeof window.dailyLifeShowCompletionFeedback==="function"){
-        var habit=s.habits.find(function(h){return String(h.id)===String(id)});
-        window.dailyLifeShowCompletionFeedback(status==="done"?"Habit complete":"Habit progress",habit?.name||"A small practice");
+      if((status==="done"||status==="partial")&&oldStatus!==status&&typeof window.dailyLifeShowCompletionFeedback==="function"){
+        var habit=s.habits.find(function(h){return String(h.id)===String(id)}),activeHabits=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
+        var practiced=activeHabits.filter(function(h){var log=logOn(h.id,date);return log&&(log.status==="done"||log.status==="partial")}).length;
+        if(status==="done"&&activeHabits.length&&practiced===activeHabits.length)window.dailyLifeShowCompletionFeedback("All today’s habits practiced","You showed up for each one. That counts.");
+        else window.dailyLifeShowCompletionFeedback(status==="done"?"Habit complete":"Progress logged",status==="done"?(habit?.name||"A small practice"):(habit?.name||"A small practice")+" — the small version counts.");
       }
     }catch(error){
       if(oldStatus){entry.status=oldStatus}else{s.habitLogs=s.habitLogs.filter(function(x){return x!==entry})}
