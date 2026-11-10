@@ -9,7 +9,7 @@ function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirst
 function jump(view){if(typeof setView==="function")setView(view)}
 function region(name,detail,icon,fill,area){
  const pct=Math.max(0,Math.min(100,Number(fill)||0));
- return '<button class="lm-region lm-region-'+h(name.toLowerCase().replace(/[^a-z0-9]+/g,"-"))+'" type="button" aria-expanded="'+(activeArea===area?'true':'false')+'" onclick="lifeMapSelectArea(\''+h(area)+'\')">'+
+ return '<button class="lm-region lm-region-'+h(name.toLowerCase().replace(/[^a-z0-9]+/g,"-"))+'" type="button" onclick="lifeMapSelectArea(\''+h(area)+'\')">'+
  '<span class="lm-region-icon" aria-hidden="true">'+icon+'</span><span class="lm-region-copy"><b>'+h(name)+'</b><small>'+h(detail)+'</small></span>'+
  '<span class="lm-region-fill" aria-hidden="true"><i style="width:'+pct+'%"></i></span></button>';
 }
@@ -171,13 +171,14 @@ function view(areaOverride){
  (clothingRows?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>Counts compare assigned saved items with your clothing targets; low counts mean items are not yet recorded to the target.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
  '<p class="lm-disclaimer">This first pass reads your existing records. It does not move, delete, or rewrite your data. Avatar fill currently uses date-specific tasks and self-care logs; spirituality, hobbies, and money each link to their existing trackers.</p></section>';
 }
-window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;if(typeof setView==="function")setView("lifearea-"+area)};
+window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea="";activeRoom=null;if(typeof setView==="function")setView("lifearea-"+area)};
 function avatarAreaFromEvent(event){const target=event.target&&event.target.closest?event.target.closest(".lm-avatar-mark[data-life-area],.lm-avatar-hotspot[data-life-area]"):null;if(!target)return;const area=target.getAttribute("data-life-area");if(!area)return;if(event.type==="keydown"&&event.key!=="Enter"&&event.key!==" ")return;if(event.type==="keydown")event.preventDefault();if(typeof window.lifeMapSelectArea==="function")window.lifeMapSelectArea(area)}
 document.addEventListener("click",avatarAreaFromEvent);
 document.addEventListener("keydown",avatarAreaFromEvent);
 window.lifeMapCloseArea=function(){if(typeof setView==="function")setView("lifemap")};
 window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
 window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
+window.lifeMapAreaPage=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return "";return view(area)};
 window.lifeMapView=view;
 window.lifeMapSetFloor=function(floor){
  if(!floorNames.includes(floor))return;
