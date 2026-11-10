@@ -31,3 +31,13 @@
 .lm-wardrobes{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(240px,1.3fr);gap:12px;align-items:start;padding:16px 18px;border:1px solid #e8dce8;border-radius:20px;background:linear-gradient(120deg,#fffdf8,#f9f3ff)}.lm-wardrobes h2{margin:4px 0;color:#493750;font-size:1.12rem}.lm-wardrobes p{margin:4px 0;color:#786d7a;font-size:.82rem;line-height:1.4}.lm-wardrobes>div+div{display:grid;gap:7px}.lm-wardrobes>div+div button{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px 12px;border:1px solid #eadfea;border-radius:13px;background:#fff;text-align:left;color:#514258}.lm-wardrobes>div+div button b{font-size:.87rem}.lm-wardrobes>div+div button span{font-weight:800;font-size:.78rem;color:#80506f}.lm-wardrobes>div+div button small{grid-column:1/-1;color:#827486;font-size:.72rem}.lm-wardrobes-empty{grid-template-columns:1fr}.lm-wardrobes-empty button{margin-top:8px;border:0;background:transparent;color:#80506f;font-weight:800;cursor:pointer}@media(max-width:760px){.lm-wardrobes{grid-template-columns:1fr}}
 
 .lm-room-progress{padding-top:10px}.lm-room-progress .household-room-progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.lm-room-progress .household-room-progress{min-width:0}
+
+.lm-scene-card{border:2px solid transparent;background:linear-gradient(#fffdfc,#fff8fb) padding-box,linear-gradient(100deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1) border-box}
+.lm-avatar-wrap{background:linear-gradient(145deg,#fff 0%,#fff4f8 32%,#f5f2ff 65%,#effaf2 100%)}
+.lm-avatar-stage{position:relative;display:grid;place-items:center;width:min(100%,260px);margin:0 auto}
+.lm-avatar{width:min(100%,220px)}
+.lm-avatar-mark{cursor:pointer;outline:none}
+.lm-avatar-mark:hover circle:first-child,.lm-avatar-mark:focus circle:first-child{stroke-width:4}
+.lm-avatar-zones-heading{display:grid;gap:2px;margin:0 0 2px;padding:4px 2px 7px;color:#5a4661}
+.lm-avatar-zones-heading b{font-size:.86rem}
+.lm-region-fill i,.lm-today-progress em{background:linear-gradient(90deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1)}
