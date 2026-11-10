@@ -62,3 +62,17 @@
 .lm-today-progress{font:inherit;text-align:left;color:inherit;cursor:pointer;touch-action:manipulation;transition:border-color .15s ease,box-shadow .15s ease}
 .lm-today-progress:hover,.lm-today-progress:focus-visible{border-color:#b783a5;box-shadow:0 0 0 3px #ead8e5}
 .lm-today-progress .lm-plan-open{margin-top:8px;font-size:.72rem;font-weight:800;color:#80506f}
+
+
+/* Full-page Life Map area views */
+.lm-area-page{gap:14px}
+.lm-area-page-heading{display:grid;gap:7px;padding:18px 20px;border:1px solid #eadbe6;border-radius:22px;background:linear-gradient(125deg,#fff4f7,#f3f1ff 56%,#eff9f3);box-shadow:0 8px 24px rgba(87,52,77,.06)}
+.lm-area-page-heading h1{margin:2px 0;color:#493750;font-family:var(--font-heading,Georgia,serif);font-size:clamp(1.8rem,6vw,2.45rem);line-height:1.08}
+.lm-area-page-heading p{margin:0;color:#756778;line-height:1.5}
+.lm-area-back{justify-self:start;min-height:40px;padding:5px 12px;border:1px solid #e7d7e3;border-radius:999px;background:#fff;color:#6e4c69;font:inherit;font-weight:800;cursor:pointer}
+.lm-area-page-content{align-content:start;padding:18px;background:linear-gradient(145deg,#fffdfc,#fff7fb);border-color:#eadbe6;box-shadow:0 8px 24px rgba(87,52,77,.07)}
+.lm-area-page-content .lm-list{max-height:none;overflow:visible}
+.lm-area-shortcuts{display:grid;gap:9px;padding:16px;border:1px solid #eadbe6;border-radius:20px;background:#fffdfc}
+.lm-area-shortcuts>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.lm-area-shortcuts .lm-region{display:flex;align-items:center;justify-content:center;min-height:54px;text-align:center;font-weight:800}
+@media(max-width:420px){.lm-area-shortcuts>div{grid-template-columns:1fr}.lm-area-page-heading{padding:16px}}
