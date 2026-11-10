@@ -30,7 +30,7 @@ function view(){
  const terms={
   mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
   body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin/i,
-  people:/dolly|leo|demitri|dimitri|ambrose|tanner|relationship|family|together|read with/i,
+  people:/relationship|family|together|read with|time with|spend time|play with|connect with|hang out with|check.?in with|date night/i,
   home:/home|house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean/i,
   spirituality:/spiritual|tarot|ritual|meditat|affirmation/i,
   hobbies:/hobby|craft|garden|plant care|project|yoga/i,
