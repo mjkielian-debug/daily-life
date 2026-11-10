@@ -41,3 +41,5 @@
 .lm-avatar-zones-heading{display:grid;gap:2px;margin:0 0 2px;padding:4px 2px 7px;color:#5a4661}
 .lm-avatar-zones-heading b{font-size:.86rem}
 .lm-region-fill i,.lm-today-progress em{background:linear-gradient(90deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1)}
+
+.hvm-room-progress-item{display:grid;gap:6px;min-width:0}.hvm-room-progress-item .household-room-progress{width:100%;text-align:left}.hvm-room-declutter-quick{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 11px;border:1px solid #d9c4d9;border-radius:12px;background:linear-gradient(90deg,#fff4f6,#fff9eb,#f1fbf5,#f3f4ff);color:#614766;font:inherit;font-weight:800;cursor:pointer}.hvm-room-declutter-quick:hover,.hvm-room-declutter-quick:focus-visible{border-color:#aa76a0;box-shadow:0 0 0 3px #ead8e5}
