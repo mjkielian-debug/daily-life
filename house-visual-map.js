@@ -193,14 +193,26 @@ function mappedRoomItems(room){
  const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
  return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
 }
+function roomInsightParts(tasks){
+ const declutter=tasks.filter(t=>/declutter|organis|organize|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
+ const declutterDone=declutter.filter(t=>t.done).length;
+ const completed=tasks.filter(t=>t.done&&/^\\d{4}-\\d{2}-\\d{2}$/.test(str(t.date))).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
+ const last=completed[0]||null;
+ const dateLabel=value=>{if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(str(value)))return str(value);return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})};
+ return {
+  declutter:declutter.length?declutterDone+" of "+declutter.length+" saved declutter/organizing tasks complete":"No saved declutter tasks linked yet",
+  last:last?"Last room task marked done: "+str(last.title||"Task")+" · "+dateLabel(last.date):"No completed room task in saved history"
+ };
+}
 function mappedProgressCard(f,z,room){
  const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
- const inventory=mappedRoomItems(room);
+ const inventory=mappedRoomItems(room),insights=roomInsightParts(tasks);
  const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
    'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
  const title=z?z.name:room.name;
  return '<button type="button" class="household-room-progress" onclick="'+action+'">'+
  '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
+ '<small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+
  '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
  '<span><b>'+(percent===null?'—':percent+'%')+'</b>'+
  '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
@@ -694,6 +706,8 @@ window.houseVisualOpenZone=function(f,id){
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
  const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
  const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
+ const insights=roomInsightParts(tasks);
+ const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small><small>This summarizes existing saved room tasks; it does not change inventory records.</small></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
  '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
@@ -715,7 +729,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+interactiveRoom+objectPanel+inventory+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
