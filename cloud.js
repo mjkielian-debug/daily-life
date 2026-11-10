@@ -1383,6 +1383,19 @@ function cloudApplyLifeEntry(row){
       const child=typeof canonicalPersonName==="function"?canonicalPersonName(p.child):String(p.child||"");
       const key=v=>String(v||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
       const targetId=String(p.taskId||"").trim();
+      if(p.dedupeMatching===true){
+        const same=(state.tasks||[]).filter(x=>key(x.title)===key(title));
+        if(same.length){
+          const existing=(targetId&&same.find(x=>String(x.id)===targetId))||same.find(x=>String(x.category||"").toLowerCase()===String(p.category||"").toLowerCase())||same[0];
+          existing.date=String(p.date||date);existing.category=String(p.category||existing.category||"life");
+          if(p.done===true){existing.done=true;existing.completedAt=String(p.completedAt||row.created_at||new Date().toISOString())}
+          if(p.notes&&String(p.notes).trim())existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
+          existing.cloudEntryId=row.id;
+          const keepId=String(existing.id);
+          state.tasks=state.tasks.filter(x=>key(x.title)!==key(title)||String(x.id)===keepId);
+          return true;
+        }
+      }
       const matches=targetId?(state.tasks||[]).filter(x=>String(x.id)===targetId):(state.tasks||[]).filter(x=>x.date===date&&key(x.title)===key(title)&&key(x.child)===key(child));
       if(matches.length){
         // A conversational update should check off an existing task, not
