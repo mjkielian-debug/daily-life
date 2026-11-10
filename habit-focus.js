@@ -26,6 +26,29 @@
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
   var quickBarOpen=false;
 
+  function seedRequestedStarterHabits(){
+    var s=appState();
+    if(!s||!s.settings||s.settings.habitStarterSetVersion>=1)return;
+    s.settings=s.settings||{};
+    var createdAt=new Date().toISOString(),added=[];
+    var starters=[
+      {id:"starter-habit-drink-water",area:"health",name:"Drink water",cue:"When I get up or refill my bottle, especially before and during work.",minimum:"Take a few sips; filling my 26-oz bottle is a bonus.",status:"active",reminderEnabled:false,reminderTime:""},
+      {id:"starter-habit-brush-teeth",area:"health",name:"Brush my teeth morning and night",cue:"After I get ready in the morning and before bed.",minimum:"Brush once; one brushing still counts on a hard day.",status:"active",reminderEnabled:false,reminderTime:""}
+    ];
+    starters.forEach(function(starter){
+      var words=starter.id.indexOf("water")>=0?/water|hydration|drink/i:/tooth|teeth|brush/i;
+      var existing=s.habits.find(function(h){return h&&words.test(String(h.name||""))});
+      if(!existing){starter.createdAt=createdAt;starter.updatedAt=createdAt;s.habits.push(starter);added.push(starter.id)}
+    });
+    s.settings.habitStarterSetVersion=1;
+    s.settings.habitStarterSetCreatedAt=createdAt;
+    Promise.resolve(typeof save==="function"?save():null).catch(function(error){
+      s.habits=s.habits.filter(function(h){return added.indexOf(h.id)<0});
+      delete s.settings.habitStarterSetVersion;
+      delete s.settings.habitStarterSetCreatedAt;
+      console.error("Could not save the planned starter habits.",error);
+    });
+  }
   function appState(){
     if(typeof state==="undefined"||!state||typeof state!=="object")return null;
     if(!Array.isArray(state.habits))state.habits=[];
@@ -250,6 +273,7 @@
     var root=document.querySelector("#app"),main=root&&root.querySelector("main.app"),area=currentArea();
     if(!root||!main)return;
     if(typeof appStartupReady!=="undefined"&&!appStartupReady)return;
+    seedRequestedStarterHabits();
     var old=main.querySelector("[data-habit-focus]"),bar=main.querySelector("[data-habit-quickbar]"),header=main.querySelector(":scope > header");
     if(area==="all"){
       if(bar)bar.remove();
