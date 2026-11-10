@@ -32,9 +32,9 @@
     if(typeof window.isDailyLifeWorkday==="function"&&window.isDailyLifeWorkday(today())){
       homeAction=window.isDailyLifeHomeConfirmed?.(today())
         ?'<div class="dl-work-focus-note">Home arrival is recorded for today; eligible home tasks can appear in Day Flow.</div>'
-        :'<div class="dl-work-focus-note">Today’s home tasks stay off Day Flow until you are home.</div><button class="btn primary" type="button" onclick="confirmDailyLifeHomeArrival(\\''+escapeHtml(today())+'\\')">I’m home · show home tasks</button>';
+        :'<div class="dl-work-focus-note">Today’s home tasks stay off Day Flow until you are home.</div><button class="btn primary" type="button" onclick="confirmDailyLifeHomeArrival(\''+escapeHtml(today())+'\')">I’m home · show home tasks</button>';
     }
-    var body='<div class="dl-work-focus-content"><div class="dl-work-focus-section"><b>Work and route</b>'+rows+'</div><div class="dl-work-focus-section"><b>Next important item</b>'+nextHtml+'</div>'+homeAction+'<button class="btn" type="button" onclick="closeModal();setView(\\'itinerary\\')">Open full Day Flow</button></div>';
+    var body='<div class="dl-work-focus-content"><div class="dl-work-focus-section"><b>Work and route</b>'+rows+'</div><div class="dl-work-focus-section"><b>Next important item</b>'+nextHtml+'</div>'+homeAction+'<button class="btn" type="button" onclick="closeModal();setView(\'itinerary\')">Open full Day Flow</button></div>';
     if(typeof modal==="function")modal("Workday focus",body,"Close",closeModal);
   }
   function mount(){
