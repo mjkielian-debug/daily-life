@@ -235,7 +235,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261110-mobile-scrollfix1"></script>
-<script src="monster-high-collection.js?v=20261110-habit-reminders-persistent1"></script>
+<script src="monster-high-collection.js?v=20261110-update-control1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -279,7 +279,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261110-habit-reminders-persistent1"></script>
+<script src="cloud.js?v=20261110-update-control1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261106-recurringpaymentreview1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -310,7 +310,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261110-habit-reminders-persistent1";
+const APP_BUILD="20261110-update-control1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -9634,23 +9634,22 @@ async function registerAppWorker(){
   try{
     const reg=await navigator.serviceWorker.register("sw.js?v="+DAILY_LIFE_BUILD);
     window.__dailyLifeWaitingWorker=reg.waiting||null;
-    const watch=worker=>{
-      if(!worker)return;
-      worker.addEventListener("statechange",()=>{
-        if(worker.state==="installed"&&hadController&&reg.waiting){
-          window.__dailyLifeReloadAfterWorkerActivation=true;
-          reg.waiting.postMessage({type:"ACTIVATE_NOW"});
-        }
-      });
+    const announceUpdate=()=>{
+      const waiting=reg.waiting;
+      if(!waiting||!hadController)return;
+      window.__dailyLifeWaitingWorker=waiting;
+      if(typeof showAppUpdateNotice==="function")showAppUpdateNotice();
     };
-    if(reg.waiting&&hadController){
-      window.__dailyLifeReloadAfterWorkerActivation=true;
-      reg.waiting.postMessage({type:"ACTIVATE_NOW"});
-    }
-    if(reg.installing)watch(reg.installing);
+    if(reg.waiting)announceUpdate();
+    if(reg.installing)reg.installing.addEventListener("statechange",()=>{
+      if(reg.installing?.state==="installed")announceUpdate();
+    });
     reg.addEventListener("updatefound",()=>{
       window.__dailyLifeWaitingWorker=null;
-      watch(reg.installing);
+      const worker=reg.installing;
+      if(worker)worker.addEventListener("statechange",()=>{
+        if(worker.state==="installed")announceUpdate();
+      });
     });
     navigator.serviceWorker.addEventListener("controllerchange",()=>{
       if(window.__dailyLifeReloadAfterWorkerActivation)location.reload();
@@ -9704,6 +9703,6 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261106-recurringpaymentreview1"></script>
-<script src="habit-focus.js?v=20261110-habit-reminders-persistent1"></script>
+<script src="habit-focus.js?v=20261110-update-control1"></script>
 </body>
 </html>
