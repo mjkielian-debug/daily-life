@@ -10,7 +10,7 @@
     if(cloudSyncing||(typeof cloudPushTimer!=="undefined"&&cloudPushTimer))return {label:"Saved on this phone · syncing",kind:"syncing"};
     if(!user())return {label:"Saved on this phone",kind:"local"};
     if(typeof cloudAutoEnabled==="function"&&!cloudAutoEnabled())return {label:"Saved on this phone · cloud sync off",kind:"attention"};
-    if(localDirty)return {label:"Saved on this phone · waiting to sync",kind:"syncing"};
+    if(localDirty)return {label:"Saved on this phone · cloud copy pending",kind:"syncing"};
     if(lastCloudSuccess||((typeof cloudRemoteUpdatedAt!=="undefined")&&cloudRemoteUpdatedAt))return {label:"Saved on this phone · synced to cloud",kind:"synced"};
     return {label:"Saved on this phone · no cloud backup yet",kind:"attention"};
   }
@@ -22,7 +22,7 @@
     var s=status();
     if(strip.dataset.label===s.label&&strip.dataset.status===s.kind)return;
     strip.dataset.label=s.label;strip.dataset.status=s.kind;
-    strip.innerHTML='<span class="dl-sync-dot" aria-hidden="true"></span><span>'+s.label+'</span><span class="dl-sync-action">Sync status ›</span>';
+    strip.innerHTML='<span class="dl-sync-dot" aria-hidden="true"></span><span>'+s.label+'</span><span class="dl-sync-action">Cloud details ›</span>';
   }
   function changed(){update()}
   if(typeof save==="function"){
