@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
 <link rel="stylesheet" href="visual-density.css?v=20261015-rainbow-cleanup2">
 <link rel="stylesheet" href="habit-focus.css?v=20261109-habit-focus1">
-<link rel="stylesheet" href="monster-high-collection.css?v=20261110-monster-high9">
+<link rel="stylesheet" href="monster-high-collection.css?v=20261110-mobile-scrollfix1">
 
 <title>Daily Life</title>
 <style id="startup-failsafe-style">#startupFailsafe{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:rgba(246,219,233,.96);opacity:0;visibility:hidden;animation:dlRevealFailsafe .01s linear 12s forwards}#startupFailsafe .panel{max-width:440px;padding:24px;border-radius:24px;background:#fffafc;color:#30233b;box-shadow:0 16px 50px rgba(48,35,59,.18);text-align:center}#startupFailsafe p{line-height:1.5}#startupFailsafe a{display:inline-block;margin-top:10px;padding:12px 18px;border-radius:999px;background:#cce9e2;color:#30233b;font-weight:800;text-decoration:none}@keyframes dlRevealFailsafe{to{opacity:1;visibility:visible}}</style><style id="status-bar-root-tint">html{background:#f6dbe9!important;color-scheme:only light}body{background-color:#f6dbe9}</style>
@@ -182,7 +182,7 @@ dialog,
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261027-trendclarity3">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261110-monster-high9">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261110-mobile-scrollfix1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -234,8 +234,8 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261110-monster-high9"></script>
-<script src="monster-high-collection.js?v=20261110-monster-high9"></script>
+<script src="visual-hubs.js?v=20261110-mobile-scrollfix1"></script>
+<script src="monster-high-collection.js?v=20261110-mobile-scrollfix1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -310,7 +310,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261110-monster-high9";
+const APP_BUILD="20261110-mobile-scrollfix1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
