@@ -120,6 +120,11 @@
       return '<button type="button" data-hf-action="add" data-area="'+a.id+'"><span>'+esc(a.icon)+'</span>'+esc(a.label)+'</button>'
     }).join("")+'</div>'
   }
+  function quickBarSignature(){
+    var s=appState();if(!s)return "";
+    var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
+    return JSON.stringify({open:quickBarOpen,habits:active.map(function(h){var log=logOn(h.id,today());return [h.id,log?.status||""]})});
+  }
   function quickBar(){
     var s=appState();if(!s)return "";
     var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
@@ -131,7 +136,7 @@
         '<button type="button" class="hf-quick-done'+(log&&log.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="done">✓ Done</button>'+
         '<button type="button" class="hf-quick-partial'+(log&&log.status==="partial"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="partial">Partly</button></div></div>';
     }).join("");
-    return '<section class="hf-quickbar" data-habit-quickbar><div class="hf-quick-head"><span class="hf-quick-sparkle" aria-hidden="true">✦</span><div class="hf-quick-title"><b>Today’s habits</b><span>'+esc(title)+'</span></div>'+
+    return '<section class="hf-quickbar" data-habit-quickbar data-signature="'+esc(quickBarSignature())+'"><div class="hf-quick-head"><span class="hf-quick-sparkle" aria-hidden="true">✦</span><div class="hf-quick-title"><b>Today’s habits</b><span>'+esc(title)+'</span></div>'+
       (active.length?'<button type="button" class="hf-quick-toggle" data-hf-action="quick-toggle">'+(quickBarOpen?"Hide":"Check in")+'</button>':'<button type="button" class="hf-quick-toggle" data-hf-action="add" data-area="health">＋ Start</button>')+
       '</div>'+(quickBarOpen&&active.length?'<div class="hf-quick-list">'+rows+'</div>':"")+'</section>';
   }
@@ -253,7 +258,7 @@
       return;
     }
     var barHtml=quickBar();
-    if(bar)bar.outerHTML=barHtml;
+    if(bar){if(bar.dataset.signature!==quickBarSignature())bar.outerHTML=barHtml}
     else if(header)header.insertAdjacentHTML("afterend",barHtml);
     else main.insertAdjacentHTML("afterbegin",barHtml);
     var currentBar=main.querySelector("[data-habit-quickbar]");
