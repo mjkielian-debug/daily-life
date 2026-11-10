@@ -7,12 +7,6 @@ const floorNames=["Basement","First floor","Second floor","Third floor"];
 let activeArea="",activeRoom=null;
 function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirstFloor");return floorNames.includes(value)?value:"First floor"}catch(_){return "First floor"}}
 function jump(view){if(typeof setView==="function")setView(view)}
-function region(name,detail,icon,fill,area){
- const pct=Math.max(0,Math.min(100,Number(fill)||0));
- return '<button class="lm-region lm-region-'+h(name.toLowerCase().replace(/[^a-z0-9]+/g,"-"))+'" type="button" onclick="lifeMapSelectArea(\''+h(area)+'\')">'+
- '<span class="lm-region-icon" aria-hidden="true">'+icon+'</span><span class="lm-region-copy"><b>'+h(name)+'</b><small>'+h(detail)+'</small></span>'+
- '<span class="lm-region-fill" aria-hidden="true"><i style="width:'+pct+'%"></i></span></button>';
-}
 function avatarMark(label,icon,x,y,pct,color,area){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
  return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(label)}" title="${h(label)}" data-life-area="${h(area)}">`+
@@ -45,7 +39,7 @@ function view(areaOverride,tasksOnly){
  const moneyGoals=list(state&&state.settings&&state.settings.financialRoadmap).filter(g=>g&&Array.isArray(g.steps));
  const moneyGoalSteps=moneyGoals.flatMap(g=>g.steps),moneyGoalDone=moneyGoalSteps.filter(step=>step&&step.done).length,moneyGoalTotal=moneyGoalSteps.length,moneyGoalPct=moneyGoalTotal?Math.round(moneyGoalDone/moneyGoalTotal*100):0;
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
- const moneyFill=moneyGoalTotal?moneyGoalPct:pctFor("money"),moneyDetail=moneyGoalTotal?moneyGoalDone+" of "+moneyGoalTotal+" money-goal steps":matches.money.filter(t=>t.done).length+" of "+matches.money.length+" linked actions today";
+ const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
  const avatarMarks=[
   avatarMark("Mind and self-care","✿",81,56,carePct,"#c89ad7","mind"),
   avatarMark("Spirituality","☾",141,42,pctFor("spirituality"),"#f2b85b","spirituality"),
@@ -144,7 +138,7 @@ function view(areaOverride,tasksOnly){
  '<path d="M101 91 L101 109 L119 109 L119 91Z" fill="#f7dfd4"/>'+
  '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
  '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#bd829e" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
+ '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#f4edf3" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
  '<path d="M89 289 L104 289 L104 292 Q98 296 84 294 Q84 291 89 289Z M116 289 L131 289 Q137 291 140 294 Q127 297 116 293Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<g clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
  '<g clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
@@ -160,14 +154,7 @@ function view(areaOverride,tasksOnly){
  avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
  avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
  '</g>'+avatarMarks+'</svg>'+
- '<p class="lm-avatar-caption">A little picture of a life being cared for</p></div>'+
- '<div class="lm-regions" aria-label="Avatar areas"><div class="lm-avatar-zones-heading"><span class="lm-kicker">PARTS OF YOU · TAP TO OPEN</span><b>Each area belongs on your avatar</b></div>'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"mind")+
- region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"body")+
- region("Relationships",matches.people.filter(t=>t.done).length+" of "+matches.people.length+" linked tasks today","♥",pctFor("people"),"people")+
- region("Spirituality",matches.spirituality.filter(t=>t.done).length+" of "+matches.spirituality.length+" linked actions today","☾",pctFor("spirituality"),"spirituality")+
- region("Hobbies & projects",matches.hobbies.filter(t=>t.done).length+" of "+matches.hobbies.length+" linked actions today","✿",pctFor("hobbies"),"hobbies")+
- region("Money & planning",moneyDetail,"✧",moneyFill,"money")+
- ''+activeAreaPanel+'<p class="lm-footnote">A part stays softly colored when no matching tasks are linked yet. The food, sleep, care, family, and inventory records remain in their existing trackers.</p></div></div></section>'+
+ '<p class="lm-avatar-caption">Tap a marker to open an area. Money-goal progress fills the pants.</p></div></div></section>'+
  '<section class="lm-lower-grid"><section class="lm-panel"><div class="lm-panel-heading"><div><span class="lm-kicker">TODAY</span><h2>Small steps</h2></div><button type="button" class="lm-text-button" onclick="setView(\'today\')">Full Day Flow ›</button></div>'+taskContent+
  '<details class="lm-care"><summary>Care habits today · '+careDone+' of '+careHabits.length+'</summary><div class="lm-list">'+careRows+'</div></details></section>'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
