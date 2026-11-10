@@ -15,13 +15,13 @@ function region(name,detail,icon,fill,area){
 }
 function avatarMark(label,icon,x,y,pct,color,area){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(label)}" title="${h(label)}" onclick="lifeMapSelectArea('${h(area)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lifeMapSelectArea('${h(area)}')}">`+
+ return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(label)}" title="${h(label)}" data-life-area="${h(area)}">`+
  '<circle cx="'+x+'" cy="'+y+'" r="14" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></g>';
 }
 function avatarHotspot(area,label,path){
- return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" onclick="lifeMapSelectArea('${h(area)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lifeMapSelectArea('${h(area)}')}"/>`;
+ return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" data-life-area="${h(area)}"/>`;
 }
 function view(){
  const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
@@ -120,7 +120,7 @@ function view(){
  const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f==="Third floor"?"Attic":f)+'</button>').join("");
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
- '<header class="lm-welcome"><div><span class="lm-kicker">YOUR LIFE MAP</span><h1>Hi, '+h(name)+'.</h1><p>Your life is made of lots of little things. Each one counts.</p></div><div class="lm-today-progress" aria-label="Today plan '+completed+' of '+tasks.length+' complete"><span>Today’s plan</span><b>'+completed+' <small>of '+tasks.length+'</small></b><i><em style="width:'+taskPct+'%"></em></i></div></header>'+
+ '<header class="lm-welcome"><div><span class="lm-kicker">YOUR LIFE MAP</span><h1>Hi, '+h(name)+'.</h1><p>Your life is made of lots of little things. Each one counts.</p></div><button type="button" class="lm-today-progress" aria-label="Open today’s tasks: '+completed+' of '+tasks.length+' complete" onclick="setView(\\'today\\')"><span>Today’s tasks</span><b>'+completed+' <small>of '+tasks.length+' done</small></b><i><em style="width:'+taskPct+'%"></em></i><span class="lm-plan-open">Tap to view the list ›</span></button></header>'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
  '<div class="lm-scene-grid"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="group" aria-label="A friendly avatar with clickable mind, spirituality, health, relationships, hobbies, and money areas">'+
  '<defs><clipPath id="lmMindClip"><path d="M82 44 Q87 25 110 24 Q133 25 138 44 L139 68 Q138 93 110 97 Q82 93 81 68Z"/></clipPath><clipPath id="lmSpiritClip"><path d="M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 62 Q130 39 110 39 Q91 39 73 62Z"/></clipPath><clipPath id="lmTorsoClip"><path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z"/></clipPath><clipPath id="lmLeftClip"><path d="M81 114 Q66 120 60 143 L53 177 Q54 185 61 187 L76 151 L92 137Z"/></clipPath><clipPath id="lmRightClip"><path d="M139 114 Q154 120 160 143 L167 177 Q166 185 159 187 L144 151 L128 137Z"/></clipPath><clipPath id="lmLegClip"><path d="M82 179 Q110 190 138 179 L134 218 L86 218Z M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z"/></clipPath></defs>'+
@@ -163,7 +163,10 @@ function view(){
  (clothingRows?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>Counts compare assigned saved items with your clothing targets; low counts mean items are not yet recorded to the target.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
  '<p class="lm-disclaimer">This first pass reads your existing records. It does not move, delete, or rewrite your data. Avatar fill currently uses date-specific tasks and self-care logs; spirituality, hobbies, and money each link to their existing trackers.</p></section>';
 }
-window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea=activeArea===area?"":area;activeRoom=null;if(typeof render==="function")render()};
+window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea=activeArea===area?"":area;activeRoom=null;if(typeof render==="function")render();if(activeArea&&typeof requestAnimationFrame==="function")requestAnimationFrame(function(){const panel=document.querySelector(".life-map-page .lm-inline-panel");if(panel)panel.scrollIntoView({behavior:"smooth",block:"center"})})};
+function avatarAreaFromEvent(event){const target=event.target&&event.target.closest?event.target.closest(".lm-avatar-mark[data-life-area],.lm-avatar-hotspot[data-life-area]"):null;if(!target)return;const area=target.getAttribute("data-life-area");if(!area)return;if(event.type==="keydown"&&event.key!=="Enter"&&event.key!==" ")return;if(event.type==="keydown")event.preventDefault();if(typeof window.lifeMapSelectArea==="function")window.lifeMapSelectArea(area)}
+document.addEventListener("click",avatarAreaFromEvent);
+document.addEventListener("keydown",avatarAreaFromEvent);
 window.lifeMapCloseArea=function(){activeArea="";if(typeof render==="function")render()};
 window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
 window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
