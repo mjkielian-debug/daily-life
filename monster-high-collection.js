@@ -100,6 +100,7 @@ async function toggleMonsterHighOwned(id,owner,checked){
   const data=monsterHighData(),previous=!!data.ownership[id]?.[owner];
   data.ownership[id]=data.ownership[id]||{};
   data.ownership[id][owner]=!!checked;
+  data.updatedAt=new Date(Math.max(Date.now(),(Date.parse(data.updatedAt||"")||0)+1)).toISOString();
   try{
     const result=await saveMonsterHighOwnership();
     render();
@@ -122,6 +123,7 @@ function openMonsterHighAdd(){
     const name=$("#mh-name")?.value.trim();if(!name)return;
     const data=monsterHighData(),id="custom-"+uid();
     data.custom.push({id,name,generation:$("#mh-generation").value,year:$("#mh-year").value.trim(),line:$("#mh-line").value.trim()||"Release",image:$("#mh-image").value.trim(),source:"Added by Michelle"});
-    try{await save();closeModal();render()}catch(error){data.custom=data.custom.filter(x=>x.id!==id);alert("Could not save that doll. Please try again.")}
+    data.updatedAt=new Date(Math.max(Date.now(),(Date.parse(data.updatedAt||"")||0)+1)).toISOString();
+    try{await saveMonsterHighOwnership();closeModal();render()}catch(error){data.custom=data.custom.filter(x=>x.id!==id);alert("Could not save that doll. Please try again.")}
   });
 }
