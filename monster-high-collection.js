@@ -110,7 +110,8 @@ async function saveMonsterHighOwnership(){
   return monsterHighOwnershipPushQueue;
 }
 async function toggleMonsterHighOwned(id,owner,checked){
-  const data=monsterHighData(),previous=!!data.ownership[id]?.[owner];
+  const data=monsterHighData(),previous=!!data.ownership[id]?.[owner],
+        previousOwnerTime=data.ownershipUpdatedAt[id]?.[owner],previousUpdatedAt=data.updatedAt;
   data.ownership[id]=data.ownership[id]||{};
   data.ownership[id][owner]=!!checked;
   data.ownershipUpdatedAt[id]=data.ownershipUpdatedAt[id]||{};
@@ -124,6 +125,9 @@ async function toggleMonsterHighOwned(id,owner,checked){
     if(result.error||result.paused)alert("The ownership mark is saved on this phone, but cloud sync is paused. Check the app's cloud sync status before relying on it on another device.");
   }catch(error){
     data.ownership[id][owner]=previous;
+    if(previousOwnerTime===undefined)delete data.ownershipUpdatedAt[id][owner];else data.ownershipUpdatedAt[id][owner]=previousOwnerTime;
+    if(!Object.keys(data.ownershipUpdatedAt[id]).length)delete data.ownershipUpdatedAt[id];
+    data.updatedAt=previousUpdatedAt;
     alert("Could not save that collection update on this phone. Please try again.");
     render();
   }
