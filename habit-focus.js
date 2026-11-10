@@ -313,27 +313,13 @@
     if(typeof appStartupReady!=="undefined"&&!appStartupReady)return;
     seedRequestedStarterHabits();
     var old=main.querySelector("[data-habit-focus]"),bar=main.querySelector("[data-habit-quickbar]"),header=main.querySelector(":scope > header");
-    if(area==="all"){
-      if(bar)bar.remove();
-      if(old&&old.dataset.area==="all")return;
-      var allHtml=renderPanel("all");
-      if(old)old.outerHTML=allHtml;
-      else if(header)header.insertAdjacentHTML("afterend",allHtml);
-      else main.insertAdjacentHTML("afterbegin",allHtml);
-      return;
-    }
-    var barHtml=quickBar();
-    if(bar){if(bar.dataset.signature!==quickBarSignature())bar.outerHTML=barHtml}
-    else if(header)header.insertAdjacentHTML("afterend",barHtml);
-    else main.insertAdjacentHTML("afterbegin",barHtml);
-    var currentBar=main.querySelector("[data-habit-quickbar]");
-    if(area){
-      if(old&&old.dataset.area===area)return;
-      var panelHtml=renderPanel(area);
-      if(old)old.outerHTML=panelHtml;
-      else if(currentBar)currentBar.insertAdjacentHTML("afterend",panelHtml);
-      else if(header)header.insertAdjacentHTML("afterend",panelHtml);
-    }else if(old)old.remove();
+    if(bar)bar.remove();
+    if(!area){if(old)old.remove();return}
+    if(old&&old.dataset.area===area)return;
+    var panelHtml=renderPanel(area);
+    if(old)old.outerHTML=panelHtml;
+    else if(header)header.insertAdjacentHTML("afterend",panelHtml);
+    else main.insertAdjacentHTML("afterbegin",panelHtml);
   }
   function handleClick(event){
     var button=event.target&&event.target.closest?event.target.closest("[data-hf-action]"):null;
