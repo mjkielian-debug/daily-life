@@ -95,13 +95,13 @@ function view(){
   const firstLine="Long sleeves "+counts.long+"/7 · Short sleeves "+counts.short+"/7 · Pants "+counts.pants+"/7";
   const secondLine="Hoodies/jackets "+counts.layers+"/3–5 · Winter coat "+counts.coat+"/1 · Pajamas "+counts.pajamas+"/5";
   const otherLine=counts.other?'<small>Other clothing · '+counts.other+' saved</small>':"";
-  return '<button type="button" onclick="setView(\\'inventory\\')"><b>'+h(person.name)+'</b><span>'+(hasRecords?clothingQty(items)+' assigned saved item'+(clothingQty(items)===1?"":"s"):"No assigned clothing records yet")+'</span>'+
+  return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(person.name)+'</b><span>'+(hasRecords?clothingQty(items)+' assigned saved item'+(clothingQty(items)===1?"":"s"):"No assigned clothing records yet")+'</span>'+
    (hasRecords?'<small>'+h(firstLine)+'</small><small>'+h(secondLine)+'</small>'+otherLine:'<small>Targets are shown as a reference; counts will fill in as items are inventoried.</small>')+'</button>';
  }).join("");
  const otherOwners=clothingOwners.filter(owner=>!childWardrobes.some(person=>person.aliases.includes(owner.toLowerCase())));
  const otherRows=otherOwners.map(owner=>{
   const items=clothing.filter(item=>clothingOwner(item)===owner.toLowerCase());
-  return '<button type="button" onclick="setView(\\'inventory\\')"><b>'+h(owner)+'</b><span>'+clothingQty(items)+' saved clothing item'+(clothingQty(items)===1?"":"s")+'</span><small>'+h(items.slice(0,3).map(item=>item.name).join(" · "))+(items.length>3?" · +"+(items.length-3)+" more":"")+'</small></button>';
+  return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(owner)+'</b><span>'+clothingQty(items)+' saved clothing item'+(clothingQty(items)===1?"":"s")+'</span><small>'+h(items.slice(0,3).map(item=>item.name).join(" · "))+(items.length>3?" · +"+(items.length-3)+" more":"")+'</small></button>';
  }).join("");
  const clothingRows=childRows+otherRows;
  const floor=selectedFloor();
