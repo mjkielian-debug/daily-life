@@ -14,7 +14,7 @@
   function nextOther(items){
     var now=new Date(),mins=now.getHours()*60+now.getMinutes();
     return items.find(function(x){
-      if(workPattern.test([x.title,x.detail,x.kind,x.category].filter(Boolean).join(" "))||x.nonBlocking||x.kind==="gap")return false;
+      if(workPattern.test([x.title,x.detail,x.kind,x.category].filter(Boolean).join(" "))||!["event","tentative"].includes(String(x.kind||"").toLowerCase()))return false;
       var end=typeof hmMinutes==="function"?hmMinutes(x.end):null,start=typeof hmMinutes==="function"?hmMinutes(x.start):null;
       return (end!==null&&end>mins)||(start!==null&&start>=mins);
     })||null;
