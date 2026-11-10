@@ -68,6 +68,8 @@ const APP_SHELL=[
   "./monster-high-collection.css",
   "./monster-high-collection.js",
   "./money-clarity.js",
+  "./hobby-weekly.js",
+  "./ssd-weekly-pay.js",
   "./chase-balance.js",
   "./chase-balance.css",
   "./readability-fix.css",
