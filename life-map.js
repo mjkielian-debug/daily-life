@@ -88,15 +88,17 @@ function view(){
   {name:"Dolly",aliases:["dolly"]},
   {name:"Ambrose",aliases:["ambrose"]}
  ];
+ const targetCount=(count,target)=>count+"/"+target+(count<target?" · "+(target-count)+" below target":count>target?" · "+(count-target)+" above target":"");
+ const layerCount=count=>count+"/3–5"+(count<3?" · "+(3-count)+" below minimum":count>5?" · "+(count-5)+" above range":" · in range");
  const childRows=childWardrobes.map(person=>{
   const items=clothing.filter(item=>person.aliases.includes(clothingOwner(item)));
   const hasRecords=items.length>0,counts={long:0,short:0,layers:0,coat:0,pants:0,pajamas:0,other:0};
   items.forEach(item=>{counts[clothingType(item)]+=Math.max(0,Number(item.quantity??1)||0)});
-  const firstLine="Long sleeves "+counts.long+"/7 · Short sleeves "+counts.short+"/7 · Pants "+counts.pants+"/7";
-  const secondLine="Hoodies/jackets "+counts.layers+"/3–5 · Winter coat "+counts.coat+"/1 · Pajamas "+counts.pajamas+"/5";
+  const firstLine="Long sleeves "+targetCount(counts.long,7)+" · Short sleeves "+targetCount(counts.short,7)+" · Pants "+targetCount(counts.pants,7);
+  const secondLine="Hoodies/jackets "+layerCount(counts.layers)+" · Winter coat "+targetCount(counts.coat,1)+" · Pajamas "+targetCount(counts.pajamas,5);
   const otherLine=counts.other?'<small>Other clothing · '+counts.other+' saved</small>':"";
   return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(person.name)+'</b><span>'+(hasRecords?clothingQty(items)+' assigned saved item'+(clothingQty(items)===1?"":"s"):"No assigned clothing records yet")+'</span>'+
-   (hasRecords?'<small>'+h(firstLine)+'</small><small>'+h(secondLine)+'</small>'+otherLine:'<small>Targets are shown as a reference; counts will fill in as items are inventoried.</small>')+'</button>';
+   (hasRecords?'<small>'+h(firstLine)+'</small><small>'+h(secondLine)+'</small>'+otherLine:'<small>Targets · Long sleeves 7 · Short sleeves 7 · Pants 7</small><small>Hoodies/jackets 3–5 · Winter coat 1 · Pajamas 5</small>')+'</button>';
  }).join("");
  const otherOwners=clothingOwners.filter(owner=>!childWardrobes.some(person=>person.aliases.includes(owner.toLowerCase())));
  const otherRows=otherOwners.map(owner=>{
