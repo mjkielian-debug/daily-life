@@ -58,8 +58,11 @@ window.openHomeAreaProjects=async function(){
    '<button class="btn" onclick="openPhotoInbox(\'home_progress\')">📷 Send a photo</button></div>';
   return;
  }
- // Only user-marked complete is complete; photo phases alone never imply it.
- const ordered=[...rows].sort((a,b)=>(a.status==="complete"?1:0)-(b.status==="complete"?1:0));
+ // Photo phases never imply completion. Focus active work first, then unstarted,
+ // paused, and user-marked complete areas; break ties by most recently updated.
+ const priority={in_progress:0,not_started:1,paused:2,complete:3};
+ const ordered=[...rows].sort((a,b)=>(priority[a.status]??1)-(priority[b.status]??1)||
+  new Date(b.updated_at||0)-new Date(a.updated_at||0));
  const focus=ordered[0],rest=ordered.slice(1);
  current.innerHTML=areaFocus(focus,phases.get(focus.id))+
  '<div class="ha-handoff"><b>One area at a time</b><small>Photo labels describe evidence; no automatic completion percentages or assumptions about things being put away.</small></div>'+
