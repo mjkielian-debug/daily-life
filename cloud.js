@@ -741,7 +741,7 @@ function cloudMergeMonsterHighCollection(localValue,remoteValue){
       if(localHas&&remoteHas&&localTime===remoteTime)owners[owner]=!!(localOwnership[id][owner]||remoteOwnership[id][owner]);
       else if(localHas&&(!remoteHas||localTime>remoteTime))owners[owner]=!!localOwnership[id][owner];
       else owners[owner]=!!remoteOwnership[id][owner];
-      times[owner]=new Date(Math.max(localTime,remoteTime)).toISOString();
+      if(Math.max(localTime,remoteTime)>0)times[owner]=new Date(Math.max(localTime,remoteTime)).toISOString();
     }
     if(Object.keys(owners).length){merged.ownership[id]=owners;merged.ownershipUpdatedAt[id]=times}
   }
