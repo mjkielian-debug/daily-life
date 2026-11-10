@@ -81,11 +81,11 @@ function view(){
  '<path d="M59 229 Q110 246 161 229 L150 292 L119 292 L109 250 L99 292 L68 292Z" fill="#f8e8ef" stroke="#64445a" stroke-width="4"/>'+
  '<g clip-path="url(#lmHeadClip)"><rect x="70" y="'+(102-80*pctFor("mind")/100)+'" width="80" height="'+(80*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
  '<g clip-path="url(#lmTorsoClip)"><rect x="45" y="'+(245-130*pctFor("body")/100)+'" width="130" height="'+(130*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
- '<g clip-path="url(#lmLeftClip)"><rect x="40" y="'+(195-75*pctFor("people")/100)+'" width="50" height="'+(75*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="130" y="'+(195-75*pctFor("people")/100)+'" width="55" height="'+(75*pctFor("people")/100)+'" fill="#e98cb0"/></g>'+
- '<g clip-path="url(#lmLegClip)"><rect x="50" y="'+(300-90*pctFor("home")/100)+'" width="120" height="'+(90*pctFor("home")/100)+'" fill="#8fc7b2"/></g>'+
+ '<g clip-path="url(#lmLeftClip)"><rect x="40" y="'+(195-75*pctFor("people")/100)+'" width="50" height="'+(75*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="130" y="'+(195-75*pctFor("hobbies")/100)+'" width="55" height="'+(75*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
+ '<g clip-path="url(#lmLegClip)"><rect x="50" y="'+(300-90*pctFor("money")/100)+'" width="120" height="'+(90*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
  '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">A little picture of a life being cared for</p></div>'+
- '<div class="lm-regions">'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"selfcare")+
+ '<div class="lm-regions" aria-label="Avatar areas"><div class="lm-avatar-zones-heading"><span class="lm-kicker">PARTS OF YOU · TAP TO OPEN</span><b>Each area belongs on your avatar</b></div>'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"selfcare")+
  region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"log")+
  region("Relationships",matches.people.filter(t=>t.done).length+" of "+matches.people.length+" linked tasks today","♥",pctFor("people"),"family")+
  region("Spirituality",matches.spirituality.filter(t=>t.done).length+" of "+matches.spirituality.length+" linked actions today","☾",pctFor("spirituality"),"spirituality")+
