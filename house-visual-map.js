@@ -193,29 +193,52 @@ function mappedRoomItems(room){
  const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
  return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
 }
-function roomInsightParts(tasks){
+function roomDeclutterSessions(f,id){
+ const key=String(f||"")+"::"+String(id||"");
+ const entry=state.settings?.roomDeclutterProgress?.[key];
+ return arr(entry?.sessions);
+}
+function roomInsightParts(tasks,f,id){
  const declutter=tasks.filter(t=>/declutter|organis|organize|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
  const declutterDone=declutter.filter(t=>t.done).length;
- const completed=tasks.filter(t=>t.done&&/^\d{4}-\\d{2}-\\d{2}$/.test(str(t.date))).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
- const last=completed[0]||null;
- const dateLabel=value=>{if(!/^\d{4}-\\d{2}-\\d{2}$/.test(str(value)))return str(value);return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})};
+ const isDate=value=>{const v=str(value);return v.length===10&&v[4]==="-"&&v[7]==="-"};
+ const completed=tasks.filter(t=>t.done&&isDate(t.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
+ const sessions=roomDeclutterSessions(f,id).filter(x=>isDate(x.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date))||str(b.at).localeCompare(str(a.at)));
+ const dateLabel=value=>isDate(value)?new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
+ const summary=[];
+ if(sessions.length)summary.push(sessions.length+" room areas organized");
+ if(declutter.length)summary.push(declutterDone+" of "+declutter.length+" saved declutter/organizing tasks done");
  return {
-  declutter:declutter.length?declutterDone+" of "+declutter.length+" saved declutter/organizing tasks complete":"No saved declutter tasks linked yet",
-  last:last?"Last room task marked done: "+str(last.title||"Task")+" · "+dateLabel(last.date):"No completed room task in saved history"
+  declutter:summary.join(" · ")||"No room declutter progress logged yet",
+  last:completed[0]?"Last room task marked done: "+str(completed[0].title||"Task")+" · "+dateLabel(completed[0].date):"No completed room task in saved history",
+  lastOrganized:sessions[0]?"Last area organized: "+dateLabel(sessions[0].date):""
  };
+}
+window.houseVisualLogDeclutter=async function(f,id){
+ if(!floors.includes(f)||!okId(id))return;
+ if(!state.settings||typeof state.settings!=="object")state.settings={};
+ if(!state.settings.roomDeclutterProgress||typeof state.settings.roomDeclutterProgress!=="object")state.settings.roomDeclutterProgress={};
+ const key=String(f)+"::"+String(id),entry=state.settings.roomDeclutterProgress[key]||(state.settings.roomDeclutterProgress[key]={sessions:[]});
+ if(!Array.isArray(entry.sessions))entry.sessions=[];
+ entry.sessions.push({date:typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),at:new Date().toISOString()});
+ await save();
+ if(typeof window.houseVisualOpenZone==="function")window.houseVisualOpenZone(f,id);
 }
 function mappedProgressCard(f,z,room){
  const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
- const inventory=mappedRoomItems(room),insights=roomInsightParts(tasks);
+ const inventory=mappedRoomItems(room),insights=roomInsightParts(tasks,f,z?.id||"room:"+String(room?.id||""));
  const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
    'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
  const title=z?z.name:room.name;
- return '<button type="button" class="household-room-progress" onclick="'+action+'">'+
+ const details='<button type="button" class="household-room-progress" onclick="'+action+'">'+
  '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
  '<small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+
+ (insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+
  '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
  '<span><b>'+(percent===null?'—':percent+'%')+'</b>'+
  '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
+ const quick=z?'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)">＋ I organized one area</button>':'';
+ return '<div class="hvm-room-progress-item">'+details+quick+'</div>';
 }
 function roomProgressHtml(f){
  const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
@@ -706,8 +729,8 @@ window.houseVisualOpenZone=function(f,id){
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
  const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
  const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
- const insights=roomInsightParts(tasks);
- const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small><small>This summarizes existing saved room tasks; it does not change inventory records.</small></div>';
+ const insights=roomInsightParts(tasks,f,id);
+ const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+(insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+'<small>This is separate from item inventory and does not remove room records.</small><button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">＋ I organized one area</button></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
  '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
