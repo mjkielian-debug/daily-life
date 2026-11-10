@@ -1,0 +1,8 @@
+.dl-completion-toast{position:fixed;z-index:12000;left:50%;bottom:calc(106px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:11px;max-width:min(420px,calc(100vw - 28px));padding:12px 17px;border:1px solid #d9bfd1;border-radius:18px;background:linear-gradient(110deg,#fffafd,#f2fbf8);box-shadow:0 12px 34px #46284230;color:#48354b;opacity:0;transform:translate(-50%,12px) scale(.97);pointer-events:none;transition:opacity .2s ease,transform .22s cubic-bezier(.2,.8,.2,1)}
+.dl-completion-toast.is-visible{opacity:1;transform:translate(-50%,0) scale(1)}
+.dl-completion-mark{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#dfefe4;color:#39714e;font-size:1.15rem;font-weight:900;animation:dlCheckPop .28s cubic-bezier(.2,.8,.2,1.5) both}
+.dl-completion-copy{display:grid;gap:2px}
+.dl-completion-copy b{font-size:.9rem}
+.dl-completion-copy small{font-size:.76rem;color:#706273}
+@keyframes dlCheckPop{from{transform:scale(.55) rotate(-14deg)}to{transform:scale(1) rotate(0)}}
+@media(prefers-reduced-motion:reduce){.dl-completion-toast,.dl-completion-mark{transition:none;animation:none}}
