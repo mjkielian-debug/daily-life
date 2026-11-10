@@ -4,17 +4,18 @@ const h=value=>String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;"
 const day=()=>typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
 const list=value=>Array.isArray(value)?value:[];
 const floorNames=["Basement","First floor","Second floor","Third floor"];
+let activeArea="",activeRoom=null;
 function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirstFloor");return floorNames.includes(value)?value:"First floor"}catch(_){return "First floor"}}
 function jump(view){if(typeof setView==="function")setView(view)}
-function region(name,detail,icon,fill,view){
+function region(name,detail,icon,fill,area){
  const pct=Math.max(0,Math.min(100,Number(fill)||0));
- return '<button class="lm-region lm-region-'+h(name.toLowerCase().replace(/[^a-z0-9]+/g,"-"))+'" type="button" onclick="setView(\''+h(view)+'\')">'+
+ return '<button class="lm-region lm-region-'+h(name.toLowerCase().replace(/[^a-z0-9]+/g,"-"))+'" type="button" aria-expanded="'+(activeArea===area?'true':'false')+'" onclick="lifeMapSelectArea(\''+h(area)+'\')">'+
  '<span class="lm-region-icon" aria-hidden="true">'+icon+'</span><span class="lm-region-copy"><b>'+h(name)+'</b><small>'+h(detail)+'</small></span>'+
  '<span class="lm-region-fill" aria-hidden="true"><i style="width:'+pct+'%"></i></span></button>';
 }
-function avatarMark(label,icon,target,x,y,pct,color){
+function avatarMark(label,icon,x,y,pct,color,area){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- return '<a class="lm-avatar-mark" href="#" aria-label="'+h(label)+'" title="'+h(label)+'" onclick="setView(&quot;'+h(target)+'&quot;);return false">'+
+ return '<a class="lm-avatar-mark" href="#" aria-label="'+h(label)+'" title="'+h(label)+'" onclick="lifeMapSelectArea(&quot;'+h(area)+'&quot;);return false">'+
  '<circle cx="'+x+'" cy="'+y+'" r="14" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></a>';
@@ -39,15 +40,23 @@ function view(){
  const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,tasks.filter(t=>re.test(String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"")))]));
  const pctFor=key=>matches[key].length?Math.round(matches[key].filter(t=>t.done).length/matches[key].length*100):0;
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿","selfcare",81,56,carePct,"#c89ad7"),
-  avatarMark("Spirituality","☾","spirituality",141,42,pctFor("spirituality"),"#f2b85b"),
-  avatarMark("Body and health","♡","log",110,133,pctFor("body"),"#f2ae85"),
-  avatarMark("Relationships","♥","family",78,168,pctFor("people"),"#e98cb0"),
-  avatarMark("Hobbies and projects","✎","gardenhobbies",166,166,pctFor("hobbies"),"#82c6a4"),
-  avatarMark("Money and planning","✧","more",112,266,pctFor("money"),"#83b8df")
+  avatarMark("Mind and self-care","✿",81,56,carePct,"#c89ad7","mind"),
+  avatarMark("Spirituality","☾",141,42,pctFor("spirituality"),"#f2b85b","spirituality"),
+  avatarMark("Body and health","♡",110,133,pctFor("body"),"#f2ae85","body"),
+  avatarMark("Relationships","♥",78,168,pctFor("people"),"#e98cb0","people"),
+  avatarMark("Hobbies and projects","✎",166,166,pctFor("hobbies"),"#82c6a4","hobbies"),
+  avatarMark("Money and planning","✧",112,266,pctFor("money"),"#83b8df","money")
  ].join("");
  const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTask(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
+ const areaTitles={mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning"};
+ const areaText=t=>String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"");
+ const areaHistory=activeArea&&terms[activeArea]?list(state&&state.tasks).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&terms[activeArea].test(areaText(t))).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
+ const careHistory=activeArea==="mind"?list(state&&state.selfCare).filter(x=>x.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||""))&&careHabits.some(habit=>habit.key===x.key)).map(x=>({date:String(x.date),title:careHabits.find(habit=>habit.key===x.key)?.label||"Self-care"})):[];
+ const lastAreaDone=[...areaHistory,...careHistory].sort((a,b)=>b.date.localeCompare(a.date))[0];
+ const activeAreaRows=activeArea?((activeArea==="mind"?careRows:"")+(matches[activeArea]||[]).map(taskRow).join("")):"";
+ const activeAreaPanel=activeArea?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[activeArea]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching checkboxes are on today’s list.</p>')+'</section>':"";
+
  const foodCount=list(state&&state.foodLogs).filter(x=>String(x.date||"")===date).length;
  const waterCount=list(state&&state.waterLogs).filter(x=>String(x.date||"")===date).length;
  const sleepCount=list(state&&state.sleepLogs).filter(x=>String(x.date||"")===date).length;
@@ -90,13 +99,13 @@ function view(){
  '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
  '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">A little picture of a life being cared for</p></div>'+
- '<div class="lm-regions" aria-label="Avatar areas"><div class="lm-avatar-zones-heading"><span class="lm-kicker">PARTS OF YOU · TAP TO OPEN</span><b>Each area belongs on your avatar</b></div>'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"selfcare")+
- region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"log")+
- region("Relationships",matches.people.filter(t=>t.done).length+" of "+matches.people.length+" linked tasks today","♥",pctFor("people"),"family")+
+ '<div class="lm-regions" aria-label="Avatar areas"><div class="lm-avatar-zones-heading"><span class="lm-kicker">PARTS OF YOU · TAP TO OPEN</span><b>Each area belongs on your avatar</b></div>'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"mind")+
+ region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"body")+
+ region("Relationships",matches.people.filter(t=>t.done).length+" of "+matches.people.length+" linked tasks today","♥",pctFor("people"),"people")+
  region("Spirituality",matches.spirituality.filter(t=>t.done).length+" of "+matches.spirituality.length+" linked actions today","☾",pctFor("spirituality"),"spirituality")+
- region("Hobbies & projects",matches.hobbies.filter(t=>t.done).length+" of "+matches.hobbies.length+" linked actions today","✿",pctFor("hobbies"),"gardenhobbies")+
- region("Money & planning",matches.money.filter(t=>t.done).length+" of "+matches.money.length+" linked actions today","✧",pctFor("money"),"more")+
- '<p class="lm-footnote">A part stays softly colored when no matching tasks are linked yet. The food, sleep, care, family, and inventory records remain in their existing trackers.</p></div></div></section>'+
+ region("Hobbies & projects",matches.hobbies.filter(t=>t.done).length+" of "+matches.hobbies.length+" linked actions today","✿",pctFor("hobbies"),"hobbies")+
+ region("Money & planning",matches.money.filter(t=>t.done).length+" of "+matches.money.length+" linked actions today","✧",pctFor("money"),"money")+
+ ''+activeAreaPanel+'<p class="lm-footnote">A part stays softly colored when no matching tasks are linked yet. The food, sleep, care, family, and inventory records remain in their existing trackers.</p></div></div></section>'+
  '<section class="lm-lower-grid"><section class="lm-panel"><div class="lm-panel-heading"><div><span class="lm-kicker">TODAY</span><h2>Small steps</h2></div><button type="button" class="lm-text-button" onclick="setView(\'today\')">Full Day Flow ›</button></div>'+taskContent+
  '<details class="lm-care"><summary>Care habits today · '+careDone+' of '+careHabits.length+'</summary><div class="lm-list">'+careRows+'</div></details></section>'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div></section></section>'+
@@ -105,6 +114,10 @@ function view(){
  (clothingOwners.length?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>These are saved item counts, not a judgment about what anyone needs.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
  '<p class="lm-disclaimer">This first pass reads your existing records. It does not move, delete, or rewrite your data. Avatar fill currently uses date-specific tasks and self-care logs; spirituality, hobbies, and money each link to their existing trackers.</p></section>';
 }
+window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea=activeArea===area?"":area;activeRoom=null;if(typeof render==="function")render()};
+window.lifeMapCloseArea=function(){activeArea="";if(typeof render==="function")render()};
+window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
+window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
 window.lifeMapView=view;
 window.lifeMapSetFloor=function(floor){
  if(!floorNames.includes(floor))return;
