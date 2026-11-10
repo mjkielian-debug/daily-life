@@ -115,8 +115,8 @@ async function toggleMonsterHighOwned(id,owner,checked){
   data.ownership[id]=data.ownership[id]||{};
   data.ownership[id][owner]=!!checked;
   data.ownershipUpdatedAt[id]=data.ownershipUpdatedAt[id]||{};
-  const previousOwnerTime=Date.parse(data.ownershipUpdatedAt[id][owner]||"")||0,
-        changeTime=new Date(Math.max(Date.now(),previousOwnerTime+1)).toISOString();
+  const previousOwnerTimeMs=Date.parse(data.ownershipUpdatedAt[id][owner]||"")||0,
+        changeTime=new Date(Math.max(Date.now(),previousOwnerTimeMs+1)).toISOString();
   data.ownershipUpdatedAt[id][owner]=changeTime;
   data.updatedAt=new Date(Math.max(Date.now(),(Date.parse(data.updatedAt||"")||0)+1,Date.parse(changeTime)||0)).toISOString();
   try{
