@@ -66,3 +66,22 @@
  .hf-week{gap:6px}.hf-week-summary{font-size:.64rem}
  .hf-dot{width:19px;height:19px}
 }
+/* Small daily check-in stays available even while browsing another section. */
+.hf-quickbar{display:grid;gap:8px;margin:0 auto 10px;padding:10px 13px;width:calc(100% - 26px);max-width:720px;border:1px solid #e7cddd;border-radius:18px;background:linear-gradient(110deg,#fff9fc,#f1fbf8);box-shadow:0 5px 15px #77466a10}
+.hf-quick-head{display:flex;align-items:center;gap:9px;min-height:38px}
+.hf-quick-sparkle{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#f7e7f3;color:#a14678;font-size:1.1rem}
+.hf-quick-title{display:grid;gap:2px;min-width:0}
+.hf-quick-title b{font-size:.88rem;color:#4a344b}
+.hf-quick-title span{font-size:.75rem;color:#786b7b}
+.hf-quick-toggle{margin-left:auto;min-height:40px;padding:8px 13px;border:1px solid #d9bdcf;border-radius:999px;background:#fff;color:#673d64;font-weight:750;touch-action:manipulation}
+.hf-quick-list{display:grid;gap:6px;padding-top:4px;animation:hfQuickIn .2s ease-out both}
+.hf-quick-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;padding:8px 0;border-top:1px solid #eadde7}
+.hf-quick-name{font-size:.86rem;font-weight:700;color:#473648}
+.hf-quick-status{font-size:.7rem;color:#776d7c}
+.hf-quick-actions{grid-column:1/-1;display:flex;gap:8px}
+.hf-quick-actions button{min-height:42px;padding:8px 13px;border:1px solid #d8c1d2;border-radius:13px;background:white;color:#65415e;font-weight:750;touch-action:manipulation;transition:transform .12s ease,background .15s ease}
+.hf-quick-actions button.hf-quick-done{background:#f5e6f1}
+.hf-quick-actions button.selected{border-color:#8fb7a2;background:#e9f5ed;color:#325f49}
+.hf-quick-actions button:active,.hf-quick-toggle:active{transform:scale(.97)}
+@keyframes hfQuickIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.hf-quick-list{animation:none}.hf-quick-actions button,.hf-quick-toggle{transition:none}}
