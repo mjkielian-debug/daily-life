@@ -43,6 +43,8 @@ const APP_SHELL=[
   "./paper-studio.css",
   "./practice-proof.js",
   "./life-insights.js",
+  "./life-map.js",
+  "./life-map.css",
   "./electricity-insights.js",
   "./life-insights.css",
   "./bank-exit-plan.js",
