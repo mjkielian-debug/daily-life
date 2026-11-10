@@ -196,9 +196,9 @@ function mappedRoomItems(room){
 function roomInsightParts(tasks){
  const declutter=tasks.filter(t=>/declutter|organis|organize|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
  const declutterDone=declutter.filter(t=>t.done).length;
- const completed=tasks.filter(t=>t.done&&/^\\d{4}-\\d{2}-\\d{2}$/.test(str(t.date))).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
+ const completed=tasks.filter(t=>t.done&&/^\d{4}-\\d{2}-\\d{2}$/.test(str(t.date))).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
  const last=completed[0]||null;
- const dateLabel=value=>{if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(str(value)))return str(value);return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})};
+ const dateLabel=value=>{if(!/^\d{4}-\\d{2}-\\d{2}$/.test(str(value)))return str(value);return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})};
  return {
   declutter:declutter.length?declutterDone+" of "+declutter.length+" saved declutter/organizing tasks complete":"No saved declutter tasks linked yet",
   last:last?"Last room task marked done: "+str(last.title||"Task")+" · "+dateLabel(last.date):"No completed room task in saved history"
