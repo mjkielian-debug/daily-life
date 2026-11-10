@@ -335,12 +335,22 @@
     else if(action==="preset-water")addWaterPreset()
   }
 
-  var dailyCheckinNode=null;
+  var dailyCheckinNode=null,dailyCheckinTimer=null;
   function closeDailyCheckin(markDone){
     if(markDone){
       try{localStorage.setItem("dailyLifeQuickCheckinDone-"+today(),"1")}catch(e){}
     }
     if(dailyCheckinNode){dailyCheckinNode.remove();dailyCheckinNode=null}
+  }
+  function deferDailyCheckin(){
+    var now=new Date(),later=new Date(now);
+    later.setHours(20,0,0,0);
+    if(later<=now)later=new Date(now.getTime()+60*60*1000);
+    var key="dailyLifeQuickCheckinSnooze-"+today(),until=later.getTime();
+    try{localStorage.setItem(key,String(until))}catch(e){}
+    if(dailyCheckinNode){dailyCheckinNode.remove();dailyCheckinNode=null}
+    if(dailyCheckinTimer)clearTimeout(dailyCheckinTimer);
+    dailyCheckinTimer=setTimeout(function(){dailyCheckinTimer=null;tryShowDailyCheckin()},Math.max(1000,until-Date.now()));
   }
   function renderDailyCheckin(){
     var s=appState();if(!s||!dailyCheckinNode)return;
@@ -348,20 +358,29 @@
     var missing=active.filter(function(h){return !logOn(h.id,date)});
     if(!missing.length){closeDailyCheckin(true);return}
     var rows=missing.map(function(h){
-      return '<article class="dl-quickcheck-row"><div><strong>'+esc(h.name||"Daily habit")+'</strong>'+(h.minimum?'<small>'+esc(h.minimum)+'</small>':"")+'</div><div class="dl-quickcheck-actions"><button type="button" data-dlc-status="done" data-dlc-id="'+esc(h.id)+'">Yes</button><button type="button" data-dlc-status="skipped" data-dlc-id="'+esc(h.id)+'">No, not today</button></div></article>'
+      return '<article class="dl-quickcheck-row"><div><strong>'+esc(h.name||"Daily habit")+'</strong>'+(h.minimum?'<small>'+esc(h.minimum)+'</small>':"")+'</div><div class="dl-quickcheck-actions"><button type="button" data-dlc-status="done" data-dlc-id="'+esc(h.id)+'">Yes</button><button type="button" data-dlc-status="skipped" data-dlc-id="'+esc(h.id)+'">No, not today</button><button type="button" data-dlc-later>Not yet</button></div></article>'
     }).join("");
-    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-close aria-label="Skip today’s check-in">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note">Only habits without a check-in today are shown. You can skip this anytime.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
+    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-later aria-label="Ask me later">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note">Choose Yes or No when you know. “Not yet” brings this back at 8 PM, or in an hour if it’s already later.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
   }
   function tryShowDailyCheckin(){
     if(typeof appStartupReady==="undefined"||!appStartupReady)return;
     var s=appState();if(!s||!Array.isArray(s.habits)||!s.habits.length)return;
-    var date=today(),key="dailyLifeQuickCheckinDone-"+date;
-    try{if(localStorage.getItem(key))return}catch(e){}
+    var date=today(),key="dailyLifeQuickCheckinDone-"+date,snoozeKey="dailyLifeQuickCheckinSnooze-"+date;
+    try{
+      if(localStorage.getItem(key))return;
+      var snoozeUntil=Number(localStorage.getItem(snoozeKey)||0);
+      if(snoozeUntil>Date.now()){
+        if(!dailyCheckinTimer)dailyCheckinTimer=setTimeout(function(){dailyCheckinTimer=null;tryShowDailyCheckin()},Math.max(1000,snoozeUntil-Date.now()));
+        return;
+      }
+    }catch(e){}
     if(dailyCheckinNode&&dailyCheckinNode.isConnected){renderDailyCheckin();return}
     if(!s.habits.some(function(h){return h&&h.status!=="paused"&&h.status!=="archived"&&!logOn(h.id,date)}))return;
     dailyCheckinNode=document.createElement("div");
     dailyCheckinNode.id="dailyLifeQuickCheckin";
     dailyCheckinNode.addEventListener("click",function(event){
+      var later=event.target.closest("[data-dlc-later]");
+      if(later){deferDailyCheckin();return}
       var close=event.target.closest("[data-dlc-close]");
       if(close){closeDailyCheckin(true);return}
       var button=event.target.closest("[data-dlc-status]");
