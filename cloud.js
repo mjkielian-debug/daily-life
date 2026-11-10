@@ -724,19 +724,36 @@ function cloudMergeMonsterHighCollection(localValue,remoteValue){
   const remote=remoteValue&&typeof remoteValue==="object"?remoteValue:null;
   if(!local)return remote?structuredClone(remote):undefined;
   if(!remote)return structuredClone(local);
-  const localTime=Date.parse(local.updatedAt||"")||0,remoteTime=Date.parse(remote.updatedAt||"")||0;
-  if(remoteTime>localTime)return structuredClone(remote);
-  if(localTime>remoteTime)return structuredClone(local);
-  const merged=structuredClone(remote);
-  merged.ownership={...(local.ownership||{}),...(remote.ownership||{})};
-  for(const [id,owners] of Object.entries(local.ownership||{})){
-    merged.ownership[id]={...(merged.ownership[id]||{}),...owners};
-    for(const owner of ["Michelle","Dolly"])merged.ownership[id][owner]=!!(owners?.[owner]||remote.ownership?.[id]?.[owner]);
+  const merged={...structuredClone(remote)},
+        localOwnership=local.ownership||{},remoteOwnership=remote.ownership||{},
+        localTimes=local.ownershipUpdatedAt||{},remoteTimes=remote.ownershipUpdatedAt||{};
+  merged.ownership={};
+  merged.ownershipUpdatedAt={};
+  const ids=new Set([...Object.keys(localOwnership),...Object.keys(remoteOwnership)]);
+  for(const id of ids){
+    const owners={},times={};
+    for(const owner of ["Michelle","Dolly"]){
+      const localHas=Object.prototype.hasOwnProperty.call(localOwnership[id]||{},owner),
+            remoteHas=Object.prototype.hasOwnProperty.call(remoteOwnership[id]||{},owner);
+      if(!localHas&&!remoteHas)continue;
+      const localTime=Date.parse(localTimes[id]?.[owner]||"")|| (localHas?Date.parse(local.updatedAt||"")||0:0),
+            remoteTime=Date.parse(remoteTimes[id]?.[owner]||"")|| (remoteHas?Date.parse(remote.updatedAt||"")||0:0);
+      if(localHas&&remoteHas&&localTime===remoteTime)owners[owner]=!!(localOwnership[id][owner]||remoteOwnership[id][owner]);
+      else if(localHas&&(!remoteHas||localTime>remoteTime))owners[owner]=!!localOwnership[id][owner];
+      else owners[owner]=!!remoteOwnership[id][owner];
+      times[owner]=new Date(Math.max(localTime,remoteTime)).toISOString();
+    }
+    if(Object.keys(owners).length){merged.ownership[id]=owners;merged.ownershipUpdatedAt[id]=times}
   }
-  const custom=[...(remote.custom||[])];
-  const ids=new Set(custom.map(x=>x?.id));
-  for(const item of local.custom||[])if(item?.id&&!ids.has(item.id))custom.push(item);
-  merged.custom=custom;
+  const customById=new Map();
+  for(const item of [...(remote.custom||[]),...(local.custom||[])]){
+    if(!item?.id)continue;
+    const old=customById.get(item.id);
+    if(!old||(Date.parse(item.updatedAt||"")||0)>(Date.parse(old.updatedAt||"")||0))customById.set(item.id,structuredClone(item));
+  }
+  merged.custom=[...customById.values()];
+  const latest=Math.max(Date.parse(local.updatedAt||"")||0,Date.parse(remote.updatedAt||"")||0);
+  if(latest)merged.updatedAt=new Date(latest).toISOString();
   return merged;
 }
 
