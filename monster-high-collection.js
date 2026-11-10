@@ -12,6 +12,13 @@ const MONSTER_HIGH_STARTER = [
   {id:"g3-core-lagoona",name:"Lagoona Blue",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://cdn11.bigcommerce.com/s-ptvounu/images/stencil/1280x1280/products/953/23918/HHK55__43557.1670161104.jpg?c=2",source:"Public doll listing"},
   {id:"g3-core-cleo",name:"Cleo de Nile",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://www.iperbimbo.it/cdn/shop/files/Mattel-HXH74-Copia1-Iperbimbo.jpg?v=1753860970&width=3840",source:"Public doll listing"},
   {id:"g3-core-ghoulia",name:"Ghoulia Yelps",line:"Core Dolls: Wave 1",generation:"G3",year:"2022",image:"https://i5.walmartimages.com/seo/Monster-High-Ghoulia-Yelps-Doll-Monster-High-G3-2022_be2bb1b3-0a22-426f-b0fa-530d688e3327.b2746ea76cc4f8cda7feb1b1a60ce399.jpeg",source:"Public doll listing"}
+  {id:"g3-core-venus",name:"Venus McFlytrap",line:"Core Doll",generation:"G3",year:"2024",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/j8bhtgirm7mvke7ocf0p_3dc8fa33-8b8b-4387-8312-d76a07414c7f.png",source:"Mattel product photo"},
+  {id:"g3-self-scare-venus",name:"Venus McFlytrap",line:"Self-Scare Secrets",generation:"G3",year:"2025",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/8f799c50b3b4fadd443adff42d6b1c3ffe515175.jpg",source:"Mattel product photo"},
+  {id:"g1-creeproduction-venus",name:"Venus McFlytrap",line:"Boo-riginal Creeproduction",generation:"G1",year:"2026",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/5dcd6c9d266d0a490e97c893ab4867da4e73983f_c026af70-eb31-46e3-866a-f89f879a25b0.jpg",source:"Mattel product photo"},
+  {id:"g1-love-in-scaris-garrott",name:"Garrott du Roque & Rochelle Goyle",line:"Love in Scaris two-pack",generation:"G1",year:"2014",image:"https://images-cdn.ubuy.qa/67f2fd320b5389da6d064ff2-monster-high-garrott-du-roque-rochelle.jpg",source:"Ubuy product listing"},
+  {id:"g3-scary-sweet-draculaura",name:"Draculaura",line:"Scary Sweet Birthday",generation:"G3",year:"2025",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/1eab043d37288f6f3daf2d062ceff65a60227f32.jpg",source:"Mattel product photo"},
+  {id:"g3-self-scare-draculaura",name:"Draculaura",line:"Self-Scare Secrets",generation:"G3",year:"2025",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/5a4168687bee093078b6373f426809ffb124ddf8_e3392dc5-e355-46ed-9009-71fef3d5bea9.jpg",source:"Mattel product photo"},
+  {id:"g3-bow-dress-draculaura",name:"Draculaura",line:"Bow Dress refresh (JHK29)",generation:"G3",year:"2026",image:"https://images.mattel.net/image/upload/w_646%2Cf_auto%2Cc_scale/shop-us-prod/files/01860ed53b6cea3381d4b2c9556ab250716b2065.jpg",source:"Mattel product photo"}
 ];
 
 let monsterHighSearch="",monsterHighGeneration="All",monsterHighOwnedFilter="All";
@@ -61,7 +68,7 @@ function monsterHighCollectionView(){
   return `<section class="mh-collection-page">
     <div class="card mh-hero"><div class="mh-topline"><button class="btn small" onclick="setView('hobbies')">‹ Hobbies</button><span class="eyebrow">GROWTH & HOBBIES · DOLL COLLECTION</span></div>
       <h1>${title}</h1><p>Keep track of your dolls together. These are actual doll/product photos, not character portraits.</p>
-      <div class="mh-stats"><div><b>${rows.length}</b><span>in this starter catalog</span></div><div><b>${monsterHighOwnedCount(rows,"Michelle")}</b><span>Michelle has</span></div><div><b>${monsterHighOwnedCount(rows,"Dolly")}</b><span>Dolly has</span></div></div>
+      <div class="mh-stats"><div><b>${rows.length}</b><span>in this catalog</span></div><div><b>${monsterHighOwnedCount(rows,"Michelle")}</b><span>Michelle has</span></div><div><b>${monsterHighOwnedCount(rows,"Dolly")}</b><span>Dolly has</span></div></div>
       <div class="mh-actions"><button class="btn primary" onclick="openMonsterHighAdd()">＋ Add a doll</button></div>
       <p class="mh-note">Browse this catalog here, and use “Add a doll” to include another release you find.</p>
     </div>
