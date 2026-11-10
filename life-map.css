@@ -58,3 +58,7 @@
 .lm-avatar-hotspot:focus-visible{stroke:#77506f;stroke-width:4}
 .lm-avatar-mark{cursor:pointer;pointer-events:all;touch-action:manipulation}
 .lm-avatar-mark:focus-visible circle:first-child{stroke-width:4}
+
+.lm-today-progress{font:inherit;text-align:left;color:inherit;cursor:pointer;touch-action:manipulation;transition:border-color .15s ease,box-shadow .15s ease}
+.lm-today-progress:hover,.lm-today-progress:focus-visible{border-color:#b783a5;box-shadow:0 0 0 3px #ead8e5}
+.lm-today-progress .lm-plan-open{margin-top:8px;font-size:.72rem;font-weight:800;color:#80506f}
