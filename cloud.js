@@ -1382,18 +1382,21 @@ function cloudApplyLifeEntry(row){
       const title=String(p.title||"").trim();if(!title)return false;
       const child=typeof canonicalPersonName==="function"?canonicalPersonName(p.child):String(p.child||"");
       const key=v=>String(v||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
-      const matches=(state.tasks||[]).filter(x=>x.date===date&&key(x.title)===key(title)&&key(x.child)===key(child));
+      const targetId=String(p.taskId||"").trim();
+      const matches=targetId?(state.tasks||[]).filter(x=>String(x.id)===targetId):(state.tasks||[]).filter(x=>x.date===date&&key(x.title)===key(title)&&key(x.child)===key(child));
       if(matches.length){
         // A conversational update should check off an existing task, not
         // duplicate the scheduled row or overwrite a true value with unknown.
         const existing=matches.find(x=>x.generated)||matches[0];
-        if(p.done===true)existing.done=true;
+        if(p.date&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(p.date)))existing.date=String(p.date);
+        if(p.category)existing.category=String(p.category);
+        if(p.done===true){existing.done=true;existing.completedAt=String(p.completedAt||row.created_at||new Date().toISOString())}
         if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))
           existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
         existing.cloudEntryId=row.id;
         return true;
       }
-      state.tasks.push({...common,title,category:String(p.category||"life"),child,notes:String(p.notes||""),done:p.done===true,order:Number(p.order||100)});return true;
+      state.tasks.push({...common,title,category:String(p.category||"life"),child,notes:String(p.notes||""),done:p.done===true,completedAt:p.done===true?String(p.completedAt||row.created_at||new Date().toISOString()):"",order:Number(p.order||100)});return true;
     }
     case "meal":{
       const dish=String(p.dish||"").trim();if(!dish)return false;
