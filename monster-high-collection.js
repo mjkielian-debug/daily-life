@@ -36,8 +36,9 @@ const MONSTER_HIGH_STARTER = [
 
 let monsterHighSearch="",monsterHighGeneration="All",monsterHighOwnedFilter="All";
 function monsterHighData(){
-  if(!state.monsterHighCollection||typeof state.monsterHighCollection!=="object")state.monsterHighCollection={ownership:{},custom:[]};
+  if(!state.monsterHighCollection||typeof state.monsterHighCollection!=="object")state.monsterHighCollection={ownership:{},ownershipUpdatedAt:{},custom:[]};
   state.monsterHighCollection.ownership=state.monsterHighCollection.ownership||{};
+  state.monsterHighCollection.ownershipUpdatedAt=state.monsterHighCollection.ownershipUpdatedAt||{};
   state.monsterHighCollection.custom=Array.isArray(state.monsterHighCollection.custom)?state.monsterHighCollection.custom:[];
   return state.monsterHighCollection;
 }
@@ -112,7 +113,11 @@ async function toggleMonsterHighOwned(id,owner,checked){
   const data=monsterHighData(),previous=!!data.ownership[id]?.[owner];
   data.ownership[id]=data.ownership[id]||{};
   data.ownership[id][owner]=!!checked;
-  data.updatedAt=new Date(Math.max(Date.now(),(Date.parse(data.updatedAt||"")||0)+1)).toISOString();
+  data.ownershipUpdatedAt[id]=data.ownershipUpdatedAt[id]||{};
+  const previousOwnerTime=Date.parse(data.ownershipUpdatedAt[id][owner]||"")||0,
+        changeTime=new Date(Math.max(Date.now(),previousOwnerTime+1)).toISOString();
+  data.ownershipUpdatedAt[id][owner]=changeTime;
+  data.updatedAt=new Date(Math.max(Date.now(),(Date.parse(data.updatedAt||"")||0)+1,Date.parse(changeTime)||0)).toISOString();
   try{
     const result=await saveMonsterHighOwnership();
     render();
