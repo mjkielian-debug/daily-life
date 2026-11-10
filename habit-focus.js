@@ -24,6 +24,7 @@
     spirituality:"spirituality"
   };
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
+  var quickBarOpen=false;
 
   function appState(){
     if(typeof state==="undefined"||!state||typeof state!=="object")return null;
@@ -119,6 +120,21 @@
       return '<button type="button" data-hf-action="add" data-area="'+a.id+'"><span>'+esc(a.icon)+'</span>'+esc(a.label)+'</button>'
     }).join("")+'</div>'
   }
+  function quickBar(){
+    var s=appState();if(!s)return "";
+    var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
+    var completed=active.filter(function(h){var log=logOn(h.id,today());return log&&(log.status==="done"||log.status==="partial")}).length;
+    var title=active.length?completed+" of "+active.length+" habits checked in today":"Start with one small habit";
+    var rows=active.map(function(h){
+      var log=logOn(h.id,today()),status=log?(STATUS[log.status]||"Logged"):"Not checked in";
+      return '<div class="hf-quick-row"><span class="hf-quick-name">'+esc(h.name)+'</span><span class="hf-quick-status">'+esc(status)+'</span><div class="hf-quick-actions">'+
+        '<button type="button" class="hf-quick-done'+(log&&log.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="done">✓ Done</button>'+
+        '<button type="button" class="hf-quick-partial'+(log&&log.status==="partial"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="partial">Partly</button></div></div>';
+    }).join("");
+    return '<section class="hf-quickbar" data-habit-quickbar><div class="hf-quick-head"><span class="hf-quick-sparkle" aria-hidden="true">✦</span><div class="hf-quick-title"><b>Today’s habits</b><span>'+esc(title)+'</span></div>'+
+      (active.length?'<button type="button" class="hf-quick-toggle" data-hf-action="quick-toggle">'+(quickBarOpen?"Hide":"Check in")+'</button>':'<button type="button" class="hf-quick-toggle" data-hf-action="add" data-area="health">＋ Start</button>')+
+      '</div>'+(quickBarOpen&&active.length?'<div class="hf-quick-list">'+rows+'</div>':"")+'</section>';
+  }
   function renderPanel(area){
     var s=appState();if(!s||!area)return "";
     var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
@@ -192,10 +208,20 @@
   async function logHabit(id,status){
     if(!STATUS[status])return;
     var s=appState();if(!s)return;
-    var date=today(),entry=s.habitLogs.find(function(x){return x&&String(x.habitId)===String(id)&&x.localDate===date});
+    var date=today(),entry=s.habitLogs.find(function(x){return x&&String(x.habitId)===String(id)&&x.localDate===date}),oldStatus=entry?.status||"";
     if(entry){entry.status=status;entry.updatedAt=new Date().toISOString()}
-    else s.habitLogs.push({id:(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-log-"+Date.now(),habitId:id,localDate:date,status:status,createdAt:new Date().toISOString()});
-    await save();render()
+    else {entry={id:(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-log-"+Date.now(),habitId:id,localDate:date,status:status,createdAt:new Date().toISOString()};s.habitLogs.push(entry)}
+    try{
+      await save();render();
+      if((status==="done"||status==="partial")&&typeof window.dailyLifeShowCompletionFeedback==="function"){
+        var habit=s.habits.find(function(h){return String(h.id)===String(id)});
+        window.dailyLifeShowCompletionFeedback(status==="done"?"Habit complete":"Habit progress",habit?.name||"A small practice");
+      }
+    }catch(error){
+      if(oldStatus){entry.status=oldStatus}else{s.habitLogs=s.habitLogs.filter(function(x){return x!==entry})}
+      alert("That habit check-in could not be saved. Please try again.");
+      render();
+    }
   }
   async function setReminder(id,enabled){
     var s=appState(),habit=s&&s.habits.find(function(h){return String(h.id)===String(id)});
@@ -216,22 +242,35 @@
     var root=document.querySelector("#app"),main=root&&root.querySelector("main.app"),area=currentArea();
     if(!root||!main)return;
     if(typeof appStartupReady!=="undefined"&&!appStartupReady)return;
-    var old=main.querySelector("[data-habit-focus]");
-    if(!area){if(old)old.remove();return}
-    if(old&&old.dataset.area===area)return;
-    var html=renderPanel(area);
-    if(old)old.outerHTML=html;
-    else{
-      var header=main.querySelector(":scope > header");
-      if(header)header.insertAdjacentHTML("afterend",html);
-      else main.insertAdjacentHTML("afterbegin",html)
+    var old=main.querySelector("[data-habit-focus]"),bar=main.querySelector("[data-habit-quickbar]"),header=main.querySelector(":scope > header");
+    if(area==="all"){
+      if(bar)bar.remove();
+      if(old&&old.dataset.area==="all")return;
+      var allHtml=renderPanel("all");
+      if(old)old.outerHTML=allHtml;
+      else if(header)header.insertAdjacentHTML("afterend",allHtml);
+      else main.insertAdjacentHTML("afterbegin",allHtml);
+      return;
     }
+    var barHtml=quickBar();
+    if(bar)bar.outerHTML=barHtml;
+    else if(header)header.insertAdjacentHTML("afterend",barHtml);
+    else main.insertAdjacentHTML("afterbegin",barHtml);
+    var currentBar=main.querySelector("[data-habit-quickbar]");
+    if(area){
+      if(old&&old.dataset.area===area)return;
+      var panelHtml=renderPanel(area);
+      if(old)old.outerHTML=panelHtml;
+      else if(currentBar)currentBar.insertAdjacentHTML("afterend",panelHtml);
+      else if(header)header.insertAdjacentHTML("afterend",panelHtml);
+    }else if(old)old.remove();
   }
   function handleClick(event){
     var button=event.target&&event.target.closest?event.target.closest("[data-hf-action]"):null;
     if(!button)return;
     var action=button.dataset.hfAction,id=button.dataset.habitId;
-    if(action==="add")openCreate(button.dataset.area||"");
+    if(action==="quick-toggle"){quickBarOpen=!quickBarOpen;mount()}
+    else if(action==="add")openCreate(button.dataset.area||"");
     else if(action==="edit")openEdit(id);
     else if(action==="pause")setPaused(id,true);
     else if(action==="resume")setPaused(id,false);
