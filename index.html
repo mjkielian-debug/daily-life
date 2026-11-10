@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="life-tools.css?v=20261013-fab-dedupe1">
 <link rel="stylesheet" href="capacity-planner.css?v=20261004-color-density1">
 <link rel="stylesheet" href="visual-density.css?v=20261015-rainbow-cleanup2">
-<link rel="stylesheet" href="habit-focus.css?v=20261110-workday-reminders1">
+<link rel="stylesheet" href="habit-focus.css?v=20261110-open-route-home1">
 <link rel="stylesheet" href="monster-high-collection.css?v=20261110-mobile-scrollfix1">
 
 <title>Daily Life</title>
@@ -182,7 +182,7 @@ dialog,
 <link rel="stylesheet" href="inventory-goals.css?v=20261014-home-goals1">
 <link rel="stylesheet" href="paper-studio.css?v=20261015-school-insights7">
 <link rel="stylesheet" href="life-insights.css?v=20261027-trendclarity3">
-<link rel="stylesheet" href="mobile-layout-repair.css?v=20261110-workday-reminders1">
+<link rel="stylesheet" href="mobile-layout-repair.css?v=20261110-open-route-home1">
 <link rel="stylesheet" href="modal-form-readability.css?v=20261015-forms1">
 <style id="rainbow-task-form-fix">
 #modal .modal:has(.rainbow-task-editor) .rainbow-task-editor label{display:grid!important;gap:6px!important;color:#49344f!important;-webkit-text-fill-color:#49344f!important;opacity:1!important;font-weight:750!important;text-shadow:none!important}
@@ -208,8 +208,8 @@ dialog,
 .vh-profile-food .vh-food-nutrients{font-size:.68rem;line-height:1.3;text-align:right;overflow-wrap:anywhere}
 @media(max-width:420px){.vh-profile-food .vh-food-row{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:4px 6px}.vh-profile-food .vh-food-nutrients{font-size:.64rem}}
 </style>
-<link rel="stylesheet" href="sync-status.css?v=20261110-workday-reminders1">
-<link rel="stylesheet" href="completion-feedback.css?v=20261110-workday-reminders1">
+<link rel="stylesheet" href="sync-status.css?v=20261110-open-route-home1">
+<link rel="stylesheet" href="completion-feedback.css?v=20261110-open-route-home1">
 </head>
 <body>
 <div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261106-recurringpaymentreview1…</p></main></div>
@@ -237,7 +237,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
 <script src="visual-hubs.js?v=20261110-mobile-scrollfix1"></script>
-<script src="monster-high-collection.js?v=20261110-workday-reminders1"></script>
+<script src="monster-high-collection.js?v=20261110-open-route-home1"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
 
@@ -281,7 +281,7 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261110-workday-reminders1"></script>
+<script src="cloud.js?v=20261110-open-route-home1"></script>
 <script src="sharing.js?v=20261002-share7"></script>
 <script src="finance-cloud.js?v=20261106-recurringpaymentreview1"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
@@ -312,7 +312,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261110-workday-reminders1";
+const APP_BUILD="20261110-open-route-home1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -9743,10 +9743,10 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261106-recurringpaymentreview1"></script>
-<script src="habit-focus.js?v=20261110-workday-reminders1"></script>
-<script src="completion-feedback.js?v=20261110-workday-reminders1"></script>
-<script src="workday-focus.js?v=20261110-workday-reminders1"></script>
-<script src="sync-status.js?v=20261110-workday-reminders1"></script>
-<script src="workday-protection.js?v=20261110-workday-reminders1"></script>
+<script src="habit-focus.js?v=20261110-open-route-home1"></script>
+<script src="completion-feedback.js?v=20261110-open-route-home1"></script>
+<script src="workday-focus.js?v=20261110-open-route-home1"></script>
+<script src="sync-status.js?v=20261110-open-route-home1"></script>
+<script src="workday-protection.js?v=20261110-open-route-home1"></script>
 </body>
 </html>
