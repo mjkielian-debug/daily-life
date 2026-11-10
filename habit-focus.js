@@ -74,8 +74,8 @@
   }
   function reminderMarkup(habit){
     if(habit.reminderEnabled!==true)return "";
-    var active=!!habit.reminderEndDate&&today()<=habit.reminderEndDate;
-    var label=active?"14-day reminder trial · until "+dateLabel(habit.reminderEndDate):"Your 14-day reminder trial has ended";
+    var active=habit.reminderEnabled===true;
+    var label="Daily reminder · "+String(habit.reminderTime||"");
     return '<div class="hf-reminder"><span>♧ '+esc(label)+'</span><button type="button" class="hf-more" data-hf-action="'+(active?"stop-reminder":"edit")+'" data-habit-id="'+esc(habit.id)+'">'+(active?"Turn off":"Review")+'</button></div>'
   }
   function habitCard(habit){
@@ -145,9 +145,9 @@
       '<label>Habit you want to build<input id="hfName" maxlength="100" value="'+esc(p.name||"")+'" placeholder="A small action you want to repeat"></label>'+
       '<label>What will cue it?<input id="hfCue" maxlength="180" value="'+esc(p.cue||"")+'" placeholder="After I… / Before I… / When…"></label>'+
       '<label>What is the smallest version that counts?<input id="hfMinimum" maxlength="180" value="'+esc(p.minimum||"")+'" placeholder="The easy version for busy days"></label>'+
-      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(p.reminderEnabled?'checked':'')+'> Try phone reminders for 14 days</label>'+
+      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(p.reminderEnabled?'checked':'')+'> Enable daily phone reminders</label>'+
       '<label>Reminder time <input id="hfReminderTime" type="time" value="'+esc(p.reminderTime||'')+'"></label>'+
-      '<div class="hf-form-note">Phone reminders require Daily Life notifications to be enabled. A trial stops after 14 days; unlogged days stay open.</div></div>';
+      '<div class="hf-form-note">Daily reminders stay on until you turn them off. Enable Daily Life notifications on this device to receive them; unlogged days stay open.</div></div>';
     modal("Build a habit",body,"Save habit",async function(){
       var areaValue=document.getElementById("hfArea")?.value||"";
       var name=String(document.getElementById("hfName")?.value||"").trim();
@@ -157,7 +157,7 @@
       var remind=!!document.getElementById("hfRemind")?.checked,reminderTime=String(document.getElementById("hfReminderTime")?.value||"");
       if(remind&&!reminderTime){alert("Choose a reminder time, or turn off the 14-day reminder trial.");return}
       var id=(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),createdAt=new Date().toISOString();
-      s.habits.push({id:id,area:areaValue,name:name,cue:String(document.getElementById("hfCue")?.value||"").trim(),minimum:String(document.getElementById("hfMinimum")?.value||"").trim(),status:"active",reminderEnabled:remind,reminderTime:reminderTime,reminderStartDate:remind?today():"",reminderEndDate:remind?dateShift(today(),13):"",createdAt:createdAt,updatedAt:createdAt});
+      s.habits.push({id:id,area:areaValue,name:name,cue:String(document.getElementById("hfCue")?.value||"").trim(),minimum:String(document.getElementById("hfMinimum")?.value||"").trim(),status:"active",reminderEnabled:remind,reminderTime:reminderTime,reminderStartDate:remind?today():"",reminderEndDate:"",createdAt:createdAt,updatedAt:createdAt});
       await save();closeModal();render()
     })
   }
@@ -169,9 +169,9 @@
       '<label>Habit<input id="hfName" maxlength="100" value="'+esc(habit.name||"")+'"></label>'+
       '<label>Cue<input id="hfCue" maxlength="180" value="'+esc(habit.cue||"")+'" placeholder="After I… / Before I… / When…"></label>'+
       '<label>Smallest version<input id="hfMinimum" maxlength="180" value="'+esc(habit.minimum||"")+'" placeholder="The easy version for busy days"></label>'+
-      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(habit.reminderEnabled===true&&habit.reminderEndDate>=today()?'checked':'')+'> Try phone reminders for 14 days</label>'+
+      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(habit.reminderEnabled===true?'checked':'')+'> Try phone reminders for 14 days</label>'+
       '<label>Reminder time <input id="hfReminderTime" type="time" value="'+esc(habit.reminderTime||'')+'"></label>'+
-      '<div class="hf-form-note">Phone reminders require Daily Life notifications to be enabled. Saving an expired trial starts a new 14-day period.</div></div>';
+      '<div class="hf-form-note">Daily reminders stay on until you turn them off. Enable Daily Life notifications on this device to receive them.</div></div>';
     modal("Edit habit",body,"Save changes",async function(){
       var areaValue=document.getElementById("hfArea")?.value||"";
       var name=String(document.getElementById("hfName")?.value||"").trim();
@@ -181,9 +181,10 @@
       habit.minimum=String(document.getElementById("hfMinimum")?.value||"").trim();
       var remind=!!document.getElementById("hfRemind")?.checked,reminderTime=String(document.getElementById("hfReminderTime")?.value||"");
       if(remind&&!reminderTime){alert("Choose a reminder time, or turn off the 14-day reminder trial.");return}
-      var trialActive=habit.reminderEnabled===true&&habit.reminderEndDate>=today(),restartTrial=remind&&(!trialActive||reminderTime!==habit.reminderTime);
+      var reminderWasOff=habit.reminderEnabled!==true;
       habit.reminderEnabled=remind;habit.reminderTime=reminderTime;
-      if(restartTrial){habit.reminderStartDate=today();habit.reminderEndDate=dateShift(today(),13)}
+      if(remind&&reminderWasOff)habit.reminderStartDate=today();
+      habit.reminderEndDate="";
       habit.updatedAt=new Date().toISOString();
       await save();closeModal();render()
     })
