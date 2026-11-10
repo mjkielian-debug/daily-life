@@ -31,8 +31,10 @@
     if(s.settings.habitReminderCorrectionVersion>=1)return false;
     var changed=false;
     var water=s.habits.find(function(h){return h&&h.id==="starter-habit-drink-water"});
-    if(water&&water.reminderTime==="07:00"){
+    if(water&&water.reminderTime==="07:00"&&water.cue!=="Mid-shift on workdays; keep the bottle within reach on the route."){
       water.cue="Mid-shift on workdays; keep the bottle within reach on the route.";
+      water.updatedAt=new Date().toISOString();
+      changed=true;
     }
     var teeth=s.habits.find(function(h){return h&&h.id==="starter-habit-brush-teeth"});
     if(teeth&&teeth.reminderTime==="19:30"){
