@@ -334,13 +334,71 @@
     else if(action==="log")logHabit(id,button.dataset.status);
     else if(action==="preset-water")addWaterPreset()
   }
+
+  var dailyCheckinNode=null;
+  function closeDailyCheckin(markDone){
+    if(markDone){
+      try{localStorage.setItem("dailyLifeQuickCheckinDone-"+today(),"1")}catch(e){}
+    }
+    if(dailyCheckinNode){dailyCheckinNode.remove();dailyCheckinNode=null}
+  }
+  function renderDailyCheckin(){
+    var s=appState();if(!s||!dailyCheckinNode)return;
+    var date=today(),active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
+    var missing=active.filter(function(h){return !logOn(h.id,date)});
+    if(!missing.length){closeDailyCheckin(true);return}
+    var rows=missing.map(function(h){
+      return '<article class="dl-quickcheck-row"><div><strong>'+esc(h.name||"Daily habit")+'</strong>'+(h.minimum?'<small>'+esc(h.minimum)+'</small>':"")+'</div><div class="dl-quickcheck-actions"><button type="button" data-dlc-status="done" data-dlc-id="'+esc(h.id)+'">Yes</button><button type="button" data-dlc-status="skipped" data-dlc-id="'+esc(h.id)+'">No, not today</button></div></article>'
+    }).join("");
+    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-close aria-label="Skip today’s check-in">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note">Only habits without a check-in today are shown. You can skip this anytime.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
+  }
+  function tryShowDailyCheckin(){
+    if(typeof appStartupReady==="undefined"||!appStartupReady)return;
+    var s=appState();if(!s||!Array.isArray(s.habits)||!s.habits.length)return;
+    var date=today(),key="dailyLifeQuickCheckinDone-"+date;
+    try{if(localStorage.getItem(key))return}catch(e){}
+    if(dailyCheckinNode&&dailyCheckinNode.isConnected){renderDailyCheckin();return}
+    if(!s.habits.some(function(h){return h&&h.status!=="paused"&&h.status!=="archived"&&!logOn(h.id,date)}))return;
+    dailyCheckinNode=document.createElement("div");
+    dailyCheckinNode.id="dailyLifeQuickCheckin";
+    dailyCheckinNode.addEventListener("click",function(event){
+      var close=event.target.closest("[data-dlc-close]");
+      if(close){closeDailyCheckin(true);return}
+      var button=event.target.closest("[data-dlc-status]");
+      if(!button)return;
+      var id=button.dataset.dlcId,status=button.dataset.dlcStatus;
+      button.disabled=true;
+      Promise.resolve(logHabit(id,status)).then(function(){renderDailyCheckin()}).catch(function(error){button.disabled=false;console.error("Could not save daily check-in.",error)});
+    });
+    document.body.appendChild(dailyCheckinNode);
+    renderDailyCheckin();
+  }
+  if(!document.getElementById("dailyLifeQuickCheckinStyles")){
+    var quickStyle=document.createElement("style");quickStyle.id="dailyLifeQuickCheckinStyles";quickStyle.textContent=`
+      .dl-quickcheck-shade{position:fixed;inset:0;z-index:2147482000;background:rgba(48,35,59,.42);display:grid;place-items:center;padding:18px}
+      .dl-quickcheck{position:relative;width:min(100%,520px);max-height:min(82vh,720px);overflow:auto;border-radius:26px;background:#fffafd;color:#30233b;padding:24px 20px 18px;box-shadow:0 18px 60px rgba(48,35,59,.28)}
+      .dl-quickcheck-kicker{margin:0 38px 6px 0;color:#95617f;font-size:.78rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+      .dl-quickcheck h2{margin:0 38px 8px 0;font-size:1.45rem}
+      .dl-quickcheck-note{margin:0 0 16px;color:#766b7a;line-height:1.45}
+      .dl-quickcheck-close{position:absolute;right:12px;top:10px;width:40px;height:40px;border:0;border-radius:50%;background:#f7eaf2;color:#30233b;font-size:1.55rem}
+      .dl-quickcheck-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0;border-top:1px solid #eadde7}
+      .dl-quickcheck-row strong{display:block}
+      .dl-quickcheck-row small{display:block;margin-top:4px;color:#766b7a;line-height:1.35}
+      .dl-quickcheck-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+      .dl-quickcheck-actions button,.dl-quickcheck-skip{border:1px solid #cbb6c8;border-radius:999px;background:#fff;color:#49384d;padding:9px 13px;font:inherit;font-weight:750}
+      .dl-quickcheck-actions button:first-child{background:#dff1e7;border-color:#b9d9c8}
+      .dl-quickcheck-skip{display:block;margin:16px auto 0;background:#f7eaf2}
+      @media(max-width:440px){.dl-quickcheck-row{grid-template-columns:1fr}.dl-quickcheck-actions{justify-content:flex-start}}
+    `;document.head.appendChild(quickStyle);
+  }
+
   function start(){
     var root=document.querySelector("#app");
     if(!root)return;
     root.addEventListener("click",handleClick);
-    var observer=new MutationObserver(function(){mount()});
+    var observer=new MutationObserver(function(){mount();tryShowDailyCheckin()});
     observer.observe(root,{childList:true,subtree:true});
-    mount()
+    mount();tryShowDailyCheckin()
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
   else start();
