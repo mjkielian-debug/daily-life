@@ -65,3 +65,20 @@ html,body{height:auto!important;min-height:100%;overflow-y:auto!important}
 .bank-exit-renewal-actions{display:flex;gap:9px;flex-wrap:wrap}
 .bank-exit-renewal-actions button,.bank-exit-close-check{min-height:50px;padding:11px 14px;border:1.5px solid #cda5b7;border-radius:14px;background:#fff;color:#4d3047;font-weight:750;touch-action:manipulation}
 .bank-exit-close-check{width:100%;text-align:left}
+
+
+/* Keep the Family home vertically scrollable on phones. */
+html:has(#app>.app.people-one-screen-shell),
+body:has(#app>.app.people-one-screen-shell){
+  height:auto!important;
+  min-height:100%!important;
+  overflow-x:clip!important;
+  overflow-y:auto!important;
+}
+#app>.app.people-one-screen-shell{
+  height:auto!important;
+  min-height:100vh!important;
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom))!important;
+}
