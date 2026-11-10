@@ -729,7 +729,14 @@ async function hydrateRoomPhotoGallery(f,z){
   '</div><small class="muted">'+photos.length+' saved photo'+(photos.length===1?'':'s')+' · use Previous and Next to browse</small></div>';
  window.houseVisualShowRoomPhoto(photos[0].id,0,photos.length);
 };
+window.houseVisualRoomInlineData=function(f,id){
+ if(!floors.includes(f)||!okId(id))return null;
+ const z=zone(f,id);if(!z)return null;
+ const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room);
+ return {floor:f,id:String(id),name:z.name,tasks,insights:roomInsightParts(tasks,f,id)};
+};
 window.houseVisualOpenZone=function(f,id){
+ if(typeof view==="string"&&view==="lifemap"&&typeof window.lifeMapSelectRoomInline==="function"){window.lifeMapSelectRoomInline(f,id);return}
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
  const photos=arr(z.photos).filter(okPhoto);
