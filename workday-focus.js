@@ -28,7 +28,13 @@
       return '<div class="dl-work-focus-row"><span class="dl-work-focus-time">'+escapeHtml(clock(x.start))+(x.end?'–'+escapeHtml(clock(x.end)):'')+'</span><span><span class="dl-work-focus-title">'+escapeHtml(String(x.icon||"↗ ")+" "+String(x.title||"Work"))+'</span>'+(x.detail?'<div class="dl-work-focus-note">'+escapeHtml(x.detail)+'</div>':'')+'</span></div>';
     }).join(""):'<div class="dl-work-focus-note">No UPS or delivery block is on today’s Day Flow. Your other appointments and saved information are unchanged.</div>';
     var nextHtml=next?'<div class="dl-work-focus-row"><span class="dl-work-focus-time">'+escapeHtml(clock(next.start))+'</span><span><span class="dl-work-focus-title">'+escapeHtml(next.title||"Next item")+'</span><div class="dl-work-focus-note">'+escapeHtml(next.detail||"Next scheduled commitment")+'</div></span></div>':'<div class="dl-work-focus-note">No later scheduled commitment is listed today.</div>';
-    var body='<div class="dl-work-focus-content"><div class="dl-work-focus-section"><b>Work and route</b>'+rows+'</div><div class="dl-work-focus-section"><b>Next important item</b>'+nextHtml+'</div><button class="btn" type="button" onclick="closeModal();setView(\'itinerary\')">Open full Day Flow</button></div>';
+    var homeAction="";
+    if(typeof window.isDailyLifeWorkday==="function"&&window.isDailyLifeWorkday(today())){
+      homeAction=window.isDailyLifeHomeConfirmed?.(today())
+        ?'<div class="dl-work-focus-note">Home arrival is recorded for today; eligible home tasks can appear in Day Flow.</div>'
+        :'<div class="dl-work-focus-note">Today’s home tasks stay off Day Flow until you are home.</div><button class="btn primary" type="button" onclick="confirmDailyLifeHomeArrival(\\''+escapeHtml(today())+'\\')">I’m home · show home tasks</button>';
+    }
+    var body='<div class="dl-work-focus-content"><div class="dl-work-focus-section"><b>Work and route</b>'+rows+'</div><div class="dl-work-focus-section"><b>Next important item</b>'+nextHtml+'</div>'+homeAction+'<button class="btn" type="button" onclick="closeModal();setView(\\'itinerary\\')">Open full Day Flow</button></div>';
     if(typeof modal==="function")modal("Workday focus",body,"Close",closeModal);
   }
   function mount(){
