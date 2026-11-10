@@ -7,6 +7,29 @@
   const workWords=/\b(ups|preload|pre-load|ssd|seasonal support driver|delivery route|driver delivery|work shift|workday|route)\b/i;
   const pickupWords=/\b(pick\s*up|pickup|school pickup|drive to school pickup|park\s*\+\s*wait)\b/i;
   const isWorkday=date=>typeof isUsualWorkday==="function"&&isUsualWorkday(date);
+  const localToday=()=>typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
+  const homeConfirmed=date=>!!(typeof state!=="undefined"&&state?.settings?.workdayHomeConfirmed?.[String(date)]);
+  window.isDailyLifeWorkday=isWorkday;
+  window.isDailyLifeHomeConfirmed=homeConfirmed;
+  window.confirmDailyLifeHomeArrival=async function(date){
+    date=String(date||localToday());
+    if(!isWorkday(date)||typeof state==="undefined"||!state)return false;
+    state.settings=state.settings||{};
+    const previous=state.settings.workdayHomeConfirmed;
+    const next=Object.assign({},previous||{});
+    next[date]=true;
+    state.settings.workdayHomeConfirmed=next;
+    try{
+      if(typeof save==="function")await save();
+      if(typeof render==="function")render();
+      return true;
+    }catch(error){
+      if(previous===undefined)delete state.settings.workdayHomeConfirmed;
+      else state.settings.workdayHomeConfirmed=previous;
+      if(typeof modal==="function")modal("Could not save home arrival",'<div class="stack"><p>Your schedule was not changed. Try again when the app can save.</p></div>',"Close",closeModal);
+      return false;
+    }
+  };
   const isWorkItem=item=>item&&(item.source==="work"||item.kind==="work"||workWords.test([item.title,item.detail].filter(Boolean).join(" ")));
   const isPickupItem=item=>item&&(item.source==="pickup"||pickupWords.test(String(item.title||"")));
   const isWorkTask=task=>task&&(
@@ -31,7 +54,7 @@
         id:"workday-protection:"+date,
         start:minutesHm(fallbackStart),end:minutesHm(Math.max(fallbackStart+15,end)),
         title:"UPS work · delivery day",
-        detail:"Usual workday protected. Home tasks stay off Day Flow until school pickup; estimated end because today’s shift is not entered.",
+        detail:"Open-ended UPS delivery work · shift end is unknown. School pickup stays at 2:52 PM; Tanner is the fallback if you are still on route. Home tasks stay hidden until you are home.",
         fixed:true,kind:"work",icon:"📦",source:"work",actor:"me",estimatedEnd:true
       });
     }else{
@@ -42,7 +65,7 @@
           item.end=minutesHm(Math.max(start+15,safeEnd(start)));
           item.endUnknown=false;
           item.estimatedEnd=true;
-          item.detail=[item.detail,"Shift end not entered · home tasks remain off the schedule until pickup."].filter(Boolean).join(" · ");
+          item.detail=[item.detail,"Shift end not entered · school pickup stays fixed at 2:52 PM; Tanner is the fallback if you are still on route."].filter(Boolean).join(" · ");
         }
       });
     }
@@ -96,10 +119,18 @@
   itineraryDayItems=function(date){
     const rows=previousDayItems(date);
     if(!isWorkday(date))return rows;
+    const currentDay=String(date)===String(localToday());
+    const holdHomeTasks=currentDay&&!homeConfirmed(date);
     return rows.filter(item=>{
       const start=hmMinutes(item.start);
-      if(start===null||start>=homeStart)return true;
-      return isWorkItem(item)||isPickupItem(item)||item.source==="event"||item.source==="context"||item.kind==="context"||item.kind==="tentative";
+      const protectedItem=isWorkItem(item)||isPickupItem(item)||item.source==="event"||item.source==="context"||item.kind==="context"||item.kind==="tentative";
+      if(currentDay&&isPickupItem(item)){
+        const fallback="2:52 PM stays fixed; if you are still on route, text Tanner to pick up.";
+        if(!String(item.detail||"").includes(fallback))item.detail=[item.detail,fallback].filter(Boolean).join(" · ");
+      }
+      if(start!==null&&start<homeStart&&!protectedItem)return false;
+      if(holdHomeTasks&&start!==null&&start>=homeStart&&!protectedItem&&item.kind!=="gap")return false;
+      return true;
     }).sort((a,b)=>(hmMinutes(a.start)??0)-(hmMinutes(b.start)??0)||(a.kind==="gap"?1:-1));
   };
 })();
