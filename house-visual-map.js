@@ -127,11 +127,18 @@ function mapSketch(f,m){
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(f==='Second floor'?'Second floor rooms':(m.title||f))+'</strong><small>Tap a room to enter, then explore its mapped items. Use Previous and Next to tour the floor.</small></div>'+
  '<div class="hvm-directory-grid">'+arr(m.zones).filter(z=>okId(z.id)).map(z=>{
- const photos=arr(z.photos).filter(okPhoto),count=roomDeclutterSessions(f,z.id).length,tint=count?Math.min(.48,.1+Math.log2(count+1)*.1):0;
+ const photos=arr(z.photos).filter(okPhoto),count=roomDeclutterSessions(f,z.id).length;
+ const linked=trackedRoomTasks(f,z,localRoom(f,z));
+ const declutterTasks=linked.filter(t=>/declutter|organis|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
+ const progressTasks=declutterTasks.length?declutterTasks:linked;
+ const progressDone=progressTasks.filter(t=>t.done).length;
+ const progressPct=progressTasks.length?Math.round(progressDone*100/progressTasks.length):Math.min(100,count*25);
+ const tint=count?Math.min(.48,.1+Math.log2(count+1)*.1):0;
  const blooms=count?'<span class="hvm-declutter-sparks" aria-hidden="true">'+Array.from({length:Math.min(count,6)},()=>'<i>✦</i>').join("")+(count>6?'<b>+'+(count-6)+'</b>':'')+'</span>':'<span class="hvm-declutter-sparks is-empty" aria-hidden="true">✦</span>';
- const declutter='<span class="hvm-room-tile-declutter">'+blooms+'<small>Declutter · '+count+' area'+(count===1?"":"s")+' organized</small></span>';
- return '<button type="button" class="hvm-room-tile hvm-photo-room-tile" data-room-id="'+h(z.id)+'" style="--hvm-zone:'+color(z.color)+'" onclick="'+act(f,z)+'">'+
- '<span class="hvm-room-tile-photo" style="--hvm-organized-tint:'+tint.toFixed(2)+'" data-room-photo-zone="'+h(z.id)+'" aria-hidden="true"><span class="hvm-tile-mark">⌂</span></span>'+
+ const progressLabel=progressTasks.length?progressDone+' of '+progressTasks.length+' tasks complete':count?count+' organizing session'+(count===1?'':'s'):'No progress logged yet';
+ const declutter='<span class="hvm-room-tile-declutter">'+blooms+'<small>'+h(progressLabel)+'</small></span>';
+ return '<button type="button" class="hvm-room-tile hvm-photo-room-tile" data-room-id="'+h(z.id)+'" aria-label="Open '+h(z.name)+'; '+h(progressLabel)+'" style="--hvm-zone:'+color(z.color)+'" onclick="'+act(f,z)+'">'+
+ '<span class="hvm-room-tile-photo" style="--hvm-organized-tint:'+tint.toFixed(2)+';--hvm-progress:'+progressPct+'%" data-room-photo-zone="'+h(z.id)+'" aria-hidden="true"><span class="hvm-room-progress-fill"></span><span class="hvm-tile-mark">⌂</span></span>'+
  '<b>'+h(z.name)+'</b>'+declutter+'<small>'+photos.length+' saved photo'+(photos.length===1?'':'s')+'</small>'+
  '<span class="hvm-tile-open">'+(z.id==="stairs_up"?"Go upstairs ›":z.id==="stairs_to_third"?"Go to third floor ›":"Enter room ›")+'</span></button>';
  }).join("")+'</div></div>';
