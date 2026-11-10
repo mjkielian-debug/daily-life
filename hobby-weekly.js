@@ -1,6 +1,7 @@
 /* A gentle, one-session-per-week hobby rotation. Progress is additive to the existing hobby project tracker. */
 (function () {
   "use strict";
+  const FIRST_WEEK = "2026-11-16";
   const plan = [
     { name: "Crochet", icon: "🧶", levels: [
       { minutes: 15, step: "Make a small practice square: chain a short row, work a few rows, and stop when your timer ends.", done: "Done means spending the 15 minutes practicing; it does not have to become a finished item." },
@@ -30,12 +31,13 @@
     return typeof ymd === "function" ? ymd(d) : d.toISOString().slice(0, 10);
   }
   function currentPlan() {
-    const start = state.settings?.hobbyRotationStart || mondayOf(ymd());
-    const weeks = Math.max(0, Math.floor((new Date(mondayOf(ymd()) + "T12:00:00") - new Date(mondayOf(start) + "T12:00:00")) / 604800000));
+    const todayWeek = mondayOf(ymd());
+    const start = state.settings?.hobbyRotationStart || FIRST_WEEK;
+    const weeks = Math.max(0, Math.floor((new Date(todayWeek + "T12:00:00") - new Date(mondayOf(start) + "T12:00:00")) / 604800000));
     const index = weeks % plan.length;
     const track = plan[index], levels = state.settings?.hobbyRotationLevels || {};
     const level = Math.min(track.levels.length - 1, Math.max(0, Number(levels[track.name] || 0)));
-    return { start, week: weeks + 1, track, level, item: { name: track.name, icon: track.icon, ...track.levels[level] } };
+    return { start, week: weeks + 1, started: todayWeek >= mondayOf(start), track, level, item: { name: track.name, icon: track.icon, ...track.levels[level] } };
   }
   function card() {
     if (typeof state === "undefined" || !state) return "";
@@ -45,7 +47,11 @@
     const done = sessions.some(x => x && x.weekStart === current.start && x.done);
     const completed = sessions.filter(x => x && x.done).length;
     const item = current.item;
-    return '<section class="card hobby-weekly-card"><div class="section-title"><div><div class="eyebrow">A little time for you · weekly</div><h2>' + item.icon + ' ' + escapeHtml(item.name) + ' · ' + item.minutes + ' minutes</h2><div class="muted small">Week ' + current.week + ' of your gentle rotation · ' + completed + ' session' + (completed === 1 ? "" : "s") + ' logged</div></div><span class="tag">' + (done ? "done this week" : "one small step") + '</span></div><p>' + escapeHtml(item.step) + '</p><div class="notice small">' + escapeHtml(item.done) + '</div><button type="button" class="btn ' + (done ? "" : "primary") + '" onclick="logWeeklyHobbySession()">' + (done ? "✓ Session logged" : "Log this week’s session") + '</button>' + (done && current.level < current.track.levels.length - 1 ? '<button type="button" class="btn small" onclick="levelUpWeeklyHobby()">That felt easy · make this hobby a little harder next time</button>' : "") + '<details class="compact-more"><summary>What comes later</summary><div class="muted small">The next session rotates through crochet, your punch needle kit, yoga, and kombucha, then repeats with a slightly more involved step when the earlier one feels easy. Guitar is saved for later, when you have one available; your couple of years of high-school lessons mean we can start with a beginner refresher instead of learning how to hold it.</div></details></section>';
+    const startLabel = new Date(current.start + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    const action = current.started
+      ? '<button type="button" class="btn ' + (done ? "" : "primary") + '" onclick="logWeeklyHobbySession()">' + (done ? "✓ Session logged" : "Log this week’s session") + '</button>' + (done && current.level < current.track.levels.length - 1 ? '<button type="button" class="btn small" onclick="levelUpWeeklyHobby()">That felt easy · make this hobby a little harder next time</button>' : "")
+      : '<div class="notice small">Your first session is planned for Monday, ' + escapeHtml(startLabel) + '. It will be ready here next week.</div>';
+    return '<section class="card hobby-weekly-card"><div class="section-title"><div><div class="eyebrow">A little time for you · weekly</div><h2>' + item.icon + ' ' + escapeHtml(item.name) + ' · ' + item.minutes + ' minutes</h2><div class="muted small">Week ' + current.week + ' of your gentle rotation · ' + completed + ' session' + (completed === 1 ? "" : "s") + ' logged</div></div><span class="tag">' + (done ? "done this week" : current.started ? "one small step" : "starts " + startLabel) + '</span></div><p>' + escapeHtml(item.step) + '</p><div class="notice small">' + escapeHtml(item.done) + '</div><div class="notice small hobby-gift-note">For crochet or punch needle, we can gradually shape a project into a Christmas or birthday gift if that feels fun. We can choose the person and project later; there is no deadline pressure.</div>' + action + '<details class="compact-more"><summary>What comes later</summary><div class="muted small">The next session rotates through crochet, your punch needle kit, yoga, and kombucha, then repeats with a slightly more involved step when the earlier one feels easy. Crochet and punch-needle projects can grow toward holiday or birthday gifts. Guitar is saved for later, when you have one available; your couple of years of high-school lessons mean we can start with a beginner refresher instead of learning how to hold it.</div></details></section>';
   }
   window.logWeeklyHobbySession = async function () {
     if (typeof state === "undefined" || typeof save !== "function") return;
