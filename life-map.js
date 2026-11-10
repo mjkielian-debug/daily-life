@@ -12,6 +12,13 @@ function region(name,detail,icon,fill,view){
  '<span class="lm-region-icon" aria-hidden="true">'+icon+'</span><span class="lm-region-copy"><b>'+h(name)+'</b><small>'+h(detail)+'</small></span>'+
  '<span class="lm-region-fill" aria-hidden="true"><i style="width:'+pct+'%"></i></span></button>';
 }
+function avatarMark(label,icon,target,x,y,pct,color){
+ const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
+ return '<a class="lm-avatar-mark" href="#" aria-label="'+h(label)+'" title="'+h(label)+'" onclick="setView(&quot;'+h(target)+'&quot;);return false">'+
+ '<circle cx="'+x+'" cy="'+y+'" r="14" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
+ '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
+ '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></a>';
+}
 function view(){
  const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"Your";
  const tasks=list(state&&state.tasks).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds);
@@ -31,6 +38,14 @@ function view(){
  };
  const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,tasks.filter(t=>re.test(String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"")))]));
  const pctFor=key=>matches[key].length?Math.round(matches[key].filter(t=>t.done).length/matches[key].length*100):0;
+ const avatarMarks=[
+  avatarMark("Mind and self-care","✿","selfcare",81,56,carePct,"#c89ad7"),
+  avatarMark("Spirituality","☾","spirituality",141,42,pctFor("spirituality"),"#f2b85b"),
+  avatarMark("Body and health","♡","log",110,133,pctFor("body"),"#f2ae85"),
+  avatarMark("Relationships","♥","family",78,168,pctFor("people"),"#e98cb0"),
+  avatarMark("Hobbies and projects","✎","gardenhobbies",166,166,pctFor("hobbies"),"#82c6a4"),
+  avatarMark("Money and planning","✧","more",112,266,pctFor("money"),"#83b8df")
+ ].join("");
  const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTask(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
  const foodCount=list(state&&state.foodLogs).filter(x=>String(x.date||"")===date).length;
@@ -56,7 +71,7 @@ function view(){
  return '<section class="life-map-page">'+
  '<header class="lm-welcome"><div><span class="lm-kicker">YOUR LIFE MAP</span><h1>Hi, '+h(name)+'.</h1><p>Your life is made of lots of little things. Each one counts.</p></div><div class="lm-today-progress" aria-label="Today plan '+completed+' of '+tasks.length+' complete"><span>Today’s plan</span><b>'+completed+' <small>of '+tasks.length+'</small></b><i><em style="width:'+taskPct+'%"></em></i></div></header>'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
- '<div class="lm-scene-grid"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="img" aria-label="A friendly person illustration with mind, body, relationships, and home progress areas">'+
+ '<div class="lm-scene-grid"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="img" aria-label="A friendly avatar with clickable mind, spirituality, health, relationships, hobbies, and money areas">'+
  '<defs><clipPath id="lmHeadClip"><circle cx="110" cy="62" r="40"/></clipPath><clipPath id="lmTorsoClip"><path d="M67 115 Q110 96 153 115 L168 232 Q110 252 52 232Z"/></clipPath><clipPath id="lmLeftClip"><path d="M68 119 Q48 127 42 187 L56 190 Q68 154 85 143Z"/></clipPath><clipPath id="lmRightClip"><path d="M152 119 Q172 127 178 187 L164 190 Q152 154 135 143Z"/></clipPath><clipPath id="lmLegClip"><path d="M59 229 Q110 246 161 229 L150 292 L119 292 L109 250 L99 292 L68 292Z"/></clipPath></defs>'+
  '<circle cx="110" cy="62" r="40" fill="#f8e8ef" stroke="#64445a" stroke-width="4"/>'+
  '<path d="M73 51 Q84 19 119 24 Q146 29 150 51 Q132 40 112 44 Q92 48 73 51Z" fill="#71504b"/>'+
@@ -68,12 +83,11 @@ function view(){
  '<g clip-path="url(#lmTorsoClip)"><rect x="45" y="'+(245-130*pctFor("body")/100)+'" width="130" height="'+(130*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
  '<g clip-path="url(#lmLeftClip)"><rect x="40" y="'+(195-75*pctFor("people")/100)+'" width="50" height="'+(75*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="130" y="'+(195-75*pctFor("people")/100)+'" width="55" height="'+(75*pctFor("people")/100)+'" fill="#e98cb0"/></g>'+
  '<g clip-path="url(#lmLegClip)"><rect x="50" y="'+(300-90*pctFor("home")/100)+'" width="120" height="'+(90*pctFor("home")/100)+'" fill="#8fc7b2"/></g>'+
- '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/></svg>'+
+ '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">A little picture of a life being cared for</p></div>'+
  '<div class="lm-regions">'+region("Mind & self-care",careDone+" of "+careHabits.length+" care habits today","✿",carePct,"selfcare")+
  region("Body & health",matches.body.filter(t=>t.done).length+" of "+matches.body.length+" linked tasks today","♡",pctFor("body"),"log")+
  region("Relationships",matches.people.filter(t=>t.done).length+" of "+matches.people.length+" linked tasks today","♥",pctFor("people"),"family")+
- region("Home & routines",matches.home.filter(t=>t.done).length+" of "+matches.home.length+" linked tasks today","⌂",pctFor("home"),"household")+
  region("Spirituality",matches.spirituality.filter(t=>t.done).length+" of "+matches.spirituality.length+" linked actions today","☾",pctFor("spirituality"),"spirituality")+
  region("Hobbies & projects",matches.hobbies.filter(t=>t.done).length+" of "+matches.hobbies.length+" linked actions today","✿",pctFor("hobbies"),"gardenhobbies")+
  region("Money & planning",matches.money.filter(t=>t.done).length+" of "+matches.money.length+" linked actions today","✧",pctFor("money"),"more")+
