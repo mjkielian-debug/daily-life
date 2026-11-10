@@ -95,7 +95,13 @@ const LOCAL_ASSET_PATHS=new Set(APP_SHELL.filter(x=>x!=="./").map(x=>new URL(x,s
 self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE_NAME);
-    await Promise.allSettled(APP_SHELL.map(async url=>{
+    const required=["./index.html","./cloud.js","./styles.css"];
+    await Promise.all(required.map(async url=>{
+      const response=await fetch(url,{cache:"reload"});
+      if(!response.ok)throw new Error("Required app file failed: "+url+" ("+response.status+")");
+      await cache.put(new URL(url,self.location).pathname,response.clone());
+    }));
+    await Promise.allSettled(APP_SHELL.filter(url=>!required.includes(url)).map(async url=>{
       const response=await fetch(url,{cache:"reload"});
       if(response.ok)await cache.put(new URL(url,self.location).pathname,response.clone());
     }));
