@@ -166,7 +166,7 @@ function view(areaOverride,tasksOnly){
  avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
  avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
  '</g>'+avatarMarks+'</svg>'+
- '<p class="lm-avatar-caption">Tap a marker to open an area. Money progress fills the pants from the bottom up.</p></div></div></section>'+
+ '<p class="lm-avatar-caption">Tap a marker to open an area. C = Car & driving; W = Work. Color grows in small steps.</p></div></div></section>'+
  '<section class="lm-lower-grid"><section class="lm-panel"><div class="lm-panel-heading"><div><span class="lm-kicker">TODAY</span><h2>Small steps</h2></div><button type="button" class="lm-text-button" onclick="setView(\'today\')">Full Day Flow ›</button></div>'+taskContent+
  '<details class="lm-care"><summary>Care habits today · '+careDone+' of '+careHabits.length+'</summary><div class="lm-list">'+careRows+'</div></details></section>'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
@@ -183,7 +183,7 @@ window.lifeMapCloseArea=function(){if(typeof setView==="function")setView("lifem
 window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
 window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
 window.lifeMapAreaPage=function(area){const allowed=["mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return "";return view(area)};
-window.lifeMapAreaTasksPage=function(area){const allowed=["all","mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return "";return view(area,true)};
+window.lifeMapAreaTasksPage=function(area){const allowed=["all","mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return "";return view(area,true)};
 window.lifeMapView=view;
 window.lifeMapSetFloor=function(floor){
  if(!floorNames.includes(floor))return;
