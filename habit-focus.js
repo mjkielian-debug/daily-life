@@ -28,25 +28,40 @@
 
   function seedRequestedStarterHabits(){
     var s=appState();
-    if(!s||!s.settings||s.settings.habitStarterSetVersion>=1)return;
+    if(!s)return;
     s.settings=s.settings||{};
-    var createdAt=new Date().toISOString(),added=[];
+    if(s.settings.habitStarterSetVersion>=2)return;
+    var createdAt=new Date().toISOString(),added=[],changed=[];
     var starters=[
-      {id:"starter-habit-drink-water",area:"health",name:"Drink water",cue:"When I get up or refill my bottle, especially before and during work.",minimum:"Take a few sips; filling my 26-oz bottle is a bonus.",status:"active",reminderEnabled:false,reminderTime:""},
-      {id:"starter-habit-brush-teeth",area:"health",name:"Brush my teeth morning and night",cue:"After I get ready in the morning and before bed.",minimum:"Brush once; one brushing still counts on a hard day.",status:"active",reminderEnabled:false,reminderTime:""}
+      {id:"starter-habit-drink-water",area:"health",name:"Drink water",cue:"When I get up or refill my bottle, especially before and during work.",minimum:"Take a few sips; filling my 26-oz bottle is a bonus.",status:"active",reminderEnabled:true,reminderTime:"07:00"},
+      {id:"starter-habit-brush-teeth",area:"health",name:"Brush my teeth morning and night",cue:"After I get ready in the morning and during the kids’ 7:30 PM teeth routine.",minimum:"Brush once; one brushing still counts on a hard day.",status:"active",reminderEnabled:true,reminderTime:"19:30"}
     ];
     starters.forEach(function(starter){
       var words=starter.id.indexOf("water")>=0?/water|hydration|drink/i:/tooth|teeth|brush/i;
       var existing=s.habits.find(function(h){return h&&words.test(String(h.name||""))});
-      if(!existing){starter.createdAt=createdAt;starter.updatedAt=createdAt;s.habits.push(starter);added.push(starter.id)}
+      if(!existing){
+        starter.reminderStartDate=today();starter.reminderEndDate="";
+        starter.createdAt=createdAt;starter.updatedAt=createdAt;
+        s.habits.push(starter);added.push(starter.id);
+      }else{
+        changed.push({habit:existing,previous:{reminderEnabled:existing.reminderEnabled,reminderTime:existing.reminderTime,reminderStartDate:existing.reminderStartDate,reminderEndDate:existing.reminderEndDate,cue:existing.cue}});
+        existing.reminderEnabled=true;
+        if(!existing.reminderTime)existing.reminderTime=starter.reminderTime;
+        existing.reminderStartDate=existing.reminderStartDate||today();
+        existing.reminderEndDate="";
+        if(starter.id.indexOf("brush")>=0&&existing.name===starter.name)existing.cue=starter.cue;
+        existing.updatedAt=createdAt;
+      }
     });
-    s.settings.habitStarterSetVersion=1;
-    s.settings.habitStarterSetCreatedAt=createdAt;
+    s.settings.habitStarterSetVersion=2;
+    s.settings.habitStarterSetCreatedAt=s.settings.habitStarterSetCreatedAt||createdAt;
+    s.settings.habitReminderSetVersion=1;
     Promise.resolve(typeof save==="function"?save():null).catch(function(error){
       s.habits=s.habits.filter(function(h){return added.indexOf(h.id)<0});
-      delete s.settings.habitStarterSetVersion;
-      delete s.settings.habitStarterSetCreatedAt;
-      console.error("Could not save the planned starter habits.",error);
+      changed.forEach(function(row){Object.assign(row.habit,row.previous)});
+      s.settings.habitStarterSetVersion=1;
+      delete s.settings.habitReminderSetVersion;
+      console.error("Could not save the requested starter habits and reminders.",error);
     });
   }
   function appState(){
@@ -214,9 +229,9 @@
       '<label>Habit<input id="hfName" maxlength="100" value="'+esc(habit.name||"")+'"></label>'+
       '<label>Cue<input id="hfCue" maxlength="180" value="'+esc(habit.cue||"")+'" placeholder="After I… / Before I… / When…"></label>'+
       '<label>Smallest version<input id="hfMinimum" maxlength="180" value="'+esc(habit.minimum||"")+'" placeholder="The easy version for busy days"></label>'+
-      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(habit.reminderEnabled===true?'checked':'')+'> Try phone reminders for 14 days</label>'+
+      '<label class="hf-reminder-check"><input id="hfRemind" type="checkbox" '+(habit.reminderEnabled===true?'checked':'')+'> Enable daily phone reminders</label>'+
       '<label>Reminder time <input id="hfReminderTime" type="time" value="'+esc(habit.reminderTime||'')+'"></label>'+
-      '<div class="hf-form-note">Daily reminders stay on until you turn them off. Enable Daily Life notifications on this device to receive them.</div></div>';
+      '<div class="hf-form-note">Daily reminders repeat until you turn them off. Enable Daily Life notifications on this device to receive them.</div></div>';
     modal("Edit habit",body,"Save changes",async function(){
       var areaValue=document.getElementById("hfArea")?.value||"";
       var name=String(document.getElementById("hfName")?.value||"").trim();
