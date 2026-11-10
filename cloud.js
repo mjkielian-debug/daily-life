@@ -719,10 +719,33 @@ function cloudStartAssistantPatchPolling(){
   }
 }
 
+function cloudMergeMonsterHighCollection(localValue,remoteValue){
+  const local=localValue&&typeof localValue==="object"?localValue:null;
+  const remote=remoteValue&&typeof remoteValue==="object"?remoteValue:null;
+  if(!local)return remote?structuredClone(remote):undefined;
+  if(!remote)return structuredClone(local);
+  const localTime=Date.parse(local.updatedAt||"")||0,remoteTime=Date.parse(remote.updatedAt||"")||0;
+  if(remoteTime>localTime)return structuredClone(remote);
+  if(localTime>remoteTime)return structuredClone(local);
+  const merged=structuredClone(remote);
+  merged.ownership={...(local.ownership||{}),...(remote.ownership||{})};
+  for(const [id,owners] of Object.entries(local.ownership||{})){
+    merged.ownership[id]={...(merged.ownership[id]||{}),...owners};
+    for(const owner of ["Michelle","Dolly"])merged.ownership[id][owner]=!!(owners?.[owner]||remote.ownership?.[id]?.[owner]);
+  }
+  const custom=[...(remote.custom||[])];
+  const ids=new Set(custom.map(x=>x?.id));
+  for(const item of local.custom||[])if(item?.id&&!ids.has(item.id))custom.push(item);
+  merged.custom=custom;
+  return merged;
+}
+
 async function cloudUseRemoteSnapshot(snapshot){
   if(!snapshot?.state)return false;
   const localState=state;
   state=migrateState(snapshot.state);
+  const mergedMonsterHigh=cloudMergeMonsterHighCollection(localState?.monsterHighCollection,state.monsterHighCollection);
+  if(mergedMonsterHigh)state.monsterHighCollection=mergedMonsterHigh;
   cloudRestoreLocalOnlyAssets(state,localState);
   cloudApplyAssistantPatches(snapshot.state);
   await dbSet("state",state);
@@ -746,6 +769,13 @@ async function cloudPrepareAutoSync(){
   if(!cloudAutoEnabled()){cloudAutoCanPush=false;return}
   await cloudRefreshMetadata();
   let snapshot=cloudRemoteUpdatedAt?await cloudReadRemoteSnapshot():null;
+  if(snapshot?.state?.monsterHighCollection){
+    const merged=cloudMergeMonsterHighCollection(state.monsterHighCollection,snapshot.state.monsterHighCollection);
+    if(merged&&JSON.stringify(merged)!==JSON.stringify(state.monsterHighCollection)){
+      state.monsterHighCollection=merged;
+      await dbSet("state",state);
+    }
+  }
   const lastBeforePatch=cloudLastPushed(),signatureBeforePatch=cloudStateSignature(),lastSignatureBeforePatch=cloudLastSignature();
   const conflictKey=cloudMetaKey("pendingConflictAt");
   const pendingConflictAt=localStorage.getItem(conflictKey);
