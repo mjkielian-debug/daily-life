@@ -20,7 +20,7 @@ function avatarMark(label,icon,target,x,y,pct,color){
  '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></a>';
 }
 function view(){
- const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"Your";
+ const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
  const tasks=list(state&&state.tasks).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds);
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
@@ -28,7 +28,7 @@ function view(){
  const carePct=careHabits.length?Math.round(careDone/careHabits.length*100):0;
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
  const terms={
-  mind:/mind|mental|journal|therapy|read|rest|breath|quiet|meditat/i,
+  mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
   body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin/i,
   people:/dolly|leo|demitri|dimitri|ambrose|tanner|relationship|family|together|read with/i,
   home:/home|house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean/i,
