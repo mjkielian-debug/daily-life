@@ -26,15 +26,36 @@
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
   var quickBarOpen=false;
 
+  function correctStarterReminderTimes(s){
+    if(!s||!s.settings)return false;
+    if(s.settings.habitReminderCorrectionVersion>=1)return false;
+    var changed=false;
+    var water=s.habits.find(function(h){return h&&h.id==="starter-habit-drink-water"});
+    if(water&&water.reminderTime==="07:00"){
+      water.cue="Mid-shift on workdays; keep the bottle within reach on the route.";
+    }
+    var teeth=s.habits.find(function(h){return h&&h.id==="starter-habit-brush-teeth"});
+    if(teeth&&teeth.reminderTime==="19:30"){
+      teeth.reminderEnabled=true;
+      teeth.reminderTime="04:00";
+      teeth.cue="After I get up and before I leave for work (around 4:00 AM on UPS days).";
+      teeth.updatedAt=new Date().toISOString();
+      changed=true;
+    }
+    s.settings.habitReminderCorrectionVersion=1;
+    return changed;
+  }
   function seedRequestedStarterHabits(){
     var s=appState();
     if(!s)return;
     s.settings=s.settings||{};
+    var reminderTimesChanged=correctStarterReminderTimes(s);
+    if(reminderTimesChanged&&typeof save==="function")Promise.resolve(save()).catch(function(error){console.error("Could not save corrected starter reminder time.",error)});
     if(s.settings.habitStarterSetVersion>=2)return;
     var createdAt=new Date().toISOString(),added=[],changed=[];
     var starters=[
-      {id:"starter-habit-drink-water",area:"health",name:"Drink water",cue:"When I get up or refill my bottle, especially before and during work.",minimum:"Take a few sips; filling my 26-oz bottle is a bonus.",status:"active",reminderEnabled:true,reminderTime:"07:00"},
-      {id:"starter-habit-brush-teeth",area:"health",name:"Brush my teeth morning and night",cue:"After I get ready in the morning and during the kids’ 7:30 PM teeth routine.",minimum:"Brush once; one brushing still counts on a hard day.",status:"active",reminderEnabled:true,reminderTime:"19:30"}
+      {id:"starter-habit-drink-water",area:"health",name:"Drink water",cue:"Mid-shift on workdays; keep the bottle within reach on the route.",minimum:"Take a few sips; filling my 26-oz bottle is a bonus.",status:"active",reminderEnabled:true,reminderTime:"07:00"},
+      {id:"starter-habit-brush-teeth",area:"health",name:"Brush my teeth morning and night",cue:"After I get up and before I leave for work (around 4:00 AM on UPS days).",minimum:"Brush once; one brushing still counts on a hard day.",status:"active",reminderEnabled:true,reminderTime:"04:00"}
     ];
     starters.forEach(function(starter){
       var words=starter.id.indexOf("water")>=0?/water|hydration|drink/i:/tooth|teeth|brush/i;
