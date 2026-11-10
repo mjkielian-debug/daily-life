@@ -54,7 +54,9 @@
       const range=previousRange(task,date);
       if(!range||!isWorkday(date)||isWorkTask(task))return range;
       const dayEnd=typeof itineraryDayEnd==="function"?itineraryDayEnd(date):range.end;
-      return {start:Math.max(homeStart,range.start),end:Math.max(homeStart,Math.min(dayEnd,Math.max(range.end,homeStart+15)))};
+      const start=Math.max(homeStart,range.start);
+      const end=range.end<=homeStart?dayEnd:Math.min(dayEnd,Math.max(range.end,start+itineraryTaskMinutes(task)));
+      return start<end?{start,end}:null;
     };
   }
   const previousAuto=itineraryAutoTaskBlocks;
