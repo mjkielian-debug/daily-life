@@ -74,7 +74,7 @@ function dueItems(state: any, now: Date, timeZone: string) {
   for (const habit of Array.isArray(state?.habits) ? state.habits : []) {
     if (!habit?.id || habit.status !== "active" || habit.reminderEnabled !== true) continue;
     const startDate = String(habit.reminderStartDate || "");
-    const endDate = String(habit.reminderEndDate || "");
+    const endDate = String(habit.reminderEndDate || "9999-12-31");
     const reminderTime = String(habit.reminderTime || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) continue;
     if (today < startDate || today > endDate || !/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)) continue;
