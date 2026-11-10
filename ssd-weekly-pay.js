@@ -29,12 +29,12 @@
       const mm = row.ssdMiles === "" || row.ssdMiles == null ? "miles not entered" : Number(row.ssdMiles).toFixed(1) + " mi";
       return '<div class="ssd-weekly-pay-row"><b>' + escText(typeof dl === "function" ? dl(row.date) : row.date) + '</b><span>' + hh + ' · ' + mm + '</span></div>';
     }).join("");
-    return '<div class="card ssd-weekly-pay-card"><div class="section-title"><div><div class="eyebrow">UPS · Seasonal Support Driver</div><h2>' + (partial ? "Partial weekly estimate" : "Weekly estimate") + '</h2><div class="muted small">' + hours.toFixed(2) + ' SSD hours · ' + miles.toFixed(1) + ' route miles</div></div><span class="tag">' + (partial ? "some details missing" : "from shift logs") + '</span></div><div class="ssd-weekly-pay-grid"><span><small>Hourly pay estimate</small><b>' + moneyText(wages) + '</b></span><span><small>Mileage reimbursement</small><b>' + moneyText(reimbursement) + '</b></span><span><small>Pay + mileage estimate</small><b>' + moneyText(wages + reimbursement) + '</b></span></div>' + (partial ? '<p class="muted small">This is partial because at least one logged SSD day is missing hours or miles. Add the missing value in that day’s UPS shift log.</p>' : '') + '<details class="compact-more"><summary>Shift details</summary>' + dayRows + '</details><p class="muted small">Uses ' + moneyText(hourlyRate) + '/hour and ' + moneyText(mileageRate) + '/mile. Mileage is separated from wages; estimates are before taxes and do not include any overtime premium.</p></div>';
+    return '<div class="card ssd-weekly-pay-card"><div class="section-title"><div><div class="eyebrow">UPS · Seasonal Support Driver</div><h2>' + (partial ? "Partial weekly estimate" : "Weekly estimate") + '</h2><div class="muted small">' + hours.toFixed(2) + ' SSD hours · ' + miles.toFixed(1) + ' route miles</div></div><span class="tag">' + (partial ? "some details missing" : "from shift logs") + '</span></div><div class="ssd-weekly-pay-grid"><span><small>Hourly pay estimate</small><b>' + moneyText(wages) + '</b></span><span><small>Mileage pay</small><b>' + moneyText(reimbursement) + '</b></span><span><small>Pay + mileage estimate</small><b>' + moneyText(wages + reimbursement) + '</b></span></div>' + (partial ? '<p class="muted small">This is partial because at least one logged SSD day is missing hours or miles. Add the missing value in that day’s UPS shift log.</p>' : '') + '<details class="compact-more"><summary>Shift details</summary>' + dayRows + '</details><p class="muted small">Uses ' + moneyText(hourlyRate) + '/hour and ' + moneyText(mileageRate) + '/mile. Mileage is separated from wages; estimates are before taxes and do not include any overtime premium.</p></div>';
   }
   window.ssdWeeklyEarningsCard = card;
-  const previousMore = window.moreView;
-  if (typeof previousMore === "function") window.moreView = function () {
-    return '<div class="ssd-weekly-pay-shell">' + card() + '</div>' + previousMore.apply(this, arguments);
+  const previousIncome = window.moneyIncomeHub;
+  if (typeof previousIncome === "function") window.moneyIncomeHub = function () {
+    return card() + previousIncome.apply(this, arguments);
   };
   if (!document.getElementById("ssdWeeklyPayStyles")) {
     const style = document.createElement("style");
