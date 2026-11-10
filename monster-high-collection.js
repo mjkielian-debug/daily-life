@@ -81,11 +81,34 @@ function monsterHighCollectionView(){
     <p class="mh-credit">The product photos are hotlinked from public doll listings for identification. Photo availability can change; use the full archive for more releases and variants.</p>
   </section>`;
 }
+let monsterHighOwnershipPushQueue=Promise.resolve();
+async function saveMonsterHighOwnership(){
+  await save();
+  if(typeof cloudUser!=="function"||!cloudUser()||typeof cloudPushSnapshotInternal!=="function")return {local:true,cloud:false};
+  monsterHighOwnershipPushQueue=monsterHighOwnershipPushQueue.catch(()=>{}).then(async()=>{
+    if(typeof cloudPushTimer!=="undefined"&&cloudPushTimer){clearTimeout(cloudPushTimer);cloudPushTimer=null}
+    if(typeof cloudAutoEnabled==="function"&&!cloudAutoEnabled())return {local:true,cloud:false};
+    if((typeof cloudAutoCanPush!=="undefined"&&!cloudAutoCanPush)||(typeof cloudNeedsReview!=="undefined"&&cloudNeedsReview))return {local:true,cloud:false,paused:true};
+    try{
+      const pushed=await cloudPushSnapshotInternal(false);
+      return pushed===false?{local:true,cloud:false,paused:true}:{local:true,cloud:true};
+    }catch(error){return {local:true,cloud:false,error}}
+  });
+  return monsterHighOwnershipPushQueue;
+}
 async function toggleMonsterHighOwned(id,owner,checked){
-  const data=monsterHighData();
+  const data=monsterHighData(),previous=!!data.ownership[id]?.[owner];
   data.ownership[id]=data.ownership[id]||{};
   data.ownership[id][owner]=!!checked;
-  try{await save();render()}catch(error){data.ownership[id][owner]=!checked;alert("Could not save that collection update. Please try again.");render()}
+  try{
+    const result=await saveMonsterHighOwnership();
+    render();
+    if(result.error||result.paused)alert("The ownership mark is saved on this phone, but cloud sync is paused. Check the app's cloud sync status before relying on it on another device.");
+  }catch(error){
+    data.ownership[id][owner]=previous;
+    alert("Could not save that collection update on this phone. Please try again.");
+    render();
+  }
 }
 function openMonsterHighCollection(){monsterHighSearch="";monsterHighGeneration="All";monsterHighOwnedFilter="All";setView("monsterhigh")}
 function openMonsterHighAdd(){
