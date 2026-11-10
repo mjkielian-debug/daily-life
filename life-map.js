@@ -70,11 +70,40 @@ function view(){
    (/clothing|clothes|apparel|wardrobe/.test(category)||/\b(pants|trousers|jeans|shorts|leggings|shirt|shirts|t[- ]?shirt|sweater|hoodie|dress|skirt|socks|underwear|pajamas|coat|jacket|shoes|boots)\b/.test(label));
  });
  const clothingOwners=[...new Set(clothing.map(item=>String(item.inventoryOwner||item.wardrobeOwner||"").trim()).filter(Boolean))];
- const clothingRows=clothingOwners.map(owner=>{
-  const items=clothing.filter(item=>String(item.inventoryOwner||item.wardrobeOwner||"").trim()===owner);
-  const qty=items.reduce((n,item)=>n+Math.max(0,Number(item.quantity??1)||0),0);
-  return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(owner)+'</b><span>'+qty+' saved clothing item'+(qty===1?"":"s")+'</span><small>'+h(items.slice(0,3).map(item=>item.name).join(" · "))+(items.length>3?" · +"+(items.length-3)+" more":"")+'</small></button>';
+ const clothingOwner=item=>String(item.inventoryOwner||item.wardrobeOwner||"").trim().toLowerCase();
+ const clothingQty=items=>items.reduce((n,item)=>n+Math.max(0,Number(item.quantity??1)||0),0);
+ const clothingType=item=>{
+  const text=(String(item.name||"")+" "+String(item.category||"")).toLowerCase();
+  if(/pajama|pyjama|sleepwear|\bpjs?\b/.test(text))return"pajamas";
+  if(/\b(winter coat|parka|coat)\b/.test(text))return"coat";
+  if(/hoodie|jacket|zip[\s-]?up/.test(text))return"layers";
+  if(/long[\s-]?sleeve/.test(text))return"long";
+  if(/short[\s-]?sleeve/.test(text))return"short";
+  if(/\b(pants?|trousers|jeans|leggings)\b/.test(text))return"pants";
+  return"other";
+ };
+ const childWardrobes=[
+  {name:"Leo",aliases:["leo"]},
+  {name:"Demitri (Tree)",aliases:["demitri","dimitri","tree"]},
+  {name:"Dolly",aliases:["dolly"]},
+  {name:"Ambrose",aliases:["ambrose"]}
+ ];
+ const childRows=childWardrobes.map(person=>{
+  const items=clothing.filter(item=>person.aliases.includes(clothingOwner(item)));
+  const hasRecords=items.length>0,counts={long:0,short:0,layers:0,coat:0,pants:0,pajamas:0,other:0};
+  items.forEach(item=>{counts[clothingType(item)]+=Math.max(0,Number(item.quantity??1)||0)});
+  const firstLine="Long sleeves "+counts.long+"/7 · Short sleeves "+counts.short+"/7 · Pants "+counts.pants+"/7";
+  const secondLine="Hoodies/jackets "+counts.layers+"/3–5 · Winter coat "+counts.coat+"/1 · Pajamas "+counts.pajamas+"/5";
+  const otherLine=counts.other?'<small>Other clothing · '+counts.other+' saved</small>':"";
+  return '<button type="button" onclick="setView(\\'inventory\\')"><b>'+h(person.name)+'</b><span>'+(hasRecords?clothingQty(items)+' assigned saved item'+(clothingQty(items)===1?"":"s"):"No assigned clothing records yet")+'</span>'+
+   (hasRecords?'<small>'+h(firstLine)+'</small><small>'+h(secondLine)+'</small>'+otherLine:'<small>Targets are shown as a reference; counts will fill in as items are inventoried.</small>')+'</button>';
  }).join("");
+ const otherOwners=clothingOwners.filter(owner=>!childWardrobes.some(person=>person.aliases.includes(owner.toLowerCase())));
+ const otherRows=otherOwners.map(owner=>{
+  const items=clothing.filter(item=>clothingOwner(item)===owner.toLowerCase());
+  return '<button type="button" onclick="setView(\\'inventory\\')"><b>'+h(owner)+'</b><span>'+clothingQty(items)+' saved clothing item'+(clothingQty(items)===1?"":"s")+'</span><small>'+h(items.slice(0,3).map(item=>item.name).join(" · "))+(items.length>3?" · +"+(items.length-3)+" more":"")+'</small></button>';
+ }).join("");
+ const clothingRows=childRows+otherRows;
  const floor=selectedFloor();
  const map=typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p class="lm-muted">The saved house map is loading.</p>';
  const roomProgress=typeof houseVisualRoomProgressHtml==="function"?houseVisualRoomProgressHtml(floor):'<p class="lm-muted">Room history is loading.</p>';
@@ -114,7 +143,7 @@ function view(){
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
  '<section class="lm-trackers"><div class="lm-tracker-title"><span class="lm-kicker">YOUR TRACKING STAYS HERE</span><h2>All the pieces you already log</h2></div>'+
  '<button type="button" onclick="setView(\'home\')"><span>🥣</span><b>Food</b><small>'+foodCount+' entries today</small></button><button type="button" onclick="setView(\'log\')"><span>☾</span><b>Sleep</b><small>'+(sleepCount?"Logged today":"Open sleep tracking")+'</small></button><button type="button" onclick="setView(\'selfcare\')"><span>💧</span><b>Water</b><small>'+waterCount+' logs today</small></button><button type="button" onclick="setView(\'family\')"><span>♡</span><b>Family</b><small>Time, people & birthdays</small></button><button type="button" onclick="setView(\'inventory\')"><span>▤</span><b>Inventory</b><small>'+itemCount+' saved item records</small></button><button type="button" onclick="setView(\'spirituality\')"><span>☾</span><b>Spirituality</b><small>Readings & rituals</small></button><button type="button" onclick="setView(\'gardenhobbies\')"><span>✿</span><b>Hobbies</b><small>Plants & projects</small></button><button type="button" onclick="setView(\'more\')"><span>✧</span><b>Money</b><small>Bills & plans</small></button></section>'+
- (clothingOwners.length?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>These are saved item counts, not a judgment about what anyone needs.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
+ (clothingRows?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>Counts compare assigned saved items with your clothing targets; low counts mean items are not yet recorded to the target.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
  '<p class="lm-disclaimer">This first pass reads your existing records. It does not move, delete, or rewrite your data. Avatar fill currently uses date-specific tasks and self-care logs; spirituality, hobbies, and money each link to their existing trackers.</p></section>';
 }
 window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea=activeArea===area?"":area;activeRoom=null;if(typeof render==="function")render()};
