@@ -27,15 +27,21 @@ function view(areaOverride,tasksOnly){
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
  const terms={
   mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
-  body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin|safety|vehicle|car|volvo|keys?|driver|delivery|lockout/i,
+  body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|stretch|workout|exercise|sleep|skin/i,
   people:/relationship|family|together|read with|time with|spend time|play with|connect with|hang out with|check.?in with|date night/i,
   home:/home|house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean/i,
   spirituality:/spiritual|tarot|ritual|meditat|affirmation/i,
   hobbies:/hobby|craft|garden|plant care|project|yoga/i,
-  money:/money|budget|bill|bank|account|paycheck|finance|rent|electric/i
+  money:/money|budget|bill|bank|account|paycheck|finance|rent|electric/i,
+  car:/car|vehicle|volvo|key|keys|lock|tire|fuel|oil|driving|driver|package/i,
+  work:/work|ups|shift|route|preload|paycheck|delivery|deliver|clock.?in/i
  };
- const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,tasks.filter(t=>re.test(String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"")))]));
- const pctFor=key=>matches[key].length?Math.round(matches[key].filter(t=>t.done).length/matches[key].length*100):0;
+ const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,tasks.filter(t=>{
+  const category=String(t.category||"").toLowerCase();
+  if(category==="car"||category==="work")return category===key;
+  return re.test(String(t.title||"")+" "+category+" "+String(t.child||""));
+ })]));
+ const pctFor=key=>{const total=matches[key]?.length||0,done=(matches[key]||[]).filter(t=>t.done).length;return total?Math.round(done/Math.max(5,total)*100):0};
  const moneyGoals=list(state&&state.settings&&state.settings.financialRoadmap).filter(g=>g&&Array.isArray(g.steps));
  const moneyGoalSteps=moneyGoals.flatMap(g=>g.steps),moneyGoalDone=moneyGoalSteps.filter(step=>step&&step.done).length,moneyGoalTotal=moneyGoalSteps.length,moneyGoalPct=moneyGoalTotal?Math.round(moneyGoalDone/moneyGoalTotal*100):0;
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
@@ -43,14 +49,16 @@ function view(areaOverride,tasksOnly){
  const avatarMarks=[
   avatarMark("Mind and self-care","✿",81,56,carePct,"#c89ad7","mind"),
   avatarMark("Spirituality","☾",141,42,pctFor("spirituality"),"#f2b85b","spirituality"),
-  avatarMark("Body, health & safety","♡",110,133,pctFor("body"),"#f2ae85","body"),
+  avatarMark("Body & health","♡",110,133,pctFor("body"),"#f2ae85","body"),
   avatarMark("Relationships","♥",78,168,pctFor("people"),"#e98cb0","people"),
   avatarMark("Hobbies and projects","✎",166,166,pctFor("hobbies"),"#82c6a4","hobbies"),
-  avatarMark("Money and planning","✧",112,266,moneyFill,"#83b8df","money")
+  avatarMark("Money and planning","✧",112,266,moneyFill,"#83b8df","money"),
+  avatarMark("Car & driving","C",51,235,pctFor("car"),"#e98cb0","car"),
+  avatarMark("Work","W",169,235,pctFor("work"),"#82c6a4","work")
  ].join("");
  const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTask(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
- const areaTitles={mind:"Mind & self-care",body:"Body, health & safety",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning"};
+ const areaTitles={mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
  const areaSelection=areaOverride||activeArea;
  const areaText=t=>String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"");
  const areaHistory=areaSelection&&terms[areaSelection]?list(state&&state.tasks).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&terms[areaSelection].test(areaText(t))).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
@@ -69,9 +77,9 @@ function view(areaOverride,tasksOnly){
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifearea-'+areaSelection+'&#39;)">‹ '+h(areaTitles[areaSelection]||"Life area")+'</button><span class="lm-kicker">TODAY · AREA TASKS</span><h1>Today’s '+h(taskTitle)+'</h1><p>Only tasks linked to this area appear here.</p></header><section class="lm-inline-panel lm-area-page-content">'+taskList+'</section></section>';
  }
  if(areaOverride){
-  const descriptions={mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines, everyday body care, and practical safety tasks.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories."};
-  const trackerViews={mind:"selfcare",body:"log",people:"family",spirituality:"spirituality",hobbies:"gardenhobbies",money:"budget"};
-  const trackerLabels={mind:"Self-care",body:"Health logs",people:"Family",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Finish budget setup"};
+  const descriptions={mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and everyday care for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories.",car:"Car keys, maintenance, driving setup, and other vehicle tasks.",work:"UPS shifts, delivery routines, and other work tasks."};
+  const trackerViews={mind:"selfcare",body:"log",people:"family",spirituality:"spirituality",hobbies:"gardenhobbies",money:"budget",car:"today",work:"today"};
+  const trackerLabels={mind:"Self-care",body:"Health logs",people:"Family",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Finish budget setup",car:"Today’s plan",work:"Today’s plan"};
   const pagePanel=activeAreaPanel.replace('class="lm-inline-panel"','class="lm-inline-panel lm-area-page-content"').replace('<button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button>','');
   return '<section class="life-map-page lm-area-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">YOUR LIFE MAP · AREA</span><h1>'+h(areaTitles[areaSelection]||"Life area")+'</h1><p>'+h(descriptions[areaSelection]||"")+'</p></header>'+pagePanel+'<div class="lm-area-shortcuts"><span class="lm-kicker">OPEN THIS AREA’S TRACKER</span><div><button type="button" class="lm-region" onclick="setView(&#39;'+trackerViews[areaSelection]+'&#39;)">'+h(trackerLabels[areaSelection]||"Open tracker")+' ›</button><button type="button" class="lm-region" onclick="setView(&#39;lifearea-tasks-'+areaSelection+'&#39;)">'+h((areaTitles[areaSelection]||"Area")+' tasks today')+' ›</button></div></div></section>';
  }
@@ -167,14 +175,14 @@ function view(areaOverride,tasksOnly){
  (clothingRows?'<section class="lm-wardrobes"><div><span class="lm-kicker">CLOTHING ON FILE</span><h2>Inventory by person</h2><p>Counts compare assigned saved items with your clothing targets; low counts mean items are not yet recorded to the target.</p></div><div>'+clothingRows+'</div></section>':'<section class="lm-wardrobes lm-wardrobes-empty"><div><span class="lm-kicker">CLOTHING INVENTORY</span><h2>Keep each person’s items together</h2><p>No clothing records with a person assigned are saved yet. Existing inventory is untouched.</p><button type="button" onclick="setView(\'inventory\')">Open inventory ›</button></div></section>')+
  '<p class="lm-disclaimer">This first pass reads your existing records. It does not move, delete, or rewrite your data. Avatar fill currently uses date-specific tasks and self-care logs; spirituality, hobbies, and money each link to their existing trackers.</p></section>';
 }
-window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return;activeArea="";activeRoom=null;if(typeof setView==="function")setView("lifearea-"+area)};
+window.lifeMapSelectArea=function(area){const allowed=["mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return;activeArea="";activeRoom=null;if(typeof setView==="function")setView("lifearea-"+area)};
 function avatarAreaFromEvent(event){const target=event.target&&event.target.closest?event.target.closest(".lm-avatar-mark[data-life-area],.lm-avatar-hotspot[data-life-area]"):null;if(!target)return;const area=target.getAttribute("data-life-area");if(!area)return;if(event.type==="keydown"&&event.key!=="Enter"&&event.key!==" ")return;if(event.type==="keydown")event.preventDefault();if(typeof window.lifeMapSelectArea==="function")window.lifeMapSelectArea(area)}
 document.addEventListener("click",avatarAreaFromEvent);
 document.addEventListener("keydown",avatarAreaFromEvent);
 window.lifeMapCloseArea=function(){if(typeof setView==="function")setView("lifemap")};
 window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
 window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
-window.lifeMapAreaPage=function(area){const allowed=["mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return "";return view(area)};
+window.lifeMapAreaPage=function(area){const allowed=["mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return "";return view(area)};
 window.lifeMapAreaTasksPage=function(area){const allowed=["all","mind","body","people","spirituality","hobbies","money"];if(!allowed.includes(area))return "";return view(area,true)};
 window.lifeMapView=view;
 window.lifeMapSetFloor=function(floor){
