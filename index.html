@@ -1818,7 +1818,7 @@ function dayFlowCurrentItem(date,items){
   return active||next||null;
 }
 function itineraryView(){
-  const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),
+  const date=itineraryDate||ymd(),items=itineraryDayItems(date),current=dayFlowCurrentItem(date,items),nowMinutes=date===ymd()?new Date().getHours()*60+new Date().getMinutes():-1,comingUp=items.filter(x=>!x.done&&!x.nonBlocking&&x.kind!=="gap"&&x.kind!=="context"&&x.kind!=="sleep"&&hmMinutes(x.start)!==null&&(date!==ymd()||x===current||hmMinutes(x.start)>=nowMinutes)).slice(0,3),
         placed=new Set(items.filter(x=>x.source==="task").map(x=>x.sourceId)),
         looseTasks=itineraryTaskCandidates(date).filter(x=>!placed.has(x.id)),
         looseChores=dayFlowUnplacedChores(date,items),
@@ -1840,6 +1840,9 @@ function itineraryView(){
       <button type="button" onclick="openDayFlowSection('unscheduled','${date}')"><span class="dayflow-mini-icon">?</span><span><b>Loose items</b><small>${unscheduled?unscheduled+" to place":"All placed"}</small></span></button>
       <button type="button" onclick="openDayFlowSection('plan','${date}')"><span class="dayflow-mini-icon">${conflicts.hardCount?"!":"✦"}</span><span><b>Plan day</b><small>${conflicts.hardCount?conflicts.hardCount+" possible overlaps":conflicts.routineCount?conflicts.routineCount+" routines to fit":"Schedule looks clear"}</small></span></button>
     </div>
+    <section class="card dayflow-coming-up"><div class="section-title"><div><div class="eyebrow">NEXT THREE</div><h2>Coming up</h2></div><small class="muted">Tap a step to mark it done</small></div>
+      ${comingUp.length?comingUp.map(x=>dayFlowRowHtml(x,date)).join(""):`<div class="notice">Nothing else is scheduled ahead.</div>`}
+    </section>
   </section>`;
 }
 function openTimeBlockDetails(date,id="",templateKey=""){
