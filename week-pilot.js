@@ -6,6 +6,7 @@
   function wpShift(date,days){return typeof shiftDateString==="function"?shiftDateString(date,days):(function(){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+days);return ymd(d)})()}
   function wpDates(start=ymd()){return Array.from({length:7},(_,i)=>wpShift(start,i))}
   function wpWorkday(date){
+    if(typeof isUsualWorkday==="function")return isUsualWorkday(date);
     const days=(state.settings?.itinerary?.workWeekdays||[2,3,4,5,6]).map(Number);
     return days.includes(new Date(date+"T12:00:00").getDay());
   }

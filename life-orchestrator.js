@@ -453,12 +453,32 @@
     const raw=String(t?.category||"life").toLowerCase();
     return ({home:"Home",school:"School",money:"Money",car:"Car",pets:"Pets",garden:"Garden",food:"Food",personal:"Personal",work:"Work",life:"Life"})[raw]||raw.replace(/^./,c=>c.toUpperCase());
   }
+  function lifeTaskIsPeriodic(t){
+    if(!t)return false;
+    if(t.generated==="recurring-task"||t.recurring===true||t.dailyReset===true)return true;
+    const title=String(t.title||"").trim().toLowerCase();
+    if((state.settings?.recurringTasks||[]).some(function(rule){return String(rule.title||"").trim().toLowerCase()===title}))return true;
+    return typeof itineraryIsDailyResetTask==="function"&&itineraryIsDailyResetTask(t);
+  }
+  function lifeTaskLastDone(t){
+    if(!lifeTaskIsPeriodic(t))return "";
+    const key=lifeTaskDisplayKey(t),dates=(state.tasks||[]).filter(function(row){
+      return row&&row.done&&String(row.id)!==String(t.id)&&lifeTaskDisplayKey(row)===key&&
+        /^\d{4}-\d{2}-\d{2}$/.test(String(row.date||""))&&String(row.date)<lifeTaskDate(t);
+    }).map(function(row){return String(row.date)});
+    const title=String(t.title||"").trim().toLowerCase(),
+      rule=(state.settings?.recurringTasks||[]).find(function(row){return String(row.title||"").trim().toLowerCase()===title});
+    if(/^\d{4}-\d{2}-\d{2}$/.test(String(rule?.lastDone||"")))dates.push(String(rule.lastDone));
+    return dates.sort().pop()||"";
+  }
   function lifeTaskMeta(t){
     const parts=[];
     if(t.child)parts.push(String(t.child));
     const d=lifeTaskDate(t),today=ymd();
     if(d<today)parts.push("from "+dl(d));
     else if(d>today)parts.push(dl(d));
+    const lastDone=lifeTaskLastDone(t);
+    if(lifeTaskIsPeriodic(t))parts.push(lastDone?"Last done "+dl(lastDone):"No prior completion logged");
     // Duplicates are already collapsed in the queue; don't add implementation
     // language to the visible task list.
     return parts.join(" · ");
@@ -477,6 +497,12 @@
   function lifeFamilyRoutinesHtml(){
     const rows=displayChoresForDate(ymd());
     if(!rows.length)return "";
+    const lastChoreDate=function(chore){
+      const child=String(chore.child||"").trim().toLowerCase(),name=String(chore.chore||"").trim().toLowerCase();
+      return (state.chores||[]).filter(function(row){
+        return row.done&&String(row.date||"")<ymd()&&String(row.child||"").trim().toLowerCase()===child&&String(row.chore||"").trim().toLowerCase()===name;
+      }).map(function(row){return String(row.date)}).sort().pop()||"";
+    };
     const preferred=["Leo","Demitri","Dolly","Ambrose"],groups=new Map();
     for(const row of rows){
       const name=String(row.child||"Family").trim()||"Family";
@@ -500,7 +526,7 @@
           '<div class="life-family-head"><b>'+esc(name)+'</b><small>'+done+'/'+sorted.length+'</small></div>'+
           '<div class="life-family-checks">'+sorted.map(c=>
             '<label class="'+(c.done?'is-done':'')+'"><input type="checkbox" '+(c.done?'checked':'')+
-            ' onchange="lifeToggleHubChore(\''+c.id+'\',this.checked)"><span>'+esc(c.chore||"Routine")+'</span></label>'
+            ' onchange="lifeToggleHubChore(\''+c.id+'\',this.checked)"><span>'+esc(c.chore||"Routine")+'<small class="muted small">'+(lastChoreDate(c)?'Last done '+esc(dl(lastChoreDate(c))):'No prior completion logged')+'</small>'+'</span></label>'
           ).join("")+'</div></div>';
       }).join("")+'</div></section>';
   }
@@ -711,6 +737,14 @@
     const target=future.length?Math.min(...future):1440;
     return new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,target,1).getTime();
   }
+  function lifeScheduleReviewLabel(){
+    const today=ymd(),weekday=new Date(today+"T12:00:00").getDay(),weekStart=lifeShift(today,-weekday),
+      review=state.settings?.itinerary?.workScheduleReviews?.[weekStart]||{};
+    if(weekday===0&&!review.sundayConfirmedAt)return "Confirm work shifts";
+    if(weekday===3&&(!review.midweekConfirmedAt||review.updatedAt>review.midweekConfirmedAt))return "Still accurate?";
+    return "Work schedule";
+  }
+
   function lifeTodayWheel(){
     const today=ymd(),now=new Date(),minutes=now.getHours()*60+now.getMinutes(),
       allBlocks=typeof itineraryDayItems==="function"?itineraryDayItems(today):[],
@@ -828,6 +862,7 @@
     return '<section class="dl-command-center life-today-one-screen" aria-label="Today dashboard">'+
       '<div class="dl-heading"><div><span class="dl-kicker">TODAY</span><h1>What’s next?</h1></div>'+
         '<div class="dl-heading-actions"><button onclick="openChatCheckin()" aria-label="Open daily information review">'+(review.unknown?"? Check-ins":"✓ Check-ins")+'</button>'+
+        '<button class="dl-quiet" onclick="openWeeklyWorkSchedule()" aria-label="Review weekly work shifts">'+esc(lifeScheduleReviewLabel())+'</button>'+
         '<button class="dl-primary" onclick="openLifeCapture()">＋ Capture</button></div></div>'+
       (familyFirst?'<section class="dl-family-next" aria-label="Upcoming family routine">'+
         '<div><span>UP NEXT · '+esc(fmtClock(night.kidsBedtime||"20:30"))+'</span><strong>Kids’ bedtime</strong>'+

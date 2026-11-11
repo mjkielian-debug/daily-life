@@ -142,14 +142,16 @@
   }
   function habitCard(habit){
     var todayLog=logOn(habit.id,today()),status=todayLog?(STATUS[todayLog.status]||"Logged"):"Not logged";
-    var cue=String(habit.cue||"").trim(),small=String(habit.minimum||"").trim();
+    var cue=String(habit.cue||"").trim(),small=String(habit.minimum||"").trim(),
+      lastDone=habitLogsFor(habit.id).filter(function(row){return row.status==="done"&&row.localDate<today()})
+        .map(function(row){return String(row.localDate||"")}).sort().pop()||"";
     return '<article class="hf-habit" data-hf-habit="'+esc(habit.id)+'">'+
       '<div class="hf-habit-top"><span class="hf-area-icon" aria-hidden="true">'+esc(iconFor(habit.area))+'</span>'+
       '<div class="hf-habit-copy"><h3>'+esc(habit.name)+'</h3>'+
       (cue?'<p><b>Cue:</b> '+esc(cue)+'</p>':'')+
       (small?'<p><b>Small version:</b> '+esc(small)+'</p>':'')+
       '</div><span class="hf-area-label">'+esc(areaLabel(habit.area))+'</span></div>'+
-      weekLine(habit)+reminderMarkup(habit)+
+      (lastDone?'<div class="hf-muted">Last done '+esc(dateLabel(lastDone))+'</div>':'<div class="hf-muted">No full completion logged</div>')+weekLine(habit)+reminderMarkup(habit)+
       '<div class="hf-today-label">Today · '+esc(status)+'</div>'+
       '<div class="hf-actions" role="group" aria-label="Log '+esc(habit.name)+' for today">'+
       '<button type="button" class="hf-action hf-done'+(todayLog&&todayLog.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="done">Done</button>'+

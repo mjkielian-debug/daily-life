@@ -313,7 +313,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261111-bankrecordfix1";
+const APP_BUILD="20261111-schedule-lastdone1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -520,16 +520,16 @@ function minutesHm(n){n=Math.max(0,Math.min(1439,Math.round(Number(n)||0)));retu
 function inferredWorkStartForDate(date){
   const prefs=state.settings?.itinerary||{},target=new Date(date+"T12:00:00"),targetWd=target.getDay(),
         workDays=Array.isArray(prefs.workWeekdays)?prefs.workWeekdays.map(Number):[2,3,4,5,6];
-  if(!workDays.includes(targetWd))return null;
+  if(!isUsualWorkday(date))return null;
   const cutoff=new Date(target);cutoff.setDate(cutoff.getDate()-42);
   const cutoffDate=ymd(cutoff),prior=(state.workShifts||[]).filter(w=>w.date<date&&w.date>=cutoffDate&&(w.start||w.scheduled));
   const toMinutes=w=>hmMinutes(w.start||w.scheduled),median=vals=>{
     const rows=vals.filter(Number.isFinite).sort((a,b)=>a-b);if(!rows.length)return null;
     const mid=Math.floor(rows.length/2);return rows.length%2?rows[mid]:Math.round((rows[mid-1]+rows[mid])/2);
   };
-  const sameWeekday=prior.filter(w=>new Date(w.date+"T12:00:00").getDay()===targetWd).map(toMinutes).filter(Number.isFinite);
+  const sameWeekday=prior.filter(w=>isUsualWorkday(w.date)&&new Date(w.date+"T12:00:00").getDay()===targetWd).map(toMinutes).filter(Number.isFinite);
   if(sameWeekday.length>=2)return{minutes:median(sameWeekday),samples:sameWeekday.length,source:"same weekday"};
-  const workdayStarts=prior.filter(w=>workDays.includes(new Date(w.date+"T12:00:00").getDay())).map(toMinutes).filter(Number.isFinite);
+  const workdayStarts=prior.filter(w=>isUsualWorkday(w.date)).map(toMinutes).filter(Number.isFinite);
   if(workdayStarts.length>=3)return{minutes:median(workdayStarts),samples:workdayStarts.length,source:"recent workday"};
   return null;
 }
@@ -639,6 +639,9 @@ function isConfirmedWorkOffDate(date){return CONFIRMED_WORK_OFF_DATES.has(String
 function isUsualWorkday(date){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||"")))return false;
   if(isConfirmedWorkOffDate(date))return false;
+  const dateOverride=state?.settings?.itinerary?.workScheduleOverrides?.[String(date)];
+  if(dateOverride&&dateOverride.workday===false)return false;
+  if(dateOverride&&dateOverride.workday===true)return true;
   return workWeekdays().includes(new Date(date+"T12:00:00").getDay());
 }
 function workShiftHasActual(w){
@@ -656,13 +659,13 @@ function sanitizeWorkScheduleData(target){
     if(!w?.date||!/^\d{4}-\d{2}-\d{2}$/.test(String(w.date)))return true;
     if(isConfirmedWorkOffDate(w.date))return false;
     const wd=new Date(w.date+"T12:00:00").getDay();
-    return days.has(wd)||workShiftHasActual(w);
+    return days.has(wd)||itinerary.workScheduleOverrides?.[w.date]?.workday===true||workShiftHasActual(w);
   });
   target.tasks=(target.tasks||[]).filter(t=>{
     if(!scheduledWorkTask(t)||!t.date)return true;
     if(isConfirmedWorkOffDate(t.date))return false;
     const wd=new Date(t.date+"T12:00:00").getDay();
-    if(days.has(wd))return true;
+    if(days.has(wd)||itinerary.workScheduleOverrides?.[t.date]?.workday===true)return true;
     const w=(target.workShifts||[]).find(x=>x.date===t.date);
     return workShiftHasActual(w);
   });
@@ -9725,7 +9728,7 @@ async function registerAppWorker(){
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
 <script src="savings-lab.js?v=20261005-compact1"></script>
 <script src="life-system.js?v=20261027-food-trends-calorie-fix1"></script>
-<script src="life-orchestrator.js?v=20261017-refined-room-map1"></script>
+<script src="life-orchestrator.js?v=20261111-schedule-lastdone1"></script>
 <script src="chat-checkin.js?v=20261014-home-progress2"></script>
 <script src="home-operator.js?v=20261026-room-inventory1"></script>
 <script src="week-pilot.js?v=20261007-week2"></script>
@@ -9763,9 +9766,9 @@ window.addEventListener("load",()=>{
 <script src="text-inbox.js?v=20261104-packagereview2"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261111-cute-avatar-map1"></script>
-<script src="habit-focus.js?v=20261111-cute-avatar-map1"></script>
+<script src="habit-focus.js?v=20261111-schedule-lastdone1"></script>
 <script src="completion-feedback.js?v=20261110-open-route-home2"></script>
-<script src="workday-focus.js?v=20261110-open-route-home2"></script>
+<script src="workday-focus.js?v=20261111-schedule-lastdone1"></script>
 <script src="sync-status.js?v=20261110-sync-clarity1"></script>
 <script src="workday-protection.js?v=20261110-open-route-home2"></script>
 <script src="life-map.js?v=20261111-volvo-task-dedupe1"></script>
