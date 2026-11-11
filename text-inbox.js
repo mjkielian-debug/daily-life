@@ -37,6 +37,8 @@
     }
   };
 
+  window.textInboxCopyToken = () => window.textInboxCopy(oneTimeToken);
+
   window.textInboxCopyMessage = (button) => {
     const card = button.closest(".text-inbox-message");
     if (!card) return;
@@ -127,7 +129,7 @@
       <div class="card" style="margin:12px 0;padding:14px">
         <b>Copy this connection token now</b>
         <p style="word-break:break-all">${h(oneTimeToken)}</p>
-        <button class="btn primary" onclick="textInboxCopy(${JSON.stringify(oneTimeToken)})">Copy token</button>
+        <button class="btn primary" onclick="textInboxCopyToken()">Copy token</button>
         <p>This token is shown only once. It is stored as a hash and can be revoked below.</p>
       </div>`;
   };
@@ -170,8 +172,7 @@
           <b>Phone connection active</b><p>Token ${h(token.token_prefix)}… · created ${h(new Date(token.created_at).toLocaleDateString())}</p>
           <button class="btn" onclick="textInboxRevoke('${h(token.id)}')">Revoke phone connection</button>
         </div>`
-      : `<div id="textInboxOneTime"></div>
-         <button class="btn primary" onclick="textInboxCreateToken()">Create phone connection</button>`;
+      : `<button class="btn primary" onclick="textInboxCreateToken()">Create phone connection</button>`;
     const steps = `
       <details open style="margin:14px 0"><summary><b>Connect this Android phone (MacroDroid)</b></summary>
         <ol>
@@ -209,6 +210,7 @@ x-inbox-source: {not_app_name}</pre>
     modal("Texts · private inbox", `
       <div style="max-height:70vh;overflow:auto">
         <p>New SMS notification previews forwarded from your phone stay in this private inbox until you delete them.</p>
+        <div id="textInboxOneTime"></div>
         ${tokenError ? "<p>Could not load connection status.</p>" : setup + connectionHealth}
         ${steps}
         <h3>Recent messages</h3>
