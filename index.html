@@ -3247,7 +3247,22 @@ function ensureMealPatterns(){
     }
   }
 }
-const todayTasks=()=>state.tasks.filter(x=>x.date===ymd()&&!x.paused&&!x.waitingForFunds).sort((a,b)=>(a.order||0)-(b.order||0));
+function lifeMapUniqueTaskCopies(rows){
+ const output=[],groups=new Map();
+ for(const task of rows||[]){
+  const title=String(task&&task.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  if(title!=="prevent volvo locking keys inside during package deliveries"){output.push(task);continue}
+  const key=String(task&&task.date||"")+"|"+title;
+  if(!groups.has(key)){groups.set(key,{index:output.length,items:[]});output.push(null)}
+  groups.get(key).items.push(task);
+ }
+ for(const group of groups.values()){
+  const winner=group.items.slice().sort((a,b)=>Number(!!b.done)-Number(!!a.done)||Number(String(b.category||"").toLowerCase()==="car")-Number(String(a.category||"").toLowerCase()==="car"))[0];
+  output[group.index]=Object.assign({},winner,{category:"car"});
+ }
+ return output.filter(Boolean);
+}
+const todayTasks=()=>lifeMapUniqueTaskCopies(state.tasks.filter(x=>x.date===ymd()&&!x.paused&&!x.waitingForFunds)).sort((a,b)=>(a.order||0)-(b.order||0));
 const water=()=>state.waterLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.oz||0),0);
 const stretch=()=>state.stretchLogs.filter(x=>x.date===ymd()).reduce((s,x)=>s+Number(x.minutes||0),0);
 const food=()=>state.foodLogs.filter(x=>x.date===ymd());
@@ -4184,7 +4199,7 @@ function displayChoresForDate(date=ymd()){
 }
 function dailyReviewExpected(date=ymd()){
   const rows=[];
-  for(const t of (state.tasks||[]).filter(x=>x.date===date)){
+  for(const t of lifeMapUniqueTaskCopies((state.tasks||[]).filter(x=>x.date===date))){
     if(String(t.title||"").trim().toLowerCase()==="ups shift"&&typeof isUsualWorkday==="function"&&!isUsualWorkday(date)&&!(typeof workShiftHasActual==="function"&&workShiftHasActual(workForDate(date))))continue;
     // Daily kid basics are already tracked as concrete per-child chore rows below.
     // Skip broad duplicate task titles so review asks "Leo · Read 20 min", etc.,
