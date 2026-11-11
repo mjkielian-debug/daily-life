@@ -5,6 +5,23 @@ const day=()=>typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10)
 const list=value=>Array.isArray(value)?value:[];
 const floorNames=["Basement","First floor","Second floor","Third floor"];
 let activeArea="",activeRoom=null;
+
+window.lifeMapHouseholdRows=function(date){
+ const wanted=String(date||day()),rows=[],seen=new Set();
+ for(const task of list(state.tasks)){
+  if(task.date!==wanted||task.paused||task.duplicateHidden||task.waitingForFunds)continue;
+  if(!(String(task.category||"").toLowerCase()==="home"||task.homeMapFloor||/house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean|litter|robot vacuum/i.test(String(task.title||""))))continue;
+  rows.push(task);
+ }
+ for(const chore of list(state.chores)){
+  if(chore.date!==wanted||chore.paused||chore.duplicateHidden)continue;
+  const key=[chore.child,chore.chore].map(x=>String(x||"").trim().toLowerCase()).join("|");
+  if(seen.has(key))continue;
+  seen.add(key);rows.push({...chore,title:String(chore.chore||"Daily routine"),_lifeChore:true,category:"home"});
+ }
+ return rows;
+};
+
 function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirstFloor");return floorNames.includes(value)?value:"First floor"}catch(_){return "First floor"}}
 function jump(view){if(typeof setView==="function")setView(view)}
 function avatarMark(label,icon,x,y,pct,color,area){
@@ -59,6 +76,7 @@ function view(areaOverride,tasksOnly){
   if(category==="car"||category==="work")return category===key;
   return re.test(String(t.title||"")+" "+category+" "+String(t.child||""));
  })]));
+ matches.home=window.lifeMapHouseholdRows(date);
  const pctFor=key=>{
   const rows=matches[key]||[],habits=key==="mind"?careHabits:[];
   const total=rows.length+habits.length,done=rows.filter(t=>t.done).length+(key==="mind"?careDone:0);
@@ -78,7 +96,7 @@ function view(areaOverride,tasksOnly){
   avatarMark("Car & driving","C",51,235,pctFor("car"),"#e98cb0","car"),
   avatarMark("Work","W",169,235,pctFor("work"),"#82c6a4","work")
  ].join("");
- const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTask(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
+ const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+(t._lifeChore?"toggleChore":"toggleTask")+'(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
  const areaTitles={home:"Home & household",mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
  const areaSelection=areaOverride||activeArea;
@@ -99,7 +117,7 @@ function view(areaOverride,tasksOnly){
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifearea-'+areaSelection+'&#39;)">‹ '+h(areaTitles[areaSelection]||"Life area")+'</button><span class="lm-kicker">TODAY · AREA TASKS</span><h1>Today’s '+h(taskTitle)+'</h1><p>Only tasks linked to this area appear here.</p></header><section class="lm-inline-panel lm-area-page-content">'+taskList+'</section></section>';
  }
  if(areaOverride){
-  const descriptions={home:"Household tasks shared across rooms. Tap a room on the house map for room-specific care.",mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and everyday care for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories.",car:"Car keys, maintenance, driving setup, and other vehicle tasks.",work:"UPS shifts, delivery routines, and other work tasks."};
+  const descriptions={home:"Daily household care and every child’s saved chores and routines. Room resets also appear inside the matching bedroom.",mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and everyday care for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories.",car:"Car keys, maintenance, driving setup, and other vehicle tasks.",work:"UPS shifts, delivery routines, and other work tasks."};
   const trackerViews={home:"household",mind:"selfcare",body:"log",people:"family",spirituality:"spirituality",hobbies:"gardenhobbies",money:"budget",car:"today",work:"today"};
   const trackerLabels={home:"House map",mind:"Self-care",body:"Health logs",people:"Family",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Finish budget setup",car:"Today’s plan",work:"Today’s plan"};
   const pagePanel=activeAreaPanel.replace('class="lm-inline-panel"','class="lm-inline-panel lm-area-page-content"').replace('<button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button>','');
