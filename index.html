@@ -176,7 +176,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261111-family-house4">
+<link rel="stylesheet" href="house-visual-map.css?v=20261111-spanish-bridge5">
 <link rel="stylesheet" href="visual-hubs.css?v=20261027-profile-rail-fix1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -282,9 +282,9 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261111-family-house4"></script>
+<script src="cloud.js?v=20261111-spanish-bridge5"></script>
 <script src="sharing.js?v=20261002-share7"></script>
-<script src="finance-cloud.js?v=20261111-family-house4"></script>
+<script src="finance-cloud.js?v=20261111-spanish-bridge5"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
 <script src="spirituality.js?v=20261111-cute-avatar-map1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
@@ -313,7 +313,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261111-family-house4";
+const APP_BUILD="20261111-spanish-bridge5";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7277,12 +7277,13 @@ function hobbyProjectStatusRank(status){
   return ({"In progress":0,"Planned":1,"Idea":2,"Waiting":3,"Paused":4,"Finished":5})[String(status||"Idea")]??3;
 }
 const HOBBY_STARTER_TEMPLATES={
+  spanish:{name:"Learn conversational Spanish",category:"Learning",status:"Planned",nextStep:"Practice greetings and introducing yourself for 10 minutes",notes:"Everyday conversation, at your own pace. Keep short notes about words and phrases you learn."},
   yoga:{name:"Beginner yoga reset",category:"Yoga",status:"Idea",nextStep:"Try an easy 8–10-minute beginner session",notes:"For enjoyment, mobility, relaxation, strength and body awareness. Use gentle modifications and skip anything that does not feel right. No streak or appearance goals."},
   kombucha:{name:"First homemade kombucha batch",category:"Kombucha",status:"Idea",nextStep:"Choose a small first experiment and note its start date",materials:"Starter culture and a tested recipe",notes:"Keep a simple batch log for ingredients, dates and tasting notes. Trace alcohol is okay; this is for enjoying homemade kombucha, not for an intoxicating effect."},
   craft:{name:"A fun craft project",category:"Craft",status:"Idea",nextStep:"Pick one small project that sounds enjoyable",notes:"A flexible place to save craft ideas, supplies and progress. This is for fun, not another chore."}
 };
 function hobbyStarterShelf(){
-  const starters=[["yoga","🧘","Yoga reset","An easy 8–10-minute start"],["kombucha","🫙","Kombucha","Plan and record a small first batch"],["craft","✂️","Crafting","Save one enjoyable project idea"]];
+  const starters=[["spanish","💬","Learn Spanish","Try greetings and a short introduction"],["yoga","🧘","Yoga reset","An easy 8–10-minute start"],["kombucha","🫙","Kombucha","Plan and record a small first batch"],["craft","✂️","Crafting","Save one enjoyable project idea"]];
   return `<div class="hobby-starter-shelf" style="margin:12px 0;padding:14px;border:1px solid #ead8e8;border-radius:18px;background:linear-gradient(125deg,#fff8fc,#edf8f6)"><div style="margin-bottom:9px"><div class="eyebrow">A little time for you</div><b>Pick a fun next step</b><div class="muted small">Start gently, save it as a project, or leave it for later.</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px">${starters.map(x=>`<button type="button" class="btn hobby-starter-tile" style="display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:66px;text-align:left;white-space:normal;border-radius:15px;padding:10px;background:#fffdfd" onclick="openHobbyProject('', '${x[0]}')"><span style="font-size:1.25rem">${x[1]}</span><span style="flex:1"><b>${x[2]}</b><small style="display:block;font-weight:500;opacity:.76;line-height:1.3">${x[3]}</small></span><span aria-hidden="true">＋</span></button>`).join("")}</div></div>`;
 }
 function hobbyProjectsCard(){
@@ -9146,9 +9147,10 @@ async function setRunzaCookingComplete(done){
    appointments, overdue to-dos, streaks, or mandatory habits. */
 function applyOptionalLifeInterests(){
   state.settings=state.settings||{};
-  if(Number(state.settings.optionalLifeInterestsVersion||0)>=1)return false;
+  if(Number(state.settings.optionalLifeInterestsVersion||0)>=2)return false;
   state.hobbyProjects=Array.isArray(state.hobbyProjects)?state.hobbyProjects:[];
   const ideas=[
+    {id:"known-idea-spanish",name:"Learn conversational Spanish",category:"Learning",status:"Planned",nextStep:"Practice greetings and introducing yourself for 10 minutes",notes:"Michelle wants to learn Spanish as a hobby. Start with everyday conversation and short, optional practice sessions; no overdue chores or streak pressure."},
     {id:"known-idea-beginner-yoga",name:"Beginner yoga practice",category:"Wellness",status:"Idea",notes:"Optional 8–10-minute beginner sessions for mobility, strength, balance and relaxation. No streaks, deadlines or pressure; do not push through pain."},
     {id:"known-idea-kombucha",name:"First homemade kombucha experiment",category:"Kitchen hobby",status:"Idea",notes:"Try a small first fermentation experiment, record ingredients, timing and tasting notes. Keep alcohol limited rather than pursuing its effects."},
     {id:"known-idea-crafts",name:"Crafting and DIY ideas",category:"Craft",status:"Idea",notes:"Space for making saved craft ideas into enjoyable projects when time allows. This is fun, not another required chore."},
@@ -9157,12 +9159,12 @@ function applyOptionalLifeInterests(){
   let added=0;
   for(const idea of ideas){
     const key=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-    const match=idea.id.includes("yoga")?/\byoga\b/:idea.id.includes("kombucha")?/\bkombucha\b/:idea.id.includes("crafts")?/\bcraft(?:s|ing)?\b|\bDIY\b/i:/\bparenting\b|\bemotional skills\b/i;
+    const match=idea.id.includes("spanish")?/\bspanish\b/i:idea.id.includes("yoga")?/\byoga\b/:idea.id.includes("kombucha")?/\bkombucha\b/:idea.id.includes("crafts")?/\bcraft(?:s|ing)?\b|\bDIY\b/i:/\bparenting\b|\bemotional skills\b/i;
     if(state.hobbyProjects.some(x=>x.id===idea.id||key(x.name)===key(idea.name)||match.test(String(x.name||""))))continue;
     state.hobbyProjects.push({...idea,createdAt:new Date().toISOString(),personalizationSeed:true});
     added++;
   }
-  state.settings.optionalLifeInterestsVersion=1;
+  state.settings.optionalLifeInterestsVersion=2;
   return added>0;
 }
 
@@ -9771,7 +9773,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261024-school-growth1"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261111-family-house4"></script>
+<script src="house-visual-map.js?v=20261111-spanish-bridge5"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
@@ -9795,7 +9797,7 @@ window.addEventListener("load",()=>{
 <script src="day-flow-corrections.js?v=20261106-worktransition1"></script>
 <script src="planner-reliability.js?v=20261103-todayreview1"></script>
 <script src="reading-wheel-fixes.js?v=20261026-readerwheel1"></script>
-<script src="text-inbox.js?v=20261104-packagereview2"></script>
+<script src="text-inbox.js?v=20261111-spanish-bridge5"></script>
 <script src="task-lifecycle.js?v=20261104-stalereview1"></script>
 <script src="money-clarity.js?v=20261111-cute-avatar-map1"></script>
 <script src="habit-focus.js?v=20261111-schedule-lastdone1"></script>
@@ -9804,7 +9806,7 @@ window.addEventListener("load",()=>{
 <script src="schedule-photo-import.js?v=20261111-schedule-photo-ocr2"></script>
 <script src="sync-status.js?v=20261111-cloud-sync-retry1"></script>
 <script src="workday-protection.js?v=20261110-open-route-home2"></script>
-<script src="life-map.js?v=20261111-family-house4"></script>
+<script src="life-map.js?v=20261111-spanish-bridge5"></script>
 <script src="hobby-weekly.js?v=20261110-hobbyweekly3"></script>
 <script src="ssd-weekly-pay.js?v=20261110-ssdweekly3"></script>
 </body>
