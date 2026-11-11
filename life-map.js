@@ -14,12 +14,30 @@ function avatarMark(label,icon,x,y,pct,color,area){
  '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></g>';
 }
+function lifeMapUniqueTasks(rows){
+ const output=[],groups=new Map();
+ for(const task of list(rows)){
+  const title=String(task&&task.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  if(title!=="prevent volvo locking keys inside during package deliveries"){output.push(task);continue}
+  const groupKey=String(task&&task.date||"")+"|"+title;
+  if(!groups.has(groupKey)){groups.set(groupKey,{index:output.length,items:[]});output.push(null)}
+  groups.get(groupKey).items.push(task);
+ }
+ for(const group of groups.values()){
+  const winner=group.items.slice().sort((a,b)=>
+   Number(!!b.done)-Number(!!a.done) ||
+   Number(String(b.category||"").toLowerCase()==="car")-Number(String(a.category||"").toLowerCase()==="car")
+  )[0];
+  output[group.index]=Object.assign({},winner,{category:"car"});
+ }
+ return output.filter(Boolean);
+}
 function avatarHotspot(area,label,path){
  return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" data-life-area="${h(area)}"/>`;
 }
 function view(areaOverride,tasksOnly){
  const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
- const tasks=list(state&&state.tasks).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds);
+ const tasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds);
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
  const careDone=careHabits.filter(x=>typeof selfCareDone==="function"&&selfCareDone(x.key,date)).length;
@@ -61,7 +79,7 @@ function view(areaOverride,tasksOnly){
  const areaTitles={mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
  const areaSelection=areaOverride||activeArea;
  const areaText=t=>String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"");
- const areaHistory=areaSelection&&terms[areaSelection]?list(state&&state.tasks).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&terms[areaSelection].test(areaText(t))).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
+ const areaHistory=areaSelection&&terms[areaSelection]?lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>{const category=String(t.category||"").toLowerCase();return t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&((category==="car"||category==="work")?category===areaSelection:terms[areaSelection].test(areaText(t)))}).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
  const careHistory=areaSelection==="mind"?list(state&&state.selfCare).filter(x=>x.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||""))&&careHabits.some(habit=>habit.key===x.key)).map(x=>({date:String(x.date),title:careHabits.find(habit=>habit.key===x.key)?.label||"Self-care"})):[];
  const lastAreaDone=[...areaHistory,...careHistory].sort((a,b)=>b.date.localeCompare(a.date))[0];
  const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).map(taskRow).join("")):"";
