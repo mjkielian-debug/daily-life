@@ -121,7 +121,7 @@
           const i=week.dates.indexOf(date);if(i<0)return;
           const check=document.getElementById("weeklyWorkday"+i),time=document.getElementById("weeklyWorkStart"+i);
           if(check)check.checked=!!entry.working;
-          if(time)time.value=entry.scheduled||"";
+          if(time&&(!entry.working||entry.scheduled))time.value=entry.scheduled||"";
           names.push(weekdays[i]+(entry.working?(entry.scheduled?" "+formatTime(entry.scheduled):" · time unclear"):" · off"));
         });
         const inferred=entries.some(([,entry])=>entry.working&&entry.scheduled&&!entry.hasAmPm);
