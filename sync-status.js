@@ -45,6 +45,7 @@
   }
   window.addEventListener("online",changed);window.addEventListener("offline",changed);
   window.addEventListener("daily-life-local-saved",changed);
+  window.addEventListener("daily-life-cloud-status",changed);
   document.addEventListener("visibilitychange",function(){if(!document.hidden)update()});
   var root=document.querySelector("#app");
   if(root)new MutationObserver(update).observe(root,{childList:true,subtree:true});

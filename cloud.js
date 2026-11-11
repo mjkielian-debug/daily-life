@@ -15,6 +15,7 @@ let cloudAutoCanPush=false;
 // Safeguard: previous installs missing a usable local profile cannot replace a cloud snapshot.
 let cloudRecoveryRequired=false;
 let cloudPushTimer=null;
+let cloudRetryTimer=null,cloudRetryDelayMs=15000;
 let cloudEntryPullBusy=false;
 
 const cloudUser=()=>cloudSession?.user||null;
@@ -1012,15 +1013,50 @@ function cloudDisableAutoSync(){
   render();
 }
 
-function cloudSchedulePush(){
+function cloudNotifySyncStatus(){
+  try{window.dispatchEvent(new Event("daily-life-cloud-status"))}catch(e){}
+}
+function cloudRetryAllowed(){
+  return !!navigator.onLine&&!!cloudUser()&&!!cloudClient&&cloudAutoEnabled()&&cloudAutoCanPush&&
+    !cloudNeedsReview&&!cloudRecoveryRequired&&cloudStateSignature()!==cloudLastSignature();
+}
+function cloudClearRetry(){
+  if(cloudRetryTimer)clearTimeout(cloudRetryTimer);
+  cloudRetryTimer=null;cloudRetryDelayMs=15000;
+}
+function cloudQueueAutomaticRetry(){
+  cloudNotifySyncStatus();
+  if(!cloudRetryAllowed()||cloudRetryTimer)return;
+  const delay=cloudRetryDelayMs;
+  cloudRetryDelayMs=Math.min(300000,cloudRetryDelayMs*2);
+  cloudRetryTimer=setTimeout(()=>{
+    cloudRetryTimer=null;
+    if(cloudRetryAllowed())cloudSchedulePush(true);
+  },delay);
+}
+function cloudResumePendingSync(){
+  if(cloudRetryTimer){clearTimeout(cloudRetryTimer);cloudRetryTimer=null}
+  if(cloudRetryAllowed())cloudSchedulePush(true);
+}
+window.addEventListener("online",cloudResumePendingSync);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)cloudResumePendingSync()});
+
+function cloudSchedulePush(fromRetry=false){
+  if(!fromRetry)cloudClearRetry();
   if(typeof appHydrating!=="undefined"&&appHydrating)return;
   if(cloudRecoveryRequired||!cloudAutoEnabled()||!cloudAutoCanPush||cloudNeedsReview||!cloudUser())return;
   if(cloudStateSignature()===cloudLastSignature())return;
   if(cloudPushTimer)clearTimeout(cloudPushTimer);
   cloudPushTimer=setTimeout(async()=>{
     cloudPushTimer=null;
-    try{await cloudPushSnapshotInternal(false)}
-    catch(error){cloudError=error?.message||"Automatic cloud sync failed."}
+    try{
+      const result=await cloudPushSnapshotInternal(false);
+      if(result!==false)cloudClearRetry();
+      else cloudNotifySyncStatus();
+    }catch(error){
+      cloudError=error?.message||"Automatic cloud sync failed.";
+      cloudQueueAutomaticRetry();
+    }
   },1800);
 }
 
