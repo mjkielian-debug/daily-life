@@ -353,6 +353,8 @@ function restoreTaskCompletions(){
       const entry=rows.filter(x=>x.owner===owner&&x.date===String(task.date||"")&&
         (x.id===String(task.id)||(x.title===String(task.title||"")&&x.child===String(task.child||"")))).sort((a,b)=>String(b.at).localeCompare(String(a.at)))[0];
       if(!entry)continue;
+      // A newer confirmed completion can repair an older lost/unchecked device copy.
+      if(task.done&&task.completedAt&&new Date(task.completedAt).getTime()>new Date(entry.at).getTime())continue;
       task.done=entry.done;task.completedAt=entry.done?entry.at:"";
     }
   }catch(error){console.warn("Could not restore completion journal",error)}
