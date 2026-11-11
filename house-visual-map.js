@@ -83,28 +83,21 @@ function zoneFloorGraphic(f,z,bounds){
   '<rect x="'+(left-7).toFixed(1)+'" y="'+(top-8).toFixed(1)+'" width="'+(right-left+14).toFixed(1)+'" height="'+(bottom-top+16).toFixed(1)+'" rx="5" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
 }
 function mapSketch(f,m){
- const isFirst=f==="First floor";
- const viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503";
- const limits=viewBox.split(" ").map(Number);
- const zonePreviews=arr(m.zones).map(z=>[z.id,inlineRoomPreview(f,z,zoneBounds(z.path))]);
- const hasPreviews=zonePreviews.some(([,preview])=>!!preview);
+ const isFirst=f==="First floor",viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503",limits=viewBox.split(" ").map(Number);
  const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).map(z=>{
   const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
-  const preview=zonePreviews.find(([id])=>id===z.id)?.[1]||"";
-  const labelX=preview&&bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
+  const labelX=bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
   const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
-  const labelY=(preview||isStair)&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
+  const labelY=isStair&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
-  const organized=roomDeclutterSessions(f,z.id).length;
-  const tint=organized?Math.min(.48,.1+Math.log2(organized+1)*.1):0;
+  const organized=roomDeclutterSessions(f,z.id).length,tint=organized?Math.min(.48,.1+Math.log2(organized+1)*.1):0;
   const declutterOverlay=organized?'<path class="hvm-declutter-wash" d="'+h(z.path)+'" fill="#ef9fc2" fill-opacity="'+tint.toFixed(2)+'" pointer-events="none"/>':"";
-  const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?
-   '<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
+  const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?'<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
-  return '<g class="hvm-zone'+(preview?' has-inline-preview':'')+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
-  '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+(organized?' · '+organized+' areas organized':'')+'">'+
-  '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#6e6478" stroke-width="3" stroke-linejoin="round"/>'+declutterOverlay+
-  preview+floorGraphic+declutterBadge+(preview?'':'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text>')+'</g>';
+  return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
+   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+(organized?' · '+organized+' areas organized':'')+'">'+
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+declutterOverlay+
+   floorGraphic+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
   const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
@@ -114,16 +107,14 @@ function mapSketch(f,m){
    '<rect x="'+(x-39)+'" y="'+(y-15)+'" width="78" height="30" rx="14" fill="#fff9e8" stroke="#8053a7" stroke-width="2"/>'+
    '<text x="'+x+'" y="'+(y+5)+'" class="hvm-annotation-label" text-anchor="middle">'+h(a.label||"↑ next")+'</text></g>';
  }).join("");
- const backing=isFirst?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#faf7fb" stroke="#d7cede" stroke-width="2"/>':
- '<rect x="55" y="186" width="430" height="572" rx="17" fill="#fcf9ff" stroke="#ded4e8" stroke-width="2"/>';
- const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#302d49" stroke-width="3"/>'+
- '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>'+h(f)+' layout</strong><span>'+(hasPreviews?"Room layouts shown inline · tap a room or mapped object":"Tap a colored area")+'</span></div>'+
- '<svg class="hvm-drawing'+(hasPreviews?' hvm-has-previews':'')+'" viewBox="'+viewBox+'" role="group" aria-label="Approximate room zone diagram with room previews based on saved room layouts.">'+
- backing+paths+pins+entry+'</svg>'+
- '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
+ const backing=isFirst?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>':'<rect x="55" y="186" width="430" height="572" rx="17" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
+ const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
+  '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
+  '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
+  backing+paths+pins+entry+'</svg>'+
+  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
 }
-
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(f==='Second floor'?'Second floor rooms':(m.title||f))+'</strong><small>Tap a room to enter, then explore its mapped items. Use Previous and Next to tour the floor.</small></div>'+
  '<div class="hvm-directory-grid">'+arr(m.zones).filter(z=>okId(z.id)).map(z=>{
@@ -524,7 +515,6 @@ window.houseVisualPersonTourStep=function(f,id,delta){
 function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
- if(m)hydrateRoomDirectoryPhotos(f,m);
  if(selectedRoomProfile())hydratePersonRoomPhotoTour();
  refreshRoomProgress(f);
 }
@@ -743,7 +733,6 @@ window.houseVisualRoomInlineData=function(f,id){
  return {floor:f,id:String(id),name:z.name,tasks,insights:roomInsightParts(tasks,f,id)};
 };
 window.houseVisualOpenZone=function(f,id){
- if(typeof view==="string"&&view==="lifemap"&&typeof window.lifeMapSelectRoomInline==="function"){window.lifeMapSelectRoomInline(f,id);return}
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
  const photos=arr(z.photos).filter(okPhoto);
