@@ -5,6 +5,7 @@ const APP_SHELL=[
   "./index.html",
   "./push-notifications.js",
   "./text-inbox.js",
+  "./gmail-settings.js",
   "./completion-feedback.js",
   "./workday-focus.js",
   "./schedule-photo-import.js",
