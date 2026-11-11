@@ -313,7 +313,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261111-cloud-sync-retry1";
+const APP_BUILD="20261111-gmail-setup1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7145,7 +7145,7 @@ function connectionsCard(){
   const signed=!!cloudUser?.();
   return `<div class="card"><div class="eyebrow">🔗 Connections</div><h2>What is automated</h2>
     <div class="connection-row"><span><b>Daily Life cloud</b><div class="muted small">Private cross-device life entries and snapshots</div></span><span class="tag">${signed?"signed in":"local only"}</span></div>
-    <div class="connection-row"><span><b>Gmail → schedule</b><div class="muted small">School dates, appointments, deadlines and action items are handled by the ChatGPT background sync.</div></span><span class="tag">email-assisted</span></div>
+    <div class="connection-row"><span><b>Gmail inbox</b><div class="muted small">Connect a read-only Gmail account to scan recent messages and review short previews inside Daily Life.</div></span><button class="btn small" type="button" onclick="openGmailSettings()">Set up</button></div>
     <div class="connection-row"><span><b>ParentVUE</b><div class="muted small">School email can flow in automatically; live grades and assignments are not directly connected.</div></span><span class="tag">partial</span></div>
     <div class="connection-row"><span><b>UPS / Dayforce</b><div class="muted small">Daily punches are logged/reconciled in Daily Life; official earnings statements can be imported. Direct punch sync is not connected.</div></span><span class="tag">partial</span></div>
     <div class="connection-row"><span><b>Kitchen photos</b><div class="muted small">Private food photos can become pantry inventory and meal suggestions.</div></span><span class="tag">${signed?"ready to test":"cloud needed"}</span></div>
@@ -9722,7 +9722,8 @@ async function registerAppWorker(){
   }catch(e){}
 }
 </script>
-<script src="settings-tabs.js?v=20261103-monthlyroutines1"></script>
+<script src="settings-tabs.js?v=20261111-gmail-setup1"></script>
+<script src="gmail-settings.js?v=20261111-gmail-setup1"></script>
 <script src="food-tabs.js?v=20261104-nutritionfix2"></script>
 <script src="daily-coach.js?v=20261026-assistant-sync2"></script>
 <script src="house-robot.js?v=20261007-fourfloors5"></script>
