@@ -187,3 +187,10 @@
 .hvm-room-tile-photo{border:1px solid #e4d2e2;box-shadow:inset 0 0 0 5px rgba(255,255,255,.5)}
 .hvm-tile-mark{color:#8b5d79}
 @media(prefers-reduced-motion:reduce){.hvm-zone{transition:none}}
+
+/* Illustrated room map uses the same soft palette as the person avatar. */
+.hvm-drawing{background:linear-gradient(145deg,#fff9fc,#edf7fa);border-radius:24px;filter:drop-shadow(0 5px 5px #79566e12)}
+.hvm-zone>path:first-child{stroke:#96758d;stroke-linejoin:round}
+.hvm-zone:hover,.hvm-zone:focus-visible{filter:brightness(1.04) drop-shadow(0 0 4px #c587b4)}
+.hvm-floor-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center}
+.hvm-floor-links .btn{min-height:44px}
