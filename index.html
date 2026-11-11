@@ -176,7 +176,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261111-cute-avatar-map1">
+<link rel="stylesheet" href="house-visual-map.css?v=20261111-map-completion3">
 <link rel="stylesheet" href="visual-hubs.css?v=20261027-profile-rail-fix1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -282,9 +282,9 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261111-cloud-sync-retry1"></script>
+<script src="cloud.js?v=20261111-map-completion3"></script>
 <script src="sharing.js?v=20261002-share7"></script>
-<script src="finance-cloud.js?v=20261111-bankrecordfix120261111-cute-avatar-map1"></script>
+<script src="finance-cloud.js?v=20261111-map-completion3"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
 <script src="spirituality.js?v=20261111-cute-avatar-map1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
@@ -313,7 +313,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261111-gmail-setup1";
+const APP_BUILD="20261111-map-completion3";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -333,7 +333,32 @@ const themes=[
   ["Rainbow Sky","#497cad","#f1b9d4","#ffd398"],
   ["Warm Lilac","#835cb2","#f5b6c8","#e9cb91"]
 ];
-async function save(){await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
+
+function taskCompletionJournalOwner(){
+  return typeof cloudUser==="function"&&cloudUser()?.id||"";
+}
+function rememberTaskCompletion(task,done){
+  try{
+    const key="dailyLifeTaskCompletionJournal:v1",rows=JSON.parse(localStorage.getItem(key)||"[]");
+    const owner=taskCompletionJournalOwner(),entry={owner,id:String(task.id),date:String(task.date||ymd()),title:String(task.title||""),child:String(task.child||""),done:!!done,at:new Date().toISOString()};
+    const kept=(Array.isArray(rows)?rows:[]).filter(x=>!(x.owner===owner&&x.id===entry.id&&x.date===entry.date));
+    kept.push(entry);localStorage.setItem(key,JSON.stringify(kept.slice(-1000)));
+  }catch(error){console.warn("Completion journal unavailable",error)}
+}
+function restoreTaskCompletions(){
+  try{
+    const rows=JSON.parse(localStorage.getItem("dailyLifeTaskCompletionJournal:v1")||"[]"),owner=taskCompletionJournalOwner();
+    if(!Array.isArray(rows))return;
+    for(const task of state.tasks||[]){
+      const entry=rows.filter(x=>x.owner===owner&&x.date===String(task.date||"")&&
+        (x.id===String(task.id)||(x.title===String(task.title||"")&&x.child===String(task.child||"")))).sort((a,b)=>String(b.at).localeCompare(String(a.at)))[0];
+      if(!entry)continue;
+      task.done=entry.done;task.completedAt=entry.done?entry.at:"";
+    }
+  }catch(error){console.warn("Could not restore completion journal",error)}
+}
+
+async function save(){restoreTaskCompletions();await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
 function theme(){const localKey=ymd(),parts=localKey.split("-").map(Number),localIndex=Math.floor(new Date(parts[0],parts[1]-1,parts[2],12).getTime()/86400000),t=themes[Math.abs(localIndex)%themes.length];document.documentElement.style.setProperty("--primary",t[1]);document.documentElement.style.setProperty("--secondary",t[2]);document.documentElement.style.setProperty("--accent",t[3]);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#f6dbe9");return t[0]}
 function moon(){const syn=29.530588853,e=Date.UTC(2000,0,6,18,14),age=((((Date.now()-e)/86400000)%syn)+syn)%syn,p=age/syn,il=(1-Math.cos(2*Math.PI*p))/2;if(p<.03||p>=.97)return["New Moon","🌑",age,il];if(p<.22)return["Waxing Crescent","🌒",age,il];if(p<.28)return["First Quarter","🌓",age,il];if(p<.47)return["Waxing Gibbous","🌔",age,il];if(p<.53)return["Full Moon","🌕",age,il];if(p<.72)return["Waning Gibbous","🌖",age,il];if(p<.78)return["Last Quarter","🌗",age,il];return["Waning Crescent","🌘",age,il]}
 const ZODIAC_SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
@@ -2105,7 +2130,7 @@ function render(){
     if(root)root.innerHTML='<main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Build '+esc(DAILY_LIFE_BUILD)+'</p>'+(startupStorageStalled?'<div class="warning" role="alert" style="margin:22px auto 12px;max-width:440px;text-align:left"><b>Saved information has not finished loading.</b><br>Nothing has been reset. Do not clear app data or start a new account. Try again to reopen Daily Life.</div><button class="btn primary" type="button" onclick="retryStartup()">Try again</button><p class="muted small">Your existing information stays on this phone.</p>':startupFallbackAvailable?'<div class="notice" style="margin:22px auto 12px;max-width:420px;text-align:left">Your saved information on this phone is ready. Daily Life is taking longer than usual to reconnect your account.</div><button class="btn primary" type="button" onclick="continueWithSavedData()">Open saved information on this phone</button><p class="muted small">This keeps your current records on the phone and does not start a new account.</p>':'')+'</main>';
     return;
   }
-  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#f6dbe9");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"dayflow-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":(view==="log"||view==="selfcare")?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${typeof lifeSimHud==="function"?lifeSimHud():""}${view==="lifemap"?lifeMapView():""}${view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaTasksPage==="function"?window.lifeMapAreaTasksPage(view.slice(15)):""}${view.startsWith("lifearea-")&&!view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaPage==="function"?window.lifeMapAreaPage(view.slice(9)):""}${view==="today"?visualHubView("itinerary"):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="selfcare"?selfCarePage():""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="monsterhigh"?monsterHighCollectionView():""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}${view==="household"&&houseOverlayView?houseOverlayHtml(houseOverlayView):""}</main><nav class="bottom-nav house-game-dock" aria-label="Daily Life navigation"><button class="navbtn ${view==="lifemap"?"active":""}" type="button" onclick="setView('lifemap')"><div>⌂</div>Home</button><button class="navbtn" type="button" onclick="profileHomeJump('today')"><div>✦</div>Today</button><button class="navbtn" type="button" onclick="openProfileHomePicker()"><div>♡</div>Profiles</button><button class="navbtn ${view==="family"?"":"active"}" type="button" onclick="openSectionLauncher()"><div>☰</div>Menu</button></nav>`}
+  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();restoreTaskCompletions();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#f6dbe9");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"dayflow-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":(view==="log"||view==="selfcare")?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="All sections" onclick="openSectionLauncher()">☰</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${typeof lifeSimHud==="function"?lifeSimHud():""}${view==="lifemap"?lifeMapView():""}${view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaTasksPage==="function"?window.lifeMapAreaTasksPage(view.slice(15)):""}${view.startsWith("lifearea-")&&!view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaPage==="function"?window.lifeMapAreaPage(view.slice(9)):""}${view==="today"?visualHubView("itinerary"):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="selfcare"?selfCarePage():""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="monsterhigh"?monsterHighCollectionView():""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}${view==="household"&&houseOverlayView?houseOverlayHtml(houseOverlayView):""}</main><nav class="bottom-nav house-game-dock" aria-label="Daily Life navigation"><button class="navbtn ${view==="lifemap"?"active":""}" type="button" onclick="setView('lifemap')"><div>⌂</div>Home</button><button class="navbtn" type="button" onclick="profileHomeJump('today')"><div>✦</div>Today</button><button class="navbtn" type="button" onclick="openProfileHomePicker()"><div>♡</div>Profiles</button><button class="navbtn ${view==="family"?"":"active"}" type="button" onclick="openSectionLauncher()"><div>☰</div>Menu</button></nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -7707,6 +7732,8 @@ async function toggleTask(id,d){
     previousReview=typeof dailyReviewEntry==="function"?dailyReviewEntry("task",id,date):null,
     reviewSnapshot=previousReview?{...previousReview}:null;
   x.done=!!d;
+  x.completedAt=d?new Date().toISOString():"";
+  if(!x.sharedEntryId)rememberTaskCompletion(x,d);
   if(d)dailyReviewSet("task",id,date,"yes",x.title||"Task","Tasks");
   else dailyReviewClear("task",id,date);
   if(x.sharedEntryId&&typeof sharingUpsertTask==="function"){
@@ -7725,6 +7752,7 @@ async function toggleTask(id,d){
       return;
     }
   }
+  rememberTaskCompletion(x,d);
   await save();render();
 }
 async function addWater(oz){state.waterLogs.push({id:uid(),date:ymd(),oz});await save();render()}
@@ -9740,7 +9768,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261024-school-growth1"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261111-house-floorplan1"></script>
+<script src="house-visual-map.js?v=20261111-map-completion3"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
@@ -9773,7 +9801,7 @@ window.addEventListener("load",()=>{
 <script src="schedule-photo-import.js?v=20261111-schedule-photo-ocr2"></script>
 <script src="sync-status.js?v=20261111-cloud-sync-retry1"></script>
 <script src="workday-protection.js?v=20261110-open-route-home2"></script>
-<script src="life-map.js?v=20261111-volvo-task-dedupe1"></script>
+<script src="life-map.js?v=20261111-map-completion3"></script>
 <script src="hobby-weekly.js?v=20261110-hobbyweekly3"></script>
 <script src="ssd-weekly-pay.js?v=20261110-ssdweekly3"></script>
 </body>
