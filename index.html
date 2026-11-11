@@ -176,7 +176,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261111-map-completion3">
+<link rel="stylesheet" href="house-visual-map.css?v=20261111-family-house4">
 <link rel="stylesheet" href="visual-hubs.css?v=20261027-profile-rail-fix1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -282,9 +282,9 @@ async function dbClear(){
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window.__DailyLifeSupabaseReady=true;window.dailyLifeCloudLibraryReady&&window.dailyLifeCloudLibraryReady()"></script>
 <script async src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="cloud.js?v=20261111-map-completion3"></script>
+<script src="cloud.js?v=20261111-family-house4"></script>
 <script src="sharing.js?v=20261002-share7"></script>
-<script src="finance-cloud.js?v=20261111-map-completion3"></script>
+<script src="finance-cloud.js?v=20261111-family-house4"></script>
 <script src="chase-balance.js?v=20261014-chase2"></script>
 <script src="spirituality.js?v=20261111-cute-avatar-map1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
@@ -313,7 +313,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261111-map-completion3";
+const APP_BUILD="20261111-family-house4";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -337,27 +337,28 @@ const themes=[
 function taskCompletionJournalOwner(){
   return typeof cloudUser==="function"&&cloudUser()?.id||"";
 }
-function rememberTaskCompletion(task,done){
+function rememberTaskCompletion(task,done,kind="task"){
   try{
     const key="dailyLifeTaskCompletionJournal:v1",rows=JSON.parse(localStorage.getItem(key)||"[]");
-    const owner=taskCompletionJournalOwner(),entry={owner,id:String(task.id),date:String(task.date||ymd()),title:String(task.title||""),child:String(task.child||""),done:!!done,at:new Date().toISOString()};
-    const kept=(Array.isArray(rows)?rows:[]).filter(x=>!(x.owner===owner&&x.id===entry.id&&x.date===entry.date));
+    const owner=taskCompletionJournalOwner(),entry={owner,kind,id:String(task.id),date:String(task.date||ymd()),title:String(task.title||task.chore||""),child:String(task.child||""),done:!!done,at:new Date().toISOString()};
+    const kept=(Array.isArray(rows)?rows:[]).filter(x=>!(x.owner===owner&&(x.kind||"task")===kind&&x.id===entry.id&&x.date===entry.date));
     kept.push(entry);localStorage.setItem(key,JSON.stringify(kept.slice(-1000)));
   }catch(error){console.warn("Completion journal unavailable",error)}
 }
 function restoreTaskCompletions(){
-  try{
-    const rows=JSON.parse(localStorage.getItem("dailyLifeTaskCompletionJournal:v1")||"[]"),owner=taskCompletionJournalOwner();
-    if(!Array.isArray(rows))return;
-    for(const task of state.tasks||[]){
-      const entry=rows.filter(x=>x.owner===owner&&x.date===String(task.date||"")&&
-        (x.id===String(task.id)||(x.title===String(task.title||"")&&x.child===String(task.child||"")))).sort((a,b)=>String(b.at).localeCompare(String(a.at)))[0];
-      if(!entry)continue;
-      // A newer confirmed completion can repair an older lost/unchecked device copy.
-      if(task.done&&task.completedAt&&new Date(task.completedAt).getTime()>new Date(entry.at).getTime())continue;
-      task.done=entry.done;task.completedAt=entry.done?entry.at:"";
-    }
-  }catch(error){console.warn("Could not restore completion journal",error)}
+ try{
+  const rows=JSON.parse(localStorage.getItem("dailyLifeTaskCompletionJournal:v1")||"[]"),owner=taskCompletionJournalOwner();
+  if(!Array.isArray(rows))return;
+  for(const [kind,items] of [["task",state.tasks],["chore",state.chores]]){
+   for(const task of items||[]){
+    const entry=rows.filter(x=>x.owner===owner&&(x.kind||"task")===kind&&x.date===String(task.date||"")&&
+     (x.id===String(task.id)||(x.title===String(task.title||task.chore||"")&&x.child===String(task.child||"")))).sort((a,b)=>String(b.at).localeCompare(String(a.at)))[0];
+    if(!entry)continue;
+    if(task.done&&task.completedAt&&new Date(task.completedAt).getTime()>new Date(entry.at).getTime())continue;
+    task.done=entry.done;task.completedAt=entry.done?entry.at:"";
+   }
+  }
+ }catch(error){console.warn("Could not restore completion journal",error)}
 }
 
 async function save(){restoreTaskCompletions();await dbSet("state",state);if(!appHydrating&&typeof cloudSchedulePush==="function")cloudSchedulePush()}
@@ -7992,7 +7993,7 @@ async function removeReadingLog(id){
   await save();closeModal();render();
 }
 function openChore(){modal("Add chore",`<div class="stack"><label>Child<input id="cc" placeholder="Name"></label><label>Chore<input id="ch"></label></div>`,"Add",async()=>{const chore=$("#ch").value.trim(),child=$("#cc").value.trim();if(!chore||!child)return;state.chores.push({id:uid(),date:ymd(),child,chore,done:false});await save();closeModal();render()})}
-async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(!x)return;x.done=d;x.inProgress=false;if(d)dailyReviewSet("chore",id,x.date||ymd(),"yes",x.chore||"Chore","Chores + routines");else dailyReviewClear("chore",id,x.date||ymd());await save();render()}
+async function toggleChore(id,d){const x=state.chores.find(x=>x.id===id);if(!x)return;x.done=d;x.completedAt=d?new Date().toISOString():"";rememberTaskCompletion(x,d,"chore");x.inProgress=false;if(d)dailyReviewSet("chore",id,x.date||ymd(),"yes",x.chore||"Chore","Chores + routines");else dailyReviewClear("chore",id,x.date||ymd());await save();render()}
 async function requestMealSuggestion(date){
   let m=state.meals.find(x=>x.date===date&&x.type==="dinner");
   if(!m){m={id:uid(),date,type:"dinner",dish:"",status:"planned",recipeState:"suggestion-queued",prepDone:[]};state.meals.push(m)}
@@ -9770,7 +9771,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261024-school-growth1"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261111-map-completion3"></script>
+<script src="house-visual-map.js?v=20261111-family-house4"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
@@ -9803,7 +9804,7 @@ window.addEventListener("load",()=>{
 <script src="schedule-photo-import.js?v=20261111-schedule-photo-ocr2"></script>
 <script src="sync-status.js?v=20261111-cloud-sync-retry1"></script>
 <script src="workday-protection.js?v=20261110-open-route-home2"></script>
-<script src="life-map.js?v=20261111-map-completion3"></script>
+<script src="life-map.js?v=20261111-family-house4"></script>
 <script src="hobby-weekly.js?v=20261110-hobbyweekly3"></script>
 <script src="ssd-weekly-pay.js?v=20261110-ssdweekly3"></script>
 </body>
