@@ -117,7 +117,7 @@ function mapSketch(f,m){
  return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   backing+paths+pins+entry+'</svg>'+
-  '<p class="hvm-disclaimer">Schematic traced from your original screenshot; orientation preserved. Room outlines are approximate, not measured walls, and the diagram is not a navigation or safety plan.</p></div>';
+  '<p class="hvm-disclaimer">Room shapes follow the saved vacuum layout and keep its orientation. Boundaries are approximate, not measured, and this is not a safety plan.</p></div>';
 }
 function directory(f,m){
  return '<div class="hvm-directory"><div class="hvm-directory-heading"><strong>'+h(f==='Second floor'?'Second floor rooms':(m.title||f))+'</strong><small>Tap a room to enter, then explore its mapped items. Use Previous and Next to tour the floor.</small></div>'+
@@ -467,6 +467,8 @@ function personRoomHome(f,z){
 }
 function floorView(f,m){
  const person=selectedRoomProfile();
+ const hasLayout=arr(m.zones).some(z=>z&&okId(z.id)&&okPath(z.path));
+ const layout=hasLayout?mapSketch(f,m):directory(f,m);
  let browsing=false;try{browsing=localStorage.getItem("dailyLifeMapBrowseRooms")==="1"}catch(e){}
  if(person&&!browsing){
   let z=null;
@@ -474,8 +476,8 @@ function floorView(f,m){
   z=z||personRoomZone(f,person.name,!!person.isSelf);
   if(z)return personRoomHome(f,z)
  }
- if(person&&browsing)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+directory(f,m)+'</div>';
- return directory(f,m)
+ if(person&&browsing)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';
+ return layout;
 }
 window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapBrowseRooms","1")}catch(e){};render()};
 window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapBrowseRooms")}catch(e){};render()};
