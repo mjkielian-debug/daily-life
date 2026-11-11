@@ -165,7 +165,7 @@
     const connectionHealth = token
       ? latestMessage
         ? `<div class="notice"><b>Last preview received:</b> ${h(new Date(latestMessage.received_at).toLocaleString())}${latestMessage.source_app ? " · " + h(latestMessage.source_app) : ""}</div>`
-        : '<div class="notice"><b>Connection token active; no preview received yet.</b> After saving and enabling the MacroDroid macro, send a short test message. This confirms delivery; an active token alone does not.</div>'
+        : '<div class="notice"><b>Connection token active; no preview received yet.</b> Save your token in Daily Life Bridge and enable its notification access. The next incoming preview from a selected app will confirm delivery; an active token alone does not.</div>'
       : '<div class="notice">No active phone connection. Create one to receive new notification previews.</div>';
     const setup = token
       ? `<div class="card" style="margin:12px 0;padding:14px">
@@ -174,20 +174,15 @@
         </div>`
       : `<button class="btn primary" onclick="textInboxCreateToken()">Create phone connection</button>`;
     const steps = `
-      <details open style="margin:14px 0"><summary><b>Connect this Android phone (MacroDroid)</b></summary>
+      <details open style="margin:14px 0"><summary><b>Connect this Android phone (Daily Life Bridge)</b></summary>
         <ol>
-          <li>In MacroDroid, create a macro with trigger <b>Notification Received</b> and select both your messaging app (Samsung Messages or Google Messages) and <b>Messenger</b>.</li>
-          <li>Add an <b>HTTP Request</b> action: method <b>POST</b>, URL <code>${endpoint()}</code>, content type <code>text/plain; charset=utf-8</code>, body <code>{notification}</code>.</li>
-          <li>Add these request headers. Replace the token with the one shown above:
-            <pre>apikey: sb_publishable_S8rk3-LkoyPLuyw2p_v7gA_yskyW--m
-x-daily-life-token: YOUR_TOKEN
-x-inbox-sender: {not_title}
-x-inbox-event-id: {not_timestamp}
-x-inbox-source: {not_app_name}</pre>
-          </li>
-          <li>Allow MacroDroid notification access when Android prompts. For Messenger, make sure message previews are enabled. Then send yourself a short test message and check for it below; only new notification previews are forwarded.</li>
+          <li>Open <b>Daily Life Bridge</b> on your phone.</li>
+          <li>Paste the full connection token into its token field, select the messaging apps you want, and tap <b>Save connection</b>.</li>
+          <li>Tap <b>Enable notification access</b> and turn on <b>Daily Life Bridge</b> in Android settings.</li>
+          <li>Return here after your next incoming message. Its notification preview should appear below when delivery succeeds.</li>
         </ol>
-        <p>Only notifications exposed by Android are forwarded. This does not import old messages or MMS photos. Notification access can reveal message previews to MacroDroid, so keep the app filter narrow. You can revoke this connection here or disable the macro in MacroDroid.</p>
+        <p>Already saved your token and enabled access? Setup is complete; wait for a new incoming notification. No MacroDroid subscription is needed.</p>
+        <p>Only new previews exposed by Android from your selected apps are forwarded. Old messages and MMS photos are not imported. You can revoke this connection here or turn off Daily Life Bridge notification access in Android settings.</p>
       </details>`;
     const messageList = (messages || []).length
       ? '<label>Find a recent message<input type="search" placeholder="Sender or message text" oninput="textInboxFilter(this.value)"></label>' +
