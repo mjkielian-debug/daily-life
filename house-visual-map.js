@@ -90,13 +90,17 @@ function mapSketch(f,m){
   const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
   const labelY=isStair&&bounds?bounds.y+16:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
-  const organized=roomDeclutterSessions(f,z.id).length,tint=organized?Math.min(.48,.1+Math.log2(organized+1)*.1):0;
-  const declutterOverlay=organized?'<path class="hvm-declutter-wash" d="'+h(z.path)+'" fill="#ef9fc2" fill-opacity="'+tint.toFixed(2)+'" pointer-events="none"/>':"";
+  const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
+    roomTasks=trackedRoomTasks(f,z,room),taskDone=roomTasks.filter(t=>t.done).length,
+    taskTint=taskDone?Math.min(.38,.08+Math.log2(taskDone+1)*.09):0,
+    declutterTint=organized?Math.min(.42,.08+Math.log2(organized+1)*.09):0;
+  const taskOverlay=taskDone?'<path class="hvm-task-progress-wash" d="'+h(z.path)+'" fill="#9fd8bd" fill-opacity="'+taskTint.toFixed(2)+'" pointer-events="none"/>':"";
+  const declutterOverlay=organized?'<path class="hvm-declutter-wash" d="'+h(z.path)+'" fill="#ef9fc2" fill-opacity="'+declutterTint.toFixed(2)+'" pointer-events="none"/>':"";
   const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?'<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(z.name)+(organized?' · '+organized+' areas organized':'')+'">'+
-   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+declutterOverlay+
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+taskOverlay+declutterOverlay+
    floorGraphic+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(z.short||z.name)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
@@ -253,7 +257,7 @@ function roomProgressHtml(f){
  const localOnly=floorRooms.filter(r=>!localUsed.has(str(r.id))).map(room=>mappedProgressCard(f,null,room));
  const rows=mapped.concat(localOnly);
  if(rows.length)return '<div class="household-room-progress-grid">'+rows.join("")+'</div>'+
- '<p class="household-progress-disclaimer">Percentages show completed saved room tasks, not an overall cleanliness score. Unrecorded work stays unknown.</p>';
+ '<p class="household-progress-disclaimer">Percentages count saved room tasks. Map color also reflects logged organization sessions; neither is an overall cleanliness score. Unrecorded work stays unknown.</p>';
  return '<p class="household-progress-empty">'+
  (online()&&!map?'Loading mapped rooms…':'No room tasks or inventory locations are linked to this floor yet. You can tap the diagram or add a room.')+
  '</p>';
