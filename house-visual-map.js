@@ -129,8 +129,7 @@ function roomSymbol(z,b){
 
 function houseCareFill(f){
  const today=typeof ymd==="function"?ymd():"";
- const rows=arr(state.tasks).filter(t=>t.date===today&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&
-  (String(t.category||"").toLowerCase()==="home"||t.homeMapFloor===f));
+ const rows=typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(today):arr(state.tasks).filter(t=>t.date===today&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&String(t.category||"").toLowerCase()==="home");
  const done=rows.filter(t=>t.done).length,pct=rows.length?done/rows.length:0;
  const clip="hvm-care-"+f.toLowerCase().replace(/[^a-z]/g,"");
  return '<button type="button" class="hvm-care-house" style="border:0;background:transparent;padding:4px;cursor:pointer" aria-label="Whole-house care: '+done+' of '+rows.length+' complete" onclick="setView(&#39;lifearea-home&#39;)">'+
@@ -707,7 +706,7 @@ window.houseVisualInventoryOpen=function(f,id){
 };
 function trackedRoomTasks(f,z,room){
  const name=String(z?.name||room?.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
- return (state.tasks||[]).filter(t=>{
+ const tasks=(state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
   if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
   const assigned=String(t.homeRoomId||t.roomId||"");
@@ -715,10 +714,18 @@ function trackedRoomTasks(f,z,room){
   const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   return String(t.category||"").toLowerCase()==="home"&&name&&(" "+label+" ").includes(" "+name+" ");
  });
+ const chores=typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(ymd()).filter(t=>{
+  if(!t._lifeChore||!/room|make.*bed/i.test(String(t.title||"")))return false;
+  const child=String(t.child||"").toLowerCase().trim(),roomName=String(z?.name||"").toLowerCase();
+  return child&&roomName.includes(child);
+ }):[];
+ return [...tasks,...chores];
 }
 window.houseVisualCompleteTask=async function(taskId,f,zoneId){
- const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId));if(!t||t.done)return;
- await toggleTask(taskId,true);
+ const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId)),chore=(state.chores||[]).find(x=>String(x.id)===String(taskId));
+ if(t&&!t.done)await toggleTask(taskId,true);
+ else if(chore&&!chore.done)await toggleChore(taskId,true);
+ else return;
  window.houseVisualOpenZone(f,zoneId);
 };
 window.houseVisualAddZoneTask=function(f,id){
