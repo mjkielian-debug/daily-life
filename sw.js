@@ -7,6 +7,7 @@ const APP_SHELL=[
   "./text-inbox.js",
   "./completion-feedback.js",
   "./workday-focus.js",
+  "./schedule-photo-import.js",
   "./workday-protection.js",
   "./sync-status.js",
   "./second-floor-miniatures.js",
