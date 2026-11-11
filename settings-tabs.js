@@ -45,6 +45,7 @@ function compactSettingsRoutines(){
 function compactSettingsConnections(){
   return `<div class="settings-tab-panel settings-component-stack">
     ${connectionsCard()}
+    ${typeof gmailConnectionCard==="function"?gmailConnectionCard():""}
     ${typeof sharingSettingsCard==="function"?sharingSettingsCard():""}
     ${cloudPanel()}
   </div>`;
