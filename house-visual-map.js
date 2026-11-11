@@ -126,6 +126,17 @@ function roomSymbol(z,b){
  return '<g class="hvm-room-symbol" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+') scale('+scale.toFixed(2)+')" fill="#fffaf5" stroke="#866778" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9" pointer-events="none">'+symbol+'</g>';
 }
 
+
+function houseCareFill(f){
+ const today=typeof ymd==="function"?ymd():"";
+ const rows=arr(state.tasks).filter(t=>t.date===today&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&
+  (String(t.category||"").toLowerCase()==="home"||t.homeMapFloor===f));
+ const done=rows.filter(t=>t.done).length,pct=rows.length?done/rows.length:0;
+ const clip="hvm-care-"+f.toLowerCase().replace(/[^a-z]/g,"");
+ return '<button type="button" class="hvm-care-house" style="border:0;background:transparent;padding:4px;cursor:pointer" aria-label="Whole-house care: '+done+' of '+rows.length+' complete" onclick="setView(&#39;lifearea-home&#39;)">'+
+ '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg></button>';
+}
+
 function mapSketch(f,m){
  m=illustratedLayout(f,m);
  const isFirst=f==="First floor",viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503",limits=viewBox.split(" ").map(Number);
@@ -137,7 +148,7 @@ function mapSketch(f,m){
   const labelY=isStair&&bounds?bounds.y+16:hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
   const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
-    roomTasks=trackedRoomTasks(f,z,room),taskDone=roomTasks.filter(t=>t.done).length,
+    roomTasks=trackedRoomTasks(f,z,room).filter(t=>!t.date||t.date===ymd()),taskDone=roomTasks.filter(t=>t.done).length,
     taskTint=taskDone?Math.min(.38,.08+Math.log2(taskDone+1)*.09):0,
     declutterTint=organized?Math.min(.42,.08+Math.log2(organized+1)*.09):0;
   const taskOverlay=taskDone?'<path class="hvm-task-progress-wash" d="'+h(z.path)+'" fill="#9fd8bd" fill-opacity="'+taskTint.toFixed(2)+'" pointer-events="none"/>':"";
@@ -160,7 +171,7 @@ function mapSketch(f,m){
  const backing=(isFirst||m.illustrative)?'<rect x="16" y="9" width="348" height="480" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>':'<rect x="55" y="186" width="430" height="572" rx="17" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
  const entry=isFirst?'<path d="M185 466v-13m0 13h45" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '<text x="220" y="482" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading"><strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
+ return '<div class="hvm-sketch"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   backing+(f==='Basement'?'<path d="M40 40H340V320H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="165" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+paths+pins+entry+'</svg>'+
   '<p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p>'+floorLinks(f,m)+'</div>';
