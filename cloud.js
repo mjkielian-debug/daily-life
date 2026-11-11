@@ -762,6 +762,23 @@ async function cloudUseRemoteSnapshot(snapshot){
   if(!snapshot?.state)return false;
   const localState=state;
   state=migrateState(snapshot.state);
+  // A routine pull must preserve a completion already confirmed on this device.
+  // Match the same record and day only; never carry yesterday's completion forward.
+  for(const key of ["tasks","chores","selfCare"]){
+    const localRows=Array.isArray(localState?.[key])?localState[key]:[];
+    for(const row of Array.isArray(state[key])?state[key]:[]){
+      const local=localRows.find(x=>String(x.id)===String(row.id)&&x.date===row.date);
+      if(local?.done&&!row.done){
+        row.done=true;
+        if(local.completedAt)row.completedAt=local.completedAt;
+      }
+    }
+  }
+  const reviews=Array.isArray(localState?.dailyReviews)?localState.dailyReviews:[];
+  if(!Array.isArray(state.dailyReviews))state.dailyReviews=[];
+  for(const review of reviews){
+    if(!state.dailyReviews.some(x=>x.id===review.id))state.dailyReviews.push({...review});
+  }
   const mergedMonsterHigh=cloudMergeMonsterHighCollection(localState?.monsterHighCollection,state.monsterHighCollection);
   if(mergedMonsterHigh)state.monsterHighCollection=mergedMonsterHigh;
   cloudRestoreLocalOnlyAssets(state,localState);
