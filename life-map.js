@@ -69,8 +69,8 @@ function view(areaOverride,tasksOnly){
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
  const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿",81,56,carePct,"#c89ad7","mind"),
-  avatarMark("Spirituality","☾",141,42,pctFor("spirituality"),"#f2b85b","spirituality"),
+  avatarMark("Mind and self-care","✿",61,70,carePct,"#c89ad7","mind"),
+  avatarMark("Spirituality","☾",163,44,pctFor("spirituality"),"#f2b85b","spirituality"),
   avatarMark("Body & health","♡",110,133,pctFor("body"),"#f2ae85","body"),
   avatarMark("Relationships","♥",78,168,pctFor("people"),"#e98cb0","people"),
   avatarMark("Hobbies and projects","✎",166,166,pctFor("hobbies"),"#82c6a4","hobbies"),
@@ -164,29 +164,29 @@ function view(areaOverride,tasksOnly){
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
  '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="group" aria-label="A cheerful illustrated avatar with clickable life areas">'+
  '<defs><clipPath id="lmMindClip"><path d="M82 44 Q87 25 110 24 Q133 25 138 44 L139 68 Q138 93 110 97 Q82 93 81 68Z"/></clipPath><clipPath id="lmSpiritClip"><path d="M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 62 Q130 39 110 39 Q91 39 73 62Z"/></clipPath><clipPath id="lmTorsoClip"><path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z"/></clipPath><clipPath id="lmLeftClip"><path d="M81 114 Q66 120 60 143 L53 177 Q54 185 61 187 L76 151 L92 137Z"/></clipPath><clipPath id="lmRightClip"><path d="M139 114 Q154 120 160 143 L167 177 Q166 185 159 187 L144 151 L128 137Z"/></clipPath><clipPath id="lmLegClip"><path d="M82 179 Q110 190 138 179 L134 218 L86 218Z M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z"/></clipPath></defs>'+
- '<path d="M78 67 Q70 28 98 18 Q125 10 145 33 Q154 49 148 77 L143 101 Q140 112 133 109 L136 62 Q132 49 123 43 Q105 50 87 43 Q85 59 82 99 Q80 109 73 109 Q68 101 70 90Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M72 62 Q65 30 89 18 Q111 6 136 20 Q157 31 151 65 Q159 81 149 95 Q151 111 136 112 L130 70 Q115 57 90 66 L85 108 Q70 115 66 102 Q60 90 69 78Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<path d="M82 58 Q82 34 101 27 Q121 21 137 37 Q142 43 143 54 Q130 42 119 41 Q105 42 96 48 Q89 53 82 66Z" fill="#7b5148" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
  '<path d="M88 37 Q99 23 114 24 M130 34 Q139 43 140 53 M76 74 Q75 90 74 101 M143 72 Q142 88 140 99" fill="none" stroke="#a36b5d" stroke-width="2" stroke-linecap="round" opacity=".8"/>'+
- '<ellipse cx="110" cy="61" rx="28" ry="34" fill="#f7dfd4" stroke="#64445a" stroke-width="3.3"/>'+
- '<path d="M82 52 Q84 34 99 27 Q118 19 133 31 Q140 36 142 49 Q132 41 120 39 Q106 39 95 46 Q89 50 82 58Z" fill="#654746" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
- '<path d="M97 58 Q102 54 107 58 M114 58 Q119 54 124 58" fill="none" stroke="#44343b" stroke-width="2.3" stroke-linecap="round"/>'+
- '<ellipse cx="103" cy="62" rx="3" ry="4" fill="#44343b"/><ellipse cx="118" cy="62" rx="3" ry="4" fill="#44343b"/><circle cx="104" cy="60.5" r="1" fill="#fff"/><circle cx="119" cy="60.5" r="1" fill="#fff"/>'+
- '<path d="M100 54 L97 52 M105 54 L107 52 M115 54 L113 52 M120 54 L123 52" stroke="#44343b" stroke-width="1.4" stroke-linecap="round"/>'+
- '<ellipse cx="92" cy="72" rx="5" ry="2.7" fill="#efa7b2" opacity=".55"/><ellipse cx="128" cy="72" rx="5" ry="2.7" fill="#efa7b2" opacity=".55"/>'+
- '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M102 77 Q110 85 118 77" fill="none" stroke="#a9566b" stroke-width="2.8" stroke-linecap="round"/>'+
+ '<ellipse cx="110" cy="62" rx="34" ry="34" fill="#ffe6dc" stroke="#896879" stroke-width="2.3"/>'+
+ '<path d="M76 53 Q73 31 96 22 Q121 13 139 31 Q149 41 145 56 Q136 51 127 35 Q115 47 97 47 Q84 48 76 59Z" fill="#654746" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
+ '<path d="M94 53 Q99 50 104 52 M117 52 Q122 50 127 53" fill="none" stroke="#795650" stroke-width="1.6" stroke-linecap="round"/>'+
+ '<ellipse cx="99" cy="63" rx="5" ry="6.6" fill="#513c43"/><ellipse cx="122" cy="63" rx="5" ry="6.6" fill="#513c43"/><circle cx="97.5" cy="60.5" r="2" fill="#fff"/><circle cx="120.5" cy="60.5" r="2" fill="#fff"/><circle cx="101" cy="65.5" r=".9" fill="#f9d4dc"/><circle cx="124" cy="65.5" r=".9" fill="#f9d4dc"/>'+
+ '<path d="M95 58L93 56M126 58L128 56" stroke="#513c43" stroke-width="1.8" stroke-linecap="round"/>'+
+ '<ellipse cx="87" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/><ellipse cx="134" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/>'+
+ '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M104 78 Q110 84 116 78" fill="none" stroke="#ac657a" stroke-width="2.2" stroke-linecap="round"/>'+
  '<path d="M99 91 L99 110 L121 110 L121 91Z" fill="#f7dfd4" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#f4d3e0" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="#fff7fb" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<g clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
- '<g clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
+ '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.6" stroke-linejoin="round"/>'+
+ '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#c5d9ef" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
+ '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="#f7b9cd" stroke="#896879" stroke-width="2.2" stroke-linejoin="round"/>'+
+ '<g opacity=".3" clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
+ '<g opacity=".45" clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
  '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
  '<g clip-path="url(#lmLeftClip)"><rect x="52" y="'+(188-45*pctFor("people")/100)+'" width="42" height="'+(45*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="126" y="'+(188-45*pctFor("hobbies")/100)+'" width="42" height="'+(45*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
  '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
  '<path d="M96 112 Q110 124 124 112 M103 113 L110 119 L117 113" fill="none" stroke="#755170" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+
  '<path d="M123 144 Q130 140 134 146 L134 161 Q128 158 123 161Z" fill="#f7e7fb" stroke="#755170" stroke-width="1.8" stroke-linejoin="round"/><circle cx="128" cy="151" r="1.3" fill="#b86c9c"/>'+
- '<path d="M110 190 L110 276 M89 218 L104 218 M116 218 L132 218 M94 229 L101 229 M119 229 L127 229" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
+ '<path d="M110 192L110 212M91 210Q97 213 103 210M117 210Q123 213 130 210" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
  '<path d="M86 196 Q110 201 135 196 M87 285 L105 285 M115 285 L134 285" fill="none" stroke="#76526b" stroke-width="2.4" stroke-linecap="round"/>'+
  '<path d="M90 291 L99 291 M120 291 L130 291 M92 289 L99 294 M124 289 L131 294" fill="none" stroke="#a7748e" stroke-width="1.8" stroke-linecap="round"/>'+
  '<path d="M141 27 Q146 19 151 27 Q157 21 160 28 Q159 36 151 40 Q144 36 141 27Z" fill="#f5c2da" stroke="#79516c" stroke-width="1.5"/><circle cx="151" cy="30" r="2" fill="#fff8de"/>'+
