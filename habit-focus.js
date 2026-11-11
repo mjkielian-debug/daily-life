@@ -215,7 +215,9 @@
     var pausedHtml=pausedHere.length?'<details class="hf-paused"><summary>Paused habits · '+pausedHere.length+'</summary>'+pausedHere.map(pausedCard).join("")+'</details>':"";
     return '<section class="hf-panel" data-habit-focus data-area="'+esc(area)+'">'+
       '<div class="hf-heading"><div><div class="hf-eyebrow">Habit building · every area</div><h2>'+esc(title)+'</h2><p>'+esc(subtitle)+'</p></div>'+
-      '<button type="button" class="hf-action hf-create" data-hf-action="add" data-area="'+esc(area==="all"?"":area)+'">＋ Add habit</button></div>'+
+      '<div class="hf-heading-actions">'+
+      (area==="all"&&active.some(function(h){return !logOn(h.id,today())})?'<button type="button" class="hf-action hf-resume-checkin" data-hf-action="reopen-checkin">Resume check-in</button>':"")+
+      '<button type="button" class="hf-action hf-create" data-hf-action="add" data-area="'+esc(area==="all"?"":area)+'">＋ Add habit</button></div></div>'+
       '<div class="hf-list">'+body+'</div>'+pausedHtml+
       '<div class="hf-footnote">Habits are practices you choose. Appointments and one-time tasks stay in their existing areas.</div></section>'
   }
@@ -326,6 +328,7 @@
     if(!button)return;
     var action=button.dataset.hfAction,id=button.dataset.habitId;
     if(action==="quick-toggle"){quickBarOpen=!quickBarOpen;mount()}
+    else if(action==="reopen-checkin"&&typeof window.openDailyHabitCheckin==="function")window.openDailyHabitCheckin()
     else if(action==="add")openCreate(button.dataset.area||"");
     else if(action==="edit")openEdit(id);
     else if(action==="pause")setPaused(id,true);
@@ -360,8 +363,17 @@
     var rows=missing.map(function(h){
       return '<article class="dl-quickcheck-row"><div><strong>'+esc(h.name||"Daily habit")+'</strong>'+(h.minimum?'<small>'+esc(h.minimum)+'</small>':"")+'</div><div class="dl-quickcheck-actions"><button type="button" data-dlc-status="done" data-dlc-id="'+esc(h.id)+'">Yes</button><button type="button" data-dlc-status="skipped" data-dlc-id="'+esc(h.id)+'">No, not today</button><button type="button" data-dlc-later>Not yet</button></div></article>'
     }).join("");
-    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-later aria-label="Ask me later">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note">Choose Yes or No when you know. “Not yet” brings this back at 8 PM, or in an hour if it’s already later.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
+    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-later aria-label="Ask me later">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note"><b>'+missing.length+' habit'+(missing.length===1?"":"s")+' left to review.</b> Answers save one at a time; the remaining habits stay here. “Not yet” brings this back at 8 PM, or in an hour if it’s already later.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
   }
+  window.openDailyHabitCheckin=function(){
+    var date=today();
+    try{
+      localStorage.removeItem("dailyLifeQuickCheckinDone-"+date);
+      localStorage.removeItem("dailyLifeQuickCheckinSnooze-"+date);
+    }catch(e){}
+    if(dailyCheckinTimer){clearTimeout(dailyCheckinTimer);dailyCheckinTimer=null}
+    tryShowDailyCheckin();
+  };
   function tryShowDailyCheckin(){
     if(typeof appStartupReady==="undefined"||!appStartupReady)return;
     var s=appState();if(!s||!Array.isArray(s.habits)||!s.habits.length)return;
