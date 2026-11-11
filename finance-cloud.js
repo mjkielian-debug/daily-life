@@ -11,13 +11,16 @@ let cloudFinanceBusy=false;
 let cloudFinanceMessage="";
 
 function cloudFinanceType(row){
-  if(row.account_type==="depository")return row.account_subtype==="savings"?"savings":"checking";
+  if(row.account_type==="depository"){
+    const override=String(row?.metadata?.dailyLifeAccountTypeOverride||"").toLowerCase();
+    if(override==="checking"||override==="savings")return override;
+    return row.account_subtype==="savings"?"savings":"checking";
+  }
   if(row.account_type==="credit")return "credit";
   if(row.account_type==="investment")return "investment";
   if(row.account_type==="loan")return "loan";
   return "other";
 }
-
 function cloudFinanceStrategy(row){
   const x=row?.metadata?.dailyLifeStrategy;
   return x&&typeof x==="object"?x:{};
@@ -67,18 +70,19 @@ function cloudFinanceBalance(row){
 }
 
 function cloudFinanceClosedAccountReason(row){
-  if(row?.account_type!=="depository"||String(row?.account_subtype||"").toLowerCase()!=="checking")return "";
+  if(row?.account_type!=="depository")return "";
   const institution=String(row?.financial_connections?.institution_name||"").trim().toLowerCase(),
     mask=String(row?.mask||"").replace(/\D/g,"");
   if(!institution||!mask)return "";
   for(const plan of state.settings?.bankExitPlans||[]){
     if(plan?.status!=="closed"||String(plan?.institution||"").trim().toLowerCase()!==institution)continue;
     const explicit=String(plan.closedAccountLast4||"").replace(/\D/g,""),
-      fromNote=String(plan.notes||"").match(/(?:deposit|checking) account ending\s*(\d{4})\s+(?:was\s+)?closed\s+on\s+(\d{4}-\d{2}-\d{2})/i);
-    const closedLast4=explicit||fromNote?.[1]||"";
-    if(closedLast4&&mask.endsWith(closedLast4)){
+      listed=Array.isArray(plan.closedAccountLast4s)?plan.closedAccountLast4s.map(x=>String(x||"").replace(/\D/g,"")).filter(Boolean):[],
+      fromNote=String(plan.notes||"").match(/(?:deposit|checking|savings) account ending\s*(\d{4})\s+(?:was\s+)?closed\s+on\s+(\d{4}-\d{2}-\d{2})/i),
+      closedLast4=explicit||fromNote?.[1]||"";
+    if((closedLast4&&mask.endsWith(closedLast4))||listed.some(last4=>mask.endsWith(last4))){
       const closedOn=plan.closureEffectiveDate||fromNote?.[2]||"";
-      return "Marked closed"+(closedOn?" · "+closedOn:"")+"; excluded from available-cash mapping.";
+      return "Marked closed"+(closedOn?" · "+closedOn:"")+"; hidden from active accounts and excluded from available cash.";
     }
   }
   return "";
@@ -154,9 +158,10 @@ function cloudFinancePanel(){
   if(!user){
     return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><span class="tag">cloud required</span></div><p class="muted">Sign in to a Daily Life cloud account before connecting banks.</p><button class="btn" onclick="openCloudAuth()">Sign in</button></div>`;
   }
-  const rows=cloudFinancialAccounts;
+  const allRows=cloudFinancialAccounts,closedRows=allRows.filter(r=>cloudFinanceClosedAccountReason(r)),rows=allRows.filter(r=>!cloudFinanceClosedAccountReason(r));
   return `<div class="card"><div class="section-title"><h2>Automatic financial accounts</h2><div class="actions"><button class="btn primary" onclick="startPlaidLink('bank')">Connect bank / card</button><button class="btn" onclick="startPlaidLink('investment')">Connect retirement / investment</button><button class="btn" onclick="cloudSyncBanks(true)">Sync now</button></div></div>
   <p class="muted small">Bank credentials are entered only in Plaid Link. Daily Life stores provider tokens server-side, never in this public app code. Balances below update mapped Money accounts.</p>
+  ${closedRows.length?`<p class="muted small">${closedRows.length} confirmed closed account${closedRows.length===1?"":"s"} hidden here; transaction history is retained.</p>`:""}
   ${cloudFinanceMessage?`<div class="notice">${esc(cloudFinanceMessage)}</div>`:""}
   ${cloudLikelyBillTransactions.length?`<div class="warning"><b>${cloudLikelyBillTransactions.length} bank transaction${cloudLikelyBillTransactions.length===1?" may":"s may"} be bill payment${cloudLikelyBillTransactions.length===1?"":"s"}.</b> Daily Life is holding ${cloudLikelyBillTransactions.length===1?"it":"them"} out of flexible spending until you confirm. <button class="btn small" onclick="openLikelyBillPaymentReview(0)">Review</button></div>`:""}
   ${cloudUnreviewedTransactions.length?`<div class="warning"><b>${cloudUnreviewedTransactions.length} bank transaction${cloudUnreviewedTransactions.length===1?"":"s"} need a category.</b> Daily Life left them out of the budget instead of guessing. <button class="btn small" onclick="openBankTransactionReview(0)">Review</button></div>`:""}
@@ -165,7 +170,7 @@ function cloudFinancePanel(){
     const balanceDate=r.balance_as_of?new Date(r.balance_as_of):null,linkDate=c.last_synced_at?new Date(c.last_synced_at):null,
       balanceLabel=balanceDate?"balance as of "+balanceDate.toLocaleDateString():"balance date unavailable",
       linkLabel=linkDate?"connection checked "+linkDate.toLocaleDateString():"connection date unavailable";
-    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(r.account_subtype||r.account_type||"account")} · ${esc(balanceLabel)} · ${esc(linkLabel)}</div>${closedReason?`<div class="warning small" role="status">${esc(closedReason)}</div>`:""}${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b>${closedReason?'<span class="tag">Closed</span>':`<button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button>`}</div></div>`;
+    return `<div class="row budget-row"><span><b>${esc(r.display_name)}</b>${r.mask?` · ••••${esc(r.mask)}`:""}<div class="muted small">${esc(c.institution_name||"Connected institution")} · ${esc(c.connection_type||"bank")} · ${esc(cloudFinanceType(r))} · ${esc(balanceLabel)} · ${esc(linkLabel)}</div>${closedReason?`<div class="warning small" role="status">${esc(closedReason)}</div>`:""}${strategy.strategy?`<div class="account-role-note">${esc(strategy.strategy)}${strategy.note?" · "+esc(strategy.note):""}</div>`:""}</span><div><b>${money(cloudFinanceBalance(r))}</b>${closedReason?'<span class="tag">Closed</span>':`<button class="btn small" onclick="openCloudAccountMap('${r.id}')">${mapped?"Mapped":"Use in Money"}</button>`}</div></div>`;
   }).join(""):`<div class="notice">No financial accounts connected yet.</div>`}</div>`;
 }
 
