@@ -134,7 +134,7 @@ function houseCareFill(f){
  const done=rows.filter(t=>t.done).length,pct=rows.length?done/rows.length:0;
  const clip="hvm-care-"+f.toLowerCase().replace(/[^a-z]/g,"");
  return '<button type="button" class="hvm-care-house" style="border:0;background:transparent;padding:4px;cursor:pointer" aria-label="Whole-house care: '+done+' of '+rows.length+' complete" onclick="setView(&#39;lifearea-home&#39;)">'+
- '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg></button>';
+ '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg><span style="display:block;font-size:.8rem;color:#68516b">'+done+' of '+rows.length+' home tasks done today</span></button>';
 }
 
 function mapSketch(f,m){
