@@ -5,6 +5,7 @@
 "use strict";
 const floors=["Basement","First floor","Second floor","Third floor"];
 const cache=new Map(),pending=new Map();
+try{if(localStorage.getItem("dailyLifeIllustratedMapVersion")!=="1"){localStorage.setItem("dailyLifeMapBrowseRooms","1");localStorage.setItem("dailyLifeIllustratedMapVersion","1")}}catch(_){}
 const personPhotoCache=new Map();
 const str=x=>String(x??"");
 const h=x=>str(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
