@@ -36,10 +36,24 @@ function facts(m){
 
 
 function zoneBounds(path){
- const nums=(str(path).match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
- if(nums.length<4)return null;
- const xs=[],ys=[];
- for(let i=0;i+1<nums.length;i+=2){xs.push(nums[i]);ys.push(nums[i+1])}
+ const tokens=str(path).match(/[a-zA-Z]|-?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/g)||[];
+ let i=0,command="",x=0,y=0,startX=0,startY=0;
+ const xs=[],ys=[],point=()=>{xs.push(x);ys.push(y)};
+ while(i<tokens.length){
+  if(/^[a-zA-Z]$/.test(tokens[i]))command=tokens[i++];
+  if(!/^[MLHVZmlhvz]$/.test(command))return null;
+  const relative=command===command.toLowerCase(),kind=command.toUpperCase();
+  if(kind==="Z"){x=startX;y=startY;point();command="";continue}
+  const count=(kind==="M"||kind==="L")?2:1;
+  if(i+count>tokens.length||tokens.slice(i,i+count).some(t=>/^[a-zA-Z]$/.test(t)))return null;
+  const values=tokens.slice(i,i+count).map(Number);i+=count;
+  if(kind==="M"||kind==="L"){x=values[0]+(relative?x:0);y=values[1]+(relative?y:0)}
+  else if(kind==="H")x=values[0]+(relative?x:0);
+  else y=values[0]+(relative?y:0);
+  if(kind==="M"){startX=x;startY=y;command=relative?"l":"L"}
+  point();
+ }
+ if(xs.length<2)return null;
  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
  return {x:minX,y:minY,width:maxX-minX,height:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
 }
@@ -72,7 +86,7 @@ function inlineRoomPreview(f,z,bounds){
 }
 function zoneFloorGraphic(f,z,bounds){
  if(f!=="Second floor"||!bounds)return "";
- if(z.id!=="stairs"&&!/stairs/i.test(z.name||""))return "";
+ if(z.id!=="stairs"&&!/\bstairs?\b|\blanding\b/i.test(z.name||""))return "";
  const left=bounds.x+bounds.width*.24,right=bounds.x+bounds.width*.76;
  const top=bounds.y+bounds.height*.34,bottom=bounds.y+bounds.height*.82;
  const count=6,step=(bottom-top)/(count-1);
@@ -100,7 +114,7 @@ function illustratedLayout(f,m){
   layoutNotice:"Only the basement stair arrival is confirmed. The dashed space is unmapped; no basement rooms have been invented."};
 }
 function roomSymbol(z,b){
- if(!b||b.width<75||b.height<70||/hall|stair/i.test(str(z.name)))return "";
+ if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
  const label=str(z.name),bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
  const symbol=bed?'<rect x="3" y="10" width="42" height="28" rx="5"/><rect x="7" y="13" width="14" height="10" rx="3"/><rect x="26" y="13" width="14" height="10" rx="3"/><path d="M3 27H45M6 38V42M42 38V42"/>':
  bath?'<path d="M5 23H43L39 37H10Z"/><path d="M10 23V10Q10 3 18 7M13 38V42M35 38V42"/>':
@@ -118,7 +132,7 @@ function mapSketch(f,m){
  const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).map(z=>{
   const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
   const labelX=bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
-  const isStair=f==="Second floor"&&(z.id==="stairs"||/stairs/i.test(z.name||""));
+  const isStair=f==="Second floor"&&(z.id==="stairs"||/\bstairs?\b|\blanding\b/i.test(z.name||""));
   const hasSymbol=!!roomSymbol(z,bounds);
   const labelY=isStair&&bounds?bounds.y+16:hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
