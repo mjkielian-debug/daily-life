@@ -141,23 +141,34 @@ function view(areaOverride,tasksOnly){
  return '<section class="life-map-page">'+
  '<header class="lm-welcome"><div><span class="lm-kicker">YOUR LIFE MAP</span><h1>Hi, '+h(name)+'.</h1><p>Your life is made of lots of little things. Each one counts.</p></div><button type="button" class="lm-today-progress" aria-label="Open today’s tasks: '+completed+' of '+tasks.length+' complete" onclick="setView(\'lifearea-tasks-all\')"><span>Today’s tasks</span><b>'+completed+' <small>of '+tasks.length+' done</small></b><i><em style="width:'+taskPct+'%"></em></i><span class="lm-plan-open">Tap to view the list ›</span></button></header>'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
- '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="group" aria-label="A friendly avatar with clickable mind, spirituality, health, relationships, hobbies, and money areas">'+
+ '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="group" aria-label="A cheerful illustrated avatar with clickable life areas">'+
  '<defs><clipPath id="lmMindClip"><path d="M82 44 Q87 25 110 24 Q133 25 138 44 L139 68 Q138 93 110 97 Q82 93 81 68Z"/></clipPath><clipPath id="lmSpiritClip"><path d="M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 62 Q130 39 110 39 Q91 39 73 62Z"/></clipPath><clipPath id="lmTorsoClip"><path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z"/></clipPath><clipPath id="lmLeftClip"><path d="M81 114 Q66 120 60 143 L53 177 Q54 185 61 187 L76 151 L92 137Z"/></clipPath><clipPath id="lmRightClip"><path d="M139 114 Q154 120 160 143 L167 177 Q166 185 159 187 L144 151 L128 137Z"/></clipPath><clipPath id="lmLegClip"><path d="M82 179 Q110 190 138 179 L134 218 L86 218Z M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z"/></clipPath></defs>'+
- '<path d="M73 66 Q69 25 98 18 Q125 11 145 33 Q153 48 147 76 L142 103 Q135 96 136 62 Q127 70 124 73 L125 44 Q105 51 87 41 Q87 72 78 103Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<ellipse cx="110" cy="60" rx="29" ry="35" fill="#f7dfd4" stroke="#64445a" stroke-width="3.5"/>'+
- '<path d="M83 45 Q89 20 111 20 Q133 21 140 45 Q125 36 110 39 Q96 40 83 45Z" fill="#654746"/>'+
- '<path d="M99 61 Q103 58 107 61 M114 61 Q118 58 122 61" fill="none" stroke="#44343b" stroke-width="2.3" stroke-linecap="round"/><circle cx="103" cy="63" r="1.4" fill="#44343b"/><circle cx="118" cy="63" r="1.4" fill="#44343b"/><path d="M103 77 Q110 83 117 77" fill="none" stroke="#a9566b" stroke-width="2.5" stroke-linecap="round"/>'+
- '<path d="M101 91 L101 109 L119 109 L119 91Z" fill="#f7dfd4"/>'+
- '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#f4d7e2" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#f4edf3" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M89 289 L104 289 L104 292 Q98 296 84 294 Q84 291 89 289Z M116 289 L131 289 Q137 291 140 294 Q127 297 116 293Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M78 67 Q70 28 98 18 Q125 10 145 33 Q154 49 148 77 L143 101 Q140 112 133 109 L136 62 Q132 49 123 43 Q105 50 87 43 Q85 59 82 99 Q80 109 73 109 Q68 101 70 90Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M82 58 Q82 34 101 27 Q121 21 137 37 Q142 43 143 54 Q130 42 119 41 Q105 42 96 48 Q89 53 82 66Z" fill="#7b5148" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
+ '<path d="M88 37 Q99 23 114 24 M130 34 Q139 43 140 53 M76 74 Q75 90 74 101 M143 72 Q142 88 140 99" fill="none" stroke="#a36b5d" stroke-width="2" stroke-linecap="round" opacity=".8"/>'+
+ '<ellipse cx="110" cy="61" rx="28" ry="34" fill="#f7dfd4" stroke="#64445a" stroke-width="3.3"/>'+
+ '<path d="M82 52 Q84 34 99 27 Q118 19 133 31 Q140 36 142 49 Q132 41 120 39 Q106 39 95 46 Q89 50 82 58Z" fill="#654746" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
+ '<path d="M97 58 Q102 54 107 58 M114 58 Q119 54 124 58" fill="none" stroke="#44343b" stroke-width="2.3" stroke-linecap="round"/>'+
+ '<ellipse cx="103" cy="62" rx="3" ry="4" fill="#44343b"/><ellipse cx="118" cy="62" rx="3" ry="4" fill="#44343b"/><circle cx="104" cy="60.5" r="1" fill="#fff"/><circle cx="119" cy="60.5" r="1" fill="#fff"/>'+
+ '<path d="M100 54 L97 52 M105 54 L107 52 M115 54 L113 52 M120 54 L123 52" stroke="#44343b" stroke-width="1.4" stroke-linecap="round"/>'+
+ '<ellipse cx="92" cy="72" rx="5" ry="2.7" fill="#efa7b2" opacity=".55"/><ellipse cx="128" cy="72" rx="5" ry="2.7" fill="#efa7b2" opacity=".55"/>'+
+ '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M102 77 Q110 85 118 77" fill="none" stroke="#a9566b" stroke-width="2.8" stroke-linecap="round"/>'+
+ '<path d="M99 91 L99 110 L121 110 L121 91Z" fill="#f7dfd4" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
+ '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#e9c7f0" stroke="#64445a" stroke-width="3" stroke-linejoin="round"/>'+
+ '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#f4d3e0" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
+ '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="#fff7fb" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<g clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
  '<g clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
  '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
  '<g clip-path="url(#lmLeftClip)"><rect x="52" y="'+(188-45*pctFor("people")/100)+'" width="42" height="'+(45*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="126" y="'+(188-45*pctFor("hobbies")/100)+'" width="42" height="'+(45*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
  '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
- '<path d="M94 137 Q110 151 126 137" fill="none" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
+ '<path d="M96 112 Q110 124 124 112 M103 113 L110 119 L117 113" fill="none" stroke="#755170" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+
+ '<path d="M123 144 Q130 140 134 146 L134 161 Q128 158 123 161Z" fill="#f7e7fb" stroke="#755170" stroke-width="1.8" stroke-linejoin="round"/><circle cx="128" cy="151" r="1.3" fill="#b86c9c"/>'+
+ '<path d="M110 190 L110 276 M89 218 L104 218 M116 218 L132 218 M94 229 L101 229 M119 229 L127 229" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
+ '<path d="M86 196 Q110 201 135 196 M87 285 L105 285 M115 285 L134 285" fill="none" stroke="#76526b" stroke-width="2.4" stroke-linecap="round"/>'+
+ '<path d="M90 291 L99 291 M120 291 L130 291 M92 289 L99 294 M124 289 L131 294" fill="none" stroke="#a7748e" stroke-width="1.8" stroke-linecap="round"/>'+
+ '<path d="M141 27 Q146 19 151 27 Q157 21 160 28 Q159 36 151 40 Q144 36 141 27Z" fill="#f5c2da" stroke="#79516c" stroke-width="1.5"/><circle cx="151" cy="30" r="2" fill="#fff8de"/>'+
  '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+
  avatarHotspot("mind","Mind & self-care","M83 43 Q81 55 81 68 Q82 93 110 97 Q138 93 139 68 L138 44 Q125 37 110 39 Q96 40 83 43Z")+
  avatarHotspot("spirituality","Spirituality","M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 76 Q140 48 125 40 Q104 34 87 43 Q84 53 78 78Z")+
@@ -166,7 +177,7 @@ function view(areaOverride,tasksOnly){
  avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
  avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
  '</g>'+avatarMarks+'</svg>'+
- '<p class="lm-avatar-caption">Tap a marker to open an area. C = Car & driving; W = Work. Color grows in small steps.</p></div></div></section>'+
+ '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p></div></div></section>'+
  '<section class="lm-lower-grid"><section class="lm-panel"><div class="lm-panel-heading"><div><span class="lm-kicker">TODAY</span><h2>Small steps</h2></div><button type="button" class="lm-text-button" onclick="setView(\'today\')">Full Day Flow ›</button></div>'+taskContent+
  '<details class="lm-care"><summary>Care habits today · '+careDone+' of '+careHabits.length+'</summary><div class="lm-list">'+careRows+'</div></details></section>'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
