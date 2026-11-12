@@ -177,7 +177,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261111-spanish-bridge5">
+<link rel="stylesheet" href="house-visual-map.css?v=20261112-house-map-visibility1">
 <link rel="stylesheet" href="visual-hubs.css?v=20261027-profile-rail-fix1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -314,7 +314,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261112-wardrobe-review1";
+const APP_BUILD="20261112-house-map-visibility1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -6690,7 +6690,7 @@ function householdMapPage(){
  if(!floors.includes(floor))floor="First floor";
  return '<section class="household-map-page"><div class="household-map-title"><div><small>LIVE · HOUSEHOLD</small><h1>House</h1><span>Choose a floor, then tap a room to go inside.</span></div>'+
  '<button class="btn small primary" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+floor+'&#39;)">📷 Add photos</button></div>'+
- '<nav class="household-map-floors" aria-label="Choose a house floor">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)"><span>'+({"Basement":"▱","First floor":"⌂","Second floor":"▤","Third floor":"△"}[f])+'</span>'+esc(f==="Third floor"?"Attic":f)+'</button>').join("")+'</nav>'+
+ '<nav class="household-map-floors" aria-label="Choose a house floor">'+floors.map(f=>'<button type="button" class="'+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="householdSelectFloor(&#39;'+f+'&#39;)"><span>'+({"Basement":"▱","First floor":"⌂","Second floor":"▤","Third floor":"△"}[f])+'</span>'+esc(f)+'</button>').join("")+'</nav>'+
  '<div class="household-map-floor-progress-slot">'+(typeof houseVisualFloorProgressHtml==="function"?houseVisualFloorProgressHtml(floor):'<div class="household-map-floor-progress">Room progress is loading…</div>')+'</div>'+
  '<div class="household-map-drawing">'+(typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p>Your private map will appear here after it loads.</p>')+'</div>'+
  '<details class="household-map-directory"><summary><span><b>Room progress + setup</b><small>Tasks and saved room details</small></span><span>⌄</span></summary><div class="household-map-directory-body"><div class="household-room-heading"><h2>Room progress</h2><small>Tap a room to see tasks + inventory</small></div>'+
@@ -9774,7 +9774,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261024-school-growth1"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261111-spanish-bridge5"></script>
+<script src="house-visual-map.js?v=20261112-house-map-visibility1"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
