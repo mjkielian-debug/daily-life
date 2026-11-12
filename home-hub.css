@@ -1,0 +1,137 @@
+/* Compact visual home hub: the avatar and illustrated house map are the primary navigation. */
+#app:has(.life-map-page) .life-map-page{
+  display:grid!important;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  grid-template-rows:auto minmax(0,1fr);
+  gap:10px;
+  height:calc(100svh - 108px);
+  min-height:420px;
+  padding:3px 0 8px;
+  overflow:hidden;
+  align-items:stretch;
+}
+#app:has(.life-map-page) .lm-scene-card,
+#app:has(.life-map-page) .lm-scene-grid,
+#app:has(.life-map-page) .lm-lower-grid{display:contents}
+#app:has(.life-map-page) .lm-scene-heading{
+  grid-column:1/-1;
+  margin:0;
+  padding:5px 10px 7px;
+  border:0;
+}
+#app:has(.life-map-page) .lm-scene-heading h2{
+  margin:1px 0;
+  font-size:1.06rem;
+  line-height:1.1;
+}
+#app:has(.life-map-page) .lm-scene-heading p,
+#app:has(.life-map-page) .lm-scene-heading [role="group"]{display:none!important}
+#app:has(.life-map-page) .lm-avatar-wrap,
+#app:has(.life-map-page) .lm-house{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  min-height:0;
+  height:100%;
+  margin:0;
+  padding:10px;
+  border:2px solid transparent;
+  border-radius:25px;
+  background:linear-gradient(145deg,#fffdfd,#fff6fb 54%,#f0fbf5) padding-box,
+    linear-gradient(135deg,#f08caf,#f4c766,#9ed8b4,#9cccf0,#c7a9e9) border-box;
+  box-shadow:0 10px 26px rgba(93,59,83,.11);
+  overflow:hidden;
+}
+#app:has(.life-map-page) .lm-avatar-wrap:before,
+#app:has(.life-map-page) .lm-house:before{
+  content:"✦  ✿  ✦";
+  position:absolute;
+  top:7px;
+  right:10px;
+  color:#dc94b4;
+  font-size:.75rem;
+  letter-spacing:.2em;
+  pointer-events:none;
+  z-index:3;
+}
+#app:has(.life-map-page) .lm-avatar-wrap{grid-column:1;grid-row:2;align-items:center}
+#app:has(.life-map-page) .lm-avatar{
+  width:auto;
+  height:min(54svh,500px);
+  max-width:100%;
+  flex:0 1 auto;
+  filter:drop-shadow(0 5px 5px rgba(93,59,83,.13));
+}
+#app:has(.life-map-page) .lm-avatar-caption{
+  margin:3px 0 7px;
+  color:#765c75;
+  font-size:.68rem;
+  line-height:1.15;
+  text-align:center;
+}
+#app:has(.life-map-page) .lm-home-closet{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:6px 12px;
+  border:1px solid #d9b7ce;
+  border-radius:999px;
+  background:linear-gradient(100deg,#fff,#fff1f8);
+  color:#654563;
+  font:800 .72rem var(--font-body,system-ui,sans-serif);
+  box-shadow:0 3px 9px rgba(96,61,93,.1);
+  cursor:pointer;
+}
+#app:has(.life-map-page) .lm-wardrobe-card,
+#app:has(.life-map-page) .lm-trackers,
+#app:has(.life-map-page) .lm-wardrobes,
+#app:has(.life-map-page) .lm-disclaimer,
+#app:has(.life-map-page) .lm-room-progress{display:none!important}
+#app:has(.life-map-page) .lm-house{grid-column:2;grid-row:2;gap:6px}
+#app:has(.life-map-page) .lm-house .lm-panel-heading{align-items:center;margin:0 0 2px;gap:4px}
+#app:has(.life-map-page) .lm-house .lm-panel-heading h2{margin:1px 0;font-size:1rem}
+#app:has(.life-map-page) .lm-house .lm-panel-heading .lm-kicker{font-size:.58rem}
+#app:has(.life-map-page) .lm-house .lm-panel-heading .lm-text-button{font-size:.62rem;white-space:nowrap}
+#app:has(.life-map-page) .lm-house>.lm-muted{margin:0;font-size:.66rem;line-height:1.2}
+#app:has(.life-map-page) .lm-floors{flex:0 0 auto;gap:4px;padding:1px 0 5px;overflow-x:auto}
+#app:has(.life-map-page) .lm-floor{min-height:32px;padding:5px 8px;font-size:.64rem}
+#app:has(.life-map-page) .lm-house-map{
+  flex:1 1 0;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:5px;
+  border:1px solid #e4d2e2;
+  border-radius:19px;
+  background:
+   radial-gradient(circle at 12% 15%,#fde9f3 0 4px,transparent 5px),
+   radial-gradient(circle at 86% 82%,#e4f5eb 0 5px,transparent 6px),
+   linear-gradient(145deg,#fffaff,#eef8ff 55%,#fff9ec);
+  box-shadow:inset 0 0 0 3px #ffffffb0,0 4px 14px #79566e16;
+}
+#app:has(.life-map-page) .lm-house-map .hvm-root{width:100%;max-height:100%;display:grid;place-items:center}
+#app:has(.life-map-page) .lm-house-map .hvm-drawing{width:100%;height:auto;max-height:100%;object-fit:contain;border-radius:15px}
+#app:has(.life-map-page) .lm-house-map .hvm-sketch,
+#app:has(.life-map-page) .lm-house-map .hvm-level{border-radius:17px}
+#app:has(.life-map-page) .lm-house-map .hvm-room-name{font-size:12px}
+#app:has(.life-map-page) .lm-inline-panel,
+#app:has(.life-map-page) .lm-inline-room-panel{max-height:42svh;overflow:auto}
+#app:has(.life-map-page) .hvm-root{font-size:.75rem}
+@media(max-width:520px){
+ #app:has(.life-map-page) .life-map-page{gap:7px;height:calc(100svh - 100px);min-height:380px}
+ #app:has(.life-map-page) .lm-avatar-wrap,#app:has(.life-map-page) .lm-house{padding:7px;border-radius:20px}
+ #app:has(.life-map-page) .lm-avatar{height:min(50svh,420px)}
+ #app:has(.life-map-page) .lm-home-closet{font-size:.64rem;min-height:32px;padding:5px 8px}
+ #app:has(.life-map-page) .lm-house .lm-panel-heading{flex-wrap:wrap}
+ #app:has(.life-map-page) .lm-house .lm-panel-heading .lm-text-button{font-size:.56rem}
+ #app:has(.life-map-page) .lm-floor{padding:5px 6px;font-size:.58rem}
+}
+@media(max-height:700px){
+ #app:has(.life-map-page) .life-map-page{height:calc(100svh - 92px);min-height:350px}
+ #app:has(.life-map-page) .lm-avatar{height:min(46svh,360px)}
+}
+@media(max-width:360px){
+ #app:has(.life-map-page) .life-map-page{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}
+ #app:has(.life-map-page) .lm-avatar-caption{font-size:.6rem}
+}

@@ -48,7 +48,7 @@ const APP_SHELL=[
   "./practice-proof.js",
   "./life-insights.js",
   "./life-map.js",
-  "./life-map.css",
+  "./life-map.css",\n  "./home-hub.css",\n  "./home-hub.js",
   "./assets/michelle-equestria-avatar.webp?v=20261112-facepony1",
   "./electricity-insights.js",
   "./life-insights.css",
