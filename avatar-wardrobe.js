@@ -24,10 +24,11 @@ function hasSchedule(s){return !!s&&(s.ssd||s.daypart&&s.daypart!=="any"||s.seas
 function scheduleMatches(item){const s=item?.schedule||{};return (!s.ssd||isSsdDay())&&(!s.daypart||s.daypart==="any"||s.daypart===currentDaypart())&&(!s.season||s.season==="any"||s.season===currentSeason())}
 function active(){
  const w=wardrobe();if(!w)return null;
+ const manual=w.manualOverrideDate===(typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10))&&w.manualOverrideDaypart===currentDaypart()?w.items.find(x=>x.id===w.activeItemId):null;
  const ssdLook=isSsdDay()&&w.ssdItemId?w.items.find(x=>x.id===w.ssdItemId):null;
  const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x));
- const look=ssdLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
- return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isScheduled:(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))}:null;
+ const look=manual||ssdLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
+ return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:!!manual,isScheduled:!manual&&((isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look)))}:null;
 }
 window.avatarWardrobeGetActive=active;
 function analysisDescription(value){
@@ -44,19 +45,29 @@ function paintAvatar(){
  svg.style.setProperty("--lm-outfit-accessory",look.type==="accessory"?look.primary:"#f5c2da");
  const card=document.querySelector(".lm-wardrobe-card");if(card&&typeof window.avatarWardrobePanelHtml==="function")card.outerHTML=window.avatarWardrobePanelHtml();
 }
+let lastSchedulePaint="";
+function refreshScheduledAvatar(){
+ if(!document.querySelector(".lm-avatar"))return;
+ const look=active(),signature=[look?.id||"",!!look?.isManual,!!look?.isScheduled,currentDaypart(),currentSeason(),typeof ymd==="function"?ymd():""].join("|");
+ if(signature===lastSchedulePaint)return;
+ lastSchedulePaint=signature;paintAvatar();
+}
+setInterval(refreshScheduledAvatar,30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshScheduledAvatar()});
+window.addEventListener("focus",refreshScheduledAvatar);
 function scheduleLabel(s){if(!hasSchedule(s))return"Any time";return [s.ssd?"SSD route":"",s.daypart&&s.daypart!=="any"?s.daypart:"",s.season&&s.season!=="any"?s.season:""].filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(" · ")}
 window.avatarWardrobePanelHtml=function(){
  const w=wardrobe();if(!w)return "";
  const selected=active(),looks=w.items.slice(-6).reverse();
  const rows=looks.map(x=>'<div class="lm-wardrobe-look"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><button type="button" class="lm-mini-button" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">Wear</button><button type="button" class="lm-mini-button" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">SSD</button></div>').join("");
- return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
+ return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isManual?"Wearing your selection for this part of the day.":selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
  '<p class="lm-wardrobe-private">'+(w.aiConnected?'Free Google photo analysis is connected. Wardrobe photos are sent to Google for garment style details; the app uses no paid model.':'Connect free photo analysis for garment style, cut, and visible details. Its image model is free tier and may use submitted content to improve Google products.')+' The original stays in your private Photo Inbox.</p>'+
  (!w.aiConnected?'<button type="button" class="lm-mini-button lm-connect-ai" onclick="avatarWardrobeConnect()">Connect free photo analysis</button>':'')+
  (w.ssdItemId?'<div class="lm-wardrobe-rule">SSD schedule · '+esc((w.items.find(x=>x.id===w.ssdItemId)||{}).name||"saved outfit")+' <button type="button" class="lm-mini-button" onclick="avatarWardrobeClearSSD()">Clear</button></div>':'<div class="lm-wardrobe-rule">Save a vest or outfit, then tap <b>SSD</b> to use it when an SSD route is on today’s plan.</div>')+
  (rows?'<div class="lm-wardrobe-list">'+rows+'</div>':'<div class="lm-wardrobe-empty">Upload clothing pieces or a complete outfit. I’ll sample its main colors locally and draw a matching look on your cartoon avatar. Your face, hair, and body stay as they are.</div>')+'</section>';
 };
 function update(){if(typeof window.save==="function")window.save();if(typeof window.render==="function")window.render()}
-window.avatarWardrobeSetActive=function(id){const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;w.activeItemId=id;update()};
+window.avatarWardrobeSetActive=function(id){const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;w.activeItemId=id;w.manualOverrideDate=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);w.manualOverrideDaypart=currentDaypart();update()};
 window.avatarWardrobeAssignSSD=function(id){const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;w.ssdItemId=id;update()};
 window.avatarWardrobeClearSSD=function(){const w=wardrobe();if(!w)return;w.ssdItemId="";update()};
 window.openAvatarWardrobeInbox=function(){if(typeof window.openPhotoInbox==="function")window.openPhotoInbox("wardrobe")};
