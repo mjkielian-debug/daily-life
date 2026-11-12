@@ -3,6 +3,9 @@
 const h=value=>String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const day=()=>typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
 const list=value=>Array.isArray(value)?value:[];
+function mapProgressRange(){try{return localStorage.getItem("dailyLifeMapProgressRange")||"week"}catch(_){return "week"}}
+function mapProgressDates(){const today=day();if(mapProgressRange()!=="week")return [today];const start=new Date(today+"T12:00:00");start.setDate(start.getDate()-((start.getDay()+6)%7));const dates=[];for(const d=new Date(start);d<=new Date(today+"T12:00:00");d.setDate(d.getDate()+1))dates.push(typeof ymd==="function"?ymd(d):d.toISOString().slice(0,10));return dates}
+window.lifeMapProgressDates=mapProgressDates;
 const floorNames=["Basement","First floor","Second floor","Third floor"];
 let activeArea="",activeRoom=null;
 
@@ -53,7 +56,7 @@ function avatarHotspot(area,label,path){
  return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" data-life-area="${h(area)}"/>`;
 }
 function view(areaOverride,tasksOnly){
- const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
+ const date=day(),progressDates=mapProgressDates(),progressRange=mapProgressRange(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
  const avatarLook=typeof window.avatarWardrobeGetActive==="function"?window.avatarWardrobeGetActive():null;
  const avatarTop=avatarLook&&!['bottom','shoes','accessory'].includes(avatarLook.type)?avatarLook.primary:"#d7c6ee";
  const avatarBottom=avatarLook?.type==="bottom"?avatarLook.primary:avatarLook?.type==="outfit"?avatarLook.accent:"#c5d9ef";
@@ -71,11 +74,13 @@ function view(areaOverride,tasksOnly){
  else if(garmentPattern==="polka-dot") avatarGarmentDetails+='<g fill="var(--lm-outfit-detail,#e6c7a7)" clip-path="url(#lmTorsoClip)"><circle cx="91" cy="177" r="3"/><circle cx="127" cy="181" r="3"/><circle cx="105" cy="202" r="3"/><circle cx="138" cy="213" r="3"/><circle cx="84" cy="225" r="3"/><circle cx="118" cy="237" r="3"/></g>';
  else if(garmentPattern==="floral") avatarGarmentDetails+='<g fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" clip-path="url(#lmTorsoClip)"><circle cx="92" cy="184" r="6"/><circle cx="128" cy="211" r="6"/><circle cx="103" cy="235" r="6"/><path d="M92 176V192 M84 184H100 M128 203V219 M120 211H136 M103 227V243 M95 235H111"/></g>';
  else if(garmentPattern==="graphic") avatarGarmentDetails+='<path d="M96 178 L110 167 L124 178 L110 201Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.4" clip-path="url(#lmTorsoClip)"/>';
- const tasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&!(/\b(app|development)\b/i.test(String(t.category||""))&&/build|apk|bridge|workflow|deploy|migration/i.test(String(t.title||""))));
+ const allTasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&!(/\b(app|development)\b/i.test(String(t.category||""))&&/build|apk|bridge|workflow|deploy|migration/i.test(String(t.title||""))));
+ const tasks=allTasks.filter(t=>String(t.date||"")===date),progressTasks=allTasks.filter(t=>progressDates.includes(String(t.date||"")));
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
- const careDone=careHabits.filter(x=>typeof selfCareDone==="function"&&selfCareDone(x.key,date)).length;
- const carePct=careHabits.length?Math.round(careDone/careHabits.length*100):0;
+ const careTotal=careHabits.length*progressDates.length;
+ const careDone=careHabits.reduce((n,x)=>n+progressDates.filter(d=>typeof selfCareDone==="function"&&selfCareDone(x.key,d)).length,0);
+ const carePct=careTotal?Math.round(careDone/careTotal*100):0;
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
  const terms={
   mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
@@ -88,15 +93,15 @@ function view(areaOverride,tasksOnly){
   car:/car|vehicle|volvo|key|keys|lock|tire|fuel|oil|driving|driver|package/i,
   work:/work|ups|shift|route|preload|paycheck|delivery|deliver|clock.?in/i
  };
- const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,tasks.filter(t=>{
+ const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,progressTasks.filter(t=>{
   const category=String(t.category||"").toLowerCase();
   if(category==="car"||category==="work")return category===key;
   return re.test(String(t.title||"")+" "+category+" "+String(t.child||""));
  })]));
- matches.home=window.lifeMapHouseholdRows(date);
+ matches.home=progressDates.flatMap(d=>window.lifeMapHouseholdRows(d));
  const pctFor=key=>{
   const rows=matches[key]||[],habits=key==="mind"?careHabits:[];
-  const total=rows.length+habits.length,done=rows.filter(t=>t.done).length+(key==="mind"?careDone:0);
+  const total=rows.length+(key==="mind"?careTotal:0),done=rows.filter(t=>t.done).length+(key==="mind"?careDone:0);
   return total?Math.round(done/total*100):0;
  };
  const moneyGoals=list(state&&state.settings&&state.settings.financialRoadmap).filter(g=>g&&Array.isArray(g.steps));
@@ -123,7 +128,7 @@ function view(areaOverride,tasksOnly){
  const lastAreaDone=[...areaHistory,...careHistory].sort((a,b)=>b.date.localeCompare(a.date))[0];
  const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).map(taskRow).join("")):"";
  const moneyGoalPanel=areaSelection==="money"?'<div class="lm-money-goals"><span class="lm-kicker">MONEY GOAL PROGRESS</span><b>'+(moneyGoalTotal?moneyGoalDone+" of "+moneyGoalTotal+" steps · "+moneyGoalPct+"%":"No money-goal steps saved yet")+'</b>'+(moneyGoalRows||'<p class="lm-muted">Add a goal and steps to start tracking progress.</p>')+'<button type="button" class="lm-text-button" onclick="openMoneyHubSection(\'goals\')">Open money goals ›</button></div>':"";
- const activeAreaPanel=areaSelection?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[areaSelection]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching checkboxes are on today’s list.</p>')+moneyGoalPanel+'</section>':"";
+ const activeAreaPanel=areaSelection?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[areaSelection]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching entries are in the selected period.</p>')+moneyGoalPanel+'</section>':"";
  if(tasksOnly&&areaSelection==="all"){
   const openTasks=tasks.filter(t=>!t.done),doneTasks=tasks.filter(t=>t.done);
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button class="lm-area-back" type="button" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">TODAY · TASK LIST</span><h1>Today’s tasks</h1><p>All tasks counted in today’s plan are listed here. Open tasks come first.</p></header><section class="lm-inline-panel lm-area-page-content">'+(openTasks.length?'<div class="lm-list">'+openTasks.map(taskRow).join("")+'</div>':'<p class="lm-muted">No open tasks. Everything on today’s list is complete.</p>')+(doneTasks.length?'<details class="lm-completed" '+(openTasks.length?'':'open')+'><summary>Completed today · '+doneTasks.length+'</summary><div class="lm-list">'+doneTasks.map(taskRow).join("")+'</div></details>':'')+'</section></section>';
@@ -196,7 +201,7 @@ function view(areaOverride,tasksOnly){
  const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f==="Third floor"?"Attic":f)+'</button>').join("");
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
- '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
+ '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills from saved activity. Choose today or this week; this week runs Monday through today.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange('week')">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange('today')">Today</button></div></div></div>'+
  '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
  '<defs>'+ '<clipPath id="lmMindClip"><path d="M48 0 H174 V130 H48Z"/></clipPath>'+ '<clipPath id="lmSpiritClip"><path d="M38 0 H182 V118 H38Z"/></clipPath>'+ '<clipPath id="lmTorsoClip"><path d="M57 120 H165 V270 H57Z"/></clipPath>'+ '<clipPath id="lmLeftClip"><path d="M28 126 H98 V274 H28Z"/></clipPath>'+ '<clipPath id="lmRightClip"><path d="M122 126 H194 V274 H122Z"/></clipPath>'+ '<clipPath id="lmLegClip"><path d="M62 248 H158 V470 H62Z"/></clipPath>'+ '<clipPath id="lmJacketClip"><path d="M52 115 H168 V270 H52Z"/></clipPath>'+ '<clipPath id="lmShoeClip"><path d="M48 445 H174 V505 H48Z"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-equestria-avatar.webp?v=20261112-facepony1" x="0" y="0" width="220" height="510" preserveAspectRatio="xMidYMid meet" pointer-events="none" aria-hidden="true"/>'+ (avatarLook?'<g clip-path="url(#lmJacketClip)" opacity=".38"><rect x="35" y="115" width="150" height="155" fill="var(--lm-outfit-main,#d7c6ee)"/></g><g clip-path="url(#lmLegClip)" opacity=".45"><rect x="55" y="245" width="110" height="225" fill="var(--lm-outfit-accent,#c5d9ef)"/></g><g clip-path="url(#lmShoeClip)" opacity=".42"><rect x="48" y="448" width="125" height="55" fill="var(--lm-outfit-shoe,#f7b9cd)"/></g>':'')+ '<g opacity=".24" clip-path="url(#lmTorsoClip)"><rect x="57" y="'+(270-148*pctFor("body")/100)+'" width="108" height="148" fill="#f2ae85"/></g>'+ '<g opacity=".23" clip-path="url(#lmLeftClip)"><rect x="28" y="'+(274-148*pctFor("people")/100)+'" width="70" height="148" fill="#e98cb0"/></g><g opacity=".23" clip-path="url(#lmRightClip)"><rect x="122" y="'+(274-148*pctFor("hobbies")/100)+'" width="72" height="148" fill="#82c6a4"/></g>'+ '<g opacity=".25" clip-path="url(#lmLegClip)"><rect x="62" y="'+(470-222*pctFor("money")/100)+'" width="96" height="222" fill="#83b8df"/></g>'+ avatarGarmentDetails+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
@@ -217,6 +222,7 @@ window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="fun
 window.lifeMapAreaPage=function(area){const allowed=["home","mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return "";return view(area)};
 window.lifeMapAreaTasksPage=function(area){const allowed=["all","home","mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return "";return view(area,true)};
 window.lifeMapView=view;
+window.lifeMapSetProgressRange=function(mode){if(mode!=="week"&&mode!=="today")return;try{localStorage.setItem("dailyLifeMapProgressRange",mode)}catch(_){}if(typeof render==="function")render()};
 window.lifeMapSetFloor=function(floor){
  if(!floorNames.includes(floor))return;
  try{localStorage.setItem("dailyLifeMapFirstFloor",floor)}catch(_){}
