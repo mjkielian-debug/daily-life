@@ -1,4 +1,4 @@
-/* Local, no-fee outfit color analysis and schedule-aware cartoon wardrobe. */
+/* Free photo styling, garment analysis, and schedule-aware cartoon wardrobe. */
 (function(){
 "use strict";
 const safeColor=v=>/^#[0-9a-f]{6}$/i.test(String(v||""))?String(v):"#d7c6ee";
@@ -122,21 +122,83 @@ function addLook(name,colors,source,analysis=null){
 function selectedFiles(){
  return [...Array.from(document.getElementById("piCamera")?.files||[]),...Array.from(document.getElementById("piFiles")?.files||[])];
 }
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function makeStyleImage(file){
+ const bmp=await createImageBitmap(file);
+ try{
+  const scale=Math.min(1,768/Math.max(bmp.width,bmp.height)),canvas=document.createElement("canvas");
+  canvas.width=Math.max(64,Math.round(bmp.width*scale));canvas.height=Math.max(64,Math.round(bmp.height*scale));
+  const ctx=canvas.getContext("2d");if(!ctx)throw Error("Could not prepare this picture for the free generator.");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bmp,0,0,canvas.width,canvas.height);
+  const imageData=canvas.toDataURL("image/webp",.76);
+  if(!imageData.startsWith("data:image/webp;base64,")||imageData.length>2400000)throw Error("This picture is too large to send to the free generator.");
+  return{imageData,width:canvas.width,height:canvas.height};
+ }finally{bmp.close?.()}
+}
+async function generateStyledCopy(file,status,index,total){
+ const image=await makeStyleImage(file);
+ if(status)status.textContent="✓ Originals saved. Sending picture "+index+" of "+total+" to the free cartoon generator…";
+ const started=await cloudClient.functions.invoke("avatar-ai",{body:{action:"stylize_start",imageData:image.imageData,width:image.width,height:image.height}});
+ if(started.error||started.data?.error)throw Error(started.data?.message||started.data?.error||"The free cartoon generator could not start.");
+ const requestId=started.data?.requestId;if(!requestId)throw Error("The free cartoon generator did not return a request ID.");
+ const deadline=Date.now()+8*60*1000;let finalImage="";
+ while(Date.now()<deadline){
+  await wait(5000);
+  const progress=await cloudClient.functions.invoke("avatar-ai",{body:{action:"stylize_status",requestId}});
+  if(progress.error||progress.data?.error)throw Error(progress.data?.message||progress.data?.error||"The free cartoon generator could not finish this picture.");
+  if(progress.data?.state==="done"){finalImage=String(progress.data.imageData||"");break}
+  if(status){const place=Number(progress.data?.queuePosition)||0,eta=Number(progress.data?.waitTime)||0;status.textContent="Free cartoon generator: "+(progress.data?.state==="processing"?"drawing your picture…":"waiting for a volunteer GPU" )+(place?" · queue spot "+place:"")+(eta>0?" · about "+Math.max(1,Math.ceil(eta/60))+" min":"")+" ("+index+" of "+total+")"}
+ }
+ if(!finalImage)throw Error("The volunteer generator is still busy. Your original is saved; try this picture again later.");
+ const blob=await(await fetch(finalImage)).blob(),bmp=await createImageBitmap(blob);
+ try{
+  const canvas=document.createElement("canvas");canvas.width=bmp.width;canvas.height=bmp.height;
+  const ctx=canvas.getContext("2d");if(!ctx)throw Error("Could not prepare the generated picture to save.");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bmp,0,0);
+  const saved=canvas.toDataURL("image/jpeg",.82);if(saved.length>2600000)throw Error("The generated picture is too large to save in the photo inbox.");
+  return{image_data:saved,width:canvas.width,height:canvas.height};
+ }finally{bmp.close?.()}
+}
+async function uploadStyleCopies(files,title){
+ const userId=String(cloudUser()?.id||""),status=document.getElementById("photoInboxStatus");let saved=0,failed=[];
+ for(let i=0;i<files.length;i++){
+  const file=files[i],name=(title&&files.length===1?title:String(file.name||"Picture").replace(/\.[^.]+$/,"" )).slice(0,88)||"Picture";
+  try{
+   const generated=await generateStyledCopy(file,status,i+1,files.length);
+   const {error}=await cloudClient.from("photo_inbox").insert({owner_user_id:userId,category:"inventory",title:"🎨 "+name+" · cartoon style",notes:"Free Equestria Girls-inspired illustration copy. Original photo remains saved in the inbox.",floor_label:"",status:"new",area_id:null,phase:"reference",image_mime:"image/jpeg",...generated});
+   if(error)throw Error(error.message||"Generated picture could not be saved.");saved++;
+  }catch(error){failed.push(String(error?.message||"Generation failed"))}
+ }
+ if(typeof window.photoInboxLoadList==="function")try{await window.photoInboxLoadList(false)}catch(_){ }
+ if(status)status.textContent=saved===files.length?"✓ "+saved+" cartoon-style cop"+(saved===1?"y":"ies")+" saved with the originals.":saved?"✓ "+saved+" cartoon-style cop"+(saved===1?"y":"ies")+" saved. "+failed.length+" could not finish; originals are still saved. "+failed[0]:"Originals are saved. The free generator could not finish: "+(failed[0]||"try again later.");
+}
 function decorateInbox(){
  const select=document.getElementById("piMode");if(!select)return;
  if(!select.querySelector('option[value="wardrobe"]'))select.insertAdjacentHTML("beforeend",'<option value="wardrobe">👗 Avatar outfit / wardrobe</option>');
+ if(!select.querySelector('option[value="style"]'))select.insertAdjacentHTML("beforeend",'<option value="style">🎨 Make a cartoon copy</option>');
  let typeSelect=document.getElementById("piWardrobeType");
  if(!typeSelect){const label=document.createElement("label");label.id="piWardrobeTypeLabel";label.innerHTML='What are you adding?<select id="piWardrobeType"><option value="outfit">Complete outfit</option><option value="vest">Work vest / outerwear</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option><option value="accessory">Accessory</option></select>';select.closest("label")?.insertAdjacentElement("afterend",label);typeSelect=document.getElementById("piWardrobeType")}
  let tip=document.getElementById("piWardrobeTip");
  if(!tip){tip=document.createElement("p");tip.id="piWardrobeTip";tip.className="pi-muted pi-wardrobe-tip";tip.setAttribute("aria-live","polite");select.closest("label")?.insertAdjacentElement("afterend",tip)}
- const syncTip=()=>{if(tip)tip.hidden=select.value!=="wardrobe";if(tip)tip.textContent=wardrobe()?.aiConnected?"The connected free Google model will identify garment style and visible details, then save a cartoon wardrobe look.":"Colors are sampled on-device. Connect free photo analysis on the Life Map to identify garment style and details; only wardrobe photos are sent to Google.";const label=document.getElementById("piWardrobeTypeLabel");if(label)label.hidden=select.value!=="wardrobe"};
+ const syncTip=()=>{const style=select.value==="style",wardrobeMode=select.value==="wardrobe";if(tip)tip.hidden=!style&&!wardrobeMode;if(tip)tip.textContent=style?"Each selected photo is sent to a free community AI generator, then a cartoon copy is saved beside the original. Queue times vary. Volunteer workers handle the source image; anonymous requests may be shared to improve image models.":wardrobe()?.aiConnected?"The connected free Google model will identify garment style and visible details, then save a cartoon wardrobe look.":"Colors are sampled on-device. Connect free photo analysis on the Life Map to identify garment style and details; only wardrobe photos are sent to Google.";const label=document.getElementById("piWardrobeTypeLabel");if(label)label.hidden=!wardrobeMode;const button=document.getElementById("piStyleUpload");if(button)button.hidden=style};
  select.addEventListener("change",syncTip);syncTip();
+ let styleButton=document.getElementById("piStyleUpload");
+ if(!styleButton){styleButton=document.createElement("button");styleButton.id="piStyleUpload";styleButton.type="button";styleButton.className="btn small";styleButton.textContent="🎨 Upload and make a cartoon copy";const submitButton=document.querySelector(".pi-submit");if(submitButton)submitButton.insertAdjacentElement("afterend",styleButton);}
+ styleButton.hidden=select.value==="style";
+ if(styleButton&&!styleButton.dataset.bound){styleButton.dataset.bound="1";styleButton.addEventListener("click",()=>{select.value="style";select.dispatchEvent(new Event("change"));window.photoInboxSubmit()})}
 }
 const open=window.openPhotoInbox;
-if(typeof open==="function")window.openPhotoInbox=function(mode){open.apply(this,arguments);decorateInbox();if(mode==="wardrobe"){const select=document.getElementById("piMode");if(select){select.value="wardrobe";select.dispatchEvent(new Event("change"))}const details=document.querySelector(".pi-form-optional");if(details)details.open=true;const title=document.getElementById("piTitle");if(title&&!title.value)title.value="Avatar outfit";}};
+if(typeof open==="function")window.openPhotoInbox=function(mode){open.apply(this,arguments);decorateInbox();if(mode==="wardrobe"||mode==="style"){const select=document.getElementById("piMode");if(select){select.value=mode;select.dispatchEvent(new Event("change"))}const details=document.querySelector(".pi-form-optional");if(details)details.open=true;const title=document.getElementById("piTitle");if(title&&!title.value)title.value=mode==="wardrobe"?"Avatar outfit":"";}};
 const submit=window.photoInboxSubmit;
 if(typeof submit==="function")window.photoInboxSubmit=async function(){
- const select=document.getElementById("piMode");if(select?.value!=="wardrobe")return submit.apply(this,arguments);
+ const select=document.getElementById("piMode");if(select?.value==="style"){
+  const files=selectedFiles();if(!files.length){select.value="inventory";return submit.apply(this,arguments)}
+  const title=String(document.getElementById("piTitle")?.value||"").trim();select.value="inventory";
+  await submit.apply(this,arguments);
+  const status=document.getElementById("photoInboxStatus");if(status&&/^✓/.test(status.textContent||""))await uploadStyleCopies(files,title);
+  return;
+ }
+ if(select?.value!=="wardrobe")return submit.apply(this,arguments);
  const files=selectedFiles();
  if(!files.length)return submit.apply(this,arguments);
  const title=String(document.getElementById("piTitle")?.value||"").trim(),type=String(document.getElementById("piWardrobeType")?.value||"outfit"),outfitLabel=title.replace(/^avatar outfit\s*[·—:-]?\s*/i,"").trim();
