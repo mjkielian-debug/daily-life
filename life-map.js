@@ -63,14 +63,14 @@ function view(areaOverride,tasksOnly){
  const avatarSleeve=garment==="vest"?"#f1c8ce":avatarTop;
  const avatarLookStyle=avatarLook?' style="--lm-outfit-main:'+h(avatarTop)+';--lm-outfit-accent:'+h(avatarBottom)+';--lm-outfit-shoe:'+h(avatarShoe)+';--lm-outfit-accessory:'+h(avatarAccessory)+';--lm-outfit-sleeve:'+h(avatarSleeve)+';--lm-outfit-detail:'+h(avatarLook.accent||"#e6c7a7")+'"':'';
  let avatarGarmentDetails="";
- if(garment==="vest") avatarGarmentDetails='<path d="M92 112 L100 122 L110 116 L120 122 L128 112 L136 177 Q110 184 84 177Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2" stroke-linejoin="round"/><path d="M110 117 L110 179 M88 151 L102 151 L102 163 L87 163Z M118 151 L132 151 L133 163 L118 163Z" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.8" stroke-linejoin="round"/><circle cx="110" cy="130" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="140" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="150" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/>';
- else if(garment==="hoodie") avatarGarmentDetails='<path d="M94 113 Q93 101 110 100 Q127 101 126 113 L120 124 L110 118 L100 124Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2" stroke-linejoin="round"/><path d="M106 119 L104 138 M114 119 L116 138 M98 157 Q110 151 122 157 L121 165 Q110 160 99 165Z" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
- else if(garment==="shirt"||garment==="blouse") avatarGarmentDetails='<path d="M96 111 L104 120 L110 116 L116 120 L124 111 L119 132 L110 127 L101 132Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.3" stroke-linejoin="round"/>';
- if(garmentPattern==="striped") avatarGarmentDetails+='<path d="M82 135 H138 M83 151 H137 M84 167 H136" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="3" clip-path="url(#lmTorsoClip)" opacity=".85"/>';
- else if(garmentPattern==="plaid") avatarGarmentDetails+='<path d="M92 108 V183 M110 108 V184 M128 108 V183 M78 139 H142 M78 159 H142" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" clip-path="url(#lmTorsoClip)" opacity=".8"/>';
- else if(garmentPattern==="polka-dot") avatarGarmentDetails+='<g fill="var(--lm-outfit-detail,#e6c7a7)" clip-path="url(#lmTorsoClip)"><circle cx="95" cy="137" r="2"/><circle cx="117" cy="137" r="2"/><circle cx="105" cy="151" r="2"/><circle cx="127" cy="154" r="2"/><circle cx="92" cy="166" r="2"/><circle cx="116" cy="169" r="2"/></g>';
- else if(garmentPattern==="floral") avatarGarmentDetails+='<g fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.5" clip-path="url(#lmTorsoClip)"><circle cx="97" cy="141" r="4"/><circle cx="123" cy="151" r="4"/><circle cx="103" cy="169" r="4"/><path d="M97 135V147 M91 141H103 M123 145V157 M117 151H129 M103 163V175 M97 169H109"/></g>';
- else if(garmentPattern==="graphic") avatarGarmentDetails+='<path d="M100 137 L110 132 L120 137 L110 153Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.4" clip-path="url(#lmTorsoClip)"/>';
+ if(garment==="vest") avatarGarmentDetails='<path d="M73 137 L91 149 L110 139 L130 149 L147 137 L153 255 Q110 269 67 255Z" fill="var(--lm-outfit-main,#d7c6ee)" fill-opacity=".86" stroke="#896879" stroke-width="2.4" stroke-linejoin="round"/><path d="M110 141V261 M79 195 L99 195 L99 216 L76 216Z M121 195 L143 195 L145 216 L121 216Z M110 151V224" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" stroke-linejoin="round"/><circle cx="110" cy="157" r="2" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="169" r="2" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="181" r="2" fill="var(--lm-outfit-detail,#e6c7a7)"/>';
+ else if(garment==="hoodie") avatarGarmentDetails='<path d="M82 136 Q84 117 110 117 Q136 117 138 136 L128 155 L110 144 L92 155Z" fill="var(--lm-outfit-main,#d7c6ee)" fill-opacity=".72" stroke="#896879" stroke-width="2" stroke-linejoin="round"/><path d="M103 146 L99 185 M117 146 L121 185 M78 226 Q110 211 142 226 L139 244 Q110 233 81 244Z" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+ else if(garment==="shirt"||garment==="blouse") avatarGarmentDetails='<path d="M94 130 L103 143 L110 137 L117 143 L126 130 L121 158 L110 151 L99 158Z" fill="var(--lm-outfit-detail,#e6c7a7)" fill-opacity=".72" stroke="#896879" stroke-width="1.5" stroke-linejoin="round"/>';
+ if(garmentPattern==="striped") avatarGarmentDetails+='<path d="M72 174 H148 M74 196 H146 M76 218 H144" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="4" clip-path="url(#lmTorsoClip)" opacity=".78"/>';
+ else if(garmentPattern==="plaid") avatarGarmentDetails+='<path d="M88 145 V250 M110 141 V255 M132 145 V250 M70 177 H150 M70 205 H150 M72 232 H148" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2.5" clip-path="url(#lmTorsoClip)" opacity=".72"/>';
+ else if(garmentPattern==="polka-dot") avatarGarmentDetails+='<g fill="var(--lm-outfit-detail,#e6c7a7)" clip-path="url(#lmTorsoClip)"><circle cx="91" cy="177" r="3"/><circle cx="127" cy="181" r="3"/><circle cx="105" cy="202" r="3"/><circle cx="138" cy="213" r="3"/><circle cx="84" cy="225" r="3"/><circle cx="118" cy="237" r="3"/></g>';
+ else if(garmentPattern==="floral") avatarGarmentDetails+='<g fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" clip-path="url(#lmTorsoClip)"><circle cx="92" cy="184" r="6"/><circle cx="128" cy="211" r="6"/><circle cx="103" cy="235" r="6"/><path d="M92 176V192 M84 184H100 M128 203V219 M120 211H136 M103 227V243 M95 235H111"/></g>';
+ else if(garmentPattern==="graphic") avatarGarmentDetails+='<path d="M96 178 L110 167 L124 178 L110 201Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.4" clip-path="url(#lmTorsoClip)"/>';
  const tasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&!(/\b(app|development)\b/i.test(String(t.category||""))&&/build|apk|bridge|workflow|deploy|migration/i.test(String(t.title||""))));
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
@@ -104,14 +104,14 @@ function view(areaOverride,tasksOnly){
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
  const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿",61,70,carePct,"#c89ad7","mind"),
-  avatarMark("Spirituality","☾",163,44,pctFor("spirituality"),"#f2b85b","spirituality"),
-  avatarMark("Body & health","♡",110,133,pctFor("body"),"#f2ae85","body"),
-  avatarMark("Relationships","♥",78,168,pctFor("people"),"#e98cb0","people"),
-  avatarMark("Hobbies and projects","✎",166,166,pctFor("hobbies"),"#82c6a4","hobbies"),
-  avatarMark("Money and planning","✧",112,266,moneyFill,"#83b8df","money"),
-  avatarMark("Car & driving","C",51,235,pctFor("car"),"#e98cb0","car"),
-  avatarMark("Work","W",169,235,pctFor("work"),"#82c6a4","work")
+  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind"),
+  avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality"),
+  avatarMark("Body & health","♡",111,205,pctFor("body"),"#f2ae85","body"),
+  avatarMark("Relationships","♥",43,274,pctFor("people"),"#e98cb0","people"),
+  avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies"),
+  avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money"),
+  avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car"),
+  avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work")
  ].join("");
  const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+(t._lifeChore?"toggleChore":"toggleTask")+'(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
@@ -141,98 +141,8 @@ function view(areaOverride,tasksOnly){
   return '<section class="life-map-page lm-area-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">YOUR LIFE MAP · AREA</span><h1>'+h(areaTitles[areaSelection]||"Life area")+'</h1><p>'+h(descriptions[areaSelection]||"")+'</p></header>'+pagePanel+'<div class="lm-area-shortcuts"><span class="lm-kicker">OPEN THIS AREA’S TRACKER</span><div><button type="button" class="lm-region" onclick="setView(&#39;'+trackerViews[areaSelection]+'&#39;)">'+h(trackerLabels[areaSelection]||"Open tracker")+' ›</button><button type="button" class="lm-region" onclick="setView(&#39;lifearea-tasks-'+areaSelection+'&#39;)">'+h((areaTitles[areaSelection]||"Area")+' tasks today')+' ›</button></div></div></section>';
  }
  const selectedRoomData=activeRoom&&typeof window.houseVisualRoomInlineData==="function"?window.houseVisualRoomInlineData(activeRoom.floor,activeRoom.id):null;
- const activeRoomPanel=selectedRoomData?'<section class="lm-inline-panel lm-inline-room" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(selectedRoomData.name)+' · room tasks</b><button type="button" class="lm-text-button" onclick="lifeMapCloseRoomInline()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+h(selectedRoomData.insights.last)+'</p><p>'+h(selectedRoomData.insights.declutter)+'</p>'+(selectedRoomData.tasks.length?'<div class="lm-list">'+selectedRoomData.tasks.map(taskRow).join("")+'</div>':'<p class="lm-muted">No room-specific tasks are mapped yet.</p>')+'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(\''+h(selectedRoomData.floor)+'\',\''+h(selectedRoomData.id)+'\')">＋ I organized one area</button></section>':"";
-
-
- const foodCount=list(state&&state.foodLogs).filter(x=>String(x.date||"")===date).length;
- const waterCount=list(state&&state.waterLogs).filter(x=>String(x.date||"")===date).length;
- const sleepCount=list(state&&state.sleepLogs).filter(x=>String(x.date||"")===date).length;
- const inventory=list(state&&state.inventoryItems),itemCount=inventory.length;
- const clothing=inventory.filter(item=>{
-  const category=String(item.category||"").toLowerCase(),label=String(item.name||"").toLowerCase(),status=String(item.status||"").toLowerCase();
-  return !["gone","donate / sell","donated","sold","discarded"].includes(status)&&
-   (/clothing|clothes|apparel|wardrobe/.test(category)||/\b(pants|trousers|jeans|shorts|leggings|shirt|shirts|t[- ]?shirt|sweater|hoodie|dress|skirt|socks|underwear|pajamas|coat|jacket|shoes|boots)\b/.test(label));
- });
- const clothingOwners=[...new Set(clothing.map(item=>String(item.inventoryOwner||item.wardrobeOwner||"").trim()).filter(Boolean))];
- const clothingOwner=item=>String(item.inventoryOwner||item.wardrobeOwner||"").trim().toLowerCase();
- const clothingQty=items=>items.reduce((n,item)=>n+Math.max(0,Number(item.quantity??1)||0),0);
- const clothingType=item=>{
-  const text=(String(item.name||"")+" "+String(item.category||"")).toLowerCase();
-  if(/pajama|pyjama|sleepwear|\bpjs?\b/.test(text))return"pajamas";
-  if(/\b(winter coat|parka|coat)\b/.test(text))return"coat";
-  if(/hoodie|jacket|zip[\s-]?up/.test(text))return"layers";
-  if(/long[\s-]?sleeve/.test(text))return"long";
-  if(/short[\s-]?sleeve/.test(text))return"short";
-  if(/\b(pants?|trousers|jeans|leggings)\b/.test(text))return"pants";
-  return"other";
- };
- const childWardrobes=[
-  {name:"Leo",aliases:["leo"]},
-  {name:"Demitri (Tree)",aliases:["demitri","dimitri","tree"]},
-  {name:"Dolly",aliases:["dolly"]},
-  {name:"Ambrose",aliases:["ambrose"]}
- ];
- const targetCount=(count,target)=>count+"/"+target+(count<target?" · "+(target-count)+" below target":count>target?" · "+(count-target)+" above target":"");
- const layerCount=count=>count+"/3–5"+(count<3?" · "+(3-count)+" below minimum":count>5?" · "+(count-5)+" above range":" · in range");
- const childRows=childWardrobes.map(person=>{
-  const items=clothing.filter(item=>person.aliases.includes(clothingOwner(item)));
-  const hasRecords=items.length>0,counts={long:0,short:0,layers:0,coat:0,pants:0,pajamas:0,other:0};
-  items.forEach(item=>{counts[clothingType(item)]+=Math.max(0,Number(item.quantity??1)||0)});
-  const firstLine="Long sleeves "+targetCount(counts.long,7)+" · Short sleeves "+targetCount(counts.short,7)+" · Pants "+targetCount(counts.pants,7);
-  const secondLine="Hoodies/jackets "+layerCount(counts.layers)+" · Winter coat "+targetCount(counts.coat,1)+" · Pajamas "+targetCount(counts.pajamas,5);
-  const otherLine=counts.other?'<small>Other clothing · '+counts.other+' saved</small>':"";
-  return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(person.name)+'</b><span>'+(hasRecords?clothingQty(items)+' assigned saved item'+(clothingQty(items)===1?"":"s"):"No assigned clothing records yet")+'</span>'+
-   (hasRecords?'<small>'+h(firstLine)+'</small><small>'+h(secondLine)+'</small>'+otherLine:'<small>Targets · Long sleeves 7 · Short sleeves 7 · Pants 7</small><small>Hoodies/jackets 3–5 · Winter coat 1 · Pajamas 5</small>')+'</button>';
- }).join("");
- const otherOwners=clothingOwners.filter(owner=>!childWardrobes.some(person=>person.aliases.includes(owner.toLowerCase())));
- const otherRows=otherOwners.map(owner=>{
-  const items=clothing.filter(item=>clothingOwner(item)===owner.toLowerCase());
-  return '<button type="button" onclick="setView(\'inventory\')"><b>'+h(owner)+'</b><span>'+clothingQty(items)+' saved clothing item'+(clothingQty(items)===1?"":"s")+'</span><small>'+h(items.slice(0,3).map(item=>item.name).join(" · "))+(items.length>3?" · +"+(items.length-3)+" more":"")+'</small></button>';
- }).join("");
- const clothingRows=childRows+otherRows;
- const floor=selectedFloor();
- const map=typeof houseVisualMapHtml==="function"?houseVisualMapHtml(floor):'<p class="lm-muted">The saved house map is loading.</p>';
- const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f)+'</button>').join("");
- const taskSummary='<button type="button" class="lm-today-entry" onclick="setView(&#39;lifearea-tasks-all&#39;)"><span class="lm-today-entry-icon" aria-hidden="true">✓</span><span class="lm-today-entry-copy"><b>Today’s task list</b><small>'+(tasks.length?completed+' of '+tasks.length+' done · '+open.length+' open':"No date-specific tasks today")+'</small></span><strong>Open ›</strong></button>';
- return '<section class="life-map-page">'+
- '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
- '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 300" role="group" aria-label="A cheerful illustrated avatar with clickable life areas">'+
- '<defs><clipPath id="lmMindClip"><path d="M82 44 Q87 25 110 24 Q133 25 138 44 L139 68 Q138 93 110 97 Q82 93 81 68Z"/></clipPath><clipPath id="lmSpiritClip"><path d="M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 62 Q130 39 110 39 Q91 39 73 62Z"/></clipPath><clipPath id="lmTorsoClip"><path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z"/></clipPath><clipPath id="lmLeftClip"><path d="M81 114 Q66 120 60 143 L53 177 Q54 185 61 187 L76 151 L92 137Z"/></clipPath><clipPath id="lmRightClip"><path d="M139 114 Q154 120 160 143 L167 177 Q166 185 159 187 L144 151 L128 137Z"/></clipPath><clipPath id="lmLegClip"><path d="M82 179 Q110 190 138 179 L134 218 L86 218Z M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z"/></clipPath></defs>'+
- '<path d="M72 62 Q65 30 89 18 Q111 6 136 20 Q157 31 151 65 Q159 81 149 95 Q151 111 136 112 L130 70 Q115 57 90 66 L85 108 Q70 115 66 102 Q60 90 69 78Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M82 58 Q82 34 101 27 Q121 21 137 37 Q142 43 143 54 Q130 42 119 41 Q105 42 96 48 Q89 53 82 66Z" fill="#7b5148" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
- '<path d="M88 37 Q99 23 114 24 M130 34 Q139 43 140 53 M76 74 Q75 90 74 101 M143 72 Q142 88 140 99" fill="none" stroke="#a36b5d" stroke-width="2" stroke-linecap="round" opacity=".8"/>'+
- '<ellipse cx="110" cy="62" rx="34" ry="34" fill="#ffe6dc" stroke="#896879" stroke-width="2.3"/>'+
- '<path d="M76 53 Q73 31 96 22 Q121 13 139 31 Q149 41 145 56 Q136 51 127 35 Q115 47 97 47 Q84 48 76 59Z" fill="#654746" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
- '<path d="M94 53 Q99 50 104 52 M117 52 Q122 50 127 53" fill="none" stroke="#795650" stroke-width="1.6" stroke-linecap="round"/>'+
- '<ellipse cx="99" cy="63" rx="5" ry="6.6" fill="#513c43"/><ellipse cx="122" cy="63" rx="5" ry="6.6" fill="#513c43"/><circle cx="97.5" cy="60.5" r="2" fill="#fff"/><circle cx="120.5" cy="60.5" r="2" fill="#fff"/><circle cx="101" cy="65.5" r=".9" fill="#f9d4dc"/><circle cx="124" cy="65.5" r=".9" fill="#f9d4dc"/>'+
- '<path d="M95 58L93 56M126 58L128 56" stroke="#513c43" stroke-width="1.8" stroke-linecap="round"/>'+
- '<ellipse cx="87" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/><ellipse cx="134" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/>'+
- '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M104 78 Q110 84 116 78" fill="none" stroke="#ac657a" stroke-width="2.2" stroke-linecap="round"/>'+
- '<path d="M99 91 L99 110 L121 110 L121 91Z" fill="#f7dfd4" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.6" stroke-linejoin="round"/>'+
- '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="var(--lm-outfit-sleeve,var(--lm-outfit-main,#d7c6ee))" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="var(--lm-outfit-sleeve,var(--lm-outfit-main,#d7c6ee))" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="var(--lm-outfit-accent,#c5d9ef)" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="var(--lm-outfit-shoe,#f7b9cd)" stroke="#896879" stroke-width="2.2" stroke-linejoin="round"/>'+
- '<g opacity=".3" clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
- '<g opacity=".45" clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
- '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
- '<g clip-path="url(#lmLeftClip)"><rect x="52" y="'+(188-45*pctFor("people")/100)+'" width="42" height="'+(45*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="126" y="'+(188-45*pctFor("hobbies")/100)+'" width="42" height="'+(45*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
- '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
- avatarGarmentDetails+
- '<path d="M96 112 Q110 124 124 112 M103 113 L110 119 L117 113" fill="none" stroke="#755170" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+
- '<path d="M123 144 Q130 140 134 146 L134 161 Q128 158 123 161Z" fill="#f7e7fb" stroke="#755170" stroke-width="1.8" stroke-linejoin="round"/><circle cx="128" cy="151" r="1.3" fill="#b86c9c"/>'+
- '<path d="M110 192L110 212M91 210Q97 213 103 210M117 210Q123 213 130 210" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
- '<path d="M86 196 Q110 201 135 196 M87 285 L105 285 M115 285 L134 285" fill="none" stroke="#76526b" stroke-width="2.4" stroke-linecap="round"/>'+
- '<path d="M90 291 L99 291 M120 291 L130 291 M92 289 L99 294 M124 289 L131 294" fill="none" stroke="#a7748e" stroke-width="1.8" stroke-linecap="round"/>'+
- '<path d="M141 27 Q146 19 151 27 Q157 21 160 28 Q159 36 151 40 Q144 36 141 27Z" fill="var(--lm-outfit-accessory,#f5c2da)" stroke="#79516c" stroke-width="1.5"/><circle cx="151" cy="30" r="2" fill="#fff8de"/>'+
- '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+
- avatarHotspot("mind","Mind & self-care","M83 43 Q81 55 81 68 Q82 93 110 97 Q138 93 139 68 L138 44 Q125 37 110 39 Q96 40 83 43Z")+
- avatarHotspot("spirituality","Spirituality","M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 76 Q140 48 125 40 Q104 34 87 43 Q84 53 78 78Z")+
- avatarHotspot("body","Body, health & safety","M87 110 Q110 101 133 110 L138 179 Q110 187 82 179Z")+
- avatarHotspot("people","Relationships","M81 112 Q66 120 60 143 L53 177 Q54 186 62 188 L78 146 L94 135Z")+
- avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
- avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
- '</g>'+avatarMarks+'</svg>'+
+ const activeRoomPanel=selectedRoomData?'<section class="lm-inline-panel lm-inline-room" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(selectedRoomData.name)+' · room tasks</b><button type="button" class="lm-text-button" onclick="lifeMapCloseRoomInline()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+h(selectedRoomData.insights.last)+'</p><p>'+h(selectedRoomData.insights.declutter)+'</p>'+(selectedRoomData.tasks.length? '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="An illustrated avatar of Michelle with clickable life areas">'+
+ '<defs>'+ '<clipPath id="lmTorsoClip"><path d="M75 130 Q91 119 110 122 Q129 119 145 130 L151 255 Q110 270 69 255Z"/></clipPath>'+ '<clipPath id="lmLeftClip"><path d="M77 128 Q60 132 55 153 L32 246 Q29 259 43 265 L68 198 L91 166Z"/></clipPath>'+ '<clipPath id="lmRightClip"><path d="M143 128 Q160 132 165 153 L188 246 Q191 259 177 265 L152 198 L129 166Z"/></clipPath>'+ '<clipPath id="lmLegClip"><path d="M69 251 Q110 268 151 251 L145 303 L137 454 L116 465 L110 300 L103 465 L82 454 L75 303Z"/></clipPath>'+ '<clipPath id="lmJacketClip"><path clip-rule="evenodd" d="M67 130 Q78 119 98 122 L110 139 L122 122 Q142 119 153 130 L163 174 L148 194 L147 253 Q110 268 73 253 L72 194 L57 174Z M96 143 L124 143 L124 247 L96 247Z"/></clipPath>'+ '<clipPath id="lmShoeClip"><path d="M77 449 L108 449 L108 482 Q97 498 54 490 Q50 483 59 475Z M112 449 L143 449 L160 475 Q171 484 160 491 Q119 499 112 482Z"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-equestria-avatar.png" x="0" y="0" width="220" height="510" preserveAspectRatio="xMidYMid slice" pointer-events="none" aria-hidden="true"/>'+ (avatarLook?'<g clip-path="url(#lmJacketClip)" opacity=".38"><rect x="35" y="115" width="150" height="155" fill="var(--lm-outfit-main,#d7c6ee)"/></g><g clip-path="url(#lmLegClip)" opacity=".45"><rect x="55" y="245" width="110" height="225" fill="var(--lm-outfit-accent,#c5d9ef)"/></g><g clip-path="url(#lmShoeClip)" opacity=".42"><rect x="48" y="448" width="125" height="55" fill="var(--lm-outfit-shoe,#f7b9cd)"/></g>':'')+ '<g opacity=".24" clip-path="url(#lmTorsoClip)"><rect x="62" y="'+(270-148*pctFor("body")/100)+'" width="96" height="148" fill="#f2ae85"/></g>'+ '<g opacity=".23" clip-path="url(#lmLeftClip)"><rect x="28" y="'+(265-132*pctFor("people")/100)+'" width="68" height="132" fill="#e98cb0"/></g><g opacity=".23" clip-path="url(#lmRightClip)"><rect x="124" y="'+(265-132*pctFor("hobbies")/100)+'" width="68" height="132" fill="#82c6a4"/></g>'+ '<g opacity=".25" clip-path="url(#lmLegClip)"><rect x="55" y="'+(465-210*pctFor("money")/100)+'" width="110" height="210" fill="#83b8df"/></g>'+ avatarGarmentDetails+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 48 Q71 6 111 7 Q151 6 165 48 L161 107 Q151 126 110 128 Q69 126 59 107Z")+ avatarHotspot("spirituality","Spirituality","M48 103 Q34 50 72 17 Q110 -10 148 17 Q186 50 172 103 Q153 74 127 55 Q106 43 84 59 Q64 75 48 103Z")+ avatarHotspot("body","Body, health & safety","M70 125 Q90 116 110 122 Q130 116 150 125 L158 256 Q110 273 62 256Z")+ avatarHotspot("people","Relationships","M77 127 Q57 128 52 157 L29 247 Q27 261 43 267 L70 198 L91 165Z")+ avatarHotspot("hobbies","Hobbies & projects","M143 127 Q163 128 168 157 L191 247 Q193 261 177 267 L150 198 L129 165Z")+ avatarHotspot("money","Money & planning","M65 250 Q110 269 155 250 L148 307 L139 455 L116 466 L110 299 L103 466 L80 455 L72 307Z")+ '</g>'+avatarMarks+'</svg>'+
  '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  taskSummary+'<section class="lm-lower-grid">'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><p class="lm-room-tip">Tap a room to see its tasks, inventory, photos, and separate decluttering progress.</p>'+activeRoomPanel+'</section></section>'+

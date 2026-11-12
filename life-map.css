@@ -25,7 +25,7 @@
 .lm-trackers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:16px}.lm-tracker-title{grid-column:1/-1}.lm-tracker-title h2{font-size:1.15rem}
 .lm-trackers>button{display:grid;justify-items:start;gap:3px;min-width:0;padding:12px;border:1px solid #ebdfeb;border-radius:15px;background:#fff;color:#514258;text-align:left;cursor:pointer}.lm-trackers>button>span{font-size:1.25rem}.lm-trackers>button b{font-size:.86rem}.lm-trackers>button small{color:#807287;font-size:.72rem}
 .lm-disclaimer{margin:0 3px;color:#807588;font-size:.73rem;line-height:1.45}
-@media(max-width:760px){.lm-welcome{align-items:flex-start}.lm-scene-grid{grid-template-columns:1fr}.lm-avatar{width:min(65vw,185px)}.lm-lower-grid{grid-template-columns:1fr}.lm-trackers{grid-template-columns:repeat(2,minmax(0,1fr))}.lm-tracker-title{grid-column:1/-1}.lm-today-progress{min-width:106px}}
+@media(max-width:760px){.lm-welcome{align-items:flex-start}.lm-scene-grid{grid-template-columns:1fr}.lm-avatar{width:min(70vw,220px)}.lm-lower-grid{grid-template-columns:1fr}.lm-trackers{grid-template-columns:repeat(2,minmax(0,1fr))}.lm-tracker-title{grid-column:1/-1}.lm-today-progress{min-width:106px}}
 @media(prefers-reduced-motion:reduce){.lm-today-progress em,.lm-region-fill i{transition:none}}
 
 .hvm-room-insights{display:grid;gap:5px;margin:14px 0;padding:12px 14px;border:1px solid #e8d8e5;border-radius:15px;background:linear-gradient(120deg,#fff8fb,#f5f2fc);color:#57485b}.hvm-room-insights b{color:#72506f}.hvm-room-insights small{color:#786d7a;font-size:.8rem;line-height:1.4}
@@ -37,7 +37,7 @@
 .lm-scene-card{border:2px solid transparent;background:linear-gradient(#fffdfc,#fff8fb) padding-box,linear-gradient(100deg,#e95770,#f3aa48,#ead84d,#62b979,#4d9fda,#8871c8,#d95ca1) border-box}
 .lm-avatar-wrap{background:linear-gradient(145deg,#fff 0%,#fff4f8 32%,#f5f2ff 65%,#effaf2 100%)}
 .lm-avatar-stage{position:relative;display:grid;place-items:center;width:min(100%,260px);margin:0 auto}
-.lm-avatar{width:min(100%,220px)}
+.lm-avatar{width:min(100%,260px)}
 .lm-avatar-mark{cursor:pointer;outline:none}
 .lm-avatar-mark:hover circle:first-child,.lm-avatar-mark:focus circle:first-child{stroke-width:4}
 .lm-avatar-zones-heading{display:grid;gap:2px;margin:0 0 2px;padding:4px 2px 7px;color:#5a4661}
@@ -83,4 +83,4 @@
 /* Keep the Life Map focused on its clickable avatar. */
 .lm-scene-grid.lm-avatar-only{grid-template-columns:minmax(0,1fr);justify-items:center}
 .lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:100%;max-width:430px}
-.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,240px)}
+.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,260px)}
