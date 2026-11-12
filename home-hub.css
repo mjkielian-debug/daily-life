@@ -135,3 +135,5 @@
  #app:has(.life-map-page) .life-map-page{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}
  #app:has(.life-map-page) .lm-avatar-caption{font-size:.6rem}
 }
+
+#app:has(.life-map-page) .life-sim-hud{display:none!important}
