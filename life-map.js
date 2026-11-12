@@ -34,24 +34,53 @@ function avatarMark(label,icon,x,y,pct,color,area){
  '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></g>';
 }
+function lifeMapAreaForTask(task){
+ const title=String(task&&task.title||"").toLowerCase();
+ const category=String(task&&task.category||"").toLowerCase();
+ const text=title+" "+category;
+ const child=String(task&&task.child||"").trim();
+ if(/homework|backpack|school|pediatric|consent|kids?|children|family|relationship|read with|time with|spend time|play with|connect with|hang out with|check.?in with|date night/i.test(text))return "people";
+ if(child&&/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text))return "people";
+ if(/wells\s*fargo|money|budget|bill|bank|account|finance|rent|electric|paycheck|credit card|loan|savings/i.test(text))return "money";
+ if(category==="car"||/\bcar\b|vehicle|volvo|\bkeys?\b|lock|tire|fuel|oil|driving|driver/i.test(text))return "car";
+ if(task&&task.homeMapFloor||/robot vacuum|litter|household|\bhome\b|\bhouse\b|\broom\b|kitchen|bathroom|laundry|\bdishes?\b|trash|declutter|organize|\bclean\b/i.test(text))return "home";
+ if(category==="work"||/\bwork\b|ups|shift|route|preload|delivery|deliver|clock.?in/i.test(text))return "work";
+ if(/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text)||category==="body"||category==="health")return child?"people":"body";
+ if(/mind|mental|journal|therapy|rest|breath|quiet/i.test(text)||category==="mind"||category==="self-care")return "mind";
+ if(/spiritual|tarot|ritual|meditat|affirmation/i.test(text)||category==="spirituality")return "spirituality";
+ if(/hobby|craft|garden|plant care|project|yoga/i.test(text)||category==="hobbies")return "hobbies";
+ if(category==="people"||category==="family"||category==="kids"||child)return "people";
+ return "";
+}
 function lifeMapUniqueTasks(rows){
  const output=[],groups=new Map();
  for(const task of list(rows)){
+  const id=String(task&&task.id||"");
   const title=String(task&&task.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  if(title!=="prevent volvo locking keys inside during package deliveries"){output.push(task);continue}
-  const groupKey=String(task&&task.date||"")+"|"+title;
+  const date=String(task&&task.date||"");
+  if(!id||!title||!/^\d{4}-\d{2}-\d{2}$/.test(date)){output.push(task);continue}
+  const child=String(task&&task.child||"").trim().toLowerCase();
+  const area=lifeMapAreaForTask(task);
+  const slot=["time","startTime","dueTime","occurrence","slot","repeatSlot"].map(k=>String(task&&task[k]||"").trim().toLowerCase()).join("|");
+  const groupKey=[date,title,child,area,slot].join("|");
   if(!groups.has(groupKey)){groups.set(groupKey,{index:output.length,items:[]});output.push(null)}
   groups.get(groupKey).items.push(task);
  }
  for(const group of groups.values()){
-  const winner=group.items.slice().sort((a,b)=>
-   Number(!!b.done)-Number(!!a.done) ||
-   Number(String(b.category||"").toLowerCase()==="car")-Number(String(a.category||"").toLowerCase()==="car")
-  )[0];
-  output[group.index]=Object.assign({},winner,{category:"car"});
+  const winner=group.items.slice().sort((a,b)=>Number(!!b.done)-Number(!!a.done))[0];
+  output[group.index]=Object.assign({},winner,{
+   done:group.items.some(t=>!!t.done),
+   completedAt:group.items.find(t=>t&&t.done&&t.completedAt)?.completedAt||winner.completedAt||"",
+   _lifeMapDuplicateIds:group.items.map(t=>String(t.id)).filter(Boolean)
+  });
  }
  return output.filter(Boolean);
 }
+window.lifeMapToggleTaskGroup=async function(encodedIds,done){
+ let ids=[];
+ try{ids=JSON.parse(decodeURIComponent(String(encodedIds||"")))}catch(_){return}
+ for(const id of Array.isArray(ids)?ids:[])await toggleTask(id,!!done);
+};
 function avatarHotspot(area,label,path){
  return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" data-life-area="${h(area)}"/>`;
 }
@@ -82,22 +111,8 @@ function view(areaOverride,tasksOnly){
  const careDone=careHabits.reduce((n,x)=>n+progressDates.filter(d=>typeof selfCareDone==="function"&&selfCareDone(x.key,d)).length,0);
  const carePct=careTotal?Math.round(careDone/careTotal*100):0;
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
- const terms={
-  mind:/mind|mental|journal|therapy|rest|breath|quiet|meditat/i,
-  body:/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|pediatric|medical|stretch|workout|exercise|sleep|skin/i,
-  people:/school|backpack|consent|relationship|family|together|read with|time with|spend time|play with|connect with|hang out with|check.?in with|date night/i,
-  home:/robot vacuum|litter|home|house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean/i,
-  spirituality:/spiritual|tarot|ritual|meditat|affirmation/i,
-  hobbies:/hobby|craft|garden|plant care|project|yoga/i,
-  money:/money|budget|bill|bank|account|paycheck|finance|rent|electric/i,
-  car:/car|vehicle|volvo|key|keys|lock|tire|fuel|oil|driving|driver|package/i,
-  work:/work|ups|shift|route|preload|paycheck|delivery|deliver|clock.?in/i
- };
- const matches=Object.fromEntries(Object.entries(terms).map(([key,re])=>[key,progressTasks.filter(t=>{
-  const category=String(t.category||"").toLowerCase();
-  if(category==="car"||category==="work")return category===key;
-  return re.test(String(t.title||"")+" "+category+" "+String(t.child||""));
- })]));
+ const areaKeys=["mind","body","people","home","spirituality","hobbies","money","car","work"];
+ const matches=Object.fromEntries(areaKeys.map(key=>[key,progressTasks.filter(t=>lifeMapAreaForTask(t)===key)]));
  matches.home=progressDates.flatMap(d=>window.lifeMapHouseholdRows(d));
  const evidenceRows=(dates,label,category)=>dates.map(date=>({date,title:label,category,done:true,_lifeMapEvidence:true}));
  const datesFrom=rows=>Array.from(new Set(list(rows).map(x=>String(x?.date||x?.startDate||"").slice(0,10)).filter(date=>progressDates.includes(date))));
@@ -125,21 +140,21 @@ function view(areaOverride,tasksOnly){
   avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind"),
   avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality"),
   avatarMark("Body & health","♡",111,205,pctFor("body"),"#f2ae85","body"),
-  avatarMark("Relationships","♥",43,274,pctFor("people"),"#e98cb0","people"),
+  avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people"),
   avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies"),
   avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money"),
   avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car"),
   avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work")
  ].join("");
- const taskRow=t=>'<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+(t._lifeChore?"toggleChore":"toggleTask")+'(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b>'+(t.child?'<small>'+h(t.child)+'</small>':"")+'</span></label>';
+ const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
+ const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask";return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small></span></label>'};
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
- const areaTitles={home:"Home & household",mind:"Mind & self-care",body:"Body & health",people:"Relationships",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
+ const areaTitles={home:"Home & household",mind:"Mind & self-care",body:"Body & health",people:"Family & kids",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
  const areaSelection=areaOverride||activeArea;
- const areaText=t=>String(t.title||"")+" "+String(t.category||"")+" "+String(t.child||"");
- const areaHistory=areaSelection&&terms[areaSelection]?lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>{const category=String(t.category||"").toLowerCase();return t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&((category==="car"||category==="work")?category===areaSelection:terms[areaSelection].test(areaText(t)))}).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
+ const areaHistory=areaKeys.includes(areaSelection)?lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&lifeMapAreaForTask(t)===areaSelection).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
  const careHistory=areaSelection==="mind"?list(state&&state.selfCare).filter(x=>x.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||""))&&careHabits.some(habit=>habit.key===x.key)).map(x=>({date:String(x.date),title:careHabits.find(habit=>habit.key===x.key)?.label||"Self-care"})):[];
  const lastAreaDone=[...areaHistory,...careHistory].sort((a,b)=>b.date.localeCompare(a.date))[0];
- const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).map(taskRow).join("")):"";
+ const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).filter(t=>!t._lifeMapEvidence).map(taskRow).join("")):"";
  const moneyGoalPanel=areaSelection==="money"?'<div class="lm-money-goals"><span class="lm-kicker">MONEY GOAL PROGRESS</span><b>'+(moneyGoalTotal?moneyGoalDone+" of "+moneyGoalTotal+" steps · "+moneyGoalPct+"%":"No money-goal steps saved yet")+'</b>'+(moneyGoalRows||'<p class="lm-muted">Add a goal and steps to start tracking progress.</p>')+'<button type="button" class="lm-text-button" onclick="openMoneyHubSection(\'goals\')">Open money goals ›</button></div>':"";
  const activeAreaPanel=areaSelection?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[areaSelection]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching entries are in the selected period.</p>')+moneyGoalPanel+'</section>':"";
  if(tasksOnly&&areaSelection==="all"){
