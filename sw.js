@@ -42,6 +42,8 @@ const APP_SHELL=[
   "./dolly-room-model.css",
   "./dolly-room-model.js",
   "./photo-inbox.css",
+  "./avatar-wardrobe.js",
+  "./avatar-wardrobe.css",
   "./paper-studio.css",
   "./practice-proof.js",
   "./life-insights.js",
