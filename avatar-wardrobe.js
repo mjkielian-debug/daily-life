@@ -95,14 +95,14 @@ if(typeof submit==="function")window.photoInboxSubmit=async function(){
  const select=document.getElementById("piMode");if(select?.value!=="wardrobe")return submit.apply(this,arguments);
  const files=selectedFiles();
  if(!files.length)return submit.apply(this,arguments);
- const title=String(document.getElementById("piTitle")?.value||"").trim(),type=String(document.getElementById("piWardrobeType")?.value||"outfit");
+ const title=String(document.getElementById("piTitle")?.value||"").trim(),type=String(document.getElementById("piWardrobeType")?.value||"outfit"),outfitLabel=title.replace(/^avatar outfit\s*[·—:-]?\s*/i,"").trim();
  const candidates=[];
  for(const file of files){let colors;try{colors=await sampleOutfit(file)}catch(_){colors={primary:"#b78772",accent:"#e6c7a7"}}
-  const base=title&&title!=="Avatar outfit"?title.replace(/^avatar outfit\s*[·:-]?\s*/i,""):String(file.name||"Outfit photo").replace(/\.[^.]+$/,"" );
+  const base=outfitLabel&&outfitLabel!=="Saved look"?outfitLabel:String(file.name||"Outfit photo").replace(/\.[^.]+$/,"" );
   candidates.push({name:(files.length>1?base+" · "+String(file.name||"Look").replace(/\.[^.]+$/," "):base)||"Clothing photo",colors,type,source:{label:"Local color sample · "+new Date().toLocaleDateString(),type}});
  }
  if(select)select.value="inventory";
- const field=document.getElementById("piTitle");if(field)field.value="Avatar outfit · "+(title&&title!=="Avatar outfit"?title:"Saved look");
+ const field=document.getElementById("piTitle");if(field)field.value="Avatar outfit · "+(outfitLabel||"Saved look");
  await submit.apply(this,arguments);
  const status=document.getElementById("photoInboxStatus");
  if(status&&/^✓/.test(status.textContent||"")){
