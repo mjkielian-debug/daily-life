@@ -2,6 +2,8 @@
 (function(){
 "use strict";
 const safeColor=v=>/^#[0-9a-f]{6}$/i.test(String(v||""))?String(v):"#d7c6ee";
+const SSD_VEST_ID="owned-ssd-mesh-vest";
+let vestSaveQueued=false;
 const esc=v=>typeof window.esc==="function"?window.esc(String(v||"")):String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function wardrobe(){
  if(typeof state==="undefined")return null;
@@ -9,43 +11,61 @@ function wardrobe(){
  state.settings.avatarWardrobe=state.settings.avatarWardrobe||{items:[],activeItemId:"",ssdItemId:""};
  const w=state.settings.avatarWardrobe;
  if(!Array.isArray(w.items))w.items=Array.isArray(w.looks)?w.looks.map(x=>({...x,type:x.type||"outfit"})):[];
+ let vest=w.items.find(x=>x&&x.id===SSD_VEST_ID)||w.items.find(x=>isVestLook(x));
+ let changed=false;
+ if(!vest){
+  vest={id:SSD_VEST_ID,name:"Brown mesh SSD vest",type:"vest",primary:"#79543e",accent:"#f0d34e",analysis:{garment_type:"vest",material_appearance:"brown mesh",style:"reflective workwear",visible_details:["bright yellow and silver reflective bands","front zipper","UPS shield","green hoodie underneath","pink shirt hem","black pants"],summary:"Brown mesh SSD vest over a green hoodie, with a pink shirt peeking below and black pants"},schedule:{ssd:true,daypart:"any",season:"any"},source:"Owned UPS workwear · added to digital wardrobe",isWorkUniform:true};
+  w.items.push(vest);changed=true;
+ }
+ if(w.ssdItemId!==vest.id){w.ssdItemId=vest.id;changed=true}
+ if(changed&&!vestSaveQueued){
+  vestSaveQueued=true;
+  const persist=()=>{vestSaveQueued=false;try{if(typeof window.save==="function"){const saved=window.save();if(saved&&typeof saved.catch==="function")saved.catch(()=>{})}}catch(_){}};
+  if(typeof queueMicrotask==="function")queueMicrotask(persist);else setTimeout(persist,0);
+ }
  return w;
 }
-function isSsdDay(){
- const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),s=typeof state==="undefined"?{}:state;
- const words=/\bssd\b|seasonal support driver|seasonal helper|delivery route|helper vest/i;
- return (s.workShifts||[]).some(x=>x&&x.date===date&&(Number(x.ssdHours)>0||Number(x.ssdMiles)>0||words.test(String(x.notes||"")+" "+String(x.payCode||""))))||
-  (s.tasks||[]).some(x=>x&&x.date===date&&words.test(String(x.title||"")+" "+String(x.notes||"")))||
-  (s.events||[]).some(x=>x&&String(x.date||x.startDate||"").slice(0,10)===date&&words.test(String(x.title||"")+" "+String(x.notes||"")));
+function clockMinutes(value){
+ const m=String(value||"").trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);if(!m)return null;
+ let hour=Number(m[1]),minute=Number(m[2]);if(hour>23||minute>59)return null;
+ if(m[3]){const pm=m[3].toLowerCase()==="pm";hour=hour%12+(pm?12:0)}
+ return hour*60+minute;
 }
-function isWorkUniformDay(){
- const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),s=typeof state==="undefined"?{}:state;
- if(isSsdDay())return true;
- const actual=(s.workShifts||[]).some(x=>x&&x.date===date&&
-  (x.start||x.end||Number(x.officialHours)>0||Number(x.officialGrossPay)>0));
- const scheduled=(s.tasks||[]).some(x=>x&&x.date===date&&
-  (String(x.category||"").toLowerCase()==="work"||/\bUPS\b|preload|seasonal support driver|helper vest|delivery route/i.test(String(x.title||"")+" "+String(x.notes||""))));
- const event=(s.events||[]).some(x=>x&&String(x.date||x.startDate||"").slice(0,10)===date&&
-  /\bUPS\b|preload|seasonal support driver|seasonal helper|delivery route/i.test(String(x.title||"")+" "+String(x.notes||"")));
- return actual||scheduled||event;
+function isSsdActiveNow(){
+ const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes(),s=typeof state==="undefined"?{}:state;
+ return (s.workShifts||[]).some(x=>{
+  if(!x||x.date!==date)return false;
+  const words=/\bssd\b|seasonal support driver|seasonal helper|delivery route|helper vest/i;
+  const hasSsd=!!(x.deliveryStart||x.deliveryEnd)||Number(x.ssdHours)>0||Number(x.ssdMiles)>0||words.test(String(x.notes||"")+" "+String(x.payCode||""));
+  const start=clockMinutes(x.deliveryStart),end=clockMinutes(x.deliveryEnd);
+  return hasSsd&&start!==null&&end!==null&&nowMinutes>=start&&nowMinutes<=end;
+ });
+}
+function isVestLook(item){
+ const type=String(item?.type||"").toLowerCase(),garment=String(item?.analysis?.garment_type||"").toLowerCase();
+ return type==="vest"||/\bvest\b/.test(garment)||!!item?.isWorkUniform||!!item?.schedule?.ssd;
 }
 function currentDaypart(){const h=new Date().getHours();return h>=4&&h<12?"morning":h>=12&&h<17?"afternoon":"evening"}
 function currentSeason(){const m=new Date().getMonth()+1;return m===12||m<=2?"winter":m<=5?"spring":m<=8?"summer":"fall"}
 function hasSchedule(s){return !!s&&(s.ssd||s.daypart&&s.daypart!=="any"||s.season&&s.season!=="any")}
-function scheduleMatches(item){const s=item?.schedule||{};return (!s.ssd||isSsdDay())&&(!s.daypart||s.daypart==="any"||s.daypart===currentDaypart())&&(!s.season||s.season==="any"||s.season===currentSeason())}
+function scheduleMatches(item){const s=item?.schedule||{};return (!s.ssd||isSsdActiveNow())&&(!s.daypart||s.daypart==="any"||s.daypart===currentDaypart())&&(!s.season||s.season==="any"||s.season===currentSeason())}
 function active(){
  const w=wardrobe();if(!w)return null;
- const manual=w.manualOverrideDate===(typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10))&&w.manualOverrideDaypart===currentDaypart()?w.items.find(x=>x.id===w.activeItemId):null;
- const ssdLook=isSsdDay()&&w.ssdItemId?w.items.find(x=>x.id===w.ssdItemId):null;
- const automaticWorkLook=isWorkUniformDay()&&!ssdLook?{
+ const ssdActive=isSsdActiveNow();
+ const selectedManual=w.manualOverrideDate===(typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10))&&w.manualOverrideDaypart===currentDaypart()?w.items.find(x=>x.id===w.activeItemId):null;
+ const manual=selectedManual;
+ const ssdLook=ssdActive&&w.ssdItemId?w.items.find(x=>x.id===w.ssdItemId):null;
+ const automaticWorkLook=ssdActive&&!ssdLook?{
   id:"automatic-work-mesh-vest",name:"Brown mesh work vest",type:"vest",
   primary:"#79543e",accent:"#d7df69",analysis:{garment_type:"vest",material_appearance:"mesh",summary:"Brown mesh delivery vest with high-visibility reflective bands"},
-  schedule:{ssd:isSsdDay()},isWorkUniform:true
+  schedule:{ssd:isSsdActiveNow()},isWorkUniform:true
  }:null;
- const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x));
- const look=ssdLook||automaticWorkLook||manual||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
- const manualActive=!!manual&&look===manual;
- return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:manualActive,isScheduled:!manualActive&&(!!look.isWorkUniform||(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))),isWorkUniform:!!look.isWorkUniform}:null;
+ const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x)&&(ssdActive||!isVestLook(x)));
+ const saved=w.items.find(x=>x.id===w.activeItemId),fallback=saved&&(ssdActive||!isVestLook(saved))?saved:null;
+ const latest=[...w.items].reverse().find(x=>ssdActive||!isVestLook(x));
+ const look=ssdLook||automaticWorkLook||manual||scheduled||fallback||latest;
+ const manualActive=!!manual&&look===manual&&!ssdActive;
+ return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:manualActive,isScheduled:!manualActive&&(!!look.isWorkUniform||(isSsdActiveNow()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))),isWorkUniform:!!look.isWorkUniform}:null;
 }
 window.avatarWardrobeGetActive=active;
 function analysisDescription(value){
@@ -57,17 +77,20 @@ function paintAvatar(){
  const svg=document.querySelector(".lm-avatar"),look=active();if(!svg||!look)return;
  const top=!['bottom','shoes','accessory'].includes(look.type)?look.primary:"#d7c6ee";
  const bottom=look.type==="bottom"?look.primary:look.type==="outfit"?look.accent:"#c5d9ef";
- svg.style.setProperty("--lm-outfit-main",top);svg.style.setProperty("--lm-outfit-accent",bottom);
+ svg.style.setProperty("--lm-outfit-main",top);svg.style.setProperty("--lm-outfit-vest",look.primary);svg.style.setProperty("--lm-outfit-accent",bottom);
  svg.style.setProperty("--lm-outfit-shoe",look.type==="shoes"?look.primary:"#f7b9cd");
  svg.style.setProperty("--lm-outfit-accessory",look.type==="accessory"?look.primary:"#f5c2da");
  const card=document.querySelector(".lm-wardrobe-card");if(card&&typeof window.avatarWardrobePanelHtml==="function")card.outerHTML=window.avatarWardrobePanelHtml();
 }
-let lastSchedulePaint="";
+let lastSchedulePaint="",lastScheduleLookId="";
 function refreshScheduledAvatar(){
  if(!document.querySelector(".lm-avatar"))return;
  const look=active(),signature=[look?.id||"",!!look?.isManual,!!look?.isScheduled,currentDaypart(),currentSeason(),typeof ymd==="function"?ymd():""].join("|");
  if(signature===lastSchedulePaint)return;
- lastSchedulePaint=signature;paintAvatar();
+ lastSchedulePaint=signature;
+ const nextId=look?.id||"",changed=lastScheduleLookId&&lastScheduleLookId!==nextId;lastScheduleLookId=nextId;
+ if(changed&&typeof window.render==="function"){window.render();return}
+ paintAvatar();
 }
 setInterval(refreshScheduledAvatar,30000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshScheduledAvatar()});
@@ -75,16 +98,33 @@ window.addEventListener("focus",refreshScheduledAvatar);
 function scheduleLabel(s){if(!hasSchedule(s))return"Any time";return [s.ssd?"SSD route":"",s.daypart&&s.daypart!=="any"?s.daypart:"",s.season&&s.season!=="any"?s.season:""].filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(" · ")}
 window.avatarWardrobePanelHtml=function(){
  const w=wardrobe();if(!w)return "";
- const selected=active(),looks=w.items.slice(-6).reverse();
- const rows=looks.map(x=>'<div class="lm-wardrobe-look"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><button type="button" class="lm-mini-button" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">Wear</button><button type="button" class="lm-mini-button" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">SSD</button></div>').join("");
- return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isManual?"Wearing your selection for this part of the day.":selected?.isWorkUniform?"Auto-selected for today’s UPS or SSD shift.":selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
- '<p class="lm-wardrobe-private">'+(w.aiConnected?'Free Google photo analysis is connected. Wardrobe photos are sent to Google for garment style details; the app uses no paid model.':'Connect free photo analysis for garment style, cut, and visible details. Its image model is free tier and may use submitted content to improve Google products.')+' The original stays in your private Photo Inbox.</p>'+
+ const selected=active(),looks=w.items.slice().reverse();
+ const rows=looks.map(x=>{
+  const wearing=selected?.id===x.id,wearText=wearing?(selected.isScheduled?"On for SSD":"On avatar · tap to take off"):"Tap to wear";
+  return '<div class="lm-wardrobe-item-row"><button type="button" class="lm-wardrobe-look" aria-pressed="'+(wearing?"true":"false")+'" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><span class="lm-wardrobe-action">'+wearText+'</span></button><button type="button" class="lm-mini-button" aria-label="Use '+esc(x.name||"item")+' for SSD" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">'+(w.ssdItemId===x.id?"SSD ✓":"SSD")+'</button></div>';
+ }).join("");
+ const status=selected?(selected.isManual?"Wearing your selection. Tap its wardrobe card again to take it off.":selected.isWorkUniform?"Vest is automatic only during the saved SSD route hours.":selected.isScheduled?"This look is scheduled for "+esc(scheduleLabel(selected.schedule))+".":"On avatar."):"No wardrobe item selected.";
+ return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):w.items.length?"Choose an item to wear":"Start your digital closet")+'</b><small>'+status+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
+ '<p class="lm-wardrobe-private">'+(w.aiConnected?'Google photo analysis is connected. It analyzes the clothing photo; the app makes a free simplified cartoon outfit on your avatar, not a separate generated image.':'Connect free photo analysis to identify garment details. The app draws a simplified cartoon outfit locally on your avatar; no paid image generation is used.')+' Selected photos are sent to Google for analysis. The original stays in your private Photo Inbox.</p>'+
  (!w.aiConnected?'<button type="button" class="lm-mini-button lm-connect-ai" onclick="avatarWardrobeConnect()">Connect free photo analysis</button>':'')+
- (w.ssdItemId?'<div class="lm-wardrobe-rule">SSD schedule · '+esc((w.items.find(x=>x.id===w.ssdItemId)||{}).name||"saved outfit")+' <button type="button" class="lm-mini-button" onclick="avatarWardrobeClearSSD()">Clear</button></div>':'<div class="lm-wardrobe-rule">Save a vest or outfit, then tap <b>SSD</b> to use it when an SSD route is on today’s plan.</div>')+
- (rows?'<div class="lm-wardrobe-list">'+rows+'</div>':'<div class="lm-wardrobe-empty">Upload clothing pieces or a complete outfit. I’ll sample its main colors locally and draw a matching look on your cartoon avatar. Your face, hair, and body stay as they are.</div>')+'</section>';
+ (w.ssdItemId?'<div class="lm-wardrobe-rule">Auto-wears during saved SSD route hours · '+esc((w.items.find(x=>x.id===w.ssdItemId)||{}).name||"saved vest")+'</div>':'')+
+ (rows?'<div class="lm-wardrobe-list">'+rows+'</div>':'<div class="lm-wardrobe-empty">Add a clothing photo to analyze it and save a simplified avatar look. Your base avatar, face, hair, and body stay unchanged.</div>')+'</section>';
 };
 function update(){if(typeof window.save==="function")window.save();if(typeof window.render==="function")window.render()}
-window.avatarWardrobeSetActive=function(id){const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;w.activeItemId=id;w.manualOverrideDate=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);w.manualOverrideDaypart=currentDaypart();update()};
+window.avatarWardrobeSetActive=function(id){
+ const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;
+ const today=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),part=currentDaypart();
+ const sameManual=w.manualOverrideDate===today&&w.manualOverrideDaypart===part&&w.activeItemId===id;
+ if(sameManual){
+  w.activeItemId=w.manualReturnItemId||"";
+  w.manualReturnItemId="";
+  w.manualOverrideDate="";w.manualOverrideDaypart="";
+ }else{
+  if(!(w.manualOverrideDate===today&&w.manualOverrideDaypart===part))w.manualReturnItemId=w.activeItemId===id?"":String(w.activeItemId||"");
+  w.activeItemId=id;w.manualOverrideDate=today;w.manualOverrideDaypart=part;
+ }
+ update();
+};
 window.avatarWardrobeAssignSSD=function(id){const w=wardrobe();if(!w||!w.items.some(x=>x.id===id))return;w.ssdItemId=id;update()};
 window.avatarWardrobeClearSSD=function(){const w=wardrobe();if(!w)return;w.ssdItemId="";update()};
 window.openAvatarWardrobeInbox=function(){if(typeof window.openPhotoInbox==="function")window.openPhotoInbox("wardrobe")};
