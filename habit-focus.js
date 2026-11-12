@@ -276,24 +276,26 @@
       await save();closeModal();render()
     })
   }
-  async function logHabit(id,status){
+  async function logHabit(id,status,options){
     if(!STATUS[status])return;
     var s=appState();if(!s)return;
     var date=today(),entry=s.habitLogs.find(function(x){return x&&String(x.habitId)===String(id)&&x.localDate===date}),oldStatus=entry?.status||"";
     if(entry){entry.status=status;entry.updatedAt=new Date().toISOString()}
     else {entry={id:(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():"habit-log-"+Date.now(),habitId:id,localDate:date,status:status,createdAt:new Date().toISOString()};s.habitLogs.push(entry)}
     try{
-      await save();render();
+      await save();if(!(options&&options.keepCheckinOpen))render();
       if((status==="done"||status==="partial")&&oldStatus!==status&&typeof window.dailyLifeShowCompletionFeedback==="function"){
         var habit=s.habits.find(function(h){return String(h.id)===String(id)}),activeHabits=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
         var practiced=activeHabits.filter(function(h){var log=logOn(h.id,date);return log&&(log.status==="done"||log.status==="partial")}).length;
         if(status==="done"&&activeHabits.length&&practiced===activeHabits.length)window.dailyLifeShowCompletionFeedback("All today’s habits practiced","You showed up for each one. That counts.");
         else window.dailyLifeShowCompletionFeedback(status==="done"?"Habit complete":"Progress logged",status==="done"?(habit?.name||"A small practice"):(habit?.name||"A small practice")+" — the small version counts.");
       }
+      return true;
     }catch(error){
       if(oldStatus){entry.status=oldStatus}else{s.habitLogs=s.habitLogs.filter(function(x){return x!==entry})}
       alert("That habit check-in could not be saved. Please try again.");
-      render();
+      if(!(options&&options.keepCheckinOpen))render();
+      return false;
     }
   }
   async function setReminder(id,enabled){
@@ -401,7 +403,11 @@
       if(!button)return;
       var id=button.dataset.dlcId,status=button.dataset.dlcStatus;
       button.disabled=true;
-      Promise.resolve(logHabit(id,status)).then(function(){renderDailyCheckin()}).catch(function(error){button.disabled=false;console.error("Could not save daily check-in.",error)});
+      Promise.resolve(logHabit(id,status,{keepCheckinOpen:true})).then(function(saved){
+        if(!saved){button.disabled=false;return}
+        renderDailyCheckin();
+        if(!dailyCheckinNode)render();
+      }).catch(function(error){button.disabled=false;console.error("Could not save daily check-in.",error)});
     });
     document.body.appendChild(dailyCheckinNode);
     renderDailyCheckin();
