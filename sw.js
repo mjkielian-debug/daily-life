@@ -49,7 +49,7 @@ const APP_SHELL=[
   "./life-insights.js",
   "./life-map.js",
   "./life-map.css",
-  "./assets/michelle-equestria-avatar.png",
+  "./assets/michelle-equestria-avatar.png?v=20261112-avatar2",
   "./electricity-insights.js",
   "./life-insights.css",
   "./bank-exit-plan.js",
