@@ -99,6 +99,19 @@ function view(areaOverride,tasksOnly){
   return re.test(String(t.title||"")+" "+category+" "+String(t.child||""));
  })]));
  matches.home=progressDates.flatMap(d=>window.lifeMapHouseholdRows(d));
+ const evidenceRows=(dates,label,category)=>dates.map(date=>({date,title:label,category,done:true,_lifeMapEvidence:true}));
+ const datesFrom=rows=>Array.from(new Set(list(rows).map(x=>String(x?.date||x?.startDate||"").slice(0,10)).filter(date=>progressDates.includes(date))));
+ const bodyLogDays=new Set([
+  ...datesFrom(state?.foodLogs),...datesFrom(state?.waterLogs),
+  ...datesFrom(state?.sleepLogs),...datesFrom(state?.wellnessLogs)
+ ]);
+ matches.body=[...(matches.body||[]),...evidenceRows(Array.from(bodyLogDays),"Food, water, sleep or health logged","body-log")];
+ const workedDays=datesFrom(list(state?.workShifts).filter(x=>
+  x&&(x.start||x.end||Number(x.officialHours)>0||Number(x.officialGrossPay)>0||Number(x.ssdHours)>0||Number(x.ssdMiles)>0)
+ ));
+ matches.work=[...(matches.work||[]),...evidenceRows(workedDays,"Work shift recorded","work-log")];
+ const attendedDays=datesFrom(list(state?.events).filter(x=>x&&/^(attended|completed|complete|done)$/i.test(String(x.status||"").trim())));
+ matches.people=[...(matches.people||[]),...evidenceRows(attendedDays,"Family event attended","people-event")];
  const pctFor=key=>{
   const rows=matches[key]||[],habits=key==="mind"?careHabits:[];
   const total=rows.length+(key==="mind"?careTotal:0),done=rows.filter(t=>t.done).length+(key==="mind"?careDone:0);

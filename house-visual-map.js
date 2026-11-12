@@ -114,8 +114,8 @@ function illustratedLayout(f,m){
   {match:s=>/play/.test(s),path:"M35 175H155V405H35Z",cx:95,cy:280},
   {match:s=>/living|lounge/.test(s),path:"M155 190H345V445H155Z",cx:250,cy:310},
   {match:s=>/basement|downstairs|stairsdown|basementstairs/.test(s),path:"M35 405H155V470H35Z",cx:95,cy:438},
-  {match:s=>/stairsup|upstairs|staircase|stairs/.test(s),path:"M155 135H245V190H155Z",cx:200,cy:162}
- ]:[
+  {match:s=>/stairsup|upstairs|staircase|stairs/.test(s),path:"M275 170H330V260H275Z",cx:302,cy:215}
+ ]:f==="Second floor"?[
   {match:s=>/dolly/.test(s),path:"M245 48H345V170H245Z",cx:295,cy:108},
   {match:s=>/demitri|dimitri|tree/.test(s),path:"M245 170H345V300H245Z",cx:295,cy:230},
   {match:s=>/bath/.test(s),path:"M35 48H135V165H35Z",cx:85,cy:105},
@@ -124,7 +124,7 @@ function illustratedLayout(f,m){
   {match:s=>/hall/.test(s),path:"M135 48H245V435H135Z",cx:190,cy:242},
   {match:s=>/third|stairs_to_third|stair.*michelle|stairs$/.test(s),path:"M135 235H175V315H135Z",cx:155,cy:275},
   {match:s=>/first|stairs|landing/.test(s),path:"M165 435H255V475H165Z",cx:210,cy:455}
- ];
+ ]:[];
  const vb=str(m.viewBox||"0 0 380 503").split(/\s+/).map(Number),sx=vb.length===4&&vb[2]>0?vb[2]/380:1,sy=vb.length===4&&vb[3]>0?vb[3]/503:1,
   ox=vb.length===4?vb[0]:0,oy=vb.length===4?vb[1]:0;
  const fit=path=>path.replace(/([MHV])(-?\d+(?:\.\d+)?)(?:\s+(-?\d+(?:\.\d+)?))?/g,(all,cmd,a,b)=>{
@@ -170,14 +170,16 @@ function illustratedLayout(f,m){
  }
  if(f==="Third floor"){
   return {...m,kind:"schematic",viewBox:"0 0 380 503",illustrative:true,
-   zones:zones.map((z,i)=>({...z,path:i===0?"M40 320H155V290H215V460H40Z":"M40 40H340V460H225V280H155V300H40Z",
-    cx:i===0?122:213,cy:i===0?380:170})),
-   layoutNotice:"Room connection illustration: entryway leads into the bedroom. Room shapes, sizes and orientation are not surveyed."};
+   zones:zones.map(z=>{
+    const entry=/entry|stair|landing/i.test(str(z.id)+" "+str(z.name));
+    return {...z,path:entry?"M78 65H302V185H78Z":"M78 300H302V440H78Z",cx:190,cy:entry?125:370};
+   }),
+   layoutNotice:"Schematic connection only: entryway leads to the bedroom. The separate shapes do not show surveyed room size or exact placement."};
  }
  const stairs=zones.filter(z=>/stair|landing/i.test(str(z.name)+" "+str(z.id)));
  return {...m,kind:"schematic",viewBox:"0 0 380 503",illustrative:true,
-  zones:zones.map((z,i)=>okPath(z.path)?z:(stairs.includes(z)?{...z,path:"M135 340H245V455H135Z",cx:190,cy:395}:z)),
-  layoutNotice:"Only the basement stair arrival is confirmed. The dashed space is unmapped; no basement rooms have been invented."};
+  zones:zones.map(z=>okPath(z.path)?z:(stairs.includes(z)?{...z,path:"M110 78H270V195H110Z",cx:190,cy:136}:z)),
+  layoutNotice:"Only the stair arrival is confirmed. The dashed area is unmapped; the stair symbol is diagrammatic and not a measured location."};
 }
 function roomSymbol(z,b){
  if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
@@ -259,7 +261,7 @@ function mapSketch(f,m){
   '<text x="'+(limits[0]+limits[2]*.58)+'" y="'+(doorY+29)+'" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
  return '<div class="hvm-sketch"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
-  backing+(f==='Basement'?'<path d="M40 40H340V320H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="165" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+paths+pins+entry+'</svg>'+
+  backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+
   '<p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
 document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});
