@@ -20,5 +20,6 @@
 .pi-ai-key-label{display:grid;gap:6px;margin:12px 0;color:#493953;font-size:.85rem;font-weight:800}
 .pi-ai-key-label input{width:100%;padding:12px;border:1px solid #bca9c1;border-radius:11px;background:#fff;color:#34273e;font:inherit}
 #avatarWardrobeConnectStatus{font-size:.85rem;color:#533c6b;font-weight:800}
+.pi-form #piStyleUpload{margin-top:7px;border-color:#ddc7e5;background:#f8e8f2;color:#624172;font-weight:850}
 @media(max-width:380px){.lm-wardrobe-head{align-items:flex-start;flex-direction:column}.lm-wardrobe-look{gap:5px}}
 .pi-form #piWardrobeTypeLabel[hidden],.pi-form .pi-wardrobe-tip[hidden]{display:none}
