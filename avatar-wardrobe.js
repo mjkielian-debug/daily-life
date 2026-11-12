@@ -18,11 +18,16 @@ function isSsdDay(){
   (s.tasks||[]).some(x=>x&&x.date===date&&words.test(String(x.title||"")+" "+String(x.notes||"")))||
   (s.events||[]).some(x=>x&&String(x.date||x.startDate||"").slice(0,10)===date&&words.test(String(x.title||"")+" "+String(x.notes||"")));
 }
+function currentDaypart(){const h=new Date().getHours();return h>=4&&h<12?"morning":h>=12&&h<17?"afternoon":"evening"}
+function currentSeason(){const m=new Date().getMonth()+1;return m===12||m<=2?"winter":m<=5?"spring":m<=8?"summer":"fall"}
+function hasSchedule(s){return !!s&&(s.ssd||s.daypart&&s.daypart!=="any"||s.season&&s.season!=="any")}
+function scheduleMatches(item){const s=item?.schedule||{};return (!s.ssd||isSsdDay())&&(!s.daypart||s.daypart==="any"||s.daypart===currentDaypart())&&(!s.season||s.season==="any"||s.season===currentSeason())}
 function active(){
  const w=wardrobe();if(!w)return null;
- const id=isSsdDay()&&w.ssdItemId?w.ssdItemId:w.activeItemId;
- const look=w.items.find(x=>x.id===id)||w.items[w.items.length-1];
- return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,primary:safeColor(look.primary),accent:safeColor(look.accent),isScheduled:isSsdDay()&&w.ssdItemId===look.id}:null;
+ const ssdLook=isSsdDay()&&w.ssdItemId?w.items.find(x=>x.id===w.ssdItemId):null;
+ const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x));
+ const look=ssdLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
+ return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isScheduled:(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))}:null;
 }
 window.avatarWardrobeGetActive=active;
 function analysisDescription(value){
@@ -39,11 +44,12 @@ function paintAvatar(){
  svg.style.setProperty("--lm-outfit-accessory",look.type==="accessory"?look.primary:"#f5c2da");
  const card=document.querySelector(".lm-wardrobe-card");if(card&&typeof window.avatarWardrobePanelHtml==="function")card.outerHTML=window.avatarWardrobePanelHtml();
 }
+function scheduleLabel(s){if(!hasSchedule(s))return"Any time";return [s.ssd?"SSD route":"",s.daypart&&s.daypart!=="any"?s.daypart:"",s.season&&s.season!=="any"?s.season:""].filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(" · ")}
 window.avatarWardrobePanelHtml=function(){
  const w=wardrobe();if(!w)return "";
  const selected=active(),looks=w.items.slice(-6).reverse();
- const rows=looks.map(x=>'<div class="lm-wardrobe-look"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(analysisDescription(x))+'</small></span><button type="button" class="lm-mini-button" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">Wear</button><button type="button" class="lm-mini-button" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">SSD</button></div>').join("");
- return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isScheduled?"Showing your saved SSD outfit today.":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
+ const rows=looks.map(x=>'<div class="lm-wardrobe-look"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><button type="button" class="lm-mini-button" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">Wear</button><button type="button" class="lm-mini-button" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">SSD</button></div>').join("");
+ return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
  '<p class="lm-wardrobe-private">'+(w.aiConnected?'Free Google photo analysis is connected. Wardrobe photos are sent to Google for garment style details; the app uses no paid model.':'Connect free photo analysis for garment style, cut, and visible details. Its image model is free tier and may use submitted content to improve Google products.')+' The original stays in your private Photo Inbox.</p>'+
  (!w.aiConnected?'<button type="button" class="lm-mini-button lm-connect-ai" onclick="avatarWardrobeConnect()">Connect free photo analysis</button>':'')+
  (w.ssdItemId?'<div class="lm-wardrobe-rule">SSD schedule · '+esc((w.items.find(x=>x.id===w.ssdItemId)||{}).name||"saved outfit")+' <button type="button" class="lm-mini-button" onclick="avatarWardrobeClearSSD()">Clear</button></div>':'<div class="lm-wardrobe-rule">Save a vest or outfit, then tap <b>SSD</b> to use it when an SSD route is on today’s plan.</div>')+
@@ -114,10 +120,37 @@ async function analyzeClothing(file){
  if(data?.error)throw Error(data.message||data.error);
  return data?.analysis||null;
 }
-function addLook(name,colors,source,analysis=null){
+function addLook(name,colors,source,analysis=null,schedule={}){
  const w=wardrobe();if(!w)return;
- const id="item-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),look={id,name:String(name||"Clothing photo").slice(0,80),type:source.type||"outfit",primary:safeColor(colors.primary),accent:safeColor(colors.accent),analysis:analysis||null,source:source.label||"Local color sample",createdAt:new Date().toISOString()};
+ const id="item-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),look={id,name:String(name||"Clothing photo").slice(0,80),type:source.type||"outfit",primary:safeColor(colors.primary),accent:safeColor(colors.accent),analysis:analysis||null,schedule:{daypart:schedule.daypart||"any",season:schedule.season||"any",ssd:!!schedule.ssd},source:source.label||"Local color sample",createdAt:new Date().toISOString()};
  w.items.push(look);w.items=w.items.slice(-100);w.activeItemId=id;return look;
+}
+function reviewWardrobeBatch(candidates,status){
+ const cards=candidates.map((x,i)=>{
+  let preview="";try{preview=URL.createObjectURL(x.file)}catch(_){ }
+  x.preview=preview;
+  const a=x.analysis||{},description=a.summary||[a.style,a.silhouette,a.pattern,a.material_appearance,...(a.visible_details||[])].filter(Boolean).join(" · ")||"No style analysis yet. Add a short description if you want.";
+  return '<article class="aw-review-card"><div class="aw-review-photo">'+(preview?'<img src="'+preview+'" alt="Selected clothing photo '+(i+1)+'">':'<span>👗</span>')+'</div><div class="aw-review-fields"><label>Closet label<input id="awName'+i+'" maxlength="80" value="'+esc(x.name)+'"></label><label>Item type<select id="awType'+i+'">'+[["outfit","Complete outfit"],["vest","Work vest / outerwear"],["top","Top"],["bottom","Bottom"],["shoes","Shoes"],["accessory","Accessory"]].map(([v,l])=>'<option value="'+v+'" '+(x.type===v?"selected":"")+'>'+l+'</option>').join("")+'</select></label><label>Style and visible details<textarea id="awDescription'+i+'" rows="2" maxlength="360">'+esc(description)+'</textarea></label><div class="aw-review-colors"><label>Main color<input id="awColor'+i+'" type="color" value="'+safeColor(x.colors.primary)+'"></label><label>Accent color<input id="awAccent'+i+'" type="color" value="'+safeColor(x.colors.accent)+'"></label></div><div class="aw-review-schedule"><label>Wear it<select id="awDaypart'+i+'"><option value="any">Any time</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select></label><label>Season<select id="awSeason'+i+'"><option value="any">Any season</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="fall">Fall</option><option value="winter">Winter</option></select></label><label class="aw-ssd-check"><input id="awSsd'+i+'" type="checkbox"> SSD route</label></div></div></article>';
+ }).join("");
+ let saved=false;
+ modal("Review your wardrobe photos",'<p class="aw-review-intro">Your originals are saved in Photo Inbox. Correct the labels and details, then choose when each item should show on your cartoon avatar.</p><p id="awReviewError" class="aw-review-error" role="alert"></p><div class="aw-review-list">'+cards+'</div>',"Save to wardrobe",async()=>{
+  const button=document.getElementById("saveModal");if(button){button.disabled=true;button.textContent="Saving…"}
+  const closet=wardrobe(),previousItems=closet?.items.slice()||[],previousActive=closet?.activeItemId||"";
+  candidates.forEach((x,i)=>{
+   const description=String(document.getElementById("awDescription"+i)?.value||"").trim();
+   const analysis=x.analysis?{...x.analysis,summary:description}:description?{summary:description}:null;
+   const schedule={daypart:document.getElementById("awDaypart"+i)?.value||"any",season:document.getElementById("awSeason"+i)?.value||"any",ssd:!!document.getElementById("awSsd"+i)?.checked};
+   x.name=String(document.getElementById("awName"+i)?.value||"Clothing photo").trim()||"Clothing photo";
+   x.type=String(document.getElementById("awType"+i)?.value||x.type);
+   x.colors={primary:safeColor(document.getElementById("awColor"+i)?.value),accent:safeColor(document.getElementById("awAccent"+i)?.value)};
+   addLook(x.name,x.colors,{...x.source,type:x.type},analysis,schedule);
+  });
+  try{if(typeof window.save==="function")await window.save()}catch(error){if(closet){closet.items=previousItems;closet.activeItemId=previousActive}const message=document.getElementById("awReviewError");if(message)message.textContent="The closet could not be saved. Please try again. "+String(error?.message||"");if(button){button.disabled=false;button.textContent="Save to wardrobe"}return}
+  saved=true;
+  candidates.forEach(x=>{if(x.preview)URL.revokeObjectURL(x.preview)});
+  closeModal();paintAvatar();
+  if(status)status.textContent="✓ Saved "+candidates.length+" reviewed closet item"+(candidates.length===1?".":"s.")+" Scheduled looks appear on the avatar when their day, season, or SSD rule matches.";
+ });
 }
 function selectedFiles(){
  return [...Array.from(document.getElementById("piCamera")?.files||[]),...Array.from(document.getElementById("piFiles")?.files||[])];
@@ -208,7 +241,7 @@ if(typeof submit==="function")window.photoInboxSubmit=async function(){
   candidates.push({file,name:(files.length>1?base+" · "+String(file.name||"Look").replace(/\.[^.]+$/," "):base)||"Clothing photo",colors,type,source:{label:"Local color sample · "+new Date().toLocaleDateString(),type},analysis:null});
  }
  if(select)select.value="inventory";
- const field=document.getElementById("piTitle");if(field)field.value="Avatar outfit · "+(outfitLabel||"Saved look");
+ const field=document.getElementById("piTitle");if(field)field.value=outfitLabel?"Avatar outfit · "+outfitLabel:"";
  await submit.apply(this,arguments);
  const status=document.getElementById("photoInboxStatus");
  if(status&&/^✓/.test(status.textContent||"")){
@@ -227,10 +260,8 @@ if(typeof submit==="function")window.photoInboxSubmit=async function(){
     }catch(error){analysisError=String(error?.message||error)}
    }
   }
-  candidates.forEach(x=>addLook(x.name,x.colors,x.source,x.analysis));
-  if(typeof window.save==="function")await window.save();
-  paintAvatar();
-  status.textContent=analyzed?"✓ Closet item saved. The free analyzer identified its clothing style and visible details, and Daily Life used the result to build the cartoon look. Use SSD to assign it to SSD days.":analysisError?"✓ Colors-only closet item saved. Style analysis did not finish: "+analysisError:!wardrobe()?.aiConnected?"✓ Colors-only closet item saved. Connect free photo analysis on the Life Map to identify style, cut, pattern, and garment details.":"✓ Closet item saved with its photo colors.";
+  status.textContent=analyzed?"✓ Free style analysis finished. Review the details and schedule before saving to your closet.":analysisError?"✓ Photos are safe in Photo Inbox. Review the color-based entries and add details if you want. Analysis issue: "+analysisError:!wardrobe()?.aiConnected?"✓ Photos are safe in Photo Inbox. Review the color-based entries and add details if you want.":"✓ Photos are safe in Photo Inbox. Review the closet details before saving.";
+  reviewWardrobeBatch(candidates,status);
  }
 };
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.target.value==="wardrobe"){const title=document.getElementById("piTitle");if(title&&!title.value)title.value="Avatar outfit"}});
