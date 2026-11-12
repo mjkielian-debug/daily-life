@@ -157,7 +157,7 @@ window.photoInboxLoadList=async function(showLoading=true){
  if(!document.getElementById("photoInboxList"))return;
  if(error){el.textContent="Could not load inbox: "+error.message;return}
  el.innerHTML=(data||[]).map(row=>
- '<div class="pi-item"><span><b>'+esc(CATEGORIES[row.category]||row.category)+' · '+esc(row.title||"Untitled")+'</b><small>'+new Date(row.created_at).toLocaleDateString()+
+ '<div class="pi-item"><span><b>'+esc(row.category==="inventory"&&/^Avatar outfit\s*[·—]/i.test(row.title||"")?"👗 Avatar outfit":CATEGORIES[row.category]||row.category)+' · '+esc(row.title||"Untitled")+'</b><small>'+new Date(row.created_at).toLocaleDateString()+
  (row.floor_label?" · "+esc(row.floor_label):"")+' · '+esc(row.status)+'</small></span>'+
  '<div class="pi-item-actions"><button class="btn small" onclick="photoInboxView(\''+row.id+'\')">View</button>'+
  '<button class="btn small" onclick="photoInboxDelete(\''+row.id+'\')">Delete</button></div></div>').join("")||'<p class="pi-muted">No photos sent yet. Upload a few above.</p>';
