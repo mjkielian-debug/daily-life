@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 16216)
+Total output lines: 867
+
 /* Private Daily Life house map.
    Personal names, layout, landmarks and photo IDs come from owner-only Supabase records,
    not from this public source file. No measured geometry is inferred. */
@@ -136,6 +139,22 @@ function houseCareFill(f){
  '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg><span style="display:block;font-size:.8rem;color:#68516b">'+done+' of '+rows.length+' home tasks done today</span></button>';
 }
 
+function unmappedLocalRooms(f,m){
+ const known=arr(m.zones).filter(z=>z&&okId(z.id)),mappedIds=new Set();
+ known.forEach(z=>{const room=localRoom(f,z);if(room)mappedIds.add(str(room.id))});
+ return arr(typeof state==="undefined"?[]:state.houseRooms).filter(room=>str(room.floor)===f&&str(room.name).trim()&&!mappedIds.has(str(room.id)));
+}
+window.houseVisualOpenLocalRoom=function(id){
+ const room=arr(typeof state==="undefined"?[]:state.houseRooms).find(x=>str(x.id)===str(id));
+ if(!room)return;
+ if(typeof window.homeOpenRoomInventory==="function")window.homeOpenRoomInventory(room.id);
+ else if(typeof window.openInventoryRoom==="function")window.openInventoryRoom(room.id,room.floor);
+};
+function unmappedRoomPicker(f,m){
+ const rooms=unmappedLocalRooms(f,m);if(!rooms.length)return "";
+ return '<section class="hvm-unmapped-rooms" aria-label="Rooms not yet placed on the floor drawing"><div><b>Other saved rooms</b><small>'+rooms.length+' room'+(rooms.length===1?" is":"s are")+' not placed on this drawing yet. Tap a room to open it, or add a map photo to update the layout.</small></div><div class="hvm-unmapped-chips">'+rooms.map(room=>'<button type="button" data-hvm-local-room="'+h(room.id)+'"><span aria-hidden="true">⌂</span>'+h(room.name)+' <span aria-hidden="true">›</span></button>').join("")+'<button type="button" class="hvm-unmapped-add" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+h(f)+'&#39;)">＋ Add map photo</button></div></section>';
+}
+
 function mapSketch(f,m){
  m=illustratedLayout(f,m);
  const isFirst=f==="First floor",viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503",limits=viewBox.split(" ").map(Number);
@@ -173,8 +192,9 @@ function mapSketch(f,m){
  return '<div class="hvm-sketch"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   backing+(f==='Basement'?'<path d="M40 40H340V320H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="165" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+paths+pins+entry+'</svg>'+
-  '<p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p>'+floorLinks(f,m)+'</div>';
+  '<p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
+document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});
 
 function floorLinks(f,m){
  const targets=[];
@@ -226,351 +246,7 @@ async function hydrateRoomDirectoryPhotos(f,m){
  const ids=refs.map(x=>x.id).filter(Boolean);
  if(!ids.length)return;
  try{
-  const {data}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",ids);
-  for(const row of data||[]){
-   if(!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(row.image_data||""))continue;
-   const zone=refs.find(x=>x.id===row.id)?.zone;
-   const host=zone&&Array.from(document.querySelectorAll("[data-room-photo-zone]")).find(node=>node.dataset.roomPhotoZone===String(zone.id));
-   if(host){const img=document.createElement("img");img.alt="";img.src=row.image_data;host.replaceChildren(img);}
-  }
- }catch(e){}
-}
-function connect(m){
- const c=arr(m.connections).filter(x=>x&&x.label&&x.from&&x.to);
- if(!c.length)return "";
- return '<section class="hvm-connections" aria-label="House connection routes"><strong>How these spaces connect</strong>'+
- c.map(x=>'<div class="hvm-connection"><b>'+h(x.label)+'</b>'+
- '<div class="hvm-route"><span class="hvm-route-end">⌂ '+h(x.from)+'</span>'+
- arr(x.via).map(v=>'<div class="hvm-route-step"><span class="hvm-step-rail" aria-hidden="true">↓</span><span>'+h(v)+'</span></div>').join("")+
- '<span class="hvm-route-end">⌂ '+h(x.to)+'</span></div>'+
- (x.status?'<p>'+h(x.status)+'</p>':"")+'</div>').join("")+'</section>';
-}
-function draw(f,m){
- const work=arr(m.flow).map(x=>'<div class="hvm-flow-line"><b>'+h(x.from)+'</b><span>→</span><b>'+h(x.to)+'</b>'+
- '<small>'+h(x.status)+'</small></div>').join("");
- const todo=arr(m.pending)[0];
- const original=okPhoto(m.sourcePhotoId)?'<button type="button" class="btn hvm-source-photo" onclick="photoInboxView(&#39;'+m.sourcePhotoId+'&#39;,&#39;map&#39;)">📷 Original robot map</button>':"";
- // Keep the clickable layout and tasks up front. Mapping caveats and stair
- // route evidence are supporting reference material, not the main screen.
- const references='<div class="hvm-technical-detail">'+
- (m.summary?'<p class="hvm-disclaimer">'+h(m.summary)+'</p>':"")+
- original+connect(m)+
- (work?'<section class="hvm-flow"><strong>↗ Where things went</strong>'+work+'</section>':"")+
- (todo?'<div class="hvm-next"><b>Next mapping step</b><p>'+h(todo)+'</p>'+
- '<button class="btn small" type="button" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+f+'&#39;)">+ Add room photos</button></div>':"")+
- facts(m)+'</div>';
- return '<div class="hvm-rendered">'+mapSketch(f,m)+
- '<details class="hvm-mapping-background"><summary>Mapping notes, stair connections and evidence ›</summary>'+
- references+'</details></div>';
-}
-function mappedRoomItems(room){
- if(!room)return [];
- const locIds=new Set(arr(state.inventoryLocations).filter(loc=>String(loc.roomId)===String(room.id)).map(loc=>String(loc.id)));
- return arr(state.inventoryItems).filter(x=>String(x.roomId)===String(room.id)||locIds.has(String(x.locationId)));
-}
-function roomDeclutterSessions(f,id){
- const key=String(f||"")+"::"+String(id||"");
- const entry=state.settings?.roomDeclutterProgress?.[key];
- return arr(entry?.sessions);
-}
-function roomInsightParts(tasks,f,id){
- const declutter=tasks.filter(t=>/declutter|organis|organize|sort|donat|outgrown|closet|dresser|storage/i.test(str(t.title)));
- const declutterDone=declutter.filter(t=>t.done).length;
- const isDate=value=>{const v=str(value);return v.length===10&&v[4]==="-"&&v[7]==="-"};
- const completed=tasks.filter(t=>t.done&&isDate(t.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date)));
- const sessions=roomDeclutterSessions(f,id).filter(x=>isDate(x.date)).sort((a,b)=>str(b.date).localeCompare(str(a.date))||str(b.at).localeCompare(str(a.at)));
- const dateLabel=value=>isDate(value)?new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
- const summary=[];
- if(sessions.length)summary.push(sessions.length+" room areas organized");
- if(declutter.length)summary.push(declutterDone+" of "+declutter.length+" saved declutter/organizing tasks done");
- return {
-  declutter:summary.join(" · ")||"No room declutter progress logged yet",
-  last:completed[0]?"Last room task marked done: "+str(completed[0].title||"Task")+" · "+dateLabel(completed[0].date):"No completed room task in saved history",
-  lastOrganized:sessions[0]?"Last area organized: "+dateLabel(sessions[0].date):""
- };
-}
-window.houseVisualLogDeclutter=async function(f,id){
- if(!floors.includes(f)||!okId(id))return;
- if(!state.settings||typeof state.settings!=="object")state.settings={};
- if(!state.settings.roomDeclutterProgress||typeof state.settings.roomDeclutterProgress!=="object")state.settings.roomDeclutterProgress={};
- const key=String(f)+"::"+String(id),entry=state.settings.roomDeclutterProgress[key]||(state.settings.roomDeclutterProgress[key]={sessions:[]});
- if(!Array.isArray(entry.sessions))entry.sessions=[];
- entry.sessions.push({date:typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),at:new Date().toISOString()});
- await save();
- if(typeof window.houseVisualOpenZone==="function")window.houseVisualOpenZone(f,id);
-}
-function mappedProgressCard(f,z,room){
- const tasks=trackedRoomTasks(f,z,room),done=tasks.filter(x=>x.done).length,percent=tasks.length?Math.round(100*done/tasks.length):null;
- const inventory=mappedRoomItems(room),insights=roomInsightParts(tasks,f,z?.id||"room:"+String(room?.id||""));
- const action=z?'houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)':
-   'homeOpenRoomInventory(&#39;'+h(String(room.id||""))+'&#39;)';
- const title=z?z.name:room.name;
- const details='<button type="button" class="household-room-progress" onclick="'+action+'">'+
- '<span><b>'+h(title)+'</b><small>'+(tasks.length?done+' / '+tasks.length+' tasks complete':'No room tasks recorded')+'</small>'+
- '<small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+
- (insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+
- '<small>'+inventory.length+' confirmed item type'+(inventory.length===1?"":"s")+'</small></span>'+
- '<span><b>'+(percent===null?'—':percent+'%')+'</b>'+
- '<i aria-hidden="true"><em style="width:'+(percent||0)+'%"></em></i></span></button>';
- const quick=z?'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+z.id+'&#39;)">＋ I organized one area</button>':'';
- return '<div class="hvm-room-progress-item">'+details+quick+'</div>';
-}
-function roomProgressHtml(f){
- const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
- const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
- const localUsed=new Set();
- const mapped=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return mappedProgressCard(f,z,room)});
- const localOnly=floorRooms.filter(r=>!localUsed.has(str(r.id))).map(room=>mappedProgressCard(f,null,room));
- const rows=mapped.concat(localOnly);
- if(rows.length)return '<div class="household-room-progress-grid">'+rows.join("")+'</div>'+
- '<p class="household-progress-disclaimer">Percentages count saved room tasks. Map color also reflects logged organization sessions; neither is an overall cleanliness score. Unrecorded work stays unknown.</p>';
- return '<p class="household-progress-empty">'+
- (online()&&!map?'Loading mapped rooms…':'No room tasks or inventory locations are linked to this floor yet. You can tap the diagram or add a room.')+
- '</p>';
-}
-function floorTrackedTasks(f){
- const map=get(f),known=arr(map?.zones).filter(z=>z&&okId(z.id));
- const floorRooms=arr(state.houseRooms).filter(r=>str(r.floor)===f&&str(r.name).trim());
- const localUsed=new Set(),groups=known.map(z=>{const room=localRoom(f,z);if(room)localUsed.add(str(room.id));return trackedRoomTasks(f,z,room)});
- for(const room of floorRooms)if(!localUsed.has(str(room.id)))groups.push(trackedRoomTasks(f,null,room));
- const byId=new Map();
- for(const task of groups.flat())if(task?.id)byId.set(String(task.id),task);
- return [...byId.values()];
-}
-window.houseVisualFloorProgressHtml=function(f){
- const tasks=floorTrackedTasks(f),done=tasks.filter(task=>task.done).length;
- const percent=tasks.length?Math.round(done*100/tasks.length):null;
- const status=tasks.length?done+" of "+tasks.length+" room tasks complete":"No room tasks logged yet";
- const progress=percent===null
-  ? '<span class="household-map-floor-progress-state">Start tracking ›</span>'
-  : '<span class="household-map-floor-progress-meter"><b>'+percent+'%</b><i role="progressbar" aria-label="Room tasks complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><em style="width:'+percent+'%"></em></i></span>';
- const label="Open "+h(f)+" room progress"+(tasks.length?": "+done+" of "+tasks.length+" tasks complete":": no room tasks logged yet");
- return '<button type="button" class="household-map-floor-progress" aria-label="'+h(label)+'" onclick="householdOpenRoomProgress()">'+
-  '<span class="household-map-floor-progress-copy"><b>'+h(f)+' progress</b><small>'+status+'</small></span>'+progress+'<span aria-hidden="true">›</span></button>';
-};
-window.houseVisualRoomProgressHtml=function(f){return roomProgressHtml(f)};
-function refreshRoomProgress(f){
- document.querySelectorAll(".household-map-room-results[data-floor]").forEach(el=>{
-  if(el.dataset.floor===f)el.innerHTML=roomProgressHtml(f);
- });
-}
-
-function selectedRoomProfile(){
- if(typeof lifeSimRoster!=="function"||typeof lifeSimSelectedId!=="function")return null;
- const roster=lifeSimRoster(),id=lifeSimSelectedId(roster);
- const person=roster.find(person=>String(person.id)===String(id))||null;
- return person?{...person,isSelf:String(id)==="self"}:null;
-}
-function selfRoomPhotoHotspots(title){
- const t=str(title).toLowerCase();
- if(/entryway/.test(t))return [];
- if(/robovac and fans/.test(t))return [
-  ["robovac","Robovac",52,82],["pedestal_fan","Black pedestal fan",55,43],["box_fan","White box fan",15,42]
- ];
- if(/room overview from the doorway/.test(t))return [
-  ["bed","Bed",20,66],["dresser","Tall dresser",52,38],["tv_stand","TV / media console",83,61],["box_fan","White box fan",92,52]
- ];
- if(/tv and box fan side/.test(t))return [
-  ["tv_stand","TV / media console",67,61],["box_fan","White box fan",83,38]
- ];
- if(/bed and vanity angle/.test(t))return [
-  ["bed","Bed",12,50],["vanity","Vanity / dressing table",34,49]
- ];
- if(/bed beside the closet doorway/.test(t))return [
-  ["closet_doorway","Closet doorway",19,43],["bed","Bed",70,65]
- ];
- if(/low shelves, shoes and dark side cabinet/.test(t))return [
-  ["book_shelves","Low book shelves",31,56],["shoes","Shoes",61,56]
- ];
- if(/low shelves, books and decor/.test(t))return [
-  ["book_shelves","Low book shelves",36,56],["decor","Display items",44,43]
- ];
- if(/tall dresser close-up/.test(t))return [
-  ["dresser","Tall dresser",48,60],["dresser_top","Items on top",47,27]
- ];
- if(/vanity and stool/.test(t))return [
-  ["vanity","Vanity / dressing table",52,58],["stool","Vanity stool",49,83],["vanity_items","Personal-care items",55,39]
- ];
- if(/vanity surface close-up/.test(t))return [
-  ["vanity","Vanity / dressing table",48,73],["vanity_items","Personal-care items",53,36]
- ];
- /* bed and vanity angle is handled above with hotspots placed on the visible bed edge and vanity. */
- if(/bed and bedding/.test(t))return [["bed","Bed",51,55]];
- if(/bed beside the doorway/.test(t))return [
-  ["bed","Bed",70,65],["bedroom_door","Bedroom doorway",20,31]
- ];
- if(/doorway and bed view/.test(t))return [
-  ["bedroom_door","Bedroom doorway",33,41],["bed","Bed",73,69]
- ];
- return [];
-}
-function personRoomPhotoMarkup(photo,index,total,person,f,z){
- const storedTitle=str(photo.title),dresserOnly=/^dolly[’']s bedroom · dresser and bed$/i.test(storedTitle),
-  title=dresserOnly?"Dolly’s bedroom · dresser":storedTitle,
-  text=(title+" "+str(photo.notes)).toLowerCase(),isDolly=/^dolly$/i.test(str(person?.name));
- let hotspots=[];
- if(person?.isSelf&&f==="Third floor")hotspots=selfRoomPhotoHotspots(title);
- else if(isDolly){
-  const dresserOnly=/^dolly[’']s bedroom · dresser$/i.test(title)||/dresser only/i.test(text);
-  const kind=/room overview|room corner|bed, vanity/i.test(title)?"overview":/dresser and bed/i.test(title)?"dresser":/dresser/i.test(title)?"dresserOnly":/playhouse/i.test(title)?"playhouse":/vanity/i.test(title)?"vanity":/bed|headboard/i.test(title)?"bed":"overview";
-  hotspots=dresserOnly||kind==="dresserOnly"?[["dresser","Dresser",18,52]]:
-   kind==="overview"?[["bed","Bed",18,73],["vanity","Vanity",58,51],["dollhouse","Playhouse",75,66]]:
-   kind==="dresser"?[["dresser","Dresser",18,52],["bed","Bed",70,56]]:
-   kind==="playhouse"?[["dollhouse","Playhouse",54,54]]:
-   kind==="vanity"?[["vanity","Vanity",52,58]]:[["bed","Bed",50,55]];
- }else if(/futon|sofa bed|couch/.test(text)){
-  // A futon may be used for sleep, but it is still a futon in the room map.
-  hotspots.push(["futon","Futon",55,37]);
- }else if(/chair/.test(text)){
-  // “Chair under bed” describes where the chair sits; it does not make the chair photo a bed photo.
-  hotspots.push(["chair","Chair + laundry",50,70]);
- }else{
-  if(/dresser/.test(text))hotspots.push(["dresser","Dresser",22,58]);
-  if(/vanity/.test(text))hotspots.push(["vanity","Vanity",62,48]);
-  if(/bed|bedroom/.test(text))hotspots.push(["bed","Bed",55,58]);
- }
- const scene='<div class="hvm-room-scene"><img src="'+h(photo.image_data)+'" alt="'+h(title)+'">'+hotspots.map(([key,label,x,y])=>
-  '<button type="button" class="hvm-room-hotspot" style="left:'+x+'%;top:'+y+'%" aria-label="Open '+h(person?.name||"room")+'’s '+h(label.toLowerCase())+' details" onclick="houseVisualInspectPersonItem(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,&#39;'+h(key)+'&#39;)"><span aria-hidden="true">✦</span><b>'+h(label)+'</b></button>'
- ).join("")+'</div>';
- return scene+'<div class="hvm-room-photo-nav"><button type="button" class="btn small" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonPhotoStep(-1)">‹ Previous view</button><span><b>'+h(title)+'</b><small>View '+(index+1)+' of '+total+' · tap a room label to inspect</small></span><button type="button" class="btn small" '+(index>=total-1?'disabled':'')+' onclick="houseVisualPersonPhotoStep(1)">Next view ›</button></div>';
-}
-async function hydratePersonRoomPhotoTour(){
- const host=document.querySelector('[data-person-photo-tour]');
- if(!host||!online())return;
- const person=selectedRoomProfile(),floor=host.dataset.floor||"Second floor",zoneId=host.dataset.zone||"",z=zone(floor,zoneId);
- if(!person||!z)return;
- const cacheKey=str(person.id||person.name).toLowerCase()+"|"+floor+"|"+zoneId;
- let photos=personPhotoCache.get(cacheKey);
- if(!photos){
-  try{
-   const {data,error}=await cloudClient.from("photo_inbox").select("id,category,title,notes,phase,created_at")
-    .in("category",["home_progress","house_map"]).eq("floor_label",floor)
-    .order("created_at",{ascending:true}).limit(100);
-   if(error)throw error;
-   const normalize=value=>str(value).toLowerCase().replace(/[^a-z0-9]/g,"");
-   const roster=typeof lifeSimRoster==="function"?lifeSimRoster():[];
-   const zoneName=normalize(z.name),zoneOwner=roster.find(candidate=>{
-    const candidateName=normalize(candidate.name);
-    return candidateName&&zoneName.includes(candidateName);
-   });
-   const name=normalize(zoneOwner?.name||person.name),isSelf=!!person.isSelf&&floor==="Third floor";
-   const selfZones=arr(get(floor)?.zones).filter(item=>item&&okId(item.id));
-   const selfRoomIndex=selfZones.findIndex(item=>item.id===zoneId);
-   const selfRows=(data||[]).filter(p=>okPhoto(p.id)&&["home_progress","house_map"].includes(p.category));
-   const afterRows=isSelf?selfRows.filter(p=>p.phase==="after"):[];
-   const sourceRows=isSelf&&afterRows.length?afterRows:selfRows.filter(p=>p.category==="home_progress");
-   const rows=sourceRows.filter(p=>{
-    if(!okPhoto(p.id))return false;
-    const all=str(p.title)+" "+str(p.notes),normalized=normalize(all);
-    if(isSelf){
-     const entry=/entryway|beanbag/i.test(all);
-     return selfRoomIndex===0?entry:!entry&&/bedroom|room overview|dresser|vanity|bed|robovac|fan|shelves/i.test(all)&&!/laundry/i.test(all);
-    }
-    if(p.category!=="home_progress")return false;
-    if(name&&normalized.includes(name))return /bedroom|bed|room|chair/i.test(all);
-    return !zoneOwner&&normalized.includes(normalize(z.name))&&/room|bed|house/i.test(all);
-   });
-   const priority=p=>/room overview/i.test(str(p.title))?0:/dresser and bed/i.test(str(p.title))?1:/bedroom/i.test(str(p.title))?2:3;
-   rows.sort((a,b)=>priority(a)-priority(b)||str(a.created_at).localeCompare(str(b.created_at)));
-   const ids=rows.map(p=>p.id);
-   if(!ids.length)throw Error("No room photos found");
-   const {data:images,error:imageError}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",ids);
-   if(imageError)throw imageError;
-   const byId=new Map((images||[]).filter(p=>/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(p.image_data||"")).map(p=>[p.id,p.image_data]));
-   photos=rows.filter(p=>byId.has(p.id)).map(p=>({...p,image_data:byId.get(p.id)}));
-   if(!photos.length)throw Error("Room images could not be loaded");
-   personPhotoCache.set(cacheKey,photos);
-  }catch(e){const frame=host.querySelector(".hvm-person-room-photo");if(frame)frame.textContent="No saved room photos for "+str(person.name)+" yet. Add photos from House · Add photos.";return}
- }
- const index=Math.max(0,Math.min(photos.length-1,Number(host.dataset.photoIndex)||0));
- host.dataset.photoIndex=String(index);
- const frame=host.querySelector(".hvm-person-room-photo");
- if(frame)frame.outerHTML='<div class="hvm-person-room-photo hvm-person-room-photo-live">'+personRoomPhotoMarkup(photos[index],index,photos.length,person,floor,z)+'</div>';
-}
-window.houseVisualPersonPhotoStep=function(delta){
- const host=document.querySelector('[data-person-photo-tour]'),person=selectedRoomProfile();
- const photos=host&&person?personPhotoCache.get(str(person.id||person.name).toLowerCase()+"|"+host.dataset.floor+"|"+host.dataset.zone)||[]:[];
- if(!host||!photos.length)return;
- host.dataset.photoIndex=String(Math.max(0,Math.min(photos.length-1,(Number(host.dataset.photoIndex)||0)+Number(delta||0))));
- Promise.resolve().then(()=>hydratePersonRoomPhotoTour());
-};
-window.houseVisualInspectPersonItem=async function(f,id,item){
- const person=selectedRoomProfile(),z=zone(f,id);if(!z)return;
- if(String(person?.name||"").toLowerCase()==="dolly"&&typeof dollyOpenObject==="function"){dollyOpenObject(item);return}
- const spot=String(item||"").toLowerCase();
- if(typeof window.homeOpenInventorySpot==="function"&&["dresser","dresser_top","vanity","vanity_items","personal_care"].includes(spot)){
-  let room=null;
-  if(person?.isSelf&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
-   const zones=arr(get(f)?.zones).filter(entry=>entry&&okId(entry.id));
-   const index=zones.findIndex(entry=>entry.id===id);
-   room=await window.homeEnsureMichelleRoomInventory(index===0?0:1);
-  }else room=localRoom(f,z);
-  if(room){window.homeOpenInventorySpot(room.id,spot);return}
- }
- window.houseVisualInventoryOpen(f,id);
-};
-function personRoomHome(f,z){
- const tourZones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
- const tourIndex=tourZones.findIndex(item=>item.id===z.id);
- const personForTitle=selectedRoomProfile();
- const roomTitle=personForTitle?.isSelf&&f==="Third floor"?(tourIndex===0?"Entryway to Michelle’s room":"Michelle’s bedroom"):z.name;
-
- const person=selectedRoomProfile(),room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),done=tasks.filter(t=>t.done).length;
- const today=(state.tasks||[]).filter(t=>t.date===ymd()&&!t.paused&&!t.waitingForFunds&&String(t.child||"").trim().toLowerCase()===String(person?.name||"").trim().toLowerCase());
- const todayDone=today.filter(t=>t.done).length;
- const photo='<div class="hvm-person-photo-tour" data-person-photo-tour="'+h(person?.id||person?.name||"profile")+'" data-floor="'+h(f)+'" data-zone="'+h(z.id)+'"><div class="hvm-person-room-photo"><span>Loading '+h(person?.name||"room")+' room views…</span></div></div>';
- const objects=
-  (arr(z.markers).length?'<div class="hvm-person-room-objects">'+arr(z.markers).map((p,i)=>'<button type="button" class="hvm-person-object" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')"><span>✦</span><b>'+h(p.label||"Room item")+'</b><small>'+h(p.status||"Tap to inspect")+'</small></button>').join("")+'</div>':"");
- const roomTasks=tasks.filter(t=>!t.done).slice(0,5).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+'</span><button type="button" class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">✓ Done</button></div>').join("");
- const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
- const tour='<nav class="hvm-person-tour-nav" aria-label="House tour navigation"><button type="button" class="btn" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,-1)">‹ Previous room</button><span><b>Room tour</b><small>'+(index+1)+' of '+zones.length+' · '+h(f)+'</small></span><button type="button" class="btn" '+(index<0||index>=zones.length-1?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,1)">Next room ›</button></nav>';
- return '<section class="hvm-person-room-home" aria-label="'+h(person?.name||z.name)+' bedroom home">'+
-  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+objects+
-  '<div class="hvm-person-room-stats"><div><small>TODAY</small><b>'+(today.length?todayDone+' of '+today.length+' tasks done':"No tasks assigned today")+'</b></div><div><small>ROOM TASKS</small><b>'+(tasks.length?done+' of '+tasks.length+' complete':"No room tasks logged")+'</b></div></div>'+
-  '<section class="hvm-person-room-task-list"><div class="hvm-person-room-task-heading"><b>Room tasks</b><button type="button" class="btn small" onclick="houseVisualAddZoneTask(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">＋ Add</button></div>'+
-  (roomTasks||'<p class="muted small">No unfinished room tasks. Progress reflects completed tasks, not how clean the room looks.</p>')+'</section>'+
-  '<button type="button" class="btn hvm-person-room-inventory" onclick="houseVisualInventoryOpen(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">Open '+h(person?.name||z.name)+'’s room inventory ›</button></section>';
-}
-function floorView(f,m){
- const person=selectedRoomProfile();
- const hasLayout=arr(m.zones).some(z=>z&&okId(z.id)&&okPath(z.path));
- const layout=mapSketch(f,m);
- let browsing=false;try{browsing=localStorage.getItem("dailyLifeMapBrowseRooms")==="1"}catch(e){}
- if(person&&!browsing&&localStorage.getItem("dailyLifeMapBrowseRooms")==="0"){
-  let z=null;
-  try{const saved=JSON.parse(localStorage.getItem("dailyLifeMapTourRoom")||"null");if(saved?.floor===f&&saved?.profileId===String(person.id||person.name))z=arr(m.zones).find(item=>item&&item.id===saved.id)||null}catch(e){}
-  z=z||personRoomZone(f,person.name,!!person.isSelf);
-  if(z)return personRoomHome(f,z)
- }
- if(person&&browsing)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';
- return layout;
-}
-window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapBrowseRooms","1")}catch(e){};render()};
-window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapBrowseRooms")}catch(e){};render()};
-window.houseVisualSelectTourRoom=function(f,id){
- if(!floors.includes(f)||!okId(id))return;
- const person=selectedRoomProfile();
- try{
-  localStorage.setItem("dailyLifeMapFirstFloor",f);
-  localStorage.setItem("dailyLifeMapBrowseRooms","0");
-  localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({profileId:String(person?.id||person?.name||""),floor:f,id}));
- }catch(e){}
- if(typeof homeSetMapFloor==="function")homeSetMapFloor(f);
- render();
- window.scrollTo(0,0);
-};
-window.houseVisualInventoryOpen=async function(f,id){
- const person=selectedRoomProfile(),z=zone(f,id);
- if(!z)return;
- const roomLabel=(String(z.name||"")+" "+String(z.short||"")).toLowerCase();
- const isMichelleRoom=(person?.isSelf||/michelle/.test(String(person?.name||""))||/michelle/.test(roomLabel));
- if(isMichelleRoom&&f==="Third floor"&&typeof window.homeEnsureMichelleRoomInventory==="function"){
-  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
-  const index=zones.findIndex(item=>item.id===id);
-  const which=/entry|nook|beanbag|sitting/.test(roomLabel)?0:
-    /bed|bedroom|vanity/.test(roomLabel)?1:(index===0?0:1);
-  const room=await window.homeEnsureMichelleRoomInventory(which);
-  if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
+  const {data}=await cloudClient.from("photo_inbox").select("id,image_data").…6216 tokens truncated…typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
  }
  const room=localRoom(f,z);
  if(room&&typeof window.homeOpenRoomInventory==="function"){window.homeOpenRoomInventory(room.id);return}
