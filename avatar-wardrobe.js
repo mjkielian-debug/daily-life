@@ -43,8 +43,9 @@ function active(){
   schedule:{ssd:isSsdDay()},isWorkUniform:true
  }:null;
  const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x));
- const look=manual||ssdLook||automaticWorkLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
- return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:!!manual,isScheduled:!manual&&(!!look.isWorkUniform||(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))),isWorkUniform:!!look.isWorkUniform}:null;
+ const look=ssdLook||automaticWorkLook||manual||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
+ const manualActive=!!manual&&look===manual;
+ return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:manualActive,isScheduled:!manualActive&&(!!look.isWorkUniform||(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))),isWorkUniform:!!look.isWorkUniform}:null;
 }
 window.avatarWardrobeGetActive=active;
 function analysisDescription(value){
