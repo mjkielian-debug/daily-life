@@ -54,6 +54,11 @@ function avatarHotspot(area,label,path){
 }
 function view(areaOverride,tasksOnly){
  const date=day(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
+ const avatarLook=typeof window.avatarWardrobeGetActive==="function"?window.avatarWardrobeGetActive():null;
+ const avatarTop=avatarLook&&!['bottom','shoes','accessory'].includes(avatarLook.type)?avatarLook.primary:"#d7c6ee";
+ const avatarBottom=avatarLook?.type==="bottom"?avatarLook.primary:avatarLook?.type==="outfit"?avatarLook.accent:"#c5d9ef";
+ const avatarShoe=avatarLook?.type==="shoes"?avatarLook.primary:"#f7b9cd",avatarAccessory=avatarLook?.type==="accessory"?avatarLook.primary:"#f5c2da";
+ const avatarLookStyle=avatarLook?' style="--lm-outfit-main:'+h(avatarTop)+';--lm-outfit-accent:'+h(avatarBottom)+';--lm-outfit-shoe:'+h(avatarShoe)+';--lm-outfit-accessory:'+h(avatarAccessory)+'"':'';
  const tasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&!(/\b(app|development)\b/i.test(String(t.category||""))&&/build|apk|bridge|workflow|deploy|migration/i.test(String(t.title||""))));
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
@@ -180,7 +185,7 @@ function view(areaOverride,tasksOnly){
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills as linked tasks get done. It’s a picture of activity, not a grade.</p></div></div>'+
- '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar" viewBox="0 0 220 300" role="group" aria-label="A cheerful illustrated avatar with clickable life areas">'+
+ '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 300" role="group" aria-label="A cheerful illustrated avatar with clickable life areas">'+
  '<defs><clipPath id="lmMindClip"><path d="M82 44 Q87 25 110 24 Q133 25 138 44 L139 68 Q138 93 110 97 Q82 93 81 68Z"/></clipPath><clipPath id="lmSpiritClip"><path d="M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 62 Q130 39 110 39 Q91 39 73 62Z"/></clipPath><clipPath id="lmTorsoClip"><path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z"/></clipPath><clipPath id="lmLeftClip"><path d="M81 114 Q66 120 60 143 L53 177 Q54 185 61 187 L76 151 L92 137Z"/></clipPath><clipPath id="lmRightClip"><path d="M139 114 Q154 120 160 143 L167 177 Q166 185 159 187 L144 151 L128 137Z"/></clipPath><clipPath id="lmLegClip"><path d="M82 179 Q110 190 138 179 L134 218 L86 218Z M89 218 L104 218 L104 289 L89 289Z M116 218 L131 218 L131 289 L116 289Z"/></clipPath></defs>'+
  '<path d="M72 62 Q65 30 89 18 Q111 6 136 20 Q157 31 151 65 Q159 81 149 95 Q151 111 136 112 L130 70 Q115 57 90 66 L85 108 Q70 115 66 102 Q60 90 69 78Z" fill="#654746" stroke="#553c3d" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<path d="M82 58 Q82 34 101 27 Q121 21 137 37 Q142 43 143 54 Q130 42 119 41 Q105 42 96 48 Q89 53 82 66Z" fill="#7b5148" stroke="#553c3d" stroke-width="2" stroke-linejoin="round"/>'+
@@ -193,10 +198,10 @@ function view(areaOverride,tasksOnly){
  '<ellipse cx="87" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/><ellipse cx="134" cy="73" rx="7" ry="4" fill="#f2a6b6" opacity=".62"/>'+
  '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M104 78 Q110 84 116 78" fill="none" stroke="#ac657a" stroke-width="2.2" stroke-linecap="round"/>'+
  '<path d="M99 91 L99 110 L121 110 L121 91Z" fill="#f7dfd4" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.6" stroke-linejoin="round"/>'+
- '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="#d7c6ee" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
- '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="#c5d9ef" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
- '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="#f7b9cd" stroke="#896879" stroke-width="2.2" stroke-linejoin="round"/>'+
+ '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.6" stroke-linejoin="round"/>'+
+ '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="var(--lm-outfit-accent,#c5d9ef)" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
+ '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="var(--lm-outfit-shoe,#f7b9cd)" stroke="#896879" stroke-width="2.2" stroke-linejoin="round"/>'+
  '<g opacity=".3" clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
  '<g opacity=".45" clip-path="url(#lmSpiritClip)"><rect x="72" y="'+(62-44*pctFor("spirituality")/100)+'" width="78" height="'+(44*pctFor("spirituality")/100)+'" fill="#f2b85b"/></g>'+
  '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
@@ -207,7 +212,7 @@ function view(areaOverride,tasksOnly){
  '<path d="M110 192L110 212M91 210Q97 213 103 210M117 210Q123 213 130 210" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
  '<path d="M86 196 Q110 201 135 196 M87 285 L105 285 M115 285 L134 285" fill="none" stroke="#76526b" stroke-width="2.4" stroke-linecap="round"/>'+
  '<path d="M90 291 L99 291 M120 291 L130 291 M92 289 L99 294 M124 289 L131 294" fill="none" stroke="#a7748e" stroke-width="1.8" stroke-linecap="round"/>'+
- '<path d="M141 27 Q146 19 151 27 Q157 21 160 28 Q159 36 151 40 Q144 36 141 27Z" fill="#f5c2da" stroke="#79516c" stroke-width="1.5"/><circle cx="151" cy="30" r="2" fill="#fff8de"/>'+
+ '<path d="M141 27 Q146 19 151 27 Q157 21 160 28 Q159 36 151 40 Q144 36 141 27Z" fill="var(--lm-outfit-accessory,#f5c2da)" stroke="#79516c" stroke-width="1.5"/><circle cx="151" cy="30" r="2" fill="#fff8de"/>'+
  '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+
  avatarHotspot("mind","Mind & self-care","M83 43 Q81 55 81 68 Q82 93 110 97 Q138 93 139 68 L138 44 Q125 37 110 39 Q96 40 83 43Z")+
  avatarHotspot("spirituality","Spirituality","M73 62 Q70 25 98 18 Q125 11 145 33 Q153 48 147 76 Q140 48 125 40 Q104 34 87 43 Q84 53 78 78Z")+
@@ -216,7 +221,7 @@ function view(areaOverride,tasksOnly){
  avatarHotspot("hobbies","Hobbies & projects","M139 112 Q154 120 160 143 L167 177 Q166 186 158 188 L142 146 L126 135Z")+
  avatarHotspot("money","Money & planning","M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z")+
  '</g>'+avatarMarks+'</svg>'+
- '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p></div></div></section>'+
+ '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  '<section class="lm-lower-grid">'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
  '<section class="lm-trackers"><div class="lm-tracker-title"><span class="lm-kicker">YOUR TRACKING STAYS HERE</span><h2>All the pieces you already log</h2></div>'+
