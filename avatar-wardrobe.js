@@ -277,3 +277,113 @@ if(typeof submit==="function")window.photoInboxSubmit=async function(){
 };
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.target.value==="wardrobe"){const title=document.getElementById("piTitle");if(title&&!title.value)title.value="Avatar outfit"}});
 })();
+
+
+/* Family visual closet: uses confirmed household clothing and private inbox photos. */
+(function(){
+ "use strict";
+ const people=["Michelle","Leo","Demitri","Dolly","Ambrose"];
+ const categories=[["all","Everything"],["top","Tops"],["bottom","Bottoms"],["dress","Dresses"],["layer","Layers"],["shoes","Shoes"],["sleep","Sleepwear"],["other","Other"]];
+ let wearer="Michelle",filter="all";
+ let selected=new Set();
+ let visibleItems=[];
+ const escValue=v=>typeof window.esc==="function"?window.esc(String(v??"")):String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const safeArg=v=>String(v??"").replace(/[^a-zA-Z0-9_-]/g,"");
+ function itemOwner(x){return String(x?.wardrobeOwner||x?.inventoryOwner||"")}
+ function kind(x){
+  const t=String(x?.wardrobeType||"").toLowerCase(),n=String(x?.name||"").toLowerCase();
+  if(t==="long_sleeve"||t==="short_sleeve"||/\b(top|shirt|blouse|tee|t-shirt)\b/.test(n))return"top";
+  if(t==="pants"||/\b(pants|jeans|shorts|leggings|skirt)\b/.test(n))return"bottom";
+  if(/\b(dress|romper|jumpsuit)\b/.test(n)||t==="dress")return"dress";
+  if(t==="hoodie_jacket"||t==="winter_coat"||/\b(hoodie|jacket|coat|cardigan|sweater|vest)\b/.test(n))return"layer";
+  if(/\b(shoes|boots|sneakers|sandals|slippers)\b/.test(n)||t==="shoes")return"shoes";
+  if(t==="pajamas"||/\b(pajama|pyjama|sleepwear)\b/.test(n))return"sleep";
+  if(/\b(accessory|hat|scarf|belt|bag|jewelry)\b/.test(n)||t==="accessory")return"other";
+  return"other";
+ }
+ function owned(person){
+  return (Array.isArray(state.inventoryItems)?state.inventoryItems:[]).filter(x=>
+   String(x?.category||"").trim().toLowerCase()==="clothing"&&itemOwner(x)===person&&
+   !["Gone","Donate / sell"].includes(String(x?.status||""))&&
+   !["donate","sell","recycle"].includes(String(x?.organizingDecision||""))
+  ).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+ }
+ function icon(k){return({top:"👚",bottom:"👖",dress:"👗",layer:"🧥",shoes:"👟",sleep:"🌙",other:"✨"})[k]||"✨"}
+ function savedLooks(){state.settings=state.settings||{};if(!Array.isArray(state.settings.familyClosetLooks))state.settings.familyClosetLooks=[];return state.settings.familyClosetLooks}
+ function photoHtml(x){
+  const value=typeof window.inventoryItemPhotoHtml==="function"?window.inventoryItemPhotoHtml(x):"";
+  return value||'<div class="fc-photo-fallback">'+icon(kind(x))+'</div>';
+ }
+ function selectedRows(){return visibleItems.filter(x=>selected.has(String(x.id)))}
+ function gapHtml(person){
+  if(person==="Michelle"||typeof wardrobeCount!=="function"||!Array.isArray(WARDROBE_TYPES))return"";
+  const gaps=WARDROBE_TYPES.map(t=>({label:t.label,missing:Math.max(0,Number(t.min)-Number(wardrobeCount(person,t)||0))})).filter(x=>x.missing>0);
+  return '<div class="fc-gaps"><b>Wardrobe needs</b>'+(gaps.length?'<span>'+gaps.slice(0,3).map(x=>escValue(x.label)+': '+x.missing+' more').join(' · ')+'</span>':'<span>Current clothing minimums are met.</span>')+'<small>Based on the existing clothing counts in Daily Life.</small></div>';
+ }
+ function render(){
+  const root=document.getElementById("familyClosetBody");if(!root)return;
+  const all=owned(wearer);
+  visibleItems=filter==="all"?all:all.filter(x=>kind(x)===filter);
+  const active=selectedRows();
+  const looks=savedLooks().filter(x=>x.person===wearer).slice(-8).reverse();
+  const filters=categories.map(([id,label])=>'<button type="button" class="'+(filter===id?"fc-filter fc-filter-on":"fc-filter")+'" aria-pressed="'+(filter===id)+'" onclick="familyClosetFilter(\''+id+'\')">'+label+'</button>').join("");
+  const cards=visibleItems.map(x=>{
+   const id=safeArg(x.id),on=selected.has(String(x.id));
+   return '<button type="button" class="'+(on?"fc-piece fc-piece-on":"fc-piece")+'" aria-pressed="'+on+'" onclick="familyClosetToggle(\''+id+'\')">'+
+    '<div class="fc-piece-photo">'+photoHtml(x)+'</div><b>'+escValue(x.name||"Clothing item")+'</b>'+
+    '<small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+' · ×'+Math.max(1,Number(x.quantity||1))+'</small>'+
+    (x.status==="Low"||x.status==="Need"?'<em>Needs more</em>':"")+'</button>';
+  }).join("");
+  const preview=active.length?active.map(x=>'<div class="fc-look-piece"><span class="fc-look-thumb">'+photoHtml(x)+'</span><span><b>'+escValue(x.name||"Clothing item")+'</b><small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+'</small></span></div>').join(""):'<p class="fc-empty-look">Tap pieces above to build a look.</p>';
+  const saved=looks.length?'<div class="fc-saved-looks">'+looks.map(x=>'<button type="button" onclick="familyClosetLoad(\''+safeArg(x.id)+'\')"><b>'+escValue(x.name||"Saved look")+'</b><small>'+escValue(x.date||"")+' · '+(x.itemIds||[]).length+' pieces</small></button>').join("")+'</div>':'<p class="fc-muted">Saved looks will show here.</p>';
+  root.innerHTML=
+   '<div class="fc-people">'+people.map(p=>'<button type="button" class="'+(wearer===p?"fc-person fc-person-on":"fc-person")+'" aria-pressed="'+(wearer===p)+'" onclick="familyClosetPerson(\''+p+'\')">'+escValue(p)+'</button>').join("")+'</div>'+
+   '<p class="fc-intro">A Clueless-style closet built from confirmed clothing in your household inventory. Photos stay in your private photo inbox.</p>'+
+   gapHtml(wearer)+
+   '<div class="fc-filter-row">'+filters+'</div>'+
+   (visibleItems.length?'<div class="fc-grid">'+cards+'</div>':'<div class="fc-empty"><span>🪞</span><b>'+escValue(wearer)+'’s visual closet is ready for clothes.</b><small>Capture clothing photos, review them, and assign each piece to '+escValue(wearer)+' to see it here.</small><button type="button" class="btn primary" onclick="closeModal();openPhotoInbox(\'inventory\')">📷 Add clothing photos</button><button type="button" class="btn" onclick="closeModal();openInventoryItem(\'\',\''+wearer+'\',\'short_sleeve\')">＋ Add a clothing item</button></div>')+
+   '<section class="fc-look"><div class="fc-look-head"><div><span class="fc-kicker">OUTFIT MIXER</span><b>Your selected look</b></div><span>'+active.length+' piece'+(active.length===1?"":"s")+'</span></div>'+
+   '<div class="fc-look-pieces">'+preview+'</div>'+
+   '<div class="fc-actions"><button type="button" class="btn primary" '+(!active.length?"disabled":"")+' onclick="familyClosetSave()">Save this look</button><button type="button" class="btn" onclick="familyClosetClear()">Clear selection</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div></section>'+
+   '<section class="fc-looks"><b>Saved looks for '+escValue(wearer)+'</b>'+saved+'</section>';
+  if(typeof window.inventoryLoadSavedItemPhotos==="function")Promise.resolve().then(()=>window.inventoryLoadSavedItemPhotos());
+ }
+ window.familyClosetPerson=function(person){if(!people.includes(person))return;wearer=person;filter="all";selected.clear();render()};
+ window.familyClosetFilter=function(value){if(!categories.some(c=>c[0]===value))return;filter=value;render()};
+ window.familyClosetToggle=function(id){if(!id)return;selected.has(id)?selected.delete(id):selected.add(id);render()};
+ window.familyClosetClear=function(){selected.clear();render()};
+ window.familyClosetSave=async function(){
+  const rows=selectedRows();if(!rows.length)return;
+  const items=owned(wearer),itemIds=items.filter(x=>selected.has(String(x.id))).map(x=>String(x.id));
+  const list=savedLooks(),date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
+  list.push({id:"look-"+Date.now().toString(36),person:wearer,name:"Look "+(list.filter(x=>x.person===wearer).length+1),date,itemIds});
+  try{await save();selected.clear();render()}
+  catch(e){alert("This look could not be saved. Your clothing inventory is unchanged.")}
+ };
+ window.familyClosetLoad=function(id){const look=savedLooks().find(x=>x.id===id&&x.person===wearer);if(!look)return;selected=new Set((look.itemIds||[]).map(String));filter="all";render()};
+ window.openFamilyCloset=function(person){
+  wearer=people.includes(person)?person:"Michelle";filter="all";selected.clear();
+  modal("The Clueless Closet",'<div id="familyClosetBody"></div>',"Close",closeModal);render();
+ };
+ const baseProgress=window.openWardrobeProgress;
+ if(typeof baseProgress==="function")window.openWardrobeProgress=function(person){
+  baseProgress(person);
+  const box=document.querySelector("#modal .wardrobe-count-list");
+  if(box&&!box.parentElement.querySelector(".fc-open-link")){
+   const button=document.createElement("button");button.type="button";button.className="btn primary fc-open-link";button.textContent="🪞 Open visual closet";
+   button.onclick=()=>{closeModal();window.openFamilyCloset(person)};
+   box.insertAdjacentElement("afterend",button);
+  }
+ };
+ const baseAdd=window.openInventoryItem;
+ if(typeof baseAdd==="function")window.openInventoryItem=function(id,person,type){
+  baseAdd(id,person,type);
+  Promise.resolve().then(()=>{
+   const select=document.getElementById("invWardrobeType");if(!select)return;
+   [["dress","Dress"],["skirt","Skirt"],["shorts","Shorts"],["leggings","Leggings"],["shoes","Shoes"],["accessory","Accessory"]].forEach(([value,label])=>{
+    if(!select.querySelector('option[value="'+value+'"]'))select.insertAdjacentHTML("beforeend",'<option value="'+value+'">'+label+'</option>');
+   });
+   if(type&&["dress","skirt","shorts","leggings","shoes","accessory"].includes(type))select.value=type;
+  });
+ };
+})();
