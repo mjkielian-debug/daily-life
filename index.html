@@ -314,7 +314,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261112-task-area-dates1";
+const APP_BUILD="20261112-ssd-preload-hours1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -3311,6 +3311,7 @@ function workEndConfirmed(w,now=new Date()){
   return end!==null&&end<=nowM+5;
 }
 function workNeedsPunchOut(w,now=new Date()){
+  if(w?.endApproximate&&!w?.timecardVerified)return true;
   if(!w?.start||w.end)return false;
   if(w.endedUnknown||String(w.status||"")==="completed-needs-end")return true;
   const date=String(w.date||""),today=ymd(now);
@@ -3324,10 +3325,21 @@ function liveWorkHours(w,now=new Date()){
 function wh(w){if(!w?.start||!w?.end||!workEndConfirmed(w))return 0;const[sh,sm]=w.start.split(":").map(Number),[eh,em]=w.end.split(":").map(Number);let m=eh*60+em-(sh*60+sm);if(m<0)m+=1440;return m/60}
 function workCreditedHours(w){
   const official=Number(w?.officialHours);
-  return w?.timecardVerified&&Number.isFinite(official)&&official>=0?official:wh(w);
+  if(w?.timecardVerified&&Number.isFinite(official)&&official>=0)return official;
+  if(w?.splitWorkSegments){
+    const preload=Number(w.preloadHoursEstimate??wh(w)),ssd=Number(w.ssdHours);
+    return (Number.isFinite(preload)&&preload>0?preload:0)+(Number.isFinite(ssd)&&ssd>0?ssd:0);
+  }
+  return wh(w);
 }
 function workStatusText(w){
   if(!w)return"No shift logged";
+  if(w.splitWorkSegments){
+    const preload=Number(w.preloadHoursEstimate||0),ssd=Number(w.ssdHours||0),miles=Number(w.ssdMiles||0),
+      range=esc(String(w.preloadClockOutRange||"clock-out time unknown")),
+      route=w.deliveryStart&&w.deliveryEnd?fmtClock(w.deliveryStart)+"–"+fmtClock(w.deliveryEnd):"";
+    return "Preload "+fmtClock(w.start)+" · approx. "+range+" ("+preload.toFixed(2)+" h estimate) · SSD "+(route?route+" · ":"")+ssd.toFixed(2)+" h · "+miles.toFixed(1)+" mi";
+  }
   if(w.start&&workEndConfirmed(w)){
     const official=w.timecardVerified&&Number.isFinite(Number(w.officialHours))?` · ${Number(w.officialHours).toFixed(2)} official h`:"";
     return `${fmtClock(w.start)}–${fmtClock(w.end)}${official}`;
