@@ -191,7 +191,12 @@ async function analyzeClothing(file){
 function addLook(name,colors,source,analysis=null,schedule={}){
  const w=wardrobe();if(!w)return;
  const id="item-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),look={id,name:String(name||"Clothing photo").slice(0,80),type:source.type||"outfit",primary:safeColor(colors.primary),accent:safeColor(colors.accent),analysis:analysis||null,schedule:{daypart:schedule.daypart||"any",season:schedule.season||"any",ssd:!!schedule.ssd},source:source.label||"Local color sample",createdAt:new Date().toISOString()};
- w.items.push(look);w.items=w.items.slice(-100);w.activeItemId=id;return look;
+ const lookText=[look.name,look.analysis?.garment_type,look.analysis?.summary,...(Array.isArray(look.analysis?.visible_details)?look.analysis.visible_details:[])].filter(Boolean).join(" ").toLowerCase();
+ const ssdVest=look.type==="vest"||(/\bvest\b/.test(lookText)&&/\b(ssd|ups|delivery|work)\b/.test(lookText));
+ if(ssdVest)look.schedule.ssd=true;
+ w.items.push(look);w.items=w.items.slice(-100);w.activeItemId=id;
+ if(ssdVest||schedule.ssd)w.ssdItemId=id;
+ return look;
 }
 function reviewWardrobeBatch(candidates,status){
  const cards=candidates.map((x,i)=>{
@@ -201,7 +206,7 @@ function reviewWardrobeBatch(candidates,status){
   return '<article class="aw-review-card"><div class="aw-review-photo">'+(preview?'<img src="'+preview+'" alt="Selected clothing photo '+(i+1)+'">':'<span>👗</span>')+'</div><div class="aw-review-fields"><label>Closet label<input id="awName'+i+'" maxlength="80" value="'+esc(x.name)+'"></label><label>Item type<select id="awType'+i+'">'+[["outfit","Complete outfit"],["vest","Work vest / outerwear"],["top","Top"],["bottom","Bottom"],["shoes","Shoes"],["accessory","Accessory"]].map(([v,l])=>'<option value="'+v+'" '+(x.type===v?"selected":"")+'>'+l+'</option>').join("")+'</select></label><label>Style and visible details<textarea id="awDescription'+i+'" rows="2" maxlength="360">'+esc(description)+'</textarea></label><div class="aw-review-colors"><label>Main color<input id="awColor'+i+'" type="color" value="'+safeColor(x.colors.primary)+'"></label><label>Accent color<input id="awAccent'+i+'" type="color" value="'+safeColor(x.colors.accent)+'"></label></div><div class="aw-review-schedule"><label>Wear it<select id="awDaypart'+i+'"><option value="any">Any time</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select></label><label>Season<select id="awSeason'+i+'"><option value="any">Any season</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="fall">Fall</option><option value="winter">Winter</option></select></label><label class="aw-ssd-check"><input id="awSsd'+i+'" type="checkbox"> SSD route</label></div></div></article>';
  }).join("");
  let saved=false;
- modal("Review your wardrobe photos",'<p class="aw-review-intro">Your originals are saved in Photo Inbox. Correct the labels and details, then choose when each item should show on your cartoon avatar.</p><p id="awReviewError" class="aw-review-error" role="alert"></p><div class="aw-review-list">'+cards+'</div>',"Save to wardrobe",async()=>{
+ modal("Review your wardrobe photos",'<p class="aw-review-intro">Your originals are saved in Photo Inbox. Describe the visible layers. A vest labeled SSD/UPS or marked Work vest becomes your automatic SSD look; it will wear only during the route hours.</p><p id="awReviewError" class="aw-review-error" role="alert"></p><div class="aw-review-list">'+cards+'</div>',"Save to wardrobe",async()=>{
   const button=document.getElementById("saveModal");if(button){button.disabled=true;button.textContent="Saving…"}
   const closet=wardrobe(),previousItems=closet?.items.slice()||[],previousActive=closet?.activeItemId||"";
   candidates.forEach((x,i)=>{
