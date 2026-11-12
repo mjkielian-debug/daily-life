@@ -194,12 +194,12 @@ function roomSymbol(z,b){
 
 
 function houseCareFill(f){
- const today=typeof ymd==="function"?ymd():"";
- const rows=typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(today):arr(state.tasks).filter(t=>t.date===today&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&String(t.category||"").toLowerCase()==="home");
- const done=rows.filter(t=>t.done).length,pct=rows.length?done/rows.length:0;
+ const today=typeof ymd==="function"?ymd():"",dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[today];
+ const rows=typeof window.lifeMapHouseholdRows==="function"?dates.flatMap(d=>window.lifeMapHouseholdRows(d)):arr(state.tasks).filter(t=>dates.includes(t.date)&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&String(t.category||"").toLowerCase()==="home");
+ const done=rows.filter(t=>t.done).length,pct=rows.length?done/rows.length:0,label=dates.length>1?"this week":"today";
  const clip="hvm-care-"+f.toLowerCase().replace(/[^a-z]/g,"");
- return '<button type="button" class="hvm-care-house" style="border:0;background:transparent;padding:4px;cursor:pointer" aria-label="Whole-house care: '+done+' of '+rows.length+' complete" onclick="setView(&#39;lifearea-home&#39;)">'+
- '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg><span style="display:block;font-size:.8rem;color:#68516b">'+done+' of '+rows.length+' home tasks done today</span></button>';
+ return '<button type="button" class="hvm-care-house" style="border:0;background:transparent;padding:4px;cursor:pointer" aria-label="Whole-house care: '+done+' of '+rows.length+' complete '+label+'" onclick="setView(&#39;lifearea-home&#39;)">'+
+ '<svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="M4 24L28 4L52 24V53H4Z"/></clipPath></defs><path d="M4 24L28 4L52 24V53H4Z" fill="#fff8fb" stroke="#97758e" stroke-width="3"/><g clip-path="url(#'+clip+')"><rect x="2" y="'+(54-50*pct)+'" width="52" height="'+(50*pct)+'" fill="#9fd8bd"/></g><path d="M4 24L28 4L52 24M22 53V36H34V53" fill="none" stroke="#97758e" stroke-width="2.5"/></svg><span style="display:block;font-size:.8rem;color:#68516b">'+done+' of '+rows.length+' home tasks done '+label+'</span></button>';
 }
 
 function unmappedLocalRooms(f,m){
@@ -233,7 +233,7 @@ function mapSketch(f,m){
   const displayLabel=f==="First floor"&&/basement/i.test(str(z.id)+" "+str(z.name))?"Basement stairs":(z.short||z.name);
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
   const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
-    roomTasks=trackedRoomTasks(f,z,room).filter(t=>!t.date||t.date===ymd()),taskDone=roomTasks.filter(t=>t.done).length,
+    roomTasks=trackedRoomTasks(f,z,room).filter(t=>{const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];return !t.date||dates.includes(String(t.date))}),taskDone=roomTasks.filter(t=>t.done).length,
     taskTint=taskDone?Math.min(.38,.08+Math.log2(taskDone+1)*.09):0,
     declutterTint=organized?Math.min(.42,.08+Math.log2(organized+1)*.09):0;
   const taskOverlay=taskDone?'<path class="hvm-task-progress-wash" d="'+h(z.path)+'" fill="#9fd8bd" fill-opacity="'+taskTint.toFixed(2)+'" pointer-events="none"/>':"";
@@ -794,15 +794,17 @@ window.houseVisualInventoryOpen=function(f,id){
 };
 function trackedRoomTasks(f,z,room){
  const name=String(z?.name||room?.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];
  const tasks=(state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
+  if(t.date&&!dates.includes(String(t.date)))return false;
   if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
   const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   return String(t.category||"").toLowerCase()==="home"&&name&&(" "+label+" ").includes(" "+name+" ");
  });
- const chores=typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(ymd()).filter(t=>{
+ const chores=typeof window.lifeMapHouseholdRows==="function"?dates.flatMap(date=>window.lifeMapHouseholdRows(date)).filter(t=>{
   if(!t._lifeChore||!/room|make.*bed/i.test(String(t.title||"")))return false;
   const child=String(t.child||"").toLowerCase().trim(),roomName=String(z?.name||"").toLowerCase();
   return child&&roomName.includes(child);
