@@ -18,6 +18,17 @@ function isSsdDay(){
   (s.tasks||[]).some(x=>x&&x.date===date&&words.test(String(x.title||"")+" "+String(x.notes||"")))||
   (s.events||[]).some(x=>x&&String(x.date||x.startDate||"").slice(0,10)===date&&words.test(String(x.title||"")+" "+String(x.notes||"")));
 }
+function isWorkUniformDay(){
+ const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10),s=typeof state==="undefined"?{}:state;
+ if(isSsdDay())return true;
+ const actual=(s.workShifts||[]).some(x=>x&&x.date===date&&
+  (x.start||x.end||Number(x.officialHours)>0||Number(x.officialGrossPay)>0));
+ const scheduled=(s.tasks||[]).some(x=>x&&x.date===date&&
+  (String(x.category||"").toLowerCase()==="work"||/\bUPS\b|preload|seasonal support driver|helper vest|delivery route/i.test(String(x.title||"")+" "+String(x.notes||""))));
+ const event=(s.events||[]).some(x=>x&&String(x.date||x.startDate||"").slice(0,10)===date&&
+  /\bUPS\b|preload|seasonal support driver|seasonal helper|delivery route/i.test(String(x.title||"")+" "+String(x.notes||"")));
+ return actual||scheduled||event;
+}
 function currentDaypart(){const h=new Date().getHours();return h>=4&&h<12?"morning":h>=12&&h<17?"afternoon":"evening"}
 function currentSeason(){const m=new Date().getMonth()+1;return m===12||m<=2?"winter":m<=5?"spring":m<=8?"summer":"fall"}
 function hasSchedule(s){return !!s&&(s.ssd||s.daypart&&s.daypart!=="any"||s.season&&s.season!=="any")}
@@ -26,9 +37,14 @@ function active(){
  const w=wardrobe();if(!w)return null;
  const manual=w.manualOverrideDate===(typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10))&&w.manualOverrideDaypart===currentDaypart()?w.items.find(x=>x.id===w.activeItemId):null;
  const ssdLook=isSsdDay()&&w.ssdItemId?w.items.find(x=>x.id===w.ssdItemId):null;
+ const automaticWorkLook=isWorkUniformDay()&&!ssdLook?{
+  id:"automatic-work-mesh-vest",name:"Brown mesh work vest",type:"vest",
+  primary:"#79543e",accent:"#d7df69",analysis:{garment_type:"vest",material_appearance:"mesh",summary:"Brown mesh delivery vest with high-visibility reflective bands"},
+  schedule:{ssd:isSsdDay()},isWorkUniform:true
+ }:null;
  const scheduled=[...w.items].reverse().find(x=>hasSchedule(x.schedule)&&scheduleMatches(x));
- const look=manual||ssdLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
- return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:!!manual,isScheduled:!manual&&((isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look)))}:null;
+ const look=manual||ssdLook||automaticWorkLook||scheduled||w.items.find(x=>x.id===w.activeItemId)||w.items[w.items.length-1];
+ return look?{id:look.id,name:look.name,type:look.type||"outfit",analysis:look.analysis||null,schedule:look.schedule||{},primary:safeColor(look.primary),accent:safeColor(look.accent),isManual:!!manual,isScheduled:!manual&&(!!look.isWorkUniform||(isSsdDay()&&w.ssdItemId===look.id)||(hasSchedule(look.schedule)&&scheduleMatches(look))),isWorkUniform:!!look.isWorkUniform}:null;
 }
 window.avatarWardrobeGetActive=active;
 function analysisDescription(value){
@@ -60,7 +76,7 @@ window.avatarWardrobePanelHtml=function(){
  const w=wardrobe();if(!w)return "";
  const selected=active(),looks=w.items.slice(-6).reverse();
  const rows=looks.map(x=>'<div class="lm-wardrobe-look"><span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><button type="button" class="lm-mini-button" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">Wear</button><button type="button" class="lm-mini-button" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">SSD</button></div>').join("");
- return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isManual?"Wearing your selection for this part of the day.":selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
+ return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):"Start your digital closet")+'</b><small>'+(selected?.isManual?"Wearing your selection for this part of the day.":selected?.isWorkUniform?"Auto-selected for today’s UPS or SSD shift.":selected?.isScheduled?"Auto-selected for "+esc(scheduleLabel(selected.schedule))+".":"Save clothing pieces and outfits from photos.")+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
  '<p class="lm-wardrobe-private">'+(w.aiConnected?'Free Google photo analysis is connected. Wardrobe photos are sent to Google for garment style details; the app uses no paid model.':'Connect free photo analysis for garment style, cut, and visible details. Its image model is free tier and may use submitted content to improve Google products.')+' The original stays in your private Photo Inbox.</p>'+
  (!w.aiConnected?'<button type="button" class="lm-mini-button lm-connect-ai" onclick="avatarWardrobeConnect()">Connect free photo analysis</button>':'')+
  (w.ssdItemId?'<div class="lm-wardrobe-rule">SSD schedule · '+esc((w.items.find(x=>x.id===w.ssdItemId)||{}).name||"saved outfit")+' <button type="button" class="lm-mini-button" onclick="avatarWardrobeClearSSD()">Clear</button></div>':'<div class="lm-wardrobe-rule">Save a vest or outfit, then tap <b>SSD</b> to use it when an SSD route is on today’s plan.</div>')+

@@ -21,7 +21,8 @@
  window.avatarWardrobeOpen=function(){
   if(typeof window.modal!=="function")return;
   const panel=typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"";
-  window.modal("Closet & outfits",'<div class="lm-wardrobe-popup">'+panel+'</div>',"Close",window.closeModal);
+  const family='<button type="button" class="btn primary lm-family-closet-open" onclick="closeModal();openFamilyCloset(\'Michelle\')">Open family closet + outfit mixer ›</button>';
+  window.modal("Closet & outfits",'<div class="lm-wardrobe-popup">'+panel+family+'</div>',"Close",window.closeModal);
  };
  function sparkle(event){
   const target=event.target?.closest?.('button,a,[role="button"],summary,input[type="checkbox"],input[type="radio"],.lm-avatar-hotspot,.lm-avatar-mark,.hvm-zone,.hvm-room-tile');
