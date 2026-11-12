@@ -632,7 +632,7 @@ function floorView(f,m){
   z=z||personRoomZone(f,person.name,!!person.isSelf);
   if(z)return personRoomHome(f,z)
  }
- if(person&&browsing)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';
+ if(person&&browsing){const ownRoom=personRoomZone(f,person.name,!!person.isSelf);if(ownRoom)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualGoToPersonRoom()">Go to '+h(person.name)+'’s room · '+h(person.isSelf?"Third floor":"Second floor")+' →</button>'+layout+'</div>'}
  return layout;
 }
 window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapBrowseRooms","1")}catch(e){};render()};
@@ -764,7 +764,8 @@ function personRoomZone(f,name,isSelf){
  }
  return null;
 }
-window.houseVisualGoToPersonRoom=async function(name,isSelf=false){
+window.houseVisualGoToPersonRoom=async function(name,isSelf){
+ const selected=selectedRoomProfile();name=name||selected?.name||"";isSelf=isSelf==null?!!selected?.isSelf:!!isSelf;
  const floor=isSelf?"Third floor":"Second floor";
  try{
   localStorage.removeItem("dailyLifeMapBrowseRooms");
