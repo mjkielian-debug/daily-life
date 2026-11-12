@@ -58,7 +58,19 @@ function view(areaOverride,tasksOnly){
  const avatarTop=avatarLook&&!['bottom','shoes','accessory'].includes(avatarLook.type)?avatarLook.primary:"#d7c6ee";
  const avatarBottom=avatarLook?.type==="bottom"?avatarLook.primary:avatarLook?.type==="outfit"?avatarLook.accent:"#c5d9ef";
  const avatarShoe=avatarLook?.type==="shoes"?avatarLook.primary:"#f7b9cd",avatarAccessory=avatarLook?.type==="accessory"?avatarLook.primary:"#f5c2da";
- const avatarLookStyle=avatarLook?' style="--lm-outfit-main:'+h(avatarTop)+';--lm-outfit-accent:'+h(avatarBottom)+';--lm-outfit-shoe:'+h(avatarShoe)+';--lm-outfit-accessory:'+h(avatarAccessory)+'"':'';
+ const garment=String(avatarLook?.analysis?.garment_type||avatarLook?.type||"").toLowerCase();
+ const garmentPattern=String(avatarLook?.analysis?.pattern||"").toLowerCase();
+ const avatarSleeve=garment==="vest"?"#f1c8ce":avatarTop;
+ const avatarLookStyle=avatarLook?' style="--lm-outfit-main:'+h(avatarTop)+';--lm-outfit-accent:'+h(avatarBottom)+';--lm-outfit-shoe:'+h(avatarShoe)+';--lm-outfit-accessory:'+h(avatarAccessory)+';--lm-outfit-sleeve:'+h(avatarSleeve)+';--lm-outfit-detail:'+h(avatarLook.accent||"#e6c7a7")+'"':'';
+ let avatarGarmentDetails="";
+ if(garment==="vest") avatarGarmentDetails='<path d="M92 112 L100 122 L110 116 L120 122 L128 112 L136 177 Q110 184 84 177Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2" stroke-linejoin="round"/><path d="M110 117 L110 179 M88 151 L102 151 L102 163 L87 163Z M118 151 L132 151 L133 163 L118 163Z" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.8" stroke-linejoin="round"/><circle cx="110" cy="130" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="140" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/><circle cx="110" cy="150" r="1.5" fill="var(--lm-outfit-detail,#e6c7a7)"/>';
+ else if(garment==="hoodie") avatarGarmentDetails='<path d="M94 113 Q93 101 110 100 Q127 101 126 113 L120 124 L110 118 L100 124Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2" stroke-linejoin="round"/><path d="M106 119 L104 138 M114 119 L116 138 M98 157 Q110 151 122 157 L121 165 Q110 160 99 165Z" fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+ else if(garment==="shirt"||garment==="blouse") avatarGarmentDetails='<path d="M96 111 L104 120 L110 116 L116 120 L124 111 L119 132 L110 127 L101 132Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.3" stroke-linejoin="round"/>';
+ if(garmentPattern==="striped") avatarGarmentDetails+='<path d="M82 135 H138 M83 151 H137 M84 167 H136" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="3" clip-path="url(#lmTorsoClip)" opacity=".85"/>';
+ else if(garmentPattern==="plaid") avatarGarmentDetails+='<path d="M92 108 V183 M110 108 V184 M128 108 V183 M78 139 H142 M78 159 H142" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="2" clip-path="url(#lmTorsoClip)" opacity=".8"/>';
+ else if(garmentPattern==="polka-dot") avatarGarmentDetails+='<g fill="var(--lm-outfit-detail,#e6c7a7)" clip-path="url(#lmTorsoClip)"><circle cx="95" cy="137" r="2"/><circle cx="117" cy="137" r="2"/><circle cx="105" cy="151" r="2"/><circle cx="127" cy="154" r="2"/><circle cx="92" cy="166" r="2"/><circle cx="116" cy="169" r="2"/></g>';
+ else if(garmentPattern==="floral") avatarGarmentDetails+='<g fill="none" stroke="var(--lm-outfit-detail,#e6c7a7)" stroke-width="1.5" clip-path="url(#lmTorsoClip)"><circle cx="97" cy="141" r="4"/><circle cx="123" cy="151" r="4"/><circle cx="103" cy="169" r="4"/><path d="M97 135V147 M91 141H103 M123 145V157 M117 151H129 M103 163V175 M97 169H109"/></g>';
+ else if(garmentPattern==="graphic") avatarGarmentDetails+='<path d="M100 137 L110 132 L120 137 L110 153Z" fill="var(--lm-outfit-detail,#e6c7a7)" stroke="#896879" stroke-width="1.4" clip-path="url(#lmTorsoClip)"/>';
  const tasks=lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>String(t.date||"")===date&&!t.paused&&!t.duplicateHidden&&!t.waitingForFunds&&!(/\b(app|development)\b/i.test(String(t.category||""))&&/build|apk|bridge|workflow|deploy|migration/i.test(String(t.title||""))));
  const completed=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
  const careHabits=typeof selfCareHabits==="function"?selfCareHabits():[];
@@ -199,7 +211,7 @@ function view(areaOverride,tasksOnly){
  '<path d="M109 65 Q107 69 110 70" fill="none" stroke="#d18e86" stroke-width="1.5" stroke-linecap="round"/><path d="M104 78 Q110 84 116 78" fill="none" stroke="#ac657a" stroke-width="2.2" stroke-linecap="round"/>'+
  '<path d="M99 91 L99 110 L121 110 L121 91Z" fill="#f7dfd4" stroke="#64445a" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<path d="M87 111 Q110 101 133 111 L138 179 Q110 187 82 179Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.6" stroke-linejoin="round"/>'+
- '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="var(--lm-outfit-main,#d7c6ee)" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
+ '<path d="M87 112 Q75 116 70 132 L60 171 Q58 179 65 181 L79 146 L94 134Z" fill="var(--lm-outfit-sleeve,var(--lm-outfit-main,#d7c6ee))" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/><path d="M133 112 Q145 116 150 132 L160 171 Q162 179 155 181 L141 146 L126 134Z" fill="var(--lm-outfit-sleeve,var(--lm-outfit-main,#d7c6ee))" stroke="#896879" stroke-width="2.5" stroke-linejoin="round"/>'+
  '<path d="M82 179 Q110 190 138 179 L133 289 L115 289 L110 225 L105 289 L87 289Z" fill="var(--lm-outfit-accent,#c5d9ef)" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+
  '<path d="M86 289 L104 289 L104 292 Q98 297 82 294 Q82 291 86 289Z M116 289 L134 289 Q140 291 143 294 Q128 298 116 293Z" fill="var(--lm-outfit-shoe,#f7b9cd)" stroke="#896879" stroke-width="2.2" stroke-linejoin="round"/>'+
  '<g opacity=".3" clip-path="url(#lmMindClip)"><rect x="78" y="'+(98-74*pctFor("mind")/100)+'" width="64" height="'+(74*pctFor("mind")/100)+'" fill="#c89ad7"/></g>'+
@@ -207,6 +219,7 @@ function view(areaOverride,tasksOnly){
  '<g clip-path="url(#lmTorsoClip)"><rect x="74" y="'+(194-85*pctFor("body")/100)+'" width="72" height="'+(85*pctFor("body")/100)+'" fill="#f2ae85"/></g>'+
  '<g clip-path="url(#lmLeftClip)"><rect x="52" y="'+(188-45*pctFor("people")/100)+'" width="42" height="'+(45*pctFor("people")/100)+'" fill="#e98cb0"/></g><g clip-path="url(#lmRightClip)"><rect x="126" y="'+(188-45*pctFor("hobbies")/100)+'" width="42" height="'+(45*pctFor("hobbies")/100)+'" fill="#82c6a4"/></g>'+
  '<g clip-path="url(#lmLegClip)"><rect x="68" y="'+(292-94*pctFor("money")/100)+'" width="84" height="'+(94*pctFor("money")/100)+'" fill="#83b8df"/></g>'+
+ avatarGarmentDetails+
  '<path d="M96 112 Q110 124 124 112 M103 113 L110 119 L117 113" fill="none" stroke="#755170" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+
  '<path d="M123 144 Q130 140 134 146 L134 161 Q128 158 123 161Z" fill="#f7e7fb" stroke="#755170" stroke-width="1.8" stroke-linejoin="round"/><circle cx="128" cy="151" r="1.3" fill="#b86c9c"/>'+
  '<path d="M110 192L110 212M91 210Q97 213 103 210M117 210Q123 213 130 210" fill="none" stroke="#76526b" stroke-width="2" stroke-linecap="round"/>'+
