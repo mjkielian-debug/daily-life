@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const hourlyRate = 23;
-  const mileageRate = 0.706;
+  const mileageRate = 0.76;
   function escText(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
   }
