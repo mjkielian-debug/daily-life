@@ -889,9 +889,18 @@ window.houseVisualAssignTaskToRoom=async function(taskId,f,id){
  if(typeof save==="function")await save();
  if(typeof render==="function")render();
 };
-window.houseVisualUnassignedTasksHtml=function(f){
+window.houseVisualLoadTaskRooms=async function(taskId,f){
+ if(!floors.includes(f))return;
+ const roomSelect=Array.from(document.querySelectorAll("[data-house-task-room]")).find(node=>node.dataset.houseTaskRoom===String(taskId));
+ if(!roomSelect)return;
+ roomSelect.innerHTML='<option value="">Loading rooms…</option>';
+ await window.houseVisualMapHydrate(f);
  const map=get(f),zones=arr(map?.zones).filter(z=>z&&okId(z.id));
- if(!zones.length)return "";
+ const currentFloor=Array.from(document.querySelectorAll("[data-house-task-floor]")).find(node=>node.dataset.houseTaskFloor===String(taskId))?.value;
+ if(currentFloor!==f)return;
+ roomSelect.innerHTML=zones.length?'<option value="">Choose a room</option>'+zones.map(z=>'<option value="'+h(z.id)+'">'+h(z.name||"Room")+'</option>').join(""):'<option value="">No mapped rooms on this floor</option>';
+};
+window.houseVisualUnassignedTasksHtml=function(f){
  const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];
  const tasks=arr(state.tasks).filter(task=>{
   if(task.done||task.paused||task.duplicateHidden||task.waitingForFunds)return false;
@@ -901,16 +910,25 @@ window.houseVisualUnassignedTasksHtml=function(f){
   return !window.houseVisualTaskHasRoomMatch(task);
  });
  const chores=dates.flatMap(date=>typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(date):[]).filter(task=>task._lifeChore&&!task.done&&!task.paused&&!task.duplicateHidden&&!window.houseVisualTaskHasRoomMatch(task));
- const unassigned=tasks.concat(chores).slice(0,12);
+ const unassigned=tasks.concat(chores);
  if(!unassigned.length)return "";
- return '<section class="hvm-unassigned-tasks"><div><span class="eyebrow">HOUSE MAP · TASK PLACEMENT</span><h3>House tasks without a room</h3><p>Room-specific work appears in its room. Choose a room for these remaining household tasks.</p></div>'+unassigned.map(task=>'<article class="hvm-unassigned-task"><b>'+h(task.title||"Home task")+'</b><small>'+(task.child?h(task.child)+" · ":"")+(task.date?h(task.date):"No date")+'</small><label>Room<select data-house-task-room="'+h(task.id)+'"><option value="">Choose a room</option>'+zones.map(z=>'<option value="'+h(z.id)+'">'+h(z.name||"Room")+'</option>').join("")+'</select></label><button type="button" class="btn small primary" data-house-assign-task="'+h(task.id)+'" data-house-floor="'+h(f)+'">Assign to room</button></article>').join("")+'</section>';
+ return '<section class="hvm-unassigned-tasks"><div><span class="eyebrow">HOUSE MAP · TASK PLACEMENT</span><h3>House tasks without a room</h3><p>Room-specific work appears in its room. Choose a floor and room for these remaining household tasks.</p></div><details><summary>Assign rooms · '+unassigned.length+' task'+(unassigned.length===1?'':'s')+'</summary><div class="hvm-unassigned-task-list">'+unassigned.map(task=>'<article class="hvm-unassigned-task"><b>'+h(task.title||"Home task")+'</b><small>'+(task.child?h(task.child)+" · ":"")+(task.date?h(task.date):"No date")+'</small><label>Floor<select data-house-task-floor="'+h(task.id)+'"><option value="">Choose a floor</option>'+floors.map(floor=>'<option value="'+h(floor)+'">'+h(floor)+'</option>').join("")+'</select></label><label>Room<select data-house-task-room="'+h(task.id)+'" disabled><option value="">Choose a floor first</option></select></label><button type="button" class="btn small primary" data-house-assign-task="'+h(task.id)+'">Assign to room</button></article>').join("")+'</div></details></section>';
 };
+document.addEventListener("change",function(event){
+ const select=event.target&&event.target.closest?event.target.closest("[data-house-task-floor]"):null;
+ if(!select)return;
+ const taskId=select.dataset.houseTaskFloor,floor=select.value;
+ const roomSelect=Array.from(document.querySelectorAll("[data-house-task-room]")).find(node=>node.dataset.houseTaskRoom===taskId);
+ if(roomSelect){roomSelect.disabled=!floor;roomSelect.innerHTML='<option value="">'+(floor?"Loading rooms…":"Choose a floor first")+'</option>'}
+ if(floor)window.houseVisualLoadTaskRooms(taskId,floor);
+});
 document.addEventListener("click",function(event){
  const button=event.target&&event.target.closest?event.target.closest("[data-house-assign-task]"):null;
  if(!button)return;
- const taskId=button.getAttribute("data-house-assign-task"),floor=button.getAttribute("data-house-floor");
- const select=Array.from(document.querySelectorAll("[data-house-task-room]")).find(node=>node.dataset.houseTaskRoom===taskId);
- if(select&&select.value)window.houseVisualAssignTaskToRoom(taskId,floor,select.value);
+ const taskId=button.getAttribute("data-house-assign-task");
+ const floorSelect=Array.from(document.querySelectorAll("[data-house-task-floor]")).find(node=>node.dataset.houseTaskFloor===taskId);
+ const roomSelect=Array.from(document.querySelectorAll("[data-house-task-room]")).find(node=>node.dataset.houseTaskRoom===taskId);
+ if(floorSelect?.value&&roomSelect?.value)window.houseVisualAssignTaskToRoom(taskId,floorSelect.value,roomSelect.value);
 });
 window.houseVisualCompleteTask=async function(taskId,f,zoneId){
  const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId)),chore=(state.chores||[]).find(x=>String(x.id)===String(taskId));
