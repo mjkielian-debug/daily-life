@@ -639,16 +639,7 @@ function bedroomWardrobes(f,z){
      const pattern=name==="Demitri"?/\b(demitri|dimitri|tree)\b/i:new RegExp("\\b"+name+"\\b","i");
      return pattern.test(label.replace(/[_-]/g," "));
    }):[];
- return owners.map(name=>{
-   const aliases=name==="Demitri"?["demitri","dimitri","tree"]:name==="Michelle"?["michelle","self","me"]: [name.toLowerCase()];
-   const items=arr(state.inventoryItems).filter(item=>{
-     const owner=str(item.inventoryOwner||item.wardrobeOwner).trim().toLowerCase();
-     return aliases.includes(owner)&&!["gone","donate / sell","donated","sold","discarded"].includes(str(item.status).toLowerCase()) &&
-       (/clothing|clothes|apparel|wardrobe/i.test(str(item.category)) || /\b(pants?|trousers|jeans|shorts|leggings|shirts?|blouses?|tees?|t-shirts?|sweaters?|hoodies?|dresses|dress|skirts?|socks?|underwear|pajamas|coats?|jackets?|shoes?|boots?)\b/i.test(str(item.name)));
-   });
-   const rows=items.map(item=>'<li>'+h(item.name||"Clothing item")+' · '+h(String(item.quantity??1))+(item.size?' · '+h(item.size):'')+'</li>').join("");
-   return '<details class="hvm-room-extra"><summary>'+h(name)+'’s wardrobe</summary>'+(rows?'<ul>'+rows+'</ul>':'<p>No clothing recorded yet.</p>')+'</details>';
- }).join("");
+ return owners.map(name=>'<button type="button" class="btn hvm-person-room-inventory" onclick="openFamilyCloset(&#39;'+h(name)+'&#39;)">Browse '+h(name)+'’s visual closet ›</button>').join("");
 }
 function personRoomHome(f,z){
  const tourZones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
