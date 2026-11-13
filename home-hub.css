@@ -251,3 +251,41 @@
     overflow:visible;
   }
 }
+
+
+/* Life Map area detail pages must stack; the compact two-column shell above is
+   only for the clickable avatar and house map. */
+#app:has(.lm-area-page) .life-map-page.lm-area-page{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto!important;
+  gap:14px!important;
+  width:100%;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  padding:4px 0 calc(112px + env(safe-area-inset-bottom))!important;
+  overflow:visible!important;
+  align-items:start!important;
+}
+#app:has(.lm-area-page) .life-map-page.lm-area-page>*{
+  grid-column:1/-1!important;
+  grid-row:auto!important;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#app:has(.lm-area-page) .lm-area-page-content{
+  max-height:none!important;
+  overflow:visible!important;
+}
+#app:has(.lm-area-page) .lm-area-page-content .lm-list{
+  max-height:none!important;
+  overflow:visible!important;
+}
+@media(max-width:640px){
+  #app:has(.lm-area-page) .life-map-page.lm-area-page{gap:12px!important}
+  #app:has(.lm-area-page) .lm-area-page-heading{padding:16px}
+  #app:has(.lm-area-page) .lm-area-shortcuts>div{grid-template-columns:minmax(0,1fr)}
+}
