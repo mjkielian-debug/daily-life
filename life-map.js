@@ -30,9 +30,9 @@ function jump(view){if(typeof setView==="function")setView(view)}
 function avatarMark(label,icon,x,y,pct,color,area){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
  return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(label)}" title="${h(label)}" data-life-area="${h(area)}">`+
- '<circle cx="'+x+'" cy="'+y+'" r="14" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
- '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
- '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="12" font-weight="900" fill="#48394d">'+icon+'</text></g>';
+ '<circle cx="'+x+'" cy="'+y+'" r="21" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
+ '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
+ '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="15" font-weight="900" fill="#48394d">'+icon+'</text></g>';
 }
 function lifeMapAreaForTask(task){
  const title=String(task&&task.title||"").toLowerCase();
