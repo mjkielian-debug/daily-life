@@ -453,17 +453,40 @@ function spiritualitySourceLink(reading){
 }
 function spiritualityGuideLandingCard(){
  const reading=dailySpiritualReading(),log=spiritualityLogFor(),done=!!log?.guidedPractice;
- return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Your daily spiritual practice</div><h2>Five minutes, guided one step at a time</h2><p class="muted">A short reading and a simple practice, rotating among Pagan, Unitarian Universalist, Buddhist, Hindu, Wiccan, and earth-centered reflections. No Christian material.</p><div class="spiritual-guide-preview"><span class="tag">Today · '+esc(reading.lens)+'</span><b>'+esc(reading.title)+'</b><span class="muted small">'+(done?'Completed today · ':'')+'1 min to set an intention · 1 min to read · 2 min to practice · 1 min to reflect</span></div><button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(done?'Practice again':'Begin today’s five-minute practice')+'</button><div class="muted small">No supplies needed. Stop whenever you want; it only records completion after all four steps.</div></section>'
+ return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Your daily spiritual practice</div><h2>Five minutes, guided one step at a time</h2><p class="muted">A short reading and a simple practice, rotating among Pagan, Unitarian Universalist, Buddhist, Hindu, Wiccan, and earth-centered reflections. No Christian material.</p><div class="spiritual-guide-preview"><span class="tag">Today · '+esc(reading.lens)+'</span><b>'+esc(reading.title)+'</b><span class="muted small">'+(done?'Completed today · ':'')+'Choose a focus · explore a teaching · try a practice · carry one thing forward</span></div><button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(done?'Practice again':'Begin today’s five-minute practice')+'</button><div class="muted small">No supplies needed. Stop whenever you want; it only records completion after all four steps.</div></section>'
+}
+function spiritualityGuideChoiceGroup(group,options,selected){
+ return'<div class="spiritual-guide-choices" role="group">'+options.map(function(option){
+  const active=selected===option;
+  return'<button type="button" class="spiritual-guide-choice'+(active?' is-selected':'')+'" aria-pressed="'+(active?'true':'false')+'" onclick="chooseSpiritualityGuide(\''+group+'\',\''+esc(option)+'\')">'+esc(option)+'</button>';
+ }).join("")+'</div>'
+}
+function chooseSpiritualityGuide(group,value){
+ if(!spiritualityGuideRun||spiritualityGuideRun.timer)return;
+ const allowed={focus:["Compassion","Courage","Curiosity","Connection","Rest","Gratitude"],readingResponse:["This feels relevant","I have a question","I want to try this"],practiceMode:["Use today’s suggested practice","Connect it to one small action","Repeat a key word or phrase"],carryForward:["A small act of care","A question to keep","A moment to notice"]};
+ if(!allowed[group]||!allowed[group].includes(value))return;
+ spiritualityGuideRun[group]=value;
+ showSpiritualityGuideStep();
 }
 function spiritualityGuideSteps(){
- const r=spiritualityGuideRun?.reading||dailySpiritualReading();
+ const r=spiritualityGuideRun?.reading||dailySpiritualReading(),run=spiritualityGuideRun||{};
+ const focusChoices=spiritualityGuideChoiceGroup("focus",["Compassion","Courage","Curiosity","Connection","Rest","Gratitude"],run.focus);
+ const responseChoices=spiritualityGuideChoiceGroup("readingResponse",["This feels relevant","I have a question","I want to try this"],run.readingResponse);
+ const practiceChoices=spiritualityGuideChoiceGroup("practiceMode",["Use today’s suggested practice","Connect it to one small action","Repeat a key word or phrase"],run.practiceMode);
+ const carryChoices=spiritualityGuideChoiceGroup("carryForward",["A small act of care","A question to keep","A moment to notice"],run.carryForward);
+ const practiceText=run.practiceMode==="Connect it to one small action"
+  ?"Choose one small action that fits your day and the focus you picked: "+esc(run.focus||"your intention")+". Decide on a first step, and take it if you can."
+  :run.practiceMode==="Repeat a key word or phrase"
+  ?"Choose a word or short phrase from today’s reading. Repeat it gently with your breathing, returning to it when your attention wanders."
+  :esc(r.practice);
  return[
-  {title:"Set an intention",minutes:1,text:"Before the reading, choose what you want to bring to today: curiosity, compassion, courage, rest, connection, or your own word. Hold that intention as you read."},
-  {title:"Read",minutes:1,text:'<div class="spiritual-guide-reading"><span class="tag">'+esc(r.lens)+'</span><h3>'+esc(r.title)+'</h3><p>'+esc(r.body)+'</p>'+spiritualitySourceLink(r)+'</div>'},
-  {title:"Practice",minutes:2,text:"Try this gently for two minutes: "+esc(r.practice)},
-  {title:"Reflect",minutes:1,text:"What stood out in the reading or practice? Name one thing you noticed, learned, or want to remember. It can be just a word."}
+  {title:"Choose a focus",minutes:1,required:"focus",text:"What would you like to make room for today? Pick one focus. You’ll bring it into the reading and practice below."+focusChoices},
+  {title:"Explore today’s teaching",minutes:1,required:"readingResponse",text:'<div class="spiritual-guide-reading"><span class="tag">'+esc(r.lens)+'</span><h3>'+esc(r.title)+'</h3><p>'+esc(r.body)+'</p>'+spiritualitySourceLink(r)+'</div><p class="spiritual-guide-question">What is your response to this teaching?</p>'+responseChoices},
+  {title:"Try a practice",minutes:2,required:"practiceMode",text:"Bring your focus of "+esc(run.focus||"your choosing")+" into a simple practice. Choose how you want to engage, then stay with it for these two minutes.<div class=\"spiritual-guide-suggestion\"><b>Today’s suggestion</b><p>"+esc(r.practice)+"</p></div>"+practiceChoices+'<div class="spiritual-guide-practice-instruction" id="spiritualGuidePracticeInstruction">'+practiceText+'</div>'},
+  {title:"Carry something forward",minutes:1,required:"carryForward",text:"Choose one small way to let this practice travel with you into the rest of your day."+carryChoices}
  ];
 }
+
 function spiritualGuideClockText(seconds){
  const value=Math.max(0,Number(seconds)||0),m=Math.floor(value/60),s=value%60;
  return String(m)+":"+String(s).padStart(2,"0");
