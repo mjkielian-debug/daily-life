@@ -19,9 +19,9 @@ window.inventoryItemPhotoHtml=function(item){
  if(src)return '<img src="'+esc(src)+'" alt="Photo of '+esc(item.name||"inventory item")+'" style="'+inventoryThumbStyle+'">';
  return '<span data-inventory-thumb="'+esc(item.id||"")+'" data-inventory-name="'+esc(item.name||"inventory item")+'" aria-hidden="true" style="'+inventoryThumbStyle+'display:grid;place-items:center">📷</span>';
 };
-window.inventoryLoadSavedItemPhotos=async function(){
+window.inventoryLoadSavedItemPhotos=async function(requestedItems){
  if(!signed())return;
- const items=(state.inventoryItems||[]).filter(item=>itemSuggestionIds(item).length).slice(0,30);
+ const items=Array.isArray(requestedItems)?requestedItems.filter(item=>itemSuggestionIds(item).length):(state.inventoryItems||[]).filter(item=>itemSuggestionIds(item).length).slice(0,30);
  const missing=items.filter(item=>!savedInventoryPhotoCache.has(String(item.id||"")));
  if(!missing.length)return;
  const suggestionIds=[...new Set(missing.flatMap(item=>itemSuggestionIds(item)))];
