@@ -823,7 +823,17 @@ function trackedRoomTasks(f,z,room){
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
   const label=String(t.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  return String(t.category||"").toLowerCase()==="home"&&name&&(" "+label+" ").includes(" "+name+" ");
+  if(String(t.category||"").toLowerCase()!=="home"||!name)return false;
+  if((" "+label+" ").includes(" "+name+" "))return true;
+  const raw=String(t.title||"").toLowerCase();
+  const roomTaskRules=[
+   {room:/kitchen/,task:/\b(microwave|stove|oven|refrigerator|fridge|dishwasher|sink|counter|countertop|pantry)\b/},
+   {room:/bath/,task:/\b(toilet|tub|bathtub|shower|bathroom|mirror|faucet)\b/},
+   {room:/laundry/,task:/\b(washer|dryer|laundry)\b/},
+   {room:/playroom/,task:/\bplayroom\b/},
+   {room:/living/,task:/\b(living room|couch|sofa)\b/}
+  ];
+  return roomTaskRules.some(rule=>rule.room.test(name)&&rule.task.test(raw));
  });
  const chores=typeof window.lifeMapHouseholdRows==="function"?dates.flatMap(date=>window.lifeMapHouseholdRows(date)).filter(t=>{
   if(!t._lifeChore||!/room|make.*bed/i.test(String(t.title||"")))return false;
@@ -923,19 +933,34 @@ window.houseVisualRoomInlineData=function(f,id){
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room);
  return {floor:f,id:String(id),name:z.name,tasks,insights:roomInsightParts(tasks,f,id)};
 };
+window.houseVisualAnswerReview=async function(kind,key,date,status,f,id){
+ if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
+ window.houseVisualOpenZone(f,id);
+};
+window.houseVisualSkipReview=function(key,date,f,id){
+ if(typeof window.lifeMapSkipReview==="function")window.lifeMapSkipReview("home",key,date);
+ window.houseVisualOpenZone(f,id);
+};
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
  const photos=arr(z.photos).filter(okPhoto);
- const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done),pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
+ const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done);
+ const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
+ const roomReviewRows=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).filter(item=>item.status==="unknown"&&pendingTasks.some(task=>String(task.id)===String(item.key))):[];
+ const reviewItem=roomReviewRows[0]||null;
+ const visiblePendingTasks=pendingTasks.filter(task=>!reviewItem||String(task.id)!==String(reviewItem.key));
+ const pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
  const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
  const inventory=room?(state.inventoryItems||[]).filter(x=>x.roomId===room.id||locIds.has(x.locationId)):[];
  const insights=roomInsightParts(tasks,f,id);
  const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+(insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+'<small>This is separate from item inventory and does not remove room records.</small><button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">＋ I organized one area</button></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
- '<div class="hvm-task-list"><b>What needs doing · '+pendingTasks.length+'</b>'+
- (pendingTasks.length?pendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No unfinished tracked room tasks yet.</p>')+'</div>'+
+ (reviewItem?'<section class="hvm-daily-checkin"><div class="hvm-daily-checkin-kicker">DAILY CHECK-IN · '+roomReviewRows.length+' unknown</div><b>'+h(reviewItem.label||reviewItem.group||"Home task")+'</b>'+(reviewItem.detail?'<p>'+h(reviewItem.detail)+'</p>':'')+
+ '<div class="hvm-daily-checkin-actions"><button type="button" class="review-yes" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;yes&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Yes</button><button type="button" class="review-no" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;no&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✕ No</button><button type="button" class="review-na" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;na&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">— N/A</button><button type="button" onclick="houseVisualSkipReview(&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Skip for now ›</button></div></section>':'')+
+ '<div class="hvm-task-list"><b>What needs doing · '+visiblePendingTasks.length+'</b>'+
+ (visiblePendingTasks.length?visiblePendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No other unfinished tracked room tasks yet.</p>')+'</div>'+
  '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 
