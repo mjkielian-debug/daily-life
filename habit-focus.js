@@ -18,9 +18,13 @@
     {id:"other",label:"Other",icon:"＋",view:"today"}
   ];
   var PAGE_AREA = {
-    today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",
+    today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",spirituality:"spirituality",
     log:"health",selfcare:"health",reading:"reading",pets:"pets",household:"home",
     inventory:"home",garden:"growth",hobbies:"growth",gardenhobbies:"growth",
+    "lifearea-home":["home"],"lifearea-mind":["health","other"],"lifearea-body":["health","food"],
+    "lifearea-people":["family","pets"],"lifearea-spirituality":["spirituality"],
+    "lifearea-hobbies":["growth","reading"],"lifearea-money":["money"],
+    "lifearea-car":["car"],"lifearea-work":["work"],
   };
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
 
@@ -180,17 +184,18 @@
     var s=appState();if(!s||!area)return "";
     var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
     var paused=s.habits.filter(function(h){return h&&h.status==="paused"});
-    var current=area==="all"?active:active.filter(function(h){return h.area===area});
-    var title=area==="all"?"Habits across your day":"Habits in "+areaLabel(area);
+    var areaIds=Array.isArray(area)?area:[area],areaKey=area==="all"?"all":areaIds.join(",");
+    var current=area==="all"?active:active.filter(function(h){return areaIds.indexOf(h.area)>=0});
+    var title=area==="all"?"Habits across your day":areaIds.length>1?"Habits for this part of life":"Habits in "+areaLabel(areaIds[0]);
     var subtitle=area==="all"?"I’ll check in with you in conversation and record what you tell me.":"Tell me in conversation when you do these, and I’ll keep the progress here.";
-    var body=current.length?current.map(habitCard).join(""):emptyState(area);
+    var body=current.length?current.map(habitCard).join(""):emptyState(areaIds[0]||"");
     if(area==="all"&&!current.length)body+=addAreaChips();
-    var pausedHere=area==="all"?paused:paused.filter(function(h){return h.area===area});
+    var pausedHere=area==="all"?paused:paused.filter(function(h){return areaIds.indexOf(h.area)>=0});
     var pausedHtml=pausedHere.length?'<details class="hf-paused"><summary>Paused habits · '+pausedHere.length+'</summary>'+pausedHere.map(pausedCard).join("")+'</details>':"";
-    return '<section class="hf-panel" data-habit-focus data-area="'+esc(area)+'">'+
+    return '<section class="hf-panel" data-habit-focus data-area="'+esc(areaKey)+'">'+
       '<div class="hf-heading"><div><div class="hf-eyebrow">Habit building · every area</div><h2>'+esc(title)+'</h2><p>'+esc(subtitle)+'</p></div>'+
       '<div class="hf-heading-actions">'+
-      '<button type="button" class="hf-action hf-create" data-hf-action="add" data-area="'+esc(area==="all"?"":area)+'">＋ Add habit</button></div></div>'+
+      '<button type="button" class="hf-action hf-create" data-area="'+esc(areaIds.length===1?areaIds[0]:"")+'" data-hf-action="add">＋ Add habit</button></div></div>'+
       '<div class="hf-list">'+body+'</div>'+pausedHtml+
       '<div class="hf-footnote">Habits are practices you choose. Appointments and one-time tasks stay in their existing areas.</div></section>'
   }
@@ -289,10 +294,10 @@
     if(!root||!main)return;
     if(typeof appStartupReady!=="undefined"&&!appStartupReady)return;
     seedRequestedStarterHabits();
-    var old=main.querySelector("[data-habit-focus]"),bar=main.querySelector("[data-habit-quickbar]"),header=main.querySelector(":scope > header");
+    var old=main.querySelector("[data-habit-focus]"),bar=main.querySelector("[data-habit-quickbar]"),header=main.querySelector(":scope > header"),areaKey=Array.isArray(area)?area.join(","):area;
     if(bar)bar.remove();
     if(!area){if(old)old.remove();return}
-    if(old&&old.dataset.area===area)return;
+    if(old&&old.dataset.area===areaKey)return;
     var panelHtml=renderPanel(area);
     if(old)old.outerHTML=panelHtml;
     else if(header)header.insertAdjacentHTML("afterend",panelHtml);

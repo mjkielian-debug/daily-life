@@ -27,12 +27,14 @@ window.lifeMapHouseholdRows=function(date){
 
 function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirstFloor");return floorNames.includes(value)?value:"First floor"}catch(_){return "First floor"}}
 function jump(view){if(typeof setView==="function")setView(view)}
-function avatarMark(label,icon,x,y,pct,color,area){
+function avatarMark(label,icon,x,y,pct,color,area,pending){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(label)}" title="${h(label)}" data-life-area="${h(area)}">`+
+ const count=Math.max(0,Number(pending)||0),accessibleLabel=label+(count?", "+count+" check-ins waiting":"");
+ return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(accessibleLabel)}" title="${h(accessibleLabel)}" data-life-area="${h(area)}">`+
  '<circle cx="'+x+'" cy="'+y+'" r="21" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
- '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="15" font-weight="900" fill="#48394d">'+icon+'</text></g>';
+ '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="15" font-weight="900" fill="#48394d">'+icon+'</text>'+
+ (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(count>9?"9+":count)+'</text></g>':"")+'</g>';
 }
 function lifeMapAreaForTask(task){
  const title=String(task&&task.title||"").toLowerCase();
@@ -52,6 +54,75 @@ function lifeMapAreaForTask(task){
  if(category==="people"||category==="family"||category==="kids"||child)return "people";
  return "";
 }
+function lifeMapAreaForHabitArea(area){
+ const map={health:"body",food:"body",family:"people",pets:"people",home:"home",spirituality:"spirituality",growth:"hobbies",reading:"hobbies",money:"money",car:"car",work:"work",other:"mind"};
+ return map[String(area||"").toLowerCase()]||"";
+}
+function lifeMapAreaForReview(item){
+ if(!item)return "";
+ if(item.kind==="task"){
+  const task=list(state&&state.tasks).find(x=>String(x.id)===String(item.key));
+  if(task)return lifeMapAreaForTask(task);
+ }
+ if(item.kind==="chore"){
+  const chore=list(state&&state.chores).find(x=>String(x.id)===String(item.key));
+  if(chore)return chore.child?"people":lifeMapAreaForTask({title:chore.chore,category:"home"});
+ }
+ if(item.kind==="routine")return "people";
+ return lifeMapAreaForTask({title:item.label||"",category:item.group||""});
+}
+let reviewSkipDate="",reviewSkipKeys=new Set();
+window.lifeMapSkipReview=function(area,key,date){
+ const current=String(date||day());
+ if(reviewSkipDate!==current){reviewSkipDate=current;reviewSkipKeys=new Set()}
+ reviewSkipKeys.add(String(area)+"|"+String(key));
+ if(typeof render==="function")render();
+};
+window.lifeMapShowSkippedReviews=function(area,date){
+ const current=String(date||day());
+ if(reviewSkipDate!==current){reviewSkipDate=current;reviewSkipKeys=new Set()}
+ const prefix=String(area)+"|";
+ reviewSkipKeys=new Set([...reviewSkipKeys].filter(key=>!key.startsWith(prefix)));
+ if(typeof render==="function")render();
+};
+window.lifeMapIsReviewSkipped=function(area,key,date){
+ return reviewSkipDate===String(date||day())&&reviewSkipKeys.has(String(area)+"|"+String(key));
+};
+window.lifeMapAnswerReview=async function(kind,key,date,status){
+ if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
+};
+function lifeMapReviewPanel(area,date){
+ if(!area||typeof dailyReviewExpected!=="function")return "";
+ const all=dailyReviewExpected(date).filter(item=>lifeMapAreaForReview(item)===area&&item.status==="unknown");
+ if(!all.length)return "";
+ if(reviewSkipDate!==date){reviewSkipDate=date;reviewSkipKeys=new Set()}
+ const item=all.find(row=>!reviewSkipKeys.has(String(area)+"|"+String(row.key)));
+ let content="";
+ if(item){
+  content='<div class="lm-review-item"><div class="lm-review-group">'+h(item.group||"Today")+'</div><h3>'+h(item.label||"Check-in")+'</h3>'+
+   (item.detail?'<p>'+h(item.detail)+'</p>':'')+'</div>'+
+   '<div class="lm-review-actions">'+
+   '<button class="lm-review-yes" type="button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="yes">✓ Yes</button>'+
+   '<button class="lm-review-no" type="button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="no">✕ No</button>'+
+   '<button class="lm-review-na" type="button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="na">— N/A</button>'+
+   '<button class="lm-review-skip" type="button" data-life-review-action="skip" data-area="'+h(area)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'">Skip for now ›</button></div>';
+ }else{
+  content='<div class="lm-review-item"><h3>That’s all for now</h3><p>'+all.length+' skipped item'+(all.length===1?"":"s")+' remain unknown.</p></div>'+
+   '<button type="button" class="lm-review-show-skipped" data-life-review-action="show-skipped" data-area="'+h(area)+'" data-date="'+h(date)+'">Show skipped</button>';
+ }
+ const backlog=typeof dailyReviewBacklog==="function"?dailyReviewBacklog(7):[];
+ const older=backlog.filter(row=>row.date!==date).reduce((n,row)=>n+Number(row.unknown||0),0);
+ return '<section class="lm-review-queue" aria-label="Daily check-in"><div class="lm-review-heading"><span>DAILY CHECK-IN</span><b>'+all.length+' still unknown</b></div>'+
+  content+(older?'<button class="lm-review-older" type="button" onclick="openDailyReviewCatchup(7)">Earlier check-ins · '+older+' unknown ›</button>':"")+'</section>';
+}
+document.addEventListener("click",function(event){
+ const button=event.target&&event.target.closest?event.target.closest("[data-life-review-action]"):null;
+ if(!button)return;
+ const action=button.getAttribute("data-life-review-action");
+ if(action==="answer")window.lifeMapAnswerReview(button.dataset.kind,button.dataset.key,button.dataset.date,button.dataset.status);
+ else if(action==="skip")window.lifeMapSkipReview(button.dataset.area,button.dataset.key,button.dataset.date);
+ else if(action==="show-skipped")window.lifeMapShowSkippedReviews(button.dataset.area,button.dataset.date);
+});
 function lifeMapUniqueTasks(rows){
  const output=[],groups=new Map();
  for(const task of list(rows)){
@@ -124,6 +195,14 @@ function view(areaOverride,tasksOnly){
  const areaKeys=["mind","body","people","home","spirituality","hobbies","money","car","work"];
  const matches=Object.fromEntries(areaKeys.map(key=>[key,progressTasks.filter(t=>lifeMapAreaForTask(t)===key)]));
  matches.home=progressDates.flatMap(d=>window.lifeMapHouseholdRows(d));
+ const habitDays=list(state&&state.habitLogs).filter(log=>log&&progressDates.includes(String(log.localDate||""))&&["done","partial"].includes(String(log.status||"")));
+ for(const log of habitDays){
+  const habit=list(state&&state.habits).find(item=>String(item.id)===String(log.habitId));
+  if(!habit||habit.status==="paused"||habit.status==="archived")continue;
+  const area=lifeMapAreaForHabitArea(habit.area);
+  if(!areaKeys.includes(area))continue;
+  matches[area].push({date:String(log.localDate),title:String(habit.name||"Habit practiced"),category:"habit",done:true,_lifeMapEvidence:true});
+ }
  const evidenceRows=(dates,label,category)=>dates.map(date=>({date,title:label,category,done:true,_lifeMapEvidence:true}));
  const datesFrom=rows=>Array.from(new Set(list(rows).map(x=>String(x?.date||x?.startDate||"").slice(0,10)).filter(date=>progressDates.includes(date))));
  const bodyLogDays=new Set([
@@ -152,15 +231,21 @@ function view(areaOverride,tasksOnly){
  const categoryFillPct=Math.round([carePct,pctFor("spirituality"),bodyProgressPct,pctFor("people"),pctFor("hobbies"),moneyFill,pctFor("car"),pctFor("work")].reduce((sum,value)=>sum+(Number(value)||0),0)/8);
  const priorityFillPct=priorityScores.length?Math.round(priorityScores.reduce((sum,value)=>sum+value,0)/priorityScores.length):0;
  const avatarFillPct=priorityScores.length?Math.round(categoryFillPct*.75+priorityFillPct*.25):categoryFillPct;
+ const avatarReviewCounts={};
+ if(typeof dailyReviewExpected==="function")for(const item of dailyReviewExpected(date)){
+  if(item.status!=="unknown")continue;
+  const area=lifeMapAreaForReview(item);
+  if(area)avatarReviewCounts[area]=(avatarReviewCounts[area]||0)+1;
+ }
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind"),
-  avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality"),
-  avatarMark("Body & health","♡",111,205,bodyProgressPct,"#f2ae85","body"),
-  avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people"),
-  avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies"),
-  avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money"),
-  avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car"),
-  avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work")
+  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind",avatarReviewCounts.mind||0),
+  avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality",avatarReviewCounts.spirituality||0),
+  avatarMark("Body & health","♡",111,205,bodyProgressPct,"#f2ae85","body",avatarReviewCounts.body||0),
+  avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people",avatarReviewCounts.people||0),
+  avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies",avatarReviewCounts.hobbies||0),
+  avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money",avatarReviewCounts.money||0),
+  avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car",avatarReviewCounts.car||0),
+  avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work",avatarReviewCounts.work||0)
  ].join("");
  const waterStatus=waterHasCheckin?Math.round(waterOzToday)+" / "+Math.round(waterGoal)+" oz":"0 / 3";
  const waterMarks=[0,1,2].map(index=>{
@@ -179,9 +264,13 @@ function view(areaOverride,tasksOnly){
  const areaHistory=areaKeys.includes(areaSelection)?lifeMapUniqueTasks(list(state&&state.tasks)).filter(t=>t.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&lifeMapAreaForTask(t)===areaSelection).map(t=>({date:String(t.date),title:String(t.title||"Task")})):[];
  const careHistory=areaSelection==="mind"?list(state&&state.selfCare).filter(x=>x.done&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||""))&&careHabits.some(habit=>habit.key===x.key)).map(x=>({date:String(x.date),title:careHabits.find(habit=>habit.key===x.key)?.label||"Self-care"})):[];
  const lastAreaDone=[...areaHistory,...careHistory].sort((a,b)=>b.date.localeCompare(a.date))[0];
- const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).filter(t=>!t._lifeMapEvidence).map(taskRow).join("")):"";
+ const areaCheckin=areaSelection?lifeMapReviewPanel(areaSelection,date):"";
+ const areaReviews=areaSelection&&typeof dailyReviewExpected==="function"?dailyReviewExpected(date).filter(item=>lifeMapAreaForReview(item)===areaSelection):[];
+ const areaReviewKeys=new Set(areaReviews.filter(item=>item.status==="unknown").map(item=>String(item.key)));
+ const areaNotApplicableKeys=new Set(areaReviews.filter(item=>item.status==="na").map(item=>String(item.key)));
+ const activeAreaRows=areaSelection?((areaSelection==="mind"?careRows:"")+(matches[areaSelection]||[]).filter(t=>!t._lifeMapEvidence&&!areaReviewKeys.has(String(t.id||""))&&!areaNotApplicableKeys.has(String(t.id||""))).map(taskRow).join("")):"";
  const moneyGoalPanel=areaSelection==="money"?'<div class="lm-money-goals"><span class="lm-kicker">MONEY GOAL PROGRESS</span><b>'+(moneyGoalTotal?moneyGoalDone+" of "+moneyGoalTotal+" steps · "+moneyGoalPct+"%":"No money-goal steps saved yet")+'</b>'+(moneyGoalRows||'<p class="lm-muted">Add a goal and steps to start tracking progress.</p>')+'<button type="button" class="lm-text-button" onclick="openMoneyHubSection(\'goals\')">Open money goals ›</button></div>':"";
- const activeAreaPanel=areaSelection?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[areaSelection]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching entries are in the selected period.</p>')+moneyGoalPanel+'</section>':"";
+ const activeAreaPanel=areaSelection?'<section class="lm-inline-panel" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(areaTitles[areaSelection]||"Life area")+'</b><button type="button" class="lm-text-button" onclick="lifeMapCloseArea()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+(lastAreaDone?h(lastAreaDone.title)+' · '+h(lastAreaDone.date):"No completed item found in saved history")+'</p>'+(areaCheckin||"")+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No matching entries are in the selected period.</p>')+moneyGoalPanel+'</section>':"";
  if(tasksOnly&&areaSelection==="all"){
   const openTasks=tasks.filter(t=>!t.done),doneTasks=tasks.filter(t=>t.done);
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button class="lm-area-back" type="button" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">TODAY · TASK LIST</span><h1>Today’s tasks</h1><p>All tasks counted in today’s plan are listed here. Open tasks come first.</p></header><section class="lm-inline-panel lm-area-page-content">'+(openTasks.length?'<div class="lm-list">'+openTasks.map(taskRow).join("")+'</div>':'<p class="lm-muted">No open tasks. Everything on today’s list is complete.</p>')+(doneTasks.length?'<details class="lm-completed" '+(openTasks.length?'':'open')+'><summary>Completed today · '+doneTasks.length+'</summary><div class="lm-list">'+doneTasks.map(taskRow).join("")+'</div></details>':'')+'</section></section>';
@@ -254,7 +343,7 @@ function view(areaOverride,tasksOnly){
  const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f==="Third floor"?"Attic":f)+'</button>').join("");
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
- '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills from saved activity. Choose today or this week; this week runs Monday through today.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
+ '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Tap an avatar badge for that area’s habits, daily check-in and tasks. Tap a house room for its tasks. Color fills from saved activity.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
  '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
  '<defs>'+ '<clipPath id="lmAvatarColorReveal" clipPathUnits="userSpaceOnUse"><circle class="lm-avatar-color-mask" cx="110" cy="255" r="'+Math.round(276*Math.sqrt(avatarFillPct/100))+'"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" clip-path="url(#lmAvatarColorReveal)" pointer-events="none" aria-hidden="true"/>'+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
  '<p class="lm-avatar-caption">Tell me here; I’ll log it.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
