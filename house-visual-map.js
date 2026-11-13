@@ -872,11 +872,23 @@ function trackedRoomTasks(f,z,room){
 }
 window.houseVisualTaskHasRoomMatch=function(task){
  if(!task)return false;
- if(task.homeRoomId||task.roomId||task.homeMapZoneId||task.homeMapFloor)return true;
- if(arr(state.houseRooms).some(room=>trackedRoomTasks(String(room.floor||""),{id:room.id,name:room.name},room).some(row=>String(row.id||"")===String(task.id||""))))return true;
+ const mappedFloor=str(task.homeMapFloor||""),mappedZone=str(task.homeMapZoneId||"");
+ if(mappedFloor||mappedZone){
+  if(!floors.includes(mappedFloor)||!mappedZone)return false;
+  const mapped=zone(mappedFloor,mappedZone);
+  // A saved room name lets a valid map link survive until that floor's private
+  // layout is hydrated. Partial or unknown links remain in the repair queue.
+  return !!mapped||!!String(task.homeMapRoomName||"").trim();
+ }
+ const assigned=str(task.homeRoomId||task.roomId||"");
+ if(assigned&&arr(state.houseRooms).some(room=>str(room.id)===assigned&&
+    (!room.floor||!floors.includes(str(room.floor))||str(room.floor)===mappedFloor)))return true;
+ if(assigned)return false;
+ if(arr(state.houseRooms).some(room=>str(room.name).trim()&&
+    trackedRoomTasks(str(room.floor||""),{id:room.id,name:room.name},room).some(row=>str(row.id)===str(task.id||""))))return true;
  return floors.some(f=>{
   const map=get(f);if(!map)return false;
-  return arr(map.zones).some(z=>z&&trackedRoomTasks(f,z,localRoom(f,z)).some(row=>String(row.id||"")===String(task.id||"")));
+  return arr(map.zones).some(z=>z&&trackedRoomTasks(f,z,localRoom(f,z)).some(row=>str(row.id)===str(task.id||"")));
  });
 };
 window.houseVisualAssignTaskToRoom=async function(taskId,f,id){
