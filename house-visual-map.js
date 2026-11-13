@@ -634,12 +634,26 @@ window.houseVisualInspectPersonItem=async function(f,id,item){
 function roomCareControls(f,z){
  const label=[z.id,z.name,z.short].join(" ").toLowerCase();
  if(!/bathroom|\bbath\b|washroom|powder room/.test(label))return bedroomWardrobes(f,z);
- if(typeof window.wardrobeWearControls!=="function")return "";
- return '<section aria-label="Bathroom towels"><h3>Towels</h3>'+["Bath towel","Hand towel"].map(type=>{
-  const key=["bathroom-towel",f,z.id,type].join(":");
-  return '<div><b>'+type+'</b><div data-towel-controls>'+window.wardrobeWearControls(key)+'</div></div>';
- }).join("")+'</section>';
+ const people=["Michelle","Leo","Demitri","Dolly","Ambrose"];
+ const towels=people.map(person=>towelRow(JSON.stringify([f,z.id,person]),person)).join("");
+ return '<section aria-label="Bathroom towels"><h3>Bath towels</h3>'+towels+'<h4>Shared hand towel</h4>'+towelRow(JSON.stringify([f,z.id,"Hand towel"]),"Hand towel")+'</section>';
 }
+function towelRow(key,person){
+ const record=state.settings?.bathroomTowels?.[key];
+ const due=record && (Date.parse(ymd())-Date.parse(record.start))/86400000>=7;
+ const summary=record?h(record.label)+' · '+(due?'Fresh towel due':'In use since '+h(record.start)):'Choose a towel';
+ return '<details data-bath-towel="'+h(key)+'" data-person="'+h(person)+'"><summary>'+h(person)+' · '+summary+'</summary><label>Towel color, pattern, or rail spot<input maxlength="64" value="'+h(record?.label||"")+'"></label><button type="button" class="btn" data-fresh-towel>'+ (record?'Start fresh towel':'Assign clean towel')+'</button></details>';
+}
+document.addEventListener("click",async event=>{
+ const button=event.target.closest?.("[data-fresh-towel]");if(!button)return;
+ const row=button.closest("[data-bath-towel]"),input=row.querySelector("input"),label=input.value.trim();
+ if(!label){input.focus();return}
+ const settings=state.settings||(state.settings={}),records=settings.bathroomTowels||(settings.bathroomTowels={});
+ const key=row.dataset.bathTowel,previous=records[key];button.disabled=true;
+ records[key]={label,start:ymd()};
+ try{await save();row.outerHTML=towelRow(key,row.dataset.person)}
+ catch(error){if(previous)records[key]=previous;else delete records[key];button.disabled=false;alert("Could not save this towel. Please try again.")}
+});
 function bedroomWardrobes(f,z){
  const label=[z.id,z.name,z.short].filter(Boolean).join(" ").toLowerCase();
  if(/entry|hall|bath/.test(label))return "";
