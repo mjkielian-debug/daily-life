@@ -325,6 +325,8 @@
 #app .hvm-unassigned-tasks{display:grid;gap:10px;margin-top:12px;padding:14px;border:1px solid #e8dbe5;border-radius:18px;background:linear-gradient(145deg,#fffdfd,#fff8fc 58%,#f5fbf7)}
 #app .hvm-unassigned-tasks h3{margin:3px 0;color:#48364d;font-size:1rem}
 #app .hvm-unassigned-tasks p{margin:4px 0 0;color:#75677a;font-size:.86rem;line-height:1.4}
+#app .hvm-unassigned-tasks>details>summary{padding:10px 11px;border:1px solid #eee1ec;border-radius:12px;background:#fff;color:#604760;font-weight:750;cursor:pointer}
+#app .hvm-unassigned-task-list{display:grid;gap:8px;margin-top:9px}
 #app .hvm-unassigned-task{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;align-items:center;padding:10px;border:1px solid #eee1ec;border-radius:14px;background:#fff}
 #app .hvm-unassigned-task>b{color:#43354a}
 #app .hvm-unassigned-task>small{color:#75677a;text-align:right}

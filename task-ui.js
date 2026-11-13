@@ -4,6 +4,12 @@
 
   function taskUiEsc(v){return typeof esc==="function"?esc(v):String(v==null?"":v)}
   function taskUiGroup(t){
+    const area=typeof window.lifeMapTaskArea==="function"?window.lifeMapTaskArea(t):"";
+    if(area==="home")return{key:"home",label:"Home",icon:"⌂"};
+    if(area==="people")return{key:"kids",label:"Kids + school",icon:"♡"};
+    if(area==="body"||area==="mind")return{key:"me",label:"Me",icon:"✦"};
+    if(area==="work")return{key:"work",label:"Work",icon:"▣"};
+    if(area==="money"||area==="car")return{key:"admin",label:"Admin + errands",icon:"✓"};
     const cat=String(t&&t.category||"life").toLowerCase(),child=String(t&&t.child||"").trim();
     if(child||/school|family|kid/.test(cat))return{key:"kids",label:"Kids + school",icon:"♡"};
     if(/home|house|clean|laundry/.test(cat))return{key:"home",label:"Home",icon:"⌂"};
@@ -56,8 +62,13 @@
   }
   function taskUiRow(t){
     const meta=taskUiMeta(t),note=taskUiSpecificNote(t),displayTitle=taskUiSpecificTitle(t);
+    const duplicateIds=Array.isArray(t._lifeMapDuplicateIds)?t._lifeMapDuplicateIds:[];
+    const encodedIds=duplicateIds.length>1?encodeURIComponent(JSON.stringify(duplicateIds)):"";
+    const toggleHandler=encodedIds&&typeof window.lifeMapToggleTaskGroup==="function"
+      ?"lifeMapToggleTaskGroup('"+taskUiEsc(encodedIds)+"',this.checked)"
+      :"toggleTask('"+taskUiEsc(t.id)+"',this.checked)";
     return '<div class="task-ui-row '+(t.done?'is-done':'')+'">'+
-      '<label class="task-ui-check"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask(\''+taskUiEsc(t.id)+'\',this.checked)"><span aria-hidden="true"></span></label>'+
+      '<label class="task-ui-check"><input type="checkbox" '+(t.done?'checked':'')+' onchange="'+toggleHandler+'"><span aria-hidden="true"></span></label>'+
       '<button class="task-ui-main" type="button" onclick="openTask(\'\',\''+taskUiEsc(t.id)+'\')">'+
         '<b>'+taskUiEsc(displayTitle)+'</b>'+
         (meta.length?'<small>'+meta.map(taskUiEsc).join(' · ')+'</small>':'')+
@@ -150,6 +161,8 @@
 
   if(typeof todayTasksTrackingDrawer==="function"){
     todayTasksTrackingDrawer=function(tk,done,actual,h,w,f,oz){
+      tk=typeof window.lifeMapUniqueTasks==="function"?window.lifeMapUniqueTasks(tk):tk;
+      done=tk.filter(x=>x.done).length;
       const open=tk.filter(x=>!x.done).length,
         workSummary=actual?h.toFixed(2)+" h":workNeedsPunchOut(w)?"Punch-out needed":w&&w.start&&liveWorkHours(w)>0?liveWorkHours(w).toFixed(2)+" h so far":"No completed hours",
         subtitle=[open?open+" open":"tasks clear",done+" done",Math.round(oz)+" oz water"].join(" · "),

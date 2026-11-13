@@ -188,6 +188,7 @@ function lifeMapUniqueTasks(rows){
  }
  return output.filter(Boolean);
 }
+window.lifeMapUniqueTasks=lifeMapUniqueTasks;
 window.lifeMapToggleTaskGroup=async function(encodedIds,done){
  let ids=[];
  try{ids=JSON.parse(decodeURIComponent(String(encodedIds||"")))}catch(_){return}
