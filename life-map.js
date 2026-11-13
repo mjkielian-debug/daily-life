@@ -71,6 +71,32 @@ function lifeMapAreaForReview(item){
  if(item.kind==="routine")return "people";
  return lifeMapAreaForTask({title:item.label||"",category:item.group||""});
 }
+function lifeMapNormalizeTaskTitle(value){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+window.lifeMapTaskLastDoneLabel=function(task){
+ if(!task)return "";
+ const title=lifeMapNormalizeTaskTitle(task.title||task.chore),child=String(task.child||"").trim().toLowerCase();
+ if(!title)return "";
+ const valid=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||""));
+ const asOf=valid(task.date)?String(task.date):day();
+ const doneRows=(task._lifeChore?list(state&&state.chores):list(state&&state.tasks)).filter(row=>{
+  const rowTitle=lifeMapNormalizeTaskTitle(row.title||row.chore);
+  return row.done&&rowTitle===title&&String(row.child||"").trim().toLowerCase()===child&&valid(row.date)&&String(row.date)<asOf;
+ }).map(row=>String(row.date));
+ const currentDone=task.done&&valid(task.date)?[String(task.date)]:[];
+ const homeRows=task._lifeChore?[]:list(state&&state.homeLogs).filter(row=>
+  row.status==="done"&&lifeMapNormalizeTaskTitle(row.task)===title&&valid(row.date)&&String(row.date)<=asOf
+ ).map(row=>String(row.date));
+ const priorHomeRows=homeRows.filter(date=>date<asOf);
+ const rules=list(state&&state.settings&&state.settings.recurringTasks);
+ const configured=rules.some(rule=>rule&&rule.active!==false&&lifeMapNormalizeTaskTitle(rule.title)===title);
+ const generated=String(task.generated||"");
+ const recurring=!!task.dailyReset||task.repeating===true||task.recurring===true||
+  /recurring|daily-basics|rotation/.test(generated)||configured||doneRows.length>0||priorHomeRows.length>0;
+ if(!recurring)return "";
+ const lastRows=[...doneRows,...homeRows,...currentDone].sort(),last=lastRows[lastRows.length-1];
+ if(!last)return "not yet logged";
+ return new Date(last+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+};
 let reviewSkipDate="",reviewSkipKeys=new Set();
 window.lifeMapSkipReview=function(area,key,date){
  const current=String(date||day());
@@ -97,10 +123,12 @@ function lifeMapReviewPanel(area,date){
  if(!all.length)return "";
  if(reviewSkipDate!==date){reviewSkipDate=date;reviewSkipKeys=new Set()}
  const item=all.find(row=>!reviewSkipKeys.has(String(area)+"|"+String(row.key)));
+ const reviewTask=item.kind==="task"?list(state&&state.tasks).find(row=>String(row.id)===String(item.key)):item.kind==="chore"?list(state&&state.chores).find(row=>String(row.id)===String(item.key)):null;
+ const itemLastDone=typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(reviewTask):"";
  let content="";
  if(item){
   content='<div class="lm-review-item"><div class="lm-review-group">'+h(item.group||"Today")+'</div><h3>'+h(item.label||"Check-in")+'</h3>'+
-   (item.detail?'<p>'+h(item.detail)+'</p>':'')+'</div>'+
+   (item.detail?'<p>'+h(item.detail)+'</p>':'')+(itemLastDone?'<small class="lm-task-last-done">Last done · '+h(itemLastDone)+'</small>':'')+'</div>'+
    '<div class="lm-review-actions">'+
    '<button class="lm-review-yes" type="button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="yes">✓ Yes</button>'+
    '<button class="lm-review-no" type="button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="no">✕ No</button>'+
@@ -288,7 +316,7 @@ function view(areaOverride,tasksOnly){
   '<div class="lm-next-checkin-foot"><small>Tell me out loud; I’ll log it and update your progress.</small><div class="lm-next-checkin-progress"><span>💧 '+waterBottlesDone+'/3</span><span>🦷 '+brushCount+'/2</span></div></div>'+
   nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
- const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask";return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small></span></label>'};
+ const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask",lastDone=window.lifeMapTaskLastDoneLabel(t);return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small>'+(lastDone?'<small class="lm-task-last-done">Last done · '+h(lastDone)+'</small>':'')+'</span></label>'};
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
  const areaTitles={home:"Home & household",mind:"Mind & self-care",body:"Body & health",people:"Family & kids",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"};
  const areaSelection=areaOverride||activeArea;
