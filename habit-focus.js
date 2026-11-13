@@ -21,7 +21,6 @@
     today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",
     log:"health",selfcare:"health",reading:"reading",pets:"pets",household:"home",
     inventory:"home",garden:"growth",hobbies:"growth",gardenhobbies:"growth",
-    spirituality:"spirituality"
   };
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
   var quickBarOpen=false;
