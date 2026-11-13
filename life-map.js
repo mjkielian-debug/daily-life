@@ -288,6 +288,8 @@ function view(areaOverride,tasksOnly){
  const waterRatio=waterBottlesDone/3,teethRatio=brushCount/2;
  const priorityOpen=waterBottlesDone<3||brushCount<2;
  const reviewNext=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).find(item=>item.status==="unknown"):null;
+ const nextReviewTask=reviewNext?(reviewNext.kind==="task"?list(state&&state.tasks).find(task=>String(task.id)===String(reviewNext.key)):reviewNext.kind==="chore"?Object.assign({},list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{},{title:(list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{}).chore,_lifeChore:true}):null):null;
+ const nextReviewLastDone=nextReviewTask&&typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(nextReviewTask):"";
  let nextCheckinTitle="",nextCheckinQuestion="",nextCheckinArea="",nextCheckinType="";
  if(priorityOpen){
   const chooseWater=waterBottlesDone<3&&(brushCount>=2||waterRatio<=teethRatio);
@@ -313,6 +315,7 @@ function view(areaOverride,tasksOnly){
  const nextCheckinPanel='<section class="lm-next-checkin" aria-label="Next check-in" aria-live="polite">'+
   '<div class="lm-next-checkin-head"><span>NEXT CHECK-IN</span><b>'+h(nextCheckinType)+'</b></div>'+
   '<div class="lm-next-checkin-question"><strong>'+h(nextCheckinTitle)+'</strong><span>'+h(nextCheckinQuestion)+'</span></div>'+
+  (!priorityOpen&&nextReviewLastDone?'<small class="lm-next-checkin-last">Last done · '+h(nextReviewLastDone)+'</small>':"")+
   '<div class="lm-next-checkin-foot"><small>Tell me out loud; I’ll log it and update your progress.</small><div class="lm-next-checkin-progress"><span>💧 '+waterBottlesDone+'/3</span><span>🦷 '+brushCount+'/2</span></div></div>'+
   nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
