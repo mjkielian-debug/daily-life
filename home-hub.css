@@ -578,3 +578,12 @@
 @media(max-width:520px){#app:has(.life-map-page) .lm-avatar{height:min(46svh,390px)}}
 
 #app:has(.life-map-page) .lm-next-checkin-last{display:block;margin-top:2px;color:#806d80;font-size:.68rem;line-height:1.2;font-weight:600}
+
+/* Keep the period picker and room controls readable on narrow screens. */
+#app .life-map-page .lm-scene-heading>div{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;width:100%}
+#app .life-map-page .lm-scene-heading .lm-period{display:inline-flex!important;padding:3px;border-radius:18px;background:#f1e7ef}
+.lm-period button{font:inherit;font-size:.82rem;font-weight:700;color:#543f57;background:transparent;border:0;border-radius:15px;min-height:42px;padding:0 12px;cursor:pointer}
+.lm-period button[aria-pressed="true"]{background:#593752;color:#fff}
+#app .life-map-page .lm-house .lm-panel-heading .lm-text-button{font-size:.85rem;min-height:44px;color:#573b55}
+#app .life-map-page .lm-floors .lm-floor{font-size:.84rem;min-height:44px;padding-inline:12px}
+#app .life-map-page .lm-floors .lm-floor.selected{background:#355b51;color:#fff;border-color:#355b51}
