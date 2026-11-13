@@ -497,16 +497,19 @@ function showSpiritualityGuideStep(){
  const steps=spiritualityGuideSteps(),step=steps[spiritualityGuideRun.step];
  spiritualityGuideRun.remaining=step.minutes*60;
  const progress='<div class="spirituality-guide-progress" aria-label="Step '+(spiritualityGuideRun.step+1)+' of '+steps.length+'">Step '+(spiritualityGuideRun.step+1)+' of '+steps.length+' · about '+step.minutes+' minute'+(step.minutes===1?'':'s')+'</div>';
- const body='<div class="spirituality-guide-step"><div class="spiritual-guide-clock" id="spiritualGuideClock" aria-live="polite">'+spiritualGuideClockText(spiritualityGuideRun.remaining)+'</div><h3>'+esc(step.title)+'</h3><div class="spiritual-guide-instruction">'+step.text+'</div><p class="muted small" id="spiritualGuideStatus" aria-live="polite">Start the timer when you’re ready. You can close this guide at any time.</p></div>';
- modal("Today’s five-minute practice",progress+body,"Start timer",startSpiritualityStepTimer);
- const next=document.getElementById("saveModal");if(next)next.classList.add("spiritual-guide-next");
+ const ready=!step.required||!!spiritualityGuideRun[step.required];
+ const choiceStyle='<style>.spiritual-guide-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.spiritual-guide-choice{min-height:48px;padding:10px 12px;border:1px solid #decfdf;border-radius:15px;background:#fff;color:#49384d;font:inherit;font-size:.9rem;font-weight:700;text-align:left;cursor:pointer}.spiritual-guide-choice.is-selected{border-color:#a45b87;background:linear-gradient(110deg,#f7c8da,#d9edf0);box-shadow:0 0 0 2px #fff inset}.spiritual-guide-question{margin:14px 0 8px;font-weight:750}.spiritual-guide-suggestion,.spiritual-guide-practice-instruction{margin:14px 0;padding:13px 15px;border-radius:14px;background:#fff8fc;color:#49384d}.spiritual-guide-suggestion p{margin:6px 0 0}@media(max-width:480px){.spiritual-guide-choices{grid-template-columns:1fr}.spiritual-guide-choice{text-align:center}}</style>';
+ const body='<div class="spirituality-guide-step"><div class="spiritual-guide-clock" id="spiritualGuideClock" aria-live="polite">'+spiritualGuideClockText(spiritualityGuideRun.remaining)+'</div><h3>'+esc(step.title)+'</h3><div class="spiritual-guide-instruction">'+step.text+'</div><p class="muted small" id="spiritualGuideStatus" aria-live="polite">'+(ready?'Choose your response, then begin this step.':'Tap one choice above to unlock this step.')+'</p></div>';
+ modal("Today’s five-minute practice",choiceStyle+progress+body,ready?"Begin this step":"Choose an option",startSpiritualityStepTimer);
+ const next=document.getElementById("saveModal");if(next){next.classList.add("spiritual-guide-next");next.disabled=!ready;next.setAttribute("aria-disabled",ready?"false":"true")}
 }
 function startSpiritualityPractice(){
- spiritualityGuideRun={date:ymd(),reading:dailySpiritualReading(),step:0,remaining:60,timer:null};
+ spiritualityGuideRun={date:ymd(),reading:dailySpiritualReading(),step:0,remaining:60,timer:null,focus:"",readingResponse:"",practiceMode:"",carryForward:""};
  showSpiritualityGuideStep();
 }
 function startSpiritualityStepTimer(){
  if(!spiritualityGuideRun||spiritualityGuideRun.timer)return;
+ const currentStep=spiritualityGuideSteps()[spiritualityGuideRun.step];if(currentStep.required&&!spiritualityGuideRun[currentStep.required])return;
  const button=document.getElementById("saveModal"),status=document.getElementById("spiritualGuideStatus");
  if(button){button.disabled=true;button.textContent="Timer running…"}
  if(status)status.textContent="Take this time at your own pace.";
@@ -514,6 +517,7 @@ function startSpiritualityStepTimer(){
   if(!document.querySelector("#modal .spirituality-guide-step")){clearInterval(spiritualityGuideRun?.timer);spiritualityGuideRun=null;return}
   spiritualityGuideRun.remaining=Math.max(0,spiritualityGuideRun.remaining-1);
   const clock=document.getElementById("spiritualGuideClock");if(clock)clock.textContent=spiritualGuideClockText(spiritualityGuideRun.remaining);
+  const activeStep=spiritualityGuideSteps()[spiritualityGuideRun.step];if(activeStep.title==="Try a practice"&&spiritualityGuideRun.remaining===60&&status)status.textContent="Halfway: notice how you’re engaging with your chosen approach, then return to it for the final minute.";
   if(spiritualityGuideRun.remaining<=0){
    clearInterval(spiritualityGuideRun.timer);spiritualityGuideRun.timer=null;
    const last=spiritualityGuideRun.step===spiritualityGuideSteps().length-1;
@@ -536,7 +540,7 @@ async function completeSpiritualityPractice(){
  let log=spiritualityLogFor(date),created=false,before=null;
  if(!log){log={id:uid(),date:date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log);created=true}
  else before={...log};
- log.reading=true;log.guidedPractice=true;log.guidedPracticeMinutes=5;log.guidedPracticeLens=run.reading.lens;log.guidedPracticeTitle=run.reading.title;log.guidedPracticeCompletedAt=new Date().toISOString();
+ log.reading=true;log.guidedPractice=true;log.guidedPracticeMinutes=5;log.guidedPracticeLens=run.reading.lens;log.guidedPracticeTitle=run.reading.title;log.guidedPracticeFocus=run.focus||"";log.guidedPracticeResponse=run.readingResponse||"";log.guidedPracticeApproach=run.practiceMode||"";log.guidedPracticeCarryForward=run.carryForward||"";log.guidedPracticeCompletedAt=new Date().toISOString();
  try{
   await save();clearInterval(run.timer);spiritualityGuideRun=null;closeModal();render();
  }catch(error){
