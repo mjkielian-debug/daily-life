@@ -48,7 +48,9 @@ const APP_SHELL=[
   "./practice-proof.js",
   "./life-insights.js",
   "./life-map.js",
-  "./life-map.css",\n  "./home-hub.css",\n  "./home-hub.js",
+  "./life-map.css",
+  "./home-hub.css",
+  "./home-hub.js",
   "./assets/michelle-equestria-avatar.webp?v=20261112-facepony1",
   "./electricity-insights.js",
   "./life-insights.css",
@@ -108,9 +110,8 @@ const APP_SHELL=[
   "./daily-life-rainbow-192.png",
   "./daily-life-rose-192.png",
   "./daily-life-rose-512.png",
-  "./botanical-corners.svg",
-  "./botanical-bg.svg",
-  "./botanical-sprig.svg"
+  "./candy-theme.css",
+  "./candy-doodles.svg"
 ];
 
 const LOCAL_ASSET_PATHS=new Set(APP_SHELL.filter(x=>x!=="./").map(x=>new URL(x,self.location).pathname));
@@ -118,7 +119,7 @@ const LOCAL_ASSET_PATHS=new Set(APP_SHELL.filter(x=>x!=="./").map(x=>new URL(x,s
 self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE_NAME);
-    const required=["./index.html","./cloud.js","./styles.css"];
+    const required=["./index.html","./cloud.js","./styles.css","./candy-theme.css","./candy-doodles.svg"];
     await Promise.all(required.map(async url=>{
       const response=await fetch(url,{cache:"reload"});
       if(!response.ok)throw new Error("Required app file failed: "+url+" ("+response.status+")");

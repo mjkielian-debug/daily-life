@@ -1,0 +1,39 @@
+/* Shared Happy Wax-inspired palette and outlined shapes. */
+:root {
+  --ink:#38213e; --berry:#a02763; --lemon:#ffda64; --lilac:#c5a8ff; --sky:#a6dcff;
+  --bg:#ffe7cb!important; --panel:#fffbf4!important; --panel2:#ffedda!important;
+  --text:var(--ink)!important; --muted:#664961!important; --primary:var(--berry)!important;
+  --secondary:#9271d4!important; --accent:var(--lemon)!important; --success:#5642a3!important;
+  --border:#b780a3!important;
+}
+@media screen {
+  html,body { background:#ffdfbd!important; color:var(--ink)!important }
+  body { background: url("candy-doodles.svg") center top/280px 210px repeat,
+    linear-gradient(145deg,#ffdfbd,#ffd5e6 46%,#ddd0ff 78%,#cceaff) fixed!important }
+  body::before,.app::before {content:none!important}
+  #app.app,.app {background:transparent!important}
+  #app header,#app .bottom-nav {background:#fff2cc!important;border:2px solid #854776!important;
+    box-shadow:0 3px 0 #ba749e!important}
+  #app header {background:linear-gradient(110deg,#ffda68,#ffb48b 60%,#ffaaca)!important}
+  #app header::after,.section-title h2::after,#app .card::before,#app .card::after,
+  .floral-card::after,.modal::before,.care-hub-header::after {content:none!important}
+  #app .card,#app .lm-panel,#app .lm-inline-panel,#modal .modal,.modal {
+    background:#fffaf1!important;border:2px solid #b87697!important;
+    box-shadow:0 3px 0 #e0a2b7!important;color:var(--ink)!important}
+  #app :is(.card,.lm-panel):nth-of-type(3n+2) {border-color:#9871bd!important}
+  #app :is(.card,.lm-panel):nth-of-type(3n) {border-color:#668fb9!important}
+  #app .life-map-page .lm-house::before,#app .life-map-page .lm-avatar-wrap::before {content:none!important}
+  #app .life-map-page .lm-next-checkin,#app .lm-area-hero {background:linear-gradient(115deg,#fff1ae,#ffd3df 70%,#e0cfff)!important;border-color:#ae6c96!important}
+  #app .btn.primary,#modal .btn.primary,#app .life-map-page .lm-floors .lm-floor.selected,
+  #app .household-map-floors button.selected,#app button[aria-pressed=true]:not(:disabled),
+  #app .bottom-nav button.active,#app .people-tabs button.active,#app .self-care-tabs button.active {
+    background:var(--berry)!important;color:white!important;border-color:#68204c!important}
+  #app .bottom-nav button.active :is(span,b,i,small){color:white!important}
+  #app .lm-floor:not(.selected),#app .lm-next-checkin-open {background:#fff0a9!important;color:var(--ink)!important;border-color:#af7696!important}
+  #app :is(.btn.good,.state.have,.bill-status.covered),#modal :is(.person-today-count,.person-action-row.is-done) {
+    color:#4d2c78!important;background:#ebdcff!important;border-color:#a38ac5!important}
+  :is(#app,#modal) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
+    background-color:#fffcf6!important;border-color:#a67699!important;color:var(--ink)!important}
+  input,progress {accent-color:var(--berry)}
+  :is(button,a,input,select,textarea):focus-visible {outline:3px solid #5635ad!important;outline-offset:2px}
+}

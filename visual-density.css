@@ -20,8 +20,8 @@ body::before{
   pointer-events:none;
   z-index:0;
   background:
-    url("botanical-corners.svg") center top/760px auto repeat-y,
-    url("botanical-bg.svg") center top/760px auto repeat-y;
+    url('candy-doodles.svg') center top/760px auto repeat-y,
+    url('candy-doodles.svg') center top/760px auto repeat-y;
   opacity:.42;
 }
 body{
@@ -229,7 +229,7 @@ body::before{opacity:.6}
 #app .card:nth-child(6n){--tile-a:#9dd4cb;--tile-b:#bce0cf}
 #app .card{background:linear-gradient(125deg,var(--tile-a,#f3aac6),var(--tile-b,#c6e3b8))!important;border:1px solid #a2789c!important;border-radius:28px!important;box-shadow:0 5px 0 #694c6815,0 9px 22px #694c6812!important}
 #app .card::after{color:#59374f!important}
-#app .card::before{background:url('botanical-sprig.svg') center/contain no-repeat!important;width:115px;height:115px;right:-24px;bottom:-24px;opacity:.35}
+#app .card::before{background:url('candy-doodles.svg') center/contain no-repeat!important;width:115px;height:115px;right:-24px;bottom:-24px;opacity:.35}
 #app :is(h1,h2,h3,h4,.title,.big,.care-hub-title,.spirituality-title,.people-section-title,.eyebrow,.mini-heading){color:#292039!important;text-shadow:none!important}
 #app :is(.muted,.small,.field-help,small,label,.tag,.pill){color:#4b4059!important}
 #app :is(.muted,.small,.field-help,small,label){font-family:var(--font-body)!important;letter-spacing:0;line-height:1.4!important}

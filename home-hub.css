@@ -45,7 +45,7 @@
 }
 #app:has(.life-map-page) .lm-avatar-wrap:before,
 #app:has(.life-map-page) .lm-house:before{
-  content:"✦  ✿  ✦";
+  content:"✦";
   position:absolute;
   top:7px;
   right:10px;
@@ -291,15 +291,15 @@
 }
 
 #app .lm-area-page[data-life-area-page]{--lm-area-accent:#b58ab6}
-#app .lm-area-page[data-life-area-page="home"]{--lm-area-accent:#53a899}
+#app .lm-area-page[data-life-area-page="home"]{--lm-area-accent:#4486b8}
 #app .lm-area-page[data-life-area-page="mind"]{--lm-area-accent:#ad83bd}
 #app .lm-area-page[data-life-area-page="body"]{--lm-area-accent:#e49279}
 #app .lm-area-page[data-life-area-page="people"]{--lm-area-accent:#df82a6}
 #app .lm-area-page[data-life-area-page="spirituality"]{--lm-area-accent:#d8a43e}
-#app .lm-area-page[data-life-area-page="hobbies"]{--lm-area-accent:#70ae91}
+#app .lm-area-page[data-life-area-page="hobbies"]{--lm-area-accent:#976aca}
 #app .lm-area-page[data-life-area-page="money"]{--lm-area-accent:#6c9fc9}
 #app .lm-area-page[data-life-area-page="car"]{--lm-area-accent:#88a2a8}
-#app .lm-area-page[data-life-area-page="work"]{--lm-area-accent:#86a968}
+#app .lm-area-page[data-life-area-page="work"]{--lm-area-accent:#d68a43}
 #app:has(.lm-area-page) .lm-area-page-heading{border-left:5px solid var(--lm-area-accent)}
 #app:has(.lm-area-page) .lm-area-practices{
   display:grid;gap:10px;padding:15px;border:1px solid #e8dbe5;border-top:4px solid var(--lm-area-accent);
@@ -586,7 +586,7 @@
 .lm-period button[aria-pressed="true"]{background:#593752;color:#fff}
 #app .life-map-page .lm-house .lm-panel-heading .lm-text-button{font-size:.85rem;min-height:44px;color:#573b55}
 #app .life-map-page .lm-floors .lm-floor{font-size:.84rem;min-height:44px;padding-inline:12px}
-#app .life-map-page .lm-floors .lm-floor.selected{background:#355b51;color:#fff;border-color:#355b51}
+#app .life-map-page .lm-floors .lm-floor.selected{background:#a02763;color:#fff;border-color:#a02763}
 
 .dl-tap-stars{position:fixed;z-index:2147480000;width:0;height:0;pointer-events:none}
 .dl-tap-stars i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;background:var(--star-color);clip-path:polygon(50% 0,62% 36%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 36%);animation:dl-star-out 460ms ease-out both}
