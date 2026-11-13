@@ -531,3 +531,5 @@
 
 #app:has(.life-map-page) .lm-avatar-caption{display:none}
 @media(max-width:520px){#app:has(.life-map-page) .lm-avatar{height:min(46svh,390px)}}
+
+#app:has(.life-map-page) .lm-next-checkin-last{display:block;margin-top:2px;color:#806d80;font-size:.68rem;line-height:1.2;font-weight:600}
