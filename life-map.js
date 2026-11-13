@@ -384,7 +384,7 @@ function view(areaOverride,tasksOnly){
   const areaLinks = (extraLinks[areaSelection] || []).map(([route,label]) =>
     '<button type="button" class="lm-region" onclick="setView(&#39;'+route+'&#39;)">'+h(label)+' ›</button>'
   ).join("");
-  const pagePanel=activeAreaPanel;
+  const pagePanel=activeAreaPanel+(areaSelection==="home"?'<button type="button" class="lm-region" onclick="openHouseLaundry()">Household laundry ›</button>':"");
   const habitPanel=typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"";
   return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">YOUR LIFE MAP · AREA</span><h1>'+h(areaTitles[areaSelection]||"Life area")+'</h1><p>'+h(descriptions[areaSelection]||"")+'</p></header>'+habitPanel+pagePanel+'<div class="lm-area-shortcuts"><span class="lm-kicker">'+h(trackerTitles[areaSelection]||"More in this area")+'</span><div><button type="button" class="lm-region" onclick="setView(&#39;'+trackerViews[areaSelection]+'&#39;)">'+h(trackerLabels[areaSelection]||"Open tracker")+' ›</button>'+areaLinks+'</div></div></section>';
  }
