@@ -642,17 +642,17 @@ function towelRow(key,person){
  const record=state.settings?.bathroomTowels?.[key];
  const due=record && (Date.parse(ymd())-Date.parse(record.start))/86400000>=7;
  const summary=record?h(record.label)+' · '+(due?'Fresh towel due':'In use since '+h(record.start)):'Choose a towel';
- return '<details data-bath-towel="'+h(key)+'" data-person="'+h(person)+'"><summary>'+h(person)+' · '+summary+'</summary><label>Towel color, pattern, or rail spot<input maxlength="64" value="'+h(record?.label||"")+'"></label><button type="button" class="btn" data-fresh-towel>'+ (record?'Start fresh towel':'Assign clean towel')+'</button></details>';
+ return '<details data-bath-towel="'+h(key)+'" data-person="'+h(person)+'"><summary>'+h(person)+' · '+summary+'</summary><label>Towel color, pattern, or rail spot<input maxlength="64" value="'+h(record?.label||"")+'"></label>'+(record?'<button type="button" class="btn" data-fresh-towel="label">Save towel name</button>':'')+'<button type="button" class="btn" data-fresh-towel="today">'+ (record?'Start fresh towel':'Assign clean towel')+'</button></details>';
 }
 document.addEventListener("click",async event=>{
  const button=event.target.closest?.("[data-fresh-towel]");if(!button)return;
  const row=button.closest("[data-bath-towel]"),input=row.querySelector("input"),label=input.value.trim();
  if(!label){input.focus();return}
  const settings=state.settings||(state.settings={}),records=settings.bathroomTowels||(settings.bathroomTowels={});
- const key=row.dataset.bathTowel,previous=records[key];button.disabled=true;
- records[key]={label,start:ymd()};
+ const key=row.dataset.bathTowel,previous=records[key];row.querySelectorAll('button').forEach(b=>b.disabled=true);
+ records[key]={label,start:button.dataset.freshTowel==='label' && previous ? previous.start : ymd()};
  try{await save();row.outerHTML=towelRow(key,row.dataset.person)}
- catch(error){if(previous)records[key]=previous;else delete records[key];button.disabled=false;alert("Could not save this towel. Please try again.")}
+ catch(error){if(previous)records[key]=previous;else delete records[key];row.querySelectorAll('button').forEach(b=>b.disabled=false);alert("Could not save this towel. Please try again.")}
 });
 function bedSheetRow(name){
  const last=state.settings?.sheetChanges?.[name];
