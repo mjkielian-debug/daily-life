@@ -882,7 +882,7 @@ window.houseVisualTaskHasRoomMatch=function(task){
  }
  const assigned=str(task.homeRoomId||task.roomId||"");
  if(assigned&&arr(state.houseRooms).some(room=>str(room.id)===assigned&&
-    (!room.floor||!floors.includes(str(room.floor))||str(room.floor)===mappedFloor)))return true;
+    (!str(room.floor)||floors.includes(str(room.floor)))))return true;
  if(assigned)return false;
  if(arr(state.houseRooms).some(room=>str(room.name).trim()&&
     trackedRoomTasks(str(room.floor||""),{id:room.id,name:room.name},room).some(row=>str(row.id)===str(task.id||""))))return true;
