@@ -840,22 +840,78 @@ function trackedRoomTasks(f,z,room){
   if(String(t.category||"").toLowerCase()!=="home"||!name)return false;
   if((" "+label+" ").includes(" "+name+" "))return true;
   const raw=String(t.title||"").toLowerCase();
+  const child=String(t.child||"").trim().toLowerCase();
+  if(child&&name.includes(child)&&/\b(room|bedroom|bed|make.*bed|room reset|room cleanup)\b/i.test(raw))return true;
   const roomTaskRules=[
-   {room:/kitchen/,task:/\b(microwave|stove|oven|refrigerator|fridge|dishwasher|sink|counter|countertop|pantry)\b/},
-   {room:/bath/,task:/\b(toilet|tub|bathtub|shower|bathroom|mirror|faucet)\b/},
-   {room:/laundry/,task:/\b(washer|dryer|laundry)\b/},
-   {room:/playroom/,task:/\bplayroom\b/},
-   {room:/living/,task:/\b(living room|couch|sofa)\b/}
+   {room:/kitchen/,task:/\b(microwave|stove|oven|refrigerator|fridge|dishwasher|dishes|dishwashing|sink|counter|counters|countertop|pantry)\b/},
+   {room:/bath/,task:/\b(toilet|tub|bathtub|shower|bathroom|bathroom mirror|bathroom faucet|bathroom sink)\b/},
+   {room:/laundry/,task:/\b(washer|dryer|laundry|wash clothes|fold clothes)\b/},
+   {room:/playroom/,task:/\bplayroom|put away toys|toy cleanup|toy pickup\b/},
+   {room:/living/,task:/\b(living room|couch|sofa)\b/},
+   {room:/dining/,task:/\b(dining room|dining table|clear the table|wipe the table)\b/}
   ];
   return roomTaskRules.some(rule=>rule.room.test(name)&&rule.task.test(raw));
  });
  const chores=typeof window.lifeMapHouseholdRows==="function"?dates.flatMap(date=>window.lifeMapHouseholdRows(date)).filter(t=>{
-  if(!t._lifeChore||!/room|make.*bed/i.test(String(t.title||"")))return false;
-  const child=String(t.child||"").toLowerCase().trim(),roomName=String(z?.name||"").toLowerCase();
-  return child&&roomName.includes(child);
+  if(!t._lifeChore)return false;
+  if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
+  const assigned=String(t.homeRoomId||t.roomId||"");
+  if(assigned)return !!room&&assigned===String(room.id);
+  const child=String(t.child||"").toLowerCase().trim(),roomName=String(z?.name||room?.name||"").toLowerCase();
+  const chore=String(t.title||t.chore||"").toLowerCase();
+  if(child&&roomName.includes(child)&&/\b(room|bedroom|bed|make.*bed|room reset|room cleanup)\b/i.test(chore))return true;
+  const rules=[
+   {room:/kitchen/,task:/\b(dishes|dishwashing|counters?|countertops?|sink|microwave|stove|oven)\b/},
+   {room:/bath/,task:/\b(toilet|tub|bathtub|shower|bathroom|mirror|faucet)\b/},
+   {room:/laundry/,task:/\b(laundry|washer|dryer|wash clothes|fold clothes)\b/},
+   {room:/playroom/,task:/\bplayroom|toys|toy pickup\b/}
+  ];
+  return rules.some(rule=>rule.room.test(roomName)&&rule.task.test(chore));
  }):[];
  return [...tasks,...chores];
 }
+window.houseVisualTaskHasRoomMatch=function(task){
+ if(!task)return false;
+ if(task.homeRoomId||task.roomId||task.homeMapZoneId||task.homeMapFloor)return true;
+ if(arr(state.houseRooms).some(room=>trackedRoomTasks(String(room.floor||""),{id:room.id,name:room.name},room).some(row=>String(row.id||"")===String(task.id||""))))return true;
+ return floors.some(f=>{
+  const map=get(f);if(!map)return false;
+  return arr(map.zones).some(z=>z&&trackedRoomTasks(f,z,localRoom(f,z)).some(row=>String(row.id||"")===String(task.id||"")));
+ });
+};
+window.houseVisualAssignTaskToRoom=async function(taskId,f,id){
+ if(!floors.includes(f)||!okId(id))return;
+ const task=arr(state.tasks).find(row=>String(row.id)===String(taskId))||arr(state.chores).find(row=>String(row.id)===String(taskId)),z=zone(f,id);
+ if(!task||!z)return;
+ delete task.homeRoomId;delete task.roomId;
+ task.homeMapFloor=f;task.homeMapZoneId=id;task.homeMapRoomName=String(z.name||"");
+ const room=localRoom(f,z);if(room)task.homeRoomId=room.id;
+ if(typeof save==="function")await save();
+ if(typeof render==="function")render();
+};
+window.houseVisualUnassignedTasksHtml=function(f){
+ const map=get(f),zones=arr(map?.zones).filter(z=>z&&okId(z.id));
+ if(!zones.length)return "";
+ const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];
+ const tasks=arr(state.tasks).filter(task=>{
+  if(task.done||task.paused||task.duplicateHidden||task.waitingForFunds)return false;
+  if(task.date&&!dates.includes(String(task.date)))return false;
+  const area=typeof window.lifeMapTaskArea==="function"?window.lifeMapTaskArea(task):String(task.category||"").toLowerCase();
+  if(area!=="home")return false;
+  return !window.houseVisualTaskHasRoomMatch(task);
+ });
+ const chores=dates.flatMap(date=>typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(date):[]).filter(task=>task._lifeChore&&!task.done&&!task.paused&&!task.duplicateHidden&&!window.houseVisualTaskHasRoomMatch(task));
+ const unassigned=tasks.concat(chores).slice(0,12);
+ if(!unassigned.length)return "";
+ return '<section class="hvm-unassigned-tasks"><div><span class="eyebrow">HOUSE MAP · TASK PLACEMENT</span><h3>House tasks without a room</h3><p>Room-specific work appears in its room. Choose a room for these remaining household tasks.</p></div>'+unassigned.map(task=>'<article class="hvm-unassigned-task"><b>'+h(task.title||"Home task")+'</b><small>'+(task.child?h(task.child)+" · ":"")+(task.date?h(task.date):"No date")+'</small><label>Room<select data-house-task-room="'+h(task.id)+'"><option value="">Choose a room</option>'+zones.map(z=>'<option value="'+h(z.id)+'">'+h(z.name||"Room")+'</option>').join("")+'</select></label><button type="button" class="btn small primary" data-house-assign-task="'+h(task.id)+'" data-house-floor="'+h(f)+'">Assign to room</button></article>').join("")+'</section>';
+};
+document.addEventListener("click",function(event){
+ const button=event.target&&event.target.closest?event.target.closest("[data-house-assign-task]"):null;
+ if(!button)return;
+ const taskId=button.getAttribute("data-house-assign-task"),floor=button.getAttribute("data-house-floor");
+ const select=Array.from(document.querySelectorAll("[data-house-task-room]")).find(node=>node.dataset.houseTaskRoom===taskId);
+ if(select&&select.value)window.houseVisualAssignTaskToRoom(taskId,floor,select.value);
+});
 window.houseVisualCompleteTask=async function(taskId,f,zoneId){
  const t=(state.tasks||[]).find(x=>String(x.id)===String(taskId)),chore=(state.chores||[]).find(x=>String(x.id)===String(taskId));
  if(t&&!t.done)await toggleTask(taskId,true);
