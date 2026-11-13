@@ -944,6 +944,10 @@ window.houseVisualSkipReview=function(key,date,f,id){
  if(typeof window.lifeMapSkipReview==="function")window.lifeMapSkipReview("home",key,date);
  window.houseVisualOpenZone(f,id);
 };
+function roomTaskLastDoneHtml(task){
+ const label=typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(task):"";
+ return label?'<small class="hvm-task-last-done">Last done · '+h(label)+'</small>':"";
+}
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
@@ -953,6 +957,8 @@ window.houseVisualOpenZone=function(f,id){
  const roomReviewUnknownRows=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).filter(item=>item.status==="unknown"&&pendingTasks.some(task=>String(task.id)===String(item.key))):[];
  const roomReviewRows=roomReviewUnknownRows.filter(item=>!(typeof window.lifeMapIsReviewSkipped==="function"&&window.lifeMapIsReviewSkipped("home",item.key,date)));
  const reviewItem=roomReviewRows[0]||null,allRoomReviewsSkipped=roomReviewUnknownRows.length>0&&!reviewItem;
+ const reviewTaskForHistory=reviewItem?(reviewItem.kind==="task"?(state.tasks||[]).find(task=>String(task.id)===String(reviewItem.key)):reviewItem.kind==="chore"?Object.assign({},(state.chores||[]).find(task=>String(task.id)===String(reviewItem.key))||{},{title:((state.chores||[]).find(task=>String(task.id)===String(reviewItem.key))||{}).chore,_lifeChore:true}):null):null;
+ const reviewLastDone=reviewTaskForHistory&&typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(reviewTaskForHistory):"";
  const visiblePendingTasks=pendingTasks.filter(task=>!reviewItem||String(task.id)!==String(reviewItem.key));
  const pct=tasks.length?Math.round(finished.length/tasks.length*100):null;
  const locIds=new Set((state.inventoryLocations||[]).filter(x=>room&&x.roomId===room.id).map(x=>x.id));
@@ -961,10 +967,10 @@ window.houseVisualOpenZone=function(f,id){
  const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+(insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+'<small>This is separate from item inventory and does not remove room records.</small><button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">＋ I organized one area</button></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
- (reviewItem?'<section class="hvm-daily-checkin"><div class="hvm-daily-checkin-kicker">DAILY CHECK-IN · '+roomReviewRows.length+' unknown</div><b>'+h(reviewItem.label||reviewItem.group||"Home task")+'</b>'+(reviewItem.detail?'<p>'+h(reviewItem.detail)+'</p>':'')+
+ (reviewItem?'<section class="hvm-daily-checkin"><div class="hvm-daily-checkin-kicker">DAILY CHECK-IN · '+roomReviewRows.length+' unknown</div><b>'+h(reviewItem.label||reviewItem.group||"Home task")+'</b>'+(reviewItem.detail?'<p>'+h(reviewItem.detail)+'</p>':'')+(reviewLastDone?'<small class="hvm-task-last-done">Last done · '+h(reviewLastDone)+'</small>':'')+
  '<div class="hvm-daily-checkin-actions"><button type="button" class="review-yes" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;yes&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Yes</button><button type="button" class="review-no" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;no&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✕ No</button><button type="button" class="review-na" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;na&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">— N/A</button><button type="button" onclick="houseVisualSkipReview(&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Skip for now ›</button></div></section>':allRoomReviewsSkipped?'<section class="hvm-daily-checkin"><b>Daily Review</b><p>Your other room check-ins are skipped for now.</p><button type="button" onclick="lifeMapShowSkippedReviews(&#39;home&#39;,&#39;'+h(date)+'&#39;);houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Show skipped</button></section>':'')+
  '<div class="hvm-task-list"><b>What needs doing · '+visiblePendingTasks.length+'</b>'+
- (visiblePendingTasks.length?visiblePendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No other unfinished tracked room tasks yet.</p>')+'</div>'+
+ (visiblePendingTasks.length?visiblePendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+roomTaskLastDoneHtml(t)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No other unfinished tracked room tasks yet.</p>')+'</div>'+
  '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 

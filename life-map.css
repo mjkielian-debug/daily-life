@@ -129,3 +129,5 @@
 .hvm-daily-checkin-actions .review-no{background:#f7e0e9;border-color:#e5c1d0}
 .hvm-daily-checkin-actions .review-na{background:#ece8f6;border-color:#d5cce5}
 .hvm-daily-checkin-actions button:last-child{grid-column:1/-1}
+
+.lm-task-last-done,.hvm-task-last-done{display:block;margin-top:3px;color:#806d80;font-size:.72rem;line-height:1.2;font-weight:600}
