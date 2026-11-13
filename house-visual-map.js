@@ -86,17 +86,27 @@ function inlineRoomPreview(f,z,bounds){
  return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="Dolly bedroom saved furniture layout" focusable="false" pointer-events="auto">'+source.markup+'</svg>';
 }
 function zoneFloorGraphic(f,z,bounds){
- if(f!=="Second floor"||!bounds)return "";
- if(z.id!=="stairs"&&!/\bstairs?\b|\blanding\b/i.test(z.name||""))return "";
- const left=bounds.x+bounds.width*.24,right=bounds.x+bounds.width*.76;
- const top=bounds.y+bounds.height*.34,bottom=bounds.y+bounds.height*.82;
- const count=6,step=(bottom-top)/(count-1);
+ if(!bounds)return "";
+ const label=String(z.name||"")+" "+String(z.id||"");
+ const firstUp=f==="First floor"&&z.id==="stairs_up";
+ const basementDown=f==="First floor"&&z.id==="basement_stairs";
+ const mainStairs=f==="Second floor"&&z.id==="stairs";
+ const thirdStairs=f==="Second floor"&&z.id==="stairs_to_third";
+ if(!firstUp&&!basementDown&&!mainStairs&&!thirdStairs)return "";
+ if(!/stairs|landing/i.test(label))return "";
+ const left=bounds.x+bounds.width*.19,right=bounds.x+bounds.width*.81;
+ const topRatio=(firstUp||thirdStairs)?0.25:0.31;
+ const top=bounds.y+bounds.height*topRatio;
+ const bottom=bounds.y+bounds.height*0.77;
+ const count=Math.max(4,Math.min(6,Math.round((bottom-top)/14)));
+ const step=(bottom-top)/(count-1);
  const treads=Array.from({length:count},(_,i)=>{
   const y=top+i*step;
-  return '<path d="M'+left.toFixed(1)+' '+y.toFixed(1)+'H'+right.toFixed(1)+'" stroke="#805c47" stroke-width="5" stroke-linecap="round"/>';
+  return '<path d="M'+left.toFixed(1)+' '+y.toFixed(1)+'H'+right.toFixed(1)+'" stroke="#704e55" stroke-width="'+Math.max(2.6,Math.min(5,bounds.width*.045)).toFixed(1)+'" stroke-linecap="round"/>';
  }).join("");
- return '<g class="hvm-stair-plan" aria-label="Stair treads inside stair footprint" pointer-events="none">'+
-  '<rect x="'+(left-7).toFixed(1)+'" y="'+(top-8).toFixed(1)+'" width="'+(right-left+14).toFixed(1)+'" height="'+(bottom-top+16).toFixed(1)+'" rx="5" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
+ const rectFill=basementDown?"#f5dfab":"#c9a17b";
+ return '<g class="hvm-stair-plan" aria-label="Stair treads inside the saved stair footprint" pointer-events="none">'+
+  '<rect x="'+(left-5).toFixed(1)+'" y="'+(top-7).toFixed(1)+'" width="'+(right-left+10).toFixed(1)+'" height="'+(bottom-top+14).toFixed(1)+'" rx="6" fill="'+rectFill+'" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
 }
 
 function illustratedLayout(f,m){
@@ -154,7 +164,8 @@ function illustratedLayout(f,m){
   mapped.push({id:"stairs_up",name:"Stairs to second floor",short:"Upstairs",color:"#d9b690",linkedFloor:"Second floor",path:fit("M155 135H245V190H155Z"),cx:200*sx+ox,cy:162*sy+oy});
  }
  if(f==="Second floor"){
-  if(!mapped.some(z=>z.linkedFloor==="First floor"||/first floor|downstairs|main stairs/i.test(str(z.name))))
+  if(!mapped.some(z=>z.linkedFloor==="First floor"||/first floor|downstairs|main stairs/i.test(str(z.name))||
+    (z.id==="stairs"&&/stairs|landing/i.test(str(z.name)))))
    mapped.push({id:"stairs_to_first",name:"Stairs to first floor",short:"Downstairs",color:"#d9b690",linkedFloor:"First floor",path:fit("M165 435H255V475H165Z"),cx:210*sx+ox,cy:455*sy+oy});
   if(!mapped.some(z=>z.id==="stairs_to_third"||z.linkedFloor==="Third floor"||/third floor|michelle/i.test(str(z.name))))
    mapped.push({id:"stairs_to_third",name:"Stairs to third floor",short:"To third floor",color:"#d9b690",linkedFloor:"Third floor",path:fit("M135 235H175V315H135Z"),cx:155*sx+ox,cy:275*sy+oy});
@@ -229,10 +240,16 @@ function mapSketch(f,m){
  }).map(z=>{
   const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
   const labelX=bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
-  const isStair=f==="Second floor"&&(z.id==="stairs"||/\bstairs?\b|\blanding\b/i.test(z.name||""));
+  const stairLabel=str(z.id)==="stairs_up"&&f==="First floor"?"↑ 2nd":
+    str(z.id)==="basement_stairs"&&f==="First floor"?"↓ Basement":
+    str(z.id)==="stairs"&&f==="Second floor"?"↓ 1st":
+    str(z.id)==="stairs_to_third"&&f==="Second floor"?"↑ 3rd":"";
+  const isStair=!!stairLabel||/\bstairs?\b|\blanding\b/i.test(str(z.name)+" "+str(z.id));
   const hasSymbol=!!roomSymbol(z,bounds);
-  const labelY=isStair&&bounds?bounds.y+16:hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
-  const displayLabel=f==="First floor"&&/basement/i.test(str(z.id)+" "+str(z.name))?"Basement stairs":(z.short||z.name);
+  const labelY=isStair&&bounds?
+    (f==="First floor"?bounds.y+bounds.height-7:bounds.y+16):
+    hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
+  const displayLabel=stairLabel|| (f==="First floor"&&/basement/i.test(str(z.id)+" "+str(z.name))?"Basement stairs":(z.short||z.name));
   const baseFill=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
   const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
     roomTasks=trackedRoomTasks(f,z,room).filter(t=>{const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];return !t.date||dates.includes(String(t.date))}),taskDone=roomTasks.filter(t=>t.done).length,
@@ -247,7 +264,8 @@ function mapSketch(f,m){
    '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+taskOverlay+declutterOverlay+
    floorGraphic+roomSymbol(z,bounds)+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
- const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)).map(a=>{
+ const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
+  !arr(m.zones).some(z=>z&&z.linkedFloor===a.targetFloor&&/stairs|landing/i.test(str(z.name)+" "+str(z.id)))).map(a=>{
   const x=Number(a.x),y=Number(a.y),on="houseVisualFollowLink('"+a.targetFloor+"')";
   if(x<limits[0]||x>limits[0]+limits[2]||y<limits[1]||y>limits[1]+limits[3])return "";
   return '<g class="hvm-annotation" role="button" tabindex="0" aria-label="'+h(a.note||a.label||"Open linked floor")+'" onclick="'+on+
