@@ -9,8 +9,7 @@ const SPIRITUAL_READINGS=[
  {lens:"Buddhist-inspired",title:"Enough for this moment",body:"The mind often tries to solve the next hour, week, and future at once. Return to what is actually here.",practice:"Name five things you can sense right now."},
  {lens:"Earth-centered",title:"Reciprocity",body:"Receiving and giving are part of the same cycle. Gratitude becomes deeper when it changes how you participate.",practice:"Thank one person, place, animal, or living system through an action."},
  {lens:"Unitarian Universalist-inspired",title:"Love as practice",body:"Love can be more than a feeling. It can be a way of choosing dignity, curiosity, fairness, generosity, and repair.",practice:"Ask what the most loving practical action is in one situation today."},
- {lens:"Buddhist-inspired",title:"Compassion without fixing",body:"Compassion does not always require a solution. Sometimes it is the willingness to stay present without adding judgment.",practice:"Offer one difficult feeling the sentence: You may be here, and I can still choose my next step."}
-
+ {lens:"Buddhist-inspired",title:"Compassion without fixing",body:"Compassion does not always require a solution. Sometimes it is the willingness to stay present without adding judgment.",practice:"Offer one difficult feeling the sentence: You may be here, and I can still choose my next step."},
  {lens:"Hinduism-inspired · karma yoga",title:"Steady action, open hands",body:"One teaching in Bhagavad Gita 2.47 invites attention to the action itself without making its reward the only reason for acting. Treat it as a reflection, not a demand for perfect detachment.",practice:"Choose one ordinary, helpful action. Do it with care for two minutes, then let the result be what it is.",sourceLabel:"Bhagavad Gita 2.47 · IIT Kanpur Heritage",sourceUrl:"https://heritage.iitk.ac.in/SBG/2.47"},
  {lens:"Hinduism-inspired · japa",title:"Return with a word",body:"Japa—repetition or remembrance of a mantra or divine name—is practiced in some Hindu traditions. Traditions differ; no single mantra is right for everyone.",practice:"For two minutes, follow your breath. If you already have a phrase from a tradition you practice, repeat it gently with the breath.",sourceLabel:"Hindu American Foundation · Puja",sourceUrl:"https://www.hinduamerican.org/blog/hindu-puja-instructions/"},
  {lens:"Pagan-inspired · seasonal attention",title:"Notice what is changing",body:"Many Pagan paths honor cycles in the natural world. Change can include growth, fullness, release, and rest; none has to be treated as failure.",practice:"Look outside or through a window and name one thing changing with the season. Ask what kind of care it needs."},
@@ -53,7 +52,7 @@ const SPIRITUAL_RITUALS=[
  ["Loving-kindness","Buddhist-inspired","Offer quiet goodwill to yourself, someone you love, someone neutral, and then outward toward more living beings."],
  ["Values circle","Unitarian Universalist-inspired","Choose love, justice, pluralism, generosity, interdependence, transformation, or equity and ask what practicing it looks like today."],
  ["Home blessing","Earth-centered · mystical","Walk through the home slowly and name what you want it to hold: safety, honesty, laughter, rest, welcome, or something else."],
- ["Release ritual","Anytime","Write down something you are ready to loosen your grip on. Safely discard the paper, then name the behavior or boundary that makes the release real."]
+ ["Release ritual","Anytime","Write down something you are ready to loosen your grip on. Safely discard the paper, then name the behavior or boundary that makes the release real."],
  ["Mindful action · karma yoga","Hinduism-inspired","Choose one small, helpful task. Bring care to the action without requiring a particular outcome. Inspired by Bhagavad Gita 2.47."]
 
 ];
@@ -163,7 +162,7 @@ function tarotCardMarkup(date,compact){
 }
 function dailyPracticeCard(){
  const x=spiritualityLogFor()||{},steps=[["reading","Daily reading"],["tarot","Tarot"],["stillness","Stillness / meditation"],["ritual","Small ritual"]],done=steps.filter(v=>x[v[0]]).length;
- return'<div class="card spiritual-practice-card"><div class="section-title"><div><div class="eyebrow">Daily practice</div><h2>'+done+'/'+steps.length+' touched today</h2><div class="muted small">A menu, not a score. Do one thing or all four.</div></div><span class="tag">~'+Number(state.settings.spirituality?.dailyMinutes||10)+' min</span></div><div class="spiritual-practice-grid">'+steps.map(v=>'<button class="'+(x[v[0]]?"done":"")+'" onclick="toggleSpiritualPractice(\''+v[0]+'\')"><span>'+(x[v[0]]?"✓":"○")+'</span><b>'+esc(v[1])+'</b></button>').join("")+'</div></div>'
+ return'<div class="card spiritual-practice-card"><div class="section-title"><div><div class="eyebrow">Daily practice</div><h2>'+done+'/'+steps.length+' touched today</h2><div class="muted small">A menu, not a score. Do one thing or all four.</div></div><span class="tag">~'+Number(state.settings.spirituality?.dailyMinutes||5)+' min</span></div><div class="spiritual-practice-grid">'+steps.map(v=>'<button class="'+(x[v[0]]?"done":"")+'" onclick="toggleSpiritualPractice(\''+v[0]+'\')"><span>'+(x[v[0]]?"✓":"○")+'</span><b>'+esc(v[1])+'</b></button>').join("")+'</div></div>'
 }
 function spiritualityTodayPanel(m){
  const r=dailySpiritualReading(),s=spiritualitySeason(),ml=moonLens(m);
