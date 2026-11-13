@@ -111,6 +111,15 @@ function view(areaOverride,tasksOnly){
  const careTotal=careHabits.length*progressDates.length;
  const careDone=careHabits.reduce((n,x)=>n+progressDates.filter(d=>typeof selfCareDone==="function"&&selfCareDone(x.key,d)).length,0);
  const carePct=careTotal?Math.round(careDone/careTotal*100):0;
+ const waterGoal=Math.max(1,Number(state?.settings?.waterTarget)||78);
+ const waterLogsToday=list(state?.waterLogs).filter(x=>String(x?.date||"")===date&&Number(x?.oz)>0);
+ const waterOzToday=waterLogsToday.reduce((sum,x)=>sum+Math.max(0,Number(x?.oz)||0),0);
+ const waterHasCheckin=waterLogsToday.length>0;
+ const waterPctToday=waterHasCheckin?Math.min(100,Math.round(waterOzToday/waterGoal*100)):null;
+ const brushCountRaw=typeof selfCareOccurrencesToday==="function"?selfCareOccurrencesToday("brush"):0;
+ const brushCount=Math.max(0,Math.min(2,Number(brushCountRaw)||0));
+ const brushHasCheckin=brushCount>0;
+ const brushPctToday=brushHasCheckin?Math.round(brushCount/2*100):null;
  const taskPct=tasks.length?Math.round(completed/tasks.length*100):0;
  const areaKeys=["mind","body","people","home","spirituality","hobbies","money","car","work"];
  const matches=Object.fromEntries(areaKeys.map(key=>[key,progressTasks.filter(t=>lifeMapAreaForTask(t)===key)]));
@@ -133,21 +142,35 @@ function view(areaOverride,tasksOnly){
   const total=rows.length+(key==="mind"?careTotal:0),done=rows.filter(t=>t.done).length+(key==="mind"?careDone:0);
   return total?Math.round(done/total*100):0;
  };
+ const priorityScores=[waterPctToday,brushPctToday].filter(value=>value!==null);
+ const priorityHealthPct=priorityScores.length?Math.round(priorityScores.reduce((sum,value)=>sum+value,0)/priorityScores.length):null;
+ const bodyProgressPct=Math.max(pctFor("body"),priorityHealthPct||0);
  const moneyGoals=list(state&&state.settings&&state.settings.financialRoadmap).filter(g=>g&&Array.isArray(g.steps));
  const moneyGoalSteps=moneyGoals.flatMap(g=>g.steps),moneyGoalDone=moneyGoalSteps.filter(step=>step&&step.done).length,moneyGoalTotal=moneyGoalSteps.length,moneyGoalPct=moneyGoalTotal?Math.round(moneyGoalDone/moneyGoalTotal*100):0;
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
  const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
- const avatarFillPct=Math.round([carePct,pctFor("spirituality"),pctFor("body"),pctFor("people"),pctFor("hobbies"),moneyFill,pctFor("car"),pctFor("work")].reduce((sum,value)=>sum+(Number(value)||0),0)/8);
+ const categoryFillPct=Math.round([carePct,pctFor("spirituality"),bodyProgressPct,pctFor("people"),pctFor("hobbies"),moneyFill,pctFor("car"),pctFor("work")].reduce((sum,value)=>sum+(Number(value)||0),0)/8);
+ const priorityFillPct=priorityScores.length?Math.round(priorityScores.reduce((sum,value)=>sum+value,0)/priorityScores.length):0;
+ const avatarFillPct=priorityScores.length?Math.round(categoryFillPct*.75+priorityFillPct*.25):categoryFillPct;
  const avatarMarks=[
   avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind"),
   avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality"),
-  avatarMark("Body & health","♡",111,205,pctFor("body"),"#f2ae85","body"),
+  avatarMark("Body & health","♡",111,205,bodyProgressPct,"#f2ae85","body"),
   avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people"),
   avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies"),
   avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money"),
   avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car"),
   avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work")
  ].join("");
+ const waterStatus=waterHasCheckin?Math.round(waterOzToday)+" / "+Math.round(waterGoal)+" oz":"Not logged yet";
+ const waterMarks=[0,1,2].map(index=>{
+  const portion=waterGoal/3,fill=waterHasCheckin?Math.max(0,Math.min(100,Math.round((waterOzToday-portion*index)/portion*100))):0;
+  return '<span class="lm-priority-mark lm-priority-water-mark" style="--lm-fill:'+fill+'%"><span aria-hidden="true">💧</span></span>';
+ }).join("");
+ const teethMarks=[0,1].map(index=>'<span class="lm-priority-mark lm-priority-teeth-mark '+(index<brushCount?"is-filled":"")+'"><span aria-hidden="true">🦷</span></span>').join("");
+ const waterHabitPanel='<aside class="lm-priority-habit lm-priority-water" aria-label="Water progress, '+h(waterStatus)+'"><b>WATER</b><small>'+h(waterStatus)+'</small><div class="lm-priority-marks" aria-hidden="true">'+waterMarks+'</div><small>3 bottles</small></aside>';
+ const teethStatus=brushHasCheckin?brushCount+" of 2 today":"Not logged yet";
+ const teethHabitPanel='<aside class="lm-priority-habit lm-priority-teeth" aria-label="Teeth brushing progress, '+h(teethStatus)+'"><b>TEETH</b><small>'+h(teethStatus)+'</small><div class="lm-priority-marks" aria-hidden="true">'+teethMarks+'</div><small>daily goal</small></aside>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
  const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask";return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small></span></label>'};
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
@@ -232,9 +255,9 @@ function view(areaOverride,tasksOnly){
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Color fills from saved activity. Choose today or this week; this week runs Monday through today.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
- '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
- '<defs>'+ '<clipPath id="lmAvatarColorReveal" clipPathUnits="userSpaceOnUse"><rect x="0" y="'+(510-510*avatarFillPct/100)+'" width="220" height="'+(510*avatarFillPct/100)+'"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" clip-path="url(#lmAvatarColorReveal)" pointer-events="none" aria-hidden="true"/>'+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+
- '<p class="lm-avatar-caption">Tap any part or badge to open that area. Color grows in small steps.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
+ '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
+ '<defs>'+ '<clipPath id="lmAvatarColorReveal" clipPathUnits="userSpaceOnUse"><circle class="lm-avatar-color-mask" cx="110" cy="255" r="'+Math.round(276*Math.sqrt(avatarFillPct/100))+'"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" clip-path="url(#lmAvatarColorReveal)" pointer-events="none" aria-hidden="true"/>'+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
+ '<p class="lm-avatar-caption">I check in with you in conversation. Your answers add color here.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  '<section class="lm-lower-grid">'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
  '<section class="lm-trackers"><div class="lm-tracker-title"><span class="lm-kicker">YOUR TRACKING STAYS HERE</span><h2>All the pieces you already log</h2></div>'+
