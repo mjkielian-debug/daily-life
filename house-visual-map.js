@@ -631,6 +631,15 @@ window.houseVisualInspectPersonItem=async function(f,id,item){
  }
  window.houseVisualInventoryOpen(f,id);
 };
+function roomCareControls(f,z){
+ const label=[z.id,z.name,z.short].join(" ").toLowerCase();
+ if(!/bathroom|\bbath\b|washroom|powder room/.test(label))return bedroomWardrobes(f,z);
+ if(typeof window.wardrobeWearControls!=="function")return "";
+ return '<section aria-label="Bathroom towels"><h3>Towels</h3>'+["Bath towel","Hand towel"].map(type=>{
+  const key=["bathroom-towel",f,z.id,type].join(":");
+  return '<div><b>'+type+'</b><div data-towel-controls>'+window.wardrobeWearControls(key)+'</div></div>';
+ }).join("")+'</section>';
+}
 function bedroomWardrobes(f,z){
  const label=[z.id,z.name,z.short].filter(Boolean).join(" ").toLowerCase();
  if(/entry|hall|bath/.test(label))return "";
@@ -657,7 +666,7 @@ function personRoomHome(f,z){
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
  const tour='<nav class="hvm-person-tour-nav" aria-label="House tour navigation"><button type="button" class="btn" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,-1)">‹ Previous room</button><span><b>Room tour</b><small>'+(index+1)+' of '+zones.length+' · '+h(f)+'</small></span><button type="button" class="btn" '+(index<0||index>=zones.length-1?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,1)">Next room ›</button></nav>';
  return '<section class="hvm-person-room-home" aria-label="'+h(person?.name||z.name)+' bedroom home">'+
-  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+bedroomWardrobes(f,z)+objects+
+  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+roomCareControls(f,z)+objects+
   '<div class="hvm-person-room-stats"><div><small>TODAY</small><b>'+(today.length?todayDone+' of '+today.length+' tasks done':"No tasks assigned today")+'</b></div><div><small>ROOM TASKS</small><b>'+(tasks.length?done+' of '+tasks.length+' complete':"No room tasks logged")+'</b></div></div>'+
   '<section class="hvm-person-room-task-list"><div class="hvm-person-room-task-heading"><b>Room tasks</b><button type="button" class="btn small" onclick="houseVisualAddZoneTask(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">＋ Add</button></div>'+
   (roomTasks||'<p class="muted small">No unfinished room tasks. Progress reflects completed tasks, not how clean the room looks.</p>')+'</section>'+
@@ -1041,7 +1050,7 @@ window.houseVisualRoomInlineData=function(f,id){
  if(!floors.includes(f)||!okId(id))return null;
  const z=zone(f,id);if(!z)return null;
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room);
- return {floor:f,id:String(id),name:z.name,tasks,wardrobes:bedroomWardrobes(f,z),insights:roomInsightParts(tasks,f,id)};
+ return {floor:f,id:String(id),name:z.name,tasks,wardrobes:roomCareControls(f,z),insights:roomInsightParts(tasks,f,id)};
 };
 window.houseVisualAnswerReview=async function(kind,key,date,status,f,id){
  if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
@@ -1095,7 +1104,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+bedroomWardrobes(f,z)+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
