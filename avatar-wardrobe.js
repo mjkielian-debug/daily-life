@@ -110,10 +110,11 @@ async function loadClosetPreviews(){
 }
 function wearDay(){return typeof ymd==="function"?ymd():new Date().toLocaleDateString("en-CA")}
 window.wardrobeWearControls=function(id){
+ const towel=id.startsWith("bathroom-towel:");
  const record=state.settings?.clothingWear?.[id],key=esc(encodeURIComponent(id).replace(/'/g,"%27"));
  const button=(action,label)=>'<button type="button" class="lm-mini-button" data-wear-key="'+key+'" data-wear-action="'+action+'">'+label+'</button>';
- const status=record?'<small>Likely in laundry · last worn '+esc(record.date)+'</small> ':"";
- return '<div class="aw-wear-controls">'+status+(record?.date===wearDay()?"":button("day","Wore today"))+(record?button("clear","Back in closet"):"")+'</div>';
+ const status=record?'<small>Likely in laundry · last '+(towel?'used ':'worn ')+esc(record.date)+'</small> ':"";
+ return '<div class="aw-wear-controls">'+status+(record?.date===wearDay()?"":button("day",towel?"Used today":"Wore today"))+(record?button("clear",towel?"Back in bathroom":"Back in closet"):"")+'</div>';
 };
 document.addEventListener("click",async event=>{
  const b=event.target.closest?.("[data-wear-action]");if(!b)return;
@@ -123,7 +124,8 @@ document.addEventListener("click",async event=>{
  if(action==="clear")delete records[id];
  else records[id]={date:wearDay(),mode:"day"};
  try{await save()}catch(e){if(before)records[id]=before;else delete records[id];alert("Could not save this wardrobe update.");return}
- if(document.getElementById("familyClosetBody"))window.refreshFamilyClosetWear?.();
+ if(b.closest("[data-towel-controls]"))b.closest("[data-towel-controls]").innerHTML=window.wardrobeWearControls(id);
+ else if(document.getElementById("familyClosetBody"))window.refreshFamilyClosetWear?.();
  else if(typeof render==="function")render();
 });
 function active(){
