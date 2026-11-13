@@ -399,3 +399,117 @@
 @media(prefers-reduced-motion:reduce){
   #app:has(.lm-scene-card) .lm-avatar-color-mask{transition:none}
 }
+
+/* Compact storybook home: keep the avatar recognizable while bringing the house map up sooner. */
+@media(max-width:640px){
+ #app:has(.lm-scene-card) .lm-scene-heading h2{
+  font-size:1.02rem!important;
+  line-height:1.15!important;
+ }
+ #app:has(.lm-scene-card) .lm-avatar-wrap{
+  max-width:none;
+  padding:2px 4px 6px;
+  gap:0;
+ }
+ #app:has(.lm-scene-card) .lm-avatar-stage-with-habits{
+  grid-template-columns:52px minmax(0,148px) 56px;
+  gap:3px;
+  width:min(100%,262px);
+  max-width:262px;
+ }
+ #app:has(.lm-scene-card) .lm-avatar-stage-with-habits .lm-avatar{
+  width:100%;
+  height:auto;
+  max-width:148px;
+  max-height:none;
+ }
+ #app:has(.lm-scene-card) .lm-priority-habit{gap:3px}
+ #app:has(.lm-scene-card) .lm-priority-habit>b{font-size:.58rem}
+ #app:has(.lm-scene-card) .lm-priority-habit>small{font-size:.52rem;line-height:1.1}
+ #app:has(.lm-scene-card) .lm-priority-marks{
+  display:flex;
+  justify-content:center;
+  gap:1px;
+ }
+ #app:has(.lm-scene-card) .lm-priority-mark{width:16px;height:16px;font-size:9px}
+ #app:has(.lm-scene-card) .lm-avatar-caption{
+  margin:0 auto 4px;
+  padding:0 3px;
+  font-size:.68rem;
+  line-height:1.15;
+ }
+ #app:has(.lm-scene-card) .lm-house{
+  border:2px solid transparent;
+  background:linear-gradient(145deg,#fffdfd,#fff6fb 54%,#f0fbf5) padding-box,
+    linear-gradient(135deg,#f08caf,#f4c766,#9ed8b4,#9cccf0,#c7a9e9) border-box;
+  box-shadow:0 8px 22px rgba(93,59,83,.1);
+  padding:10px;
+  gap:7px;
+ }
+ #app:has(.lm-scene-card) .lm-house>.lm-muted{
+  margin:0;
+  font-size:.72rem;
+  line-height:1.2;
+ }
+ #app:has(.lm-scene-card) .lm-floors{
+  display:flex;
+  gap:5px;
+  overflow-x:auto;
+  padding:1px 0 3px;
+  scrollbar-width:none;
+ }
+ #app:has(.lm-scene-card) .lm-floors::-webkit-scrollbar{display:none}
+ #app:has(.lm-scene-card) .lm-floor{
+  flex:1 0 auto;
+  min-width:0;
+  min-height:34px;
+  padding:5px 7px;
+  border-radius:999px;
+  background:linear-gradient(140deg,#fff,#fff1f7);
+  font-size:.68rem;
+  white-space:nowrap;
+ }
+ #app:has(.lm-scene-card) .lm-floor.selected{
+  background:linear-gradient(120deg,#f7d9e8,#eee5ff);
+  box-shadow:inset 0 0 0 1px #d5adca;
+ }
+ #app:has(.lm-scene-card) .lm-house-map{
+  padding:4px;
+  border:0;
+  border-radius:20px;
+  background:linear-gradient(145deg,#fff8fc,#edf8f7 55%,#fff8e9);
+  box-shadow:inset 0 0 0 2px #ffffffc9,0 3px 10px #79566e12;
+ }
+ #app:has(.lm-scene-card) .lm-house-map .hvm-sketch-heading{
+  flex-wrap:nowrap;
+  gap:5px;
+  margin-bottom:2px;
+ }
+ #app:has(.lm-scene-card) .lm-house-map .hvm-care-house{
+  display:flex!important;
+  flex:0 0 auto;
+  align-items:center;
+  gap:4px;
+  padding:0!important;
+ }
+ #app:has(.lm-scene-card) .lm-house-map .hvm-care-house svg{
+  width:34px!important;
+  height:34px!important;
+ }
+ #app:has(.lm-scene-card) .lm-house-map .hvm-care-house span{
+  display:block!important;
+  max-width:90px;
+  font-size:.62rem!important;
+  line-height:1.1;
+  text-align:left;
+ }
+ #app:has(.lm-scene-card) .lm-house-map .hvm-sketch-heading>span{display:none}
+}
+@media(max-width:380px){
+ #app:has(.lm-scene-card) .lm-avatar-stage-with-habits{
+  grid-template-columns:47px minmax(0,136px) 51px;
+  width:min(100%,240px);
+  max-width:240px;
+ }
+ #app:has(.lm-scene-card) .lm-avatar-stage-with-habits .lm-avatar{max-width:136px}
+}
