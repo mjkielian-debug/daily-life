@@ -10,6 +10,12 @@ const SPIRITUAL_READINGS=[
  {lens:"Earth-centered",title:"Reciprocity",body:"Receiving and giving are part of the same cycle. Gratitude becomes deeper when it changes how you participate.",practice:"Thank one person, place, animal, or living system through an action."},
  {lens:"Unitarian Universalist-inspired",title:"Love as practice",body:"Love can be more than a feeling. It can be a way of choosing dignity, curiosity, fairness, generosity, and repair.",practice:"Ask what the most loving practical action is in one situation today."},
  {lens:"Buddhist-inspired",title:"Compassion without fixing",body:"Compassion does not always require a solution. Sometimes it is the willingness to stay present without adding judgment.",practice:"Offer one difficult feeling the sentence: You may be here, and I can still choose my next step."}
+
+ {lens:"Hinduism-inspired · karma yoga",title:"Steady action, open hands",body:"One teaching in Bhagavad Gita 2.47 invites attention to the action itself without making its reward the only reason for acting. Treat it as a reflection, not a demand for perfect detachment.",practice:"Choose one ordinary, helpful action. Do it with care for two minutes, then let the result be what it is.",sourceLabel:"Bhagavad Gita 2.47 · IIT Kanpur Heritage",sourceUrl:"https://heritage.iitk.ac.in/SBG/2.47"},
+ {lens:"Hinduism-inspired · japa",title:"Return with a word",body:"Japa—repetition or remembrance of a mantra or divine name—is practiced in some Hindu traditions. Traditions differ; no single mantra is right for everyone.",practice:"For two minutes, follow your breath. If you already have a phrase from a tradition you practice, repeat it gently with the breath.",sourceLabel:"Hindu American Foundation · Puja",sourceUrl:"https://www.hinduamerican.org/blog/hindu-puja-instructions/"},
+ {lens:"Pagan-inspired · seasonal attention",title:"Notice what is changing",body:"Many Pagan paths honor cycles in the natural world. Change can include growth, fullness, release, and rest; none has to be treated as failure.",practice:"Look outside or through a window and name one thing changing with the season. Ask what kind of care it needs."},
+ {lens:"Wiccan-inspired · intention",title:"Give an intention one small action",body:"Wiccan practice is diverse. For some practitioners, ritual helps focus intention; a meaningful act can be simple and personal.",practice:"Name one quality you want to bring to today, then choose one small action that expresses it. No tools or supplies are needed."}
+
 ];
 const TAROT_MAJOR=[
  ["The Fool","Beginnings, openness, and a step into the not-yet-known.","Pause before leaping; freedom can become avoidance.","What would a curious first step look like?"],
@@ -48,9 +54,11 @@ const SPIRITUAL_RITUALS=[
  ["Values circle","Unitarian Universalist-inspired","Choose love, justice, pluralism, generosity, interdependence, transformation, or equity and ask what practicing it looks like today."],
  ["Home blessing","Earth-centered · mystical","Walk through the home slowly and name what you want it to hold: safety, honesty, laughter, rest, welcome, or something else."],
  ["Release ritual","Anytime","Write down something you are ready to loosen your grip on. Safely discard the paper, then name the behavior or boundary that makes the release real."]
+ ["Mindful action · karma yoga","Hinduism-inspired","Choose one small, helpful task. Bring care to the action without requiring a particular outcome. Inspired by Bhagavad Gita 2.47."]
+
 ];
 function spiritualHash(text){let h=2166136261;for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-function dailySpiritualReading(date){date=date||ymd();return SPIRITUAL_READINGS[spiritualHash(date+"|reading")%SPIRITUAL_READINGS.length]}
+function dailySpiritualReading(date){date=date||ymd();const day=Math.floor(new Date(date+"T12:00:00").getTime()/86400000);return SPIRITUAL_READINGS[((day%SPIRITUAL_READINGS.length)+SPIRITUAL_READINGS.length)%SPIRITUAL_READINGS.length]}
 function tarotForDate(date){
  date=date||ymd();const saved=(state.tarotDraws||[]).find(x=>x.date===date);let index,reversed;
  if(saved){index=Number(saved.cardIndex||0)%TAROT_MAJOR.length;reversed=!!saved.reversed}
@@ -159,7 +167,7 @@ function dailyPracticeCard(){
 }
 function spiritualityTodayPanel(m){
  const r=dailySpiritualReading(),s=spiritualitySeason(),ml=moonLens(m);
- return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div><button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'+dailyPracticeCard()+'<div class="card spiritual-season-card floral-card"><div class="section-title"><div><div class="eyebrow">Seasonal wheel</div><h2>'+esc(s.title)+'</h2><div class="muted small">'+esc(s.theme)+'</div></div><button class="btn" onclick="setSpiritualityTab(\'rituals\')">Ritual ideas</button></div><div class="spiritual-moon"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><span><b>'+esc(m?.[0]||"Moon")+'</b><small>'+esc(ml.phaseAction)+'</small></span></div></div><div class="card daily-tarot-card floral-card"><div class="section-title"><div><div class="eyebrow">Daily tarot</div><h2>One card for reflection</h2></div><button class="btn" onclick="setSpiritualityTab(\'tarot\')">Open Tarot</button></div>'+tarotCardMarkup(ymd(),true)+'</div>'
+ return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div>'+spiritualitySourceLink(r)+'<button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'+dailyPracticeCard()+'<div class="card spiritual-season-card floral-card"><div class="section-title"><div><div class="eyebrow">Seasonal wheel</div><h2>'+esc(s.title)+'</h2><div class="muted small">'+esc(s.theme)+'</div></div><button class="btn" onclick="setSpiritualityTab(\'rituals\')">Ritual ideas</button></div><div class="spiritual-moon"><span class="moon-mark">'+esc(m?.[1]||"☾")+'</span><span><b>'+esc(m?.[0]||"Moon")+'</b><small>'+esc(ml.phaseAction)+'</small></span></div></div><div class="card daily-tarot-card floral-card"><div class="section-title"><div><div class="eyebrow">Daily tarot</div><h2>One card for reflection</h2></div><button class="btn" onclick="setSpiritualityTab(\'tarot\')">Open Tarot</button></div>'+tarotCardMarkup(ymd(),true)+'</div>'
 }
 function spiritualityTarotPanel(){
  ensureDailyTarotSaved();const rows=[...(state.tarotDraws||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,20);
@@ -175,7 +183,7 @@ function spiritualityJournalPanel(){
 }
 function spiritualityReadingCard(){
  const r=dailySpiritualReading();
- return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div><button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'
+ return'<div class="card daily-reading-card floral-card"><div class="eyebrow">Daily reading · '+esc(r.lens)+'</div><h2>'+esc(r.title)+'</h2><p class="spiritual-reading-text">'+esc(r.body)+'</p><div class="spiritual-practice-line"><span>Try today</span><b>'+esc(r.practice)+'</b></div>'+spiritualitySourceLink(r)+'<button class="btn" onclick="openSpiritualJournal(\'Reflection\')">Journal about this</button></div>'
 }
 function spiritualityMoonSeasonCard(m){
  m=m||moon();const s=spiritualitySeason(),ml=moonLens(m),
@@ -229,8 +237,9 @@ function spiritualityView(m){
   };
   const active=["today","tarot","rituals","journal"].includes(spiritualityTab)?spiritualityTab:"today";
   return '<section class="spirituality-page">'+
-    '<div class="spirituality-page-heading"><div><div class="eyebrow">Spirituality</div><h2>Reflection at your pace</h2><p class="muted small">Explore a daily reading, tarot, rituals, or your saved journal.</p></div>'+
+    '<div class="spirituality-page-heading"><div><div class="eyebrow">Spirituality</div><h2>Reflection at your pace</h2><p class="muted small">Your five-minute daily practice, with optional readings, rituals, tarot, and journaling.</p></div>'+
     '<button class="btn small primary" type="button" onclick="openSpiritualJournal()">＋ Journal</button></div>'+
+    spiritualityGuideLandingCard()+
     spiritualityTabs()+
     '<div class="spirituality-page-content" aria-live="polite">'+panels[active]+'</div>'+
   '</section>';
@@ -436,4 +445,89 @@ tarotSpreadChooser=function(){let html=tarotChooserBeforeSelection().replace('<b
   style.id="spiritualityPageStyles";
   style.textContent=".spirituality-page{display:grid;gap:12px;max-width:900px;margin:0 auto;padding:0 0 calc(96px + env(safe-area-inset-bottom));}.spirituality-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:20px;background:linear-gradient(130deg,color-mix(in srgb,#f3b6cf 35%,var(--panel)),color-mix(in srgb,#cce8d3 35%,var(--panel)),color-mix(in srgb,#d8c8f0 30%,var(--panel)));color:var(--text)}.spirituality-page-heading h2{margin:3px 0;font-family:var(--font-heading,Georgia,serif)}.spirituality-page-heading p{margin:2px 0}.spirituality-page .spirituality-tabs{position:sticky;top:0;z-index:8;background:var(--panel);box-shadow:0 4px 14px rgba(80,50,80,.08)}.spirituality-page-content{display:grid;gap:12px;min-width:0}.spirituality-page-content>.card{margin:0}.spirituality-tabs button{min-height:44px;touch-action:manipulation}@media(max-width:480px){.spirituality-page-heading{align-items:flex-start}.spirituality-page-heading .btn{flex:0 0 auto}.spirituality-page .spirituality-tabs{gap:3px}.spirituality-page .spirituality-tabs button{padding:6px 3px;font-size:.78rem}}";
   document.head.appendChild(style);
+})();
+
+let spiritualityGuideRun=null;
+function spiritualitySourceLink(reading){
+ if(!reading||!reading.sourceUrl)return"";
+ return'<p class="spiritual-source"><a href="'+esc(reading.sourceUrl)+'" target="_blank" rel="noopener noreferrer">Source: '+esc(reading.sourceLabel||"Read more")+'</a></p>';
+}
+function spiritualityGuideLandingCard(){
+ const reading=dailySpiritualReading(),log=spiritualityLogFor(),done=!!log?.guidedPractice;
+ return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Your daily spiritual practice</div><h2>Five minutes, guided one step at a time</h2><p class="muted">A short reading and a simple practice, rotating among Pagan, Unitarian Universalist, Buddhist, Hindu, Wiccan, and earth-centered reflections. No Christian material.</p><div class="spiritual-guide-preview"><span class="tag">Today · '+esc(reading.lens)+'</span><b>'+esc(reading.title)+'</b><span class="muted small">'+(done?'Completed today · ':'')+'1 min to arrive · 1 min to read · 2 min to practice · 1 min to close</span></div><button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(done?'Practice again':'Begin today’s five-minute practice')+'</button><div class="muted small">No supplies needed. Stop whenever you want; it only records completion after all four steps.</div></section>'
+}
+function spiritualityGuideSteps(){
+ const r=spiritualityGuideRun?.reading||dailySpiritualReading();
+ return[
+  {title:"Arrive",minutes:1,text:"Settle where you are. Feel your feet, notice a breath, and soften your shoulders. Let this be a moment for you, not a test."},
+  {title:"Read",minutes:1,text:'<div class="spiritual-guide-reading"><span class="tag">'+esc(r.lens)+'</span><h3>'+esc(r.title)+'</h3><p>'+esc(r.body)+'</p>'+spiritualitySourceLink(r)+'</div>'},
+  {title:"Practice",minutes:2,text:"Try this gently for two minutes: "+esc(r.practice)},
+  {title:"Carry it with you",minutes:1,text:"Choose one word or quality you want to carry into the next part of your day. If nothing comes to mind, take one last breath and simply notice how you feel."}
+ ];
+}
+function spiritualGuideClockText(seconds){
+ const value=Math.max(0,Number(seconds)||0),m=Math.floor(value/60),s=value%60;
+ return String(m)+":"+String(s).padStart(2,"0");
+}
+function showSpiritualityGuideStep(){
+ if(!spiritualityGuideRun)return;
+ clearInterval(spiritualityGuideRun.timer);spiritualityGuideRun.timer=null;
+ const steps=spiritualityGuideSteps(),step=steps[spiritualityGuideRun.step];
+ spiritualityGuideRun.remaining=step.minutes*60;
+ const progress='<div class="spirituality-guide-progress" aria-label="Step '+(spiritualityGuideRun.step+1)+' of '+steps.length+'">Step '+(spiritualityGuideRun.step+1)+' of '+steps.length+' · about '+step.minutes+' minute'+(step.minutes===1?'':'s')+'</div>';
+ const body='<div class="spirituality-guide-step"><div class="spiritual-guide-clock" id="spiritualGuideClock" aria-live="polite">'+spiritualGuideClockText(spiritualityGuideRun.remaining)+'</div><h3>'+esc(step.title)+'</h3><div class="spiritual-guide-instruction">'+step.text+'</div><p class="muted small" id="spiritualGuideStatus" aria-live="polite">Start the timer when you’re ready. You can close this guide at any time.</p></div>';
+ modal("Today’s five-minute practice",progress+body,"Start timer",startSpiritualityStepTimer);
+ const next=document.getElementById("saveModal");if(next)next.classList.add("spiritual-guide-next");
+}
+function startSpiritualityPractice(){
+ spiritualityGuideRun={date:ymd(),reading:dailySpiritualReading(),step:0,remaining:60,timer:null};
+ showSpiritualityGuideStep();
+}
+function startSpiritualityStepTimer(){
+ if(!spiritualityGuideRun||spiritualityGuideRun.timer)return;
+ const button=document.getElementById("saveModal"),status=document.getElementById("spiritualGuideStatus");
+ if(button){button.disabled=true;button.textContent="Timer running…"}
+ if(status)status.textContent="Take this time at your own pace.";
+ spiritualityGuideRun.timer=setInterval(function(){
+  if(!document.querySelector("#modal .spirituality-guide-step")){clearInterval(spiritualityGuideRun?.timer);spiritualityGuideRun=null;return}
+  spiritualityGuideRun.remaining=Math.max(0,spiritualityGuideRun.remaining-1);
+  const clock=document.getElementById("spiritualGuideClock");if(clock)clock.textContent=spiritualGuideClockText(spiritualityGuideRun.remaining);
+  if(spiritualityGuideRun.remaining<=0){
+   clearInterval(spiritualityGuideRun.timer);spiritualityGuideRun.timer=null;
+   const last=spiritualityGuideRun.step===spiritualityGuideSteps().length-1;
+   const nextButton=document.getElementById("saveModal");
+   const nextStatus=document.getElementById("spiritualGuideStatus");
+   if(nextStatus)nextStatus.textContent="This step is complete. Continue when you’re ready.";
+   if(nextButton){nextButton.disabled=false;nextButton.textContent=last?"Finish & save":"Next step";nextButton.onclick=last?completeSpiritualityPractice:advanceSpiritualityPractice}
+  }
+ },1000);
+}
+function advanceSpiritualityPractice(){
+ if(!spiritualityGuideRun)return;
+ spiritualityGuideRun.step++;
+ showSpiritualityGuideStep();
+}
+async function completeSpiritualityPractice(){
+ if(!spiritualityGuideRun)return;
+ const run=spiritualityGuideRun,date=run.date;
+ state.spiritualityPracticeLogs=Array.isArray(state.spiritualityPracticeLogs)?state.spiritualityPracticeLogs:[];
+ let log=spiritualityLogFor(date),created=false,before=null;
+ if(!log){log={id:uid(),date:date,reading:false,tarot:false,stillness:false,ritual:false};state.spiritualityPracticeLogs.push(log);created=true}
+ else before={...log};
+ log.reading=true;log.guidedPractice=true;log.guidedPracticeMinutes=5;log.guidedPracticeLens=run.reading.lens;log.guidedPracticeTitle=run.reading.title;log.guidedPracticeCompletedAt=new Date().toISOString();
+ try{
+  await save();clearInterval(run.timer);spiritualityGuideRun=null;closeModal();render();
+ }catch(error){
+  if(created)state.spiritualityPracticeLogs=state.spiritualityPracticeLogs.filter(function(x){return x!==log});
+  else Object.assign(log,before);
+  alert("The practice could not be saved yet. Your existing log was kept unchanged.");
+  const retry=document.getElementById("saveModal");
+  if(retry){retry.disabled=false;retry.textContent="Try saving again";retry.onclick=completeSpiritualityPractice}
+ }
+}
+(function installSpiritualityGuideStyles(){
+ if(document.getElementById("spiritualityGuideStyles"))return;
+ const style=document.createElement("style");style.id="spiritualityGuideStyles";
+ style.textContent=".spirituality-guide-card{border:1px solid color-mix(in srgb,#a96e9a 35%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,#f6dce9 42%,var(--panel)),color-mix(in srgb,#e5f3eb 38%,var(--panel)),color-mix(in srgb,#e9e1f6 35%,var(--panel)))}.spirituality-guide-card h2{font-family:var(--font-heading,Georgia,serif);margin:4px 0}.spiritual-guide-preview{display:grid;gap:7px;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--panel) 88%,transparent);margin:10px 0}.spirituality-guide-start{width:100%;min-height:48px}.spirituality-guide-progress{font-weight:700;color:var(--muted);margin:0 0 12px}.spiritual-guide-clock{font:700 2.3rem var(--font-heading,Georgia,serif);text-align:center;margin:4px 0 12px;color:var(--primary)}.spirituality-guide-step h3,.spiritual-guide-reading h3{margin:4px 0 8px}.spiritual-guide-instruction{line-height:1.6}.spirituality-guide-step{padding:14px;border-radius:18px;background:color-mix(in srgb,#f7e8ef 45%,var(--panel));min-width:0}.spiritual-guide-reading{padding:12px;border-radius:14px;background:color-mix(in srgb,var(--panel) 90%,transparent)}.spiritual-source{font-size:.82rem;margin:8px 0;color:var(--muted)}.spirituality-guide-next:disabled{opacity:.65;cursor:wait}@media(max-width:480px){.spirituality-guide-card{padding:14px}.spirituality-guide-step{padding:12px}}";
+ document.head.appendChild(style);
 })();
