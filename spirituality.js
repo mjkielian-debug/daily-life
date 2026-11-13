@@ -453,15 +453,15 @@ function spiritualitySourceLink(reading){
 }
 function spiritualityGuideLandingCard(){
  const reading=dailySpiritualReading(),log=spiritualityLogFor(),done=!!log?.guidedPractice;
- return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Your daily spiritual practice</div><h2>Five minutes, guided one step at a time</h2><p class="muted">A short reading and a simple practice, rotating among Pagan, Unitarian Universalist, Buddhist, Hindu, Wiccan, and earth-centered reflections. No Christian material.</p><div class="spiritual-guide-preview"><span class="tag">Today · '+esc(reading.lens)+'</span><b>'+esc(reading.title)+'</b><span class="muted small">'+(done?'Completed today · ':'')+'1 min to arrive · 1 min to read · 2 min to practice · 1 min to close</span></div><button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(done?'Practice again':'Begin today’s five-minute practice')+'</button><div class="muted small">No supplies needed. Stop whenever you want; it only records completion after all four steps.</div></section>'
+ return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Your daily spiritual practice</div><h2>Five minutes, guided one step at a time</h2><p class="muted">A short reading and a simple practice, rotating among Pagan, Unitarian Universalist, Buddhist, Hindu, Wiccan, and earth-centered reflections. No Christian material.</p><div class="spiritual-guide-preview"><span class="tag">Today · '+esc(reading.lens)+'</span><b>'+esc(reading.title)+'</b><span class="muted small">'+(done?'Completed today · ':'')+'1 min to set an intention · 1 min to read · 2 min to practice · 1 min to reflect</span></div><button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(done?'Practice again':'Begin today’s five-minute practice')+'</button><div class="muted small">No supplies needed. Stop whenever you want; it only records completion after all four steps.</div></section>'
 }
 function spiritualityGuideSteps(){
  const r=spiritualityGuideRun?.reading||dailySpiritualReading();
  return[
-  {title:"Arrive",minutes:1,text:"Settle where you are. Feel your feet, notice a breath, and soften your shoulders. Let this be a moment for you, not a test."},
+  {title:"Set an intention",minutes:1,text:"Before the reading, choose what you want to bring to today: curiosity, compassion, courage, rest, connection, or your own word. Hold that intention as you read."},
   {title:"Read",minutes:1,text:'<div class="spiritual-guide-reading"><span class="tag">'+esc(r.lens)+'</span><h3>'+esc(r.title)+'</h3><p>'+esc(r.body)+'</p>'+spiritualitySourceLink(r)+'</div>'},
   {title:"Practice",minutes:2,text:"Try this gently for two minutes: "+esc(r.practice)},
-  {title:"Carry it with you",minutes:1,text:"Choose one word or quality you want to carry into the next part of your day. If nothing comes to mind, take one last breath and simply notice how you feel."}
+  {title:"Reflect",minutes:1,text:"What stood out in the reading or practice? Name one thing you noticed, learned, or want to remember. It can be just a word."}
  ];
 }
 function spiritualGuideClockText(seconds){
