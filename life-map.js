@@ -29,12 +29,27 @@ function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirst
 function jump(view){if(typeof setView==="function")setView(view)}
 function avatarMark(label,icon,x,y,pct,color,area,pending){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- const count=Math.max(0,Number(pending)||0),accessibleLabel=label+(count?", "+count+" check-ins waiting":"");
+ const count=Math.max(0,Number(pending)||0),accessibleLabel=label+", "+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+"% complete"+(count?", "+count+" check-ins waiting":"");
  return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(accessibleLabel)}" title="${h(accessibleLabel)}" data-life-area="${h(area)}">`+
  '<circle cx="'+x+'" cy="'+y+'" r="21" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
- '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="15" font-weight="900" fill="#48394d">'+icon+'</text>'+
+ '<text x="'+x+'" y="'+(y-1)+'" text-anchor="middle" font-size="13" font-weight="900" fill="#48394d">'+icon+'</text>'+
+ '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+'%</text>'+
  (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(count>9?"9+":count)+'</text></g>':"")+'</g>';
+}
+function avatarAreaFill(area,path,cx,cy,maxRadius,pct){
+ const progress=Math.max(0,Math.min(100,Number(pct)||0));
+ if(!progress)return "";
+ const regionId="lmAvatarRegion-"+area,progressId="lmAvatarProgress-"+area;
+ const radius=(maxRadius*Math.sqrt(progress/100)).toFixed(2);
+ return '<clipPath id="'+regionId+'"><path d="'+path+'"/></clipPath>'+ '<clipPath id="'+progressId+'"><circle class="lm-avatar-progress-circle" cx="'+cx+'" cy="'+cy+'" r="'+radius+'"/></clipPath>';
+}
+function avatarAreaLayer(area,path,cx,cy,maxRadius,pct){
+ const progress=Math.max(0,Math.min(100,Number(pct)||0));
+ if(!progress)return "";
+ return '<g clip-path="url(#lmAvatarRegion-'+area+')"><g clip-path="url(#lmAvatarProgress-'+area+')">'+
+  '<image href="assets/michelle-ssd-avatar.webp?v=20261113-area-fill1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" pointer-events="none" aria-hidden="true"/>'+
+  '</g></g>';
 }
 function lifeMapAreaForTask(task){
  const title=String(task&&task.title||"").toLowerCase();
@@ -256,9 +271,18 @@ function view(areaOverride,tasksOnly){
  const moneyGoalSteps=moneyGoals.flatMap(g=>g.steps),moneyGoalDone=moneyGoalSteps.filter(step=>step&&step.done).length,moneyGoalTotal=moneyGoalSteps.length,moneyGoalPct=moneyGoalTotal?Math.round(moneyGoalDone/moneyGoalTotal*100):0;
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
  const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
- const categoryFillPct=Math.round([carePct,pctFor("spirituality"),bodyProgressPct,pctFor("people"),pctFor("hobbies"),moneyFill,pctFor("car"),pctFor("work")].reduce((sum,value)=>sum+(Number(value)||0),0)/8);
- const priorityFillPct=priorityScores.length?Math.round(priorityScores.reduce((sum,value)=>sum+value,0)/priorityScores.length):0;
- const avatarFillPct=priorityScores.length?Math.round(categoryFillPct*.75+priorityFillPct*.25):categoryFillPct;
+ const avatarLifeAreas=[
+  {key:"spirituality",path:"M79 2H141L158 35Q138 45 110 43Q82 45 62 35Z",cx:110,cy:22,r:57,pct:pctFor("spirituality")},
+  {key:"mind",path:"M75 40H145Q164 60 156 108Q147 137 110 142Q73 137 64 108Q56 60 75 40Z",cx:110,cy:90,r:70,pct:carePct},
+  {key:"work",path:"M66 145H98V260H66ZM122 145H154V260H122Z",cx:110,cy:202,r:74,pct:pctFor("work")},
+  {key:"people",path:"M96 177Q110 162 124 177Q137 192 110 216Q83 192 96 177Z",cx:110,cy:189,r:40,pct:pctFor("people")},
+  {key:"hobbies",path:"M54 150Q70 145 80 162L79 246Q71 270 55 278L43 263Q53 230 45 190Z",cx:62,cy:213,r:73,pct:pctFor("hobbies")},
+  {key:"body",path:"M72 258H148V306Q139 312 110 312Q81 312 72 306Z",cx:110,cy:285,r:48,pct:bodyProgressPct},
+  {key:"money",path:"M68 318H152L158 463Q137 477 112 468H108Q83 477 62 463Z",cx:110,cy:390,r:105,pct:moneyFill},
+  {key:"car",path:"M65 463Q86 475 108 468Q112 468 116 468Q139 476 158 463L163 492Q143 509 111 502Q80 509 59 492Z",cx:110,cy:485,r:61,pct:pctFor("car")}
+ ];
+ const avatarAreaDefs=avatarLifeAreas.map(area=>avatarAreaFill(area.key,area.path,area.cx,area.cy,area.r,area.pct)).join("");
+ const avatarAreaLayers=avatarLifeAreas.map(area=>avatarAreaLayer(area.key,area.path,area.cx,area.cy,area.r,area.pct)).join("");
  const avatarReviewCounts={};
  if(typeof dailyReviewExpected==="function")for(const item of dailyReviewExpected(date)){
   if(item.status!=="unknown")continue;
@@ -405,9 +429,9 @@ function view(areaOverride,tasksOnly){
  const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f==="Third floor"?"Attic":f)+'</button>').join("");
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
- '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Tap an avatar badge for that area’s habits, daily check-in and tasks. Tap a house room for its tasks. Color fills from saved activity.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
+ '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Each avatar area fills from the center with its own saved progress. Tap a badge to see that area’s habits, check-ins and tasks; house progress fills room by room.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
  '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-next-checkin-slot">'+nextCheckinPanel+'</div><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
- '<defs>'+ '<clipPath id="lmAvatarColorReveal" clipPathUnits="userSpaceOnUse"><rect class="lm-avatar-color-mask" x="22" y="'+(510-Math.round(510*avatarFillPct/100))+'" width="176" height="'+Math.round(510*avatarFillPct/100)+'"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-transparent-fill1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-transparent-fill1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" clip-path="url(#lmAvatarColorReveal)" pointer-events="none" aria-hidden="true"/>'+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
+ '<defs>'+avatarAreaDefs+'</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-area-fill1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+avatarAreaLayers+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
  '<p class="lm-avatar-caption">Tell me here; I’ll log it.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  '<section class="lm-lower-grid">'+
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><span class="lm-kicker">YOUR HOME</span><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor and tap a room to see its existing tasks and inventory.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+'</section></section>'+
