@@ -109,40 +109,20 @@ async function loadClosetPreviews(){
  }catch(_){}
 }
 function wearDay(){return typeof ymd==="function"?ymd():new Date().toLocaleDateString("en-CA")}
-function wearStatus(record){
- if(!record)return "Clean";
- if(record.mode==="day")return record.date<wearDay()?"Dirty":"Worn today";
- const now=new Date();
- const ended=record.ended || (state.workShifts||[]).some(shift=>{
-  if(shift.date!==record.date)return false;
-  const end=shift.deliveryEnd || (!shift.deliveryStart && !shift.ssdHours && !shift.ssdMiles && shift.end);
-  const minutes=end?clockMinutes(end):null;
-  if(minutes==null)return false;
-  const [year,month,day]=record.date.split("-").map(Number);
-  const finish=new Date(year,month-1,day,0,minutes);
-  if(minutes<(clockMinutes(shift.deliveryStart||shift.start)||0))finish.setDate(finish.getDate()+1);
-  return finish<=now;
- });
- return ended?"Dirty":"Worn for work";
-}
-window.wardrobeWearControls=function(id,isWork){
- const record=state.settings?.clothingWear?.[id],status=wearStatus(record);
- const key=esc(encodeURIComponent(id).replace(/'/g,"%27"));
+window.wardrobeWearControls=function(id){
+ const record=state.settings?.clothingWear?.[id],key=esc(encodeURIComponent(id).replace(/'/g,"%27"));
  const button=(action,label)=>'<button type="button" class="lm-mini-button" data-wear-key="'+key+'" data-wear-action="'+action+'">'+label+'</button>';
- const work=button("work","Wore to work"),day=button("day","Wore today");
- return '<div class="aw-wear-controls"><small>'+status+'</small> '+(status==="Clean"?(isWork?work+day:day+work):((status==="Worn for work"?button("end","Shift ended"):"")+button("wash","Washed")))+'</div>';
+ const status=record?'<small>Likely in laundry · last worn '+esc(record.date)+'</small> ':"";
+ return '<div class="aw-wear-controls">'+status+(record?.date===wearDay()?"":button("day","Wore today"))+(record?button("clear","Back in closet"):"")+'</div>';
 };
 document.addEventListener("click",async event=>{
  const b=event.target.closest?.("[data-wear-action]");if(!b)return;
  const id=decodeURIComponent(b.dataset.wearKey),action=b.dataset.wearAction;
  state.settings=state.settings||{};const records=state.settings.clothingWear||(state.settings.clothingWear={});
- const before={...records};
- if(action==="wash")delete records[id];
- else if(action==="end"){
-  const date=records[id]?.date;
-  for(const [key,r] of Object.entries(records))if(r.mode==="work"&&r.date===date)records[key]={...r,ended:true};
- }else records[id]={date:wearDay(),mode:action};
- try{await save()}catch(e){state.settings.clothingWear=before;alert("Could not save this wardrobe update.");return}
+ const before=records[id];
+ if(action==="clear")delete records[id];
+ else records[id]={date:wearDay(),mode:"day"};
+ try{await save()}catch(e){if(before)records[id]=before;else delete records[id];alert("Could not save this wardrobe update.");return}
  if(document.getElementById("familyClosetBody"))window.refreshFamilyClosetWear?.();
  else if(typeof render==="function")render();
 });
@@ -508,7 +488,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    (visibleItems.length?'<div class="fc-grid">'+cards+'</div>':'<div class="fc-empty"><span>🪞</span><b>'+escValue(wearer)+'’s visual closet is ready for clothes.</b><small>Capture clothing photos, review them, and assign each piece to '+escValue(wearer)+' to see it here.</small><button type="button" class="btn primary" onclick="closeModal();openPhotoInbox(\'inventory\')">📷 Add clothing photos</button><button type="button" class="btn" onclick="closeModal();openInventoryItem(\'\',\''+wearer+'\',\'short_sleeve\')">＋ Add a clothing item</button></div>')+
    '<section class="fc-look"><div class="fc-look-head"><div><span class="fc-kicker">OUTFIT MIXER</span><b>Your selected look</b></div><span>'+active.length+' piece'+(active.length===1?"":"s")+'</span></div>'+
    '<div class="fc-look-pieces">'+preview+'</div>'+
-   '<button type="button" class="btn" onclick="openHouseLaundry()">Open household laundry</button>'+
+
    '<div class="fc-actions"><button type="button" class="btn primary" '+(!active.length?"disabled":"")+' onclick="familyClosetSave()">Save this look</button><button type="button" class="btn" onclick="familyClosetClear()">Clear selection</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div></section>'+
    '<section class="fc-looks"><b>Saved looks for '+escValue(wearer)+'</b>'+saved+'</section>';
   if(typeof window.inventoryLoadSavedItemPhotos==="function")Promise.resolve().then(()=>window.inventoryLoadSavedItemPhotos());
@@ -527,22 +507,6 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   catch(e){alert("This look could not be saved. Your clothing inventory is unchanged.")}
  };
  window.familyClosetLoad=function(id){const look=savedLooks().find(x=>x.id===id&&x.person===wearer);if(!look)return;selected=new Set((look.itemIds||[]).map(String));filter="all";render()};
- window.openHouseLaundry=function(){
-  const records=state.settings?.clothingWear||{};
-  const pieces=people.flatMap(person=>owned(person).map(item=>({key:"inventory:"+item.id,name:item.name,person})));
-  for(const look of state.settings?.avatarWardrobe?.items||[])pieces.push({key:"look:"+look.id,name:look.name,person:"Michelle"});
-  const worn=pieces.filter(piece=>records[piece.key]);
-  const rows=worn.map((piece,i)=>'<label class="task"><input type="checkbox" data-load-index="'+i+'"> '+escValue(piece.person)+' · '+escValue(piece.name)+'</label>').join("");
-  modal("Household laundry",'<div id="houseLaundryPieces">'+(rows||'<p>No clothing is marked worn or dirty.</p>')+'</div>',worn.length?"Mark selected washed":"Close",async()=>{
-   if(!worn.length){closeModal();return}
-   const chosen=Array.from(document.querySelectorAll("#houseLaundryPieces input:checked"),box=>worn[Number(box.dataset.loadIndex)]);
-   if(!chosen.length)return;
-   const removed=new Map();
-   for(const piece of chosen)if(records[piece.key]){removed.set(piece.key,records[piece.key]);delete records[piece.key]}
-   try{await save();closeModal();if(typeof window.render==="function")window.render()}
-   catch(error){for(const [key,value] of removed)if(!records[key])records[key]=value;alert("Could not save this load. Please try again.")}
-  });
- };
  window.openFamilyCloset=function(person){
   wearer=people.includes(person)?person:"Michelle";filter="all";selected.clear();
   modal("The Clueless Closet",'<div id="familyClosetBody"></div>',"Close",closeModal);render();
