@@ -377,7 +377,7 @@
   background:#f1c2d8;
   color:#8d4f70;
 }
-#app:has(.lm-scene-card) .lm-avatar-color-mask{transition:y .55s ease,height .55s ease}
+#app:has(.lm-scene-card) .lm-avatar-progress-circle{transition:r .55s ease}
 #app:has(.lm-scene-card) .lm-avatar-caption{
   max-width:34rem;
   margin:4px auto 10px;
@@ -397,7 +397,7 @@
   #app:has(.lm-scene-card) .lm-priority-habit>small{font-size:.53rem}
 }
 @media(prefers-reduced-motion:reduce){
-  #app:has(.lm-scene-card) .lm-avatar-color-mask{transition:none}
+  #app:has(.lm-scene-card) .lm-avatar-progress-circle{transition:none}
 }
 
 /* Compact storybook home: keep the avatar recognizable while bringing the house map up sooner. */

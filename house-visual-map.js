@@ -94,6 +94,17 @@ function zoneFloorGraphic(f,z,bounds){
  const thirdStairs=f==="Second floor"&&z.id==="stairs_to_third";
  if(!firstUp&&!basementDown&&!mainStairs&&!thirdStairs)return "";
  if(!/stairs|landing/i.test(label))return "";
+ if(firstUp){
+  const centerX=bounds.x+bounds.width/2,centerY=bounds.y+bounds.height/2;
+  const width=Math.min(bounds.width*.82,52),height=Math.min(bounds.height*.34,28);
+  const left=centerX-width/2,right=centerX+width/2,top=centerY-height/2,bottom=centerY+height/2;
+  const count=6,step=width/(count-1),treads=Array.from({length:count},(_,i)=>{
+   const x=left+i*step;
+   return '<path d="M'+x.toFixed(1)+' '+top.toFixed(1)+'V'+bottom.toFixed(1)+'" stroke="#704e55" stroke-width="'+Math.max(2.6,Math.min(4,bounds.width*.055)).toFixed(1)+'" stroke-linecap="round"/>';
+  }).join("");
+  return '<g class="hvm-stair-plan hvm-stair-plan-up-pivoted" aria-label="Stairs to the second floor turned sideways between dining and living rooms" pointer-events="none">'+
+   '<rect x="'+(left-5).toFixed(1)+'" y="'+(top-5).toFixed(1)+'" width="'+(width+10).toFixed(1)+'" height="'+(height+10).toFixed(1)+'" rx="6" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
+ }
  const left=bounds.x+bounds.width*.19,right=bounds.x+bounds.width*.81;
  const topRatio=(firstUp||thirdStairs)?0.25:0.31;
  const top=bounds.y+bounds.height*topRatio;
