@@ -21,10 +21,6 @@
     today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",spirituality:"spirituality",
     log:"health",selfcare:"health",reading:"reading",pets:"pets",household:"home",
     inventory:"home",garden:"growth",hobbies:"growth",gardenhobbies:"growth",
-    "lifearea-home":["home"],"lifearea-mind":["health","other"],"lifearea-body":["health","food"],
-    "lifearea-people":["family","pets"],"lifearea-spirituality":["spirituality"],
-    "lifearea-hobbies":["growth","reading"],"lifearea-money":["money"],
-    "lifearea-car":["car"],"lifearea-work":["work"],
   };
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
 
@@ -199,6 +195,29 @@
       '<div class="hf-list">'+body+'</div>'+pausedHtml+
       '<div class="hf-footnote">Habits are practices you choose. Appointments and one-time tasks stay in their existing areas.</div></section>'
   }
+  var LIFE_AREA_HABITS={
+    home:{areas:["home"],category:"home",title:"Household routines"},
+    mind:{areas:["other"],category:"other",title:"Care practices"},
+    body:{areas:["health","food"],category:"health",title:"Body & health routines"},
+    people:{areas:["family","pets"],category:"family",title:"Family & connection"},
+    spirituality:{areas:["spirituality"],category:"spirituality",title:"Spiritual practices"},
+    hobbies:{areas:["growth","reading"],category:"growth",title:"Creative practice"},
+    money:{areas:["money"],category:"money",title:"Money routines"},
+    car:{areas:["car"],category:"car",title:"Car-care routines"},
+    work:{areas:["work"],category:"work",title:"Workday routines"}
+  };
+  window.lifeMapAreaHabitsHtml=function(area){
+    var config=LIFE_AREA_HABITS[String(area||"")],s=appState();
+    if(!config||!s)return "";
+    var active=s.habits.filter(function(habit){return habit&&habit.status!=="paused"&&habit.status!=="archived"&&config.areas.indexOf(habit.area)>=0});
+    var heading='<header class="lm-area-practices-heading"><span class="lm-kicker">PRACTICES</span><h2>'+esc(config.title)+'</h2></header>';
+    if(!active.length)return '<section class="lm-area-practices" data-life-area-practices="'+esc(area)+'">'+heading+'<p class="lm-area-practices-empty">No '+esc(config.title.toLowerCase())+' saved yet.</p><button class="lm-area-add-practice" type="button" data-hf-action="add" data-area="'+esc(config.category)+'">＋ Add a practice</button></section>';
+    var cards=active.map(function(habit){
+      var entry=logOn(habit.id,today()),status=entry?(STATUS[entry.status]||"Logged"):"Not logged",cue=String(habit.cue||"").trim(),minimum=String(habit.minimum||"").trim();
+      return '<article class="lm-area-practice" data-habit-id="'+esc(habit.id)+'"><div class="lm-area-practice-copy"><b>'+esc(habit.name)+'</b><small>Today · '+esc(status)+'</small>'+(cue?'<small>'+esc(cue)+'</small>':"")+(minimum?'<small>Small version · '+esc(minimum)+'</small>':"")+'</div><div class="lm-area-practice-actions"><button type="button" class="hf-more" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="done">✓ Done</button><button type="button" class="hf-more" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="partial">Small step</button><button type="button" class="hf-more" data-hf-action="edit" data-habit-id="'+esc(habit.id)+'">Edit</button></div></article>';
+    }).join("");
+    return '<section class="lm-area-practices" data-life-area-practices="'+esc(area)+'">'+heading+'<div class="lm-area-practice-list">'+cards+'</div><button class="lm-area-add-practice" type="button" data-hf-action="add" data-area="'+esc(config.category)+'">＋ Add a practice</button></section>';
+  };
   function openCreate(area,preset){
     if(typeof modal!=="function")return;
     var selected=AREAS.some(function(a){return a.id===area})?area:"";
