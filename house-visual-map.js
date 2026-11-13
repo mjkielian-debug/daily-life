@@ -631,6 +631,25 @@ window.houseVisualInspectPersonItem=async function(f,id,item){
  }
  window.houseVisualInventoryOpen(f,id);
 };
+function bedroomWardrobes(f,z){
+ const label=[z.id,z.name,z.short].filter(Boolean).join(" ").toLowerCase();
+ if(/entry|hall|bath/.test(label))return "";
+ const owners=f==="Third floor" && /bed|michelle|primary|master/.test(label)?["Michelle"]:
+   f==="Second floor"?["Leo","Demitri","Dolly","Ambrose"].filter(name=>{
+     const pattern=name==="Demitri"?/\b(demitri|dimitri|tree)\b/i:new RegExp("\\b"+name+"\\b","i");
+     return pattern.test(label.replace(/[_-]/g," "));
+   }):[];
+ return owners.map(name=>{
+   const aliases=name==="Demitri"?["demitri","dimitri","tree"]:name==="Michelle"?["michelle","self","me"]: [name.toLowerCase()];
+   const items=arr(state.inventoryItems).filter(item=>{
+     const owner=str(item.inventoryOwner||item.wardrobeOwner).trim().toLowerCase();
+     return aliases.includes(owner)&&!["gone","donate / sell","donated","sold","discarded"].includes(str(item.status).toLowerCase()) &&
+       (/clothing|clothes|apparel|wardrobe/i.test(str(item.category)) || /\b(pants?|trousers|jeans|shorts|leggings|shirts?|blouses?|tees?|t-shirts?|sweaters?|hoodies?|dresses|dress|skirts?|socks?|underwear|pajamas|coats?|jackets?|shoes?|boots?)\b/i.test(str(item.name)));
+   });
+   const rows=items.map(item=>'<li>'+h(item.name||"Clothing item")+' · '+h(String(item.quantity??1))+(item.size?' · '+h(item.size):'')+'</li>').join("");
+   return '<details class="hvm-room-extra"><summary>'+h(name)+'’s wardrobe</summary>'+(rows?'<ul>'+rows+'</ul>':'<p>No clothing recorded yet.</p>')+'</details>';
+ }).join("");
+}
 function personRoomHome(f,z){
  const tourZones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
  const tourIndex=tourZones.findIndex(item=>item.id===z.id);
@@ -647,7 +666,7 @@ function personRoomHome(f,z){
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),index=zones.findIndex(item=>item.id===z.id);
  const tour='<nav class="hvm-person-tour-nav" aria-label="House tour navigation"><button type="button" class="btn" '+(index<=0?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,-1)">‹ Previous room</button><span><b>Room tour</b><small>'+(index+1)+' of '+zones.length+' · '+h(f)+'</small></span><button type="button" class="btn" '+(index<0||index>=zones.length-1?'disabled':'')+' onclick="houseVisualPersonTourStep(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,1)">Next room ›</button></nav>';
  return '<section class="hvm-person-room-home" aria-label="'+h(person?.name||z.name)+' bedroom home">'+
-  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+objects+
+  '<header class="hvm-person-room-heading"><div><small>'+h((person?.name||z.name).toUpperCase())+'’S HOUSE TOUR · '+h(f.toUpperCase())+'</small><h3>'+h(roomTitle||"Room")+'</h3></div><button type="button" class="btn small" onclick="houseVisualBrowseFloor()">Browse floor ›</button></header>'+tour+photo+bedroomWardrobes(f,z)+objects+
   '<div class="hvm-person-room-stats"><div><small>TODAY</small><b>'+(today.length?todayDone+' of '+today.length+' tasks done':"No tasks assigned today")+'</b></div><div><small>ROOM TASKS</small><b>'+(tasks.length?done+' of '+tasks.length+' complete':"No room tasks logged")+'</b></div></div>'+
   '<section class="hvm-person-room-task-list"><div class="hvm-person-room-task-heading"><b>Room tasks</b><button type="button" class="btn small" onclick="houseVisualAddZoneTask(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;)">＋ Add</button></div>'+
   (roomTasks||'<p class="muted small">No unfinished room tasks. Progress reflects completed tasks, not how clean the room looks.</p>')+'</section>'+
@@ -1031,7 +1050,7 @@ window.houseVisualRoomInlineData=function(f,id){
  if(!floors.includes(f)||!okId(id))return null;
  const z=zone(f,id);if(!z)return null;
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room);
- return {floor:f,id:String(id),name:z.name,tasks,insights:roomInsightParts(tasks,f,id)};
+ return {floor:f,id:String(id),name:z.name,tasks,wardrobes:bedroomWardrobes(f,z),insights:roomInsightParts(tasks,f,id)};
 };
 window.houseVisualAnswerReview=async function(kind,key,date,status,f,id){
  if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
@@ -1085,7 +1104,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+bedroomWardrobes(f,z)+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
