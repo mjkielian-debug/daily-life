@@ -18,7 +18,7 @@
     {id:"other",label:"Other",icon:"＋",view:"today"}
   ];
   var PAGE_AREA = {
-    today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",
+    today:"all",itinerary:"all",family:"family",home:"food",more:"money",budget:"money",spirituality:"spirituality",
     log:"health",selfcare:"health",reading:"reading",pets:"pets",household:"home",
     inventory:"home",garden:"growth",hobbies:"growth",gardenhobbies:"growth",
     "lifearea-home":["home"],"lifearea-mind":["health","other"],"lifearea-body":["health","food"],

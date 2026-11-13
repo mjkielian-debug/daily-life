@@ -85,6 +85,9 @@ window.lifeMapShowSkippedReviews=function(area,date){
  reviewSkipKeys=new Set([...reviewSkipKeys].filter(key=>!key.startsWith(prefix)));
  if(typeof render==="function")render();
 };
+window.lifeMapIsReviewSkipped=function(area,key,date){
+ return reviewSkipDate===String(date||day())&&reviewSkipKeys.has(String(area)+"|"+String(key));
+};
 window.lifeMapAnswerReview=async function(kind,key,date,status){
  if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
 };
