@@ -544,6 +544,22 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   catch(e){alert("This look could not be saved. Your clothing inventory is unchanged.")}
  };
  window.familyClosetLoad=function(id){const look=savedLooks().find(x=>x.id===id&&x.person===wearer);if(!look)return;selected=new Set((look.itemIds||[]).map(String));filter="all";render()};
+ window.openHouseLaundry=function(){
+  const records=state.settings?.clothingWear||{};
+  const pieces=people.flatMap(person=>owned(person).map(item=>({key:"inventory:"+item.id,name:item.name,person})));
+  for(const look of state.settings?.avatarWardrobe?.items||[])pieces.push({key:"look:"+look.id,name:look.name,person:"Michelle"});
+  const worn=pieces.filter(piece=>records[piece.key]);
+  const rows=worn.map((piece,i)=>'<label class="task"><input type="checkbox" data-load-index="'+i+'"> '+escValue(piece.person)+' · '+escValue(piece.name)+'</label>').join("");
+  modal("Household laundry",'<div id="houseLaundryPieces">'+(rows||'<p>No clothing is marked worn or dirty.</p>')+'</div>',worn.length?"Mark selected washed":"Close",async()=>{
+   if(!worn.length){closeModal();return}
+   const chosen=Array.from(document.querySelectorAll("#houseLaundryPieces input:checked"),box=>worn[Number(box.dataset.loadIndex)]);
+   if(!chosen.length)return;
+   const removed=new Map();
+   for(const piece of chosen)if(records[piece.key]){removed.set(piece.key,records[piece.key]);delete records[piece.key]}
+   try{await save();closeModal();if(typeof window.render==="function")window.render()}
+   catch(error){for(const [key,value] of removed)if(!records[key])records[key]=value;alert("Could not save this load. Please try again.")}
+  });
+ };
  window.openFamilyCloset=function(person){
   wearer=people.includes(person)?person:"Michelle";filter="all";selected.clear();
   modal("The Clueless Closet",'<div id="familyClosetBody"></div>',"Close",closeModal);render();
