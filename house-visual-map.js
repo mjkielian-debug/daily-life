@@ -656,21 +656,30 @@ document.addEventListener("click",async event=>{
 });
 function bedSheetRow(name){
  const last=state.settings?.sheetChanges?.[name];
+ const label=state.settings?.sheetSetNames?.[name]||"";
  let status="Last change not recorded";
  if(last){
   const due=new Date(last+"T12:00:00");due.setDate(due.getDate()+14);
   const dueDay=[due.getFullYear(),String(due.getMonth()+1).padStart(2,"0"),String(due.getDate()).padStart(2,"0")].join("-");
   status="Last changed "+last+" · "+(ymd()>=dueDay?"Fresh sheets due":"Next change")+" "+dueDay;
  }
- return '<section data-sheet-owner="'+h(name)+'"><b>'+h(name)+'’s sheets</b><p>'+h(status)+'</p><button class="btn" type="button" data-sheet-change '+(last===ymd()?'disabled':'')+'>'+(last===ymd()?'Changed today':'Changed sheets today')+'</button></section>';
+ return '<section data-sheet-owner="'+h(name)+'"><b>'+h(name)+'’s sheets</b><p>On the bed: '+h(label||"Set not recorded")+'</p><p>'+h(status)+'</p><label>Sheet set<input maxlength="80" placeholder="Color or pattern" value="'+h(label)+'"></label><button class="btn" type="button" data-sheet-change="label">Save set name</button><button class="btn" type="button" data-sheet-change="today">Changed sheets today</button></section>';
 }
 document.addEventListener("click",async event=>{
  const button=event.target.closest?.("[data-sheet-change]");if(!button)return;
- const row=button.closest("[data-sheet-owner]"),owner=row.dataset.sheetOwner;
- state.settings=state.settings||{};const changes=state.settings.sheetChanges||(state.settings.sheetChanges={});
- const previous=changes[owner];button.disabled=true;changes[owner]=ymd();
+ const row=button.closest("[data-sheet-owner]"),owner=row.dataset.sheetOwner,input=row.querySelector("input");
+ const label=input.value.trim();if(!label){input.focus();return}
+ const settings=state.settings||(state.settings={});
+ const names=settings.sheetSetNames||(settings.sheetSetNames={}),changes=settings.sheetChanges||(settings.sheetChanges={});
+ const oldName=names[owner],oldDate=changes[owner];
+ row.querySelectorAll("button").forEach(b=>b.disabled=true);
+ names[owner]=label;if(button.dataset.sheetChange==="today")changes[owner]=ymd();
  try{await save();row.outerHTML=bedSheetRow(owner)}
- catch(error){if(previous)changes[owner]=previous;else delete changes[owner];button.disabled=false;alert("Could not save the sheet change. Please try again.")}
+ catch(error){
+  if(oldName===undefined)delete names[owner];else names[owner]=oldName;
+  if(oldDate===undefined)delete changes[owner];else changes[owner]=oldDate;
+  row.querySelectorAll("button").forEach(b=>b.disabled=false);alert("Could not save the sheet update. Please try again.");
+ }
 });
 function bedroomWardrobes(f,z){
  const label=[z.id,z.name,z.short].filter(Boolean).join(" ").toLowerCase();
