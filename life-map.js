@@ -423,4 +423,24 @@ window.lifeMapSetFloor=function(floor){
  activeRoom=null;
  if(typeof render==="function")render();
 };
+// Capture taps before navigation replaces the room or avatar view.
+document.addEventListener("click",event=>{
+ const control=event.target.closest?.("button,[role=button],input[type=checkbox],summary");
+ if(!control || control.matches(":disabled,[aria-disabled=true]") || !control.closest(".life-map-page,.hvm-root,.hvm-zone-detail,.hvm-person-room-home,#familyClosetBody") || window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ const box=control.getBoundingClientRect();
+ const burst=document.createElement("span");
+ burst.className="dl-tap-stars";burst.setAttribute("aria-hidden","true");
+ burst.style.left=(event.detail?event.clientX:box.left+box.width/2)+"px";
+ burst.style.top=(event.detail?event.clientY:box.top+box.height/2)+"px";
+ const colors=["#e8a535","#b65d91","#539785","#906bb0"];
+ for(let n=0;n<6;n++){
+  const star=document.createElement("i"),angle=n*Math.PI/3-.5;
+  star.style.setProperty("--dx",Math.round(Math.cos(angle)*24)+"px");
+  star.style.setProperty("--dy",Math.round(Math.sin(angle)*24)+"px");
+  star.style.setProperty("--star-color",colors[n%colors.length]);
+  burst.appendChild(star);
+ }
+ document.body.appendChild(burst);
+ setTimeout(()=>burst.remove(),500);
+},true);
 })();
