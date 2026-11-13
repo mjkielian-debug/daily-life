@@ -1609,7 +1609,7 @@ body{
 .app{
   position:relative;
   background:
-    url("botanical-bg.svg?v=20261002-1") center top/760px auto repeat-y,
+    url('candy-doodles.svg') center top/760px auto repeat-y,
     radial-gradient(circle at 100% 2%,rgba(243,170,196,.20),transparent 23%),
     radial-gradient(circle at 3% 27%,rgba(169,213,181,.15),transparent 29%),
     radial-gradient(circle at 90% 68%,rgba(239,216,167,.08),transparent 22%),
@@ -1618,14 +1618,14 @@ body{
 header{position:relative;overflow:visible}
 header:after{
   content:"";position:absolute;right:-17px;top:32px;width:112px;height:86px;
-  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.23;pointer-events:none;transform:rotate(7deg);z-index:0
 }
 header>*{position:relative;z-index:1}
 .floral-card{overflow:hidden}
 .floral-card:after{
   content:"";position:absolute;right:-22px;bottom:-23px;width:145px;height:112px;
-  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.22;pointer-events:none;transform:rotate(-7deg)
 }
 .floral-card>*{position:relative;z-index:1}
@@ -1634,7 +1634,7 @@ header>*{position:relative;z-index:1}
 }
 .today-focus:after,.care-hub-header:after,.people-hero:after,.money-strategy-card:after,.garden-hero:after,.pet-hero:after{
   content:"";position:absolute;right:-27px;bottom:-30px;width:138px;height:108px;
-  background:url("botanical-sprig.svg?v=20261002-1") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.13;pointer-events:none
 }
 .today-focus>*,.care-hub-header>*,.people-hero>*,.money-strategy-card>*,.garden-hero>*,.pet-hero>*{position:relative;z-index:1}
@@ -1713,7 +1713,7 @@ header>*{position:relative;z-index:1}
   min-height:255px;border-radius:22px;padding:14px 12px;display:grid;grid-template-rows:auto 1fr auto auto;place-items:center;text-align:center;
   color:var(--cream);border:1px solid rgba(234,212,167,.46);
   background:
-    url("botanical-sprig.svg?v=20261002-1") 115% 105%/105px auto no-repeat,
+    url('candy-doodles.svg') 115% 105%/105px auto no-repeat,
     radial-gradient(circle at 50% 40%,rgba(239,184,202,.18),transparent 37%),
     linear-gradient(160deg,#995f85,#995f85 55%,#5b3948 130%);
   box-shadow:0 15px 34px rgba(0,0,0,.28),inset 0 0 0 4px rgba(255,244,236,.035)
@@ -1854,7 +1854,7 @@ body{
   margin:0 auto;
   pointer-events:none;
   z-index:0;
-  background-image:url("botanical-bg.svg");
+  background-image:url('candy-doodles.svg');
   background-position:center top;
   background-repeat:repeat-y;
   background-size:100% auto;
@@ -1874,7 +1874,7 @@ header::after{
   top:-18px;
   width:128px;
   height:100px;
-  background:url("botanical-sprig.svg") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.72;
   pointer-events:none;
   transform:rotate(6deg);
@@ -1904,7 +1904,7 @@ h1,h2,h3,
   height:22px;
   margin-left:7px;
   vertical-align:-5px;
-  background:url("botanical-sprig.svg") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.62;
 }
 .card{
@@ -1921,7 +1921,7 @@ h1,h2,h3,
   bottom:-34px;
   width:126px;
   height:98px;
-  background:url("botanical-sprig.svg") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.17;
   pointer-events:none;
   transform:rotate(-8deg);
@@ -1991,7 +1991,7 @@ body::before{
   inset:0;
   pointer-events:none;
   z-index:0;
-  background-image:url("botanical-corners.svg?v=20261002-floral1");
+  background-image:url('candy-doodles.svg');
   background-repeat:no-repeat;
   background-position:top center;
   background-size:min(760px,100vw) auto;
@@ -2951,7 +2951,7 @@ textarea{resize:vertical}
   top:52px;
   width:150px;
   height:118px;
-  background:url("botanical-sprig.svg?v=20261002-2") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.075;
   pointer-events:none;
 }
@@ -3481,7 +3481,7 @@ textarea{resize:vertical}
   top:-8px;
   width:132px;
   height:132px;
-  background:url("botanical-sprig.svg") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.19;
   filter:drop-shadow(0 5px 18px color-mix(in srgb,var(--primary) 14%,transparent));
   transform:rotate(8deg);
@@ -3499,7 +3499,7 @@ textarea{resize:vertical}
   bottom:-38px;
   width:126px;
   height:126px;
-  background:url("botanical-sprig.svg") center/contain no-repeat;
+  background:url('candy-doodles.svg') center/contain no-repeat;
   opacity:.11;
   transform:rotate(192deg);
 }
