@@ -84,3 +84,9 @@
 .lm-scene-grid.lm-avatar-only{grid-template-columns:minmax(0,1fr);justify-items:center}
 .lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:100%;max-width:430px}
 .lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,260px)}
+
+/* Keep the progress portrait compact; the figure itself carries the color fill. */
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:min(100%,270px);max-width:270px;padding:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible}
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap::before{top:8%;width:min(72%,190px);background:radial-gradient(circle,rgba(255,221,235,.42) 0 28%,rgba(216,205,238,.17) 29% 51%,transparent 73%)}
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap::after{display:none}
+.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,220px)}
