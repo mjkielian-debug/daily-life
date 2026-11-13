@@ -108,6 +108,44 @@ async function loadClosetPreviews(){
   }
  }catch(_){}
 }
+function wearDay(){return typeof ymd==="function"?ymd():new Date().toLocaleDateString("en-CA")}
+function wearStatus(record){
+ if(!record)return "Clean";
+ if(record.mode==="day")return record.date<wearDay()?"Dirty":"Worn today";
+ const now=new Date();
+ const ended=record.ended || (state.workShifts||[]).some(shift=>{
+  if(shift.date!==record.date)return false;
+  const end=shift.deliveryEnd || (!shift.deliveryStart && !shift.ssdHours && !shift.ssdMiles && shift.end);
+  const minutes=end?clockMinutes(end):null;
+  if(minutes==null)return false;
+  const [year,month,day]=record.date.split("-").map(Number);
+  const finish=new Date(year,month-1,day,0,minutes);
+  if(minutes<(clockMinutes(shift.deliveryStart||shift.start)||0))finish.setDate(finish.getDate()+1);
+  return finish<=now;
+ });
+ return ended?"Dirty":"Worn for work";
+}
+window.wardrobeWearControls=function(id,isWork){
+ const record=state.settings?.clothingWear?.[id],status=wearStatus(record);
+ const key=esc(encodeURIComponent(id).replace(/'/g,"%27"));
+ const button=(action,label)=>'<button type="button" class="lm-mini-button" data-wear-key="'+key+'" data-wear-action="'+action+'">'+label+'</button>';
+ const work=button("work","Wore to work"),day=button("day","Wore today");
+ return '<div class="aw-wear-controls"><small>'+status+'</small> '+(status==="Clean"?(isWork?work+day:day+work):((status==="Worn for work"?button("end","Shift ended"):"")+button("wash","Washed")))+'</div>';
+};
+document.addEventListener("click",async event=>{
+ const b=event.target.closest?.("[data-wear-action]");if(!b)return;
+ const id=decodeURIComponent(b.dataset.wearKey),action=b.dataset.wearAction;
+ state.settings=state.settings||{};const records=state.settings.clothingWear||(state.settings.clothingWear={});
+ const before={...records};
+ if(action==="wash")delete records[id];
+ else if(action==="end"){
+  const date=records[id]?.date;
+  for(const [key,r] of Object.entries(records))if(r.mode==="work"&&r.date===date)records[key]={...r,ended:true};
+ }else records[id]={date:wearDay(),mode:action};
+ try{await save()}catch(e){state.settings.clothingWear=before;alert("Could not save this wardrobe update.");return}
+ if(document.getElementById("familyClosetBody"))window.refreshFamilyClosetWear?.();
+ else if(typeof render==="function")render();
+});
 function active(){
  const w=wardrobe();if(!w)return null;
  const looks=availableLooks(w);
@@ -162,7 +200,7 @@ window.avatarWardrobePanelHtml=function(){
  queueMicrotask(loadClosetPreviews);
  const rows=looks.map(x=>{
   const wearing=selected?.id===x.id,wearText=wearing?(selected.isScheduled?"On for SSD":"On avatar · tap to take off"):"Tap to wear";
-  return '<div class="lm-wardrobe-item-row"><button type="button" class="lm-wardrobe-look" aria-pressed="'+(wearing?"true":"false")+'" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">'+(x.inventoryItem?'<span class="aw-closet-preview" style="filter:contrast(1.45) saturate(1.35);overflow:hidden;border-radius:12px;display:inline-grid;width:54px;height:54px" data-item="'+esc(x.inventoryItem.id)+'">'+(window.inventoryItemPhotoHtml?.(x.inventoryItem)||(x.inventoryItem.avatarGarment==="green-hoodie"?window.greenHoodieIllustration:x.inventoryItem.avatarGarment==="black-pants"?window.blackPantsIllustration:""))+'</span>':'')+'<span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><span class="lm-wardrobe-action">'+wearText+'</span></button><button type="button" class="lm-mini-button" aria-label="Use '+esc(x.name||"item")+' for SSD" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">'+(w.ssdItemId===x.id?"SSD ✓":"SSD")+'</button></div>';
+  return '<div class="lm-wardrobe-item-row"><button type="button" class="lm-wardrobe-look" aria-pressed="'+(wearing?"true":"false")+'" onclick="avatarWardrobeSetActive(\''+esc(x.id)+'\')">'+(x.inventoryItem?'<span class="aw-closet-preview" style="filter:contrast(1.45) saturate(1.35);overflow:hidden;border-radius:12px;display:inline-grid;width:54px;height:54px" data-item="'+esc(x.inventoryItem.id)+'">'+(window.inventoryItemPhotoHtml?.(x.inventoryItem)||(x.inventoryItem.avatarGarment==="green-hoodie"?window.greenHoodieIllustration:x.inventoryItem.avatarGarment==="black-pants"?window.blackPantsIllustration:""))+'</span>':'')+'<span class="lm-wardrobe-swatches"><i style="background:'+safeColor(x.primary)+'"></i><i style="background:'+safeColor(x.accent)+'"></i></span><span class="lm-wardrobe-name"><b>'+esc(x.name||"Clothing photo")+'</b><small>'+esc(x.type||"Complete outfit")+' · '+esc(scheduleLabel(x.schedule))+' · '+esc(analysisDescription(x))+'</small></span><span class="lm-wardrobe-action">'+wearText+'</span></button><button type="button" class="lm-mini-button" aria-label="Use '+esc(x.name||"item")+' for SSD" onclick="avatarWardrobeAssignSSD(\''+esc(x.id)+'\')">'+(w.ssdItemId===x.id?"SSD ✓":"SSD")+'</button>'+window.wardrobeWearControls(x.inventoryItem?"inventory:"+x.inventoryItem.id:"look:"+x.id,w.ssdItemId===x.id)+'</div>';
  }).join("");
  const status=selected?(selected.isManual?"Wearing your selection. Tap its wardrobe card again to take it off.":selected.isWorkUniform?"Vest is automatic only during the saved SSD route hours.":selected.isScheduled?"This look is scheduled for "+esc(scheduleLabel(selected.schedule))+".":"On avatar."):"No wardrobe item selected.";
  return '<section class="lm-wardrobe-card"><div class="lm-wardrobe-head"><div><span class="lm-kicker">DIGITAL WARDROBE</span><b>'+(selected?esc(selected.name):w.items.length?"Choose an item to wear":"Start your digital closet")+'</b><small>'+status+'</small></div><button type="button" class="lm-mini-button lm-upload-look" onclick="openAvatarWardrobeInbox()">＋ Add clothing</button></div>'+
@@ -455,10 +493,10 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   const filters=categories.map(([id,label])=>'<button type="button" class="'+(filter===id?"fc-filter fc-filter-on":"fc-filter")+'" aria-pressed="'+(filter===id)+'" onclick="familyClosetFilter(\''+id+'\')">'+label+'</button>').join("");
   const cards=visibleItems.map(x=>{
    const id=safeArg(x.id),on=selected.has(String(x.id));
-   return '<button type="button" class="'+(on?"fc-piece fc-piece-on":"fc-piece")+'" aria-pressed="'+on+'" onclick="familyClosetToggle(\''+id+'\')">'+
+   return '<div class="fc-piece-with-care"><button type="button" class="'+(on?"fc-piece fc-piece-on":"fc-piece")+'" aria-pressed="'+on+'" onclick="familyClosetToggle(\''+id+'\')">'+
     '<div class="fc-piece-photo">'+photoHtml(x)+'</div><b>'+escValue(x.name||"Clothing item")+'</b>'+
     '<small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+' · ×'+Math.max(1,Number(x.quantity||1))+'</small>'+
-    (x.status==="Low"||x.status==="Need"?'<em>Needs more</em>':"")+'</button>';
+    (x.status==="Low"||x.status==="Need"?'<em>Needs more</em>':"")+'</button>'+window.wardrobeWearControls("inventory:"+x.id,false)+'</div>';
   }).join("");
   const preview=active.length?active.map(x=>'<div class="fc-look-piece"><span class="fc-look-thumb">'+photoHtml(x)+'</span><span><b>'+escValue(x.name||"Clothing item")+'</b><small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+'</small></span></div>').join(""):'<p class="fc-empty-look">Tap pieces above to build a look.</p>';
   const saved=looks.length?'<div class="fc-saved-looks">'+looks.map(x=>'<button type="button" onclick="familyClosetLoad(\''+safeArg(x.id)+'\')"><b>'+escValue(x.name||"Saved look")+'</b><small>'+escValue(x.date||"")+' · '+(x.itemIds||[]).length+' pieces</small></button>').join("")+'</div>':'<p class="fc-muted">Saved looks will show here.</p>';
@@ -474,6 +512,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    '<section class="fc-looks"><b>Saved looks for '+escValue(wearer)+'</b>'+saved+'</section>';
   if(typeof window.inventoryLoadSavedItemPhotos==="function")Promise.resolve().then(()=>window.inventoryLoadSavedItemPhotos());
  }
+ window.refreshFamilyClosetWear=render;
  window.familyClosetPerson=function(person){if(!people.includes(person))return;wearer=person;filter="all";selected.clear();render()};
  window.familyClosetFilter=function(value){if(!categories.some(c=>c[0]===value))return;filter=value;render()};
  window.familyClosetToggle=function(id){if(!id)return;selected.has(id)?selected.delete(id):selected.add(id);render()};
