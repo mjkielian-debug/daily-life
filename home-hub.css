@@ -587,3 +587,12 @@
 #app .life-map-page .lm-house .lm-panel-heading .lm-text-button{font-size:.85rem;min-height:44px;color:#573b55}
 #app .life-map-page .lm-floors .lm-floor{font-size:.84rem;min-height:44px;padding-inline:12px}
 #app .life-map-page .lm-floors .lm-floor.selected{background:#355b51;color:#fff;border-color:#355b51}
+
+.dl-tap-stars{position:fixed;z-index:2147480000;width:0;height:0;pointer-events:none}
+.dl-tap-stars i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;background:var(--star-color);clip-path:polygon(50% 0,62% 36%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 36%);animation:dl-star-out 460ms ease-out both}
+@keyframes dl-star-out{from{opacity:.9;transform:scale(.45)}55%{opacity:1}to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(30deg) scale(.65)}}
+@media(prefers-reduced-motion:no-preference){
+ .life-map-page button:active,.hvm-zone:active,.lm-avatar-mark:active{filter:brightness(.9)}
+ .life-map-page button:active{translate:0 1px}
+}
+@media(prefers-reduced-motion:reduce){.dl-tap-stars{display:none}}
