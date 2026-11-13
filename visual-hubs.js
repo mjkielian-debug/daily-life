@@ -219,43 +219,19 @@ window.setSpiritualityPage=setSpiritualityPage;
 window.openSpiritualHubSection=setSpiritualityPage;
 
 function visualSpiritualityView(){
- const section=window.dailyLifeSpiritualitySection||"overview",s=state,today=ymd(),journal=s.spiritualityJournal||[],draws=s.tarotDraws||[],
-   todayDraw=typeof tarotForDate==="function"?tarotForDate():null,
-   revealed=typeof tarotRevealed==="function"&&tarotRevealed(),
-   reading=typeof dailySpiritualReading==="function"?dailySpiritualReading(today):null,
-   moonNow=typeof moon==="function"?moon():null,
-   moonInfo=typeof moonLens==="function"?moonLens(moonNow):null,
-   season=typeof spiritualitySeason==="function"?spiritualitySeason():null;
- const sections={
-  reading:{title:"Daily reading",body:typeof spiritualityReadingCard==="function"?spiritualityReadingCard():"<div class='notice'>Daily reading is unavailable right now.</div>"},
-  tarot:{title:"Tarot",body:typeof spiritualityTarotPanel==="function"?spiritualityTarotPanel():"<div class='notice'>Tarot is unavailable right now.</div>"},
-  spread:{title:"Card spreads",body:typeof tarotSpreadChooser==="function"?tarotSpreadChooser():"<div class='notice'>Card spreads are unavailable right now.</div>"},
-  journal:{title:"Journal",body:typeof spiritualityJournalPanel==="function"?spiritualityJournalPanel():"<div class='notice'>Journal is unavailable right now.</div>"},
-  history:{title:"History",body:typeof spiritualityHistoryCard==="function"?spiritualityHistoryCard():"<div class='notice'>History is unavailable right now.</div>"},
-  moon:{title:"Moon + season",body:typeof spiritualityMoonSeasonCard==="function"?spiritualityMoonSeasonCard(moonNow):"<div class='notice'>Moon and season notes are unavailable right now.</div>"},
-  rituals:{title:"Rituals",body:typeof spiritualityRitualsPanel==="function"?spiritualityRitualsPanel():"<div class='notice'>Ritual ideas are unavailable right now.</div>"},
-  practice:{title:"Daily practice",body:(typeof spiritualityGuideLandingCard==="function"?spiritualityGuideLandingCard():"")+(typeof dailyPracticeCard==="function"?dailyPracticeCard():"<div class='notice'>Daily practice is unavailable right now.</div>")}
- };
- if(section!=="overview"){
-  const page=sections[section]||sections.reading;
-  return `<section class="spirit-dashboard spirit-detail-page" aria-label="Spirituality · ${esc(page.title)}" style="min-height:60vh;overflow:visible">
-   <button type="button" class="btn" onclick="setSpiritualityPage('overview')" style="margin:6px 0 12px">‹ Spirituality overview</button>
-   <header class="spirit-heading"><div><span class="spirit-kicker">REFLECTION · PRACTICE · JOURNAL</span><h1>${esc(page.title)}</h1></div><button type="button" class="spirit-add" onclick="setSpiritualityPage('overview')">Overview</button></header>
-   <div class="spirit-detail-content">${page.body}</div>
-  </section>`;
- }
- const counts=Array.from({length:7},(_,i)=>{const date=shiftDateString(today,i-6);return{date,count:journal.filter(x=>(x.date||x.createdAt?.slice(0,10))===date).length+draws.filter(x=>(x.date||x.drawnAt?.slice(0,10))===date).length}}),max=Math.max(1,...counts.map(x=>x.count));
- const nav=[["tarot","☾","Tarot"],["spread","◇","Card spreads"],["journal","▤","Journal"],["history","↕","History"],["moon","◐","Moon + season"],["rituals","✧","Rituals"],["practice","○","Practice log"]];
- return `<section class="spirit-dashboard" aria-label="Spirituality dashboard" style="min-height:60vh;overflow:visible">
- <style>.spirit-dashboard{color:#30283a}.spirit-dashboard h1,.spirit-dashboard h2,.spirit-dashboard p{margin:0}.spirit-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 16px}.spirit-heading h1{font-size:1.7rem}.spirit-heading p{color:#756c7b}.spirit-add,.spirit-link{border:0;border-radius:999px;padding:10px 14px;background:#f3e4ef;color:#30283a;font-weight:750}.spirit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.spirit-feature,.spirit-chart{background:#fff;border:1px solid #e8e0e9;border-radius:20px;padding:16px;box-shadow:0 8px 26px #34233b0b}.spirit-feature.primary{grid-column:span 2;background:linear-gradient(120deg,#fbf2f8,#f2e9f7)}.spirit-kicker{font-size:.66rem;letter-spacing:.15em;font-weight:800;color:#9270a6}.spirit-feature h2{font-size:1.12rem;margin:5px 0}.spirit-feature p{font-size:.82rem;color:#756c7b;line-height:1.45;margin-bottom:12px}.spirit-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.spirit-link{display:flex;align-items:center;gap:9px;text-align:left;border-radius:13px;background:#fff;border:1px solid #eee8ef}.spirit-link b{flex:1}.spirit-bars{height:135px;display:grid;grid-template-columns:repeat(7,1fr);align-items:end;gap:9px;margin:16px 0 8px}.spirit-bar{display:grid;justify-items:center;gap:6px;height:100%;align-content:end}.spirit-bar i{width:min(28px,75%);min-height:3px;border-radius:8px 8px 2px 2px;background:linear-gradient(#b78dc7,#e8bfdc)}.spirit-bar small{font-size:.65rem;color:#756c7b}.spirit-chart h2{font-size:1rem}.spirit-empty{color:#756c7b;font-size:.83rem;padding:15px 0}.spirit-trends{grid-column:span 2}.spirit-detail-content{overflow:visible;min-height:40vh}@media(max-width:390px){.spirit-grid{grid-template-columns:1fr}.spirit-feature.primary,.spirit-trends{grid-column:auto}.spirit-links{grid-template-columns:1fr}}</style>
- <header class="spirit-heading"><div><span class="spirit-kicker">DAILY PRACTICE · REFLECTION · JOURNAL</span><h1>Spirituality</h1><p>Build a gentle five-minute practice, with readings and rituals from the traditions you chose.</p></div><button type="button" class="spirit-add" onclick="openSpiritualJournal()">＋ Journal</button></header>
- ${typeof spiritualityGuideLandingCard==="function"?spiritualityGuideLandingCard():"<div class=\"notice\">Your daily five-minute practice is loading.</div>"}
- <div class="spirit-grid">
-  <article class="spirit-feature primary"><span class="spirit-kicker">TODAY’S TAROT</span><h2>${esc(revealed?(todayDraw?.name||"Your card is revealed"):"Today’s card is face down")}</h2><p>${esc(revealed?(todayDraw?.meaning||todayDraw?.prompt||"Return to your saved card reflection."):"Reveal your card when you are ready. It is a reflection prompt, not a prediction.")}</p><button type="button" class="spirit-add" onclick="setSpiritualityPage('tarot')">${revealed?"Open card":"Explore tarot"} ›</button></article>
-  <article class="spirit-feature"><span class="spirit-kicker">DAILY READING</span><h2>Today’s reading</h2><p>${esc(reading?.body||"Open the daily reading and its saved history.")}</p><button type="button" class="spirit-add" onclick="setSpiritualityPage('reading')">Daily reading ›</button></article>
-  <article class="spirit-feature"><span class="spirit-kicker">MOON + SEASON</span><h2>${esc(moonInfo?.sign||moonNow?.[0]||"Moon today")}</h2><p>${esc([moonInfo?.element,moonInfo?.phaseAction,season?.title].filter(Boolean).join(" · ")||"Open the current moon and seasonal reflections.")}</p><button type="button" class="spirit-add" onclick="setSpiritualityPage('moon')">Moon notes ›</button></article>
-  <article class="spirit-chart spirit-trends"><span class="spirit-kicker">SAVED ACTIVITY</span><h2>Journal entries + tarot draws · last 7 days</h2><div class="spirit-bars" role="img" aria-label="Saved journal entries and tarot draws over the last seven days">${counts.map(x=>`<div class="spirit-bar" title="${esc(x.date)}: ${x.count} saved"><i style="height:${Math.max(3,Math.round(100*x.count/max))}%"></i><small>${esc(new Date(x.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short"}).slice(0,2))}</small></div>`).join("")}</div><p>${journal.length} journal ${journal.length===1?"entry":"entries"} saved · ${draws.length} tarot ${draws.length===1?"draw":"draws"} in history.</p></article>
- </div><nav class="spirit-links" aria-label="Spirituality sections">${nav.map(([key,icon,label])=>`<button class="spirit-link" type="button" onclick="setSpiritualityPage('${key}')"><span>${icon}</span><b>${label}</b><span>›</span></button>`).join("")}</nav></section>`;
+ const practice=typeof spiritualityGuideLandingCard==="function"
+  ?spiritualityGuideLandingCard()
+  :"<section class=\"card spirituality-guide-card\"><h1>Your daily spiritual practice</h1><p>The five-minute guide is loading.</p></section>";
+ return `<section class="spirit-dashboard spirit-direct-practice" aria-label="Daily five-minute spiritual practice">
+  <style>
+   .spirit-direct-practice{min-height:55vh;overflow:visible;color:#30283a}
+   .spirit-direct-practice .spirituality-guide-card{width:100%;max-width:760px;margin:0 auto;padding:clamp(20px,5vw,34px);box-sizing:border-box}
+   .spirit-direct-practice .spirituality-guide-card h2{font-size:clamp(1.45rem,5vw,2rem);line-height:1.15}
+   .spirit-direct-practice .spiritual-guide-preview{display:grid;gap:8px;margin:18px 0}
+   .spirit-direct-practice .spirituality-guide-start{width:100%;min-height:54px}
+  </style>
+  ${practice}
+ </section>`;
 }
 
 function visualHubView(page){
