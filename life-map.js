@@ -256,6 +256,37 @@ function view(areaOverride,tasksOnly){
  const waterHabitPanel='<aside class="lm-priority-habit lm-priority-water" aria-label="Water progress, '+h(waterStatus)+'"><b>WATER</b><small>'+h(waterStatus)+'</small><div class="lm-priority-marks" aria-hidden="true">'+waterMarks+'</div><small>3 bottles</small></aside>';
  const teethStatus=brushHasCheckin?brushCount+" of 2 today":"0 of 2";
  const teethHabitPanel='<aside class="lm-priority-habit lm-priority-teeth" aria-label="Teeth brushing progress, '+h(teethStatus)+'"><b>TEETH</b><small>'+h(teethStatus)+'</small><div class="lm-priority-marks" aria-hidden="true">'+teethMarks+'</div><small>daily goal</small></aside>';
+ const bottleSize=Math.max(1,waterGoal/3),waterBottlesDone=Math.min(3,Math.floor(waterOzToday/bottleSize));
+ const waterRatio=waterBottlesDone/3,teethRatio=brushCount/2;
+ const priorityOpen=waterBottlesDone<3||brushCount<2;
+ const reviewNext=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).find(item=>item.status==="unknown"):null;
+ let nextCheckinTitle="",nextCheckinQuestion="",nextCheckinArea="",nextCheckinType="";
+ if(priorityOpen){
+  const chooseWater=waterBottlesDone<3&&(brushCount>=2||waterRatio<=teethRatio);
+  nextCheckinType=chooseWater?"Priority habit · water":"Priority habit · teeth";
+  nextCheckinTitle=chooseWater?"Water":"Brushing your teeth";
+  nextCheckinQuestion=chooseWater?
+   "Have you had your "+(["first","second","third"][waterBottlesDone]||"next")+" 26-ounce bottle of water today?":
+   (brushCount===0?"Have you brushed your teeth yet today?":"Have you brushed a second time today?");
+  nextCheckinArea="body";
+ }else if(reviewNext){
+  nextCheckinType="Daily Review · "+String(reviewNext.group||"Today");
+  nextCheckinTitle=String(reviewNext.label||"Check-in");
+  nextCheckinQuestion=String(reviewNext.detail||"Tell me whether this happened today.");
+  nextCheckinArea=lifeMapAreaForReview(reviewNext);
+ }else{
+  nextCheckinType="Today";
+  nextCheckinTitle="You’re caught up for today";
+  nextCheckinQuestion="Water: "+waterBottlesDone+" of 3 bottles · Teeth: "+brushCount+" of 2 check-ins";
+ }
+ const nextAreaTitle={body:"Body & health",home:"Home tasks",mind:"Mind & self-care",people:"Family & kids",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"}[nextCheckinArea]||"Daily Review";
+ const nextAction=nextCheckinArea?"lifeMapSelectArea(&#39;"+h(nextCheckinArea)+"&#39;)":"openDailyReview(&#39;"+h(date)+"&#39;)";
+ const nextActionButton=priorityOpen||reviewNext?'<button type="button" class="lm-next-checkin-open" onclick="'+nextAction+'">Open '+h(nextAreaTitle)+' ›</button>':"";
+ const nextCheckinPanel='<section class="lm-next-checkin" aria-label="Next check-in" aria-live="polite">'+
+  '<div class="lm-next-checkin-head"><span>NEXT CHECK-IN</span><b>'+h(nextCheckinType)+'</b></div>'+
+  '<div class="lm-next-checkin-question"><strong>'+h(nextCheckinTitle)+'</strong><span>'+h(nextCheckinQuestion)+'</span></div>'+
+  '<div class="lm-next-checkin-foot"><small>Tell me out loud; I’ll log it and update your progress.</small><div class="lm-next-checkin-progress"><span>💧 '+waterBottlesDone+'/3</span><span>🦷 '+brushCount+'/2</span></div></div>'+
+  nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
  const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask";return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small></span></label>'};
  const careRows=careHabits.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
@@ -344,7 +375,7 @@ function view(areaOverride,tasksOnly){
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
  '<section class="lm-scene-card"><div class="lm-scene-heading"><div><span class="lm-kicker">LIFE IN PROGRESS</span><h2>Different parts of your life, together</h2><p>Tap an avatar badge for that area’s habits, daily check-in and tasks. Tap a house room for its tasks. Color fills from saved activity.</p><div role="group" aria-label="Map progress period" style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn small" aria-pressed="${progressRange==="week"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;week&#39;)">This week</button><button type="button" class="btn small" aria-pressed="${progressRange==="today"?"true":"false"}" onclick="lifeMapSetProgressRange(&#39;today&#39;)">Today</button></div></div></div>'+
- '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
+ '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-next-checkin-slot">'+nextCheckinPanel+'</div><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
  '<defs>'+ '<clipPath id="lmAvatarColorReveal" clipPathUnits="userSpaceOnUse"><circle class="lm-avatar-color-mask" cx="110" cy="255" r="'+Math.round(276*Math.sqrt(avatarFillPct/100))+'"/></clipPath>'+ '</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-personalized1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" clip-path="url(#lmAvatarColorReveal)" pointer-events="none" aria-hidden="true"/>'+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
  '<p class="lm-avatar-caption">Tell me here; I’ll log it.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  '<section class="lm-lower-grid">'+

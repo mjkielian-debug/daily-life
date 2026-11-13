@@ -513,3 +513,21 @@
  }
  #app:has(.lm-scene-card) .lm-avatar-stage-with-habits .lm-avatar{max-width:136px}
 }
+
+/* A compact, voice-friendly check-in that stays visible on the avatar home. */
+#app:has(.life-map-page) .lm-next-checkin-slot{width:100%;max-width:510px;flex:0 0 auto;margin:0 auto 6px}
+#app:has(.life-map-page) .lm-next-checkin{padding:9px 11px;border:1.5px solid #d9bbd2;border-radius:17px;background:linear-gradient(120deg,#fff6fa,#f0f8f1 56%,#f0ebf8);box-shadow:0 4px 12px rgba(92,61,87,.08);color:#433346}
+#app:has(.life-map-page) .lm-next-checkin-head{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#855573;font-size:.68rem;font-weight:900;letter-spacing:.07em}
+#app:has(.life-map-page) .lm-next-checkin-head b{font-size:.68rem;letter-spacing:0;text-align:right}
+#app:has(.life-map-page) .lm-next-checkin-question{display:grid;gap:2px;margin:4px 0}
+#app:has(.life-map-page) .lm-next-checkin-question strong{font:700 .98rem Georgia,serif;color:#35253d}
+#app:has(.life-map-page) .lm-next-checkin-question span{font-size:.78rem;line-height:1.25;color:#665b6b}
+#app:has(.life-map-page) .lm-next-checkin-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#app:has(.life-map-page) .lm-next-checkin-foot small{font-size:.66rem;line-height:1.2;color:#765c75}
+#app:has(.life-map-page) .lm-next-checkin-progress{display:flex;gap:6px;flex:0 0 auto}
+#app:has(.life-map-page) .lm-next-checkin-progress span{padding:3px 6px;border-radius:999px;background:#fff9fd;font-size:.68rem;font-weight:800;color:#654563;white-space:nowrap}
+#app:has(.life-map-page) .lm-next-checkin-open{min-height:32px;margin-top:6px;padding:5px 10px;border:1px solid #d9b7ce;border-radius:999px;background:#fffafc;color:#654563;font:800 .7rem var(--font-body,system-ui,sans-serif);cursor:pointer}
+@media(max-width:380px){#app:has(.life-map-page) .lm-next-checkin{padding:8px}.lm-next-checkin-foot{align-items:flex-start;flex-direction:column}.lm-next-checkin-open{margin-top:4px}}
+
+#app:has(.life-map-page) .lm-avatar-caption{display:none}
+@media(max-width:520px){#app:has(.life-map-page) .lm-avatar{height:min(46svh,390px)}}
