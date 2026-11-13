@@ -478,7 +478,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   if(!value && x.avatarGarment==="green-hoodie")return window.greenHoodieIllustration;
   return value||'<div class="fc-photo-fallback">'+icon(kind(x))+'</div>';
  }
- function selectedRows(){return visibleItems.filter(x=>selected.has(String(x.id)))}
+ function selectedRows(){return owned(wearer).filter(x=>selected.has(String(x.id)))}
  function gapHtml(person){
   if(person==="Michelle"||typeof wardrobeCount!=="function"||!Array.isArray(WARDROBE_TYPES))return"";
   const gaps=WARDROBE_TYPES.map(t=>({label:t.label,missing:Math.max(0,Number(t.min)-Number(wardrobeCount(person,t)||0))})).filter(x=>x.missing>0);
@@ -489,6 +489,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   const all=owned(wearer);
   visibleItems=filter==="all"?all:all.filter(x=>kind(x)===filter);
   const active=selectedRows();
+  const washCount=active.filter(item=>state.settings?.clothingWear?.["inventory:"+item.id]).length;
   const looks=savedLooks().filter(x=>x.person===wearer).slice(-8).reverse();
   const filters=categories.map(([id,label])=>'<button type="button" class="'+(filter===id?"fc-filter fc-filter-on":"fc-filter")+'" aria-pressed="'+(filter===id)+'" onclick="familyClosetFilter(\''+id+'\')">'+label+'</button>').join("");
   const cards=visibleItems.map(x=>{
@@ -508,6 +509,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    (visibleItems.length?'<div class="fc-grid">'+cards+'</div>':'<div class="fc-empty"><span>🪞</span><b>'+escValue(wearer)+'’s visual closet is ready for clothes.</b><small>Capture clothing photos, review them, and assign each piece to '+escValue(wearer)+' to see it here.</small><button type="button" class="btn primary" onclick="closeModal();openPhotoInbox(\'inventory\')">📷 Add clothing photos</button><button type="button" class="btn" onclick="closeModal();openInventoryItem(\'\',\''+wearer+'\',\'short_sleeve\')">＋ Add a clothing item</button></div>')+
    '<section class="fc-look"><div class="fc-look-head"><div><span class="fc-kicker">OUTFIT MIXER</span><b>Your selected look</b></div><span>'+active.length+' piece'+(active.length===1?"":"s")+'</span></div>'+
    '<div class="fc-look-pieces">'+preview+'</div>'+
+   (washCount?'<button type="button" class="btn" onclick="familyClosetWash(this)">Mark '+washCount+' selected as washed</button>':'')+
    '<div class="fc-actions"><button type="button" class="btn primary" '+(!active.length?"disabled":"")+' onclick="familyClosetSave()">Save this look</button><button type="button" class="btn" onclick="familyClosetClear()">Clear selection</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div></section>'+
    '<section class="fc-looks"><b>Saved looks for '+escValue(wearer)+'</b>'+saved+'</section>';
   if(typeof window.inventoryLoadSavedItemPhotos==="function")Promise.resolve().then(()=>window.inventoryLoadSavedItemPhotos());
@@ -517,6 +519,22 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
  window.familyClosetFilter=function(value){if(!categories.some(c=>c[0]===value))return;filter=value;render()};
  window.familyClosetToggle=function(id){if(!id)return;selected.has(id)?selected.delete(id):selected.add(id);render()};
  window.familyClosetClear=function(){selected.clear();render()};
+ window.familyClosetWash=async function(button){
+  const records=state.settings?.clothingWear;if(!records)return;
+  const removed=new Map();
+  for(const item of selectedRows()){
+   const key="inventory:"+item.id;
+   if(records[key]){removed.set(key,records[key]);delete records[key]}
+  }
+  if(!removed.size)return;
+  button.disabled=true;
+  try{await save();selected.clear()}
+  catch(error){
+   for(const [key,value] of removed)if(!records[key])records[key]=value;
+   alert("Could not save this laundry load. Please try again.");
+  }
+  render();
+ };
  window.familyClosetSave=async function(){
   const rows=selectedRows();if(!rows.length)return;
   const items=owned(wearer),itemIds=items.filter(x=>selected.has(String(x.id))).map(x=>String(x.id));
