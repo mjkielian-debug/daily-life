@@ -23,7 +23,6 @@
     inventory:"home",garden:"growth",hobbies:"growth",gardenhobbies:"growth",
   };
   var STATUS = {done:"Done",partial:"Partly",skipped:"Skipped",not_applicable:"N/A"};
-  var quickBarOpen=false;
 
   function correctStarterReminderTimes(s){
     if(!s||!s.settings)return false;
@@ -152,14 +151,9 @@
       '</div><span class="hf-area-label">'+esc(areaLabel(habit.area))+'</span></div>'+
       (lastDone?'<div class="hf-muted">Last done '+esc(dateLabel(lastDone))+'</div>':'<div class="hf-muted">No full completion logged</div>')+weekLine(habit)+reminderMarkup(habit)+
       '<div class="hf-today-label">Today · '+esc(status)+'</div>'+
-      '<div class="hf-actions" role="group" aria-label="Log '+esc(habit.name)+' for today">'+
-      '<button type="button" class="hf-action hf-done'+(todayLog&&todayLog.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="done">Done</button>'+
-      '<button type="button" class="hf-action'+(todayLog&&todayLog.status==="partial"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="partial">Partly</button>'+
-      '<button type="button" class="hf-action'+(todayLog&&todayLog.status==="skipped"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="skipped">Skipped</button>'+
-      '<button type="button" class="hf-action hf-na'+(todayLog&&todayLog.status==="not_applicable"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(habit.id)+'" data-status="not_applicable">N/A</button>'+
-      '<button type="button" class="hf-more" data-hf-action="edit" data-habit-id="'+esc(habit.id)+'">Edit</button>'+
-      '<button type="button" class="hf-more" data-hf-action="pause" data-habit-id="'+esc(habit.id)+'">Pause</button>'+
-      '</div></article>'
+      '<p class="hf-muted">Tell me in conversation when you do this, and I’ll record it here.</p>'+
+      '<div class="hf-actions"><button type="button" class="hf-more" data-hf-action="edit" data-habit-id="'+esc(habit.id)+'">Edit</button>'+
+      '<button type="button" class="hf-more" data-hf-action="pause" data-habit-id="'+esc(habit.id)+'">Pause</button></div></article>'
   }
   function pausedCard(habit){
     return '<div class="hf-paused-row"><span>'+esc(habit.name)+' <small>· '+esc(areaLabel(habit.area))+'</small></span>'+
@@ -182,34 +176,13 @@
       return '<button type="button" data-hf-action="add" data-area="'+a.id+'"><span>'+esc(a.icon)+'</span>'+esc(a.label)+'</button>'
     }).join("")+'</div>'
   }
-  function quickBarSignature(){
-    var s=appState();if(!s)return "";
-    var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
-    return JSON.stringify({open:quickBarOpen,habits:active.map(function(h){var log=logOn(h.id,today());return [h.id,log?.status||""]})});
-  }
-  function quickBar(){
-    var s=appState();if(!s)return "";
-    var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
-    var completed=active.filter(function(h){var log=logOn(h.id,today());return log&&(log.status==="done"||log.status==="partial")}).length;
-    var title=active.length?completed+" of "+active.length+" habits checked in today":"Start with one small habit";
-    var rows=active.map(function(h){
-      var log=logOn(h.id,today()),status=log?(STATUS[log.status]||"Logged"):"Not checked in";
-      return '<div class="hf-quick-row"><span class="hf-quick-name">'+esc(h.name)+'</span><span class="hf-quick-status">'+esc(status)+'</span><div class="hf-quick-actions">'+
-        '<button type="button" class="hf-quick-done'+(log&&log.status==="done"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="done">✓ Done</button>'+
-        '<button type="button" class="hf-quick-partial'+(log&&log.status==="partial"?" selected":"")+'" data-hf-action="log" data-habit-id="'+esc(h.id)+'" data-status="partial">Partly</button></div></div>';
-    }).join("");
-    return '<section class="hf-quickbar" data-habit-quickbar data-signature="'+esc(quickBarSignature())+'"><div class="hf-quick-head"><span class="hf-quick-sparkle" aria-hidden="true">✦</span><div class="hf-quick-title"><b>Today’s habits</b><span>'+esc(title)+'</span></div>'+
-      (active.length?'<button type="button" class="hf-quick-toggle" data-hf-action="quick-toggle">'+(quickBarOpen?"Hide":"Check in")+'</button>':'<button type="button" class="hf-quick-toggle" data-hf-action="add" data-area="health">＋ Start</button>')+
-      '</div>'+(active.length?'<div class="hf-quick-track" aria-label="'+completed+' of '+active.length+' habits checked in"><span style="width:'+Math.round(completed/active.length*100)+'%"></span></div>':"")+
-      (quickBarOpen&&active.length?'<div class="hf-quick-list">'+rows+'</div>':"")+'</section>';
-  }
   function renderPanel(area){
     var s=appState();if(!s||!area)return "";
     var active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
     var paused=s.habits.filter(function(h){return h&&h.status==="paused"});
     var current=area==="all"?active:active.filter(function(h){return h.area===area});
     var title=area==="all"?"Habits across your day":"Habits in "+areaLabel(area);
-    var subtitle=area==="all"?"Build repeatable routines throughout your life. Open an area to work on its habits.":"Small practices for this part of your life.";
+    var subtitle=area==="all"?"I’ll check in with you in conversation and record what you tell me.":"Tell me in conversation when you do these, and I’ll keep the progress here.";
     var body=current.length?current.map(habitCard).join(""):emptyState(area);
     if(area==="all"&&!current.length)body+=addAreaChips();
     var pausedHere=area==="all"?paused:paused.filter(function(h){return h.area===area});
@@ -217,7 +190,6 @@
     return '<section class="hf-panel" data-habit-focus data-area="'+esc(area)+'">'+
       '<div class="hf-heading"><div><div class="hf-eyebrow">Habit building · every area</div><h2>'+esc(title)+'</h2><p>'+esc(subtitle)+'</p></div>'+
       '<div class="hf-heading-actions">'+
-      (area==="all"&&active.some(function(h){return !logOn(h.id,today())})?'<button type="button" class="hf-action hf-resume-checkin" data-hf-action="reopen-checkin">Resume check-in</button>':"")+
       '<button type="button" class="hf-action hf-create" data-hf-action="add" data-area="'+esc(area==="all"?"":area)+'">＋ Add habit</button></div></div>'+
       '<div class="hf-list">'+body+'</div>'+pausedHtml+
       '<div class="hf-footnote">Habits are practices you choose. Appointments and one-time tasks stay in their existing areas.</div></section>'
@@ -330,9 +302,7 @@
     var button=event.target&&event.target.closest?event.target.closest("[data-hf-action]"):null;
     if(!button)return;
     var action=button.dataset.hfAction,id=button.dataset.habitId;
-    if(action==="quick-toggle"){quickBarOpen=!quickBarOpen;mount()}
-    else if(action==="reopen-checkin"&&typeof window.openDailyHabitCheckin==="function")window.openDailyHabitCheckin()
-    else if(action==="add")openCreate(button.dataset.area||"");
+    if(action==="add")openCreate(button.dataset.area||"");
     else if(action==="edit")openEdit(id);
     else if(action==="pause")setPaused(id,true);
     else if(action==="resume")setPaused(id,false);
@@ -341,102 +311,13 @@
     else if(action==="preset-water")addWaterPreset()
   }
 
-  var dailyCheckinNode=null,dailyCheckinTimer=null;
-  function closeDailyCheckin(markDone){
-    if(markDone){
-      try{localStorage.setItem("dailyLifeQuickCheckinDone-"+today(),"1")}catch(e){}
-    }
-    if(dailyCheckinNode){dailyCheckinNode.remove();dailyCheckinNode=null}
-  }
-  function deferDailyCheckin(){
-    var now=new Date(),later=new Date(now);
-    later.setHours(20,0,0,0);
-    if(later<=now)later=new Date(now.getTime()+60*60*1000);
-    var key="dailyLifeQuickCheckinSnooze-"+today(),until=later.getTime();
-    try{localStorage.setItem(key,String(until))}catch(e){}
-    if(dailyCheckinNode){dailyCheckinNode.remove();dailyCheckinNode=null}
-    if(dailyCheckinTimer)clearTimeout(dailyCheckinTimer);
-    dailyCheckinTimer=setTimeout(function(){dailyCheckinTimer=null;tryShowDailyCheckin()},Math.max(1000,until-Date.now()));
-  }
-  function renderDailyCheckin(){
-    var s=appState();if(!s||!dailyCheckinNode)return;
-    var date=today(),active=s.habits.filter(function(h){return h&&h.status!=="paused"&&h.status!=="archived"});
-    var missing=active.filter(function(h){return !logOn(h.id,date)});
-    if(!missing.length){closeDailyCheckin(true);return}
-    var rows=missing.map(function(h){
-      return '<article class="dl-quickcheck-row"><div><strong>'+esc(h.name||"Daily habit")+'</strong>'+(h.minimum?'<small>'+esc(h.minimum)+'</small>':"")+'</div><div class="dl-quickcheck-actions"><button type="button" data-dlc-status="done" data-dlc-id="'+esc(h.id)+'">Yes</button><button type="button" data-dlc-status="skipped" data-dlc-id="'+esc(h.id)+'">No, not today</button><button type="button" data-dlc-later>Not yet</button></div></article>'
-    }).join("");
-    dailyCheckinNode.innerHTML='<div class="dl-quickcheck-shade"><section class="dl-quickcheck" role="dialog" aria-modal="true" aria-labelledby="dl-quickcheck-title"><button type="button" class="dl-quickcheck-close" data-dlc-later aria-label="Ask me later">×</button><p class="dl-quickcheck-kicker">A quick daily check-in</p><h2 id="dl-quickcheck-title">Did you do these today?</h2><p class="dl-quickcheck-note"><b>'+missing.length+' habit'+(missing.length===1?"":"s")+' left to review.</b> Answers save one at a time; the remaining habits stay here. “Not yet” brings this back at 8 PM, or in an hour if it’s already later.</p>'+rows+'<button type="button" class="dl-quickcheck-skip" data-dlc-close>Skip for today</button></section></div>';
-  }
-  window.openDailyHabitCheckin=function(){
-    var date=today();
-    try{
-      localStorage.removeItem("dailyLifeQuickCheckinDone-"+date);
-      localStorage.removeItem("dailyLifeQuickCheckinSnooze-"+date);
-    }catch(e){}
-    if(dailyCheckinTimer){clearTimeout(dailyCheckinTimer);dailyCheckinTimer=null}
-    tryShowDailyCheckin();
-  };
-  function tryShowDailyCheckin(){
-    if(typeof appStartupReady==="undefined"||!appStartupReady)return;
-    var s=appState();if(!s||!Array.isArray(s.habits)||!s.habits.length)return;
-    var date=today(),key="dailyLifeQuickCheckinDone-"+date,snoozeKey="dailyLifeQuickCheckinSnooze-"+date;
-    try{
-      if(localStorage.getItem(key))return;
-      var snoozeUntil=Number(localStorage.getItem(snoozeKey)||0);
-      if(snoozeUntil>Date.now()){
-        if(!dailyCheckinTimer)dailyCheckinTimer=setTimeout(function(){dailyCheckinTimer=null;tryShowDailyCheckin()},Math.max(1000,snoozeUntil-Date.now()));
-        return;
-      }
-    }catch(e){}
-    if(dailyCheckinNode&&dailyCheckinNode.isConnected){renderDailyCheckin();return}
-    if(!s.habits.some(function(h){return h&&h.status!=="paused"&&h.status!=="archived"&&!logOn(h.id,date)}))return;
-    dailyCheckinNode=document.createElement("div");
-    dailyCheckinNode.id="dailyLifeQuickCheckin";
-    dailyCheckinNode.addEventListener("click",function(event){
-      var later=event.target.closest("[data-dlc-later]");
-      if(later){deferDailyCheckin();return}
-      var close=event.target.closest("[data-dlc-close]");
-      if(close){closeDailyCheckin(true);return}
-      var button=event.target.closest("[data-dlc-status]");
-      if(!button)return;
-      var id=button.dataset.dlcId,status=button.dataset.dlcStatus;
-      button.disabled=true;
-      Promise.resolve(logHabit(id,status,{keepCheckinOpen:true})).then(function(saved){
-        if(!saved){button.disabled=false;return}
-        renderDailyCheckin();
-        if(!dailyCheckinNode)render();
-      }).catch(function(error){button.disabled=false;console.error("Could not save daily check-in.",error)});
-    });
-    document.body.appendChild(dailyCheckinNode);
-    renderDailyCheckin();
-  }
-  if(!document.getElementById("dailyLifeQuickCheckinStyles")){
-    var quickStyle=document.createElement("style");quickStyle.id="dailyLifeQuickCheckinStyles";quickStyle.textContent=`
-      .dl-quickcheck-shade{position:fixed;inset:0;z-index:2147482000;background:rgba(48,35,59,.42);display:grid;place-items:center;padding:18px}
-      .dl-quickcheck{position:relative;width:min(100%,520px);max-height:min(82vh,720px);overflow:auto;border-radius:26px;background:#fffafd;color:#30233b;padding:24px 20px 18px;box-shadow:0 18px 60px rgba(48,35,59,.28)}
-      .dl-quickcheck-kicker{margin:0 38px 6px 0;color:#95617f;font-size:.78rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
-      .dl-quickcheck h2{margin:0 38px 8px 0;font-size:1.45rem}
-      .dl-quickcheck-note{margin:0 0 16px;color:#766b7a;line-height:1.45}
-      .dl-quickcheck-close{position:absolute;right:12px;top:10px;width:40px;height:40px;border:0;border-radius:50%;background:#f7eaf2;color:#30233b;font-size:1.55rem}
-      .dl-quickcheck-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0;border-top:1px solid #eadde7}
-      .dl-quickcheck-row strong{display:block}
-      .dl-quickcheck-row small{display:block;margin-top:4px;color:#766b7a;line-height:1.35}
-      .dl-quickcheck-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-      .dl-quickcheck-actions button,.dl-quickcheck-skip{border:1px solid #cbb6c8;border-radius:999px;background:#fff;color:#49384d;padding:9px 13px;font:inherit;font-weight:750}
-      .dl-quickcheck-actions button:first-child{background:#dff1e7;border-color:#b9d9c8}
-      .dl-quickcheck-skip{display:block;margin:16px auto 0;background:#f7eaf2}
-      @media(max-width:440px){.dl-quickcheck-row{grid-template-columns:1fr}.dl-quickcheck-actions{justify-content:flex-start}}
-    `;document.head.appendChild(quickStyle);
-  }
-
   function start(){
     var root=document.querySelector("#app");
     if(!root)return;
     root.addEventListener("click",handleClick);
-    var observer=new MutationObserver(function(){mount();tryShowDailyCheckin()});
+    var observer=new MutationObserver(function(){mount()});
     observer.observe(root,{childList:true,subtree:true});
-    mount();tryShowDailyCheckin()
+    mount()
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
   else start();
