@@ -654,6 +654,24 @@ document.addEventListener("click",async event=>{
  try{await save();row.outerHTML=towelRow(key,row.dataset.person)}
  catch(error){if(previous)records[key]=previous;else delete records[key];button.disabled=false;alert("Could not save this towel. Please try again.")}
 });
+function bedSheetRow(name){
+ const last=state.settings?.sheetChanges?.[name];
+ let status="Last change not recorded";
+ if(last){
+  const due=new Date(last+"T12:00:00");due.setDate(due.getDate()+14);
+  const dueDay=[due.getFullYear(),String(due.getMonth()+1).padStart(2,"0"),String(due.getDate()).padStart(2,"0")].join("-");
+  status="Last changed "+last+" · "+(ymd()>=dueDay?"Fresh sheets due":"Next change")+" "+dueDay;
+ }
+ return '<section data-sheet-owner="'+h(name)+'"><b>'+h(name)+'’s sheets</b><p>'+h(status)+'</p><button class="btn" type="button" data-sheet-change '+(last===ymd()?'disabled':'')+'>'+(last===ymd()?'Changed today':'Changed sheets today')+'</button></section>';
+}
+document.addEventListener("click",async event=>{
+ const button=event.target.closest?.("[data-sheet-change]");if(!button)return;
+ const row=button.closest("[data-sheet-owner]"),owner=row.dataset.sheetOwner;
+ state.settings=state.settings||{};const changes=state.settings.sheetChanges||(state.settings.sheetChanges={});
+ const previous=changes[owner];button.disabled=true;changes[owner]=ymd();
+ try{await save();row.outerHTML=bedSheetRow(owner)}
+ catch(error){if(previous)changes[owner]=previous;else delete changes[owner];button.disabled=false;alert("Could not save the sheet change. Please try again.")}
+});
 function bedroomWardrobes(f,z){
  const label=[z.id,z.name,z.short].filter(Boolean).join(" ").toLowerCase();
  if(/entry|hall|bath/.test(label))return "";
@@ -662,7 +680,7 @@ function bedroomWardrobes(f,z){
      const pattern=name==="Demitri"?/\b(demitri|dimitri|tree)\b/i:new RegExp("\\b"+name+"\\b","i");
      return pattern.test(label.replace(/[_-]/g," "));
    }):[];
- return owners.map(name=>'<button type="button" class="btn hvm-person-room-inventory" onclick="openFamilyCloset(&#39;'+h(name)+'&#39;)">Browse '+h(name)+'’s visual closet ›</button>').join("");
+ return owners.map(name=>'<button type="button" class="btn hvm-person-room-inventory" onclick="openFamilyCloset(&#39;'+h(name)+'&#39;)">Browse '+h(name)+'’s visual closet ›</button>'+bedSheetRow(name)).join("");
 }
 function personRoomHome(f,z){
  const tourZones=arr(get(f)?.zones).filter(item=>item&&okId(item.id));
