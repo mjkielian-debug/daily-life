@@ -90,3 +90,12 @@
 .lm-scene-grid.lm-avatar-only .lm-avatar-wrap::before{top:8%;width:min(72%,190px);background:radial-gradient(circle,rgba(255,221,235,.42) 0 28%,rgba(216,205,238,.17) 29% 51%,transparent 73%)}
 .lm-scene-grid.lm-avatar-only .lm-avatar-wrap::after{display:none}
 .lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,220px)}
+
+/* The avatar is the focal point, not a framed panel; use the freed space for larger tap targets. */
+.lm-scene-card{padding:8px 0 12px;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.lm-scene-grid.lm-avatar-only{grid-template-columns:minmax(0,1fr);justify-items:center}
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:min(100%,340px);max-width:340px;padding:0;background:none!important;border:0;border-radius:0;box-shadow:none;overflow:visible}
+.lm-scene-grid.lm-avatar-only .lm-avatar-wrap::before,.lm-scene-grid.lm-avatar-only .lm-avatar-wrap::after{display:none}
+.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(100%,270px)}
+.lm-avatar-mark{cursor:pointer}
+@media(max-width:760px){.lm-scene-grid.lm-avatar-only .lm-avatar-wrap{width:min(100%,340px)}.lm-scene-grid.lm-avatar-only .lm-avatar{width:min(72vw,270px)}}
