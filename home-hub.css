@@ -290,6 +290,38 @@
   #app:has(.lm-area-page) .lm-area-shortcuts>div{grid-template-columns:minmax(0,1fr)}
 }
 
+#app .lm-area-page[data-life-area-page]{--lm-area-accent:#b58ab6}
+#app .lm-area-page[data-life-area-page="home"]{--lm-area-accent:#53a899}
+#app .lm-area-page[data-life-area-page="mind"]{--lm-area-accent:#ad83bd}
+#app .lm-area-page[data-life-area-page="body"]{--lm-area-accent:#e49279}
+#app .lm-area-page[data-life-area-page="people"]{--lm-area-accent:#df82a6}
+#app .lm-area-page[data-life-area-page="spirituality"]{--lm-area-accent:#d8a43e}
+#app .lm-area-page[data-life-area-page="hobbies"]{--lm-area-accent:#70ae91}
+#app .lm-area-page[data-life-area-page="money"]{--lm-area-accent:#6c9fc9}
+#app .lm-area-page[data-life-area-page="car"]{--lm-area-accent:#88a2a8}
+#app .lm-area-page[data-life-area-page="work"]{--lm-area-accent:#86a968}
+#app:has(.lm-area-page) .lm-area-page-heading{border-left:5px solid var(--lm-area-accent)}
+#app:has(.lm-area-page) .lm-area-practices{
+  display:grid;gap:10px;padding:15px;border:1px solid #e8dbe5;border-top:4px solid var(--lm-area-accent);
+  border-radius:20px;background:linear-gradient(145deg,#fffdfd,#fff8fc 58%,#f5fbf7);
+}
+#app:has(.lm-area-page) .lm-area-practices-heading h2{margin:2px 0 0;font-size:1.08rem;color:#48364d}
+#app:has(.lm-area-page) .lm-area-practice-list{display:grid;gap:8px}
+#app:has(.lm-area-page) .lm-area-practice{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:11px;border:1px solid #eee1ec;
+  border-radius:15px;background:#fff;
+}
+#app:has(.lm-area-page) .lm-area-practice-copy{display:grid;gap:3px;min-width:0}
+#app:has(.lm-area-page) .lm-area-practice-copy>b{color:#43354a;font-size:.98rem}
+#app:has(.lm-area-page) .lm-area-practice-copy>small{color:#75677a;font-size:.79rem;line-height:1.35}
+#app:has(.lm-area-page) .lm-area-practice-actions{display:flex;flex-wrap:wrap;gap:6px}
+#app:has(.lm-area-page) .lm-area-practice-actions .hf-more,
+#app:has(.lm-area-page) .lm-area-add-practice{min-height:38px;padding:7px 12px;border:1px solid #dfcedd;border-radius:999px;background:#fff;color:#604760;font-weight:700}
+#app:has(.lm-area-page) .lm-area-practice-actions [data-status="done"]{border-color:var(--lm-area-accent);background:color-mix(in srgb,var(--lm-area-accent) 15%,white)}
+#app:has(.lm-area-page) .lm-area-practices-empty{margin:0;color:#74657a;font-size:.9rem}
+#app:has(.lm-area-page) .lm-area-add-practice{justify-self:start}
+#app:has(.lm-area-page) .lm-area-shortcuts{border-top:3px solid var(--lm-area-accent)}
+
 
 /* Conversational priority habits beside the avatar; the indicators display saved progress only. */
 #app:has(.lm-scene-card) .lm-avatar-wrap{
