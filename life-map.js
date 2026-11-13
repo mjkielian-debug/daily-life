@@ -80,19 +80,20 @@ window.lifeMapTaskLastDoneLabel=function(task){
  const asOf=valid(task.date)?String(task.date):day();
  const doneRows=(task._lifeChore?list(state&&state.chores):list(state&&state.tasks)).filter(row=>{
   const rowTitle=lifeMapNormalizeTaskTitle(row.title||row.chore);
-  return row.done&&rowTitle===title&&String(row.child||"").trim().toLowerCase()===child&&valid(row.date)&&String(row.date)<=asOf;
+  return row.done&&rowTitle===title&&String(row.child||"").trim().toLowerCase()===child&&valid(row.date)&&String(row.date)<asOf;
  }).map(row=>String(row.date));
- if(task.done&&valid(task.date))doneRows.push(String(task.date));
+ const currentDone=task.done&&valid(task.date)?[String(task.date)]:[];
  const homeRows=task._lifeChore?[]:list(state&&state.homeLogs).filter(row=>
   row.status==="done"&&lifeMapNormalizeTaskTitle(row.task)===title&&valid(row.date)&&String(row.date)<=asOf
  ).map(row=>String(row.date));
+ const priorHomeRows=homeRows.filter(date=>date<asOf);
  const rules=list(state&&state.settings&&state.settings.recurringTasks);
  const configured=rules.some(rule=>rule&&rule.active!==false&&lifeMapNormalizeTaskTitle(rule.title)===title);
  const generated=String(task.generated||"");
  const recurring=!!task.dailyReset||task.repeating===true||task.recurring===true||
-  /recurring|daily-basics|rotation/.test(generated)||configured||doneRows.length>0||homeRows.length>0;
+  /recurring|daily-basics|rotation/.test(generated)||configured||doneRows.length>0||priorHomeRows.length>0;
  if(!recurring)return "";
- const lastRows=[...doneRows,...homeRows].sort(),last=lastRows[lastRows.length-1];
+ const lastRows=[...doneRows,...homeRows,...currentDone].sort(),last=lastRows[lastRows.length-1];
  if(!last)return "not yet logged";
  return new Date(last+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
 };
