@@ -198,3 +198,60 @@
 .hvm-zone:hover,.hvm-zone:focus-visible{filter:brightness(1.04) drop-shadow(0 0 4px #c587b4)}
 .hvm-floor-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center}
 .hvm-floor-links .btn{min-height:44px}
+
+/* Storybook floor plan: soft room colors, warm outlines and toy-house furniture. */
+.hvm-sketch{
+ border-color:#e8cddd;
+ border-radius:24px;
+ background:linear-gradient(145deg,#fffdfb 0%,#fff6fa 48%,#f2fbf5 100%);
+ box-shadow:inset 0 0 0 3px #ffffffaa,0 5px 14px rgba(98,66,91,.08);
+}
+.hvm-sketch-heading strong{
+ color:#614364;
+ font:800 1rem var(--font-display,Georgia,serif);
+}
+.hvm-drawing{
+ border:4px solid #fffdfb;
+ border-radius:28px;
+ background:linear-gradient(145deg,#fff9f2 0%,#fff5fb 56%,#f2fbf3 100%);
+ box-shadow:0 0 0 1px #e7cedf,0 6px 14px rgba(95,65,86,.1);
+}
+.hvm-drawing>rect:first-child{
+ fill:#fffdf7;
+ stroke:#ad7e9d;
+ stroke-width:4;
+}
+.hvm-zone>path:first-child{
+ stroke:#a47c99;
+ stroke-width:4;
+ stroke-linejoin:round;
+}
+.hvm-room-symbol{
+ fill:#fffafc;
+ stroke:#b2799a;
+ stroke-width:2.3;
+ opacity:1;
+ filter:drop-shadow(0 1px 1px #71495b22);
+}
+.hvm-room-name{
+ fill:#523b53;
+ font-family:var(--font-display,Georgia,serif);
+ font-size:15px;
+ font-weight:900;
+ stroke:#fffdf8;
+ stroke-width:4px;
+ paint-order:stroke;
+}
+.hvm-entry-label{fill:#765771;font-weight:850}
+.hvm-map-legend{color:#68516b}
+@media(max-width:640px){
+ .hvm-sketch{padding:7px}
+ .hvm-drawing{
+  max-width:365px;
+  margin:3px auto;
+  border-width:3px;
+  border-radius:21px;
+ }
+ .hvm-room-name{font-size:14px}
+ .hvm-disclaimer{font-size:.68rem;line-height:1.3;margin:5px 2px 0}
+}
