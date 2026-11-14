@@ -206,8 +206,37 @@ function illustratedLayout(f,m){
 
 /* Photo-grounded fixtures are supplied by the owner's private floor-map record.
    Keep the names, positions and photos out of public source. */
+
+/* Illustrated furniture is deliberately generic code: the authenticated map
+   data determines which objects exist and where photo evidence places them. */
+function lifelikeFurnitureSvg(k){
+ switch(k){
+  case "futon": return '<path d="M-16 -7Q-16 -15 -7 -14H8Q17 -14 16 -5V8H-16Z" fill="#77cad4" stroke="#547a95" stroke-width="1.7"/><rect x="-13" y="-2" width="26" height="12" rx="4" fill="#a5e3de" stroke="#568995"/><path d="M0 -11V8M-12 3H12M-11 11V15M11 11V15" stroke="#538c9a" stroke-width="1.7"/><path d="M-15 -17Q-11 -12 -8 -17M8 -17Q12 -12 15 -17" stroke="#eea5c8" stroke-width="3" fill="none"/><path d="M-9 1Q-5 -3 -1 2M3 1Q7 -3 11 2" stroke="#fff5fa" stroke-width="1.4" fill="none"/>';
+  case "door_front": return '<rect x="-11" y="-17" width="22" height="34" rx="2" fill="#caa47d" stroke="#8d6470" stroke-width="1.7"/><rect x="-9" y="-15" width="18" height="30" rx="1" fill="#fffdf5"/><path d="M-6 -11H6V-2H-6ZM-6 2H6V11H-6Z" fill="#f7f1f8" stroke="#cbb8c2" stroke-width="1"/><circle cx="5" cy=".5" r="1.4" fill="#a77e51"/>';
+  case "wood_opening":return '<path d="M-16 16V-16H16V16H12V-12H-12V16Z" fill="#be805b" stroke="#82595f" stroke-width="1.4"/><path d="M-11 -11H11V14H-11Z" fill="#e9d5e7"/><path d="M-13 -12H13M-13 -12V15M13 -12V15" stroke="#e6b486" stroke-width="2.8"/><path d="M-11 13H11" stroke="#f9d1a7" stroke-width="2"/>';
+  case "tv_dresser":return '<rect x="-14" y="-17" width="22" height="19" rx="2" fill="#222a3a" stroke="#987f96" stroke-width="1.4"/><rect x="-11" y="-14" width="16" height="13" rx="1" fill="#526b87"/><path d="M-9 -11Q-1 -15 3 -6" stroke="#c1e5f8" stroke-width="1.2" fill="none"/><rect x="-15" y="4" width="22" height="13" rx="2" fill="#76534c" stroke="#b08172"/><path d="M-14 10H6M-5 5V16" stroke="#d2a58d" stroke-width="1.2"/><rect x="9" y="-11" width="7" height="27" rx="2" fill="#303247" stroke="#8e819f"/><circle cx="12.5" cy="-5" r="2.3" stroke="#fd8acb" stroke-width="1.5" fill="none"/><circle cx="12.5" cy="2" r="2.3" stroke="#75dae1" stroke-width="1.5" fill="none"/><circle cx="12.5" cy="9" r="2.3" stroke="#c9a0fe" stroke-width="1.5" fill="none"/>';
+  case "dining_table":return '<rect x="-16" y="-16" width="13" height="17" rx="1" fill="#9e7559" stroke="#654b4c"/><path d="M-14 -10H-5M-14 -5H-5" stroke="#f3d7ac" stroke-width="1.3"/><ellipse cx="3" cy="3" rx="13" ry="9" fill="#b67d62" stroke="#795359" stroke-width="1.5"/><ellipse cx="3" cy="1" rx="10" ry="6.3" fill="#daab84"/><path d="M-6 -2H10V4H-6Z" fill="#f7f2e5" stroke="#c8a19e"/><path d="M-5 -1H9M-4 1H8" stroke="#b8c6c7" stroke-width="1"/><path d="M-7 9v6M13 9v6" stroke="#73574f" stroke-width="2"/>';
+  case "coat_hooks":return '<path d="M-15 -12H15" stroke="#996b50" stroke-width="3" stroke-linecap="round"/><path d="M-9 -12v4M0 -12v4M9 -12v4" stroke="#b29b7a" stroke-width="2"/><path d="M-13 -8Q-15 -6 -16 8H-4Q-4 -6 -8 -8Z" fill="#c58bba" stroke="#84617f"/><path d="M-1 -8Q-7 0 -7 13H7Q7 0 1 -8Z" fill="#557f9f" stroke="#59718b"/><path d="M12 -8Q7 -7 8 7H17Q19 -6 14 -8Z" fill="#d19e70" stroke="#8d6d63"/><rect x="-3" y="5" width="6" height="7" rx="2" fill="#ebcb97"/>';
+  case "pet_bowls":return '<ellipse cx="-8" cy="8" rx="9" ry="4" fill="#7ebecb" stroke="#5e8eab"/><path d="M-17 8Q-15 15 -8 15Q-1 15 1 8" fill="#9bd9d7" stroke="#5e8eab"/><ellipse cx="9" cy="8" rx="9" ry="4" fill="#a78cc0" stroke="#7d619a"/><path d="M0 8Q2 15 9 15Q16 15 18 8" fill="#ccaada" stroke="#7d619a"/><circle cx="-7" cy="7" r="1" fill="#f8ede3"/>';
+  case "keyboard":return '<path d="M-16 0L14 -2L17 9L-14 11Z" fill="#33344b" stroke="#8a8592" stroke-width="1.5"/><path d="M-12 2L12 0M-11 5L13 3" stroke="#faf7f1" stroke-width="2.2" stroke-dasharray="2 1.5"/><path d="M-5 11L-12 17M4 11L12 17" stroke="#555266" stroke-width="1.8"/><path d="M12 -14V-2M7 -14H18M12 -14L15 -7" stroke="#aa7797" stroke-width="1.7"/>';
+  case "mesh":return '<path d="M0 -16V-11" stroke="#8e7998" stroke-width="2"/><path d="M-12 -11L12 -11L9 15H-9Z" fill="#ffe4a0" stroke="#b99061" stroke-width="1.5"/><path d="M-8 -8L7 12M0 -9L10 3M8 -8L-7 12M0 -8L-10 3M-10 0L-2 12" stroke="#dbad62" stroke-width="1.1"/>';
+  case "bed":return '<rect x="-15" y="-9" width="30" height="23" rx="3" fill="#bd9ac7" stroke="#846789" stroke-width="1.5"/><rect x="-12" y="-7" width="24" height="17" rx="3" fill="#d9cce6"/><rect x="-10" y="-6" width="8" height="7" rx="2" fill="#d4e9fa"/><rect x="2" y="-6" width="8" height="7" rx="2" fill="#d4e9fa"/><path d="M-13 5Q0 0 13 5V12H-13Z" fill="#e2c4bc"/><path d="M-13 12v5M13 12v5" stroke="#846789" stroke-width="2"/>';
+  case "vanity":return '<rect x="-9" y="-17" width="19" height="17" rx="8" fill="#e8e6f1" stroke="#a17c94" stroke-width="2"/><path d="M-7 -14Q0 -19 8 -12" stroke="#fff" stroke-width="1.4" fill="none"/><rect x="-16" y="1" width="32" height="6" rx="2" fill="#e8c39e" stroke="#95746b"/><path d="M-12 7V17M12 7V17" stroke="#a27b69" stroke-width="2"/><rect x="-5" y="11" width="10" height="6" rx="2" fill="#d6a3bb" stroke="#96718b"/><circle cx="11" cy="-2" r="2" fill="#efcfa5"/>';
+  case "dresser":return '<rect x="-13" y="-16" width="26" height="31" rx="3" fill="#cba882" stroke="#88685d" stroke-width="1.7"/><path d="M-11 -6H11M-11 4H11" stroke="#956e66" stroke-width="1.2"/><circle cx="0" cy="-11" r="1.5" fill="#fff0d4"/><circle cx="0" cy="-1" r="1.5" fill="#fff0d4"/><circle cx="0" cy="9" r="1.5" fill="#fff0d4"/>';
+  case "tv":return '<rect x="-17" y="-12" width="34" height="21" rx="3" fill="#2c2b3c" stroke="#786b8a" stroke-width="1.6"/><rect x="-14" y="-9" width="28" height="15" rx="1.5" fill="#6f92b1"/><path d="M-11 -6Q0 1 12 -5" stroke="#c3c0e6" stroke-width="1.5" fill="none"/><path d="M0 9V14M-8 15H8" stroke="#786b8a" stroke-width="2"/>';
+  case "robovac":return '<ellipse cy="5" rx="15" ry="9" fill="#3b3b47" stroke="#8f8592" stroke-width="2"/><ellipse cy="3" rx="10" ry="5" fill="#4e5260" stroke="#2f3138"/><circle cx="0" cy="2" r="2" fill="#afd5e2"/>';
+  case "fan":return '<path d="M0 -10V16M-10 16H10" stroke="#555865" stroke-width="2.8" stroke-linecap="round"/><circle cy="-10" r="10" fill="#ebebf0" stroke="#737486" stroke-width="1.5"/><path d="M0 -10Q-11 -20 -5 -6Q-1 -8 0 -10M0 -10Q10 -17 7 -5Q3 -6 0 -10M0 -10Q-2 0 -10 -7Q-8 -11 0 -10" fill="#9599aa" stroke="#777d8c" stroke-width=".6"/><circle cy="-10" r="2.3" fill="#657380"/>';
+  case "box_fan":return '<rect x="-14" y="-14" width="28" height="28" rx="3" fill="#f9f9f2" stroke="#969fac" stroke-width="1.6"/><circle r="10" fill="#e4ecf1" stroke="#aeb6c0"/><path d="M0 0Q-4 -10 -8 -4Q-6 1 0 0M0 0Q10 -4 4 -8Q-1 -6 0 0M0 0Q4 10 8 4Q6 -1 0 0M0 0Q-10 4 -4 8Q1 6 0 0" fill="#aebac8"/><circle r="2" fill="#7d8b9c"/>';
+  case "book_shelf":return '<rect x="-14" y="-16" width="28" height="32" rx="2" fill="#a27b61" stroke="#795b60" stroke-width="1.5"/><path d="M-13 -5H13M-13 6H13" stroke="#674c53" stroke-width="1.5"/><path d="M-10 -13V-6M-6 -15V-6M-1 -12V-6M5 -15V-6M10 -10V-6M-9 -3V5M-4 -4V5M2 -2V5M8 -4V5" stroke="#a7c6df" stroke-width="3"/><rect x="-8" y="8" width="10" height="5" fill="#e9b68e"/>';
+  case "beanbag":return '<path d="M-14 11Q-20 3 -7 -13Q-1 -21 7 -10Q19 5 13 13Q3 19 -10 15Z" fill="#4e4d5d" stroke="#8a778f" stroke-width="1.7"/><path d="M-8 -7Q0 -12 7 -1" stroke="#8c879c" stroke-width="2" fill="none"/>';
+  case "chair":return '<path d="M-11 -13H11V5H-11Z" fill="#b28a6f" stroke="#7d6261" stroke-width="1.4"/><path d="M-13 6H13V10H-13Z" fill="#d0b098" stroke="#7d6261"/><path d="M-10 10V17M10 10V17" stroke="#7d6261" stroke-width="2"/>';
+  default:return "";
+ }
+}
+
 function fixtureSvg(kind){
  const k=str(kind).toLowerCase();
+ const illustrated=lifelikeFurnitureSvg(k);if(illustrated)return illustrated;
  if(k==="stove")return '<rect x="-9" y="-8" width="18" height="17" rx="2" fill="#38354a"/>'+[-4,4].map(x=>[-3,5].map(y=>'<circle cx="'+x+'" cy="'+y+'" r="2.7" fill="#ffd2a5" stroke="#fff3eb" stroke-width=".65"/>').join("")).join("");
  if(k==="microwave")return '<rect x="-10" y="-7" width="20" height="14" rx="2" fill="#494154"/><rect x="-7" y="-4.5" width="12" height="9" rx="1" fill="#c1d6e4"/><circle cx="7.3" cy="-2" r="1.5" fill="#fdd8a1"/><circle cx="7.3" cy="2.4" r="1.5" fill="#fdd8a1"/>';
  if(k==="sink")return '<rect x="-11" y="-8" width="22" height="16" rx="2" fill="#bdcfdb" stroke="#7897ac" stroke-width=".7"/><rect x="-9" y="-6" width="8" height="12" rx="3" fill="#f8fbff"/><rect x="1" y="-6" width="8" height="12" rx="3" fill="#f8fbff"/><path d="M0 -11v5" stroke="#7196b4" stroke-width="2" stroke-linecap="round"/>';
@@ -228,20 +257,32 @@ function mappedFurniture(f,z,bounds){
   const x=bounds.x+bounds.width*px/100,y=bounds.y+bounds.height*py/100;
   const on="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
   return '<g class="hvm-map-fixture" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
-   '<title>'+h(p.label||"Mapped fixture")+'</title><rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/>'+fixtureSvg(p.kind)+'</g>';
+   '<title>'+h(p.label||"Mapped fixture")+'</title><rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+fixtureSvg(p.kind)+'</g></g>';
  }).join("");
 }
 function mappedRoomMiniature(f,z){
- const markers=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&p.mapX!=null&&p.mapY!=null&&Number.isFinite(Number(p.mapX))&&Number.isFinite(Number(p.mapY)));
- if(!markers.length)return "";
- const emojis={stove:"🍳",microwave:"♨️",sink:"🚰",dishwasher:"🫧",pantry:"🥫",fridge:"🧊",door:"🚪",counter:"🧽",coffee:"☕",cabinet:"🗄️",shelf:"🧺"};
- const points=markers.map(({p,i})=>{
-  const x=Math.max(7,Math.min(93,Number(p.mapX))),y=Math.max(9,Math.min(91,Number(p.mapY)));
-  return '<button type="button" class="hvm-mini-fixture" style="left:'+x.toFixed(1)+'%;top:'+y.toFixed(1)+'%" title="'+h(p.label||"Mapped item")+'" aria-label="Inspect '+h(p.label||"mapped item")+'" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')"><span aria-hidden="true">'+(emojis[str(p.kind)]||"✦")+'</span><small>'+h(str(p.short||p.label||"Item"))+'</small></button>';
- }).join("");
- return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong><small>Tap a fixture to see tasks and inventory</small></header><div class="hvm-mini-room-canvas">'+points+'</div><p class="muted small">Photo-based arrangement; spacing is illustrative, not a measured floor plan.</p></section>';
+ const all=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&str(p.label));
+ if(!all.length)return "";
+ const placed=all.filter(({p})=>p.showOnMap!==false&&p.mapX!=null&&p.mapY!=null&&Number.isFinite(Number(p.mapX))&&Number.isFinite(Number(p.mapY)));
+ const unplaced=all.filter(({p})=>p.showOnMap===false||p.mapX==null||p.mapY==null||!Number.isFinite(Number(p.mapX))||!Number.isFinite(Number(p.mapY)));
+ const picture=({p})=>'<svg viewBox="-19 -19 38 38" role="img" aria-label="'+h(p.label)+'"><g>'+fixtureSvg(p.kind)+'</g></svg>';
+ const action=({p,i},isPositioned)=>{
+  const position=isPositioned?' style="left:'+Math.max(9,Math.min(91,Number(p.mapX))).toFixed(1)+'%;top:'+Math.max(10,Math.min(90,Number(p.mapY))).toFixed(1)+'%"':'';
+  return '<button type="button" class="'+(isPositioned?'hvm-mini-fixture':'hvm-mini-landmark')+'"'+position+' title="'+h(p.label)+'" aria-label="Inspect '+h(p.label)+'" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')">'+picture({p})+'<small>'+h(str(p.short||p.label||"Item"))+'</small></button>';
+ };
+ const photoCount=arr(z.photos).filter(okPhoto).length;
+ const showPhotos=photoCount?'<button class="btn small" type="button" onclick="houseVisualRevealRoomPhotos()">View '+photoCount+' saved reference photo'+(photoCount===1?'':'s')+' ›</button>':"";
+ return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong>'+showPhotos+'</header>'+
+ (placed.length?'<div class="hvm-mini-room-canvas">'+placed.map(p=>action(p,true)).join("")+'</div>':"")+
+ (unplaced.length?'<div class="hvm-mini-unplaced"><b>Known furniture · exact spot not mapped</b><div>'+unplaced.map(p=>action(p,false)).join("")+'</div></div>':"")+
+ '<p class="muted small">From saved room photos and confirmed notes. Positions are approximate; unplaced items are listed separately.</p></section>';
 }
-
+window.houseVisualRevealRoomPhotos=function(){
+ const panel=document.querySelector(".hvm-zone-detail .hvm-room-extra");
+ if(panel)panel.open=true;
+ const photos=document.getElementById("hvmRoomPhotoGallery");
+ if(photos)photos.scrollIntoView({behavior:"smooth",block:"nearest"});
+};
 function roomSymbol(z,b){
  if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
  const label=str(z.name),bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
