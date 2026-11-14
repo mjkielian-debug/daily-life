@@ -454,9 +454,46 @@ function view(areaOverride,tasksOnly){
    return '<div class="lm-task '+(row.done?'is-done':'')+'"><span><b>'+h(row.title)+'</b>'+(item.detail?'<small>'+h(item.detail)+'</small>':'')+'</span><button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="'+(row.done?'unknown':'yes')+'">'+(row.done?'Undo':'Done')+'</button>'+(!row.done?'<button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="na">Not applicable</button>':'')+'</div>';
   };
   const openRows=rows.filter(x=>!x.done).map(rowHtml).join(""),doneRows=rows.filter(x=>x.done).map(rowHtml).join("");
+  // Existing tasks retain their real dates. No-date tasks are a visible
+  // anytime queue, not silently excluded from the avatar category.
+  const areaTaskRows=allTasks.filter(t=>lifeMapAreaForTask(t)===areaSelection);
+  const openAreaTasks=areaTaskRows.filter(t=>!t.done);
+  const anytimeTasks=openAreaTasks.filter(t=>!/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||"")));
+  const upcomingTasks=openAreaTasks.filter(t=>/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&String(t.date)>date).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const olderTasks=openAreaTasks.filter(t=>/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&String(t.date)<date).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const unsorted=areaSelection==="home"?allTasks.filter(t=>!t.done&&!lifeMapAreaForTask(t)):[];
+  const taskGroup=(title,items,subtitle)=>items.length?'<section class="lm-area-task-group"><div class="lm-area-section-heading"><b>'+h(title)+'</b><small>'+items.length+' task'+(items.length===1?"":"s")+(subtitle?' · '+h(subtitle):"")+'</small></div><div class="lm-list">'+items.map(taskRow).join("")+'</div></section>':"";
+  const historyTaskGroup=(title,items,summary)=>items.length?'<details class="lm-area-task-history"><summary>'+h(title)+' · '+items.length+'</summary>'+(summary?'<p>'+h(summary)+'</p>':"")+'<div class="lm-list">'+items.map(taskRow).join("")+'</div></details>':"";
+  const currentOpen=rows.filter(x=>!x.done).length;
+  const activeCount=currentOpen+anytimeTasks.length+upcomingTasks.length;
   const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
   const tracker=trackers[areaSelection];
-  return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar & map</button><h1 style="font-size:1.4rem;margin:0">'+h(areaTitles[areaSelection])+'</h1></div><section class="lm-inline-panel lm-area-page-content" style="margin-top:12px"><b style="display:block;font-size:1.2rem">'+stats.left+' left today</b><p style="margin:6px 0 12px">'+stats.done+' of '+stats.total+' done · '+h(date)+'</p>'+(openRows?'<div class="lm-list">'+openRows+'</div>':stats.total?'<p>Today’s list is complete.</p>':'<p>No actions are scheduled in this area today.</p>')+(doneRows?'<details style="margin-top:12px"><summary>Completed today · '+stats.done+'</summary><div class="lm-list">'+doneRows+'</div></details>':'')+'</section><details class="lm-area-shortcuts"><summary>History &amp; details</summary>'+(lastAreaDone?'<p>Last done · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':'')+(areaSelection==="spirituality"?(typeof spiritualitySourceLink==="function"&&typeof spiritualityCourseLesson==="function"?spiritualitySourceLink(spiritualityCourseLesson(date)):""):'<button type="button" class="lm-region" onclick="setView(&#39;'+tracker[0]+'&#39;)">'+h(tracker[1])+' ›</button>')+(areaSelection==="money"?moneyGoalPanel:"")+(typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"")+'</details></section>';
+  const todayGroup='<section class="lm-area-task-group" aria-label="Today and check-ins">'+
+    '<div class="lm-area-section-heading"><b>Today & check-ins</b><small>'+currentOpen+' to do · '+stats.done+' done</small></div>'+
+    (openRows?'<div class="lm-list">'+openRows+'</div>':'<p class="lm-area-clear">✓ Nothing waiting for today in this category.</p>')+'</section>';
+  const todayCompleted=doneRows?'<details class="lm-area-task-history"><summary>Completed today · '+stats.done+'</summary><div class="lm-list">'+doneRows+'</div></details>':"";
+  const detailLink=areaSelection==="spirituality"?
+    (typeof spiritualitySourceLink==="function"&&typeof spiritualityCourseLesson==="function"?spiritualitySourceLink(spiritualityCourseLesson(date)):""):
+    '<button type="button" class="lm-region" onclick="setView(&#39;'+tracker[0]+'&#39;)">'+h(tracker[1])+' ›</button>';
+  return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'">'+
+   '<header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar & house</button>'+
+   '<span class="lm-kicker">YOUR CATEGORY TASKS</span><h1>'+h(areaTitles[areaSelection])+'</h1>'+
+   '<div class="lm-area-task-lead"><span><strong>'+activeCount+'</strong><small>active today, anytime or upcoming</small></span>'+
+   '<button type="button" class="lm-area-add-task" onclick="lifeMapOpenAreaTask(&#39;'+h(areaSelection)+'&#39;)">＋ Add task here</button></div></header>'+
+   '<section class="lm-inline-panel lm-area-page-content lm-area-task-workspace" aria-label="'+h(areaTitles[areaSelection])+' task list">'+
+   todayGroup+
+   taskGroup("Anytime · no date",anytimeTasks,"Do these whenever they fit")+
+   taskGroup("Coming up",upcomingTasks,"Already scheduled")+
+   historyTaskGroup("Older unfinished tasks",olderTasks,"These were saved for earlier dates. They have not been silently rescheduled.")+
+   (unsorted.length?historyTaskGroup("Tasks needing a category",unsorted,"Open a task to change its category."):"")+
+   todayCompleted+
+   (lastAreaDone?'<p class="lm-area-lastdone"><b>Last done</b> · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':"")+
+   lifeMapTaskIdeasHtml(areaSelection)+
+   '<details class="lm-area-shortcuts"><summary>More tools & history</summary>'+detailLink+
+   (areaSelection==="money"?moneyGoalPanel:"")+
+   (typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"")+
+   '</details></section></section>';
+
  }
  const selectedRoomData=activeRoom&&typeof window.houseVisualRoomInlineData==="function"?window.houseVisualRoomInlineData(activeRoom.floor,activeRoom.id):null;
  const activeRoomPanel=selectedRoomData?'<section class="lm-inline-panel lm-inline-room" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(selectedRoomData.name)+' · room tasks</b><button type="button" class="lm-text-button" onclick="lifeMapCloseRoomInline()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+h(selectedRoomData.insights.last)+'</p><p>'+h(selectedRoomData.insights.declutter)+'</p>'+(selectedRoomData.wardrobes||"")+(selectedRoomData.tasks.length?'<div class="lm-list">'+selectedRoomData.tasks.map(task=>task&&task._lifeChore?choreRow(task):taskRow(task)).join("")+'</div>':'<p class="lm-muted">No room-specific tasks are mapped yet.</p>')+'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(\''+h(selectedRoomData.floor)+'\',\''+h(selectedRoomData.id)+'\')">＋ I organized one area</button></section>':"";
