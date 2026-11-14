@@ -415,3 +415,57 @@
 @media(prefers-reduced-motion:reduce){
  .hvm-bloom-circle,.hvm-mini-room-canvas.is-illustrated .hvm-mini-color-bloom{animation:none}
 }
+
+
+/* The user-approved 2026-11-14 detailed dollhouse illustration is the actual
+   first-floor interface, not an inspiration for generic schematic icons. */
+.hvm-approved-wrap{display:block;min-width:0;width:100%;margin:8px 0 16px}
+.hvm-approved-legacy{display:none}
+.hvm-approved-wrap.hvm-image-failed .hvm-approved-hero{display:none}
+.hvm-approved-wrap.hvm-image-failed .hvm-approved-legacy{display:block}
+.hvm-approved-hero{display:grid;gap:10px;padding:12px;border:2px solid #c591b5;border-radius:24px;
+ background:linear-gradient(145deg,#f7e1ff 0%,#fff0f8 47%,#ffead2 100%);
+ box-shadow:0 8px 18px #965e8e2b;max-width:620px;margin-inline:auto}
+.hvm-approved-heading{display:flex;align-items:center;justify-content:space-between;gap:8px 15px;flex-wrap:wrap;padding:3px 6px 0;color:#60365f}
+.hvm-approved-heading>div{display:grid;gap:3px}
+.hvm-approved-heading strong{font-family:Georgia,serif;font-size:clamp(1rem,4.5vw,1.35rem);letter-spacing:.01em;color:#572a55}
+.hvm-approved-eyebrow{color:#8a4d85;font-weight:900;font-size:.66rem;letter-spacing:.11em}
+.hvm-approved-heading small{font-size:.73rem;color:#765575;line-height:1.25}
+.hvm-approved-house-progress{display:flex;align-items:center;padding:0 4px;min-height:20px}
+.hvm-approved-scene{position:relative;overflow:hidden;border:3px solid #875a78;border-radius:23px;
+ background:#ead9da;box-shadow:0 0 0 4px #fff9ef,0 5px 11px #5b3d4d4b;isolation:isolate}
+.hvm-approved-svg{display:block;width:100%;height:auto;aspect-ratio:805/1040;overflow:hidden;touch-action:manipulation}
+.hvm-approved-muted-base{filter:saturate(.63) brightness(1.055)}
+.hvm-approved-color-reveal{pointer-events:none;filter:drop-shadow(0 0 3px #ffe8ed)}
+.hvm-approved-room{cursor:pointer;touch-action:manipulation}
+.hvm-approved-room path{transition:fill-opacity .12s,stroke .12s,stroke-width .12s}
+.hvm-approved-room:hover path,.hvm-approved-room:focus-visible path{stroke:#ffe9fa;stroke-width:10;stroke-opacity:.9;
+ fill:#fff9fd;fill-opacity:.1;filter:drop-shadow(0 0 5px #f6b4ea)}
+.hvm-approved-room:focus-visible{outline:none}
+.hvm-approved-room:active path{fill:#fff;fill-opacity:.2;stroke:#f9c0f0;stroke-width:12}
+.hvm-approved-count{filter:drop-shadow(0 2px 3px #6b466566)}
+.hvm-approved-caption{margin:3px 5px 0;color:#6a4a69;font-size:.76rem;line-height:1.45}
+.hvm-approved-room-zoom{display:grid;gap:7px;padding:10px;border:2px solid #c89bb9;border-radius:18px;
+ background:linear-gradient(140deg,#fff2fb,#f8edff,#fff2e4)}
+.hvm-approved-room-zoom-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#6b4568}
+.hvm-approved-room-zoom-header strong{font-size:.94rem}
+.hvm-approved-room-zoom-header span{font-size:.78rem;font-weight:850;background:#ffe4f5;border-radius:999px;padding:5px 9px}
+.hvm-approved-room-zoom svg{width:100%;height:auto;display:block;max-height:560px;border:2px solid #a97d90;border-radius:13px;background:#eee4e1;
+ box-shadow:0 4px 8px #704c6635}
+.hvm-approved-room-zoom p{font-size:.75rem;margin:2px 3px;color:#785d70;line-height:1.4}
+.hvm-approved-object-choices{display:grid;gap:7px;padding:9px 10px;background:#fffafc;
+ border:1px solid #e6c7da;border-radius:15px}
+.hvm-approved-object-choices>strong{color:#633f65;font-size:.84rem}
+.hvm-approved-object-strip{display:flex;gap:7px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity}
+.hvm-approved-object-strip>button{flex:0 0 auto;scroll-snap-align:start;min-height:40px;padding:9px 11px;border-radius:13px;
+ border:1.5px solid #bb85ac;background:linear-gradient(125deg,#fff6fb,#fae3f5);
+ color:#6b4063;font-weight:850;font-size:.78rem;cursor:pointer}
+.hvm-approved-object-strip>button:hover,.hvm-approved-object-strip>button:focus-visible{
+ outline:2px solid #daacd0;outline-offset:1px;background:#ffe0f0}
+@media(max-width:420px){
+ .hvm-approved-hero{padding:8px;gap:8px;border-radius:18px}
+ .hvm-approved-scene{border-radius:16px;border-width:2px}
+ .hvm-approved-heading strong{font-size:1.05rem}
+ .hvm-approved-count{filter:drop-shadow(0 1px 2px #6b466566)}
+}
+@media(prefers-reduced-motion:reduce){.hvm-approved-room path{transition:none}}
