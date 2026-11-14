@@ -514,7 +514,8 @@ function mapSketch(f,m){
     str(z.id)==="stairs_to_third"&&f==="Second floor"?"↑ 3rd":"";
   const isStair=!!stairLabel||/\bstairs?\b|\blanding\b/i.test(str(z.name)+" "+str(z.id));
   const furniture=mappedFurniture(f,z,bounds);
-  const hasSymbol=!furniture&&!!roomSymbol(z,bounds,f);
+  const savedRoomMiniature=inlineRoomPreview(f,z,bounds);
+  const hasSymbol=!furniture&&!savedRoomMiniature&&!!roomSymbol(z,bounds,f);
   const labelY=isStair&&bounds?
     (f==="First floor"?bounds.y+bounds.height-7:bounds.y+16):
     furniture&&bounds?bounds.y+bounds.height-8:
@@ -538,7 +539,7 @@ function mapSketch(f,m){
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
    '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+accents+taskOverlay+declutterOverlay+
-   floorGraphic+(furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
+   floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
   !arr(m.zones).some(z=>z&&z.linkedFloor===a.targetFloor&&/stairs|landing/i.test(str(z.name)+" "+str(z.id)))).map(a=>{
