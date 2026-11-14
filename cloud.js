@@ -676,7 +676,17 @@ function cloudApplyAssistantPatches(remoteState){
       if(!incoming.id)incoming.id=recordId;
       if(patch.fields&&typeof patch.fields==="object")Object.assign(incoming,structuredClone(patch.fields));
       if(index<0)rows.push(incoming);
-      else Object.assign(rows[index],incoming);
+      else if(collection==="spiritualityPracticeLogs"&&rows[index]?.date===incoming.date){
+        // Patch today's confirmed lesson without clobbering tarot, meditation,
+        // rituals, or the existing record ID saved on this phone.
+        const lessonFields={...incoming};
+        for(const key of ["id","tarot","stillness","ritual"])delete lessonFields[key];
+        if(rows[index].guidedPractice){
+          for(const key of Object.keys(lessonFields))if(key.startsWith("guidedPractice"))delete lessonFields[key];
+        }
+        if(lessonFields.reading===true)rows[index].reading=true;
+        Object.assign(rows[index],lessonFields);
+      }else Object.assign(rows[index],incoming);
     }else{
       if(index<0)continue;
       Object.assign(rows[index],structuredClone(patch.fields));
@@ -784,7 +794,12 @@ async function cloudUseRemoteSnapshot(snapshot){
     if(!local?.date||!local.guidedPractice)continue;
     const remote=state.spiritualityPracticeLogs.find(x=>x.date===local.date);
     if(!remote)state.spiritualityPracticeLogs.push({...local});
-    else if(!remote.guidedPractice){for(const key of Object.keys(local))if(key.startsWith("guidedPractice")||key==="reading")remote[key]=local[key]}
+    else {
+      for(const key of ["reading","tarot","stillness","ritual"])if(local[key]===true)remote[key]=true;
+      if(!remote.guidedPractice&&local.guidedPractice){
+        for(const key of Object.keys(local))if(key.startsWith("guidedPractice"))remote[key]=local[key];
+      }
+    }
   }
   const reviews=Array.isArray(localState?.dailyReviews)?localState.dailyReviews:[];
   if(!Array.isArray(state.dailyReviews))state.dailyReviews=[];
