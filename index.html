@@ -178,7 +178,7 @@ dialog,
 <link rel="stylesheet" href="readability-fix.css?v=20261015-rainbow-cleanup2">
 
 <link rel="stylesheet" href="photo-inbox.css?v=20261016-guided27">
-<link rel="stylesheet" href="house-visual-map.css?v=20261114-map-polish2">
+<link rel="stylesheet" href="house-visual-map.css?v=20261114-room-routines1">
 <link rel="stylesheet" href="visual-hubs.css?v=20261027-profile-rail-fix1">
 <link rel="stylesheet" href="chat-checkin.css?v=20261014-review4">
 <link rel="stylesheet" href="chase-balance.css?v=20261014-chase1">
@@ -316,7 +316,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261114-map-polish2";
+const APP_BUILD="20261114-room-routines1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2290,6 +2290,8 @@ function ensureBirthdayEvents(){
 }
 function ensureToday(){
   applyConferencePrepCleanup();
+  for(const task of state.tasks||[]){if(/empty.*bathroom trash/i.test(task.title||'')){task.itineraryMinutes=2;task.notes=String(task.notes||'').replace(/About 10 minutes/gi,'About 2 minutes')}}
+  if(typeof window.houseVisualEnsureDailyRoutines==='function')window.houseVisualEnsureDailyRoutines(ymd());
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay();
   // Remove generated broad daily-reset tasks that are now represented by the
   // per-child family chore rows (clean room, homework, read 20 min).
@@ -2318,11 +2320,13 @@ function ensureToday(){
     ["Empty bathroom trash","Empty one bathroom trash can and replace the liner if needed."]
   ];
   const [householdTitle,householdNotes]=householdChores[wd];
+  const householdMinutes=[2,3,5,2,1,3,2][wd];
   const generatedChore=state.tasks.find(t=>t.date===date&&t.generated==="daily-household-chore");
   if(generatedChore&&!generatedChore.done){
     generatedChore.title=householdTitle;
     generatedChore.category="home";
-    generatedChore.notes=householdNotes+" About 10 minutes. This daily task resets tomorrow.";
+    generatedChore.notes=householdNotes+" About "+householdMinutes+" minutes. This daily task resets tomorrow.";
+    generatedChore.itineraryMinutes=householdMinutes;
     generatedChore.order=70;
     generatedChore.dailyReset=true;
   }
@@ -2331,7 +2335,7 @@ function ensureToday(){
     (["home","household","chore"].includes(String(t.category||"").toLowerCase())||
      /\b(clean|tidy|wipe|sweep|laundry|dishes|dish|vacuum|declutter|chore|reset|organize|bathroom|toilet|trash|mail|paper|fridge|microwave|restock)\b/i.test(String(t.title||"")+" "+String(t.notes||""))));
   if(!personalHomeTask&&!generatedChore){
-    state.tasks.push({id:uid(),date,title:householdTitle,category:"home",notes:householdNotes+" About 10 minutes. This daily task resets tomorrow.",done:false,order:70,generated:"daily-household-chore",dailyReset:true});
+    state.tasks.push({id:uid(),date,title:householdTitle,category:"home",notes:householdNotes+" About "+householdMinutes+" minutes. This daily task resets tomorrow.",done:false,itineraryMinutes:householdMinutes,order:70,generated:"daily-household-chore",dailyReset:true});
   }
   const addHomeRoutine=(title,category,notes,order,extra={})=>{
     const semanticallySame=title==="Scoop litter boxes"&&state.tasks.some(t=>t.date===date&&/\blitter\b/i.test(String(t.title||"")+" "+String(t.notes||"")));
@@ -9788,7 +9792,7 @@ async function registerAppWorker(){
 <script src="paper-studio.js?v=20261024-school-growth1"></script>
 <script src="paper-import.js?v=20261015-school-insights7"></script>
 <script src="second-floor-miniatures.js?v=20261016-mini1"></script>
-<script src="house-visual-map.js?v=20261114-map-polish2"></script>
+<script src="house-visual-map.js?v=20261114-room-routines1"></script>
 <script src="dolly-room-model.js?v=20261019-bedding-vanity-details4"></script>
 <script src="photo-inbox.js?v=20261016-guided22"></script>
 <script src="home-area-projects.js?v=20261015-followthrough3"></script>
