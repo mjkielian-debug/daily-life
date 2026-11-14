@@ -203,6 +203,45 @@ function illustratedLayout(f,m){
   zones:zones.map(z=>okPath(z.path)?z:(stairs.includes(z)?{...z,path:"M110 78H270V195H110Z",cx:190,cy:136}:z)),
   layoutNotice:"Only the stair arrival is confirmed. The dashed area is unmapped; the stair symbol is diagrammatic and not a measured location."};
 }
+
+/* Photo-grounded fixtures are supplied by the owner's private floor-map record.
+   Keep the names, positions and photos out of public source. */
+function fixtureSvg(kind){
+ const k=str(kind).toLowerCase();
+ if(k==="stove")return '<rect x="-9" y="-8" width="18" height="17" rx="2" fill="#38354a"/>'+[-4,4].map(x=>[-3,5].map(y=>'<circle cx="'+x+'" cy="'+y+'" r="2.7" fill="#ffd2a5" stroke="#fff3eb" stroke-width=".65"/>').join("")).join("");
+ if(k==="microwave")return '<rect x="-10" y="-7" width="20" height="14" rx="2" fill="#494154"/><rect x="-7" y="-4.5" width="12" height="9" rx="1" fill="#c1d6e4"/><circle cx="7.3" cy="-2" r="1.5" fill="#fdd8a1"/><circle cx="7.3" cy="2.4" r="1.5" fill="#fdd8a1"/>';
+ if(k==="sink")return '<rect x="-11" y="-8" width="22" height="16" rx="2" fill="#bdcfdb" stroke="#7897ac" stroke-width=".7"/><rect x="-9" y="-6" width="8" height="12" rx="3" fill="#f8fbff"/><rect x="1" y="-6" width="8" height="12" rx="3" fill="#f8fbff"/><path d="M0 -11v5" stroke="#7196b4" stroke-width="2" stroke-linecap="round"/>';
+ if(k==="dishwasher")return '<rect x="-9" y="-10" width="18" height="20" rx="2" fill="#f5ebf2" stroke="#aa819b"/><rect x="-6" y="-5" width="12" height="11" rx="3" fill="#b5deed"/><path d="M-5 -8h8" stroke="#9e7993" stroke-width="1.5"/>';
+ if(k==="pantry"||k==="cabinet")return '<rect x="-10" y="-10" width="20" height="20" rx="2" fill="#c99677" stroke="#885e60"/><path d="M-9 -3h18M-9 4h18M0 -9v18" stroke="#fff1d0" stroke-width="1.5"/>';
+ if(k==="fridge")return '<rect x="-9" y="-11" width="18" height="22" rx="2.5" fill="#444354" stroke="#b8a1b8" stroke-width="1.3"/><path d="M-9 -2h18M6 -8v4M6 2v6" stroke="#e8e1f1" stroke-width="1.5" stroke-linecap="round"/>';
+ if(k==="door")return '<path d="M-8 10V-10H8V10" fill="#f9e5bd" stroke="#ac7e76" stroke-width="2"/><path d="M-7 8L8 -8" stroke="#cb9b8e" stroke-width="1.5" stroke-dasharray="2 2"/><circle cx="5" cy="1" r="1.7" fill="#8a6d8e"/>';
+ if(k==="counter")return '<rect x="-11" y="-7" width="22" height="14" rx="3" fill="#efc7ac" stroke="#b88786" stroke-width="1"/><path d="M-8 1H8" stroke="#fff2db" stroke-width="2"/>';
+ if(k==="coffee")return '<circle r="9" fill="#e7b2cf"/><path d="M-5 -5h9v9h-9zM4 -3h3q4 0 0 5H4" fill="#faf5ec" stroke="#836479" stroke-width="1.3"/>';
+ if(k==="shelf")return '<path d="M-9 -9V9M9 -9V9M-9 -3H9M-9 4H9" stroke="#99717d" stroke-width="2"/><circle cx="-4" cy="-6" r="2" fill="#f0b891"/><rect x="2" y="0" width="4" height="4" rx="1" fill="#abd6c7"/>';
+ return '<circle r="7" fill="#eed0e7" stroke="#a4759e"/><path d="M0 -5V5M-5 0H5" stroke="#fff" stroke-width="1.6"/>';
+}
+function mappedFurniture(f,z,bounds){
+ if(!bounds||bounds.width<55||bounds.height<55)return "";
+ return arr(z.markers).map((p,i)=>{
+  const px=Number(p?.mapX),py=Number(p?.mapY);
+  if(p?.showOnMap===false||p?.mapX==null||p?.mapY==null||!Number.isFinite(px)||!Number.isFinite(py)||px<4||px>96||py<4||py>96)return "";
+  const x=bounds.x+bounds.width*px/100,y=bounds.y+bounds.height*py/100;
+  const on="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
+  return '<g class="hvm-map-fixture" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
+   '<title>'+h(p.label||"Mapped fixture")+'</title><rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/>'+fixtureSvg(p.kind)+'</g>';
+ }).join("");
+}
+function mappedRoomMiniature(f,z){
+ const markers=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&p.mapX!=null&&p.mapY!=null&&Number.isFinite(Number(p.mapX))&&Number.isFinite(Number(p.mapY)));
+ if(!markers.length)return "";
+ const emojis={stove:"🍳",microwave:"♨️",sink:"🚰",dishwasher:"🫧",pantry:"🥫",fridge:"🧊",door:"🚪",counter:"🧽",coffee:"☕",cabinet:"🗄️",shelf:"🧺"};
+ const points=markers.map(({p,i})=>{
+  const x=Math.max(7,Math.min(93,Number(p.mapX))),y=Math.max(9,Math.min(91,Number(p.mapY)));
+  return '<button type="button" class="hvm-mini-fixture" style="left:'+x.toFixed(1)+'%;top:'+y.toFixed(1)+'%" title="'+h(p.label||"Mapped item")+'" aria-label="Inspect '+h(p.label||"mapped item")+'" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')"><span aria-hidden="true">'+(emojis[str(p.kind)]||"✦")+'</span><small>'+h(str(p.short||p.label||"Item"))+'</small></button>';
+ }).join("");
+ return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong><small>Tap a fixture to see tasks and inventory</small></header><div class="hvm-mini-room-canvas">'+points+'</div><p class="muted small">Photo-based arrangement; spacing is illustrative, not a measured floor plan.</p></section>';
+}
+
 function roomSymbol(z,b){
  if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
  const label=str(z.name),bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
@@ -306,9 +345,11 @@ function mapSketch(f,m){
     str(z.id)==="stairs"&&f==="Second floor"?"↓ 1st":
     str(z.id)==="stairs_to_third"&&f==="Second floor"?"↑ 3rd":"";
   const isStair=!!stairLabel||/\bstairs?\b|\blanding\b/i.test(str(z.name)+" "+str(z.id));
-  const hasSymbol=!!roomSymbol(z,bounds);
+  const furniture=mappedFurniture(f,z,bounds);
+  const hasSymbol=!furniture&&!!roomSymbol(z,bounds);
   const labelY=isStair&&bounds?
     (f==="First floor"?bounds.y+bounds.height-7:bounds.y+16):
+    furniture&&bounds?bounds.y+bounds.height-8:
     hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const displayLabel=stairLabel|| (f==="First floor"&&/basement/i.test(str(z.id)+" "+str(z.name))?"Basement stairs":(z.short||z.name));
   const sourceColor=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
@@ -328,7 +369,7 @@ function mapSketch(f,m){
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
    '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+taskOverlay+declutterOverlay+
-   floorGraphic+roomSymbol(z,bounds)+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
+   floorGraphic+(furniture||roomSymbol(z,bounds))+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
   !arr(m.zones).some(z=>z&&z.linkedFloor===a.targetFloor&&/stairs|landing/i.test(str(z.name)+" "+str(z.id)))).map(a=>{
@@ -1216,6 +1257,7 @@ window.houseVisualOpenZone=function(f,id){
  '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 
+ const miniRoom=mappedRoomMiniature(f,z);
  const spots=arr(z.markers).map((p,i)=>'<button type="button" class="hvm-object-row" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')"><span>✦</span><span><b>'+h(p.label||"Mapped object")+'</b><small>'+h(p.status||"Tap to inspect this mapped object")+'</small></span><span>›</span></button>').join("");
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),zoneIndex=zones.findIndex(item=>item.id===id);
  const tour='<section class="hvm-tour-nav" aria-label="Room tour"><div><b>Room tour</b><small>'+(zoneIndex+1)+' of '+zones.length+' rooms · tap mapped items to inspect them</small></div><div class="hvm-detail-actions"><button class="btn" type="button" '+(zoneIndex<=0?'disabled':'')+' onclick="houseVisualTourStep(&#39;'+f+'&#39;,&#39;'+id+'&#39;,-1)">‹ Previous room</button><button class="btn" type="button" '+(zoneIndex<0||zoneIndex>=zones.length-1?'disabled':'')+' onclick="houseVisualTourStep(&#39;'+f+'&#39;,&#39;'+id+'&#39;,1)">Next room ›</button></div></section>';
@@ -1230,7 +1272,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+progress+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+progress+miniRoom+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
