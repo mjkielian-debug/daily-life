@@ -56,9 +56,22 @@ function lifeMapAreaForTask(task){
  const category=String(task&&task.category||"").toLowerCase();
  const text=title+" "+category;
  const child=String(task&&task.child||"").trim();
+ // Respect explicit category labels, but keep room-linked chores inside Home.
+ const categoryAreas={
+  household:"home",cleaning:"home",inventory:"home",house:"home",
+  people:"people",family:"people",kids:"people",school:"people",pets:"people",childcare:"people",
+  housing:"money",financial:"money",finances:"money",budget:"money",
+  plants:"hobbies",garden:"hobbies",reading:"hobbies",library:"hobbies",crafts:"hobbies",
+  health:"body",wellness:"body",fitness:"body",selfcare:"body",
+  work:"work",career:"work",ups:"work",
+  transport:"car",vehicle:"car",driving:"car",auto:"car",
+  hobbies:"hobbies",spirituality:"spirituality",mind:"mind",money:"money",car:"car",body:"body",home:"home"
+ };
  // Household work belongs to the house map even when a child is responsible for it.
  if(category==="home"||category==="household"||category==="cleaning"||task&&(task.homeMapFloor||task.homeMapZoneId||task.homeRoomId||task.roomId)||/\b(housework|household|chores?|room reset|room cleanup|clean room|cleaning|dishes|dishwashing|laundry|counters?|countertops?|floors?|vacuum|mop|sweep|litter box|trash|garbage|declutter|organize|tidy up|house reset|kitchen|bathroom|playroom|living room|bedroom)\b/i.test(title))return "home";
  if(child&&/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text))return "people";
+ if(category==="library"&&child)return "people";
+ if(categoryAreas[category])return categoryAreas[category];
  if(/mind|mental|journal|therapy|rest|breath|quiet/i.test(text)||category==="mind"||category==="self-care")return "mind";
  if(/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text)||category==="body"||category==="health")return "body";
  if(/spiritual|tarot|ritual|meditat|affirmation/i.test(text)||category==="spirituality")return "spirituality";
@@ -85,6 +98,43 @@ function lifeMapAreaForReview(item){
  if(item.kind==="routine")return "people";
  return lifeMapAreaForTask({title:item.label||"",category:item.group||""});
 }
+
+// Starter suggestions are *not* counted as chores or progress until added.
+// They give each category useful next steps without inventing dates or completions.
+const lifeMapTaskIdeas={
+ home:[["Reset one kitchen counter","home"],["Put away one load of laundry","home"]],
+ mind:[["Check in with my feelings for five minutes","mind"],["Make time for a short rest break","mind"]],
+ body:[["Refill my water bottle before leaving work","body"],["Check whether I took my vitamins","body"]],
+ people:[["Review school papers when the kids are home","family"],["Read with the kids for 20 minutes","family"]],
+ spirituality:[["Explore today's seasonal spiritual lesson","spirituality"],["Choose one Yule tradition to try with the kids","spirituality"]],
+ hobbies:[["Practice Spanish for 15 minutes","hobbies"],["Crochet for 15 minutes","hobbies"]],
+ money:[["Review upcoming bills and due dates","money"],["Check savings progress toward buying a home","money"]],
+ car:[["Check on the Volvo oil change","car"],["Check tire pressure","car"]],
+ work:[["Record my UPS hours and SSD delivery mileage","work"],["Confirm next week's UPS start times","work"]]
+};
+const taskIdeaKey=title=>String(title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+window.lifeMapAddTaskIdea=async function(area,index){
+ const ideas=lifeMapTaskIdeas[area]||[],idea=ideas[Number(index)];
+ if(!idea||!state||!Array.isArray(state.tasks))return;
+ const found=state.tasks.find(t=>taskIdeaKey(t.title)===taskIdeaKey(idea[0])&&!t.retiredAt);
+ if(found){if(typeof openTask==="function")openTask("",found.id);return}
+ if(typeof uid!=="function"||typeof save!=="function")return;
+ state.tasks.push({id:uid(),title:idea[0],category:idea[1],date:"",child:"",done:false,notes:"Optional task added from "+area+" category",order:100});
+ await save();
+ if(typeof render==="function")render();
+};
+window.lifeMapOpenAreaTask=function(area){
+ if(!lifeMapTaskIdeas[area]||typeof openTask!=="function")return;
+ openTask("", "",false,null,area);
+};
+function lifeMapTaskIdeasHtml(area){
+ const ideas=lifeMapTaskIdeas[area]||[],existing=new Set(list(state&&state.tasks).filter(t=>!t.retiredAt).map(t=>taskIdeaKey(t.title)));
+ const available=ideas.map((item,i)=>({item,i})).filter(({item})=>!existing.has(taskIdeaKey(item[0])));
+ if(!available.length)return "";
+ return '<section class="lm-area-ideas" aria-label="Suggested tasks"><div class="lm-area-section-heading"><b>More ideas for this category</b><small>Optional · not on your list until added</small></div>'+
+  available.map(({item,i})=>'<div class="lm-area-idea"><span>✦ <b>'+h(item[0])+'</b></span><button type="button" onclick="lifeMapAddTaskIdea(&#39;'+h(area)+'&#39;,'+i+')">＋ Add</button></div>').join("")+'</section>';
+}
+
 function lifeMapNormalizeTaskTitle(value){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
 window.lifeMapTaskLastDoneLabel=function(task){
  if(!task)return "";
@@ -318,7 +368,7 @@ function view(areaOverride,tasksOnly){
  }
  const avatarMarks=[
   avatarMark("Mind and self-care","✿",47,99,dailyAreaStats.mind.pct,"#c89ad7","mind",dailyAreaStats.mind.left),
-  avatarMark("Spirituality","☾",174,78,dailyAreaStats.spirituality.pct,"#f2b85b","spirituality",dailyAreaStats.spirituality.left),
+  avatarMark("Spirituality","✦",174,78,dailyAreaStats.spirituality.pct,"#f2b85b","spirituality",dailyAreaStats.spirituality.left),
   avatarMark("Body & health","♡",111,205,dailyAreaStats.body.pct,"#f2ae85","body",dailyAreaStats.body.left),
   avatarMark("Family and kids","♥",43,274,dailyAreaStats.people.pct,"#e98cb0","people",dailyAreaStats.people.left),
   avatarMark("Hobbies and projects","✎",177,274,dailyAreaStats.hobbies.pct,"#82c6a4","hobbies",dailyAreaStats.hobbies.left),
