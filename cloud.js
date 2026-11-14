@@ -664,7 +664,10 @@ function cloudApplyAssistantPatches(remoteState){
     const collection=String(patch.collection),op=String(patch.operation||"update");
     if(!Array.isArray(state[collection]))continue;
     const rows=state[collection],recordId=String(patch.recordId||patch.record?.id||"");
-    const index=rows.findIndex(item=>String(item?.id||"")===recordId);
+    let index=rows.findIndex(item=>String(item?.id||"")===recordId);
+    if(collection==="spiritualityPracticeLogs"&&op==="upsert"&&patch.record?.date&&index<0){
+      index=rows.findIndex(item=>item?.date===patch.record.date);
+    }
     if(op==="delete"){
       if(index<0)continue;
       rows.splice(index,1);
@@ -773,6 +776,15 @@ async function cloudUseRemoteSnapshot(snapshot){
         if(local.completedAt)row.completedAt=local.completedAt;
       }
     }
+  }
+  // Never discard a locally completed spiritual class when a cloud snapshot
+  // has not received its record yet.
+  if(!Array.isArray(state.spiritualityPracticeLogs))state.spiritualityPracticeLogs=[];
+  for(const local of Array.isArray(localState?.spiritualityPracticeLogs)?localState.spiritualityPracticeLogs:[]){
+    if(!local?.date||!local.guidedPractice)continue;
+    const remote=state.spiritualityPracticeLogs.find(x=>x.date===local.date);
+    if(!remote)state.spiritualityPracticeLogs.push({...local});
+    else if(!remote.guidedPractice){for(const key of Object.keys(local))if(key.startsWith("guidedPractice")||key==="reading")remote[key]=local[key]}
   }
   const reviews=Array.isArray(localState?.dailyReviews)?localState.dailyReviews:[];
   if(!Array.isArray(state.dailyReviews))state.dailyReviews=[];
