@@ -497,6 +497,34 @@ function photoRoomAccents(f,z,b){
  return "";
 }
 
+
+// Room colors behave like the avatar: uncompleted areas stay softly muted.
+// Only actual saved, room-linked tasks count; an empty room is not 100% done.
+function roomTaskColorStats(f,z,room){
+ const byId=new Map();
+ for(const task of trackedRoomTasks(f,z,room)){
+  if(task&&task.id!=null)byId.set((task._lifeChore?"chore:":"task:")+String(task.id),task);
+ }
+ const rows=[...byId.values()],total=rows.length,done=rows.filter(x=>x.done).length;
+ return {total,done,pct:total?Math.max(0,Math.min(100,Math.round(done*100/total))):0};
+}
+function roomColorBloomSvg(f,z,bounds,fill,progress){
+ if(!bounds||!progress.total||progress.done===0)return "";
+ const pct=progress.done/progress.total;
+ const cx=Number.isFinite(Number(z.cx))&&Number(z.cx)>=bounds.x&&Number(z.cx)<=bounds.x+bounds.width?Number(z.cx):bounds.cx;
+ const cy=Number.isFinite(Number(z.cy))&&Number(z.cy)>=bounds.y&&Number(z.cy)<=bounds.y+bounds.height?Number(z.cy):bounds.cy;
+ const dx=Math.max(Math.abs(cx-bounds.x),Math.abs(cx-(bounds.x+bounds.width)));
+ const dy=Math.max(Math.abs(cy-bounds.y),Math.abs(cy-(bounds.y+bounds.height)));
+ const maxRadius=Math.hypot(dx,dy)+2;
+ // Area changes should feel roughly proportional even in a long, narrow room.
+ const radius=(maxRadius*Math.sqrt(pct)).toFixed(2);
+ const id="hvm-room-bloom-"+String(f).replace(/[^a-z0-9]/gi,"").toLowerCase()+"-"+String(z.id).replace(/[^a-z0-9]/gi,"").toLowerCase();
+ return '<g class="hvm-room-color-bloom" pointer-events="none" aria-hidden="true">'+
+  '<defs><clipPath id="'+id+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
+  '<g clip-path="url(#'+id+')"><circle class="hvm-bloom-circle" cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="'+radius+'" fill="'+h(fill)+'" fill-opacity=".82"/>'+
+  '<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="'+radius+'" fill="none" stroke="#fff7ec" stroke-opacity=".48" stroke-width="3"/></g></g>';
+}
+
 function mapSketch(f,m){
  m=illustratedLayout(f,m);
  if(f==="First floor")m=joinedFloorDisplay(m);
@@ -526,20 +554,23 @@ function mapSketch(f,m){
   const texture=/bath|kitchen/i.test(str(z.name))?"hvm-floor-tile":(f==="First floor"?"hvm-floor-wood":"hvm-floor-linen");
   const floorTexture=isStair?"":'<path d="'+h(z.path)+'" fill="url(#'+texture+')" pointer-events="none"/>';
   const accents=photoRoomAccents(f,z,bounds);
-  const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
-    roomTasks=trackedRoomTasks(f,z,room).filter(t=>{const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];return !t.date||dates.includes(String(t.date))}),taskDone=roomTasks.filter(t=>t.done).length,
-    taskTint=taskDone?Math.min(.38,.08+Math.log2(taskDone+1)*.09):0,
-    declutterTint=organized?Math.min(.42,.08+Math.log2(organized+1)*.09):0,
-    pendingReviewCount=reviewRows.filter(item=>roomTasks.some(task=>String(task.id)===String(item.key))).length;
-  const taskOverlay=taskDone?'<path class="hvm-task-progress-wash" d="'+h(z.path)+'" fill="#9fd8bd" fill-opacity="'+taskTint.toFixed(2)+'" pointer-events="none"/>':"";
+  const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),roomTasks=trackedRoomTasks(f,z,room);
+  const taskProgress=roomTaskColorStats(f,z,room);
+  const taskOverlay=roomColorBloomSvg(f,z,bounds,sourceColor,taskProgress);
+  const declutterTint=organized?Math.min(.15,.04+Math.log2(organized+1)*.03):0;
   const declutterOverlay=organized?'<path class="hvm-declutter-wash" d="'+h(z.path)+'" fill="#ef9fc2" fill-opacity="'+declutterTint.toFixed(2)+'" pointer-events="none"/>':"";
+  const pendingReviewCount=reviewRows.filter(item=>roomTasks.some(task=>String(task.id)===String(item.key))).length;
+  const taskCountLabel=taskProgress.total?taskProgress.done+" of "+taskProgress.total+" room tasks done":"Room tasks not yet recorded";
+  const taskCountBadge=taskProgress.total&&!isStair&&bounds&&bounds.width>85&&bounds.height>77?
+    '<g class="hvm-room-progress-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-56).toFixed(1)+'" y="'+(bounds.y+21).toFixed(1)+'" width="49" height="18" rx="9" fill="#fff9f4" fill-opacity=".94" stroke="'+h(sourceColor)+'" stroke-width="1.1"/>'+
+    '<text x="'+(bounds.x+bounds.width-31.5).toFixed(1)+'" y="'+(bounds.y+33).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="900" fill="#5b3c63">✓ '+taskProgress.done+'/'+taskProgress.total+'</text></g>':"";
   const reviewBadge=pendingReviewCount&&bounds?'<g class="hvm-review-badge" pointer-events="none"><circle cx="'+(bounds.x+12).toFixed(1)+'" cy="'+(bounds.y+12).toFixed(1)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(bounds.x+12).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+Math.min(pendingReviewCount,9)+(pendingReviewCount>9?"+":"")+'</text></g>':"";
   const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?'<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
-   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
+   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+' · '+h(taskCountLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
    '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+accents+taskOverlay+declutterOverlay+
-   floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
+   floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+taskCountBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
   !arr(m.zones).some(z=>z&&z.linkedFloor===a.targetFloor&&/stairs|landing/i.test(str(z.name)+" "+str(z.id)))).map(a=>{
@@ -554,7 +585,7 @@ function mapSketch(f,m){
  const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '':"";
- return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
+ return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Room colors grow from the center as saved tasks are completed. Tap a room for its tasks.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
