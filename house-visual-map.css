@@ -341,3 +341,14 @@
 .hvm-mini-landmark:hover,.hvm-mini-landmark:focus-visible{border-color:#8b558e;background:#ffe7f3;outline:2px solid #f0c7e5}
 .hvm-mini-landmark:active{transform:scale(.96)}
 @media(max-width:380px){.hvm-mini-fixture{width:65px;min-height:62px}.hvm-mini-fixture svg{width:35px;height:35px}.hvm-mini-unplaced>div{grid-template-columns:repeat(auto-fit,minmax(76px,1fr))}}
+
+
+/* The photo-reviewed rooms display the actual furniture silhouette, not a generic icon tile. */
+.hvm-map-fixture-illustrated>rect,
+.hvm-map-fixture-illustrated:hover>rect,
+.hvm-map-fixture-illustrated:focus-visible>rect,
+.hvm-map-fixture-illustrated:active>rect{fill:transparent;stroke:none;filter:none}
+.hvm-map-fixture-illustrated>g{filter:drop-shadow(0 2px 1.5px #66526b70)}
+.hvm-map-fixture-illustrated:hover>g,
+.hvm-map-fixture-illustrated:focus-visible>g{filter:drop-shadow(0 3px 3px #9a5981b3) brightness(1.1)}
+.hvm-map-fixture-illustrated:focus-visible{outline:2px solid #fff;outline-offset:3px}
