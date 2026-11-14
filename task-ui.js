@@ -62,6 +62,14 @@
   }
   function taskUiRow(t){
     const meta=taskUiMeta(t),note=taskUiSpecificNote(t),displayTitle=taskUiSpecificTitle(t);
+    if(typeof window.isParentingSkillTask==="function"&&window.isParentingSkillTask(t)){
+      return '<div class="task-ui-row task-ui-lesson '+(t.done?'is-done':'')+'">'+
+        '<button class="task-ui-main" type="button" onclick="openParentingSkillLesson(\''+taskUiEsc(t.id)+'\')">'+
+        '<b>'+taskUiEsc(displayTitle)+'</b>'+
+        (meta.length?'<small>'+meta.map(taskUiEsc).join(' · ')+'</small>':'')+
+        (note?'<small class="task-ui-note">'+taskUiEsc(note)+'</small>':'')+
+        '</button><button class="task-ui-more" type="button" aria-label="Manage lesson task" onclick="taskUiManageCarryover(\''+taskUiEsc(t.id)+'\')">•••</button></div>';
+    }
     const duplicateIds=Array.isArray(t._lifeMapDuplicateIds)?t._lifeMapDuplicateIds:[];
     const encodedIds=duplicateIds.length>1?encodeURIComponent(JSON.stringify(duplicateIds)):"";
     const toggleHandler=encodedIds&&typeof window.lifeMapToggleTaskGroup==="function"
