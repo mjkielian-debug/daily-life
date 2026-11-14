@@ -460,6 +460,25 @@ function joinedFloorDisplay(m){
 
 /* Architectural details added behind the task-progress wash, based on the
    already reviewed first-floor photos. Zone outlines stay in private data. */
+
+/* The approved first-floor picture defines the soft-realistic My Little Pony-inspired
+ * materials: soft lavender outlines, dimensional joinery and warm natural light.
+ * Private zone paths remain the geometry; all artwork is clipped inside them. */
+function realisticFloorRoomFinish(f,z,b,shade){
+ if((f!=="Second floor"&&f!=="Third floor")||!b||b.width<25||b.height<25)return "";
+ const key=(f+"-"+z.id).toLowerCase().replace(/[^a-z0-9-]/g,""),clip="hvm-pony-clip-"+key,light="hvm-pony-light-"+key;
+ const wall="#866084",p=""+z.path;
+ return '<g class="hvm-pony-room-finish" pointer-events="none" aria-hidden="true"><defs>'+
+  '<clipPath id="'+clip+'"><path d="'+h(p)+'"/></clipPath>'+
+  '<radialGradient id="'+light+'" cx="24%" cy="17%" r="98%"><stop offset="0" stop-color="#fff4de" stop-opacity=".73"/><stop offset=".4" stop-color="#fff7f1" stop-opacity=".15"/><stop offset=".78" stop-color="#a989bb" stop-opacity=".06"/><stop offset="1" stop-color="#7b4d83" stop-opacity=".31"/></radialGradient>'+
+  '</defs><g clip-path="url(#'+clip+')">'+
+  '<rect x="'+(b.x-4).toFixed(1)+'" y="'+(b.y-4).toFixed(1)+'" width="'+(b.width+8).toFixed(1)+'" height="'+(b.height+8).toFixed(1)+'" fill="url(#'+light+')"/>'+
+  '<path d="'+h(p)+'" fill="none" stroke="#6a4d65" stroke-opacity=".27" stroke-width="12"/>'+
+  '<path d="'+h(p)+'" fill="none" stroke="#fff6e9" stroke-opacity=".8" stroke-width="5"/>'+
+  '<path d="'+h(p)+'" fill="none" stroke="#cba6cd" stroke-opacity=".87" stroke-width="2.2"/>'+
+  '</g><path d="'+h(p)+'" fill="none" stroke="#5e405c" stroke-opacity=".72" stroke-width="2.2" stroke-linejoin="round"/></g>';
+}
+
 function photoRoomAccents(f,z,b){
  if(!b||b.width<35||b.height<35)return "";
  const k=str(z.id),id="hvm-acc-"+f.toLowerCase().replace(/[^a-z]/g,"")+"-"+k;
@@ -470,16 +489,16 @@ function photoRoomAccents(f,z,b){
   const name=(str(z.id)+" "+str(z.name)).toLowerCase();
   if(/bed|bedroom|dolly|demitri|dimitri|ambrose|leo|michelle/.test(name)){
    const quilt=/dolly/.test(name)?"#e5abc9":/ambrose/.test(name)?"#9fcebf":/leo/.test(name)?"#93b6d7":/demitri|dimitri/.test(name)?"#8eb7ce":"#d2a1a8";
-   return T('<ellipse cx="52" cy="63" rx="31" ry="25" fill="#ead6e9" stroke="#c4a6c1" stroke-width="1.5"/>'+
+   return T('<ellipse cx="53" cy="65" rx="34" ry="28" fill="#9c72a2" fill-opacity=".19"/><ellipse cx="52" cy="63" rx="31" ry="25" fill="#ead6e9" stroke="#c4a6c1" stroke-width="1.5"/>'+
     '<ellipse cx="52" cy="63" rx="27" ry="21" fill="none" stroke="#fff8fb" stroke-width="1.4"/>'+
     '<rect x="19" y="12" width="62" height="15" rx="2" fill="#f8f5f0" stroke="#b69d91" stroke-width="1.7"/>'+
     '<path d="M50 12V27M19 21H81" stroke="#b6d2df" stroke-width="2"/>'+
-    '<rect x="31" y="37" width="44" height="49" rx="5" fill="#89695c" stroke="#74545b" stroke-width="2"/>'+
+    '<rect x="29" y="38" width="48" height="51" rx="6" fill="#58434a" fill-opacity=".21"/><rect x="31" y="37" width="44" height="49" rx="5" fill="#89695c" stroke="#74545b" stroke-width="2"/>'+
     '<rect x="35" y="40" width="36" height="42" rx="4" fill="'+quilt+'" stroke="#f8e9e8" stroke-width="2"/>'+
-    '<path d="M35 56Q53 49 71 56V81H35Z" fill="#f3dce7" stroke="#fff3f5" stroke-width="1.5"/>'+
+    '<path d="M35 56Q53 49 71 56V81H35Z" fill="#f3dce7" stroke="#fff3f5" stroke-width="1.5"/>'+ '<path d="M37 62Q52 67 69 62M38 70Q53 75 69 70" fill="none" stroke="#ffffff" stroke-opacity=".52" stroke-width="1.1"/>'+
     '<rect x="38" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
     '<rect x="54" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
-    '<rect x="7" y="40" width="17" height="25" rx="2" fill="#b2866c" stroke="#77595a" stroke-width="1.5"/>'+
+    '<rect x="7" y="42" width="19" height="24" rx="3" fill="#6d5364" fill-opacity=".22"/><rect x="7" y="40" width="17" height="25" rx="2" fill="#b2866c" stroke="#77595a" stroke-width="1.5"/>'+
     '<path d="M10 47H21M10 54H21" stroke="#edd9c1" stroke-width="1.5"/>'+
     '<path d="M82 37V55M76 43H88M76 49H88" stroke="#a97765" stroke-width="1.4"/>'+
     '<path d="M12 12Q10 5 14 2M19 12Q20 5 17 2" stroke="#6e9b73" stroke-width="2" fill="none"/>');
@@ -642,7 +661,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+correctedStairArtwork()+hotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other floors use the same pastel storybook style; open a room to browse its saved photos. Completed room tasks reveal richer color.</div></section>'+
+  '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. Upper floors now use matching soft-realistic lavender detailing; open a room to browse the actual saved photos. Completed room tasks reveal richer color.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
@@ -702,7 +721,7 @@ function mapSketch(f,m,skipApproved=false){
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+' · '+h(taskCountLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
-   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+accents+taskOverlay+declutterOverlay+
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+realisticFloorRoomFinish(f,z,bounds,sourceColor)+accents+taskOverlay+declutterOverlay+
    floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+taskCountBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
@@ -715,12 +734,12 @@ function mapSketch(f,m,skipApproved=false){
    '<text x="'+x+'" y="'+(y+5)+'" class="hvm-annotation-label" text-anchor="middle">'+h(a.label||"↑ next")+'</text></g>';
  }).join("");
  const frameX=limits[0]+16,frameY=limits[1]+9,frameW=Math.max(80,limits[2]-32),frameH=Math.max(100,limits[3]-18);
- const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
+ const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="'+(f==='Second floor'||f==='Third floor'?'#f6e6f2':'#fff9fd')+'" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '':"";
- return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Room colors grow from the center as saved tasks are completed. Tap a room for its tasks.</span></div>'+
+ return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Rooms gain color as saved tasks are completed. Tap any illustrated room for its tasks.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
-  '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
+  '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M155 187V292H225V187" fill="#edd5bb" fill-opacity=".75" stroke="#a78390" stroke-width="2"/><path d="M160 212H220M160 235H220M160 258H220M160 280H220" stroke="#b99176" stroke-opacity=".58" stroke-width="2"/><path d="M186 193V286" stroke="#fff4e2" stroke-opacity=".66" stroke-width="1.5"/>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
 document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});

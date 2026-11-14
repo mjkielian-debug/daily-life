@@ -469,3 +469,16 @@
  .hvm-approved-count{filter:drop-shadow(0 1px 2px #6b466566)}
 }
 @media(prefers-reduced-motion:reduce){.hvm-approved-room path{transition:none}}
+
+
+/* Make both upper floors read as part of the approved semi-realistic dollhouse,
+   not a separate flat block diagram. Real private zone footprints do not move. */
+.hvm-connected-map{border:2px solid #b07da8;border-radius:22px;padding:12px 8px;background:linear-gradient(160deg,#f8ecff,#fffbf4 52%,#fae4f1);box-shadow:0 7px 23px #8e62883b,0 0 0 4px #fff9f6}
+.hvm-connected-map:has(+.hvm-directory) .hvm-drawing{background:#f6e8f3}
+.hvm-root[data-floor="Second floor"] .hvm-connected-map,.hvm-root[data-floor="Third floor"] .hvm-connected-map{border-color:#a57d9d}
+.hvm-root[data-floor="Second floor"] .hvm-drawing,.hvm-root[data-floor="Third floor"] .hvm-drawing{filter:drop-shadow(0 7px 8px #5f436033);border-radius:14px;overflow:visible}
+.hvm-root[data-floor="Second floor"] .hvm-zone,.hvm-root[data-floor="Third floor"] .hvm-zone{filter:drop-shadow(0 1px 2px #583b5d44);cursor:pointer}
+.hvm-pony-room-finish{mix-blend-mode:normal}
+.hvm-root[data-floor="Second floor"] .hvm-photo-room-accents,.hvm-root[data-floor="Third floor"] .hvm-photo-room-accents{filter:drop-shadow(0 2px 2px #593e5e42)}
+.hvm-root[data-floor="Second floor"] .hvm-stair-plan,.hvm-root[data-floor="Third floor"] .hvm-stair-plan{filter:drop-shadow(0 2px 1px #694c6040)}
+@media(max-width:420px){.hvm-connected-map{border-radius:17px;padding:8px 5px}}
