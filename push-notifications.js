@@ -13,7 +13,7 @@ function dailyLifePushSettingsPanel(){
   return `<section class="settings-flat-section daily-life-push-settings">
     <div class="section-title"><div><div class="eyebrow">Phone alerts</div><h2>Daily Life notifications</h2></div><span class="tag">${connected?"on":"optional"}</span></div>
     <div class="muted small">${status} Reminders use the schedule you set in Daily Life. Android controls sound and vibration.</div>
-    <div class="actions" style="margin-top:10px">
+    <p class="muted small">For sound: press and hold a Daily Life notification, open its notification settings, choose Alert (not Silent), and select a sound. Also check notification volume and Do Not Disturb. The small Android badge is monochrome; the full icon is colorful.</p><div class="actions" style="margin-top:10px"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button>
       <button class="btn primary" type="button" onclick="enableDailyLifePush()" ${!supported||Notification.permission==="denied"?"disabled":""}>${connected?"Refresh this device":"Enable notifications"}</button>
       ${connected?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}
     </div>
@@ -74,7 +74,7 @@ function dailyLifeBase64ToBytes(value){
 function openDailyLifePushSettings(){
   const supported="Notification" in window&&"serviceWorker" in navigator&&!!window.PushManager;
   const status=!supported?"This browser does not support phone notifications.":Notification.permission==="denied"?"Notifications are blocked in browser settings.":localStorage.getItem("dailyLifePushEnabled")==="1"?"Notifications are enabled on this device.":"Notifications are off on this device.";
-  const body=`<div class="stack"><p>${esc(status)}</p><p>Daily Life checks opted-in reminders every five minutes and sends them at the time saved on each reminder. Android controls sound and vibration.</p><div class="actions"><button class="btn primary" type="button" onclick="enableDailyLifePush()">Enable notifications</button>${localStorage.getItem("dailyLifePushEnabled")==="1"?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}</div></div>`;
+  const body=`<div class="stack"><p>${esc(status)}</p><p>Daily Life checks opted-in reminders every five minutes and sends them at the time saved on each reminder. Android controls sound and vibration.</p><p>For sound, press and hold a Daily Life notification and open its settings. Choose Alert and a sound; check notification volume and Do Not Disturb.</p><div class="actions"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button><button class="btn primary" type="button" onclick="enableDailyLifePush()">Enable notifications</button>${localStorage.getItem("dailyLifePushEnabled")==="1"?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}</div></div>`;
   modal("Daily Life notifications",body,"Done",()=>{});
 }
 function attachDailyLifeNotificationButton(){
@@ -101,4 +101,12 @@ window.addEventListener("load",attachDailyLifeNotificationButton,{once:true});
 if(typeof cloudPanel==="function"){
   const dailyLifeOriginalCloudPanel=cloudPanel;
   cloudPanel=function(){return dailyLifeOriginalCloudPanel()+dailyLifePushSettingsPanel()};
+}
+
+async function testDailyLifeNotification(){
+ try{
+ if(!("Notification" in window)||Notification.permission!=="granted")throw new Error("Enable Daily Life notifications first.");
+ const reg=await navigator.serviceWorker.ready;
+ await reg.showNotification("Daily Life · Test alert",{body:"If this is silent, press and hold this notification and choose Alert and a sound in your phone settings.",icon:"./daily-life-rainbow-192.png?v=20261114-alerts2",badge:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACG0lEQVR4nO3a3W7DIAyGYZh2/7ecHU3qKpEY/Pmn2vscN2BjCAR1DAAAAAAAAAApZnUAVtd1XbvPzDnb59c2wJMBf9KxIK0Cihj0lS7FKA8ic9BXKotR1nGHgX9XUYj0DjsO/LvMQqQWwDv4OwOT2Zern4xOuhwhu8Txp/3IxsfYTzpj5nWKKTRZa6KVp5DqGEMarU7qRFXMX8rGxvjMwR/DHo/6FCcdBEtwnoHfST66H9UEkhUgImjlbIvoW1EE+StoZfcMr17qu21+1HfAU2JV79c7qpi8hXIXQBFg5fWEIj5PEVyvoE8ffGv/T3l4cnCtgLuOowa/a7unqyDkqKacMYrNUNmfughHyWUMfuVlXGYR0o6hY9jft2H3Lsa2M/el7QJEvAdVz2f1c/f8bvFkK8D76sm+G+oSr+zz/HRWnCTSpT1FHN+WHz1RLklvO6+/U52gVu3MOac3v9RN+J11QzxN0vps5dW4uQAng1DxoXbajnoVW59xr4Cjjw/DBlhxGxqRy5OwV5DntaGORdF+VFymTXjVecWMeWrDO1AnG+vqmbsN/FfICoiaZZYvWctvOq2C1FOQZ+burpzsS7VTpcdQq+Or3sLjpdVjATIupqrul6pzG8OxAlaJKZOS3bcIV4LyQDJG039FdJAVb/keoJ5RKxkr9kR5Af47ClCMAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgA0/u/acS1yb5KoAAAAASUVORK5CYII=",tag:"daily-life-test-"+Date.now(),silent:false,renotify:true,vibrate:[200,100,200],data:{url:reg.scope}});
+ }catch(error){alert(String(error.message||error));}
 }
