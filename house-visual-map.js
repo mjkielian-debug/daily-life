@@ -370,7 +370,7 @@ window.houseVisualRevealRoomPhotos=function(){
 };
 function roomSymbol(z,b,f){
  const label=str(z.name);
- if((f==="Second floor"||f==="Third floor")&&/bed|bedroom|bath|hall|entry|landing/i.test(label))return "";
+ if((f==="Second floor"||f==="Third floor")&&/bed|bedroom|bath|hall|entry|landing|dolly|demitri|dimitri|ambrose|leo|michelle/i.test(label))return "";
  if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
  const bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
  const symbol=bed?'<rect x="3" y="10" width="42" height="28" rx="5"/><rect x="7" y="13" width="14" height="10" rx="3"/><rect x="26" y="13" width="14" height="10" rx="3"/><path d="M3 27H45M6 38V42M42 38V42"/>':
@@ -642,7 +642,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+correctedStairArtwork()+hotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other room illustrations are style references until their positions are verified with photos. Completed room tasks reveal richer color.</div></section>'+
+  '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other floors use the same pastel storybook style; open a room to browse its saved photos. Completed room tasks reveal richer color.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
