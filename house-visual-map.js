@@ -256,8 +256,11 @@ function mappedFurniture(f,z,bounds){
   if(p?.showOnMap===false||p?.mapX==null||p?.mapY==null||!Number.isFinite(px)||!Number.isFinite(py)||px<4||px>96||py<4||py>96)return "";
   const x=bounds.x+bounds.width*px/100,y=bounds.y+bounds.height*py/100;
   const on="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
-  return '<g class="hvm-map-fixture" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
-   '<title>'+h(p.label||"Mapped fixture")+'</title><rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+fixtureSvg(p.kind)+'</g></g>';
+  const illustrated=!!lifelikeFurnitureSvg(str(p.kind).toLowerCase());
+  const art=illustrated?'<rect x="-17" y="-17" width="34" height="34" fill="transparent" stroke="none"/><g transform="scale(.88)">'+fixtureSvg(p.kind)+'</g>':
+   '<rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+fixtureSvg(p.kind)+'</g>';
+  return '<g class="hvm-map-fixture'+(illustrated?' hvm-map-fixture-illustrated':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
+   '<title>'+h(p.label||"Mapped fixture")+'</title>'+art+'</g>';
  }).join("");
 }
 function mappedRoomMiniature(f,z){
