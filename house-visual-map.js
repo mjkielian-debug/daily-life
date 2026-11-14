@@ -339,7 +339,10 @@ function illustratedRoomBackdrop(f,z){
 
 function mappedRoomMiniature(f,z){
  const all=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&str(p.label));
- if(!all.length)return "";
+ if(/stairs|landing|hallway|corridor/i.test(str(z.id)+" "+str(z.name)))return "";
+ const progress=roomTaskColorStats(f,z,localRoom(f,z));
+ const bloomRadius=(Math.sqrt(progress.pct/100)*100).toFixed(1)+"%";
+ const tint=color(z.color);
  const placed=all.filter(({p})=>p.showOnMap!==false&&p.mapX!=null&&p.mapY!=null&&Number.isFinite(Number(p.mapX))&&Number.isFinite(Number(p.mapY)));
  const unplaced=all.filter(({p})=>p.showOnMap===false||p.mapX==null||p.mapY==null||!Number.isFinite(Number(p.mapX))||!Number.isFinite(Number(p.mapY)));
  const picture=({p})=>'<svg viewBox="-19 -19 38 38" role="img" aria-label="'+h(p.label)+'"><g>'+fixtureSvg(p.kind)+'</g></svg>';
@@ -349,10 +352,15 @@ function mappedRoomMiniature(f,z){
  };
  const photoCount=arr(z.photos).filter(okPhoto).length;
  const showPhotos=photoCount?'<button class="btn small" type="button" onclick="houseVisualRevealRoomPhotos()">View '+photoCount+' saved reference photo'+(photoCount===1?'':'s')+' ›</button>':"";
+ const bloom=progress.done?'<div class="hvm-mini-color-bloom" aria-hidden="true" style="--hvm-bloom-radius:'+bloomRadius+';--hvm-room-tint:'+h(tint)+'"></div>':"";
+ const roomMessage=all.length?'From saved photos and confirmed room notes. Positions are approximate.':'Furniture not mapped yet. Add room tasks to track progress; no furniture has been invented.';
  return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong>'+showPhotos+'</header>'+
- (placed.length?'<div class="hvm-mini-room-canvas is-illustrated">'+illustratedRoomBackdrop(f,z)+placed.map(p=>action(p,true)).join("")+'</div>':"")+
+ '<div class="hvm-mini-progress-message" aria-label="'+progress.done+' of '+progress.total+' room tasks complete">'+
+ '<b>✦ '+(progress.total?progress.done+' / '+progress.total+' tasks completed':'No room tasks assigned yet')+'</b>'+
+ '<small>'+(progress.total?progress.pct+'% of today’s tracked room tasks · color grows as you finish':'Add a room task to begin coloring this space')+'</small></div>'+
+ '<div class="hvm-mini-room-canvas is-illustrated" data-room-task-progress="'+progress.pct+'">'+illustratedRoomBackdrop(f,z)+bloom+placed.map(p=>action(p,true)).join("")+'</div>'+
  (unplaced.length?'<div class="hvm-mini-unplaced"><b>Known furniture · exact spot not mapped</b><div>'+unplaced.map(p=>action(p,false)).join("")+'</div></div>':"")+
- '<p class="muted small">From saved room photos and confirmed notes. Positions are approximate; unplaced items are listed separately.</p></section>';
+ '<p class="muted small">'+h(roomMessage)+'</p></section>';
 }
 window.houseVisualRevealRoomPhotos=function(){
  const panel=document.querySelector(".hvm-zone-detail .hvm-room-extra");
@@ -521,7 +529,7 @@ function roomColorBloomSvg(f,z,bounds,fill,progress){
  const id="hvm-room-bloom-"+String(f).replace(/[^a-z0-9]/gi,"").toLowerCase()+"-"+String(z.id).replace(/[^a-z0-9]/gi,"").toLowerCase();
  return '<g class="hvm-room-color-bloom" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+id+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
-  '<g clip-path="url(#'+id+')"><circle class="hvm-bloom-circle" cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="'+radius+'" fill="'+h(fill)+'" fill-opacity=".82"/>'+
+  '<g clip-path="url(#'+id+')"><circle class="hvm-bloom-circle" cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="'+radius+'" fill="'+h(fill)+'" fill-opacity=".68"/>'+
   '<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="'+radius+'" fill="none" stroke="#fff7ec" stroke-opacity=".48" stroke-width="3"/></g></g>';
 }
 
