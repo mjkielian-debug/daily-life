@@ -242,8 +242,41 @@ function unmappedRoomPicker(f,m){
  return '<section class="hvm-unmapped-rooms" aria-label="Rooms not yet placed on the floor drawing"><div><b>Other saved rooms</b><small>'+rooms.length+' room'+(rooms.length===1?" is":"s are")+' not placed on this drawing yet. Tap a room to open it, or add a map photo to update the layout.</small></div><div class="hvm-unmapped-chips">'+rooms.map(room=>'<button type="button" data-hvm-local-room="'+h(room.id)+'"><span aria-hidden="true">⌂</span>'+h(room.name)+' <span aria-hidden="true">›</span></button>').join("")+'<button type="button" class="hvm-unmapped-add" onclick="openPhotoInbox(&#39;house_map&#39;,&#39;&#39;,&#39;'+h(f)+'&#39;)">＋ Add map photo</button></div></section>';
 }
 
+
+function joinedFloorDisplay(m){
+ // Presentation only: align close traced edges without rewriting private records.
+ // One monotone mapping per axis preserves room order and cannot create overlaps.
+ const zones=arr(m.zones),vb=str(m.viewBox||"0 0 380 503").split(/\s+/).map(Number);
+ if(zones.some(z=>!/^\s*(?:M[-\d. ,]+(?:[LHV][-\d. ,]+)*Z)\s*$/.test(str(z.path))))return m;
+ const xs=[],ys=[];
+ const walk=(path,fx,fy)=>path.replace(/([MLHV])\s*(-?\d+(?:\.\d+)?)(?:[ ,]+(-?\d+(?:\.\d+)?))?/g,(all,c,a,b)=>{
+  if(c==="M"||c==="L")return c+fx(+a)+" "+fy(+b);
+  return c+(c==="H"?fx(+a):fy(+a));
+ });
+ zones.forEach(z=>walk(z.path,v=>{xs.push(v);return v},v=>{ys.push(v);return v}));
+ const align=(values,tolerance)=>{
+  let groups=[...new Set(values)].sort((a,b)=>a-b).map(v=>[v]);
+  while(true){
+   let at=-1,gap=Infinity;
+   for(let i=0;i<groups.length-1;i++){
+    const a=groups[i],b=groups[i+1],distance=b[0]-a[a.length-1];
+    if(b[b.length-1]-a[0]<=tolerance&&distance<gap){gap=distance;at=i}
+   }
+   if(at<0)break;
+   groups.splice(at,2,groups[at].concat(groups[at+1]));
+  }
+  const lookup=new Map();groups.forEach(g=>{const mid=(g[0]+g[g.length-1])/2;g.forEach(v=>lookup.set(v,mid))});
+  return v=>lookup.get(v)??v;
+ };
+ const fx=align(xs,16*(vb[2]||380)/380),fy=align(ys,16*(vb[3]||503)/503);
+ const joined=zones.map(z=>({...z,path:walk(z.path,fx,fy)}));
+ if(joined.some(z=>{const b=zoneBounds(z.path);return !b||b.width<20||b.height<20}))return m;
+ return {...m,zones:joined,layoutNotice:"Room edges are aligned for a connected schematic view. Saved source outlines are unchanged; sizes are illustrative."};
+}
+
 function mapSketch(f,m){
  m=illustratedLayout(f,m);
+ if(f==="First floor")m=joinedFloorDisplay(m);
  const isFirst=f==="First floor",viewBox=/^\d+ \d+ \d+ \d+$/.test(str(m.viewBox||""))?m.viewBox:"0 0 380 503",limits=viewBox.split(" ").map(Number);
  const reviewRows=typeof dailyReviewExpected==="function"?dailyReviewExpected(ymd()).filter(item=>item.status==="unknown"):[];
  const paths=arr(m.zones).filter(z=>okId(z.id)&&okPath(z.path)).slice().sort((a,b)=>{
@@ -275,7 +308,7 @@ function mapSketch(f,m){
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
-   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="3.5" stroke-linejoin="round"/>'+taskOverlay+declutterOverlay+
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+taskOverlay+declutterOverlay+
    floorGraphic+roomSymbol(z,bounds)+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
@@ -291,10 +324,10 @@ function mapSketch(f,m){
  const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '<text x="'+(limits[0]+limits[2]*.58)+'" y="'+(doorY+29)+'" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
- return '<div class="hvm-sketch"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
+ return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+
-  '<p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
+  '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
 document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});
 
