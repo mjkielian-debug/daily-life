@@ -13,7 +13,7 @@ function dailyLifePushSettingsPanel(){
   return `<section class="settings-flat-section daily-life-push-settings">
     <div class="section-title"><div><div class="eyebrow">Phone alerts</div><h2>Daily Life notifications</h2></div><span class="tag">${connected?"on":"optional"}</span></div>
     <div class="muted small">${status} Reminders use the schedule you set in Daily Life. Android controls sound and vibration.</div>
-    <p class="muted small">If alerts appear but are silent on Samsung: Settings → Notifications → Advanced settings → turn on Manage notification categories for each app. Then Settings → Apps → Daily Life (or Chrome if Daily Life is listed under Chrome) → Notifications → Notification categories → tap the category name → choose Alert and a Sound. Also check notification volume and Do Not Disturb. The small Android badge is monochrome; the full icon is colorful.</p><div class="actions" style="margin-top:10px"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button>
+    <p class="muted small">If alerts appear but are silent on Samsung: Settings → Notifications → Advanced settings → turn on Manage notification categories for each app. Then Settings → Apps → Daily Life (or Chrome if Daily Life is listed under Chrome) → Notifications → Notification categories → tap the category name → choose Alert and a Sound. Also check notification volume and Do Not Disturb. The small Android badge is monochrome; the full icon is colorful.</p><div class="actions" style="margin-top:10px"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button><button class="btn" type="button" onclick="testDailyLifeChime()">Hear a test sound</button><button class="btn" type="button" onclick="openDailyLifeSoundHelp()">Fix silent alerts</button>
       <button class="btn primary" type="button" onclick="enableDailyLifePush()" ${!supported||Notification.permission==="denied"?"disabled":""}>${connected?"Refresh this device":"Enable notifications"}</button>
       ${connected?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}
     </div>
@@ -74,7 +74,7 @@ function dailyLifeBase64ToBytes(value){
 function openDailyLifePushSettings(){
   const supported="Notification" in window&&"serviceWorker" in navigator&&!!window.PushManager;
   const status=!supported?"This browser does not support phone notifications.":Notification.permission==="denied"?"Notifications are blocked in browser settings.":localStorage.getItem("dailyLifePushEnabled")==="1"?"Notifications are enabled on this device.":"Notifications are off on this device.";
-  const body=`<div class="stack"><p>${esc(status)}</p><p>Daily Life checks opted-in reminders every five minutes and sends them at the time saved on each reminder. Android controls sound and vibration.</p><p>If alerts appear but are silent on Samsung: Settings → Notifications → Advanced settings → turn on Manage notification categories for each app. Then Settings → Apps → Daily Life (or Chrome if Daily Life is listed under Chrome) → Notifications → Notification categories → tap the category name → choose Alert and a Sound. Also check notification volume and Do Not Disturb.</p><div class="actions"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button><button class="btn primary" type="button" onclick="enableDailyLifePush()">Enable notifications</button>${localStorage.getItem("dailyLifePushEnabled")==="1"?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}</div></div>`;
+  const body=`<div class="stack"><p>${esc(status)}</p><p>Daily Life checks opted-in reminders every five minutes and sends them at the time saved on each reminder. Android controls sound and vibration.</p><p>If alerts appear but are silent on Samsung: Settings → Notifications → Advanced settings → turn on Manage notification categories for each app. Then Settings → Apps → Daily Life (or Chrome if Daily Life is listed under Chrome) → Notifications → Notification categories → tap the category name → choose Alert and a Sound. Also check notification volume and Do Not Disturb.</p><div class="actions"><button class="btn" type="button" onclick="testDailyLifeNotification()">Test notification</button><button class="btn" type="button" onclick="testDailyLifeChime()">Hear a test sound</button><button class="btn" type="button" onclick="openDailyLifeSoundHelp()">Fix silent alerts</button><button class="btn primary" type="button" onclick="enableDailyLifePush()">Enable notifications</button>${localStorage.getItem("dailyLifePushEnabled")==="1"?'<button class="btn" type="button" onclick="disableDailyLifePush()">Turn off this device</button>':""}</div></div>`;
   modal("Daily Life notifications",body,"Done",()=>{});
 }
 function attachDailyLifeNotificationButton(){
@@ -107,6 +107,30 @@ async function testDailyLifeNotification(){
  try{
  if(!("Notification" in window)||Notification.permission!=="granted")throw new Error("Enable Daily Life notifications first.");
  const reg=await navigator.serviceWorker.ready;
- await reg.showNotification("Daily Life · Test alert",{body:"If this is silent, press and hold this notification and choose Alert and a sound in your phone settings.",icon:"./daily-life-garden-app-192.png",badge:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACG0lEQVR4nO3a3W7DIAyGYZh2/7ecHU3qKpEY/Pmn2vscN2BjCAR1DAAAAAAAAAApZnUAVtd1XbvPzDnb59c2wJMBf9KxIK0Cihj0lS7FKA8ic9BXKotR1nGHgX9XUYj0DjsO/LvMQqQWwDv4OwOT2Zern4xOuhwhu8Txp/3IxsfYTzpj5nWKKTRZa6KVp5DqGEMarU7qRFXMX8rGxvjMwR/DHo/6FCcdBEtwnoHfST66H9UEkhUgImjlbIvoW1EE+StoZfcMr17qu21+1HfAU2JV79c7qpi8hXIXQBFg5fWEIj5PEVyvoE8ffGv/T3l4cnCtgLuOowa/a7unqyDkqKacMYrNUNmfughHyWUMfuVlXGYR0o6hY9jft2H3Lsa2M/el7QJEvAdVz2f1c/f8bvFkK8D76sm+G+oSr+zz/HRWnCTSpT1FHN+WHz1RLklvO6+/U52gVu3MOac3v9RN+J11QzxN0vps5dW4uQAng1DxoXbajnoVW59xr4Cjjw/DBlhxGxqRy5OwV5DntaGORdF+VFymTXjVecWMeWrDO1AnG+vqmbsN/FfICoiaZZYvWctvOq2C1FOQZ+burpzsS7VTpcdQq+Or3sLjpdVjATIupqrul6pzG8OxAlaJKZOS3bcIV4LyQDJG039FdJAVb/keoJ5RKxkr9kR5Af47ClCMAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgA0/u/acS1yb5KoAAAAASUVORK5CYII=",tag:"daily-life-test-"+Date.now(),silent:false,renotify:true,vibrate:[200,100,200],data:{url:reg.scope}});
+ await reg.showNotification("Daily Life · Test alert",{body:"If this is silent, press and hold this notification and choose Alert and a sound in your phone settings.",icon:"./daily-life-garden-app-192.png",badge:"./daily-life-notification-badge.png",tag:"daily-life-test-"+Date.now(),silent:false,renotify:true,vibrate:[200,100,200],data:{url:reg.scope}});
  }catch(error){alert(String(error.message||error));}
+}
+
+/* A user-triggered sound test. Push chimes themselves are controlled by Samsung's Android channel. */
+async function testDailyLifeChime(){
+ try{
+  const A=window.AudioContext||window.webkitAudioContext;
+  if(!A)throw new Error("Audio tests are unavailable in this browser.");
+  const ctx=new A();await ctx.resume();
+  [0,0.17].forEach((offset,i)=>{
+   const o=ctx.createOscillator(),g=ctx.createGain();
+   o.type="sine";o.frequency.value=i?880:660;o.connect(g);g.connect(ctx.destination);
+   const now=ctx.currentTime+offset;
+   g.gain.setValueAtTime(.0001,now);
+   g.gain.exponentialRampToValueAtTime(.13,now+.02);
+   g.gain.exponentialRampToValueAtTime(.0001,now+.21);
+   o.start(now);o.stop(now+.24);
+  });
+  setTimeout(()=>ctx.close().catch(()=>{}),1100);
+  if(typeof modal==="function")modal("Test sound played","<p>Did you hear the little two-note chime? This confirms whether app audio is audible. Background reminders use a separate Android notification channel; even when this sound works, you must enable an audible alert sound in the phone's notification settings.</p>","Done",closeModal);
+ }catch(error){alert(String(error?.message||error))}
+}
+function openDailyLifeSoundHelp(){
+ if(typeof modal!=="function")return;
+ modal("Make Daily Life reminders audible",'<div class="stack"><p><b>Your screenshot confirms reminders are arriving.</b> The silent alert is an Android setting, not a missing reminder.</p><p><b>1.</b> Press and hold a Daily Life notification, choose Settings, and open its notification category.</p><p><b>2.</b> Choose <b>Alert</b> (not Silent) and select a notification <b>Sound</b>. If categories are hidden, enable <b>Manage notification categories for each app</b> in Samsung Settings → Notifications → Advanced settings.</p><p><b>3.</b> Check notification volume and Do Not Disturb. Return here and tap <b>Test notification</b> to verify the channel.</p><p>The colorful picture in your notification is the large icon; Android requires a separate monochrome small badge. We now supply a white house badge, although Samsung/Chrome can still show an app-controlled small icon.</p><p>The moon home-screen icon is cached by Android from the original installation. Changing app code alone does not reliably replace it. Keep your app data and cloud backup safe before removing or reinstalling anything.</p></div>',"Done",closeModal);
 }
