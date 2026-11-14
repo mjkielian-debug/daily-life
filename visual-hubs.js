@@ -219,6 +219,7 @@ window.setSpiritualityPage=setSpiritualityPage;
 window.openSpiritualHubSection=setSpiritualityPage;
 
 function visualSpiritualityView(){
+ if(typeof window.lifeMapAreaPage==="function")return window.lifeMapAreaPage("spirituality");
  const practice=typeof spiritualityGuideLandingCard==="function"
   ?spiritualityGuideLandingCard()
   :"<section class=\"card spirituality-guide-card\"><h1>Your daily spiritual practice</h1><p>The five-minute guide is loading.</p></section>";
