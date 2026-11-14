@@ -107,7 +107,7 @@ const APP_SHELL=[
   "./daily-life-pastel-icon.svg",
   "./daily-life-colorful-icon.svg",
   "./daily-life-rainbow-512.png",
-  "./daily-life-rainbow-192.png",
+  "./daily-life-rainbow-192.png?v=20261114-rainbow-refresh1",
   "./daily-life-rose-192.png",
   "./daily-life-rose-512.png",
   "./candy-theme.css",
@@ -179,8 +179,8 @@ self.addEventListener("push",event=>{
   const title=String(payload.title||"Daily Life");
   const options={
     body:String(payload.body||"A Daily Life reminder is due."),
-    icon:"./daily-life-rainbow-192.png",
-    badge:"./daily-life-rainbow-192.png",
+    icon:"./daily-life-rainbow-192.png?v=20261114-rainbow-refresh1",
+    badge:"./daily-life-rainbow-192.png?v=20261114-rainbow-refresh1",
     tag:String(payload.tag||"daily-life-reminder"),
     renotify:false,
     data:{url:String(payload.url||"./")}
