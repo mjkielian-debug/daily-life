@@ -342,10 +342,10 @@ function mapSketch(f,m){
  const frameX=limits[0]+16,frameY=limits[1]+9,frameW=Math.max(80,limits[2]-32),frameH=Math.max(100,limits[3]-18);
  const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="#fff9fd" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
-  '<text x="'+(limits[0]+limits[2]*.58)+'" y="'+(doorY+29)+'" text-anchor="middle" class="hvm-entry-label">Front door · street</text>':"";
+  '':"";
  return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Tap a room to open its details; photos stay inside the room.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
-  '<defs><pattern id="hvm-floor-tile" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M18 0H0V18" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width=".7"/></pattern><pattern id="hvm-floor-wood" width="44" height="14" patternUnits="userSpaceOnUse"><path d="M0 14H44M22 0V14" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".6"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+
+  '<defs><pattern id="hvm-floor-tile" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M18 0H0V18" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width=".7"/></pattern><pattern id="hvm-floor-wood" width="44" height="14" patternUnits="userSpaceOnUse"><path d="M0 14H44M22 0V14" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".6"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M190 187V292 M182 282L190 294L198 282" fill="none" stroke="#96758d" stroke-width="4" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/><text x="210" y="246" fill="#725c78" font-size="13">connection</text>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
 document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});
@@ -845,7 +845,7 @@ window.houseVisualMapHydrate=async function(f,force=false){
   if(key(f)!==k)return;
   const m=data?.[0]?.payload;
   if(!m||!Array.isArray(m.zones))throw new Error("No reviewed floor details yet.");
-  cache.set(k,m);paint(f);
+  cache.set(k,m);if(window.houseVisualEnsureDailyRoutines(ymd())&&typeof save==="function")save();paint(f);
  }catch(e){
   where(f).forEach(el=>{el.innerHTML='<p class="hvm-disclaimer">Map could not load: '+h(e?.message||"Please retry")+
   '</p><button class="btn" onclick="houseVisualMapHydrate(&#39;'+f+'&#39;,true)">Retry loading</button>'});
@@ -939,9 +939,42 @@ window.houseVisualInventoryOpen=function(f,id){
  if(typeof setView==="function"){setView("inventory");return}
  if(typeof openInventoryRoom==="function")openInventoryRoom("",f);
 };
+
+window.houseVisualEnsureDailyRoutines=function(date){
+ if(typeof state==="undefined"||!date)return false;
+ state.tasks=state.tasks||[];let changed=false;
+ const rooms=[];
+ floors.forEach(f=>arr(get(f)?.zones).forEach(z=>rooms.push({f,z,room:localRoom(f,z)})));
+ arr(state.houseRooms).forEach(room=>{
+  if(!rooms.some(r=>r.room?.id===room.id||r.f===room.floor&&r.z.name===room.name))rooms.push({f:room.floor,z:{id:room.id,name:room.name},room,local:true});
+ });
+ for(const {f,z,room,local} of rooms){
+  const name=str(z.name),key=str(room?.id||f+":"+z.id);
+  let steps=/bath/i.test(name)?[
+   ["sink","Wipe sink and faucet",2,/wipe.*(sink|faucet|mirror)/i],
+   ["supplies","Check soap, toilet paper and towel",1,/restock|bathroom supplies/i],
+   ["trash","Empty bathroom trash if needed",2,/empty.*bathroom trash/i]]:
+   /kitchen/i.test(name)?[["dishes","Wash one sink of dishes",5,/dish/i],["counter","Wipe kitchen counters",2,/counter/i]]:
+   /dining/i.test(name)?[["table","Clear and wipe dining table",2,/table/i],["floor","Pick up crumbs under the table",2,/crumb/i]]:
+   /living/i.test(name)?[["reset","Put away things left in the living room",3,/living.*(reset|tidy)|tidy.*living/i],["sofa","Straighten cushions and blankets",1,/cushion|blanket/i]]:
+   /playroom/i.test(name)?[["toys","Put toys back in their homes",3,/toy|playroom.*reset/i],["path","Clear the playroom walking space",2,/walking space/i]]:
+   /bedroom/i.test(name)?[["reset","Put clothes and loose items away",3,/clean room|room reset|room cleanup/i],["bed","Straighten bedding",1,/make.*bed|bedding/i]]:
+   /hall|entry|stair|landing/i.test(name)?[["path","Check and clear the walking path",1,/walking path|clear.*(hall|stair)/i]]:[["reset","Put loose items away",3,/reset|tidy/i]];
+  const linked=trackedRoomTasks(f,z,room).filter(t=>t.date===date);
+  for(const [step,title,minutes,match] of steps){
+   const id="room-daily:"+encodeURIComponent(key)+":"+step+":"+date;
+   if(state.tasks.some(t=>t.id===id)||linked.some(t=>match.test(str(t.title))))continue;
+   state.tasks.push({id,date,title:name+" · "+title,category:"home",notes:"Daily room care. Suggested estimate: "+minutes+" minute"+(minutes===1?"":"s")+".",done:false,dailyReset:true,generated:"room-daily",order:78,itineraryMinutes:minutes,itineraryPreference:"after-work",
+    ...(local?{homeRoomId:room.id}:{homeMapFloor:f,homeMapZoneId:z.id,homeMapRoomName:name,...(room?{homeRoomId:room.id}:{})})});
+   changed=true;
+  }
+ }
+ return changed;
+};
+
 function trackedRoomTasks(f,z,room){
  const name=String(z?.name||room?.name||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
- const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];
+ const dates=[ymd()];
  const tasks=(state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
   if(t.date&&!dates.includes(String(t.date)))return false;
@@ -1176,10 +1209,10 @@ window.houseVisualOpenZone=function(f,id){
  const roomInsights='<div class="hvm-room-insights"><b>Declutter progress</b><small>'+h(insights.declutter)+'</small><small>'+h(insights.last)+'</small>'+(insights.lastOrganized?'<small>'+h(insights.lastOrganized)+'</small>':'')+'<small>This is separate from item inventory and does not remove room records.</small><button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">＋ I organized one area</button></div>';
  const progress='<div class="hvm-task-progress"><div><b>'+(pct===null?"Not assessed":pct+"%")+'</b><small>'+(pct===null?"No room tasks saved yet":finished.length+" / "+tasks.length+" tasks complete")+'</small></div>'+
  '<div class="hvm-task-meter"><i style="width:'+(pct||0)+'%"></i></div><small>Task progress only; not a cleanliness rating.</small></div>'+
- (reviewItem?'<section class="hvm-daily-checkin"><div class="hvm-daily-checkin-kicker">DAILY CHECK-IN · '+roomReviewRows.length+' unknown</div><b>'+h(reviewItem.label||reviewItem.group||"Home task")+'</b>'+(reviewItem.detail?'<p>'+h(reviewItem.detail)+'</p>':'')+(reviewLastDone?'<small class="hvm-task-last-done">Last done · '+h(reviewLastDone)+'</small>':'')+
+ (reviewItem?'<section class="hvm-daily-checkin"><div class="hvm-daily-checkin-kicker">TODAY’S CHECK-IN · '+roomReviewRows.length+' to answer</div><b>'+h(reviewItem.label||reviewItem.group||"Home task")+'</b>'+(reviewItem.detail?'<p>'+h(reviewItem.detail)+'</p>':'')+(reviewLastDone?'<small class="hvm-task-last-done">Last done · '+h(reviewLastDone)+'</small>':'')+
  '<div class="hvm-daily-checkin-actions"><button type="button" class="review-yes" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;yes&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Yes</button><button type="button" class="review-no" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;no&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✕ No</button><button type="button" class="review-na" onclick="houseVisualAnswerReview(&#39;'+h(reviewItem.kind)+'&#39;,&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;na&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">— N/A</button><button type="button" onclick="houseVisualSkipReview(&#39;'+h(reviewItem.key)+'&#39;,&#39;'+h(date)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Skip for now ›</button></div></section>':allRoomReviewsSkipped?'<section class="hvm-daily-checkin"><b>Daily Review</b><p>Your other room check-ins are skipped for now.</p><button type="button" onclick="lifeMapShowSkippedReviews(&#39;home&#39;,&#39;'+h(date)+'&#39;);houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Show skipped</button></section>':'')+
  '<div class="hvm-task-list"><b>What needs doing · '+visiblePendingTasks.length+'</b>'+
- (visiblePendingTasks.length?visiblePendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+roomTaskLastDoneHtml(t)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No other unfinished tracked room tasks yet.</p>')+'</div>'+
+ (visiblePendingTasks.length?visiblePendingTasks.slice(0,12).map(t=>'<div class="hvm-task-row"><span>'+h(t.title)+(t.itineraryMinutes?'<small>About '+h(t.itineraryMinutes)+' min</small>':'')+(t.homeObjectLabel?'<small>↳ '+h(t.homeObjectLabel)+'</small>':"")+roomTaskLastDoneHtml(t)+'</span><button class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button></div>').join(""):'<p>No other unfinished tracked room tasks yet.</p>')+'</div>'+
  '<div class="hvm-room-inventory"><b>Things in this room · '+inventory.length+' item types</b>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</div>';
 
@@ -1197,7 +1230,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+inventory+progress+actions+references+'</div>';
+ const markup='<div class="hvm-zone-detail">'+progress+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
