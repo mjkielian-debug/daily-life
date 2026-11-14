@@ -139,7 +139,29 @@ async function revealTarot(date){
    tarotRevealInFlight=false;
  }
 }
-function spiritualityLogFor(date){date=date||ymd();return(state.spiritualityPracticeLogs||[]).find(x=>x.date===date)||null}
+const SPIRITUALITY_DONE_JOURNAL="dailyLifeSpiritualityCompletionJournal:v1";
+const SPIRITUALITY_DRAFT_JOURNAL="dailyLifeSpiritualityLessonDraft:v1";
+function spiritualityCompletedBackup(date){
+ try{const entry=JSON.parse(localStorage.getItem(SPIRITUALITY_DONE_JOURNAL)||"null");return entry?.date===date&&entry.guidedPractice===true?entry:null}catch(_){return null}
+}
+function spiritualityLogFor(date){
+ date=date||ymd();
+ state.spiritualityPracticeLogs=Array.isArray(state.spiritualityPracticeLogs)?state.spiritualityPracticeLogs:[];
+ let row=state.spiritualityPracticeLogs.find(x=>x.date===date)||null;
+ // Local completion journal protects completed lessons from a stale cloud pull
+ // or an app update that reloads between IndexedDB and cloud writes.
+ const backup=spiritualityCompletedBackup(date);
+ if(backup&&!row){row={...backup};state.spiritualityPracticeLogs.push(row)}
+ else if(backup&&row&&!row.guidedPractice){for(const key of Object.keys(backup))if(key.startsWith("guidedPractice")||key==="reading")row[key]=backup[key]}
+ return row;
+}
+function spiritualitySaveDraft(){
+ if(!spiritualityGuideRun)return;
+ try{const r=spiritualityGuideRun;localStorage.setItem(SPIRITUALITY_DRAFT_JOURNAL,JSON.stringify({date:r.date,step:r.step,practiceStep:r.practiceStep,quizChoice:r.quizChoice,carryForward:r.carryForward}))}catch(_){}
+}
+function spiritualityReadDraft(date){
+ try{const x=JSON.parse(localStorage.getItem(SPIRITUALITY_DRAFT_JOURNAL)||"null");return x?.date===date&&Number.isInteger(x.step)&&x.step>=0&&x.step<=3?x:null}catch(_){return null}
+}
 async function toggleSpiritualPractice(key){
  const allowed=["reading","tarot","stillness","ritual"];if(!allowed.includes(key))return;
  state.spiritualityPracticeLogs=state.spiritualityPracticeLogs||[];
@@ -535,7 +557,7 @@ function spiritualitySourceLink(reading){
 }
 function spiritualityGuideLandingCard(){
  const lesson=spiritualityCourseLesson(),season=spiritualitySeasonalFocus();
- return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Daily spiritual education · class '+lesson.courseNumber+' of '+lesson.courseSize+'</div><h2>'+esc(lesson.title)+'</h2><div class="tag">'+esc(lesson.tradition)+'</div>'+spiritualityLessonVisual(lesson)+'<p class="muted">Learn one idea from a tradition, check what you understood, then move through a guided practice. No typing and no countdown holding you in place.</p>'+(season?'<div class="spiritual-guide-season"><b>'+(season.active?'In season now':'Coming up')+' · '+esc(season.name)+'</b><p>'+esc(season.about)+(season.active?' Try this season: '+esc(season.practice):' · Around '+esc(season.date)+' in the Northern Hemisphere.')+'</p></div>':'')+'<button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">Start today’s class</button><div class="muted small">About five minutes at your pace · lesson, understanding check, guided practice, reflection</div></section>'
+ return'<section class="card spirituality-guide-card floral-card"><div class="eyebrow">Daily spiritual education · class '+lesson.courseNumber+' of '+lesson.courseSize+'</div><h2>'+esc(lesson.title)+'</h2><div class="tag">'+esc(lesson.tradition)+'</div>'+spiritualityLessonVisual(lesson)+'<p class="muted">Learn one idea from a tradition, check what you understood, then move through a guided practice. No typing and no countdown holding you in place.</p>'+(season?'<div class="spiritual-guide-season"><b>'+(season.active?'In season now':'Coming up')+' · '+esc(season.name)+'</b><p>'+esc(season.about)+(season.active?' Try this season: '+esc(season.practice):' · Around '+esc(season.date)+' in the Northern Hemisphere.')+'</p></div>':'')+'<button type="button" class="btn primary spirituality-guide-start" onclick="startSpiritualityPractice()">'+(spiritualityLogFor(ymd())?.guidedPractice?'✓ Completed today · Revisit class':spiritualityReadDraft(ymd())?'Resume today’s class':'Start today’s class')+'</button><div class="muted small">About five minutes at your pace · lesson, understanding check, guided practice, reflection</div></section>'
 }
 function spiritualityGuideChoiceGroup(group,options,selected){
  return'<div class="spiritual-guide-choices" role="group">'+options.map(function(option,index){
@@ -552,6 +574,7 @@ function chooseSpiritualityGuide(group,value){
   const allowed=spiritualityGuideRun.lesson.carry;if(!allowed.includes(value))return;
   spiritualityGuideRun.carryForward=value;
  }else return;
+ spiritualitySaveDraft();
  showSpiritualityGuideStep();
 }
 function spiritualityGuideSteps(){
@@ -584,17 +607,21 @@ function showSpiritualityGuideStep(){
  const next=document.getElementById("saveModal");if(next){next.classList.add("spiritual-guide-next");next.disabled=!ready;next.setAttribute("aria-disabled",ready?"false":"true")}
 }
 function startSpiritualityPractice(){
- const date=ymd();
- spiritualityGuideRun={date:date,lesson:spiritualityCourseLesson(date),season:spiritualitySeasonalFocus(date),step:0,practiceStep:0,quizChoice:null,carryForward:""};
+ const date=ymd(),draft=spiritualityLogFor(date)?.guidedPractice?null:spiritualityReadDraft(date);
+ spiritualityGuideRun={date:date,lesson:spiritualityCourseLesson(date),season:spiritualitySeasonalFocus(date),
+  step:draft?.step||0,practiceStep:Math.max(0,Math.min(draft?.practiceStep||0,spiritualityCourseLesson(date).practice.length-1)),
+  quizChoice:draft?.quizChoice??null,carryForward:draft?.carryForward||""};
+ spiritualitySaveDraft();
  showSpiritualityGuideStep();
 }
 function advanceSpiritualityPractice(){
  if(!spiritualityGuideRun)return;
  const run=spiritualityGuideRun,step=spiritualityGuideSteps()[run.step];
  if(step.kind==="quiz"&&run.quizChoice===null)return;
- if(step.kind==="practice"&&run.practiceStep<run.lesson.practice.length-1){run.practiceStep++;showSpiritualityGuideStep();return}
+ if(step.kind==="practice"&&run.practiceStep<run.lesson.practice.length-1){run.practiceStep++;spiritualitySaveDraft();showSpiritualityGuideStep();return}
  if(step.kind==="reflection"){completeSpiritualityPractice();return}
  run.step++;
+ spiritualitySaveDraft();
  showSpiritualityGuideStep();
 }
 async function completeSpiritualityPractice(){
@@ -606,8 +633,11 @@ async function completeSpiritualityPractice(){
  else before={...log};
  const answer=run.lesson.answers[run.quizChoice];
  log.reading=true;log.guidedPractice=true;log.guidedPracticeMinutes=5;log.guidedPracticeLessonId=run.lesson.courseNumber;log.guidedPracticeTradition=run.lesson.tradition;log.guidedPracticeTitle=run.lesson.title;log.guidedPracticeQuizCorrect=!!answer?.correct;log.guidedPracticeCarryForward=run.carryForward;log.guidedPracticeSeason=run.season?.active?run.season.name:"";log.guidedPracticeCompletedAt=new Date().toISOString();
- try{await save();spiritualityGuideRun=null;closeModal();render()}
- catch(error){if(created)state.spiritualityPracticeLogs=state.spiritualityPracticeLogs.filter(function(x){return x!==log});else Object.assign(log,before);alert("The class could not be saved yet. Your existing record was kept unchanged.");const retry=document.getElementById("saveModal");if(retry){retry.disabled=false;retry.textContent="Try saving again";retry.onclick=completeSpiritualityPractice}}
+ const backup={id:log.id,date:log.date,reading:true,guidedPractice:true,guidedPracticeMinutes:log.guidedPracticeMinutes,guidedPracticeLessonId:log.guidedPracticeLessonId,guidedPracticeTradition:log.guidedPracticeTradition,guidedPracticeTitle:log.guidedPracticeTitle,guidedPracticeQuizCorrect:log.guidedPracticeQuizCorrect,guidedPracticeCarryForward:log.guidedPracticeCarryForward,guidedPracticeSeason:log.guidedPracticeSeason,guidedPracticeCompletedAt:log.guidedPracticeCompletedAt};
+ const previousBackup=localStorage.getItem(SPIRITUALITY_DONE_JOURNAL);
+ try{localStorage.setItem(SPIRITUALITY_DONE_JOURNAL,JSON.stringify(backup))}catch(_){}
+ try{await save();try{localStorage.removeItem(SPIRITUALITY_DRAFT_JOURNAL)}catch(_){}spiritualityGuideRun=null;closeModal();render()}
+ catch(error){if(created)state.spiritualityPracticeLogs=state.spiritualityPracticeLogs.filter(function(x){return x!==log});else Object.assign(log,before);try{if(previousBackup===null)localStorage.removeItem(SPIRITUALITY_DONE_JOURNAL);else localStorage.setItem(SPIRITUALITY_DONE_JOURNAL,previousBackup)}catch(_){}alert("The class could not be saved yet. Your existing record was kept unchanged.");const retry=document.getElementById("saveModal");if(retry){retry.disabled=false;retry.textContent="Try saving again";retry.onclick=completeSpiritualityPractice}}
 }
 (function installSpiritualityGuideStyles(){
  if(document.getElementById("spiritualityGuideStyles"))return;
