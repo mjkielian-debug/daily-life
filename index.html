@@ -7805,15 +7805,15 @@ function openTaskDetails(id){
  document.getElementById("taskDetailEdit")?.addEventListener("click",()=>{closeModal();openTask("",id)});
  document.getElementById("taskDetailToggle")?.addEventListener("click",async()=>{t.done=!t.done;await save();render();openTaskDetails(id)});
 }
-function openTask(person="",id="",shareDefault=false,roomContext=null){
+function openTask(person="",id="",shareDefault=false,roomContext=null,categoryDefault=""){
   ensurePeopleProfiles();
   const objectTask=!!(roomContext?.objectName&&!id);
   const existing=(state.tasks||[]).find(x=>x.id===id)||null,
-        x=existing||{date:ymd(),title:objectTask?"":roomContext?.roomName?String(roomContext.roomName)+" · ":"",child:person||"",category:roomContext?"home":"life",notes:objectTask?"Room: "+String(roomContext.roomName||"Room")+" · Object: "+String(roomContext.objectName):roomContext?.roomName?"Room: "+String(roomContext.roomName):"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
+        x=existing||{date:ymd(),title:objectTask?"":roomContext?.roomName?String(roomContext.roomName)+" · ":"",child:person||"",category:roomContext?"home":categoryDefault||"life",notes:objectTask?"Room: "+String(roomContext.roomName||"Room")+" · Object: "+String(roomContext.objectName):roomContext?.roomName?"Room: "+String(roomContext.roomName):"",done:false,order:100,itineraryMinutes:null,itineraryPreference:"",itineraryStart:"",shared:!!shareDefault};
   modal(existing?"Edit task":"Add task",`<div class="stack rainbow-task-editor">
     <label>Task<input id="task" value="${esc(x.title||"")}" placeholder="${objectTask?'What do you want to do with '+esc(roomContext.objectName)+'?':'Task name'}"></label>
     ${objectTask?'<div class="notice"><b>Linked to '+esc(roomContext.objectName)+'</b><div class="muted small">This task will appear with '+esc(roomContext.roomName||"this room")+(roomContext.floor?' · '+esc(roomContext.floor):'')+' and stay attached to this mapped object.</div></div>':roomContext?.roomName&&!existing?'<p class="muted small">Linked to '+esc(roomContext.roomName)+(roomContext.floor?' · '+esc(roomContext.floor):'')+'</p>':""}
-    <div class="grid2"><label>Date<input id="taskdate" type="date" value="${esc(x.date||ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
+    <div class="grid2"><label>Date · leave blank for anytime<input id="taskdate" type="date" value="${esc(x.date??ymd())}"></label><label>Person<input id="taskperson" list="peopleOptions" value="${esc(x.child||person||"")}" placeholder="Optional"><datalist id="peopleOptions">${(state.peopleProfiles||[]).map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist></label></div>
     <label>Category<input id="cat" value="${esc(x.category||"life")}"></label>
     <div class="grid2"><label>About how long?<select id="taskmins"><option value="">Let Daily Life estimate</option>${[10,15,20,25,30,45,60,90,120].map(n=>`<option value="${n}" ${Number(x.itineraryMinutes)===n?"selected":""}>${n} minutes</option>`).join("")}</select></label><label>Best time<select id="taskpref"><option value="" ${!x.itineraryPreference?"selected":""}>Auto · fit my day</option><option value="morning" ${x.itineraryPreference==="morning"?"selected":""}>Morning</option><option value="afternoon" ${x.itineraryPreference==="afternoon"?"selected":""}>Afternoon</option><option value="after-school" ${x.itineraryPreference==="after-school"?"selected":""}>After school</option><option value="evening" ${x.itineraryPreference==="evening"?"selected":""}>Evening</option><option value="any" ${x.itineraryPreference==="any"?"selected":""}>Anywhere</option></select></label></div>
     <label>Exact start (optional)<input id="taskstart" type="time" value="${esc(x.itineraryStart||"")}"></label>
@@ -7823,7 +7823,7 @@ function openTask(person="",id="",shareDefault=false,roomContext=null){
     ${x.sourceAssignmentId?`<div class="notice"><b>Linked to a school assignment snapshot.</b><div class="muted small">Sharing this task shares only the task text and timing—not the private assignment snapshot or school source link.</div></div>`:""}
     ${existing?`<button type="button" class="btn danger" onclick="removeTask('${x.id}')">Delete task</button>`:""}
   </div>`,"Save",async()=>{
-    const title=$("#task").value.trim(),date=$("#taskdate").value||ymd();if(!title)return;
+    const title=$("#task").value.trim(),date=$("#taskdate").value||"";if(!title)return;
     let t=existing;
     if(!t){t={id:uid(),done:false,order:100};state.tasks.push(t)}
     Object.assign(t,{date,title,child:$("#taskperson").value.trim(),category:$("#cat").value.trim()||"life",notes:$("#notes").value.trim(),done:$("#taskdone").checked,itineraryMinutes:Number($("#taskmins").value||0)||null,itineraryPreference:$("#taskpref").value||"",itineraryStart:$("#taskstart").value||""});
