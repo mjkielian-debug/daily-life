@@ -421,6 +421,11 @@ function view(areaOverride,tasksOnly){
   nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
  const taskRow=t=>{
+  if(typeof window.isParentingSkillTask==="function"&&window.isParentingSkillTask(t)){
+   return '<div class="lm-task lm-lesson-row '+(t.done?"is-done":"")+'">'+
+    '<button class="lm-lesson-launch" type="button" onclick="openParentingSkillLesson(&#39;'+h(t.id)+'&#39;)"><b>'+h(t.title||"Parenting skill")+'</b><small>'+(t.done?"Completed task · open another lesson":"Learn, think & practice · Open lesson ›")+'</small></button>'+
+    '<button class="lm-task-edit" type="button" onclick="openTask(&#39;&#39;,&#39;'+h(t.id)+'&#39;)">Edit</button></div>';
+  }
   const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");
   const handler=group?"lifeMapToggleTaskGroup":"toggleTask",lastDone=window.lifeMapTaskLastDoneLabel(t);
   return '<div class="lm-task lm-task-editable '+(t.done?"is-done":"")+'">'+
@@ -445,7 +450,8 @@ function view(areaOverride,tasksOnly){
  const homeChores=areaSelection==="home"&&typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(date).filter(t=>t._lifeChore&&!areaReviewKeys.has(String(t.id||""))&&!areaNotApplicableKeys.has(String(t.id||""))&&!(typeof window.houseVisualTaskHasRoomMatch==="function"&&window.houseVisualTaskHasRoomMatch(t))).map(choreRow).join(""):"";
  const activeAreaRows=areaSelection?((areaSelection==="mind"?mindCareRows:"")+(matches[areaSelection]||[]).filter(t=>!t._lifeMapEvidence&&!areaReviewKeys.has(String(t.id||""))&&!areaNotApplicableKeys.has(String(t.id||""))&&!(areaSelection==="home"&&typeof window.houseVisualTaskHasRoomMatch==="function"&&window.houseVisualTaskHasRoomMatch(t))).map(taskRow).join("")+homeChores):"";
  const moneyGoalPanel=areaSelection==="money"?'<div class="lm-money-goals"><span class="lm-kicker">MONEY GOAL PROGRESS</span><b>'+(moneyGoalTotal?moneyGoalDone+" of "+moneyGoalTotal+" steps · "+moneyGoalPct+"%":"No money-goal steps saved yet")+'</b>'+(moneyGoalRows||'<p class="lm-muted">Add a goal and steps to start tracking progress.</p>')+'<button type="button" class="lm-text-button" onclick="openMoneyHubSection(\'goals\')">Open money goals ›</button></div>':"";
- const areaActivityContent=(lastAreaDone?'<p class="lm-inline-last"><b>Last done</b> · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':"")+(areaCheckin||"")+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':"")+moneyGoalPanel;
+ const mindLessonShortcut=areaSelection==="mind"?'<div class="lm-area-task-group"><div class="lm-area-section-heading"><b>Learn when useful</b><small>Guided parenting & psychology</small></div><button type="button" class="lm-region" onclick="openParentingSkillLesson()">Open a short interactive lesson ›</button></div>':"";
+ const areaActivityContent=mindLessonShortcut+(lastAreaDone?'<p class="lm-inline-last"><b>Last done</b> · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':"")+(areaCheckin||"")+(activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':"")+moneyGoalPanel;
  const activeAreaPanel=areaSelection&&areaActivityContent?'<section class="lm-inline-panel lm-area-page-content" aria-label="'+h(areaTitles[areaSelection]||"Life area")+' tasks and check-ins">'+areaActivityContent+'</section>':"";
  if(tasksOnly&&areaSelection==="all"){
   const openTasks=tasks.filter(t=>!t.done),doneTasks=tasks.filter(t=>t.done);
