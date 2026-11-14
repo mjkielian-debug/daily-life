@@ -661,19 +661,27 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+correctedStairArtwork()+hotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. Upper floors now use matching soft-realistic lavender detailing; open a room to browse the actual saved photos. Completed room tasks reveal richer color.</div></section>'+
+  '<div class="hvm-approved-caption">✦ Kitchen: approved artwork. Dining room and living room: photo references documented; illustrated furniture is still being refined. Other rooms remain reference-pending. Tap a room for its tasks and confirmed details. Progress coloring reflects completed tasks, not a claim that the room is clean.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
  if(f!=="First floor"||!approvedDollhouseRooms[z?.id])return "";
  const config=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
- const kitchen=z.id==="kitchen";
- const note=kitchen?"Kitchen layout illustrated from your photos — tap objects in the list below to inspect their tasks.":"Illustrated style reference. Furniture here may not match its exact placement yet.";
- return '<section class="hvm-approved-room-zoom" aria-label="Detailed illustration of '+h(z.name)+'">'+
-  '<div class="hvm-approved-room-zoom-header"><strong>✦ '+h(z.name)+' · illustrated room</strong><span>'+stats.done+' / '+stats.total+' tasks done</span></div>'+
-  '<svg viewBox="'+config.zoom+'" role="img" aria-label="'+h(z.name)+' from the approved illustrated first-floor design">'+
+ const kitchen=z.id==="kitchen",photoMapped=z.id==="dining"||z.id==="living";
+ const note=kitchen
+  ?"Approved kitchen illustration based on your room photos. The kitchen artwork stays unchanged."
+  :photoMapped
+   ?"Photo-mapped room: the photos establish where the real furniture, doorways and decorations go. The picture above is still an illustration draft, not an exact representation. No more room photographs are needed right now."
+   :"Illustration reference only: furniture and room details still need photo verification.";
+ const evidence=photoMapped?[z.photoReference20261114,z.photoReference20261114Additional].filter(Boolean):[];
+ const details=evidence.length?'<details class="hvm-photo-verified-notes"><summary>Photo-confirmed room details</summary>'+
+  evidence.map(entry=>'<p>'+h(entry)+'</p>').join("")+'</details>':"";
+ const status=kitchen?"Approved kitchen":photoMapped?"Photos reviewed · illustration in progress":"Needs room references";
+ return '<section class="hvm-approved-room-zoom" aria-label="Illustration reference for '+h(z.name)+'">'+
+  '<div class="hvm-approved-room-zoom-header"><strong>✦ '+h(z.name)+' · '+h(status)+'</strong><span>'+stats.done+' / '+stats.total+' tasks done</span></div>'+
+  '<svg viewBox="'+config.zoom+'" role="img" aria-label="'+h(z.name)+' reference artwork; actual details may differ from photos">'+
   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0"/>'+
-  '</svg><p>'+h(note)+'</p></section>';
+  '</svg><p>'+h(note)+'</p>'+details+'</section>';
 }
 
 function mapSketch(f,m,skipApproved=false){
