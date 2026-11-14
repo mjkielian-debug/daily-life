@@ -447,6 +447,56 @@ function joinedFloorDisplay(m){
  return {...m,zones:joined,layoutNotice:"Room edges are aligned for a connected schematic view. Saved source outlines are unchanged; sizes are illustrative."};
 }
 
+
+/* Architectural details added behind the task-progress wash, based on the
+   already reviewed first-floor photos. Zone outlines stay in private data. */
+function photoRoomAccents(f,z,b){
+ if(f!=="First floor"||!b||b.width<35||b.height<35)return "";
+ const k=str(z.id),id="hvm-acc-"+k;
+ const T=(body)=>'<g class="hvm-photo-room-accents" pointer-events="none">'+
+ '<defs><clipPath id="'+id+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
+ '<g clip-path="url(#'+id+')"><g transform="translate('+b.x.toFixed(1)+' '+b.y.toFixed(1)+') scale('+(b.width/100).toFixed(4)+' '+(b.height/100).toFixed(4)+')">'+body+'</g></g></g>';
+ if(k==="kitchen"){
+  return T('<path d="M0 0H100V12H0ZM0 0H12V100H0Z" fill="#fefaf4" stroke="#b5a8aa" stroke-width="1.3"/>'+
+    '<path d="M12 0V14M23 0V13M35 0V13M84 0V12M0 24H12M0 47H12M0 70H12" stroke="#bcaab0" stroke-width="1"/>'+
+    '<path d="M38 2H75V18H38Z" fill="#b5d5e6" stroke="#fdf9f3" stroke-width="3.2"/>'+
+    '<path d="M56 2V18M38 10H75" stroke="#fff9f2" stroke-width="2"/>'+
+    '<path d="M38 14Q46 10 53 14Q61 10 74 14V18H38Z" fill="#a9c6b2" opacity=".85"/>'+
+    '<path d="M79 0V9" stroke="#99858a" stroke-width="1"/>'+
+    '<path d="M79 8q-8 -6 -10 4M79 8q7 -7 12 3M79 8q-4 4 -7 10M79 8q3 7 10 10" fill="none" stroke="#5f9a73" stroke-width="2.8" stroke-linecap="round"/>'+
+    '<path d="M0 100H100" stroke="#fdfaf7" stroke-width="2" opacity=".65"/>');
+ }
+ if(k==="bath"){
+  return T('<rect x="2" y="4" width="96" height="14" fill="#d5c9c1" stroke="#a69c9e" stroke-width="1.3"/>'+
+    '<rect x="20" y="4" width="56" height="15" fill="#b1c4ce" stroke="#f8f9f6" stroke-width="3"/>'+
+    '<rect x="18" y="23" width="55" height="20" rx="2" fill="#b48a6b" stroke="#896c65" stroke-width="2"/>'+
+    '<ellipse cx="46" cy="23" rx="18" ry="7" fill="#f7f8f4" stroke="#aaa5a5" stroke-width="2"/>'+
+    '<path d="M22 32H68M46 32V41" stroke="#ccad94" stroke-width="2"/>');
+ }
+ if(k==="dining"){
+  return T('<path d="M0 0H100V8H0Z" fill="#f4e6d3" stroke="#b69075" stroke-width="1"/>'+
+    '<path d="M10 3V11M40 3V11M72 3V11" stroke="#d8b99b" stroke-width="1.5"/>'+
+    '<rect x="79" y="2" width="17" height="28" rx="2" fill="#a0785b" stroke="#755545" stroke-width="1.4"/>'+
+    '<path d="M79 11H96M79 20H96" stroke="#624a45" stroke-width="1.2"/>'+
+    '<path d="M4 98H100" stroke="#d4aa83" stroke-width="1.4"/>');
+ }
+ if(k==="living"){
+  return T('<path d="M0 0H100V8H0Z" fill="#fff6e9" stroke="#b58b73" stroke-width="1.2"/>'+
+    '<path d="M8 3V25M13 3V25M92 3V25" stroke="#c59f86" stroke-width="1.3"/>'+
+    '<path d="M30 88H67V99H30Z" fill="#b9d7df" stroke="#f4f2ed" stroke-width="1.7"/>'+
+    '<path d="M47 88V99" stroke="#fefdf7" stroke-width="2"/>'+
+    '<path d="M27 85Q35 90 40 85V100H26Z" fill="#e3a6b5"/>'+
+    '<path d="M68 85Q62 90 58 85V100H70Z" fill="#e3a6b5"/>');
+ }
+ if(k==="playroom"){
+  return T('<path d="M0 0H100V9H0Z" fill="#fff1d9" stroke="#bc9c83" stroke-width="1.2"/>'+
+    '<path d="M0 0V100" stroke="#b8856c" stroke-width="4"/>'+
+    '<rect x="9" y="8" width="30" height="18" rx="2" fill="#f5eaca" stroke="#b9a58e"/>'+
+    '<path d="M11 18L17 11L25 20L32 12L38 18" fill="none" stroke="#ad81be" stroke-width="2"/>');
+ }
+ return "";
+}
+
 function mapSketch(f,m){
  m=illustratedLayout(f,m);
  if(f==="First floor")m=joinedFloorDisplay(m);
@@ -474,6 +524,7 @@ function mapSketch(f,m){
   const baseFill="#"+sourceColor.slice(1).match(/../g).map(v=>Math.round(parseInt(v,16)*.58+255*.42).toString(16).padStart(2,"0")).join("");
   const texture=/bath|kitchen/i.test(str(z.name))?"hvm-floor-tile":"hvm-floor-wood";
   const floorTexture=isStair?"":'<path d="'+h(z.path)+'" fill="url(#'+texture+')" pointer-events="none"/>';
+  const accents=photoRoomAccents(f,z,bounds);
   const organized=roomDeclutterSessions(f,z.id).length,room=localRoom(f,z),
     roomTasks=trackedRoomTasks(f,z,room).filter(t=>{const dates=typeof window.lifeMapProgressDates==="function"?window.lifeMapProgressDates():[ymd()];return !t.date||dates.includes(String(t.date))}),taskDone=roomTasks.filter(t=>t.done).length,
     taskTint=taskDone?Math.min(.38,.08+Math.log2(taskDone+1)*.09):0,
@@ -486,7 +537,7 @@ function mapSketch(f,m){
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
-   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+taskOverlay+declutterOverlay+
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+accents+taskOverlay+declutterOverlay+
    floorGraphic+(furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
