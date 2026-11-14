@@ -95,7 +95,7 @@ function zoneFloorGraphic(f,z,bounds){
  if(!firstUp&&!basementDown&&!mainStairs&&!thirdStairs)return "";
  if(!/stairs|landing/i.test(label))return "";
  if(firstUp){
-  const centerX=bounds.x+bounds.width/2,centerY=bounds.y+bounds.height/2;
+  const centerX=bounds.x+bounds.width/2,centerY=bounds.y+bounds.height*.36;
   const width=Math.min(bounds.width*.82,52),height=Math.min(bounds.height*.34,28);
   const left=centerX-width/2,right=centerX+width/2,top=centerY-height/2,bottom=centerY+height/2;
   const count=6,step=width/(count-1),treads=Array.from({length:count},(_,i)=>{
@@ -135,7 +135,7 @@ function illustratedLayout(f,m){
   {match:s=>/play/.test(s),path:"M35 175H155V405H35Z",cx:95,cy:280},
   {match:s=>/living|lounge/.test(s),path:"M155 190H345V445H155Z",cx:250,cy:310},
   {match:s=>/basement|downstairs|stairsdown|basementstairs/.test(s),path:"M35 405H155V470H35Z",cx:95,cy:438},
-  {match:s=>/stairsup|upstairs|staircase|stairs/.test(s),path:"M275 170H330V260H275Z",cx:302,cy:215}
+  {match:s=>/stairsup|upstairs|staircase|stairs/.test(s),path:"M175 225H258V275H175Z",cx:216.5,cy:250}
  ]:f==="Second floor"?[
   {match:s=>/dolly/.test(s),path:"M245 48H345V170H245Z",cx:295,cy:108},
   {match:s=>/demitri|dimitri|tree/.test(s),path:"M245 170H345V300H245Z",cx:295,cy:230},
@@ -172,7 +172,7 @@ function illustratedLayout(f,m){
   return z;
  });
  if(f==="First floor"&&!mapped.some(z=>z.id==="stairs_up"||/stairs?\s*(up|to second)|upstairs/i.test(str(z.name)))){
-  mapped.push({id:"stairs_up",name:"Stairs to second floor",short:"Upstairs",color:"#d9b690",linkedFloor:"Second floor",path:fit("M155 135H245V190H155Z"),cx:200*sx+ox,cy:162*sy+oy});
+  mapped.push({id:"stairs_up",name:"Stairs to second floor",short:"Upstairs",color:"#d9b690",linkedFloor:"Second floor",path:fit("M175 225H258V275H175Z"),cx:216.5*sx+ox,cy:250*sy+oy});
  }
  if(f==="Second floor"){
   if(!mapped.some(z=>z.linkedFloor==="First floor"||/first floor|downstairs|main stairs/i.test(str(z.name))||
@@ -252,7 +252,7 @@ function mapSketch(f,m){
  }).map(z=>{
   const bounds=zoneBounds(z.path),x=Number(z.cx)||0,y=Number(z.cy)||0,onclick=act(f,z);
   const labelX=bounds?bounds.cx:Math.max(limits[0],Math.min(limits[0]+limits[2],x));
-  const stairLabel=str(z.id)==="stairs_up"&&f==="First floor"?"↑ 2nd":
+  const stairLabel=str(z.id)==="stairs_up"&&f==="First floor"?"← 2nd":
     str(z.id)==="basement_stairs"&&f==="First floor"?"↓ Basement":
     str(z.id)==="stairs"&&f==="Second floor"?"↓ 1st":
     str(z.id)==="stairs_to_third"&&f==="Second floor"?"↑ 3rd":"";
