@@ -566,6 +566,19 @@ function approvedDollhouseProgressArt(f,z,settings,stats,prefix){
   '<g class="hvm-approved-color-reveal" pointer-events="none" clip-path="url(#'+id+'-zone)">'+
   '<g clip-path="url(#'+id+'-reveal)"><image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" /></g></g>';
 }
+function approvedStairDirectionGuides(){
+ return '<g class="hvm-stair-direction-guides" aria-label="Stair directions" pointer-events="none">'+
+  '<path d="M130 920L130 1065" fill="none" stroke="#fff9ff" stroke-width="15" stroke-linecap="round"/>'+
+  '<path d="M130 920L130 1065M112 1046L130 1065L148 1046" fill="none" stroke="#914c7d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'+
+  '<rect x="55" y="1074" width="150" height="31" rx="15" fill="#fff6fc" fill-opacity=".96" stroke="#a9618f" stroke-width="2"/>'+
+  '<text x="130" y="1095" text-anchor="middle" font-size="16" fill="#59324f" font-weight="900">↓ DOWN TO BASEMENT</text>'+
+  '<path d="M396 1033L483 947" fill="none" stroke="#fff9ff" stroke-width="15" stroke-linecap="round"/>'+
+  '<path d="M396 1033L483 947M458 947L483 947L482 972" fill="none" stroke="#914c7d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'+
+  '<rect x="388" y="1040" width="94" height="31" rx="15" fill="#fff6fc" fill-opacity=".96" stroke="#a9618f" stroke-width="2"/>'+
+  '<text x="435" y="1061" text-anchor="middle" font-size="16" fill="#59324f" font-weight="900">↑ UP</text>'+
+ '</g>';
+}
+
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  const reveal=zoneData.map(z=>{
@@ -587,7 +600,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+hotspots+'</svg></div>'+
+  reveal+hotspots+approvedStairDirectionGuides()+'</svg></div>'+
   '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other room illustrations are style references until their positions are verified with photos. Completed room tasks reveal richer color.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
