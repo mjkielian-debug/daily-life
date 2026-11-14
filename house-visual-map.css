@@ -265,3 +265,19 @@
 .hvm-connected-map .hvm-map-notes summary{cursor:pointer}
 .hvm-connected-map .hvm-sketch-heading{padding:4px 2px}
 .hvm-connected-map .hvm-floor-links{gap:8px;margin-top:10px}
+
+/* Soft illustrated rooms, legible names, and a compact map canvas. */
+.hvm-connected-map{background:#fffaf6;box-shadow:none}
+.hvm-connected-map .hvm-drawing{background:#fffaf6}
+.hvm-connected-map .hvm-drawing>rect:first-child{fill:#fffaf6}
+.hvm-connected-map .hvm-zone>path:first-child{stroke:#a18b9a;stroke-width:1.6}
+.hvm-connected-map .hvm-room-symbol{fill:var(--room-accent,#fffaf5);stroke:#80657b;stroke-width:2;filter:drop-shadow(0 2px 1px #674c6620)}
+.hvm-connected-map .hvm-room-name{font-family:var(--font-body,system-ui,sans-serif);font-size:12px;font-weight:750;fill:#503e53;stroke:#fffaf6;stroke-width:2;paint-order:stroke}
+.hvm-connected-map .hvm-stair-zone .hvm-room-name{font-size:11px}
+.hvm-connected-map .hvm-stair-plan rect{fill:#e8caa5;stroke:#ab8c78;stroke-width:1.4}
+.hvm-connected-map .hvm-stair-plan path{stroke:#9a7966;stroke-width:3}
+.hvm-connected-map .hvm-sketch-heading{padding:0 2px 4px;gap:6px}
+.hvm-connected-map .hvm-sketch-heading strong{font-family:var(--font-body,system-ui,sans-serif);font-size:1rem}
+.hvm-connected-map .hvm-floor-links{display:flex;justify-content:center;gap:8px;padding:0;margin:8px 0 0}
+.hvm-connected-map .hvm-floor-links .btn{min-height:42px;padding:8px 14px;font-size:.88rem}
+@media(prefers-reduced-motion:no-preference){.hvm-connected-map .hvm-zone{transition:filter .18s}.hvm-connected-map .hvm-zone:hover{filter:brightness(1.04) drop-shadow(0 1px 2px #9b6f9033)}}
