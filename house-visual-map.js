@@ -541,13 +541,13 @@ function roomColorBloomSvg(f,z,bounds,fill,progress){
  */
 const approvedDollhouseAsset="assets/approved-dollhouse-first-floor.png?v=20261114-approved1";
 const approvedDollhouseRooms={
- kitchen:{path:"M32 407H573V899H333V908H32Z",cx:301,cy:634,badge:[512,852],zoom:"31 405 544 504"},
- bath:{path:"M578 409H805V713H578Z",cx:692,cy:558,badge:[717,430],zoom:"577 405 230 309"},
- dining:{path:"M580 713H806V1064H580Z",cx:693,cy:883,badge:[718,742],zoom:"578 707 231 363"},
- basement_stairs:{path:"M31 906H316V1148H31Z",cx:171,cy:1024,badge:[240,929],zoom:"31 902 290 248"},
- stairs_up:{path:"M320 900H581V1065H320Z",cx:451,cy:985,badge:[500,924],zoom:"320 898 262 170"},
- playroom:{path:"M30 1147H326V1400H30Z",cx:177,cy:1272,badge:[252,1169],zoom:"30 1146 300 259"},
- living:{path:"M326 1063H807V1400H326Z",cx:565,cy:1232,badge:[727,1091],zoom:"326 1062 481 341"}
+ kitchen:{path:"M32 407H573V899H333V908H32Z",cx:301,cy:634,maxRadius:385,badge:[512,852],zoom:"31 405 544 504"},
+ bath:{path:"M578 409H805V713H578Z",cx:692,cy:558,maxRadius:200,badge:[717,430],zoom:"577 405 230 309"},
+ dining:{path:"M580 713H806V1064H580Z",cx:693,cy:883,maxRadius:225,badge:[718,742],zoom:"578 707 231 363"},
+ basement_stairs:{path:"M31 906H316V1148H31Z",cx:171,cy:1024,maxRadius:195,badge:[240,929],zoom:"31 902 290 248"},
+ stairs_up:{path:"M320 900H581V1065H320Z",cx:451,cy:985,maxRadius:165,badge:[500,924],zoom:"320 898 262 170"},
+ playroom:{path:"M30 1147H326V1400H30Z",cx:177,cy:1272,maxRadius:205,badge:[252,1169],zoom:"30 1146 300 259"},
+ living:{path:"M326 1063H807V1400H326Z",cx:565,cy:1232,maxRadius:310,badge:[727,1091],zoom:"326 1062 481 341"}
 };
 function approvedDollhouseCountBadge(settings,stats,configuredRoom){
  if(!stats.total)return "";
@@ -559,9 +559,7 @@ function approvedDollhouseCountBadge(settings,stats,configuredRoom){
 function approvedDollhouseProgressArt(f,z,settings,stats,prefix){
  if(!stats.total||!stats.done)return "";
  const frac=Math.max(0,Math.min(1,stats.done/stats.total));
- const box=settings.path.match(/-?\d+(?:\.\d+)?/g).map(Number);
- const maxDistance=Math.max(...Array.from({length:box.length/2},(_,i)=>Math.hypot(box[2*i]-settings.cx,box[2*i+1]-settings.cy)),270);
- const radius=(maxDistance*Math.sqrt(frac)).toFixed(2);
+ const radius=(settings.maxRadius*Math.sqrt(frac)).toFixed(2);
  const id=prefix+"-"+z.id;
  return '<defs><clipPath id="'+id+'-zone"><path d="'+settings.path+'"/></clipPath>'+
   '<clipPath id="'+id+'-reveal"><circle cx="'+settings.cx+'" cy="'+settings.cy+'" r="'+radius+'"/></clipPath></defs>'+
@@ -585,8 +583,9 @@ function approvedDollhouseMap(f,m,oldMap){
  }).join("");
  return '<div class="hvm-approved-wrap">'+
   '<section class="hvm-approved-hero" aria-label="Detailed illustrated interactive first floor">'+
-  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR REAL HOUSE · FIRST FLOOR</span><strong>Explore the illustrated rooms</strong></div><small>Tap a room to see its tasks and details</small></div>'+
-  '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 388 805 1018" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
+  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Explore the illustrated rooms</strong></div><small>Tap a room to see its tasks and details</small></div>'+
+  '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
+  '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+hotspots+'</svg></div>'+
   '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other room illustrations are style references until their positions are verified with photos. Completed room tasks reveal richer color.</div></section>'+
