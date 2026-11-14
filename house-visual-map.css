@@ -352,3 +352,24 @@
 .hvm-map-fixture-illustrated:hover>g,
 .hvm-map-fixture-illustrated:focus-visible>g{filter:drop-shadow(0 3px 3px #9a5981b3) brightness(1.1)}
 .hvm-map-fixture-illustrated:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+
+/* Large photo-informed illustrated interior. Furniture remains a real accessible button. */
+.hvm-mini-room-canvas.is-illustrated{background:#e5dbd5;border:6px solid #a3827b;border-radius:17px;aspect-ratio:1.18;min-height:285px;
+ box-shadow:inset 0 0 0 2px #f8e6dc,0 5px 11px #805e7345;overflow:hidden}
+.hvm-mini-room-canvas.is-illustrated::before,
+.hvm-mini-room-canvas.is-illustrated::after{display:none}
+.hvm-mini-backdrop{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture{width:67px;min-height:60px;max-height:80px;padding:3px 2px 4px;
+ border:1px solid #ffffffbb;background:linear-gradient(140deg,#fffdf6dc,#f8e0e3b5);
+ box-shadow:0 2px 4px #4e33447a,0 0 0 1px #7c5f7f35;backdrop-filter:blur(1.5px);
+ border-radius:13px;z-index:2}
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture svg{width:44px;height:41px;filter:drop-shadow(0 2px 1.5px #4538457a)}
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture small{font-size:.6rem;line-height:1.1;color:#413046;
+ text-shadow:0 1px 0 #fff9f9;max-height:2.2em;overflow:hidden}
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture:hover,
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture:focus-visible{border:2px solid #d160b1;box-shadow:0 0 0 4px #fff6ea,0 3px 12px #8c5776cc;
+ transform:translate(-50%,-50%) scale(1.08);background:#fff9f8;z-index:5}
+.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture:active{transform:translate(-50%,-50%) scale(.95)}
+@media(max-width:380px){.hvm-mini-room-canvas.is-illustrated{min-height:260px}.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture{width:59px;min-height:54px;padding:3px 2px}.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture svg{width:38px;height:35px}}
+@media(prefers-reduced-motion:reduce){.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture{transition:none}}
