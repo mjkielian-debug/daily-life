@@ -102,6 +102,7 @@ const APP_SHELL=[
   "./capacity-planner.js",
   "./money-fix.js",
   "./task-ui.js",
+  "./parenting-psychology-lessons.js",
   "./manifest.webmanifest",
   "./icon.svg",
   "./daily-life-pastel-icon.svg",
