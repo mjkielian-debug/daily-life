@@ -1401,6 +1401,10 @@ function roomTaskLastDoneHtml(task){
  const label=typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(task):"";
  return label?'<small class="hvm-task-last-done">Last done · '+h(label)+'</small>':"";
 }
+window.houseVisualJumpToRoomTasks=function(){
+ const panel=document.querySelector(".hvm-zone-detail .hvm-task-list");
+ if(panel)panel.scrollIntoView({behavior:"smooth",block:"start"});
+};
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
@@ -1442,7 +1446,10 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+miniRoom+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const roomTaskNotice='<section class="hvm-room-task-entry" aria-label="Room task shortcut"><div><b>✓ '+pendingTasks.length+' room task'+(pendingTasks.length===1?"":"s")+' waiting</b>'+
+  '<small>'+(pendingTasks.length?h(pendingTasks[0].title||"Next room task"):"Nothing assigned yet · add a room task")+'</small></div>'+
+  '<button type="button" onclick="houseVisualJumpToRoomTasks()">View tasks ↓</button></section>';
+ const markup='<div class="hvm-zone-detail">'+roomTaskNotice+miniRoom+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
