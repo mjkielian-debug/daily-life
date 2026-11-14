@@ -29,13 +29,13 @@ function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirst
 function jump(view){if(typeof setView==="function")setView(view)}
 function avatarMark(label,icon,x,y,pct,color,area,pending){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- const count=Math.max(0,Number(pending)||0),accessibleLabel=label+", "+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+"% complete"+(count?", "+count+(area==="mind"?" actions left today":" check-ins waiting"):"");
+ const count=Math.max(0,Number(pending)||0),accessibleLabel=label+", "+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+"% complete"+(count?", "+count+" actions left today":"");
  return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(accessibleLabel)}" title="${h(accessibleLabel)}" data-life-area="${h(area)}">`+
  '<circle cx="'+x+'" cy="'+y+'" r="21" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y-1)+'" text-anchor="middle" font-size="13" font-weight="900" fill="#48394d">'+icon+'</text>'+
- '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+(area==='mind'?'% today':'%')+'</text>'+
- (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(area==="mind"?count+" left":count>9?"9+":count)+'</text></g>':"")+'</g>';
+ '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+'% today'+'</text>'+
+ (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(count+" left")+'</text></g>':"")+'</g>';
 }
 function avatarAreaFill(area,path,cx,cy,maxRadius,pct){
  const progress=Math.max(0,Math.min(100,Number(pct)||0));
@@ -279,6 +279,24 @@ function view(areaOverride,tasksOnly){
  const moneyGoalSteps=moneyGoals.flatMap(g=>g.steps),moneyGoalDone=moneyGoalSteps.filter(step=>step&&step.done).length,moneyGoalTotal=moneyGoalSteps.length,moneyGoalPct=moneyGoalTotal?Math.round(moneyGoalDone/moneyGoalTotal*100):0;
  const moneyGoalRows=moneyGoals.map(goal=>{const steps=list(goal.steps),done=steps.filter(step=>step&&step.done).length,pct=steps.length?Math.round(done/steps.length*100):0;return '<div class="lm-money-goal"><b>'+h(goal.name||"Money goal")+'</b><small>'+done+" of "+steps.length+" steps · "+pct+"%"+'</small></div>'}).join("");
  const moneyTaskDone=matches.money.filter(t=>t.done).length,moneyProgressTotal=moneyGoalTotal+matches.money.length,moneyProgressDone=moneyGoalDone+moneyTaskDone,moneyFill=moneyProgressTotal?Math.round(moneyProgressDone/moneyProgressTotal*100):0;
+
+ // One daily action source drives both the avatar and the destination lists.
+ const dailyAreaRows=Object.fromEntries(areaKeys.map(key=>[key,[]]));
+ const addDaily=(area,row)=>{if(dailyAreaRows[area]&&!dailyAreaRows[area].some(x=>x.id===row.id))dailyAreaRows[area].push(row)};
+ for(const t of tasks)if(!t._lifeMapEvidence)addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
+ for(const t of window.lifeMapHouseholdRows(date))if(t._lifeChore)addDaily("home",{id:"chore:"+t.id,kind:"chore",key:String(t.id),done:!!t.done,title:t.title,task:t});
+ for(const habit of careHabits){const area=mindCareHabits.includes(habit)?"mind":"body";addDaily(area,{id:"care:"+habit.key,kind:"care",key:String(habit.key),title:habit.label||habit.name||habit.key,done:typeof selfCareDone==="function"&&selfCareDone(habit.key,date),habit})}
+ for(const item of typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[]){
+  const area=lifeMapAreaForReview(item),rows=dailyAreaRows[area];if(!rows)continue;
+  const existing=rows.find(x=>x.key===String(item.key));
+  if(existing){if(item.status==="na")rows.splice(rows.indexOf(existing),1);continue}
+  if(item.status==="na")continue;
+  addDaily(area,{id:"review:"+item.kind+":"+item.key,kind:"review",key:String(item.key),title:item.label||"Daily action",done:item.status==="yes",review:item});
+ }
+ const spiritualLog=typeof spiritualityLogFor==="function"?spiritualityLogFor(date):null;
+ addDaily("spirituality",{id:"guided-class",kind:"lesson",title:"Today’s guided spiritual class",done:!!spiritualLog?.guidedPractice});
+ const dailyAreaStats=Object.fromEntries(areaKeys.map(area=>{const rows=dailyAreaRows[area],done=rows.filter(x=>x.done).length;return[area,{total:rows.length,done,left:rows.length-done,pct:rows.length?Math.round(done/rows.length*100):0}]}));
+
  const avatarLifeAreas=[
   {key:"spirituality",path:"M79 2H141L158 35Q138 45 110 43Q82 45 62 35Z",cx:110,cy:22,r:57,pct:pctFor("spirituality")},
   {key:"mind",path:"M75 40H145Q164 60 156 108Q147 137 110 142Q73 137 64 108Q56 60 75 40Z",cx:110,cy:90,r:70,pct:carePct},
@@ -289,6 +307,7 @@ function view(areaOverride,tasksOnly){
   {key:"money",path:"M68 318H152L158 463Q137 477 112 468H108Q83 477 62 463Z",cx:110,cy:390,r:105,pct:moneyFill},
   {key:"car",path:"M65 463Q86 475 108 468Q112 468 116 468Q139 476 158 463L163 492Q143 509 111 502Q80 509 59 492Z",cx:110,cy:485,r:61,pct:pctFor("car")}
  ];
+ avatarLifeAreas.forEach(area=>{area.pct=dailyAreaStats[area.key].pct});
  const avatarAreaDefs=avatarLifeAreas.map(area=>avatarAreaFill(area.key,area.path,area.cx,area.cy,area.r,area.pct)).join("");
  const avatarAreaLayers=avatarLifeAreas.map(area=>avatarAreaLayer(area.key,area.path,area.cx,area.cy,area.r,area.pct)).join("");
  const avatarReviewCounts={};
@@ -298,14 +317,14 @@ function view(areaOverride,tasksOnly){
   if(area)avatarReviewCounts[area]=(avatarReviewCounts[area]||0)+1;
  }
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind",mindRemaining),
-  avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality",avatarReviewCounts.spirituality||0),
-  avatarMark("Body & health","♡",111,205,bodyProgressPct,"#f2ae85","body",avatarReviewCounts.body||0),
-  avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people",avatarReviewCounts.people||0),
-  avatarMark("Hobbies and projects","✎",177,274,pctFor("hobbies"),"#82c6a4","hobbies",avatarReviewCounts.hobbies||0),
-  avatarMark("Money and planning","✧",111,372,moneyFill,"#83b8df","money",avatarReviewCounts.money||0),
-  avatarMark("Car & driving","C",47,425,pctFor("car"),"#e98cb0","car",avatarReviewCounts.car||0),
-  avatarMark("Work","W",175,425,pctFor("work"),"#82c6a4","work",avatarReviewCounts.work||0)
+  avatarMark("Mind and self-care","✿",47,99,dailyAreaStats.mind.pct,"#c89ad7","mind",dailyAreaStats.mind.left),
+  avatarMark("Spirituality","☾",174,78,dailyAreaStats.spirituality.pct,"#f2b85b","spirituality",dailyAreaStats.spirituality.left),
+  avatarMark("Body & health","♡",111,205,dailyAreaStats.body.pct,"#f2ae85","body",dailyAreaStats.body.left),
+  avatarMark("Family and kids","♥",43,274,dailyAreaStats.people.pct,"#e98cb0","people",dailyAreaStats.people.left),
+  avatarMark("Hobbies and projects","✎",177,274,dailyAreaStats.hobbies.pct,"#82c6a4","hobbies",dailyAreaStats.hobbies.left),
+  avatarMark("Money and planning","✧",111,372,dailyAreaStats.money.pct,"#83b8df","money",dailyAreaStats.money.left),
+  avatarMark("Car & driving","C",47,425,dailyAreaStats.car.pct,"#e98cb0","car",dailyAreaStats.car.left),
+  avatarMark("Work","W",175,425,dailyAreaStats.work.pct,"#82c6a4","work",dailyAreaStats.work.left)
  ].join("");
  const waterStatus=waterHasCheckin?Math.round(waterOzToday)+" / "+Math.round(waterGoal)+" oz":"0 / 3";
  const waterMarks=[0,1,2].map(index=>{
@@ -379,25 +398,21 @@ function view(areaOverride,tasksOnly){
   const taskList=activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No '+h((areaTitles[areaSelection]||"area").toLowerCase())+' tasks are scheduled for today.</p>';
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifearea-'+areaSelection+'&#39;)">‹ '+h(areaTitles[areaSelection]||"Life area")+'</button><span class="lm-kicker">TODAY · AREA TASKS</span><h1>Today’s '+h(taskTitle)+'</h1><p>Only tasks linked to this area appear here.</p></header><section class="lm-inline-panel lm-area-page-content">'+taskList+'</section></section>';
  }
- if(areaOverride==="mind"&&!tasksOnly){
-  const openCare=mindCareHabits.filter(x=>!(typeof selfCareDone==="function"&&selfCareDone(x.key,date)));
-  const doneCare=mindCareHabits.filter(x=>typeof selfCareDone==="function"&&selfCareDone(x.key,date));
-  const openRows=careRowsFor(openCare)+mindTodayTasks.filter(t=>!t.done).map(taskRow).join("");
-  const doneRows=careRowsFor(doneCare)+mindTodayTasks.filter(t=>t.done).map(taskRow).join("");
-  return '<section class="life-map-page lm-area-page" data-life-area-page="mind"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar</button><h1 style="font-size:1.4rem;margin:0">Mind &amp; self-care</h1></div><section class="lm-inline-panel lm-area-page-content" style="margin-top:12px"><b style="display:block;font-size:1.2rem">'+mindRemaining+' left today</b><p style="margin:6px 0 12px">'+mindTodayDone+' of '+mindTodayTotal+' done · '+h(date)+'<br>Each action below adds color to your avatar’s mind area.</p>'+(openRows?'<div class="lm-list">'+openRows+'</div>':'<p>Today’s mind area is filled. You’re done with this list.</p>')+(doneRows?'<details style="margin-top:12px"><summary>Completed today · '+mindTodayDone+'</summary><div class="lm-list">'+doneRows+'</div></details>':'')+'</section><details class="lm-area-shortcuts"><summary>History &amp; care practices</summary><button type="button" class="lm-region" onclick="setView(&#39;selfcare&#39;)">Open self-care history ›</button>'+(typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml("mind"):"")+'</details></section>';
- }
+
  if(areaOverride){
-  const descriptions={home:"Daily household care and every child’s saved chores and routines. Room resets also appear inside the matching bedroom.",mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and everyday care for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories.",car:"Car keys, maintenance, driving setup, and other vehicle tasks.",work:"UPS shifts, delivery routines, and other work tasks."};
-  const trackerViews={home:"household",mind:"selfcare",body:"log",people:"family",spirituality:"spirituality",hobbies:"gardenhobbies",money:"budget",car:"today",work:"today"};
-  const trackerLabels={home:"Open full house map",mind:"Open self-care tracker",body:"Open health logs",people:"Open family tracker",spirituality:"Open spirituality lessons & rituals",hobbies:"Open hobbies & projects",money:"Open full budget",car:"Open day plan",work:"Open day plan"};
-  const trackerTitles={home:"Rooms & inventory",mind:"Self-care history",body:"Health logs",people:"Family details",spirituality:"Lessons & rituals",hobbies:"Projects & interests",money:"Budget & accounts",car:"Driving schedule",work:"UPS schedule"};
-  const extraLinks = {body: [["home","Food"],["selfcare","Water"]], home: [["inventory","Inventory"]], money: [["more","Bills and plans"]]};
-  const areaLinks = (extraLinks[areaSelection] || []).map(([route,label]) =>
-    '<button type="button" class="lm-region" onclick="setView(&#39;'+route+'&#39;)">'+h(label)+' ›</button>'
-  ).join("");
-  const pagePanel=activeAreaPanel;
-  const habitPanel=typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"";
-  return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Life Map</button><span class="lm-kicker">YOUR LIFE MAP · AREA</span><h1>'+h(areaTitles[areaSelection]||"Life area")+'</h1><p>'+h(descriptions[areaSelection]||"")+'</p></header>'+habitPanel+pagePanel+'<div class="lm-area-shortcuts"><span class="lm-kicker">'+h(trackerTitles[areaSelection]||"More in this area")+'</span><div><button type="button" class="lm-region" onclick="setView(&#39;'+trackerViews[areaSelection]+'&#39;)">'+h(trackerLabels[areaSelection]||"Open tracker")+' ›</button>'+areaLinks+'</div></div></section>';
+  const stats=dailyAreaStats[areaSelection],rows=dailyAreaRows[areaSelection]||[];
+  const rowHtml=row=>{
+   if(row.kind==="task")return taskRow(row.task);
+   if(row.kind==="chore")return choreRow(row.task);
+   if(row.kind==="care")return careRowsFor([row.habit]);
+   if(row.kind==="lesson")return '<button class="lm-region" type="button" onclick="startSpiritualityPractice()"><b>'+h(row.title)+'</b><small>'+(row.done?'Completed today · revisit':'Learn, listen & practice · Start ›')+'</small></button>';
+   const item=row.review;
+   return '<div class="lm-task '+(row.done?'is-done':'')+'"><span><b>'+h(row.title)+'</b>'+(item.detail?'<small>'+h(item.detail)+'</small>':'')+'</span><button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="'+(row.done?'unknown':'yes')+'">'+(row.done?'Undo':'Done')+'</button>'+(!row.done?'<button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="na">Not applicable</button>':'')+'</div>';
+  };
+  const openRows=rows.filter(x=>!x.done).map(rowHtml).join(""),doneRows=rows.filter(x=>x.done).map(rowHtml).join("");
+  const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
+  const tracker=trackers[areaSelection];
+  return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar & map</button><h1 style="font-size:1.4rem;margin:0">'+h(areaTitles[areaSelection])+'</h1></div><section class="lm-inline-panel lm-area-page-content" style="margin-top:12px"><b style="display:block;font-size:1.2rem">'+stats.left+' left today</b><p style="margin:6px 0 12px">'+stats.done+' of '+stats.total+' done · '+h(date)+'</p>'+(openRows?'<div class="lm-list">'+openRows+'</div>':stats.total?'<p>Today’s list is complete.</p>':'<p>No actions are scheduled in this area today.</p>')+(doneRows?'<details style="margin-top:12px"><summary>Completed today · '+stats.done+'</summary><div class="lm-list">'+doneRows+'</div></details>':'')+'</section><details class="lm-area-shortcuts"><summary>History &amp; details</summary>'+(lastAreaDone?'<p>Last done · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':'')+(areaSelection==="spirituality"?(typeof spiritualitySourceLink==="function"&&typeof spiritualityCourseLesson==="function"?spiritualitySourceLink(spiritualityCourseLesson(date)):""):'<button type="button" class="lm-region" onclick="setView(&#39;'+tracker[0]+'&#39;)">'+h(tracker[1])+' ›</button>')+(areaSelection==="money"?moneyGoalPanel:"")+(typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"")+'</details></section>';
  }
  const selectedRoomData=activeRoom&&typeof window.houseVisualRoomInlineData==="function"?window.houseVisualRoomInlineData(activeRoom.floor,activeRoom.id):null;
  const activeRoomPanel=selectedRoomData?'<section class="lm-inline-panel lm-inline-room" aria-live="polite"><div class="lm-inline-panel-head"><b>'+h(selectedRoomData.name)+' · room tasks</b><button type="button" class="lm-text-button" onclick="lifeMapCloseRoomInline()">Close</button></div><p class="lm-inline-last"><b>Last done</b> · '+h(selectedRoomData.insights.last)+'</p><p>'+h(selectedRoomData.insights.declutter)+'</p>'+(selectedRoomData.wardrobes||"")+(selectedRoomData.tasks.length?'<div class="lm-list">'+selectedRoomData.tasks.map(task=>task&&task._lifeChore?choreRow(task):taskRow(task)).join("")+'</div>':'<p class="lm-muted">No room-specific tasks are mapped yet.</p>')+'<button type="button" class="hvm-room-declutter-quick" onclick="houseVisualLogDeclutter(\''+h(selectedRoomData.floor)+'\',\''+h(selectedRoomData.id)+'\')">＋ I organized one area</button></section>':"";
