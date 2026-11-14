@@ -369,8 +369,10 @@ window.houseVisualRevealRoomPhotos=function(){
  if(photos)photos.scrollIntoView({behavior:"smooth",block:"nearest"});
 };
 function roomSymbol(z,b,f){
+ const label=str(z.name);
+ if((f==="Second floor"||f==="Third floor")&&/bed|bedroom|bath|hall|entry|landing/i.test(label))return "";
  if(!b||b.width<75||b.height<70||/\bhall(?:way)?\b|\bstairs?\b|\blanding\b/i.test(str(z.name)))return "";
- const label=str(z.name),bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
+ const bed=/bed|bedroom/i.test(label),bath=/bath/i.test(label),kitchen=/kitchen/i.test(label);
  const symbol=bed?'<rect x="3" y="10" width="42" height="28" rx="5"/><rect x="7" y="13" width="14" height="10" rx="3"/><rect x="26" y="13" width="14" height="10" rx="3"/><path d="M3 27H45M6 38V42M42 38V42"/>':
  bath?(f==="First floor"?'<rect x="6" y="12" width="36" height="27" rx="3" fill="#c69b80" stroke="#95777b"/><rect x="5" y="10" width="38" height="8" rx="2" fill="#f4f0ef"/><ellipse cx="24" cy="13" rx="10" ry="3" fill="#c8dde8"/><path d="M24 12V6H30" fill="none" stroke="#7a96a2" stroke-width="2"/><path d="M23 18V38M9 18H39" stroke="#a47c70" stroke-width="1.3"/>':'<path d="M5 23H43L39 37H10Z"/><path d="M10 23V10Q10 3 18 7M13 38V42M35 38V42"/>'):
  kitchen?'<rect x="5" y="5" width="38" height="35" rx="4"/><circle cx="16" cy="15" r="5"/><circle cx="32" cy="15" r="5"/><path d="M10 27H38M13 33H35"/>':
@@ -1536,7 +1538,7 @@ async function hydrateRoomPhotoGallery(f,z){
   const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
    .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
   if(error){host.textContent="Could not load saved room photos.";return}
-  const identity=(str(z.id)+" "+str(z.name)).toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\\s+/).filter(word=>word.length>2&&!/^(the|room|bed|bedroom|floor|second|third|upstairs|photo|view|overview|stairs|stair|landing|entry|hall|hallway)$/.test(word));
+  const identity=(str(z.id)+" "+str(z.name)).toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(word=>word.length>2&&!/^(the|room|bed|bedroom|floor|second|third|upstairs|photo|view|overview|stairs|stair|landing|entry|hall|hallway)$/.test(word));
   const queryText=(p=>((str(p.title)+" "+str(p.notes)).toLowerCase()));
   const matches=(data||[]).filter(p=>okPhoto(p.id)&&identity.some(word=>queryText(p).includes(word)));
   photos=[...photos,...matches].filter((p,index,all)=>all.findIndex(other=>other.id===p.id)===index);
