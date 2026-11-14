@@ -1442,7 +1442,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const markup='<div class="hvm-zone-detail">'+progress+miniRoom+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+miniRoom+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
