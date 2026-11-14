@@ -263,6 +263,80 @@ function mappedFurniture(f,z,bounds){
    '<title>'+h(p.label||"Mapped fixture")+'</title>'+art+'</g>';
  }).join("");
 }
+
+/* A decorative room cross-section, not a second source of furniture truth.
+   Private markers place the tappable objects on top of this scene. */
+function illustratedRoomBackdrop(f,z){
+ const id="hvm-sc-"+str(f).replace(/[^a-z]/gi,"").toLowerCase()+"-"+str(z.id).replace(/[^a-z0-9]/gi,"");
+ const label=(str(z.id)+" "+str(z.name)).toLowerCase();
+ const kitchen=/kitchen/.test(label),bath=/bath/.test(label),living=/living/.test(label),
+  dining=/dining/.test(label),play=/playroom/.test(label),bed=/bedroom|^bedroom$/.test(label);
+ const tiled=kitchen||bath;
+ const base=tiled?
+ '<rect x="0" y="70" width="360" height="230" fill="#eeece8"/><rect x="0" y="70" width="360" height="230" fill="url(#'+id+'-tile)" opacity=".83"/>':
+ '<rect x="0" y="70" width="360" height="230" fill="#bd8d62"/><rect x="0" y="70" width="360" height="230" fill="url(#'+id+'-wood)" opacity=".86"/>';
+ let decorations="";
+ if(kitchen){
+  decorations='<rect x="12" y="11" width="160" height="55" rx="3" fill="#f8f8f5" stroke="#bbaeb7" stroke-width="2"/>'+
+   '<path d="M65 11V66M118 11V66" stroke="#cabdc4" stroke-width="1.8"/>'+
+   '<circle cx="47" cy="37" r="2.1" fill="#4d4552"/><circle cx="99" cy="37" r="2.1" fill="#4d4552"/><circle cx="150" cy="37" r="2.1" fill="#4d4552"/>'+
+   '<rect x="178" y="8" width="119" height="77" rx="2" fill="#fefefc" stroke="#b6a4a1" stroke-width="5"/>'+
+   '<rect x="184" y="14" width="107" height="62" fill="#badce9"/><path d="M237 14V76M184 46H291" stroke="#f9f7f5" stroke-width="6"/>'+
+   '<path d="M186 56Q205 37 220 59Q242 33 265 55Q282 42 291 57V76H186Z" fill="#aacbb4" opacity=".7"/>'+
+   '<rect x="175" y="82" width="130" height="10" rx="3" fill="#ede4de" stroke="#b1a2a0"/>'+
+   '<path d="M304 1V55" stroke="#af9385" stroke-width="2"/><path d="M304 55Q283 39 283 59M304 55Q326 27 334 59M305 55Q288 59 292 83M305 55Q321 56 315 78" fill="none" stroke="#658d70" stroke-width="4" stroke-linecap="round"/>'+
+   '<rect x="10" y="91" width="53" height="173" rx="3" fill="#fffaf6" stroke="#c6c0bf" stroke-width="2"/>'+
+   '<rect x="14" y="98" width="44" height="31" rx="2" fill="#353540"/><path d="M14 152H59M14 202H59" stroke="#b7aaad" stroke-width="2"/>'+
+   '<rect x="296" y="92" width="54" height="65" rx="2" fill="#795c50"/><path d="M298 112H347M298 136H347" stroke="#d3b097" stroke-width="3"/>'+
+   '<rect x="300" y="96" width="9" height="12" fill="#f0c89c"/><rect x="317" y="96" width="9" height="13" fill="#d3a0aa"/><rect x="334" y="96" width="9" height="12" fill="#b1c3c4"/>';
+ }else if(dining){
+  decorations='<path d="M0 18H360M0 55H360" stroke="#f4ede0" stroke-width="3"/>'+
+   Array.from({length:10},(_,i)=>'<path d="M'+(i*38+8)+' 3V68" stroke="#e6dfd1" stroke-width="1.6"/>').join("")+
+   '<rect x="222" y="55" width="120" height="91" rx="3" fill="#6f4b3e" stroke="#4e3b38" stroke-width="3"/>'+
+   '<rect x="230" y="59" width="106" height="48" fill="#926958"/><path d="M266 59V107M300 59V107M230 83H336" stroke="#654a40" stroke-width="2"/>'+
+   '<rect x="222" y="111" width="120" height="38" rx="2" fill="#8d6451"/><path d="M237 128H326" stroke="#c39874" stroke-width="2"/>';
+ }else if(living){
+  decorations='<rect x="58" y="16" width="158" height="86" rx="2" fill="#f2efeb" stroke="#896854" stroke-width="7"/>'+
+   '<rect x="68" y="23" width="138" height="75" fill="#c0dce2"/><path d="M137 23V98M68 62H206" stroke="#fff9f0" stroke-width="6"/>'+
+   '<path d="M63 11Q75 19 81 11V108Q71 119 63 108Z" fill="#d99ba6" stroke="#bd8595" stroke-width="1.4"/>'+
+   '<path d="M201 11Q191 19 183 11V108Q193 119 201 108Z" fill="#d99ba6" stroke="#bd8595" stroke-width="1.4"/>'+
+   '<path d="M65 30V102M72 30V102M192 30V102M199 30V102" stroke="#f2c0c3" stroke-width="1.1"/>'+
+   '<path d="M215 3V104" stroke="#b88b6a" stroke-width="6"/>';
+ }else if(bath){
+  decorations='<rect x="0" y="0" width="360" height="76" fill="#d6d1ca"/><path d="M0 57H360" stroke="#eee4df" stroke-width="5"/>'+
+   '<rect x="48" y="8" width="136" height="60" rx="3" fill="#e1e5e8" stroke="#c2aa9e" stroke-width="6"/>'+
+   '<rect x="210" y="52" width="112" height="46" rx="3" fill="#a97850" stroke="#77573f" stroke-width="3"/>'+
+   '<path d="M225 67H306M225 83H306" stroke="#cca47b" stroke-width="2"/>'+
+   '<ellipse cx="266" cy="50" rx="39" ry="13" fill="#f9f9f7" stroke="#b6afa8" stroke-width="2"/>'+
+   '<ellipse cx="266" cy="48" rx="25" ry="6" fill="#c2d6d8"/><path d="M266 46V34h12" fill="none" stroke="#9b9da4" stroke-width="4" stroke-linecap="round"/>';
+ }else if(play){
+  decorations='<path d="M0 12H360" stroke="#f9efdf" stroke-width="3"/>'+
+   '<rect x="12" y="68" width="60" height="101" rx="5" fill="#dfc49a" stroke="#9f8567" stroke-width="2"/>'+
+   '<path d="M18 100H66M18 130H66" stroke="#b89b75" stroke-width="3"/>';
+ }else if(bed){
+  decorations='<path d="M0 6L70 70M360 6L290 70" fill="none" stroke="#cfc1ca" stroke-width="6"/>'+
+   '<path d="M60 12V70M300 12V70" fill="none" stroke="#eee5e4" stroke-width="4"/>'+
+   '<rect x="132" y="15" width="96" height="50" rx="3" fill="#f8f8f3" stroke="#bba5aa" stroke-width="6"/>'+
+   '<rect x="141" y="22" width="78" height="36" fill="#b1d0de"/><path d="M180 22V58" stroke="#fff" stroke-width="5"/>';
+ }else{
+  decorations='<path d="M0 17H360M0 56H360" stroke="#e5d7cd" stroke-width="3"/>';
+ }
+ return '<svg class="hvm-mini-backdrop" viewBox="0 0 360 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">'+
+  '<defs><pattern id="'+id+'-wood" width="48" height="29" patternUnits="userSpaceOnUse">'+
+  '<path d="M0 0H48M0 14H48M0 29H48M18 0V14M35 14V29" stroke="#875f4a" stroke-width="1.6" stroke-opacity=".43"/>'+
+  '<path d="M5 7q8 -4 17 0M28 21q7 -3 15 0" fill="none" stroke="#ead2a6" stroke-width=".8" stroke-opacity=".48"/></pattern>'+
+  '<pattern id="'+id+'-tile" width="36" height="32" patternUnits="userSpaceOnUse">'+
+  '<path d="M9 1L25 1L35 16L25 31L9 31L-1 16Z" fill="#f8f7f3" stroke="#c7c5c4" stroke-width="1.4"/>'+
+  '<path d="M9 1L25 1L35 16L25 31L9 31L-1 16Z" transform="translate(18 16)" fill="#dde0de" opacity=".22"/></pattern>'+
+  '<linearGradient id="'+id+'-wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffdf7"/><stop offset="1" stop-color="#e4d8d4"/></linearGradient>'+
+  '<linearGradient id="'+id+'-shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#816676" stop-opacity=".22"/><stop offset=".2" stop-color="#816676" stop-opacity="0"/></linearGradient></defs>'+
+  '<rect x="0" y="0" width="360" height="300" fill="#f9efe8"/>'+
+  '<rect x="0" y="0" width="360" height="74" fill="url(#'+id+'-wall)"/>'+base+
+  '<rect x="0" y="70" width="360" height="45" fill="url(#'+id+'-shadow)"/>'+
+  '<path d="M0 70H360" stroke="#ab8277" stroke-width="8"/>'+
+  '<path d="M0 0V300M360 0V300" stroke="#9c7b75" stroke-width="9"/>'+decorations+'</svg>';
+}
+
 function mappedRoomMiniature(f,z){
  const all=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&str(p.label));
  if(!all.length)return "";
@@ -276,7 +350,7 @@ function mappedRoomMiniature(f,z){
  const photoCount=arr(z.photos).filter(okPhoto).length;
  const showPhotos=photoCount?'<button class="btn small" type="button" onclick="houseVisualRevealRoomPhotos()">View '+photoCount+' saved reference photo'+(photoCount===1?'':'s')+' ›</button>':"";
  return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong>'+showPhotos+'</header>'+
- (placed.length?'<div class="hvm-mini-room-canvas">'+placed.map(p=>action(p,true)).join("")+'</div>':"")+
+ (placed.length?'<div class="hvm-mini-room-canvas is-illustrated">'+illustratedRoomBackdrop(f,z)+placed.map(p=>action(p,true)).join("")+'</div>':"")+
  (unplaced.length?'<div class="hvm-mini-unplaced"><b>Known furniture · exact spot not mapped</b><div>'+unplaced.map(p=>action(p,false)).join("")+'</div></div>':"")+
  '<p class="muted small">From saved room photos and confirmed notes. Positions are approximate; unplaced items are listed separately.</p></section>';
 }
