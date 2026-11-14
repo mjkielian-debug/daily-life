@@ -1560,7 +1560,12 @@ window.houseVisualOpenZone=function(f,id){
   '<small>'+(pendingTasks.length?h(pendingTasks[0].title||"Next room task"):"Nothing assigned yet · add a room task")+'</small></div>'+
   '<button type="button" onclick="houseVisualJumpToRoomTasks()">View tasks ↓</button></section>';
  const approvedZoom=approvedDollhouseRoomZoom(f,z);
- const markup='<div class="hvm-zone-detail">'+roomTaskNotice+(approvedZoom||miniRoom)+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const approvedObjectChoices=approvedZoom&&id==="kitchen"?
+  '<section class="hvm-approved-object-choices"><strong>Tap a kitchen area to see its tasks</strong><div class="hvm-approved-object-strip">'+
+  arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>/stove|oven|sink|dishwasher|pantry|fridge|refrigerator|counter|coffee|back door/i.test(str(p.label||""))).slice(0,9)
+    .map(({p,i})=>'<button type="button" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')">'+h(p.short||p.label)+'</button>').join("")+
+  '</div></section>':"";
+ const markup='<div class="hvm-zone-detail">'+roomTaskNotice+(approvedZoom||miniRoom)+approvedObjectChoices+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
