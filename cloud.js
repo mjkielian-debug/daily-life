@@ -791,7 +791,7 @@ async function cloudUseRemoteSnapshot(snapshot){
   // has not received its record yet.
   if(!Array.isArray(state.spiritualityPracticeLogs))state.spiritualityPracticeLogs=[];
   for(const local of Array.isArray(localState?.spiritualityPracticeLogs)?localState.spiritualityPracticeLogs:[]){
-    if(!local?.date||!local.guidedPractice)continue;
+    if(!local?.date)continue;
     const remote=state.spiritualityPracticeLogs.find(x=>x.date===local.date);
     if(!remote)state.spiritualityPracticeLogs.push({...local});
     else {
