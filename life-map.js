@@ -35,7 +35,7 @@ function avatarMark(label,icon,x,y,pct,color,area,pending){
  '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y-1)+'" text-anchor="middle" font-size="13" font-weight="900" fill="#48394d">'+icon+'</text>'+
  '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+'% today'+'</text>'+
- (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(count+" left")+'</text></g>':"")+'</g>';
+ (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+count+'</text></g>':"")+'</g>';
 }
 function avatarAreaFill(area,path,cx,cy,maxRadius,pct){
  const progress=Math.max(0,Math.min(100,Number(pct)||0));
