@@ -260,7 +260,7 @@ function mappedFurniture(f,z,bounds){
   const art=illustrated?'<rect x="-17" y="-17" width="34" height="34" fill="transparent" stroke="none"/><g transform="scale(.88)">'+fixtureSvg(p.kind)+'</g>':
    '<rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+fixtureSvg(p.kind)+'</g>';
   return '<g class="hvm-map-fixture'+(illustrated?' hvm-map-fixture-illustrated':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
-   '<title>'+h(p.label||"Mapped fixture")+'</title>'+art+'</g>';
+   '<title>'+h(p.label||"Mapped fixture")+'</title><path class="hvm-map-hit" d="M-22 -22H22V22H-22Z" fill="transparent" stroke="none" pointer-events="all"/>'+art+'</g>';
  }).join("");
 }
 
@@ -344,7 +344,7 @@ function mappedRoomMiniature(f,z){
  const unplaced=all.filter(({p})=>p.showOnMap===false||p.mapX==null||p.mapY==null||!Number.isFinite(Number(p.mapX))||!Number.isFinite(Number(p.mapY)));
  const picture=({p})=>'<svg viewBox="-19 -19 38 38" role="img" aria-label="'+h(p.label)+'"><g>'+fixtureSvg(p.kind)+'</g></svg>';
  const action=({p,i},isPositioned)=>{
-  const position=isPositioned?' style="left:'+Math.max(9,Math.min(91,Number(p.mapX))).toFixed(1)+'%;top:'+Math.max(10,Math.min(90,Number(p.mapY))).toFixed(1)+'%"':'';
+  const position=isPositioned?' style="left:'+Math.max(12,Math.min(88,Number(p.mapX))).toFixed(1)+'%;top:'+Math.max(14,Math.min(86,Number(p.mapY))).toFixed(1)+'%"':'';
   return '<button type="button" class="'+(isPositioned?'hvm-mini-fixture':'hvm-mini-landmark')+'"'+position+' title="'+h(p.label)+'" aria-label="Inspect '+h(p.label)+'" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')">'+picture({p})+'<small>'+h(str(p.short||p.label||"Item"))+'</small></button>';
  };
  const photoCount=arr(z.photos).filter(okPhoto).length;
