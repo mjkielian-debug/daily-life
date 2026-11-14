@@ -255,3 +255,13 @@
  .hvm-room-name{font-size:14px}
  .hvm-disclaimer{font-size:.68rem;line-height:1.3;margin:5px 2px 0}
 }
+
+/* Connected floor-plan presentation: one canvas, quiet walls, no nested frames. */
+.hvm-connected-map .hvm-drawing{border:0;border-radius:12px;box-shadow:none;background:#fffdf7;width:100%;max-width:480px}
+.hvm-connected-map .hvm-drawing>rect:first-child{stroke:none;fill:#fffdf7}
+.hvm-connected-map .hvm-zone>path:first-child{stroke:#92758b;stroke-width:2;stroke-linejoin:round;filter:none}
+.hvm-connected-map .hvm-room-name{stroke-width:2.5px;font-size:14px}
+.hvm-connected-map .hvm-map-notes{font-size:.8rem;margin:8px 2px;color:#68516b}
+.hvm-connected-map .hvm-map-notes summary{cursor:pointer}
+.hvm-connected-map .hvm-sketch-heading{padding:4px 2px}
+.hvm-connected-map .hvm-floor-links{gap:8px;margin-top:10px}
