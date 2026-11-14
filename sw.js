@@ -105,6 +105,9 @@ const APP_SHELL=[
   "./parenting-psychology-lessons.js",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./daily-life-garden-app.svg",
+  "./daily-life-garden-app-192.png",
+  "./daily-life-garden-app-512.png",
   "./daily-life-pastel-icon.svg",
   "./daily-life-colorful-icon.svg",
   "./daily-life-rainbow-512.png",
@@ -180,7 +183,7 @@ self.addEventListener("push",event=>{
   const title=String(payload.title||"Daily Life");
   const options={
     body:String(payload.body||"A Daily Life reminder is due."),
-    icon:"./daily-life-rainbow-192.png?v=20261114-rainbow-refresh1",
+    icon:"./daily-life-garden-app-192.png",
     badge:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACG0lEQVR4nO3a3W7DIAyGYZh2/7ecHU3qKpEY/Pmn2vscN2BjCAR1DAAAAAAAAAApZnUAVtd1XbvPzDnb59c2wJMBf9KxIK0Cihj0lS7FKA8ic9BXKotR1nGHgX9XUYj0DjsO/LvMQqQWwDv4OwOT2Zern4xOuhwhu8Txp/3IxsfYTzpj5nWKKTRZa6KVp5DqGEMarU7qRFXMX8rGxvjMwR/DHo/6FCcdBEtwnoHfST66H9UEkhUgImjlbIvoW1EE+StoZfcMr17qu21+1HfAU2JV79c7qpi8hXIXQBFg5fWEIj5PEVyvoE8ffGv/T3l4cnCtgLuOowa/a7unqyDkqKacMYrNUNmfughHyWUMfuVlXGYR0o6hY9jft2H3Lsa2M/el7QJEvAdVz2f1c/f8bvFkK8D76sm+G+oSr+zz/HRWnCTSpT1FHN+WHz1RLklvO6+/U52gVu3MOac3v9RN+J11QzxN0vps5dW4uQAng1DxoXbajnoVW59xr4Cjjw/DBlhxGxqRy5OwV5DntaGORdF+VFymTXjVecWMeWrDO1AnG+vqmbsN/FfICoiaZZYvWctvOq2C1FOQZ+burpzsS7VTpcdQq+Or3sLjpdVjATIupqrul6pzG8OxAlaJKZOS3bcIV4LyQDJG039FdJAVb/keoJ5RKxkr9kR5Af47ClCMAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgA0/u/acS1yb5KoAAAAASUVORK5CYII=",
     tag:String(payload.tag||"daily-life-reminder"),
     renotify:true,

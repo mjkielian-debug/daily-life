@@ -2,33 +2,33 @@
   "name": "Daily Life",
   "short_name": "Daily Life",
   "id": "./",
-  "start_url": "./?app=rainbow12",
+  "start_url": "./?app=rainbow-garden-20261114",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffdfbd",
   "theme_color": "#ffdfbd",
-  "description": "A calm, private personal and family command center for daily life.",
+  "description": "Your colorful daily life: home, family, habits, learning and progress.",
   "icons": [
     {
-      "src": "daily-life-rainbow-192.png?v=20261114-rainbow-refresh1",
+      "src": "daily-life-garden-app-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "daily-life-rainbow-512.png?v=20261114-rainbow-refresh1",
+      "src": "daily-life-garden-app-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon.svg?v=20261114-rainbow-refresh1",
+      "src": "daily-life-garden-app.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "daily-life-rainbow-512.png?v=20261114-rainbow-refresh1",
+      "src": "daily-life-garden-app-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
