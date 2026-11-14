@@ -518,7 +518,7 @@ function mapSketch(f,m){
   const hasSymbol=!furniture&&!savedRoomMiniature&&!!roomSymbol(z,bounds,f);
   const labelY=isStair&&bounds?
     (f==="First floor"?bounds.y+bounds.height-7:bounds.y+16):
-    furniture&&bounds?bounds.y+bounds.height-8:
+    (furniture||savedRoomMiniature)&&bounds?bounds.y+bounds.height-8:
     hasSymbol?bounds.cy+24:Math.max(limits[1],Math.min(limits[1]+limits[3],y));
   const displayLabel=stairLabel|| (f==="First floor"&&/basement/i.test(str(z.id)+" "+str(z.name))?"Basement stairs":(z.short||z.name));
   const sourceColor=z.id==="dolly"&&f==="Second floor"?"#f8f0e8":color(z.color);
