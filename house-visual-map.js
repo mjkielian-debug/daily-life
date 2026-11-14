@@ -269,7 +269,21 @@ function joinedFloorDisplay(m){
   return v=>lookup.get(v)??v;
  };
  const fx=align(xs,16*(vb[2]||380)/380),fy=align(ys,16*(vb[3]||503)/503);
- const joined=zones.map(z=>({...z,path:walk(z.path,fx,fy)}));
+ const clean=path=>{
+  const points=[];let x=0,y=0;
+  path.replace(/([MLHV])\s*(-?\d+(?:\.\d+)?)(?:[ ,]+(-?\d+(?:\.\d+)?))?/g,(all,c,a,b)=>{
+   if(c==="M"||c==="L"){x=+a;y=+b}else if(c==="H")x=+a;else y=+a;
+   if(!points.length||points[points.length-1][0]!==x||points[points.length-1][1]!==y)points.push([x,y]);
+   return all;
+  });
+  let changed=true;
+  while(changed&&points.length>3){changed=false;for(let i=0;i<points.length;i++){
+   const a=points[(i+points.length-1)%points.length],b=points[i],c=points[(i+1)%points.length];
+   if((a[0]===b[0]&&b[0]===c[0])||(a[1]===b[1]&&b[1]===c[1])){points.splice(i,1);changed=true;break}
+  }}
+  return points.map((p,i)=>(i?"L":"M")+p.join(" ")).join("")+"Z";
+ };
+ const joined=zones.map(z=>({...z,path:clean(walk(z.path,fx,fy))}));
  if(joined.some(z=>{const b=zoneBounds(z.path);return !b||b.width<20||b.height<20}))return m;
  return {...m,zones:joined,layoutNotice:"Room edges are aligned for a connected schematic view. Saved source outlines are unchanged; sizes are illustrative."};
 }
