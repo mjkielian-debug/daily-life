@@ -459,11 +459,52 @@ function joinedFloorDisplay(m){
 /* Architectural details added behind the task-progress wash, based on the
    already reviewed first-floor photos. Zone outlines stay in private data. */
 function photoRoomAccents(f,z,b){
- if(f!=="First floor"||!b||b.width<35||b.height<35)return "";
- const k=str(z.id),id="hvm-acc-"+k;
+ if(!b||b.width<35||b.height<35)return "";
+ const k=str(z.id),id="hvm-acc-"+f.toLowerCase().replace(/[^a-z]/g,"")+"-"+k;
  const T=(body)=>'<g class="hvm-photo-room-accents" pointer-events="none">'+
  '<defs><clipPath id="'+id+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
  '<g clip-path="url(#'+id+')"><g transform="translate('+b.x.toFixed(1)+' '+b.y.toFixed(1)+') scale('+(b.width/100).toFixed(4)+' '+(b.height/100).toFixed(4)+')">'+body+'</g></g></g>';
+ if(f==="Second floor"||f==="Third floor"){
+  const name=(str(z.id)+" "+str(z.name)).toLowerCase();
+  if(/bed|bedroom|dolly|demitri|dimitri|ambrose|leo|michelle/.test(name)){
+   const quilt=/dolly/.test(name)?"#e5abc9":/ambrose/.test(name)?"#9fcebf":/leo/.test(name)?"#93b6d7":/demitri|dimitri/.test(name)?"#8eb7ce":"#d2a1a8";
+   return T('<ellipse cx="52" cy="63" rx="31" ry="25" fill="#ead6e9" stroke="#c4a6c1" stroke-width="1.5"/>'+
+    '<ellipse cx="52" cy="63" rx="27" ry="21" fill="none" stroke="#fff8fb" stroke-width="1.4"/>'+
+    '<rect x="19" y="12" width="62" height="15" rx="2" fill="#f8f5f0" stroke="#b69d91" stroke-width="1.7"/>'+
+    '<path d="M50 12V27M19 21H81" stroke="#b6d2df" stroke-width="2"/>'+
+    '<rect x="31" y="37" width="44" height="49" rx="5" fill="#89695c" stroke="#74545b" stroke-width="2"/>'+
+    '<rect x="35" y="40" width="36" height="42" rx="4" fill="'+quilt+'" stroke="#f8e9e8" stroke-width="2"/>'+
+    '<path d="M35 56Q53 49 71 56V81H35Z" fill="#f3dce7" stroke="#fff3f5" stroke-width="1.5"/>'+
+    '<rect x="38" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
+    '<rect x="54" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
+    '<rect x="7" y="40" width="17" height="25" rx="2" fill="#b2866c" stroke="#77595a" stroke-width="1.5"/>'+
+    '<path d="M10 47H21M10 54H21" stroke="#edd9c1" stroke-width="1.5"/>'+
+    '<path d="M82 37V55M76 43H88M76 49H88" stroke="#a97765" stroke-width="1.4"/>'+
+    '<path d="M12 12Q10 5 14 2M19 12Q20 5 17 2" stroke="#6e9b73" stroke-width="2" fill="none"/>');
+  }
+  if(/bath/.test(name)){
+   return T('<rect x="3" y="3" width="94" height="94" rx="4" fill="#edf2f1" stroke="#b4c9cd" stroke-width="1.5"/>'+
+    '<path d="M3 18H97M3 37H97M3 56H97M3 75H97M22 3V97M41 3V97M60 3V97M79 3V97" stroke="#d1e1e4" stroke-width="1.4"/>'+
+    '<rect x="9" y="9" width="28" height="19" rx="3" fill="#b7d3df" stroke="#fff" stroke-width="2"/>'+
+    '<path d="M13 12Q22 8 33 12V24H13Z" fill="#eff9fa" stroke="#a8c4ce" stroke-width="1.3"/>'+
+    '<rect x="61" y="11" width="27" height="12" rx="3" fill="#b78e73" stroke="#83665d" stroke-width="1.5"/>'+
+    '<ellipse cx="74" cy="16" rx="8" ry="4" fill="#fff" stroke="#a5b5ba" stroke-width="1.3"/>'+
+    '<rect x="10" y="60" width="29" height="27" rx="4" fill="#fff" stroke="#a7b8bd" stroke-width="1.5"/>'+
+    '<ellipse cx="24.5" cy="68" rx="9" ry="5" fill="#e6f4f6" stroke="#9eb4bb" stroke-width="1.4"/>'+
+    '<path d="M17 80H32" stroke="#d6b8a0" stroke-width="1.4"/>'+
+    '<circle cx="73" cy="70" r="10" fill="#fff" stroke="#a7b8bd" stroke-width="1.5"/>'+
+    '<path d="M73 80V87H84V79" fill="none" stroke="#a7b8bd" stroke-width="1.5"/>');
+  }
+  if(/hall|landing|entry|stairs/.test(name)){
+   return T('<path d="M4 12H96V88H4Z" fill="#e9c9a8" stroke="#b48a75" stroke-width="2"/>'+
+    '<path d="M4 28H96M4 46H96M4 64H96M30 12V28M70 28V46M30 46V64M70 64V88" stroke="#fff1dd" stroke-opacity=".72" stroke-width="1.3"/>'+
+    '<path d="M35 29H65V79H35Z" fill="#c6a0bf" stroke="#fff5fa" stroke-width="2"/>'+
+    '<path d="M40 34H60V74H40Z" fill="#e7d7e8" stroke="#fff" stroke-width="1.2"/>'+
+    '<path d="M9 16V10M91 16V10" stroke="#92766a" stroke-width="2"/>'+
+    '<path d="M8 88H92" stroke="#8e6c5d" stroke-width="2"/>');
+  }
+ }
+ if(f!=="First floor")return "";
  if(k==="kitchen"){
   return T('<path d="M0 0H100V12H0ZM0 0H12V100H0Z" fill="#fefaf4" stroke="#b5a8aa" stroke-width="1.3"/>'+
     '<path d="M12 0V14M23 0V13M35 0V13M84 0V12M0 24H12M0 47H12M0 70H12" stroke="#bcaab0" stroke-width="1"/>'+
@@ -566,17 +607,15 @@ function approvedDollhouseProgressArt(f,z,settings,stats,prefix){
   '<g class="hvm-approved-color-reveal" pointer-events="none" clip-path="url(#'+id+'-zone)">'+
   '<g clip-path="url(#'+id+'-reveal)"><image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" /></g></g>';
 }
-function approvedStairDirectionGuides(){
- return '<g class="hvm-stair-direction-guides" aria-label="Stair directions" pointer-events="none">'+
-  '<path d="M130 920L130 1065" fill="none" stroke="#fff9ff" stroke-width="15" stroke-linecap="round"/>'+
-  '<path d="M130 920L130 1065M112 1046L130 1065L148 1046" fill="none" stroke="#914c7d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'+
-  '<rect x="55" y="1074" width="150" height="31" rx="15" fill="#fff6fc" fill-opacity=".96" stroke="#a9618f" stroke-width="2"/>'+
-  '<text x="130" y="1095" text-anchor="middle" font-size="16" fill="#59324f" font-weight="900">↓ DOWN TO BASEMENT</text>'+
-  '<path d="M396 1033L483 947" fill="none" stroke="#fff9ff" stroke-width="15" stroke-linecap="round"/>'+
-  '<path d="M396 1033L483 947M458 947L483 947L482 972" fill="none" stroke="#914c7d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'+
-  '<rect x="388" y="1040" width="94" height="31" rx="15" fill="#fff6fc" fill-opacity=".96" stroke="#a9618f" stroke-width="2"/>'+
-  '<text x="435" y="1061" text-anchor="middle" font-size="16" fill="#59324f" font-weight="900">↑ UP</text>'+
- '</g>';
+function correctedStairArtwork(){
+ return '<defs>'+
+  '<clipPath id="hvm-corrected-basement-flight"><path d="M65 918H201V1102H65Z"/></clipPath>'+
+  '<clipPath id="hvm-corrected-second-flight"><path d="M382 1058L466 943L506 978L423 1082Z"/></clipPath>'+
+  '</defs>'+
+  '<g class="hvm-corrected-stair-art" aria-label="Reoriented basement and second-floor stair artwork" pointer-events="none">'+
+   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" transform="translate(0 2016) scale(1 -1)" clip-path="url(#hvm-corrected-basement-flight)"/>'+
+   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" transform="rotate(180 444 1004)" clip-path="url(#hvm-corrected-second-flight)"/>'+
+  '</g>';
 }
 
 function approvedDollhouseMap(f,m,oldMap){
@@ -600,7 +639,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+hotspots+approvedStairDirectionGuides()+'</svg></div>'+
+  reveal+correctedStairArtwork()+hotspots+'</svg></div>'+
   '<div class="hvm-approved-caption">✦ Your approved kitchen artwork is back. The other room illustrations are style references until their positions are verified with photos. Completed room tasks reveal richer color.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
@@ -1493,11 +1532,21 @@ async function hydrateRoomPhotoGallery(f,z){
  const host=document.getElementById("hvmRoomPhotoGallery");if(!host)return;
  if(!online()){host.textContent="Sign in to see saved room photos.";return}
  let photos=arr(z.photos).filter(okPhoto).map(id=>({id}));
- if(/bath/i.test(str(z.name||""))){
+ if(f==="Second floor"||f==="Third floor"){
+  const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
+   .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
+  if(error){host.textContent="Could not load saved room photos.";return}
+  const identity=(str(z.id)+" "+str(z.name)).toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\\s+/).filter(word=>word.length>2&&!/^(the|room|bed|bedroom|floor|second|third|upstairs|photo|view|overview|stairs|stair|landing|entry|hall|hallway)$/.test(word));
+  const queryText=(p=>((str(p.title)+" "+str(p.notes)).toLowerCase()));
+  const matches=(data||[]).filter(p=>okPhoto(p.id)&&identity.some(word=>queryText(p).includes(word)));
+  photos=[...photos,...matches].filter((p,index,all)=>all.findIndex(other=>other.id===p.id)===index);
+ }
+ if(f==="First floor"&&/bath/i.test(str(z.name||""))){
   const {data,error}=await cloudClient.from("photo_inbox").select("id,title,notes,created_at")
    .in("category",["house_map","home_progress"]).eq("floor_label",f).order("created_at",{ascending:false}).limit(100);
   if(error){host.textContent="Could not load saved bathroom photos.";return}
-  photos=(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id));
+  photos=[...photos,...(data||[]).filter(p=>/bath/i.test(str(p.title)+" "+str(p.notes))&&okPhoto(p.id))]
+   .filter((p,index,all)=>all.findIndex(other=>other.id===p.id)===index);
  }
  if(!photos.length){host.innerHTML='<p class="muted">No room photos are linked here yet.</p>';return}
  activeRoomPhotoIds=photos.map(p=>p.id);activeRoomPhotoIndex=0;activeRoomPhotoRoom=str(z.name||"Room");
