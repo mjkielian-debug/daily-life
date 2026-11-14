@@ -420,7 +420,15 @@ function view(areaOverride,tasksOnly){
   '<div class="lm-next-checkin-foot"><small>Tell me out loud; I’ll log it and update your progress.</small><div class="lm-next-checkin-progress"><span>💧 '+waterBottlesDone+'/3</span><span>🦷 '+brushCount+'/2</span></div></div>'+
   nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
- const taskRow=t=>{const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");const handler=group?"lifeMapToggleTaskGroup":"toggleTask",lastDone=window.lifeMapTaskLastDoneLabel(t);return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)"><span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small>'+(lastDone?'<small class="lm-task-last-done">Last done · '+h(lastDone)+'</small>':'')+'</span></label>'};
+ const taskRow=t=>{
+  const group=list(t._lifeMapDuplicateIds).length>1,ids=group?encodeURIComponent(JSON.stringify(t._lifeMapDuplicateIds)):String(t.id||"");
+  const handler=group?"lifeMapToggleTaskGroup":"toggleTask",lastDone=window.lifeMapTaskLastDoneLabel(t);
+  return '<div class="lm-task lm-task-editable '+(t.done?"is-done":"")+'">'+
+    '<label class="lm-task-main"><input type="checkbox" '+(t.done?"checked":"")+' onchange="'+handler+'(\''+h(ids)+'\',this.checked)">'+
+    '<span><b>'+h(t.title||"Task")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small>'+
+    (lastDone?'<small class="lm-task-last-done">Last done · '+h(lastDone)+'</small>':"")+'</span></label>'+
+    '<button class="lm-task-edit" type="button" aria-label="Edit '+h(t.title||"task")+'" onclick="openTask(&#39;&#39;,&#39;'+h(t.id)+'&#39;)">Edit</button></div>';
+ };
  const choreRow=t=>{const lastDone=window.lifeMapTaskLastDoneLabel(Object.assign({},t,{_lifeChore:true}));return '<label class="lm-task '+(t.done?"is-done":"")+'"><input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleChore(\''+h(t.id)+'\',this.checked)"><span><b>'+h(t.title||"Home chore")+'</b><small>'+[t.child?String(t.child):"",taskDateLabel(t)].filter(Boolean).map(h).join(" · ")+'</small>'+(lastDone?'<small class="lm-task-last-done">Last done · '+h(lastDone)+'</small>':'')+'</span></label>'};
  const careRowsFor=rows=>rows.map(item=>'<label class="lm-task '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"is-done":"")+'"><input type="checkbox" '+(typeof selfCareDone==="function"&&selfCareDone(item.key,date)?"checked":"")+' onchange="toggleCare(\''+h(item.key)+'\')"><span><b>'+h(item.label||item.name||item.key)+'</b></span></label>').join("");
  const mindCareRows=careRowsFor(mindCareHabits);
