@@ -1,0 +1,11 @@
+
+.lm-avatar-doors,.lm-house-doors{border:1.5px solid #e5c0d9;border-radius:17px;background:linear-gradient(135deg,#fff9fd,#fff1fa 49%,#f4eeff);margin:12px 0;padding:10px;box-shadow:0 3px 9px #8c527b15}
+.lm-avatar-doors .lm-area-section-heading{margin:0 0 9px}.lm-door-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.lm-doorway{display:flex;align-items:center;gap:7px;text-align:left;padding:10px 9px;min-height:47px;line-height:1.14;border:1.5px solid #d9b6d4;border-radius:13px;background:linear-gradient(135deg,#fffefd,#f4e5fb);color:#62385b;font-size:.79rem;font-weight:800;cursor:pointer;white-space:normal}
+.lm-doorway>span{display:grid;place-items:center;min-width:23px;font-size:1rem;color:#9464aa}.lm-doorway:active,.hvm-context-doors button:active{transform:scale(.97);background:#f0d2ea}
+.lm-house-doors summary{cursor:pointer;font-weight:850;color:#76506f;padding:3px 3px 7px}.lm-house-doors[open] summary{margin-bottom:4px}
+.lm-avatar-quick{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:8px auto 0}
+.lm-avatar-quick button{border:1.5px solid #c996bd;background:#fff7fc;color:#774366;padding:7px 12px;min-height:37px;border-radius:999px;font-size:.79rem;font-weight:850}
+.hvm-context-doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0;padding:9px;border-radius:15px;background:#fff6fd;border:1.5px solid #dcb3d0}
+.hvm-context-doors button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;border:1px solid #d3acc9;border-radius:12px;background:#fffafc;color:#6b416d;min-height:61px;padding:7px 4px;font-size:.72rem;line-height:1.12;font-weight:900;white-space:normal}
+.hvm-context-doors button span{font-size:1.18rem}@media(max-width:360px){.lm-doorway{font-size:.73rem;padding:8px 6px}.hvm-context-doors button{font-size:.67rem}}

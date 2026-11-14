@@ -1579,6 +1579,18 @@ window.houseVisualJumpToRoomTasks=function(){
  const panel=document.querySelector(".hvm-zone-detail .hvm-task-list");
  if(panel)panel.scrollIntoView({behavior:"smooth",block:"start"});
 };
+
+function houseVisualRoomDoorways(f,z){
+ const k=(String(z?.id||"")+" "+String(z?.name||"")).toLowerCase();
+ const links=/kitchen|pantry/.test(k)?[["🍲","Food","food"],["▦","Inventory","inventory"],["＋","Log","capture"]]:
+ /bath/.test(k)?[["♡","Self-care","care"],["▦","Supplies","inventory"],["✦","Today","today"]]:
+ /bed|dolly|demitri|dimitri|ambrose|leo/.test(k)?[["♥","People","people"],["📖","Reading","reading"],["▦","Inventory","inventory"]]:
+ f==="Third floor"?[["♡","Self-care","care"],["▣","Vault","vault"],["✿","Hobbies","hobbies"]]:
+ /hall|stair|entry|landing/.test(k)?[["◷","Day Flow","flow"],["✦","Today","today"],["⌕","Search","search"]]:
+ [["⌂","House","house"],["✦","Today","today"],["✿","Projects","hobbies"]];
+ return '<nav class="hvm-context-doors" aria-label="More from this room">'+links.map(([icon,label,key])=>'<button type="button" onclick="closeModal();lifeMapNavigate(&#39;'+key+'&#39;)"><span aria-hidden="true">'+icon+'</span>'+label+'</button>').join("")+'</nav>';
+}
+
 window.houseVisualOpenZone=function(f,id){
  if(!floors.includes(f)||!okId(id)||typeof modal!=="function")return;
  const z=zone(f,id);if(!z)return;
@@ -1629,7 +1641,7 @@ window.houseVisualOpenZone=function(f,id){
   arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>/stove|oven|sink|dishwasher|pantry|fridge|refrigerator|counter|coffee|back door/i.test(str(p.label||""))).slice(0,9)
     .map(({p,i})=>'<button type="button" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')">'+h(p.short||p.label)+'</button>').join("")+
   '</div></section>':"";
- const markup='<div class="hvm-zone-detail">'+roomTaskNotice+(approvedZoom||miniRoom)+approvedObjectChoices+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+roomTaskNotice+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
