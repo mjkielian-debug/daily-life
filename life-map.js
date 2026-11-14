@@ -103,7 +103,7 @@ function lifeMapAreaForReview(item){
 // They give each category useful next steps without inventing dates or completions.
 const lifeMapTaskIdeas={
  home:[["Reset one kitchen counter","home"],["Put away one load of laundry","home"]],
- mind:[["Check in with my feelings for five minutes","mind"],["Make time for a short rest break","mind"]],
+ mind:[["Learn one useful parenting or psychology skill","mind"],["Make time for a short rest break","mind"]],
  body:[["Refill my water bottle before leaving work","body"],["Check whether I took my vitamins","body"]],
  people:[["Review school papers when the kids are home","family"],["Read with the kids for 20 minutes","family"]],
  spirituality:[["Explore today's seasonal spiritual lesson","spirituality"],["Choose one Yule tradition to try with the kids","spirituality"]],
@@ -521,7 +521,30 @@ function view(areaOverride,tasksOnly){
  '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor, then tap a room.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div><div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+(typeof window.houseVisualUnassignedTasksHtml==="function"?window.houseVisualUnassignedTasksHtml(floor):"")+'</section></section>'+
  '</section>';
 }
-window.lifeMapSelectArea=function(area){const allowed=["home","mind","body","people","spirituality","hobbies","money","car","work"];if(!allowed.includes(area))return;activeArea="";activeRoom=null;if(typeof setView==="function")setView("lifearea-"+area)};
+window.lifeMapSelectArea=async function(area){
+ const allowed=["home","mind","body","people","spirituality","hobbies","money","car","work"];
+ if(!allowed.includes(area))return;
+ // A deliberate category tap can start one real, undated task if that area
+ // has no open saved tasks. Never add it while rendering or after a reload.
+ const ideas=lifeMapTaskIdeas[area]||[];
+ if(state&&Array.isArray(state.tasks)&&ideas.length&&typeof save==="function"){
+  state.settings=state.settings||{};
+  const seeded=state.settings.lifeMapAreaStarters||{};
+  if(seeded[area]!==true){
+   const alreadyOpen=state.tasks.some(t=>!t.done&&!t.retiredAt&&!t.paused&&!t.duplicateHidden&&lifeMapAreaForTask(t)===area);
+   const selected=ideas[area==="spirituality"?1:0]||ideas[0];
+   const exists=state.tasks.some(t=>taskIdeaKey(t.title)===taskIdeaKey(selected[0])&&!t.retiredAt);
+   if(!alreadyOpen&&!exists&&typeof uid==="function"){
+    state.tasks.push({id:uid(),title:selected[0],category:selected[1],date:"",child:"",done:false,
+     notes:"Undated starter task for "+area+" · change or delete whenever you like",generated:"life-map-area-starter",order:100});
+   }
+   state.settings.lifeMapAreaStarters={...seeded,[area]:true};
+   try{await save()}catch(e){console.warn("Could not save category starter",e)}
+  }
+ }
+ activeArea="";activeRoom=null;
+ if(typeof setView==="function")setView("lifearea-"+area);
+};
 function avatarAreaFromEvent(event){const target=event.target&&event.target.closest?event.target.closest(".lm-avatar-mark[data-life-area],.lm-avatar-hotspot[data-life-area]"):null;if(!target)return;const area=target.getAttribute("data-life-area");if(!area)return;if(event.type==="keydown"&&event.key!=="Enter"&&event.key!==" ")return;if(event.type==="keydown")event.preventDefault();if(typeof window.lifeMapSelectArea==="function")window.lifeMapSelectArea(area)}
 document.addEventListener("click",avatarAreaFromEvent);
 document.addEventListener("keydown",avatarAreaFromEvent);
