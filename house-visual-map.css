@@ -373,3 +373,16 @@
 .hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture:active{transform:translate(-50%,-50%) scale(.95)}
 @media(max-width:380px){.hvm-mini-room-canvas.is-illustrated{min-height:260px}.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture{width:59px;min-height:54px;padding:3px 2px}.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture svg{width:38px;height:35px}}
 @media(prefers-reduced-motion:reduce){.hvm-mini-room-canvas.is-illustrated .hvm-mini-fixture{transition:none}}
+
+
+/* On opening a room, put its work right in sight before the illustrated furniture. */
+.hvm-room-task-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+ padding:12px 14px;margin:0 0 12px;border:2px solid #d8a6c6;border-radius:17px;
+ background:linear-gradient(115deg,#fff0f8,#f2edff 65%,#fff1dc);color:#684263}
+.hvm-room-task-entry>div{display:grid;gap:3px;min-width:0;flex:1}
+.hvm-room-task-entry b{font-size:1rem}
+.hvm-room-task-entry small{color:#765c70;font-size:.78rem;line-height:1.3}
+.hvm-room-task-entry>button{min-height:43px;padding:8px 13px;border:1px solid #a65c93;border-radius:13px;
+ background:#a33f7c;color:white;font:inherit;font-weight:900;cursor:pointer}
+.hvm-room-task-entry>button:hover,.hvm-room-task-entry>button:focus-visible{background:#80336e;outline:2px solid #edd0e6;outline-offset:2px}
+.hvm-zone-detail .hvm-task-list{scroll-margin-top:26px}
