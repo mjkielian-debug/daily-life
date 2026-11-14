@@ -29,13 +29,13 @@ function selectedFloor(){try{const value=localStorage.getItem("dailyLifeMapFirst
 function jump(view){if(typeof setView==="function")setView(view)}
 function avatarMark(label,icon,x,y,pct,color,area,pending){
  const alpha=(0.2+Math.max(0,Math.min(100,Number(pct)||0)/125)).toFixed(2);
- const count=Math.max(0,Number(pending)||0),accessibleLabel=label+", "+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+"% complete"+(count?", "+count+" check-ins waiting":"");
+ const count=Math.max(0,Number(pending)||0),accessibleLabel=label+", "+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+"% complete"+(count?", "+count+(area==="mind"?" actions left today":" check-ins waiting"):"");
  return `<g class="lm-avatar-mark" role="button" tabindex="0" aria-label="${h(accessibleLabel)}" title="${h(accessibleLabel)}" data-life-area="${h(area)}">`+
  '<circle cx="'+x+'" cy="'+y+'" r="21" fill="#fff" stroke="'+color+'" stroke-width="2.5"/>'+
  '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+color+'" fill-opacity="'+alpha+'"/>'+
  '<text x="'+x+'" y="'+(y-1)+'" text-anchor="middle" font-size="13" font-weight="900" fill="#48394d">'+icon+'</text>'+
- '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+'%</text>'+
- (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(count>9?"9+":count)+'</text></g>':"")+'</g>';
+ '<text x="'+x+'" y="'+(y+12)+'" text-anchor="middle" font-size="7" font-weight="900" fill="#48394d">'+Math.max(0,Math.min(100,Math.round(Number(pct)||0)))+(area==='mind'?'% today':'%')+'</text>'+
+ (count?'<g class="lm-avatar-review-count" aria-hidden="true"><circle cx="'+(x+15)+'" cy="'+(y-15)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(x+15)+'" y="'+(y-11.5)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+(area==="mind"?count+" left":count>9?"9+":count)+'</text></g>':"")+'</g>';
 }
 function avatarAreaFill(area,path,cx,cy,maxRadius,pct){
  const progress=Math.max(0,Math.min(100,Number(pct)||0));
@@ -225,7 +225,11 @@ function view(areaOverride,tasksOnly){
  const bodyCareHabits=careHabits.filter(x=>!["outside","quiet_time","journal","meditate"].includes(String(x.key||"")));
  const careTotal=mindCareHabits.length*progressDates.length;
  const careDone=mindCareHabits.reduce((n,x)=>n+progressDates.filter(d=>typeof selfCareDone==="function"&&selfCareDone(x.key,d)).length,0);
- const carePct=careTotal?Math.round(careDone/careTotal*100):0;
+ const mindTodayTasks=tasks.filter(t=>lifeMapAreaForTask(t)==="mind"&&!t._lifeMapEvidence);
+ const mindTodayDone=mindCareHabits.filter(x=>typeof selfCareDone==="function"&&selfCareDone(x.key,date)).length+mindTodayTasks.filter(t=>t.done).length;
+ const mindTodayTotal=mindCareHabits.length+mindTodayTasks.length;
+ const mindRemaining=Math.max(0,mindTodayTotal-mindTodayDone);
+ const carePct=mindTodayTotal?Math.round(mindTodayDone/mindTodayTotal*100):0;
  const bodyCareTotal=bodyCareHabits.length*progressDates.length;
  const bodyCareDone=bodyCareHabits.reduce((n,x)=>n+progressDates.filter(d=>typeof selfCareDone==="function"&&selfCareDone(x.key,d)).length,0);
  const bodyCarePct=bodyCareTotal?Math.round(bodyCareDone/bodyCareTotal*100):0;
@@ -294,7 +298,7 @@ function view(areaOverride,tasksOnly){
   if(area)avatarReviewCounts[area]=(avatarReviewCounts[area]||0)+1;
  }
  const avatarMarks=[
-  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind",avatarReviewCounts.mind||0),
+  avatarMark("Mind and self-care","✿",47,99,carePct,"#c89ad7","mind",mindRemaining),
   avatarMark("Spirituality","☾",174,78,pctFor("spirituality"),"#f2b85b","spirituality",avatarReviewCounts.spirituality||0),
   avatarMark("Body & health","♡",111,205,bodyProgressPct,"#f2ae85","body",avatarReviewCounts.body||0),
   avatarMark("Family and kids","♥",43,274,pctFor("people"),"#e98cb0","people",avatarReviewCounts.people||0),
@@ -374,6 +378,13 @@ function view(areaOverride,tasksOnly){
   const taskTitle=(areaTitles[areaSelection]||"Area")+" tasks";
   const taskList=activeAreaRows?'<div class="lm-list">'+activeAreaRows+'</div>':'<p class="lm-muted">No '+h((areaTitles[areaSelection]||"area").toLowerCase())+' tasks are scheduled for today.</p>';
   return '<section class="life-map-page lm-area-page lm-area-tasks-page"><header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifearea-'+areaSelection+'&#39;)">‹ '+h(areaTitles[areaSelection]||"Life area")+'</button><span class="lm-kicker">TODAY · AREA TASKS</span><h1>Today’s '+h(taskTitle)+'</h1><p>Only tasks linked to this area appear here.</p></header><section class="lm-inline-panel lm-area-page-content">'+taskList+'</section></section>';
+ }
+ if(areaOverride==="mind"&&!tasksOnly){
+  const openCare=mindCareHabits.filter(x=>!(typeof selfCareDone==="function"&&selfCareDone(x.key,date)));
+  const doneCare=mindCareHabits.filter(x=>typeof selfCareDone==="function"&&selfCareDone(x.key,date));
+  const openRows=careRowsFor(openCare)+mindTodayTasks.filter(t=>!t.done).map(taskRow).join("");
+  const doneRows=careRowsFor(doneCare)+mindTodayTasks.filter(t=>t.done).map(taskRow).join("");
+  return '<section class="life-map-page lm-area-page" data-life-area-page="mind"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar</button><h1 style="font-size:1.4rem;margin:0">Mind &amp; self-care</h1></div><section class="lm-inline-panel lm-area-page-content" style="margin-top:12px"><b style="display:block;font-size:1.2rem">'+mindRemaining+' left today</b><p style="margin:6px 0 12px">'+mindTodayDone+' of '+mindTodayTotal+' done · '+h(date)+'<br>Each action below adds color to your avatar’s mind area.</p>'+(openRows?'<div class="lm-list">'+openRows+'</div>':'<p>Today’s mind area is filled. You’re done with this list.</p>')+(doneRows?'<details style="margin-top:12px"><summary>Completed today · '+mindTodayDone+'</summary><div class="lm-list">'+doneRows+'</div></details>':'')+'</section><details class="lm-area-shortcuts"><summary>History &amp; care practices</summary><button type="button" class="lm-region" onclick="setView(&#39;selfcare&#39;)">Open self-care history ›</button>'+(typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml("mind"):"")+'</details></section>';
  }
  if(areaOverride){
   const descriptions={home:"Daily household care and every child’s saved chores and routines. Room resets also appear inside the matching bedroom.",mind:"Mental health, self-care, and small practices that help you feel cared for.",body:"Health routines and everyday care for your body.",people:"Family connection and relationship tasks, gathered in one place.",spirituality:"Spiritual practices and reflections linked to this part of your life.",hobbies:"Hobbies, creative projects, and interests you are growing.",money:"Money goals are shown here. Budget setup is still unfinished; use the budget button to add income and funded categories.",car:"Car keys, maintenance, driving setup, and other vehicle tasks.",work:"UPS shifts, delivery routines, and other work tasks."};
