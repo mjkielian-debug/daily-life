@@ -33,6 +33,15 @@
 <link rel="stylesheet" href="holiday-gifts.css?v=20261115-elfster-wishlists1">
 
 <title>Daily Life</title>
+<style id="vehicle-mileage-tracker-theme">
+.vehicle-oil-tracker{margin:13px 0;padding:14px;border-radius:18px;border:1px solid rgba(122,128,200,.32);background:linear-gradient(145deg,rgba(190,220,255,.14),rgba(255,221,233,.2))}
+.vehicle-oil-tracker-main{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.vehicle-oil-tracker-main>div{flex:1;min-width:170px}
+.vehicle-oil-tracker h3{margin:4px 0;font-size:1rem}
+.vehicle-oil-tracker-number{display:block;font-size:1.38rem;margin:5px 0 7px;font-variant-numeric:tabular-nums}
+.vehicle-oil-tracker .muted{margin:4px 0}
+.vehicle-oil-tracker-due{border-color:#c15b6c;background:rgba(255,131,151,.13)}
+</style>
 <style id="startup-failsafe-style">#startupFailsafe{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:rgba(246,219,233,.96);opacity:0;visibility:hidden;animation:dlRevealFailsafe .01s linear 12s forwards}#startupFailsafe .panel{max-width:440px;padding:24px;border-radius:24px;background:#fffafc;color:#30233b;box-shadow:0 16px 50px rgba(48,35,59,.18);text-align:center}#startupFailsafe p{line-height:1.5}#startupFailsafe a{display:inline-block;margin-top:10px;padding:12px 18px;border-radius:999px;background:#cce9e2;color:#30233b;font-weight:800;text-decoration:none}@keyframes dlRevealFailsafe{to{opacity:1;visibility:visible}}</style><style id="status-bar-root-tint">html{background:#ffdfbd!important;color-scheme:only light}body{background-color:#ffdfbd}</style>
 <style> .today-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0} .today-metrics .metric{min-width:0;overflow-wrap:anywhere}.today-metrics .big{font-size:1.3rem;margin:5px 0} .today-progress{display:block;width:100%;height:9px;accent-color:var(--primary);margin:8px 0} .today-focus h2{font-size:1.25rem;margin:8px 0}.today-moon summary{cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none;min-height:44px} .today-moon summary::-webkit-details-marker{display:none}.today-moon .orb{flex:0 0 44px;width:44px;height:44px;font-size:1.7rem}.today-moon .moon-label{flex:1;min-width:0} .today-moon[open] .moon-toggle{font-size:0}.today-moon[open] .moon-toggle:after{content:'Less';font-size:.78rem}.today-weather h2{font-size:1.15rem;margin:6px 0} @media(max-width:340px){.today-metrics{grid-template-columns:1fr}}
 body{background-image:radial-gradient(circle at 16% 8%,color-mix(in srgb,var(--primary) 12%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--accent) 10%,transparent) 0 1px,transparent 2px)}
@@ -2139,7 +2148,7 @@ function render(){
     if(root)root.innerHTML='<main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Build '+esc(DAILY_LIFE_BUILD)+'</p>'+(startupStorageStalled?'<div class="warning" role="alert" style="margin:22px auto 12px;max-width:440px;text-align:left"><b>Saved information has not finished loading.</b><br>Nothing has been reset. Do not clear app data or start a new account. Try again to reopen Daily Life.</div><button class="btn primary" type="button" onclick="retryStartup()">Try again</button><p class="muted small">Your existing information stays on this phone.</p>':startupFallbackAvailable?'<div class="notice" style="margin:22px auto 12px;max-width:420px;text-align:left">Your saved information on this phone is ready. Daily Life is taking longer than usual to reconnect your account.</div><button class="btn primary" type="button" onclick="continueWithSavedData()">Open saved information on this phone</button><p class="muted small">This keeps your current records on the phone and does not start a new account.</p>':'')+'</main>';
     return;
   }
-  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);ensurePeopleProfiles();ensureToday();restoreTaskCompletions();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#ffdfbd");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"dayflow-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":(view==="log"||view==="selfcare")?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="Search everything" onclick="openLifeSearch()">⌕</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="spirituality"?"":typeof lifeSimHud==="function"?lifeSimHud():""}${view==="lifemap"?lifeMapView():""}${view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaTasksPage==="function"?window.lifeMapAreaTasksPage(view.slice(15)):""}${view.startsWith("lifearea-")&&!view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaPage==="function"?window.lifeMapAreaPage(view.slice(9)):""}${view==="today"?visualHubView("itinerary"):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="selfcare"?selfCarePage():""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="monsterhigh"?monsterHighCollectionView():""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}${view==="household"&&houseOverlayView?houseOverlayHtml(houseOverlayView):""}</main><nav class="bottom-nav house-game-dock" aria-label="Daily Life navigation"><button class="navbtn ${view==="lifemap"?"active":""}" type="button" onclick="setView('lifemap')"><div>⌂</div>Home</button><button class="navbtn" type="button" onclick="profileHomeJump('today')"><div>✦</div>Today</button><button class="navbtn" type="button" onclick="openProfileHomePicker()"><div>♡</div>Profiles</button><button class="navbtn ${view==="family"?"":"active"}" type="button" onclick="openLifeCapture()"><div>＋</div>Log</button></nav>`}
+  if(needsSetup()){document.querySelector("#app").innerHTML=renderSetup();return}if(String(state.profile?.name||"").trim())localStorage.setItem("dailyLifeConfiguredOnce","1");sanitizeWorkScheduleData(state);reconcileVehicleOdometerFromSSD();ensurePeopleProfiles();ensureToday();restoreTaskCompletions();save();document.querySelector('meta[name="theme-color"]')?.setAttribute("content","#ffdfbd");const t=theme(),m=moon(),f=totals(),w=work(),h=wh(w),tk=todayTasks(),done=tk.filter(x=>x.done).length,nt=tk.find(x=>!x.done),tr=tire();document.querySelector("#app").innerHTML=`<main class="app ${view==="today"?"dayflow-one-screen-shell":view==="family"?"people-one-screen-shell":view==="home"?"food-one-screen-shell":view==="more"?"money-one-screen-shell":(view==="log"||view==="selfcare")?"care-one-screen-shell":view==="reading"?"reading-one-screen-shell":view==="pets"?"pets-one-screen-shell":view==="inventory"?"inventory-one-screen-shell":view==="spirituality"?"spirituality-one-screen-shell":view==="gardenhobbies"?"garden-hobbies-one-screen-shell":view==="household"?"household-one-screen-shell":view==="itinerary"?"dayflow-one-screen-shell":view==="vault"?"vault-one-screen-shell":view==="settings"?"settings-one-screen-shell":view==="budget"?"budget-one-screen-shell":""}"><header><div class="brand-lockup"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="brand-copy"><div class="eyebrow">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div><div class="title">Daily Life</div><div class="muted small">${esc(state.profile.name)} · organize • care • grow</div></div></div><div class="header-tools"><div class="pill">✧ ${t}</div><button class="btn small section-launch-btn" aria-label="Search everything" onclick="openLifeSearch()">⌕</button><button class="btn small settings-btn" aria-label="Settings" onclick="setView('settings')">⚙</button>${installPrompt?`<button class="btn primary small" onclick="installApp()">Install</button>`:""}</div></header>${view==="spirituality"?"":typeof lifeSimHud==="function"?lifeSimHud():""}${view==="lifemap"?lifeMapView():""}${view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaTasksPage==="function"?window.lifeMapAreaTasksPage(view.slice(15)):""}${view.startsWith("lifearea-")&&!view.startsWith("lifearea-tasks-")&&typeof window.lifeMapAreaPage==="function"?window.lifeMapAreaPage(view.slice(9)):""}${view==="today"?visualHubView("itinerary"):""}${view==="itinerary"?visualHubView("itinerary"):""}${view==="log"?visualHubView("log"):""}${view==="selfcare"?selfCarePage():""}${view==="family"?visualHubView("family"):""}${view==="reading"?visualHubView("reading"):""}${view==="pets"?visualHubView("pets"):""}${view==="household"?householdMapPage():""}${view==="garden"?visualHubView("garden"):""}${view==="hobbies"?visualHubView("hobbies"):""}${view==="monsterhigh"?monsterHighCollectionView():""}${view==="gardenhobbies"?visualHubView("gardenhobbies"):""}${view==="spirituality"?visualHubView("spirituality"):""}${view==="vault"&&typeof vaultView==="function"?(typeof vaultUnlocked!=="undefined"&&vaultUnlocked?visualHubView("vault"):vaultView()):""}${view==="home"?visualHubView("home"):""}${view==="inventory"?visualHubView("inventory"):""}${view==="more"?visualHubView("more"):""}${view==="budget"?visualHubView("budget"):""}${view==="settings"?visualHubView("settings"):""}${view==="household"&&houseOverlayView?houseOverlayHtml(houseOverlayView):""}</main><nav class="bottom-nav house-game-dock" aria-label="Daily Life navigation"><button class="navbtn ${view==="lifemap"?"active":""}" type="button" onclick="setView('lifemap')"><div>⌂</div>Home</button><button class="navbtn" type="button" onclick="profileHomeJump('today')"><div>✦</div>Today</button><button class="navbtn" type="button" onclick="openProfileHomePicker()"><div>♡</div>Profiles</button><button class="navbtn ${view==="family"?"":"active"}" type="button" onclick="openLifeCapture()"><div>＋</div>Log</button></nav>`}
 
 function changeBudgetMonth(offset){
   const d=new Date(budgetMonth+"-01T12:00:00");d.setMonth(d.getMonth()+offset);budgetMonth=ymd(d).slice(0,7);localStorage.setItem("dailyLifeBudgetMonth",budgetMonth);render();
@@ -4919,6 +4928,10 @@ function recalculateVehicleMaintenance(v=primaryVehicle()){
   const oil=latestVehicleService(v.id,/oil/i),rotation=latestVehicleService(v.id,/rotation/i),
         oi=Number(v.oilIntervalMiles||0),ri=Number(v.rotationIntervalMiles||0);
   if(oil?.mileage&&oi>0)v.oilDueMiles=Number(oil.mileage)+oi;
+  if(oil?.date&&Number(v.oilIntervalMonths||0)>0&&/^\d{4}-\d{2}-\d{2}$/.test(oil.date)){
+    const [year,month,day]=oil.date.split("-").map(Number),d=new Date(year,month-1+Number(v.oilIntervalMonths),day,12);
+    v.oilDueDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+  }
   if(rotation?.mileage&&ri>0)v.rotationDueMiles=Number(rotation.mileage)+ri;
 }
 function ensureVehicleMaintenanceTasks(date=ymd()){
@@ -4936,6 +4949,69 @@ function ensureVehicleMaintenanceTasks(date=ymd()){
       task.notes=[task.notes,"Maintenance no longer shows due"].filter(Boolean).join(" · ");
     }
   }
+  const oil=snap.oil,soon=state.tasks.find(t=>t.sourceMaintenance==="oil-soon"&&!t.done);
+  const daysLeft=oil?.dueDate?Math.ceil((new Date(oil.dueDate+"T12:00:00")-new Date(date+"T12:00:00"))/86400000):null;
+  const approaching=!!oil&&!oil.due&&
+    ((oil.milesRemaining!==null&&oil.milesRemaining>=0&&oil.milesRemaining<=1000)||
+     (Number.isFinite(daysLeft)&&daysLeft>=0&&daysLeft<=30));
+  if(approaching&&!soon){
+    state.tasks.push({id:uid(),date,title:"Plan Volvo oil change",category:"car",
+      notes:[oil.milesRemaining!==null?Math.max(0,oil.milesRemaining).toLocaleString()+" miles remaining":"",
+        oil.dueDate?"Date limit "+oil.dueDate:""].filter(Boolean).join(" · "),
+      done:false,order:35,sourceMaintenance:"oil-soon",itineraryMinutes:10,itineraryPreference:"afternoon"});
+  }else if(!approaching&&soon){
+    soon.done=true;soon.notes=[soon.notes,"Service no longer approaching"].filter(Boolean).join(" · ");
+  }
+}
+// Only confirmed SSD route odometer pairs update car mileage. Route distance
+// alone cannot establish absolute odometer or capture personal driving.
+function reconcileVehicleOdometerFromSSD(){
+  const v=primaryVehicle();if(!v)return false;
+  const current=Number(v.mileage||0);
+  const rows=(state.workShifts||[]).map(shift=>{
+    const start=Number(shift?.ssdOdometerStart),end=Number(shift?.ssdOdometerEnd);
+    if(!shift||shift.ssdOdometerStart===""||shift.ssdOdometerEnd===""||
+      !Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1000||
+      end<start||end-start>500||end>9999999||!/^\d{4}-\d{2}-\d{2}$/.test(String(shift.date||"")))return null;
+    return {mileage:end,date:shift.date};
+  }).filter(Boolean).sort((a,b)=>b.mileage-a.mileage);
+  const latest=rows[0];
+  if(!latest||latest.mileage<=current)return false;
+  v.mileage=latest.mileage;
+  v.odometerSource="Confirmed SSD route log";
+  v.odometerRecordedDate=latest.date;
+  return true;
+}
+function vehicleMileageStatusCard(v,oil){
+  if(!v||!oil?.dueMiles)return "";
+  const miles=Number(v.mileage||0),remaining=oil.dueMiles-miles;
+  const dueDate=oil.dueDate?dl(oil.dueDate):"not recorded";
+  const status=oil.due?"Oil change due":remaining<=500?"Schedule oil change":remaining<=1000?"Plan your oil change":"Tracking maintenance";
+  const message=oil.due?"Your car has reached its mileage or date limit.":
+    remaining<=1000?"An oil-change planning task will appear in Daily Life as you approach the limit.":
+    "SSD route end-odometer readings automatically update this tracker when logged.";
+  return `<div class="vehicle-oil-tracker ${oil.due?"vehicle-oil-tracker-due":""}" aria-label="Oil change mileage tracking">
+      <div class="vehicle-oil-tracker-main"><div><div class="eyebrow">🛢️ Oil change tracker</div>
+        <h3>${esc(status)}</h3><strong class="vehicle-oil-tracker-number">${remaining>0?remaining.toLocaleString()+" miles left":"Mileage limit reached"}</strong>
+        <div class="muted small">Current ${miles.toLocaleString()} · next at ${Number(oil.dueMiles).toLocaleString()} miles</div>
+        <div class="muted small">Due by ${esc(dueDate)}, whichever comes first</div>
+        <div class="muted small">${esc(message)}</div>
+        ${v.odometerRecordedDate?`<small class="muted">Last mileage source: ${esc(v.odometerSource||"log")} · ${esc(dl(v.odometerRecordedDate))}</small>`:""}
+      </div><button class="btn small" onclick="openVehicleMileageCheck()">Update mileage</button></div>
+    </div>`;
+}
+function openVehicleMileageCheck(){
+  const v=primaryVehicle();if(!v)return;
+  modal("Update Volvo mileage",`<div class="stack">
+    <div class="notice">SSD routes with a confirmed ending odometer update this automatically. Enter a reading here only when you have a newer one.</div>
+    <label>Current odometer<input id="vehicleMileageCurrent" type="number" min="1" max="9999999" step="1" inputmode="numeric" value="${Number(v.mileage||0)||""}"></label>
+    <div class="muted small">Latest saved reading: ${Number(v.mileage||0).toLocaleString()} miles.</div></div>`,"Save mileage",async()=>{
+    const next=Number(document.getElementById("vehicleMileageCurrent")?.value||0);
+    if(!Number.isSafeInteger(next)||next<Number(v.mileage||0)||next>9999999){alert("Enter a valid odometer reading at least as high as the latest saved reading.");return;}
+    v.mileage=next;v.odometerSource="Manually confirmed";
+    v.odometerRecordedDate=ymd();ensureVehicleMaintenanceTasks(ymd());
+    await save();closeModal();render();
+  });
 }
 
 function vehicleFuelStats(vehicleId=""){
@@ -4959,6 +5035,7 @@ function vehicleCard(){
   const tireTrend=tireStats.samples&&Number.isFinite(tireStats.avgPerDay)?tireStats.avgPerDay.toFixed(1)+" PSI/day observed":"Need a fill → later reading pair";
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">🚙 Vehicle</div><h2>${v?esc([v.year,v.make,v.model].filter(Boolean).join(" ")):"No vehicle profile"}</h2></div><button class="btn" onclick="openVehicle()">${v?"Edit":"Add"}</button></div>
     ${v?`<div class="grid3"><div class="metric"><div class="muted small">Mileage</div><div class="big">${v.mileage?Number(v.mileage).toLocaleString():"—"}</div></div><div class="metric"><div class="muted small">Registration</div><div class="big">${v.registrationDue?esc(dl(v.registrationDue)):"—"}</div></div><div class="metric"><div class="muted small">Open recalls</div><div class="big">${Number.isFinite(Number(v.openRecalls))?Number(v.openRecalls):"—"}</div></div></div><div class="vehicle-maint-grid"><div class="${maintenance.oil?.due?"maintenance-due":""}"><span class="muted small">Oil change</span><b>${esc(oil.main)}</b>${oil.detail?`<small>${esc(oil.detail)}</small>`:""}</div><div class="${maintenance.rotation?.due?"maintenance-due":""}"><span class="muted small">Tire rotation</span><b>${esc(rotation.main)}</b>${rotation.detail?`<small>${esc(rotation.detail)}</small>`:""}</div><div><span class="muted small">Tread / tires</span><b>${esc(v.tireTread||"not logged")}</b><small>${v.tireTread?"Saved tire note":"Add tread or tire condition when checked"}</small></div><div><span class="muted small">Estimated value</span><b>${v.estimatedValue?money(v.estimatedValue):"—"}</b><small>${v.estimatedValue?"Manual estimate":"Optional"}</small></div></div>${v.appointmentDate?`<div class="notice"><b>Service appointment:</b> ${esc(dl(v.appointmentDate))}${v.appointmentTime?" · "+esc(fmtClock(v.appointmentTime)):""}${v.appointmentPlace?" · "+esc(v.appointmentPlace):""}</div>`:""}${v.notes?`<div class="muted small">${esc(v.notes)}</div>`:""}`:`<div class="notice">Add the vehicle once; tire readings and maintenance can live underneath it.</div>`}
+    ${vehicleMileageStatusCard(v,maintenance.oil)}
     ${tireStats.latest?`<div class="vehicle-tire-summary"><div><span class="muted small">Latest tire pressure</span><b>${Number(tireStats.latest.psi).toFixed(1)} PSI</b><small>${esc(dl(tireStats.latest.date))}${tireStats.latest.time?" · "+esc(fmtClock(tireStats.latest.time)):""} · ${esc(tireStats.latest.event||"reading")}</small></div><div><span class="muted small">Pressure-loss pattern</span><b>${esc(tireTrend)}</b><small>${tireStats.samples?`Based on ${tireStats.samples} recent fill-to-reading interval${tireStats.samples===1?"":"s"}`:"Log a pressure reading after a fill to calculate an observed rate."}</small></div></div>`:""}
     ${fuel.latest?`<div class="fuel-economy-summary"><div><span class="muted small">Latest fuel-up</span><b>${Number(fuel.latest.gallons).toFixed(3)} gal · ${fuel.latest.cost?money(fuel.latest.cost):"cost not logged"}</b><small>${fuel.byId.get(fuel.latest.id)?.pricePerGallon?"$"+fuel.byId.get(fuel.latest.id).pricePerGallon.toFixed(2)+"/gal":""}</small></div><div><span class="muted small">Fuel economy</span><b>${fuel.byId.get(fuel.latest.id)?.mpg?fuel.byId.get(fuel.latest.id).mpg.toFixed(1)+" MPG":fuel.avgMpg?fuel.avgMpg.toFixed(1)+" MPG avg":"Need another full fill"}</b><small>${fuel.mpgs.length?"Calculated from full-to-full odometer fills":"Trip T2 is saved but not used unless its reset point is confirmed."}</small></div></div>`:""}
     <div class="section-title" style="margin-top:10px"><h3>Service / maintenance</h3><button class="btn small" onclick="openVehicleService()">+ Log</button></div>${services.map(x=>{const fm=fuel.byId.get(x.id);return `<div class="row vehicle-service-row"><span><b>${esc(x.type||"Service")}</b><div class="muted small">${esc(dl(x.date))}${x.mileage?` · ${Number(x.mileage).toLocaleString()} mi`:""}${Number(x.gallons)>0?` · ${Number(x.gallons).toFixed(3)} gal`:""}${fm?.mpg?` · ${fm.mpg.toFixed(1)} MPG`:""}${x.notes?" · "+esc(x.notes):""}</div></span><span class="vehicle-service-actions"><b>${x.cost?money(x.cost):""}</b><button class="btn small" onclick="openVehicleService('${x.id}')">Edit</button></span></div>`}).join("")||`<div class="muted small">No service history logged yet.</div>`}
