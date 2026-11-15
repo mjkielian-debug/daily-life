@@ -37,7 +37,7 @@ test("daily check-in does not show broken controls when a module is missing",()=
 });
 test("check-in still clarifies that ChatGPT chat does not itself sync entries",()=>{
  const html=view();
- assert.match(html,/ChatGPT conversations do not automatically sync to the app/);
+ assert.match(html,/this is not an automatic conversation feed/);
  assert.match(html,/Unknown never means you failed/);
 });
 
