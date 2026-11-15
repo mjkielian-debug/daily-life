@@ -2184,6 +2184,29 @@ function dailyAdviceCard(){
 function dateDayIndex(date){
   return Math.floor(new Date(date+"T12:00:00").getTime()/86400000);
 }
+// Kids are typically with their dad on weekend evenings. Generated chores
+// must not become outstanding work just because a recurring rotation exists.
+// The user can override a specific date if an exchange or visit changes.
+function familyKidsHomeForChores(date=ymd()){
+  const day=String(date||ymd()),override=state.settings?.kidChoreAvailabilityOverrides?.[day];
+  if(override===true||override===false)return override;
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(day))return true;
+  const weekday=new Date(day+"T12:00:00").getDay();
+  if(weekday===0||weekday===6)return false;
+  if(weekday===5&&day===ymd()){
+    const now=new Date();return now.getHours()*60+now.getMinutes()<17*60+30;
+  }
+  return true;
+}
+window.familyKidsHomeForChores=familyKidsHomeForChores;
+window.familySetKidsHomeForChores=async function(date,value){
+  const day=/^\\d{4}-\\d{2}-\\d{2}$/.test(String(date||""))?String(date):ymd();
+  if(!state.settings)state.settings={};
+  const map=state.settings.kidChoreAvailabilityOverrides||(state.settings.kidChoreAvailabilityOverrides={});
+  if(value===null)delete map[day];else map[day]=!!value;
+  ensureFamilyDay(day);
+  await save();render();
+};
 function ensureFamilyDay(date=ymd()){
   const settings=state.settings||{},desired=new Map();
   const addDesired=(child,chore,generated)=>{
@@ -2193,7 +2216,7 @@ function ensureFamilyDay(date=ymd()){
   const family=(settings.familyMembers||[]).map(x=>String(x?.name||x||"").trim()).filter(Boolean),
         basics=(settings.dailyKidBasics||[]).map(String).map(x=>x.trim()).filter(Boolean),
         weekday=new Date(date+"T12:00:00").getDay(),
-        kidsHomeForGeneratedRoutines=weekday!==6;
+        kidsHomeForGeneratedRoutines=familyKidsHomeForChores(date);
   if(kidsHomeForGeneratedRoutines)for(const name of family)for(const basic of basics)addDesired(name,basic,"daily-basics");
   for(const r of settings.choreRotations||[]){
     if(!kidsHomeForGeneratedRoutines)continue;
@@ -4263,6 +4286,7 @@ function dailyReviewExpected(date=ymd()){
     rows.push({kind:"task",key:t.id,label:taskLabel,group:"Tasks",detail:taskDetail,status:dailyReviewStatus("task",t.id,date)});
   }
   for(const c of displayChoresForDate(date)){
+    if((c.generated==="daily-basics"||c.generated==="rotation")&&!familyKidsHomeForChores(date))continue;
     const child=String(c.child||"").trim(),chore=String(c.chore||"Chore").trim(),
           label=child?`${child} · ${chore}`:chore,
           group=c.generated==="daily-basics"?"Kids daily routine":c.generated==="rotation"?"Kids rotating chore":"Chores + routines";
@@ -4328,7 +4352,7 @@ function openDailyReviewAnswers(date=ymd()){
       '<select aria-label="Change answer for '+esc(item.label)+'" onchange="reviseDailyReviewAnswer(\''+esc(item.kind)+'\',\''+esc(String(item.key))+'\',\''+esc(date)+'\',this.value)">'+
       '<option value="yes" '+(item.status==="yes"?"selected":"")+'>Yes</option>'+
       '<option value="no" '+(item.status==="no"?"selected":"")+'>No</option>'+
-      (item.kind==="care"?'<option value="na" '+(item.status==="na"?"selected":"")+'>N/A</option>':"")+
+      '<option value="na" '+(item.status==="na"?"selected":"")+'>N/A · not applicable</option>'+
       '<option value="unknown">Keep unknown</option></select></label>').join("")+'</div>':
     '<p class="muted">There are no answered items to change for '+esc(dateLabel)+'.</p>';
   modal("Change daily answers",'<div class="stack daily-review">'+body+'</div>',"Back to review",()=>openDailyReview(date));
@@ -4355,16 +4379,14 @@ async function applyDailyReview(kind,key,date,status,openReviewAfter=true){
   if(!item)return;
   if(kind==="task"){
     const t=(state.tasks||[]).find(x=>String(x.id)===String(key));
-    if(t&&status==="yes")t.done=true;
-    else if(t)t.done=false;
+    if(t){t.done=status==="yes";if(status!=="yes")t.completedAt=""}
     if(t?.sharedEntryId&&status==="yes"&&typeof sharingUpsertTask==="function"){
       const ok=await sharingUpsertTask(t);
       if(!ok){t.done=false;return}
     }
   }else if(kind==="chore"){
     const c=(state.chores||[]).find(x=>String(x.id)===String(key));
-    if(c&&status==="yes")c.done=true;
-    else if(c)c.done=false;
+    if(c){c.done=status==="yes";if(status!=="yes")c.completedAt=""}
   }else if(kind==="care"){
     let row=selfCareLogRow(key,date);
     if(status==="yes"){
@@ -4421,7 +4443,7 @@ function openDailyReview(date=ymd(),cursor=0){
     modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-complete"><div class="eyebrow">${esc(dateLabel)}</div><h2>Review complete</h2><div class="muted">Nothing is being silently treated as “no.”</div></div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>0</b><small>unknown</small></span></div>${dailyReviewAnswerButtonHtml(date,summary)}${backlogUnknown?`<div class="notice"><b>${backlogUnknown} unknown check${backlogUnknown===1?"":"s"} remain across the last 7 days.</b><div class="actions" style="margin-top:8px"><button class="btn primary" onclick="openDailyReviewCatchup(7)">Catch up earlier days</button></div></div>`:""}<label>Review another day<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Done",closeModal);
     return;
   }
-  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${dailyReviewSteps(item).length?dailyReviewStepsHtml(item,date):`${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button>${item.kind==="care"?`<button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button>`:""}<button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div>`}<div class="muted small">Skipped items stay unknown. You can come back to them later.</div>${backlogUnknown>summary.unknown?`<div class="actions" style="margin-top:9px"><button class="btn small" onclick="openDailyReviewCatchup(7)">Catch up ${backlogUnknown-summary.unknown} earlier unknown${backlogUnknown-summary.unknown===1?"":"s"}</button></div>`:""}</div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div>${dailyReviewAnswerButtonHtml(date,summary)}<label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
+  modal("Daily Review",`<div class="stack daily-review"><div class="daily-review-head"><div><div class="eyebrow">${esc(dateLabel)}</div><h2>${unknown.length} still unknown</h2><div class="muted small">Unknown is excluded from pattern calculations until you tell Daily Life what happened.</div></div><span class="tag">?${unknown.length}</span></div><div class="daily-review-question"><span class="daily-review-group">${esc(item.group)}</span><h2>${esc(item.label)}</h2>${dailyReviewSteps(item).length?dailyReviewStepsHtml(item,date):`${item.detail?`<div class="muted">${esc(item.detail)}</div>`:""}<div class="daily-review-actions"><button class="review-yes" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','yes')">✓ Yes</button><button class="review-no" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','no')">✕ No</button><button class="review-na" onclick="applyDailyReview('${item.kind}','${item.key}','${date}','na')">— N/A</button><button class="btn review-unknown" onclick="openDailyReview('${date}',${position+1})">? Keep unknown · Next</button></div>`}<div class="muted small">Skipped items stay unknown. You can come back to them later.</div>${backlogUnknown>summary.unknown?`<div class="actions" style="margin-top:9px"><button class="btn small" onclick="openDailyReviewCatchup(7)">Catch up ${backlogUnknown-summary.unknown} earlier unknown${backlogUnknown-summary.unknown===1?"":"s"}</button></div>`:""}</div><div class="daily-review-summary"><span><b>${summary.yes}</b><small>yes</small></span><span><b>${summary.no}</b><small>no</small></span><span><b>${summary.na}</b><small>N/A</small></span><span><b>${summary.unknown}</b><small>unknown</small></span></div>${dailyReviewAnswerButtonHtml(date,summary)}<label>Review date<input type="date" value="${esc(date)}" onchange="openDailyReview(this.value)"></label></div>`,"Close",closeModal);
 }
 function selfCareHabits(){
   const list=Array.isArray(state.settings?.selfCareHabits)?state.settings.selfCareHabits:[],
