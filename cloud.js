@@ -85,6 +85,7 @@ function cloudPanel(){
   const updated=cloudRemoteUpdatedAt?new Date(cloudRemoteUpdatedAt).toLocaleString():"No cloud copy yet";
   const auto=cloudAutoEnabled(),lastLifePull=localStorage.getItem(cloudMetaKey("lastLifePull")),lastLifePullText=lastLifePull?new Date(lastLifePull).toLocaleString():"Not scanned yet",
     lastSignature=cloudLastSignature(),currentSignature=cloudStateSignature(),lastSync=cloudLastPushed(),
+    lastLifeAdded=localStorage.getItem(cloudMetaKey("lastLifePullCount")),
     syncStatus=cloudRecoveryRequired?"Paused while recovery is needed":cloudNeedsReview?"Needs your review":!auto?"Automatic sync is off":!cloudRemoteUpdatedAt?"No full cloud backup yet":cloudBusy||cloudPushTimer?"Syncing changes":!lastSignature?"Sync status not confirmed yet":currentSignature!==lastSignature?"Changes waiting to sync":"Up to date",
     lastSyncText=lastSync?new Date(lastSync).toLocaleString():"No successful sync recorded yet";
   return `<div class="card glow"><div class="section-title"><h2>Cloud account</h2><span class="tag">${auto?"auto sync on":"signed in"}</span></div>
@@ -93,6 +94,7 @@ function cloudPanel(){
   <div class="row"><span>Sync status</span><b>${esc(syncStatus)}</b></div>
   <div class="row"><span>Last successful sync</span><b>${esc(lastSyncText)}</b></div>
   <div class="row"><span>ChatGPT log scan</span><b>${esc(lastLifePullText)}</b></div>
+  <div class="row"><span>New logs in last scan</span><b>${lastLifeAdded===null?"Not checked":esc(lastLifeAdded)}</b></div>
   ${!cloudRemoteUpdatedAt?`<div class="warning"><b>No full cloud snapshot yet.</b><br><span class="muted small">Private profile, household, finance, and ChatGPT life entries can still load, but a complete device restore is not protected until you create the first cloud copy.</span></div>`:""}
   ${cloudNeedsReview?`<div class="warning"><b>Cloud copy changed elsewhere.</b> Automatic upload is paused so this device cannot overwrite newer cloud data. Restore the cloud copy, or explicitly keep this device.</div>`:""}
   <p class="muted small"><b>This device remembers your cloud sign-in.</b> Reopening Daily Life can restore the signed-in session automatically; that is expected behavior, not a silent new login. Use Sign out below if you do not want this browser to stay signed in.</p><p class="muted small">Your device keeps its IndexedDB copy. Outfit, meal, pet, plant, and hobby photos remain local while private photo storage is built separately.</p>
@@ -2136,10 +2138,11 @@ async function cloudQueueRecipeRequest(meal){
 async function cloudPullLifeEntries(showAlert=false){
   if(cloudEntryPullBusy||!cloudUser()||!cloudClient)return 0;
   cloudEntryPullBusy=true;
+  let originalState=null,staged=false,committed=false;
   try{
     const batchSize=500,maxRows=10000;
     let offset=0,applied=0,totalRows=0;
-    const petProfileEntryIds=new Set();
+    const incoming=[];
     while(offset<maxRows){
       const {data,error}=await cloudClient.from("life_entries")
         .select("id,category,occurred_at,local_date,payload,source,external_id,created_at,updated_at")
@@ -2149,38 +2152,57 @@ async function cloudPullLifeEntries(showAlert=false){
       if(error)throw error;
       const rows=data||[];
       totalRows+=rows.length;
-      for(const row of rows){
+      // Finish all network reads before touching the local snapshot. A partial
+      // page or network failure must never leave half-imported records.
+      incoming.push(...rows);
+      if(rows.length<batchSize)break;
+      offset+=batchSize;
+    }
+    const fresh=incoming.filter(row=>row?.id&&!cloudEntryAlreadyApplied(row.id));
+    const petProfileEntryIds=new Set();
+    if(fresh.length){
+      originalState=state;
+      state=structuredClone(originalState);
+      staged=true;
+      for(const row of fresh){
         if(cloudApplyLifeEntry(row)){
           cloudMarkEntryApplied(row.id);applied++;
           if(row.category==="pet_profile")petProfileEntryIds.add(row.id);
         }
       }
-      if(rows.length<batchSize)break;
-      offset+=batchSize;
-    }
-    if(applied){
-      if(typeof sanitizeWorkScheduleData==="function")sanitizeWorkScheduleData(state);
-      await dbSet("state",state);
-      if(petProfileEntryIds.size&&typeof cloudUpsertPetProfile==="function"){
-        for(const pet of state.pets||[]){
-          if(petProfileEntryIds.has(pet.cloudEntryId)){
-            try{await cloudUpsertPetProfile(pet)}catch(e){}
+      if(applied){
+        if(typeof sanitizeWorkScheduleData==="function")sanitizeWorkScheduleData(state);
+        // Commit the whole imported batch to the on-device database at once.
+        await dbSet("state",state);
+        committed=true;
+        if(petProfileEntryIds.size&&typeof cloudUpsertPetProfile==="function"){
+          for(const pet of state.pets||[]){
+            if(petProfileEntryIds.has(pet.cloudEntryId)){
+              try{await cloudUpsertPetProfile(pet)}catch(e){}
+            }
           }
         }
+        cloudSchedulePush();
+        if(typeof render==="function")render();
+      }else{
+        state=originalState;
+        staged=false;
       }
-      cloudSchedulePush();
-      if(typeof render==="function")render();
     }
     if(showAlert){
       const capNote=totalRows>=maxRows?" The sync reached its safety limit; older entries remain safe in cloud but were not scanned in this pass.":"";
       const message=applied?("Added "+applied+" new ChatGPT log entr"+(applied===1?"y":"ies")+" to this device."):"No new ChatGPT logs to add.";
       alert(message+capNote);
     }
-    if(cloudUser())localStorage.setItem(cloudMetaKey("lastLifePull"),new Date().toISOString());
+    if(cloudUser()){
+      localStorage.setItem(cloudMetaKey("lastLifePull"),new Date().toISOString());
+      localStorage.setItem(cloudMetaKey("lastLifePullCount"),String(applied));
+    }
     return applied;
   }catch(error){
+    if(staged&&!committed&&originalState)state=originalState;
     cloudError=error?.message||"Could not pull conversational logs.";
-    if(showAlert)alert("Could not pull ChatGPT logs.");
+    if(showAlert)alert("Could not pull ChatGPT logs. Existing on-device records were left unchanged.");
     return 0;
   }finally{cloudEntryPullBusy=false}
 }
