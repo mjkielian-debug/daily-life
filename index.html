@@ -6176,6 +6176,14 @@ function peoplePlansHub(){
   const rows=peopleAgendaItems().slice(0,18),partners=(state.peopleProfiles||[]).filter(isPartnerProfile);
   return `<div class="stack">${peopleAgendaCard()}${partners.map(p=>`<div class="card relationship-card"><div class="section-title"><div><div class="eyebrow">Check-in</div><h2>${esc(p.name)}</h2><div class="muted small">Relationship notes and recurring check-ins.</div></div><button class="btn" onclick="closeModal();openPersonHub('${p.id}')">Open</button></div></div>`).join("")}</div>`;
 }
+function familyKidChorePresenceCard(date=ymd()){
+  const atHome=familyKidsHomeForChores(date),overrides=state.settings?.kidChoreAvailabilityOverrides||{},isCustom=Object.prototype.hasOwnProperty.call(overrides,date);
+  return '<section class="card kid-chore-presence"><div class="mini-heading">Kids’ chore availability</div>'+
+    '<p class="muted small">'+(atHome?'Kids at home · their routine chores can appear':'Kids away · their automatically assigned chores are hidden')+'</p>'+
+    '<div class="actions"><button type="button" class="btn small '+(atHome?'primary':'')+'" onclick="familySetKidsHomeForChores(&#39;'+esc(date)+'&#39;,true)">Kids here today</button>'+
+    '<button type="button" class="btn small '+(!atHome?'primary':'')+'" onclick="familySetKidsHomeForChores(&#39;'+esc(date)+'&#39;,false)">Kids away today</button>'+
+    (isCustom?'<button type="button" class="btn small" onclick="familySetKidsHomeForChores(&#39;'+esc(date)+'&#39;,null)">Use usual schedule</button>':'')+'</div></section>';
+}
 function openPeopleHubSection(section){
   let title="People",body="";
   if(section==="profiles"){title="All People";body=peopleHubProfileList()}
@@ -6184,7 +6192,7 @@ function openPeopleHubSection(section){
   else if(section==="activities"){title="Activities";body=peopleActivitiesHub()}
   else if(section==="birthdays"){title="Birthdays + Gifts";body=`${birthdayDashboard()}${elfsterStatusCard()}${birthdayGiftBoard()}${holidayGiftBoard()}`}
   else if(section==="money"){title="Kids Money";body=kidsMoneyCard()}
-  else if(section==="routines"){title="Chores + Routines";body=familyRoutinesCard()}
+  else if(section==="routines"){title="Chores + Routines";body=familyKidChorePresenceCard()+familyRoutinesCard()}
   else if(section==="family"){title="Family + Extended";body=`${familyConnectionsCard()}${peopleMissingInfoCard()}${peopleHubProfileList()}`}
   else if(section==="plans"){title="Plans + Check-ins";body=peoplePlansHub()}
   modal(title,`<div class="people-hub-modal">${body}</div>`,"Close",closeModal);
