@@ -40,3 +40,16 @@ test("check-in still clarifies that ChatGPT chat does not itself sync entries",(
  assert.match(html,/ChatGPT conversations do not automatically sync to the app/);
  assert.match(html,/Unknown never means you failed/);
 });
+
+
+test("preload end does not imply that SSD delivery is finished",()=>{
+ const start=script.indexOf(" function chatWorkdayFinished(");
+ const end=script.indexOf(" window.dailyLifeChatWorkdayFinished=",start);
+ assert.ok(start>=0&&end>start);
+ const ctx={};
+ vm.runInNewContext(script.slice(start,end)+"\nthis.finished=chatWorkdayFinished;",ctx);
+ assert.equal(ctx.finished({start:"04:45",end:"09:30"}),false);
+ assert.equal(ctx.finished({start:"04:45",end:"09:30",deliveryStart:"09:42"}),false);
+ assert.equal(ctx.finished({start:"04:45",end:"09:30",deliveryStart:"09:42",deliveryEnd:"13:59"}),true);
+ assert.equal(ctx.finished({start:"04:45",end:"09:30",ssdHours:4.25}),true);
+});
