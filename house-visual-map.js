@@ -1668,7 +1668,9 @@ window.houseVisualOpenZone=function(f,id){
   arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>/stove|oven|sink|dishwasher|pantry|fridge|refrigerator|counter|coffee|back door/i.test(str(p.label||""))).slice(0,9)
     .map(({p,i})=>'<button type="button" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')">'+h(p.short||p.label)+'</button>').join("")+
   '</div></section>':"";
- const markup='<div class="hvm-zone-detail">'+roomTaskNotice+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+progress+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+tour+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ // A room tap should immediately show actionable chores and direct room navigation.
+ // Leave the approved illustrations, floor geometry, and task completion rules unchanged.
+ const markup='<div class="hvm-zone-detail">'+roomTaskNotice+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
