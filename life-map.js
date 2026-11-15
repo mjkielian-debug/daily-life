@@ -85,8 +85,8 @@ function lifeMapAreaForTask(task){
  if(child&&/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|medical|stretch|workout|exercise|sleep|skin/i.test(title))return "people";
  if(["health","wellness","fitness","selfcare","body"].includes(category))return "body";
  if(category==="library"&&child)return "people";
- if(categoryAreas[category])return categoryAreas[category];
  if(/\b(housework|household|chores?|room reset|room cleanup|clean room|cleaning|dishes|dishwashing|laundry|counters?|countertops?|floors?|vacuum|mop|sweep|litter box|trash|garbage|declutter|organize|tidy up|house reset|kitchen|bathroom|playroom|living room|bedroom)\b/i.test(title))return "home";
+ if(categoryAreas[category])return categoryAreas[category];
  if(/mind|mental|journal|therapy|rest|breath|quiet/i.test(text)||category==="mind"||category==="self-care")return "mind";
  if(/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text)||category==="body"||category==="health")return "body";
  if(/spiritual|tarot|ritual|meditat|affirmation/i.test(text)||category==="spirituality")return "spirituality";
