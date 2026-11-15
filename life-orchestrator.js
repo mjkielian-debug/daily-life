@@ -355,11 +355,18 @@
     return{title:"No urgent loose ends",detail:"Use the open time for recovery, a room reset, or something you actually want to do.",task:null,mode:"clear"};
   }
 
+  function lifeCaptureWaterOunces(line){
+    const m=String(line||"").trim().match(/^(?:i\s+)?(?:drank|had|finished)\s+(?:a\s+|one\s+)?(\d+(?:\.\d+)?)\s*[- ]?\s*(?:oz|ounces?)(?:\s+bottle)?(?:\s+of)?\s+water\b/i);
+    return m?Number(m[1]):null;
+  }
+  window.dailyLifeQuickCaptureWaterOunces=lifeCaptureWaterOunces;
   window.openLifeCapture=function(){
     const tomorrow=lifeShift(ymd(),1);
     modal("Quick capture",'<div class="stack">'+
-      '<div class="notice"><b>Dump it here. Daily Life will sort the basics.</b><div class="muted small">One item per line. Lines beginning with “buy” or “get” can go straight to Shopping.</div></div>'+
-      '<label>What is on your mind?<textarea id="lifeCaptureText" rows="7" placeholder="Call school about form\nbuy cat litter\nclean out hallway closet"></textarea></label>'+
+      '<div class="notice"><b>Dump it here. Daily Life will sort the basics.</b><div class="muted small">One item per line. “Buy” goes to Shopping. “I drank 26 oz water” logs water. Review dictation before saving.</div></div>'+
+      '<label>What is on your mind?<textarea id="lifeCaptureText" rows="7" placeholder="I drank 26 oz water\nbuy cat litter\ncall school about form"></textarea></label>'+
+// optional speech supported through device/browser; no microphone upload by Daily Life itself
+      '<div class="row"><button type="button" class="btn small" id="lifeCaptureDictateButton">🎙️ Dictate</button><span class="muted small" id="lifeCaptureDictateStatus">Speech recognition depends on your phone or browser.</span></div>'+
       '<div class="grid2"><label>When<select id="lifeCaptureWhen"><option value="'+ymd()+'">Today</option><option value="'+tomorrow+'">Tomorrow</option><option value="'+lifeShift(ymd(),3)+'">In the next few days</option><option value="'+lifeShift(ymd(),7)+'">Next week</option></select></label>'+
       '<label>Route<select id="lifeCaptureRoute"><option value="auto">Auto-sort</option><option value="task">Tasks</option><option value="shopping">Shopping list</option></select></label></div>'+
       '<label>Person (optional)<input id="lifeCapturePerson" list="lifeCapturePeople" placeholder="Leave blank if it is not for one person"><datalist id="lifeCapturePeople">'+(state.peopleProfiles||[]).map(p=>'<option value="'+esc(p.name)+'">').join("")+'</datalist></label>'+
@@ -367,20 +374,47 @@
         const lines=$("#lifeCaptureText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),date=$("#lifeCaptureWhen").value||ymd(),
           route=$("#lifeCaptureRoute").value,person=$("#lifeCapturePerson").value.trim();
         if(!lines.length)return;
+        for(const line of lines){const oz=lifeCaptureWaterOunces(line);if(oz!==null&&(!Number.isFinite(oz)||oz<=0||oz>128)){alert("Check water amount: enter 1–128 oz per line.");return;}}
         for(const line of lines){
           const shoppingMatch=line.match(/^(?:buy|get|pick up|pickup)\s+(.+)/i),asShopping=route==="shopping"||(route==="auto"&&shoppingMatch);
-          if(asShopping){
+          const waterOz=route==="auto"?lifeCaptureWaterOunces(line):null;
+          if(waterOz!==null){
+            state.waterLogs=Array.isArray(state.waterLogs)?state.waterLogs:[];
+            state.waterLogs.push({id:uid(),date:ymd(),oz:waterOz,source:"quick-capture"});
+          }else if(asShopping){
             const item=(shoppingMatch?shoppingMatch[1]:line).trim();
             state.shopping=state.shopping||[];
-            state.shopping.push({id:uid(),item:item,qty:"",store:"",status:"needed",source:"quick-capture",createdAt:new Date().toISOString()});
+            if(!state.shopping.some(x=>String(x.item||"").trim().toLowerCase()===item.toLowerCase()&&String(x.status||"needed")==="needed"))
+              state.shopping.push({id:uid(),item:item,qty:"",store:"",status:"needed",source:"quick-capture",createdAt:new Date().toISOString()});
           }else{
             const category=lifeInferCategory(line);
-            state.tasks.push({id:uid(),date:date,title:line,child:person,category:category,notes:"Quick capture",done:false,order:55,
-              itineraryMinutes:lifeTaskMinutesFor(line,category),itineraryPreference:category==="school"?"after-school":"",itineraryStart:"",generated:"quick-capture"});
+            if(!state.tasks.some(x=>!x.done&&x.generated==="quick-capture"&&x.date===date&&String(x.title||"").trim().toLowerCase()===line.toLowerCase()&&String(x.child||"")===person))
+              state.tasks.push({id:uid(),date:date,title:line,child:person,category:category,notes:"Quick capture",done:false,order:55,
+                itineraryMinutes:lifeTaskMinutesFor(line,category),itineraryPreference:category==="school"?"after-school":"",itineraryStart:"",generated:"quick-capture"});
           }
         }
         await save();closeModal();render();
       });
+    const button=document.getElementById("lifeCaptureDictateButton"),field=document.getElementById("lifeCaptureText");
+    const status=document.getElementById("lifeCaptureDictateStatus");
+    if(!button||!field)return;
+    const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Speech){button.remove();if(status)status.textContent="Use the microphone on your keyboard to dictate.";return;}
+    let active=null;
+    button.addEventListener("click",()=>{
+      if(active){active.stop();return;}
+      const recognition=new Speech();active=recognition;
+      recognition.lang="en-US";recognition.interimResults=false;recognition.continuous=false;
+      recognition.onresult=event=>{
+        const words=Array.from(event.results||[]).map(x=>x[0]?.transcript||"").join(" ").trim();
+        if(words){field.value+=(field.value.trim()?"\\n":"")+words;field.focus();}
+        if(status)status.textContent="Review what was heard, then tap Add.";
+      };
+      recognition.onerror=()=>{if(status)status.textContent="Speech unavailable. Try your keyboard microphone instead.";};
+      recognition.onend=()=>{active=null;button.textContent="🎙️ Dictate";};
+      button.textContent="■ Stop";
+      try{recognition.start()}catch(_){active=null;button.textContent="🎙️ Dictate";if(status)status.textContent="Speech unavailable. Try your keyboard microphone instead.";}
+    });
   };
 
   function lifeWaitingOpen(row){
