@@ -5712,7 +5712,10 @@ function birthdayDashboard(){
   </div>`;
 }
 function personTodaySummary(p){
-  const chores=(state.chores||[]).filter(x=>x.date===ymd()&&String(x.child||"")===String(p.name||"")),
+  const day=ymd(),kidsHere=familyKidsHomeForChores(day);
+  const chores=(state.chores||[]).filter(x=>x.date===day&&String(x.child||"")===String(p.name||"")&&
+    !((x.generated==="daily-basics"||x.generated==="rotation")&&!kidsHere)&&
+    dailyReviewStatus("chore",x.id,day)!=="na"),
         pages=(state.readingLogs||[]).filter(x=>x.date===ymd()&&String(x.reader||"")===String(p.name||"")).reduce((sum,x)=>sum+Number(x.pages||0),0),
         schoolTasks=(state.tasks||[]).filter(x=>!x.done&&x.category==="school"&&String(x.child||"")===String(p.name||"")),
         upcoming=(state.events||[]).filter(e=>e.date>=ymd()&&e.status!=="cancelled"&&String(e.child||"")===String(p.name||"")).sort((a,b)=>(a.date+(a.startTime||"")).localeCompare(b.date+(b.startTime||"")))[0];
@@ -6151,7 +6154,10 @@ function openFamilyScheduleSettings(){
   });
 }
 function familyRoutinesCard(){
-  const rows=state.chores.filter(x=>x.date===ymd());
+  const today=ymd(),kidsHere=familyKidsHomeForChores(today);
+  const rows=state.chores.filter(x=>x.date===today&&
+    !((x.generated==="daily-basics"||x.generated==="rotation")&&!kidsHere)&&
+    dailyReviewStatus("chore",x.id,today)!=="na");
   return `<div class="card"><div class="section-title"><div><div class="eyebrow">Family today</div><h2>Kids + household routines</h2><div class="muted small">Daily basics, alternating chores, and weekly activities can all be adjusted without changing app code.</div></div><div class="actions"><button class="btn" onclick="openFamilyRoutineSettings()">Chore setup</button><button class="btn" onclick="openFamilyScheduleSettings()">Weekly schedule</button><button class="btn" onclick="openChore()">+ Chore</button></div></div>${rows.map(x=>`<div class="row"><label class="task"><input type="checkbox" ${x.done?"checked":""} onchange="toggleChore('${x.id}',this.checked)"><span class="${x.done?"done":""}"><b>${esc(x.child)}</b> · ${esc(x.chore)}</span></label>${x.generated?`<span class="tag">${x.generated==="rotation"?"rotation":"daily"}</span>`:""}</div>`).join("")||`<div class="notice">No family routines logged today. Use Routine setup to add daily basics or alternating chore groups.</div>`}</div>`;
 }
 function peopleHubProfileList(){
