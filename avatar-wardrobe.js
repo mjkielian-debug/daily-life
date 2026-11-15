@@ -487,7 +487,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    const localSprites=state.settings.wardrobeImageSprites&&typeof state.settings.wardrobeImageSprites==="object"?state.settings.wardrobeImageSprites:{};
    for(const id of needed){
     const sprite=sourceSprites[id],uri=String(sprite?.imageData||"");
-    if(!localSprites[id]&&/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(uri)&&uri.length<2500000){
+    if(!localSprites[id]&&/^data:image\/(?:jpeg|webp);base64,[a-z0-9+/=]+$/i.test(uri)&&uri.length<2500000){
      localSprites[id]=structuredClone(sprite);changed++;
     }
    }
