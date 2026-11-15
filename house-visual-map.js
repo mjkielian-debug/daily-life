@@ -94,7 +94,7 @@ function zoneFloorGraphic(f,z,bounds){
  const thirdStairs=f==="Second floor"&&z.id==="stairs_to_third";
  if(!firstUp&&!basementDown&&!mainStairs&&!thirdStairs)return "";
  if(!/stairs|landing/i.test(label))return "";
- if(firstUp){
+ if(firstUp||mainStairs){
   const centerX=bounds.x+bounds.width/2,centerY=bounds.y+bounds.height*.36;
   const width=Math.min(bounds.width*.82,52),height=Math.min(bounds.height*.34,28);
   const left=centerX-width/2,right=centerX+width/2,top=centerY-height/2,bottom=centerY+height/2;
@@ -164,11 +164,11 @@ function illustratedLayout(f,m){
  mapped=mapped.map(z=>{
   if(f==="First floor"&&(/basement|downstairs/i.test(str(z.id)+" "+str(z.name))))return {...z,linkedFloor:"Basement"};
   if(f==="First floor"&&/stairs|upstairs/i.test(str(z.id)+" "+str(z.name))&&z.id!=="basement_stairs")return {...z,linkedFloor:"Second floor"};
-  if(f==="Second floor"&&/stairs|landing/i.test(str(z.id)+" "+str(z.name))&&!/first floor|downstairs|main stairs/i.test(str(z.name))){
-   const hasKids=zones.some(q=>/ambrose/i.test(str(q.name)))&&zones.some(q=>/leo/i.test(str(q.name)));
-   if(hasKids)return {...z,linkedFloor:"Third floor"};
-  }
-  if(f==="Second floor"&&/first floor|downstairs|main stairs/i.test(str(z.name)))return {...z,linkedFloor:"First floor"};
+  // Main upstairs landing leads to first floor; separate flight between Leo and Ambrose leads to third.
+  if(f==="Second floor"&&(z.id==="stairs"||z.id==="stairs_to_first"||/first floor|downstairs|main stairs/i.test(str(z.name))))
+   return {...z,linkedFloor:"First floor"};
+  if(f==="Second floor"&&(z.id==="stairs_to_third"||/third floor|michelle/i.test(str(z.name))))
+   return {...z,linkedFloor:"Third floor"};
   return z;
  });
  if(f==="First floor"&&!mapped.some(z=>z.id==="stairs_up"||/stairs?\s*(up|to second)|upstairs/i.test(str(z.name)))){
