@@ -97,7 +97,10 @@
     '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy app status for ChatGPT</button>'+
     '<button type="button" class="btn" onclick="chatCheckinOpenChat()">Open ChatGPT ↗</button>'+
    '</div>'+
-   '<div class="chat-checkin-secondary"><button type="button" onclick="closeModal();openDailyReview()">Optional: review unknown activities</button>'+
+   '<div class="chat-checkin-secondary">'+
+    (typeof window.openLifeCapture==="function"?'<button type="button" onclick="closeModal();openLifeCapture()">Record an update</button>':'')+
+    (typeof window.openSSDRouteQuickLog==="function"?'<button type="button" onclick="closeModal();openSSDRouteQuickLog()">Log SSD route</button>':'')+
+    '<button type="button" onclick="closeModal();openDailyReview()">Optional: review unknown activities</button>'+
    (typeof cloudUser==="function"&&cloudUser()?'<button type="button" onclick="chatCheckinSync()">Import connected life logs</button>':"")+'</div>'+
    '<p class="chat-checkin-footnote">ChatGPT conversations do not automatically sync to the app. Only saved or imported entries appear as recorded. You can always enter information manually.</p>'+
    '</div>';
