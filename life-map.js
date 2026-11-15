@@ -13,11 +13,14 @@ window.lifeMapHouseholdRows=function(date){
  const wanted=String(date||day()),rows=[],seen=new Set();
  for(const task of list(state.tasks)){
   if(task.date!==wanted||task.paused||task.duplicateHidden||task.waitingForFunds)continue;
+  if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",task.id,wanted)==="na")continue;
   if(!(String(task.category||"").toLowerCase()==="home"||task.homeMapFloor||/house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean|litter|robot vacuum/i.test(String(task.title||""))))continue;
   rows.push(task);
  }
  for(const chore of list(state.chores)){
   if(chore.date!==wanted||chore.paused||chore.duplicateHidden)continue;
+  if((chore.generated==="rotation"||chore.generated==="daily-basics")&&typeof window.familyKidsHomeForChores==="function"&&!window.familyKidsHomeForChores(wanted))continue;
+  if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("chore",chore.id,wanted)==="na")continue;
   const key=[chore.child,chore.chore].map(x=>String(x||"").trim().toLowerCase()).join("|");
   if(seen.has(key))continue;
   seen.add(key);rows.push({...chore,title:String(chore.chore||"Daily routine"),_lifeChore:true,category:"home"});
@@ -360,7 +363,7 @@ function view(areaOverride,tasksOnly){
  // One daily action source drives both the avatar and the destination lists.
  const dailyAreaRows=Object.fromEntries(areaKeys.map(key=>[key,[]]));
  const addDaily=(area,row)=>{if(dailyAreaRows[area]&&!dailyAreaRows[area].some(x=>x.id===row.id))dailyAreaRows[area].push(row)};
- for(const t of tasks)if(!t._lifeMapEvidence)addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
+ for(const t of tasks)if(!t._lifeMapEvidence&&!(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",t.id,date)==="na"))addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
  for(const t of window.lifeMapHouseholdRows(date))if(t._lifeChore)addDaily("home",{id:"chore:"+t.id,kind:"chore",key:String(t.id),done:!!t.done,title:t.title,task:t});
  for(const habit of careHabits){const area=mindCareHabits.includes(habit)?"mind":"body";addDaily(area,{id:"care:"+habit.key,kind:"care",key:String(habit.key),title:habit.label||habit.name||habit.key,done:typeof selfCareDone==="function"&&selfCareDone(habit.key,date),habit})}
  for(const item of typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[]){
