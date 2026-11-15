@@ -6,10 +6,10 @@ const path=require("node:path");
 const vm=require("node:vm");
 
 const script=fs.readFileSync(path.join(__dirname,"..","chat-checkin.js"),"utf8");
-function view({quick=true,route=true}={}){
+function view({quick=true,route=true,pending=false}={}){
  let html="";
  const ctx={
-  window:{...(quick?{openLifeCapture:()=>{}}:{}),...(route?{openSSDRouteQuickLog:()=>{}}:{})},
+  window:{...(quick?{openLifeCapture:()=>{}}:{}),...(route?{openSSDRouteQuickLog:()=>{}}:{}),...(pending?{chatShareReviewPending:()=>{}}:{})},
   state:{waterLogs:[],foodLogs:[],sleepLogs:[],workShifts:[]},
   ymd:()=>"2026-11-14",dailyReviewExpected:()=>[],
   esc:x=>String(x).replace(/[&<>"]/g,""),
@@ -52,4 +52,13 @@ test("preload end does not imply that SSD delivery is finished",()=>{
  assert.equal(ctx.finished({start:"04:45",end:"09:30",deliveryStart:"09:42"}),false);
  assert.equal(ctx.finished({start:"04:45",end:"09:30",deliveryStart:"09:42",deliveryEnd:"13:59"}),true);
  assert.equal(ctx.finished({start:"04:45",end:"09:30",ssdHours:4.25}),true);
+});
+
+test("daily check-in opens recoverable shared messages when review is available",()=>{
+ const html=view({pending:true});
+ assert.match(html,/Review waiting shares/);
+ assert.match(html,/onclick="closeModal\(\);chatShareReviewPending\(\)"/);
+ assert.match(html,/not an automatic conversation feed/);
+ const fallback=view({pending:false});
+ assert.doesNotMatch(fallback,/onclick="closeModal\(\);chatShareReviewPending\(\)"/);
 });
