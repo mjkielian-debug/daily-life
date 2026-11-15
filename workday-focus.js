@@ -50,37 +50,71 @@
       '<div class="muted small">Enter scheduled starts from your UPS schedule. Actual punch-in/out, SSD hours, and route miles are kept unchanged.</div>'+rows+'</div>';
     modal("Weekly work schedule",body,"Save shifts",function(){saveWeeklyWorkSchedule(start,dates)});
   };
+  function weeklyScheduleDate(date){
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(date||""));
+  }
   window.markWeeklyScheduleAccurate=async function(start){
-    const itinerary=state.settings.itinerary=state.settings.itinerary||{},
-      reviews=itinerary.workScheduleReviews=itinerary.workScheduleReviews||{},
+    if(!weeklyScheduleDate(start))return false;
+    const originalSettings=state.settings;
+    const settings=originalSettings||{},itinerary=settings.itinerary||{},
+      reviews=itinerary.workScheduleReviews||{},
       row=reviews[start]||{},now=new Date().toISOString();
-    reviews[start]=Object.assign({},row,{weekStart:start,midweekConfirmedAt:now,updatedAt:now});
-    try{await save();closeModal();render()}
-    catch(error){modal("Could not save schedule review",'<div class="stack"><p>Your schedule review was not saved. Try again when the app can save.</p></div>',"Close",closeModal)}
+    state.settings={...settings,itinerary:{...itinerary,workScheduleReviews:{
+      ...reviews,[start]:{...row,weekStart:start,midweekConfirmedAt:now,updatedAt:now}
+    }}};
+    try{await save();closeModal();render();return true}
+    catch(error){
+      state.settings=originalSettings;
+      modal("Could not save schedule review",'<div class="stack"><p>Your previous schedule review is unchanged. Try again when the app can save.</p></div>',"Close",closeModal);
+      return false;
+    }
   };
   window.saveWeeklyWorkSchedule=async function(start,dates){
-    const now=new Date().toISOString(),itinerary=state.settings.itinerary=state.settings.itinerary||{},
-      overrides=itinerary.workScheduleOverrides=Object.assign({},itinerary.workScheduleOverrides||{}),
-      reviews=itinerary.workScheduleReviews=itinerary.workScheduleReviews||{},
-      weekday=new Date(today()+"T12:00:00").getDay(),review=reviews[start]||{};
-    dates.forEach(function(date,i){
-      const working=!!document.getElementById("weeklyWorkday"+i)?.checked,
-        scheduled=String(document.getElementById("weeklyWorkStart"+i)?.value||""),
-        existing=(state.workShifts||[]).find(function(row){return row.date===date});
+    if(!weeklyScheduleDate(start)||!Array.isArray(dates)||dates.length!==7||!dates.every(weeklyScheduleDate))return false;
+    const proposed=[];
+    for(let i=0;i<dates.length;i++){
+      const checkbox=document.getElementById("weeklyWorkday"+i),
+        startInput=document.getElementById("weeklyWorkStart"+i);
+      if(!checkbox||!startInput)return false;
+      const scheduled=String(startInput.value||"");
+      if(scheduled&&!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(scheduled)){
+        modal("Check a start time",'<p>Please enter a valid scheduled start time before saving.</p>',"Close",closeModal);
+        return false;
+      }
+      proposed.push({date:dates[i],working:!!checkbox.checked,scheduled});
+    }
+    const originalSettings=state.settings,originalShifts=state.workShifts,
+      settings=originalSettings||{},itinerary=settings.itinerary||{},
+      overrides={...(itinerary.workScheduleOverrides||{})},
+      reviews={...(itinerary.workScheduleReviews||{})},
+      nextShifts=(originalShifts||[]).map(row=>({...row})),
+      now=new Date().toISOString(),weekday=new Date(today()+"T12:00:00").getDay(),
+      review=reviews[start]||{};
+    for(const {date,working,scheduled} of proposed){
       overrides[date]={workday:working,updatedAt:now,source:"weekly-review"};
-      let shift=existing;
+      let shift=nextShifts.find(row=>row.date===date);
       if(working){
-        if(!shift){shift={id:typeof uid==="function"?uid():"schedule-"+date,date:date};state.workShifts.push(shift)}
-        if(scheduled)shift.scheduled=scheduled;
+        if(!shift){shift={id:typeof uid==="function"?uid():"schedule-"+date,date};nextShifts.push(shift)}
+        // An intentionally blank start must clear an older scheduled start;
+        // actual punches and SSD fields are never changed by this form.
+        shift.scheduled=scheduled;
         shift.scheduleSource="weekly-review";shift.scheduleUpdatedAt=now;
       }else if(shift&&!workShiftHasActual(shift)){
         shift.scheduled="";shift.scheduleSource="weekly-review";shift.scheduleUpdatedAt=now;
       }
-    });
-    reviews[start]=Object.assign({},review,{weekStart:start,confirmedAt:now,updatedAt:now,
-      ...(weekday===0?{sundayConfirmedAt:now}:{}),...(weekday===3?{midweekConfirmedAt:now}:{})});
-    try{await save();closeModal();render()}
-    catch(error){modal("Could not save weekly schedule",'<div class="stack"><p>Your changes were not saved. Try again when the app can save.</p></div>',"Close",closeModal)}
+    }
+    reviews[start]={...review,weekStart:start,confirmedAt:now,updatedAt:now,
+      ...(weekday===0?{sundayConfirmedAt:now}:{}),
+      ...(weekday===3?{midweekConfirmedAt:now}:{})};
+    state.settings={...settings,itinerary:{...itinerary,workScheduleOverrides:overrides,workScheduleReviews:reviews}};
+    state.workShifts=nextShifts;
+    try{await save();closeModal();render();return true}
+    catch(error){
+      state.settings=originalSettings;
+      state.workShifts=originalShifts;
+      modal("Could not save weekly schedule",'<div class="stack"><p>Your previous schedule and actual punches are unchanged. Try again when the app can save.</p></div>',"Close",closeModal);
+      return false;
+    }
   };
   function open(){
     var all=[];
