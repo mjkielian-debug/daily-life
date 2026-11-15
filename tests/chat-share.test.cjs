@@ -19,7 +19,7 @@ function setup({signedIn=true,failWrite=false,existing=false,failImport=false,qu
  const fields={};
  const ids={
   chatShareDate:"2026-11-15",chatShareCategory:"water",chatShareOz:"26",chatShareFood:"",
-  chatShareChild:"",chatShareChore:"",chatShareTitle:"",chatShareDone:""
+  chatShareChild:"",chatShareChore:"",chatShareTitle:"",chatShareTaskCategory:"life",chatShareDone:""
  };
  for(const [id,value] of Object.entries(ids)){
    fields[id]={value,checked:false,hidden:false,addEventListener(){}};
@@ -153,4 +153,30 @@ test("a confirmed cloud write stays successful even if phone import fails",async
  assert.equal(h.queue.size,0);
  assert.match(h.alert(),/Saved to your Daily Life cloud, but not confirmed on this phone yet/);
  assert.doesNotMatch(h.alert(),/couldn't confirm/i);
+});
+
+test("task review shows specific Daily Life sections and suggests only clear category signals",()=>{
+ const h=setup(),api=h.context.window.dailyLifeChatShareValidation;
+ assert.equal(api.guess("I need to wrap birthday presents").taskCategory,"family");
+ assert.equal(api.guess("I need to pay electric bill").taskCategory,"money");
+ assert.equal(api.guess("I need to log SSD mileage").taskCategory,"work");
+ assert.equal(api.guess("I need to fix GitHub regression tests").taskCategory,"app");
+ assert.equal(api.guess("I need to do something").taskCategory,"life");
+ h.open({text:"I need to wrap birthday presents"});
+ assert.match(h.modal(),/Show task under/);
+ assert.match(h.modal(),/Relationships &amp; family/);
+ assert.match(h.modal(),/value="family" selected/);
+});
+test("reviewed tasks preserve the chosen app category rather than becoming generic life tasks",async()=>{
+ const h=setup();
+ h.open();
+ h.fields.chatShareCategory.value="task";
+ h.fields.chatShareTitle.value="Choose Christmas gifts for the kids";
+ h.fields.chatShareTaskCategory.value="family";
+ await h.save();
+ assert.equal(h.saved(),1);
+ assert.equal(h.submitted().row.category,"task");
+ assert.equal(h.submitted().row.payload.category,"family");
+ const api=h.context.window.dailyLifeChatShareValidation;
+ assert.equal(api.validate("task",{date:"2026-11-15",title:"Task",taskCategory:"unsupported"}).payload.category,"life");
 });
