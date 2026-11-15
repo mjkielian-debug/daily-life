@@ -6,8 +6,16 @@ const path=require("node:path");
 const vm=require("node:vm");
 const src=fs.readFileSync(path.join(__dirname,"..","chat-share.js"),"utf8");
 
-function setup({signedIn=true,failWrite=false,existing=false}={}){
+function setup({signedIn=true,failWrite=false,existing=false,failImport=false,queued=[]}={}){
  let saveAction=null,modalText="",closed=0,imported=0,resultAlert="",writeCount=0,submitted=null;
+ const base="https://example.test/daily-life/";
+ const queue=new Map(queued.map(row=>[base+"__daily_life_share__/"+row.id,{text:row.text,createdAt:row.createdAt||1}]));
+ const localCache={
+  keys:async()=>[...queue.keys()].map(url=>({url})),
+  match:async key=>queue.has(typeof key==="string"?key:key.url)?{json:async()=>queue.get(typeof key==="string"?key:key.url)}:null,
+  delete:async key=>queue.delete(typeof key==="string"?key:key.url)
+ };
+ const caches={open:async()=>localCache};
  const fields={};
  const ids={
   chatShareDate:"2026-11-15",chatShareCategory:"water",chatShareOz:"26",chatShareFood:"",
@@ -21,7 +29,7 @@ function setup({signedIn=true,failWrite=false,existing=false}={}){
  fields.chatShareDetect={addEventListener(){}};
  fields.chatSharePaste={addEventListener(){}};
  const context={
-  window:{},location:{href:"https://example.test/daily-life/"},
+  window:{caches,confirm:()=>true},caches,location:{href:base},
   document:{readyState:"loading",addEventListener(){},getElementById:id=>fields[id]||null},
   navigator:{clipboard:{}},crypto:{randomUUID:()=>"6c8cd55f-d4ae-4639-a3ee-a19b4f98ae4a"},
   ymd:()=>"2026-11-15",
@@ -33,13 +41,14 @@ function setup({signedIn=true,failWrite=false,existing=false}={}){
       async select(){if(failWrite)return {data:null,error:{message:"Offline"}};return {data:existing?[]:[{id:"new-entry"}],error:null}}
     }}
   }}},
-  cloudPullLifeEntries:async()=>{imported++;return 1},
+  cloudPullLifeEntries:async()=>{imported++;if(failImport)throw new Error("Device import offline");return 1},
   console,Date,URL,Map
  };
  vm.runInNewContext(src,context,{filename:"chat-share.js"});
  return {context,fields,open:(payload={})=>context.window.openChatShareReview(payload),save:()=>saveAction(),
   modal:()=>modalText,submitted:()=>submitted,saved:()=>writeCount,closed:()=>closed,
-  imported:()=>imported,alert:()=>resultAlert};
+  imported:()=>imported,alert:()=>resultAlert,queue,
+  reviewPending:()=>context.window.chatShareReviewPending(),discard:id=>context.window.chatShareDiscard(id)};
 }
 test("water detection only accepts an explicit water amount",()=>{
  const api=setup().context.window.dailyLifeChatShareValidation;
@@ -105,4 +114,43 @@ test("the installed app advertises a locally reviewed text share target",()=>{
  assert.match(worker,/new Response\(JSON\.stringify\(\{text,createdAt/);
  assert.match(worker,/review_chat=/);
  assert.doesNotMatch(worker,/fetch\(.*text-ingest/);
+});
+
+test("short, explicit statements suggest fields but longer AI text does not",()=>{
+ const f=setup().context.window.dailyLifeChatShareValidation.guess;
+ assert.equal(f("I drank 26 oz water").category,"water");
+ assert.equal(f("I ate oatmeal").name,"oatmeal");
+ assert.equal(f("Dolly cleaned her room").category,"chore");
+ assert.equal(f("Dolly cleaned her room").child,"Dolly");
+ assert.equal(f("I finished laundry").done,true);
+ assert.equal(f("I need to wrap birthday presents").done,false);
+ assert.equal(f("I need to wrap birthday presents").title,"wrap birthday presents");
+ assert.equal(f("This message has no confirmed activity").title,"");
+ assert.equal(f("I ate oatmeal.\nActually that was yesterday").name,"");
+});
+test("share review queue reopens an unsaved message after closing the modal",async()=>{
+ const id="9832f271-2ec4-4b92-97e2-8a923c9b76f0";
+ const h=setup({queued:[{id,text:"Dolly cleaned her room",createdAt:123}]});
+ assert.equal(await h.context.window.chatSharePendingCount(),1);
+ await h.reviewPending();
+ assert.match(h.modal(),/Dolly cleaned her room/);
+ assert.match(h.modal(),/value="Dolly"/);
+ assert.match(h.modal(),/Discard this unsaved share/);
+ assert.equal(h.queue.size,1);
+ await h.discard(id);
+ assert.equal(h.queue.size,0);
+ assert.equal(h.closed(),1);
+ assert.match(h.alert(),/discarded/);
+});
+test("a confirmed cloud write stays successful even if phone import fails",async()=>{
+ const id="c5704e18-b861-4ec9-afbc-52f470e6ca3f";
+ const h=setup({failImport:true,queued:[{id,text:"I drank 26 oz water"}]});
+ h.open({id,text:"I drank 26 oz water"});
+ await h.save();
+ assert.equal(h.saved(),1);
+ assert.equal(h.imported(),1);
+ assert.equal(h.closed(),1);
+ assert.equal(h.queue.size,0);
+ assert.match(h.alert(),/Saved to your Daily Life cloud, but not confirmed on this phone yet/);
+ assert.doesNotMatch(h.alert(),/couldn't confirm/i);
 });
