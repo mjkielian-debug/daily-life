@@ -3,7 +3,7 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const life=fs.readFileSync(path.join(__dirname,"..","life-map.js"),"utf8");
 const house=fs.readFileSync(path.join(__dirname,"..","house-visual-map.js"),"utf8");
 function context(){
- const ctx={window:{},state:{tasks:[],chores:[]},dailyReviewStatus:()=>null};
+ const ctx={window:{},state:{tasks:[],chores:[]},dailyReviewStatus:()=>null,list:value=>Array.isArray(value)?value:[]};
  let a=life.indexOf("function lifeMapIsHouseholdChore("),b=life.indexOf("function selectedFloor()",a);
  assert.ok(a>=0&&b>a);
  vm.runInNewContext(life.slice(a,b),ctx);
