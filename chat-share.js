@@ -9,12 +9,15 @@
   const html=x=>typeof esc==="function"?esc(String(x??"")):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const today=()=>typeof ymd==="function"?ymd():new Date().toLocaleDateString("en-CA");
   function waterFrom(text){
-    const match=String(text||"").match(/\b(?:drank|finished|had)\s+(?:a\s+)?(\d+(?:\.\d+)?)\s*[- ]?\s*(?:oz|ounces?)\s+(?:of\s+)?water\b/i);
+    const match=String(text||"").match(/\b(?:drank|finished|had)\s+(?:a\s+)?(\d+(?:\.\d+)?)\s*[- ]?\s*(?:oz|ounces?)\s+(?:(?:bottle|cup)\s+)?(?:of\s+)?water\b/i);
     const oz=match?Number(match[1]):null;
     return oz!==null&&Number.isFinite(oz)&&oz>0&&oz<=128?oz:null;
   }
   function validate(category,data){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(data.date||""))||!Number.isFinite(Date.parse(data.date+"T12:00:00")))
+    const date=String(data.date||"");
+    const parts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    const check=parts?new Date(Date.UTC(Number(parts[1]),Number(parts[2])-1,Number(parts[3]))):null;
+    if(!check||check.toISOString().slice(0,10)!==date)
       return {error:"Choose a valid date."};
     let payload;
     if(category==="water"){
