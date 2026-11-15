@@ -12,7 +12,7 @@ test("release metadata matches the app build string",()=>{
 });
 test("important scripts are loaded and known to the offline service worker",()=>{
  const html=read("index.html"),worker=read("sw.js");
- for(const name of ["holiday-gifts.js","schedule-photo-import.js","life-orchestrator.js","sync-status.js","ssd-route-capture.js","workday-focus.js"]){
+ for(const name of ["holiday-gifts.js","schedule-photo-import.js","life-orchestrator.js","sync-status.js","ssd-route-capture.js","workday-focus.js","chat-share.js"]){
   assert.ok(html.includes('src="'+name+'?'),"Missing HTML import: "+name);
   assert.ok(worker.includes('"./'+name+'"'),"Missing offline asset: "+name);
   assert.ok(fs.existsSync(path.join(root,name)),"Missing file: "+name);
