@@ -31,6 +31,7 @@ const APP_SHELL=[
   "./life-sim-ui.js",
   "./chat-checkin.css",
   "./chat-checkin.js",
+  "./chat-share.js",
   "./inventory-goals.js",
   "./paper-studio.js",
   "./paper-import.js",
@@ -212,12 +213,42 @@ self.addEventListener("notificationclick",event=>{
     if(self.clients.openWindow)await self.clients.openWindow(target);
   })());
 });
+const SHARED_CHAT_CACHE="daily-life-chat-shares-v1";
+async function receiveSharedChat(request){
+  try{
+    const form=await request.formData();
+    const text=[form.get("text"),form.get("url"),form.get("title")]
+      .filter(x=>typeof x==="string"&&x.trim()).join("\n").trim().slice(0,10000);
+    if(!text)return Response.redirect(new URL("./",self.location).href,303);
+    const id=self.crypto.randomUUID();
+    const cache=await caches.open(SHARED_CHAT_CACHE);
+    const uri=new URL("./__daily_life_share__/"+id,self.location).href;
+    await cache.put(uri,new Response(JSON.stringify({text,createdAt:Date.now()}),{
+      headers:{"Content-Type":"application/json","Cache-Control":"no-store"}
+    }));
+    // Retain only a small, temporary local queue. No conversation text is
+    // sent to a server before user confirmation.
+    const keys=await cache.keys();
+    const old=keys.slice(0,Math.max(0,keys.length-10));
+    await Promise.all(old.map(key=>cache.delete(key)));
+    return Response.redirect(new URL("./?review_chat="+encodeURIComponent(id),self.location).href,303);
+  }catch(error){
+    return new Response("Daily Life could not receive this shared text. Open Daily Life and use Review shared ChatGPT text.",{
+      status:400,headers:{"Content-Type":"text/plain"}
+    });
+  }
+}
 self.addEventListener("fetch",event=>{
   const request=event.request;
-  if(request.method!=="GET")return;
-
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+  const appRoot=new URL("./",self.location).pathname;
+  if(request.method==="POST"&&url.pathname===appRoot&&url.searchParams.has("chat_share_target")){
+    event.respondWith(receiveSharedChat(request));
+    return;
+  }
+  if(request.method!=="GET")return;
+
 
   if(request.mode==="navigate"){
     event.respondWith(navigationResponse(request));
