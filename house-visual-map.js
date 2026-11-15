@@ -1362,7 +1362,9 @@ window.houseVisualEnsureDailyRoutines=function(date){
    /playroom/i.test(name)?[["toys","Put toys back in their homes",3,/toy|playroom.*reset/i],["path","Clear the playroom walking space",2,/walking space/i]]:
    /bedroom/i.test(name)?[["reset","Put clothes and loose items away",3,/clean room|room reset|room cleanup/i],["bed","Straighten bedding",1,/make.*bed|bedding/i]]:
    /hall|entry|stair|landing/i.test(name)?[["path","Check and clear the walking path",1,/walking path|clear.*(hall|stair)/i]]:[["reset","Put loose items away",3,/reset|tidy/i]];
-  const linked=trackedRoomTasks(f,z,room).filter(t=>t.date===date);
+  // An assigned child's chores are not substitutes for the adult's room
+  // cleaning steps. A kitchen needs useful tasks even when the kids are away.
+  const linked=trackedRoomTasks(f,z,room).filter(t=>t.date===date&&!String(t.child||"").trim());
   for(const [step,title,minutes,match] of steps){
    const id="room-daily:"+encodeURIComponent(key)+":"+step+":"+date;
    if(state.tasks.some(t=>t.id===id)||linked.some(t=>match.test(str(t.title))))continue;
@@ -1380,6 +1382,7 @@ function trackedRoomTasks(f,z,room){
  const tasks=(state.tasks||[]).filter(t=>{
   if(t.paused||t.duplicateHidden||t.waitingForFunds)return false;
   if(t.date&&!dates.includes(String(t.date)))return false;
+  if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",t.id,t.date||dates[0])==="na")return false;
   if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
@@ -1401,6 +1404,8 @@ function trackedRoomTasks(f,z,room){
  });
  const chores=typeof window.lifeMapHouseholdRows==="function"?dates.flatMap(date=>window.lifeMapHouseholdRows(date)).filter(t=>{
   if(!t._lifeChore)return false;
+  if((t.generated==="rotation"||t.generated==="daily-basics")&&typeof window.familyKidsHomeForChores==="function"&&!window.familyKidsHomeForChores(dates[0]))return false;
+  if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("chore",t.id,t.date||dates[0])==="na")return false;
   if(t.homeMapZoneId||t.homeMapFloor)return String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===String(z?.id||"");
   const assigned=String(t.homeRoomId||t.roomId||"");
   if(assigned)return !!room&&assigned===String(room.id);
@@ -1625,6 +1630,8 @@ window.houseVisualOpenZone=function(f,id){
  const room=localRoom(f,z),tasks=trackedRoomTasks(f,z,room),finished=tasks.filter(t=>t.done),pendingTasks=tasks.filter(t=>!t.done);
  const date=typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10);
  const roomReviewUnknownRows=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).filter(item=>item.status==="unknown"&&pendingTasks.some(task=>String(task.id)===String(item.key))):[];
+ // The same applicable task set powers check-ins, count labels, and map fill.
+ // N/A and absent-child generated chores must not enter the denominator.
  const roomReviewRows=roomReviewUnknownRows.filter(item=>!(typeof window.lifeMapIsReviewSkipped==="function"&&window.lifeMapIsReviewSkipped("home",item.key,date)));
  const reviewItem=roomReviewRows[0]||null,allRoomReviewsSkipped=roomReviewUnknownRows.length>0&&!reviewItem;
  const reviewTaskForHistory=reviewItem?(reviewItem.kind==="task"?(state.tasks||[]).find(task=>String(task.id)===String(reviewItem.key)):reviewItem.kind==="chore"?Object.assign({},(state.chores||[]).find(task=>String(task.id)===String(reviewItem.key))||{},{title:((state.chores||[]).find(task=>String(task.id)===String(reviewItem.key))||{}).chore,_lifeChore:true}):null):null;
@@ -1659,9 +1666,7 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
- const roomTaskNotice='<section class="hvm-room-task-entry" aria-label="Room task shortcut"><div><b>✓ '+pendingTasks.length+' room task'+(pendingTasks.length===1?"":"s")+' waiting</b>'+
-  '<small>'+(pendingTasks.length?h(pendingTasks[0].title||"Next room task"):"Nothing assigned yet · add a room task")+'</small></div>'+
-  '<button type="button" onclick="houseVisualJumpToRoomTasks()">View tasks ↓</button></section>';
+ const roomTaskNotice=''; // Checklist itself is visible at the top; avoid a redundant jump card.
  const approvedZoom=approvedDollhouseRoomZoom(f,z);
  const approvedObjectChoices=approvedZoom&&id==="kitchen"?
   '<section class="hvm-approved-object-choices"><strong>Tap a kitchen area to see its tasks</strong><div class="hvm-approved-object-strip">'+
@@ -1670,7 +1675,7 @@ window.houseVisualOpenZone=function(f,id){
   '</div></section>':"";
  // A room tap should immediately show actionable chores and direct room navigation.
  // Leave the approved illustrations, floor geometry, and task completion rules unchanged.
- const markup='<div class="hvm-zone-detail">'+roomTaskNotice+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
