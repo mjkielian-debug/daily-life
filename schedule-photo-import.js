@@ -33,7 +33,7 @@
       const before=line.slice(Math.max(0,m.index-3),m.index);
       if(/[\d/]/.test(before))continue;
       const hour=Number(m[1]||m[4]),minute=Number(m[2]||m[5]||0),ampm=(m[3]||"").toLowerCase();
-      if(hour<1||hour>12||minute>59)continue;
+      if(minute>59 || (ampm ? (hour<1||hour>12) : (hour<0||hour>23)))continue;
       let h=hour;
       if(ampm)h=(hour%12)+(ampm==="p"?12:0);
       else if(hour===12)h=12;
@@ -76,6 +76,8 @@
     });
     return result;
   }
+  // Exposed for regression tests; photos are still processed only on the device.
+  window.dailyLifeSchedulePhotoParsing=Object.freeze({timeCandidates,parseOCR});
   function showError(message){
     if(window.openWeeklyWorkSchedule)window.openWeeklyWorkSchedule();
     setTimeout(()=>addBanner('<b>Photo import didn’t finish.</b> '+esc(message)),0);
@@ -125,7 +127,7 @@
           names.push(weekdays[i]+(entry.working?(entry.scheduled?" "+formatTime(entry.scheduled):" · time unclear"):" · off"));
         });
         const inferred=entries.some(([,entry])=>entry.working&&entry.scheduled&&!entry.hasAmPm);
-        addBanner('<b>Review what I read from the photo:</b> '+esc(names.join(" · "))+'<div class="small">Check every day and time below. Nothing changes until you tap Save shifts.'+(inferred?" Times without AM/PM were read as morning; please check them.":"")+"</div>");
+        addBanner('<b>Review what I read from the photo:</b> '+esc(names.join(" · "))+'<div class="small">Check every day and time below. Nothing changes until you tap Save shifts.'+(inferred?" Times without AM/PM were interpreted using the clock shown (13:59 means 1:59 PM); please verify them.":"")+"</div>");
       },0);
     }catch(error){
       if(!cancelled){window.closeModal();showError(error?.message||"Try a clearer photo or try again when you have a connection.")}
