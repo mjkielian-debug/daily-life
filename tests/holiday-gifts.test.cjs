@@ -11,9 +11,9 @@ function createApp(){
   christmasGifts2026:{dolly:{name:"Dolly",idea:"Craft kit",choice:"buy",status:"planned",budget:"25"}},
   tasks:[]
  };
- let active=null,values={},error="",failSave=false,extraRows=[];
+ let active=null,values={},error="",failSave=false,extraRows=[],openedUrl="";
  const context={
-  window:{},state,
+  window:{open:(url)=>{openedUrl=url},confirm:()=>true},state,URL,
   esc:value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),
   ymd:()=>"2026-11-14",ensurePeopleProfiles:()=>{},
   modal:(title,body,button,handler)=>{active={title,body,button,handler}},
@@ -31,7 +31,7 @@ function createApp(){
   alert:message=>{error=message}
  };
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,"..","holiday-gifts.js"),"utf8"),context,{filename:"holiday-gifts.js"});
- return {state,context,setValues:v=>{values=v},getDialog:()=>active,getError:()=>error,setFailSave:value=>{failSave=!!value},setExtraRows:value=>{extraRows=value}};
+ return {state,context,setValues:v=>{values=v},getDialog:()=>active,getError:()=>error,openedUrl:()=>openedUrl,setFailSave:value=>{failSave=!!value},setExtraRows:value=>{extraRows=value}};
 }
 
 test("old name-keyed gift data remains visible for existing people",()=>{
@@ -151,4 +151,59 @@ test("extra gift plan can stand alone without a main idea",async()=>{
  const board=app.context.window.holidayGiftBoard();
  assert.match(board,/Handmade scarf/);
  assert.match(board,/2\/2/);
+});
+
+test("existing profile Elfster links are shown in gift planner without copying or guessing wishes",()=>{
+ const app=createApp();
+ const doll=app.state.peopleProfiles[0];
+ doll.elfsterUrl="https://www.elfster.com/profile/person-1/wish-lists/list-2/";
+ const board=app.context.window.holidayGiftBoard();
+ assert.match(board,/Open Elfster list/);
+ assert.match(board,/Add Elfster list/);
+ assert.match(board,/Daily Life does not import Elfster items automatically/);
+ assert.equal(app.state.christmasGifts2026.dolly.idea,"Craft kit");
+ assert.equal(app.context.window.holidayGiftOpenElfster("person-child-1"),undefined);
+ assert.match(app.openedUrl(),/^https:\/\/www\.elfster\.com\/profile\//);
+});
+test("Elfster profile links accept secure official links and reject unexpected hosts",()=>{
+ const app=createApp(),valid=app.context.window.elfsterWishlistSafeUrl;
+ assert.equal(valid("https://www.elfster.com/profile/a/wish-lists/b/"),"https://www.elfster.com/profile/a/wish-lists/b/");
+ assert.equal(valid("https://links.elfster.com/s/c/example"),"https://links.elfster.com/s/c/example");
+ assert.equal(valid("javascript:alert(1)"),"");
+ assert.equal(valid("http://www.elfster.com/profile/a"),"");
+ assert.equal(valid("https://elfster.com.evil.test/wishlist"),"");
+ assert.equal(valid("https://user:pass@www.elfster.com/profile/a"),"");
+});
+test("Elfster link editor saves to the same profile used for birthdays and Christmas, not to a temporary Christmas-only field",async()=>{
+ const app=createApp();
+ app.context.window.holidayGiftEditElfster("person-relative-2");
+ assert.match(app.getDialog().body,/Copy Share Link/);
+ app.setValues({holidayElfsterLink:"https://links.elfster.com/s/c/new-shared-list"});
+ await app.getDialog().handler();
+ assert.equal(app.state.peopleProfiles[1].elfsterUrl,"https://links.elfster.com/s/c/new-shared-list");
+ assert.equal(app.state.christmasGifts2026["person-relative-2"],undefined);
+ assert.match(app.context.window.holidayGiftBoard(),/Open Elfster list/);
+});
+test("invalid or failed Elfster link saves cannot erase an already valid family wishlist",async()=>{
+ const app=createApp();
+ app.state.peopleProfiles[0].elfsterUrl="https://www.elfster.com/profile/a/wish-lists/old/";
+ app.context.window.holidayGiftEditElfster("person-child-1");
+ app.setValues({holidayElfsterLink:"https://not-elfster.example/wishlist"});
+ await app.getDialog().handler();
+ assert.match(app.state.peopleProfiles[0].elfsterUrl,/wish-lists\/old/);
+ app.setValues({holidayElfsterLink:"https://links.elfster.com/s/c/new-list"});
+ app.setFailSave(true);
+ await app.getDialog().handler();
+ assert.match(app.state.peopleProfiles[0].elfsterUrl,/wish-lists\/old/);
+});
+test("same person duplicated under equivalent relationship names appears once, without deleting profiles",()=>{
+ const app=createApp();
+ app.state.peopleProfiles.push(
+   {id:"a",name:"Ted",relationship:"partner's brother",elfsterUrl:""},
+   {id:"b",name:"Ted",relationship:"Tanner's brother",elfsterUrl:"https://www.elfster.com/profile/ted/wish-lists/main/"}
+ );
+ const board=app.context.window.holidayGiftBoard();
+ assert.equal((board.match(/class="holiday-gift-person"/g)||[]).length,3);
+ assert.equal(app.state.peopleProfiles.length,4);
+ assert.match(board,/Open Elfster list/);
 });
