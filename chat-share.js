@@ -13,6 +13,26 @@
     const oz=match?Number(match[1]):null;
     return oz!==null&&Number.isFinite(oz)&&oz>0&&oz<=128?oz:null;
   }
+  const taskCategories=[
+    ["life","General"],["family","Relationships & family"],["home","Home"],
+    ["work","Work / UPS"],["health","Health & self-care"],["money","Money"],
+    ["school","School"],["car","Car"],["pets","Pets"],["app","Daily Life app"]
+  ];
+  function taskCategoryFor(title){
+    const s=String(title||"").toLowerCase();
+    const rules=[
+      ["family",/\b(gift|gifts|present|presents|christmas|birthday|niece|nephew|kids|child|children|family|relationship)\b/],
+      ["app",/\b(daily life app|github|supabase|regression tests?|app bug|chat sync)\b/],
+      ["money",/\b(budget|bank|bill|bills|rent|account|savings?|payment|paycheck|insurance premium)\b/],
+      ["school",/\b(school|homework|teacher|backpack|field trip)\b/],
+      ["pets",/\b(cat|cats|pet|pets|litter box|litter boxes)\b/],
+      ["health",/\b(doctor|dentist|medication|vitamins?|gym|exercise|shower|brush teeth|appointment)\b/],
+      ["car",/\b(car|volvo|tires?|oil change|vehicle)\b/],
+      ["work",/\b(ups|ssd|preload|delivery route|supervisor|work shift|odometer|mileage)\b/],
+      ["home",/\b(kitchen|laundry|dishes|vacuum|bathroom|bedroom|clean|cleaning|house|basement|staircase)\b/]
+    ];
+    return rules.find(([_,pattern])=>pattern.test(s))?.[0]||"life";
+  }
   function validate(category,data){
     const date=String(data.date||"");
     const parts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
@@ -35,7 +55,9 @@
     }else if(category==="task"){
       const title=String(data.title||"").trim();
       if(!title||title.length>200)return {error:"Enter a task or project title."};
-      payload={title,done:!!data.done,date:data.date,category:"life"};
+      const requested=String(data.taskCategory||"life");
+      const taskCategory=taskCategories.some(([key])=>key===requested)?requested:"life";
+      payload={title,done:!!data.done,date:data.date,category:taskCategory};
     }else{
       return {error:"Choose what you're recording."};
     }
@@ -43,7 +65,7 @@
   }
   function guess(text){
     const line=String(text||"").trim();
-    const blank={category:"task",oz:"",name:"",child:"",chore:"",title:"",done:false};
+    const blank={category:"task",taskCategory:"life",oz:"",name:"",child:"",chore:"",title:"",done:false};
     // Suggestions are only made for short, explicit statements. Lengthy AI
     // responses and quotes should not masquerade as completed activities.
     if(!line||line.length>220||line.includes("\n"))return blank;
@@ -54,9 +76,9 @@
     const food=/^(?:I\s+)?(?:ate|drank|had)\s+(.+?)[.!]?\s*$/i.exec(line);
     if(food&&food[1].length<=160)return {...blank,category:"food",name:food[1].replace(/[.!]+$/,"")};
     const done=/^(?:I\s+)?(?:finished|completed)\s+(.+?)[.!]?\s*$/i.exec(line);
-    if(done)return {...blank,category:"task",title:done[1].replace(/[.!]+$/,""),done:true};
+    if(done){const title=done[1].replace(/[.!]+$/,"");return {...blank,category:"task",title,taskCategory:taskCategoryFor(title),done:true}}
     const upcoming=/^(?:I\s+)?(?:need to|plan to|remind me to)\s+(.+?)[.!]?\s*$/i.exec(line);
-    if(upcoming)return {...blank,category:"task",title:upcoming[1].replace(/[.!]+$/,"")};
+    if(upcoming){const title=upcoming[1].replace(/[.!]+$/,"");return {...blank,category:"task",title,taskCategory:taskCategoryFor(title)}}
     return blank;
   }
   function showStatus(message){
@@ -72,6 +94,7 @@
       child:get("chatShareChild")?.value||"",
       chore:get("chatShareChore")?.value||"",
       title:get("chatShareTitle")?.value||"",
+      taskCategory:get("chatShareTaskCategory")?.value||"life",
       done:!!get("chatShareDone")?.checked
     };
   }
@@ -152,7 +175,9 @@
       '<div id="chatShareGroup_water"><label>Confirmed water amount (oz)<input id="chatShareOz" type="number" min="1" max="128" step="0.5" value="'+html(proposed.oz)+'"></label></div>'+
       '<div id="chatShareGroup_food"><label>Food or drink<input id="chatShareFood" maxlength="160" value="'+html(proposed.name)+'" placeholder="What did you eat or drink?"></label></div>'+
       '<div id="chatShareGroup_chore"><label>Child<input id="chatShareChild" maxlength="80" value="'+html(proposed.child)+'" placeholder="Child’s name"></label><label>Completed chore<input id="chatShareChore" maxlength="180" value="'+html(proposed.chore)+'" placeholder="What did they finish?"></label></div>'+
-      '<div id="chatShareGroup_task"><label>Task or project<input id="chatShareTitle" maxlength="200" value="'+html(proposed.title)+'" placeholder="What should be recorded?"></label><label><input id="chatShareDone" type="checkbox"'+(proposed.done?' checked':'')+'> Already completed</label></div>'+
+      '<div id="chatShareGroup_task"><label>Task or project<input id="chatShareTitle" maxlength="200" value="'+html(proposed.title)+'" placeholder="What should be recorded?"></label>'+
+      '<label>Show task under<select id="chatShareTaskCategory">'+taskCategories.map(([value,label])=>'<option value="'+value+'"'+(proposed.taskCategory===value?' selected':'')+'>'+html(label)+'</option>').join("")+'</select></label>'+
+      '<label><input id="chatShareDone" type="checkbox"'+(proposed.done?' checked':'')+'> Already completed</label></div>'+
       '<p class="muted small" id="chatShareStatus" role="status">Review the category, amount, and date before saving.</p>'+
       (sharedId?'<button type="button" class="btn small" onclick="chatShareDiscard(\''+html(sharedId)+'\')">Discard this unsaved share</button>':'')+
       '</div>';
@@ -218,6 +243,8 @@
         ["chatShareChild",proposed.child],["chatShareChore",proposed.chore],
         ["chatShareTitle",proposed.title]
       ]){const input=document.getElementById(id);if(input)input.value=String(value??"")}
+      const taskCategory=document.getElementById("chatShareTaskCategory");
+      if(taskCategory)taskCategory.value=proposed.taskCategory;
       const done=document.getElementById("chatShareDone");
       if(done)done.checked=!!proposed.done;
       categoryChanged();
@@ -260,5 +287,5 @@
     if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{openPendingShare().catch(()=>{})},{once:true});
     else openPendingShare().catch(()=>{});
   }
-  window.dailyLifeChatShareValidation=Object.freeze({waterFrom,validate,guess});
+  window.dailyLifeChatShareValidation=Object.freeze({waterFrom,validate,guess,taskCategoryFor});
 })();
