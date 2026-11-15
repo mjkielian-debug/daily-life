@@ -30,8 +30,8 @@
     const found=[],re=/\b(\d{1,2})(?::(\d{2}))?\s*([ap])(?:\.?\s*m)?\.?\b|\b(\d{1,2})[:.](\d{2})\b/ig;
     let m;
     while((m=re.exec(line))){
-      const before=line.slice(Math.max(0,m.index-3),m.index);
-      if(/[\d/]/.test(before))continue;
+      // Word boundaries already prevent matching inside an odometer/date number.
+      // Do not reject a shift time simply because the date appears just before it.
       const hour=Number(m[1]||m[4]),minute=Number(m[2]||m[5]||0),ampm=(m[3]||"").toLowerCase();
       if(minute>59 || (ampm ? (hour<1||hour>12) : (hour<0||hour>23)))continue;
       let h=hour;
