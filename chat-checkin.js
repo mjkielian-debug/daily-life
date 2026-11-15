@@ -108,6 +108,7 @@
     (typeof window.openChatShareReview==="function"?'<button type="button" class="btn" onclick="closeModal();openChatShareReview()">Review shared ChatGPT text</button>':'')+
    '</div>'+
    '<div class="chat-checkin-secondary">'+
+    (typeof window.chatShareReviewPending==="function"?'<button type="button" onclick="closeModal();chatShareReviewPending()">Review waiting shares</button>':'')+
     (typeof window.openLifeCapture==="function"?'<button type="button" onclick="closeModal();openLifeCapture()">Record an update</button>':'')+
     (typeof window.openSSDRouteQuickLog==="function"?'<button type="button" onclick="closeModal();openSSDRouteQuickLog()">Log SSD route</button>':'')+
     '<button type="button" onclick="closeModal();openDailyReview()">Optional: review unknown activities</button>'+
