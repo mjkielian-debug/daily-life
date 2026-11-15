@@ -41,6 +41,12 @@ test("a room uses one applicable checklist for both count badges and color fill"
 test("adult room routines are not suppressed by child chore assignments",()=>{
  assert.match(source,/const linked=trackedRoomTasks\(f,z,room\)\.filter\(t=>t\.date===date&&!String\(t\.child\|\|""\)\.trim\(\)\)/);
 });
+test("every room task remains reachable after the first six and inventory stays optional",()=>{
+ assert.match(room,/visiblePendingTasks\.slice\(0,6\)/);
+ assert.match(room,/visiblePendingTasks\.slice\(6\)/);
+ assert.match(room,/hvm-more-room-tasks/);
+ assert.match(room,/details class="hvm-room-inventory"/);
+});
 test("the approved kitchen asset stays unchanged and colors emerge over grayscale",()=>{
  const css=fs.readFileSync(path.join(__dirname,"..","house-visual-map.css"),"utf8");
  assert.match(css,/\.hvm-approved-muted-base\{filter:grayscale\(/);
