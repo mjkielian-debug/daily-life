@@ -33,7 +33,7 @@
       seenIds.add(key);
       const legacyOwner=!seenLegacy.has(legacyKey);
       seenLegacy.add(legacyKey);
-      const next={key,legacyKey,legacyOwner,name,relationship:String(p.relationship||"Person")};
+      const next={key,profileId:id,legacyKey,legacyOwner,name,relationship:String(p.relationship||"Person"),elfsterUrl:String(p.elfsterUrl||"")};
       // Only collapse profiles with an identical name AND the same relationship.
       // "partner's brother" and "Tanner's brother" are equivalent here, while
       // two distinct people who happen to share a name remain separate.
@@ -46,12 +46,75 @@
       if(previousSaved&&nextSaved){
         // Don't silently hide or merge two independently saved gift plans.
         out.push({...next,possibleDuplicate:true});
-      }else if(nextSaved&&!previousSaved){
+      }else if(!previousSaved&&(nextSaved||(!prior.elfsterUrl&&next.elfsterUrl))){
         out[previousIndex]={...next,legacyOwner:prior.legacyOwner};
       }
     }
     return out;
   }
+  function elfsterSafeUrl(value){
+    const raw=String(value||"").trim();
+    if(!raw||raw.length>2048)return "";
+    try{
+      const url=new URL(raw);
+      const host=url.hostname.toLowerCase();
+      if(url.protocol!=="https:"||url.username||url.password||url.port||!(host==="elfster.com"||host.endsWith(".elfster.com")))return "";
+      return url.href;
+    }catch(error){return ""}
+  }
+  window.elfsterWishlistSafeUrl=elfsterSafeUrl;
+  window.openElfsterWishlistForProfile=function(profileId){
+    const p=(state.peopleProfiles||[]).find(x=>String(x.id)===String(profileId));
+    const url=elfsterSafeUrl(p?.elfsterUrl);
+    if(!url){alert("No valid Elfster wishlist link saved for this person yet.");return false}
+    window.open(url,"_blank","noopener,noreferrer");
+    return true;
+  };
+  window.editElfsterWishlistForProfile=function(profileId){
+    const p=(state.peopleProfiles||[]).find(x=>String(x.id)===String(profileId));
+    if(!p||typeof modal!=="function")return;
+    const current=elfsterSafeUrl(p.elfsterUrl),notice=current?
+      '<p class="muted small">A wishlist link is already saved. Replace it only if this person has a new link.</p>':
+      '<p class="muted small">On Elfster, open this person’s Wishlist, tap Share Wishlist, then Copy Share Link. Paste that link here.</p>';
+    const body='<div class="stack elfster-link-editor">'+notice+
+      '<label>Elfster wishlist link<input id="holidayElfsterLink" type="url" maxlength="2048" value="'+esc(p.elfsterUrl||"")+'" placeholder="https://www.elfster.com/..."></label>'+
+      '<p class="muted small">This is a shortcut to the real Elfster wishlist, not automatic wishlist syncing. Clearing the field removes the saved shortcut.</p>'+
+      (current?'<button type="button" class="btn" onclick="openElfsterWishlistForProfile('+esc(JSON.stringify(p.id))+')">Open current Elfster list ↗</button>':'')+
+      '<p id="holidayElfsterError" class="muted small" role="status"></p></div>';
+    modal("Elfster wishlist · "+p.name,body,"Save Elfster link",async()=>{
+      const field=document.getElementById("holidayElfsterLink");
+      const raw=String(field?.value||"").trim(),url=elfsterSafeUrl(raw);
+      if(raw&&!url){
+        const status=document.getElementById("holidayElfsterError");
+        if(status)status.textContent="Paste an https:// link from Elfster (elfster.com or links.elfster.com).";
+        return;
+      }
+      const previous=p.elfsterUrl||"";
+      if(raw===previous||(!raw&&!previous)){closeModal();return}
+      p.elfsterUrl=url;
+      try{await save()}catch(error){
+        p.elfsterUrl=previous;
+        const status=document.getElementById("holidayElfsterError");
+        if(status)status.textContent="Could not save the Elfster link. Your previous link has been kept.";
+        return;
+      }
+      // The device save succeeded. A failed cloud upload must not be
+      // presented as a failed device save or as a completed Elfster sync.
+      if(typeof cloudUpsertPersonProfile==="function"){
+        try{await cloudUpsertPersonProfile(p)}catch(error){}
+      }
+      closeModal();
+      if(typeof render==="function")render();
+    });
+  };
+  window.holidayGiftOpenElfster=function(key){
+    const person=people().find(p=>p.key===String(key));
+    if(person)window.openElfsterWishlistForProfile(person.profileId);
+  };
+  window.holidayGiftEditElfster=function(key){
+    const person=people().find(p=>p.key===String(key));
+    if(person)window.editElfsterWishlistForProfile(person.profileId);
+  };
   function giftIdeas(person){
     const who=keyFor(person?.name),rel=normalizedRelationship(person?.relationship);
     const make=(title,choice)=>({title,choice});
@@ -153,16 +216,24 @@
       const label=String(g.idea||"").trim()||(extras.length?extras[0].title:"Tap to add an idea");
       const summary=[labelFor(choices,choice),labelFor(statuses,status),extras.length?extraDone+"/"+extras.length+" extra gifts ready":"",money(g.budget)!==null?"Budget "+dollars(money(g.budget)):"",money(g.spent)!==null?"Spent "+dollars(money(g.spent)):""].filter(Boolean).join(" · ");
 
-      return '<button type="button" class="holiday-gift-person" onclick="openHolidayGift('+esc(JSON.stringify(p.key))+')">'
-        +'<span class="holiday-person-initial">'+esc(p.name.charAt(0).toUpperCase())+'</span>'
-        +'<span class="holiday-gift-main"><b>'+esc(p.name)+'</b><small>'+esc(p.relationship)+' · '+esc(label)+'</small></span>'
-        +'<span class="holiday-gift-status">'+esc(summary)+(p.possibleDuplicate?' · Duplicate profile to review':'')+'<span aria-hidden="true"> ›</span></span></button>';
+      const elfster=elfsterSafeUrl(p.elfsterUrl);
+      return '<div class="holiday-gift-person-row">'+
+        '<button type="button" class="holiday-gift-person" onclick="openHolidayGift('+esc(JSON.stringify(p.key))+')">'+
+        '<span class="holiday-person-initial">'+esc(p.name.charAt(0).toUpperCase())+'</span>'+
+        '<span class="holiday-gift-main"><b>'+esc(p.name)+'</b><small>'+esc(p.relationship)+' · '+esc(label)+'</small></span>'+
+        '<span class="holiday-gift-status">'+esc(summary)+(p.possibleDuplicate?' · Duplicate profile to review':'')+'<span aria-hidden="true"> ›</span></span></button>'+
+        '<div class="holiday-elfster-actions">'+
+        (elfster?'<button type="button" class="holiday-elfster-open" onclick="holidayGiftOpenElfster('+esc(JSON.stringify(p.key))+')">🎁 Open Elfster list</button>':
+         '<button type="button" class="holiday-elfster-missing" onclick="holidayGiftEditElfster('+esc(JSON.stringify(p.key))+')">＋ Add Elfster list</button>')+
+        (elfster?'<button type="button" class="holiday-elfster-edit" onclick="holidayGiftEditElfster('+esc(JSON.stringify(p.key))+')">Edit link</button>':'')+
+        '</div></div>';
     }).join("");
     const upcoming=(state.tasks||[]).filter(t=>!t.done && t.date>=(typeof ymd==="function"?ymd():"2026-11-14") && /^(Christmas gifts|Tree.s birthday)/i.test(String(t.title||""))).sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).slice(0,3);
     return '<section class="card holiday-gifts-card" aria-label="Christmas gift planner">'
       +'<div class="section-title"><div><div class="eyebrow">🎄 Christmas 2026</div><h2>Gifts for your people</h2><div class="muted small">Ideas, buy or make, cost, and progress for each person. Includes nieces and nephews.</div></div></div>'
       +'<div class="holiday-gift-stats"><span><b>'+planned+'/'+roster.length+'</b><small>with a plan</small></span><span><b>'+need+'</b><small>need ideas</small></span><span><b>'+completed+'</b><small>ready or wrapped</small></span></div>'
       +(budgets.length||spending.length?'<div class="notice small holiday-gift-money">'+(budgets.length?'<b>Gift budgets:</b> '+dollars(budgetTotal)+' across '+budgets.length+' people':'')+(budgets.length&&spending.length?' · ':'')+(spending.length?'<b>Actual spending:</b> '+dollars(spendingTotal)+' recorded for '+spending.length+' people':'')+'</div>':'')
+      +'<p class="muted small">Open family wishlists on Elfster, then record ideas or purchases here. Daily Life does not import Elfster items automatically.</p>'
       +'<div class="holiday-gift-people">'+(rows||'<div class="notice">Add people to your People profiles to plan their Christmas gifts.</div>')+'</div>'
       +'<div class="notice small holiday-gift-birthday">🎂 Tree’s December 28 birthday gift is <b>separate</b> from Christmas. <button type="button" class="btn small" onclick="openHolidayTreeBirthday()">Open Tree’s birthday plan</button></div>'
       +(upcoming.length?'<div class="holiday-gift-next"><div class="mini-heading">Next gift tasks · Relationships</div>'+upcoming.map(t=>'<div class="row"><span>'+esc(t.title)+'</span><span class="muted small">'+esc(t.date)+'</span></div>').join("")+'</div>':'')
@@ -170,9 +241,11 @@
   };
   window.openHolidayGift=function(key){
     const p=people().find(x=>x.key===String(key));if(!p)return;
-    const g=giftFor(p),suggestions=giftIdeas(p);
+    const g=giftFor(p),suggestions=giftIdeas(p),elfster=elfsterSafeUrl(p.elfsterUrl);
     const suggestionButtons=suggestions.map((idea,index)=>'<button type="button" class="holiday-gift-idea-choice" onclick="holidayGiftChooseIdea('+esc(JSON.stringify(p.key))+','+index+')">'+esc(idea.title)+' <small>'+esc(idea.choice==="make"?"Make":idea.choice==="both"?"Buy or make":"Buy")+'</small></button>').join("");
     const body='<div class="stack holiday-gift-editor"><div class="notice small">Keep this Christmas gift separate from birthday gifts. You can leave anything undecided.</div>'
+      +(elfster?'<button type="button" class="btn elfster-btn" onclick="holidayGiftOpenElfster('+esc(JSON.stringify(p.key))+')">🎁 Open '+esc(p.name)+'’s Elfster wishlist ↗</button>':
+        '<p class="muted small">No Elfster wishlist saved for '+esc(p.name)+'. Add it from the family gift list.</p>')
       +'<label>Gift idea / item<textarea id="holiday-gift-idea" rows="3" placeholder="What could I give or make?">'+esc(g.idea||"")+'</textarea></label>'
       +'<div class="holiday-gift-idea-suggestions"><b>Ideas to consider</b><small>Suggestions only. Tap one to fill the editor; nothing saves until you confirm.</small><div class="holiday-gift-idea-options">'+suggestionButtons+'</div></div>'
       +'<div class="grid2"><label>How to get it<select id="holiday-gift-choice">'+optionHtml(choices,safeChoice(g.choice))+'</select></label>'
