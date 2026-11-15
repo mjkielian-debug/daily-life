@@ -1,9 +1,24 @@
 /* Daily Life · protect workdays and keep Day Flow interactive.
-   Workdays reserve the day through school pickup; home tasks start at 3:30 PM. */
+   3:30 PM is the earliest home-task start; confirmed late SSD route endings
+   move flexible household work later, without moving school pickup. */
 (function(){
   "use strict";
   if(typeof itineraryFixedItems!=="function"||typeof itineraryDayItems!=="function")return;
-  const homeStart=15*60+30;
+  const earliestHomeStart=15*60+30;
+  function homeStartFor(date){
+    const shift=(state.workShifts||[]).find(w=>w?.date===String(date));
+    const arrived=!!state?.settings?.workdayHomeConfirmed?.[String(date)];
+    if(!shift||arrived)return earliestHomeStart;
+    // 'end' is normally the PRELOAD punch. Do not treat it as the SSD
+    // delivery end or assume the user is home when preload clocks out.
+    const routeEnd=String(shift.deliveryEnd||"");
+    const finished=typeof hmMinutes==="function"?hmMinutes(routeEnd):null;
+    const started=typeof hmMinutes==="function"?hmMinutes(shift.deliveryStart||""):null;
+    if(finished===null||started===null||finished<=started)return earliestHomeStart;
+    // Travel, parking, and decompression buffer; never infer arrival itself.
+    return Math.max(earliestHomeStart,Math.min(22*60,finished+45));
+  }
+  window.dailyLifeHomeTaskStartMinutes=homeStartFor;
   const workWords=/\b(ups|preload|pre-load|ssd|seasonal support driver|delivery route|driver delivery|work shift|workday|route)\b/i;
   const pickupWords=/\b(pick\s*up|pickup|school pickup|drive to school pickup|park\s*\+\s*wait)\b/i;
   const isWorkday=date=>typeof isUsualWorkday==="function"&&isUsualWorkday(date);
@@ -77,6 +92,7 @@
       const range=previousRange(task,date);
       if(!range||!isWorkday(date)||isWorkTask(task))return range;
       const dayEnd=typeof itineraryDayEnd==="function"?itineraryDayEnd(date):range.end;
+      const homeStart=homeStartFor(date);
       const start=Math.max(homeStart,range.start);
       const end=range.end<=homeStart?dayEnd:Math.min(dayEnd,Math.max(range.end,start+itineraryTaskMinutes(task)));
       return start<end?{start,end}:null;
@@ -87,7 +103,9 @@
     itineraryAutoTaskBlocks=function(date,baseItems){
       if(!isWorkday(date))return previousAuto(date,baseItems);
       const moved=[];
+      const homeStart=homeStartFor(date);
       for(const task of state.tasks||[]){
+        if(task.date&&String(task.date)!==String(date))continue;
         const start=hmMinutes(task.itineraryStart);
         if(start!==null&&start<homeStart&&!isWorkTask(task)){
           moved.push([task,task.itineraryStart]);
@@ -104,7 +122,10 @@
       const range=previousWindow(item,date);
       if(!range||!isWorkday(date)||/^work-/.test(String(item?.templateKey||"")))return range;
       const dayEnd=typeof itineraryDayEnd==="function"?itineraryDayEnd(date):range.end;
-      return {start:Math.max(homeStart,range.start),end:Math.max(homeStart,Math.min(dayEnd,Math.max(range.end,homeStart+30)))};
+      const homeStart=homeStartFor(date);
+      const start=Math.max(homeStart,range.start);
+      const end=Math.max(start,Math.min(dayEnd,Math.max(range.end,homeStart+30)));
+      return start<end?{start,end}:null;
     };
   }
   const previousFit=itineraryFitRoutines;
@@ -112,6 +133,7 @@
     itineraryFitRoutines=function(date,blockingItems,routines){
       const rows=previousFit(date,blockingItems,routines);
       if(!isWorkday(date))return rows;
+      const homeStart=homeStartFor(date);
       return rows.filter(item=>/^work-/.test(String(item.templateKey||""))||hmMinutes(item.start)>=homeStart||/^tanner\s*[·:–-]\s*/i.test(String(item.title||"")));
     };
   }
@@ -120,6 +142,7 @@
     const rows=previousDayItems(date);
     if(!isWorkday(date))return rows;
     const currentDay=String(date)===String(localToday());
+    const homeStart=homeStartFor(date);
     const holdHomeTasks=currentDay&&!homeConfirmed(date);
     return rows.filter(item=>{
       const start=hmMinutes(item.start);
