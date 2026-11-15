@@ -8,20 +8,96 @@
     if(!state.christmasGifts2026 || typeof state.christmasGifts2026!=="object" || Array.isArray(state.christmasGifts2026)) state.christmasGifts2026={};
     return state.christmasGifts2026;
   }
+  function normalizedRelationship(value){
+    return String(value||"").trim().toLowerCase().replace(/\u2019/g,"'")
+      .replace(/^(?:tanner's|partner's)\s+/,"partner's ").replace(/\s+/g," ");
+  }
+  function giftHasSavedDetail(g){
+    return !!(g&&typeof g==="object"&&(
+      String(g.idea||"").trim()||String(g.notes||"").trim()||
+      String(g.link||"").trim()||giftItems(g).length||
+      ["buy","make","both"].includes(String(g.choice||""))||
+      ["planned","in-progress","ready","wrapped","given"].includes(String(g.status||""))||
+      money(g.budget)!==null||money(g.spent)!==null
+    ));
+  }
   function people(){
     if(typeof ensurePeopleProfiles==="function") ensurePeopleProfiles();
-    const seen=new Set(),seenLegacy=new Set(),out=[];
+    const store=giftStore(),seenIds=new Set(),seenLegacy=new Set(),rosterByPerson=new Map(),out=[];
     for(const p of state.peopleProfiles||[]){
       const name=String(p?.name||"").trim(),legacyKey=keyFor(name),rel=String(p?.relationship||"").trim().toLowerCase();
       if(!name||!legacyKey||rel==="self"||rel==="you")continue;
       const id=p?.id==null?"":String(p.id).trim();
       const key=id?"person-"+encodeURIComponent(id):"name-"+legacyKey;
-      if(seen.has(key))continue;
-      seen.add(key);const legacyOwner=!seenLegacy.has(legacyKey);seenLegacy.add(legacyKey);
-      out.push({key,legacyKey,legacyOwner,name,relationship:String(p.relationship||"Person")});
+      if(seenIds.has(key))continue;
+      seenIds.add(key);
+      const legacyOwner=!seenLegacy.has(legacyKey);
+      seenLegacy.add(legacyKey);
+      const next={key,legacyKey,legacyOwner,name,relationship:String(p.relationship||"Person")};
+      // Only collapse profiles with an identical name AND the same relationship.
+      // "partner's brother" and "Tanner's brother" are equivalent here, while
+      // two distinct people who happen to share a name remain separate.
+      const identity=legacyKey+"|"+normalizedRelationship(next.relationship);
+      const previousIndex=rosterByPerson.get(identity);
+      if(previousIndex===undefined){rosterByPerson.set(identity,out.length);out.push(next);continue}
+      const prior=out[previousIndex];
+      const previousSaved=giftHasSavedDetail(store[prior.key]||(prior.legacyOwner?store[prior.legacyKey]:null));
+      const nextSaved=giftHasSavedDetail(store[key]);
+      if(previousSaved&&nextSaved){
+        // Don't silently hide or merge two independently saved gift plans.
+        out.push({...next,possibleDuplicate:true});
+      }else if(nextSaved&&!previousSaved){
+        out[previousIndex]={...next,legacyOwner:prior.legacyOwner};
+      }
     }
     return out;
   }
+  function giftIdeas(person){
+    const who=keyFor(person?.name),rel=normalizedRelationship(person?.relationship);
+    const make=(title,choice)=>({title,choice});
+    if(who==="leo")return [
+      make("Nature or reptile field guide","buy"),make("Tabletop adventure accessories","buy"),
+      make("Homemade dice bag or drawstring pouch","make"),make("A book in a favorite series","buy")
+    ];
+    if(who==="demitri"||who==="tree")return [
+      make("Homemade crochet creature","make"),make("Building or science activity kit","buy"),
+      make("Personalized story or comic","make"),make("Board or card game","buy")
+    ];
+    if(who==="dolly")return [
+      make("DIY spa-night gift basket","both"),make("Art or bracelet-making kit","buy"),
+      make("Handmade colorful plush or hair accessory","make"),make("Doll outfit or play accessory","buy")
+    ];
+    if(who==="ambrose")return [
+      make("Age-appropriate building set","buy"),make("Picture book and cozy blanket","both"),
+      make("Handmade soft toy","make"),make("Simple art project kit","buy")
+    ];
+    if(/niece|nephew|child|son|daughter|grandchild/.test(rel))return [
+      make("Age-appropriate book or game","buy"),make("Crocheted animal or soft toy","make"),
+      make("Personalized ornament","make"),make("Craft or activity kit","buy")
+    ];
+    if(/sister|brother|friend|partner|mother|father|parent|aunt|uncle|grand/.test(rel))return [
+      make("Punch-needle wall art or handmade coaster","make"),make("Favorite snacks and treats basket","both"),
+      make("Personalized photo ornament","make"),make("Cozy self-care or hobby kit","buy")
+    ];
+    return [
+      make("Handmade ornament or crochet gift","make"),make("Book or activity based on their interests","buy"),
+      make("Treat basket","both"),make("Personalized photo keepsake","make")
+    ];
+  }
+  window.holidayGiftChooseIdea=function(key,index){
+    const person=people().find(p=>p.key===String(key)),idea=person&&giftIdeas(person)[Number(index)];
+    if(!idea)return;
+    const field=document.getElementById("holiday-gift-idea");
+    if(!field)return;
+    const current=String(field.value||"").trim();
+    if(current&&current!==idea.title&&!window.confirm?.("Replace the gift idea in this editor? Nothing is saved until you tap Save."))return;
+    field.value=idea.title;
+    const choice=document.getElementById("holiday-gift-choice");
+    if(choice)choice.value=idea.choice;
+    const status=document.getElementById("holiday-gift-status");
+    if(status&&status.value==="ideas")status.value="planned";
+    if(typeof field.focus==="function")field.focus();
+  };
   function giftFor(person,store=giftStore()){
     return store[person.key]||(person.legacyOwner?store[person.legacyKey]:null)||{};
   }
@@ -76,10 +152,11 @@
       const extras=giftItems(g),extraDone=extras.filter(x=>["ready","wrapped","given"].includes(safeStatus(x.status))).length;
       const label=String(g.idea||"").trim()||(extras.length?extras[0].title:"Tap to add an idea");
       const summary=[labelFor(choices,choice),labelFor(statuses,status),extras.length?extraDone+"/"+extras.length+" extra gifts ready":"",money(g.budget)!==null?"Budget "+dollars(money(g.budget)):"",money(g.spent)!==null?"Spent "+dollars(money(g.spent)):""].filter(Boolean).join(" · ");
+
       return '<button type="button" class="holiday-gift-person" onclick="openHolidayGift('+esc(JSON.stringify(p.key))+')">'
         +'<span class="holiday-person-initial">'+esc(p.name.charAt(0).toUpperCase())+'</span>'
         +'<span class="holiday-gift-main"><b>'+esc(p.name)+'</b><small>'+esc(p.relationship)+' · '+esc(label)+'</small></span>'
-        +'<span class="holiday-gift-status">'+esc(summary)+'<span aria-hidden="true"> ›</span></span></button>';
+        +'<span class="holiday-gift-status">'+esc(summary)+(p.possibleDuplicate?' · Duplicate profile to review':'')+'<span aria-hidden="true"> ›</span></span></button>';
     }).join("");
     const upcoming=(state.tasks||[]).filter(t=>!t.done && t.date>=(typeof ymd==="function"?ymd():"2026-11-14") && /^(Christmas gifts|Tree.s birthday)/i.test(String(t.title||""))).sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).slice(0,3);
     return '<section class="card holiday-gifts-card" aria-label="Christmas gift planner">'
@@ -93,9 +170,11 @@
   };
   window.openHolidayGift=function(key){
     const p=people().find(x=>x.key===String(key));if(!p)return;
-    const g=giftFor(p);
+    const g=giftFor(p),suggestions=giftIdeas(p);
+    const suggestionButtons=suggestions.map((idea,index)=>'<button type="button" class="holiday-gift-idea-choice" onclick="holidayGiftChooseIdea('+esc(JSON.stringify(p.key))+','+index+')">'+esc(idea.title)+' <small>'+esc(idea.choice==="make"?"Make":idea.choice==="both"?"Buy or make":"Buy")+'</small></button>').join("");
     const body='<div class="stack holiday-gift-editor"><div class="notice small">Keep this Christmas gift separate from birthday gifts. You can leave anything undecided.</div>'
       +'<label>Gift idea / item<textarea id="holiday-gift-idea" rows="3" placeholder="What could I give or make?">'+esc(g.idea||"")+'</textarea></label>'
+      +'<div class="holiday-gift-idea-suggestions"><b>Ideas to consider</b><small>Suggestions only. Tap one to fill the editor; nothing saves until you confirm.</small><div class="holiday-gift-idea-options">'+suggestionButtons+'</div></div>'
       +'<div class="grid2"><label>How to get it<select id="holiday-gift-choice">'+optionHtml(choices,safeChoice(g.choice))+'</select></label>'
       +'<label>Progress<select id="holiday-gift-status">'+optionHtml(statuses,safeStatus(g.status))+'</select></label></div>'
       +'<div class="grid2"><label>Budget (optional)<input id="holiday-gift-budget" type="number" step="0.01" min="0" value="'+esc(g.budget??"")+'" placeholder="0.00"></label>'
