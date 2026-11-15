@@ -66,3 +66,11 @@
  .dl-quick-review-buttons{gap:3px}
  .dl-quick-review-buttons button{min-width:33px;padding:5px 5px;font-size:.66rem}
 }
+
+/* Share review – follow the existing colorful palette without rebuilding layouts. */
+.chat-share-review{max-height:70vh;overflow:auto;overscroll-behavior:contain;gap:9px}
+.chat-share-review label{display:grid;gap:5px;min-width:0;font-weight:700;color:#553c5d}
+.chat-share-review input:not([type=checkbox]),.chat-share-review select,.chat-share-review textarea{width:100%;min-width:0;box-sizing:border-box}
+.chat-share-review [hidden]{display:none!important}
+.chat-share-review button{justify-self:start;max-width:100%}
+.chat-share-review #chatShareStatus{padding:9px;border-radius:10px;background:rgba(238,227,248,.55)}
