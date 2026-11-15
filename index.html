@@ -2190,7 +2190,7 @@ function dateDayIndex(date){
 function familyKidsHomeForChores(date=ymd()){
   const day=String(date||ymd()),override=state.settings?.kidChoreAvailabilityOverrides?.[day];
   if(override===true||override===false)return override;
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(day))return true;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return true;
   const weekday=new Date(day+"T12:00:00").getDay();
   if(weekday===0||weekday===6)return false;
   if(weekday===5&&day===ymd()){
@@ -2200,7 +2200,7 @@ function familyKidsHomeForChores(date=ymd()){
 }
 window.familyKidsHomeForChores=familyKidsHomeForChores;
 window.familySetKidsHomeForChores=async function(date,value){
-  const day=/^\\d{4}-\\d{2}-\\d{2}$/.test(String(date||""))?String(date):ymd();
+  const day=/^\d{4}-\d{2}-\d{2}$/.test(String(date||""))?String(date):ymd();
   if(!state.settings)state.settings={};
   const map=state.settings.kidChoreAvailabilityOverrides||(state.settings.kidChoreAvailabilityOverrides={});
   if(value===null)delete map[day];else map[day]=!!value;
