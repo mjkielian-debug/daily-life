@@ -80,6 +80,7 @@ const APP_SHELL=[
   "./hobby-weekly.js",
   "./holiday-gifts.js",
   "./holiday-gifts.css",
+  "./ssd-route-capture.js",
   "./ssd-weekly-pay.js",
   "./chase-balance.js",
   "./chase-balance.css",
