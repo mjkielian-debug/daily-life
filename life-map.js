@@ -513,7 +513,7 @@ function view(areaOverride,tasksOnly){
   const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
   const tracker=trackers[areaSelection];
   const todayGroup='<section class="lm-area-task-group" aria-label="Today and check-ins">'+
-    '<div class="lm-area-section-heading"><b>Today & check-ins</b><small>'+currentOpen+' to do · '+stats.done+' done</small></div>'+
+    '<div class="lm-area-section-heading"><b>For today</b><small>'+currentOpen+' to do · '+stats.done+' done</small></div>'+
     (openRows?'<div class="lm-list">'+openRows+'</div>':'<p class="lm-area-clear">✓ Nothing waiting for today in this category.</p>')+'</section>';
   const todayCompleted=doneRows?'<details class="lm-area-task-history"><summary>Completed today · '+stats.done+'</summary><div class="lm-list">'+doneRows+'</div></details>':"";
   const detailLink=areaSelection==="spirituality"?
@@ -526,15 +526,16 @@ function view(areaOverride,tasksOnly){
    '<button type="button" class="lm-area-add-task" onclick="lifeMapOpenAreaTask(&#39;'+h(areaSelection)+'&#39;)">＋ Add task here</button></div></header>'+
    '<section class="lm-inline-panel lm-area-page-content lm-area-task-workspace" aria-label="'+h(areaTitles[areaSelection])+' task list">'+
    todayGroup+
-   lifeMapDoorwaysHtml(areaSelection,false)+
+   ((anytimeTasks.length||upcomingTasks.length)?'<details class="lm-area-task-history"><summary>Other open tasks · '+(anytimeTasks.length+upcomingTasks.length)+'</summary>':"")+
    taskGroup("Anytime · no date",anytimeTasks,"Do these whenever they fit")+
    taskGroup("Coming up",upcomingTasks,"Already scheduled")+
+   ((anytimeTasks.length||upcomingTasks.length)?"</details>":"")+
    historyTaskGroup("Older unfinished tasks",olderTasks,"These were saved for earlier dates. They have not been silently rescheduled.")+
    (unsorted.length?historyTaskGroup("Tasks needing a category",unsorted,"Open a task to change its category."):"")+
    todayCompleted+
    (lastAreaDone?'<p class="lm-area-lastdone"><b>Last done</b> · '+h(lastAreaDone.title)+' · '+h(lastAreaDone.date)+'</p>':"")+
-   lifeMapTaskIdeasHtml(areaSelection)+
-   '<details class="lm-area-shortcuts"><summary>More tools & history</summary>'+detailLink+
+   '<details class="lm-area-shortcuts"><summary>More in this area</summary>'+
+   lifeMapDoorwaysHtml(areaSelection,false)+lifeMapTaskIdeasHtml(areaSelection)+detailLink+
    (areaSelection==="money"?moneyGoalPanel:"")+
    (typeof window.lifeMapAreaHabitsHtml==="function"?window.lifeMapAreaHabitsHtml(areaSelection):"")+
    '</details></section></section>';
