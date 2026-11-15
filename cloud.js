@@ -1159,9 +1159,13 @@ function cloudApplyLifeEntry(row){
   const p=row.payload||{},date=row.local_date||String(row.occurred_at||"").slice(0,10)||ymd();
   const common={id:uid(),cloudEntryId:row.id,date};
   switch(row.category){
-    case "water":
-      if(Number(p.oz)>0)state.waterLogs.push({...common,oz:Number(p.oz)});else return false;
+    case "water":{
+      const oz=Number(p.oz),bottles=Number(p.bottles);
+      if(!(oz>0)&&!(bottles>0))return false;
+      state.waterLogs.push({...common,oz:oz>0?oz:null,bottles:bottles>0?bottles:null,
+        notes:String(p.notes||"")});
       return true;
+    }
     case "stretch":
       if(Number(p.minutes)>0)state.stretchLogs.push({...common,minutes:Number(p.minutes)});else return false;
       return true;
@@ -1212,12 +1216,23 @@ function cloudApplyLifeEntry(row){
       const name=String(p.name||"").trim();if(!name)return false;
       const quantity=Number(p.quantity||1)>0?Number(p.quantity||1):1;
       const metric=key=>{if(p[key]===undefined||p[key]===null||String(p[key]).trim()==="")return null;const value=Number(p[key]);return Number.isFinite(value)?value:null},next={...common,name,category:String(p.category||"food"),quantity,calories:metric("calories"),protein:metric("protein"),carbs:metric("carbs"),fat:metric("fat"),fiber:metric("fiber"),caffeineMg:metric("caffeineMg"),micronutrients:p.micronutrients&&typeof p.micronutrients==="object"?p.micronutrients:{},notes:String(p.notes||""),nutritionEstimated:!!p.nutritionEstimated,nutritionSource:String(p.nutritionSource||"")};
+      // Preserve full nutrition details from confirmed receipts, labels and
+      // carefully flagged estimates; core food totals above remain compatible.
+      for(const key of ["sugars","addedSugars","sodiumMg","saturatedFat","transFat","cholesterolMg","servingCount"]){
+        if(p[key]!==undefined)next[key]=metric(key);
+      }
+      for(const key of ["servingSize","nutritionAssumptions"])
+        if(p[key]!==undefined)next[key]=String(p[key]||"");
+      for(const key of ["calorieRange","nutritionSources"])
+        if(Array.isArray(p[key]))next[key]=p[key].slice(0,20);
+      if(p.ingredients&&typeof p.ingredients==="object")next.ingredients=p.ingredients;
+      if(p.nutritionExample&&typeof p.nutritionExample==="object")next.nutritionExample=p.nutritionExample;
       if(p.replaceExisting){
         const key=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
         const existing=(state.foodLogs||[]).find(x=>x.date===date&&key(x.name)===key(name));
         if(existing){
           const keepId=existing.id;
-          for(const field of ["category","quantity","calories","protein","carbs","fat","fiber","caffeineMg","micronutrients","notes","nutritionEstimated","nutritionSource"]){
+          for(const field of ["category","quantity","calories","protein","carbs","fat","fiber","caffeineMg","micronutrients","notes","nutritionEstimated","nutritionSource","sugars","addedSugars","sodiumMg","saturatedFat","transFat","cholesterolMg","servingCount","servingSize","calorieRange","nutritionSources","nutritionAssumptions","ingredients","nutritionExample"]){
             if(p[field]===undefined)next[field]=existing[field];
           }
           Object.assign(existing,next,{id:keepId,cloudEntryId:row.id});
@@ -1855,7 +1870,7 @@ function cloudApplyLifeEntry(row){
       if(!Array.isArray(state.vehicles))state.vehicles=[];
       let x=state.vehicles.find(x=>x.cloudEntryId===row.id)||state.vehicles.find(x=>x.primary);
       if(!x){x={id:uid(),primary:true};state.vehicles.push(x)}
-      Object.assign(x,{cloudEntryId:row.id,year:Number(p.year||x.year||0)||null,make:String(p.make||x.make||""),model:String(p.model||x.model||""),mileage:Number(p.mileage||x.mileage||0)||null,registrationDue:String(p.registrationDue||x.registrationDue||""),openRecalls:Number.isFinite(Number(p.openRecalls))?Number(p.openRecalls):x.openRecalls,estimatedValue:Number(p.estimatedValue||x.estimatedValue||0)||null,oilIntervalMiles:Number(p.oilIntervalMiles||x.oilIntervalMiles||0)||null,rotationIntervalMiles:Number(p.rotationIntervalMiles||x.rotationIntervalMiles||0)||null,oilDueMiles:Number(p.oilDueMiles||x.oilDueMiles||0)||null,oilDueDate:String(p.oilDueDate||x.oilDueDate||""),rotationDueMiles:Number(p.rotationDueMiles||x.rotationDueMiles||0)||null,rotationDueDate:String(p.rotationDueDate||x.rotationDueDate||""),tireTread:String(p.tireTread||x.tireTread||""),appointmentDate:String(p.appointmentDate||x.appointmentDate||""),appointmentTime:String(p.appointmentTime||x.appointmentTime||""),appointmentPlace:String(p.appointmentPlace||x.appointmentPlace||""),notes:String(p.notes||x.notes||"")});
+      Object.assign(x,{cloudEntryId:row.id,year:Number(p.year||x.year||0)||null,make:String(p.make||x.make||""),model:String(p.model||x.model||""),mileage:Math.max(Number(p.mileage||0),Number(x.mileage||0))||null,registrationDue:String(p.registrationDue||x.registrationDue||""),openRecalls:Number.isFinite(Number(p.openRecalls))?Number(p.openRecalls):x.openRecalls,estimatedValue:Number(p.estimatedValue||x.estimatedValue||0)||null,oilIntervalMiles:Number(p.oilIntervalMiles||x.oilIntervalMiles||0)||null,rotationIntervalMiles:Number(p.rotationIntervalMiles||x.rotationIntervalMiles||0)||null,oilDueMiles:Number(p.oilDueMiles||x.oilDueMiles||0)||null,oilDueDate:String(p.oilDueDate||x.oilDueDate||""),rotationDueMiles:Number(p.rotationDueMiles||x.rotationDueMiles||0)||null,rotationDueDate:String(p.rotationDueDate||x.rotationDueDate||""),tireTread:String(p.tireTread||x.tireTread||""),appointmentDate:String(p.appointmentDate||x.appointmentDate||""),appointmentTime:String(p.appointmentTime||x.appointmentTime||""),appointmentPlace:String(p.appointmentPlace||x.appointmentPlace||""),notes:String(p.notes||x.notes||"")});
       return true;
     }
     case "vehicle_service":{
@@ -1880,6 +1895,22 @@ function cloudApplyLifeEntry(row){
       if(p.gallons!==undefined)x.gallons=Number(p.gallons||0)||null;
       if(p.tripMeter!==undefined)x.tripMeter=Number(p.tripMeter||0)||null;
       if(p.fullTank!==undefined)x.fullTank=p.fullTank===true;
+      // A dated service report is a verified mileage source. Never move an
+      // existing vehicle odometer backwards when an older entry syncs.
+      const vehicle=(state.vehicles||[]).find(v=>v.id===x.vehicleId)||(state.vehicles||[]).find(v=>v.primary);
+      if(vehicle&&mileage&&mileage>Number(vehicle.mileage||0)){
+        vehicle.mileage=mileage;
+        vehicle.odometerSource="Service record";
+        vehicle.odometerRecordedDate=serviceDate;
+      }
+      if(vehicle&&/oil/i.test(type)){
+        const dueMiles=Number(p.nextOilChangeMiles||0);
+        if(dueMiles>mileage&&(!vehicle.oilDueMiles||dueMiles>Number(vehicle.oilDueMiles)))vehicle.oilDueMiles=dueMiles;
+        if(p.nextOilChangeDate&&(!vehicle.oilDueDate||String(p.nextOilChangeDate)>vehicle.oilDueDate))
+          vehicle.oilDueDate=String(p.nextOilChangeDate);
+        if(Number(p.oilIntervalMiles)>0)vehicle.oilIntervalMiles=Number(p.oilIntervalMiles);
+        if(Number(p.oilIntervalMonths)>0)vehicle.oilIntervalMonths=Number(p.oilIntervalMonths);
+      }
       return true;
     }
     case "person_rename":{
