@@ -108,3 +108,30 @@
  .fc-flip-actions .btn{padding:7px 11px}
 }
 @media(prefers-reduced-motion:reduce){.fc-flip-front{animation:none}}
+
+/* Clueless closet focus & collapsible outfit panel · Nov 15 */
+#familyClosetBody .fc-fold-panel{margin:0!important;padding:0!important;border:0!important;border-top:1px solid #e9dfe9!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+#familyClosetBody .fc-fold-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:54px;padding:11px 6px;background:transparent;border:0;text-align:left;color:#47374e;font:inherit;font-weight:800;font-size:.9rem;cursor:pointer}
+#familyClosetBody .fc-fold-trigger>span:last-child{display:flex;align-items:center;gap:10px;color:#87778b;font-size:.73rem;font-weight:700;white-space:nowrap}
+#familyClosetBody .fc-fold-trigger[aria-expanded="true"]{color:#8f3c72}
+#familyClosetBody .fc-fold-inner{padding:2px 5px 14px}
+#familyClosetBody .fc-fold-inner .fc-look-pieces{margin:4px 0 12px;gap:9px}
+#familyClosetBody .fc-fold-inner .fc-actions{gap:8px}
+#familyClosetBody .fc-fold-inner .fc-actions button{min-height:40px}
+#familyClosetBody .fc-footer-tools{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0 6px}
+#familyClosetBody .fc-footer-tools .btn{min-height:39px;font-size:.78rem}
+#familyClosetBody .fc-gaps{margin-top:12px;font-size:.71rem;opacity:.85}
+#familyClosetBody .fc-people{padding-bottom:4px}
+#familyClosetBody .fc-filter-row{padding-bottom:6px}
+#familyClosetBody .fc-flip-photo{display:flex;justify-content:center;align-items:center}
+#familyClosetBody .fc-flip-photo>.dl-clothing-thumb{flex:none!important;width:min(100%,266px)!important;height:auto!important;aspect-ratio:1/1!important;min-height:0;align-self:center;border-radius:0!important;mix-blend-mode:multiply}
+#familyClosetBody .fc-flip-peek>.dl-clothing-thumb{aspect-ratio:1/1;width:100%;height:auto;max-height:100%}
+#familyClosetBody .fc-flip-scene{touch-action:pan-y}
+#familyClosetBody .fc-flip-scene:focus-visible{outline:3px solid #935892;outline-offset:-3px}
+#familyClosetBody .fc-flip-arrow:focus-visible,#familyClosetBody .fc-fold-trigger:focus-visible{outline:3px solid #935892;outline-offset:2px}
+#familyClosetBody .fc-flip-caption{padding:5px 10px}
+#familyClosetBody .fc-flip-photo>.dl-clothing-thumb{filter:contrast(1.06) saturate(1.025)}
+@media(max-width:390px){
+ #familyClosetBody .fc-flip-photo>.dl-clothing-thumb{width:min(100%,245px)!important}
+ #familyClosetBody .fc-flip-scene{height:min(45vh,390px)}
+}
