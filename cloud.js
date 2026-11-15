@@ -1244,6 +1244,20 @@ function cloudApplyLifeEntry(row){
       let x=state.workShifts.find(x=>x.date===date);
       if(!x){x=common;state.workShifts.push(x)}
       Object.assign(x,{scheduled:String(p.scheduled||x.scheduled||""),start:String(p.start||x.start||""),end:String(p.end||x.end||""),rate:Number(p.rate??x.rate??0),status:String(p.status||x.status||""),endedUnknown:p.endedUnknown!==undefined?!!p.endedUnknown:!!x.endedUnknown,notes:String(p.notes??x.notes??""),source:String(p.source||x.source||""),cloudEntryId:row.id});
+      // Copy confirmed SSD odometer pairs from imported route/supervisor logs.
+      // Do not infer a car odometer from reimbursement miles alone.
+      const sourceText=[p.job,p.title,p.source].filter(Boolean).join(" ");
+      const routeStart=Number(p.ssdOdometerStart??p.odometerStart);
+      const routeEnd=Number(p.ssdOdometerEnd??p.odometerEnd);
+      if(/ssd|delivery|route/i.test(sourceText)&&Number.isSafeInteger(routeStart)&&Number.isSafeInteger(routeEnd)&&
+        routeStart>=1000&&routeEnd>=routeStart&&routeEnd-routeStart<=500&&routeEnd<=9999999){
+        const priorEnd=Number(x.ssdOdometerEnd||0);
+        if(routeEnd>=priorEnd){
+          x.ssdOdometerStart=routeStart;x.ssdOdometerEnd=routeEnd;
+          x.ssdMiles=routeEnd-routeStart;
+          x.ssdRouteSource=String(p.source||"Imported confirmed SSD log");
+        }
+      }
       if(p.officialHours!==undefined&&Number.isFinite(Number(p.officialHours)))x.officialHours=Number(p.officialHours);
       if(p.officialGrossPay!==undefined&&Number.isFinite(Number(p.officialGrossPay)))x.officialGrossPay=Number(p.officialGrossPay);
       if(p.officialRate!==undefined&&Number.isFinite(Number(p.officialRate)))x.officialRate=Number(p.officialRate);
