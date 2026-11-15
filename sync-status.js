@@ -10,7 +10,11 @@
     if(cloudSyncing||(typeof cloudPushTimer!=="undefined"&&cloudPushTimer))return {label:"Saved on this phone · syncing",kind:"syncing"};
     if(!user())return {label:"Saved on this phone",kind:"local"};
     if(typeof cloudAutoEnabled==="function"&&!cloudAutoEnabled())return {label:"Saved on this phone · cloud sync off",kind:"attention"};
-    if(localDirty)return {label:"Saved on this phone · cloud copy pending",kind:"syncing"};
+    // This comparison survives reloads and catches a write made during
+    // an in-flight cloud upload, even when a success event just fired.
+    const signaturePending=typeof cloudStateSignature==="function"&&typeof cloudLastSignature==="function"&&
+      !!cloudLastSignature()&&cloudStateSignature()!==cloudLastSignature();
+    if(localDirty||signaturePending)return {label:"Saved on this phone · cloud copy pending",kind:"syncing"};
     if(lastCloudSuccess||((typeof cloudRemoteUpdatedAt!=="undefined")&&cloudRemoteUpdatedAt))return {label:"Saved on this phone · synced to cloud",kind:"synced"};
     return {label:"Saved on this phone · no cloud backup yet",kind:"attention"};
   }
@@ -38,7 +42,12 @@
       cloudSyncing=true;update();
       try{
         var result=await originalPush.apply(this,arguments);
-        if(result!==false){lastCloudSuccess=Date.now();localDirty=false;if(typeof cloudError!=="undefined")cloudError=""}
+        if(result!==false){
+          lastCloudSuccess=Date.now();
+          localDirty=typeof cloudStateSignature==="function"&&typeof cloudLastSignature==="function"&&
+            cloudStateSignature()!==cloudLastSignature();
+          if(typeof cloudError!=="undefined")cloudError="";
+        }
         return result;
       }finally{cloudSyncing=false;update()}
     };
