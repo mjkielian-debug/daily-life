@@ -631,13 +631,28 @@ function cloudRestoreLocalOnlyAssets(restored,local){
   }
 }
 
+const cloudUnsafePatchKeys=new Set(["__proto__","constructor","prototype"]);
+function cloudPatchSafeKeys(obj){
+  if(!obj||typeof obj!=="object")return true;
+  return !Object.keys(obj).some(key=>cloudUnsafePatchKeys.has(key));
+}
+function cloudPatchSafePath(path){
+  return Array.isArray(path)&&path.length>0&&path.length<=8&&path.every(key=>
+    (typeof key==="string"||Number.isInteger(key))&&
+    String(key).length>0&&String(key).length<=128&&
+    !cloudUnsafePatchKeys.has(String(key))
+  );
+}
 function cloudAssistantPatches(remoteState){
   const patches=remoteState?.settings?.assistantSyncPatches;
   return Array.isArray(patches)?patches.filter(p=>{
     if(!p||typeof p!=="object"||!p.id)return false;
-    if(Array.isArray(p.path)&&p.path.length&&Object.prototype.hasOwnProperty.call(p,"value"))return true;
+    if(Array.isArray(p.path)&&p.path.length&&Object.prototype.hasOwnProperty.call(p,"value"))
+      return cloudPatchSafePath(p.path)&&cloudPatchSafeKeys(p.value);
     const op=String(p.operation||"update");
-    return !!p.collection&&((op==="upsert"&&!!(p.record||p.recordId))||(op==="delete"&&!!p.recordId)||(!!p.recordId&&p.fields&&typeof p.fields==="object"));
+    if(!p.collection||cloudUnsafePatchKeys.has(String(p.collection)))return false;
+    if(!cloudPatchSafeKeys(p.fields)||!cloudPatchSafeKeys(p.record))return false;
+    return (op==="upsert"&&!!(p.record||p.recordId))||(op==="delete"&&!!p.recordId)||(!!p.recordId&&p.fields&&typeof p.fields==="object");
   }):[];
 }
 
@@ -702,25 +717,37 @@ let cloudAssistantPatchPollTimer=null;
 let cloudAssistantPatchPollBusy=false;
 let cloudAssistantPatchVisibilityBound=false;
 async function cloudPollAssistantPatches(){
-  if(cloudAssistantPatchPollBusy||!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
+  if(cloudAssistantPatchPollBusy||!cloudUser()||!cloudClient||!cloudAutoEnabled()||cloudNeedsReview)return;
   cloudAssistantPatchPollBusy=true;
   try{
     const snapshot=await cloudReadRemoteSnapshot();
     const patches=cloudAssistantPatches(snapshot?.state);
     if(!patches.length)return;
-    const changed=cloudApplyAssistantPatches(snapshot.state);
-    if(changed){
-      await dbSet("state",state);
+    const hasNew=patches.some(p=>!(state.settings?.appliedAssistantSyncPatchIds||[]).includes(String(p.id)));
+    if(!hasNew)return;
+    const lastSignature=cloudLastSignature(),localSignature=cloudStateSignature();
+    const localClean=!!lastSignature&&lastSignature===localSignature;
+    if(localClean){
+      // No unsynced device changes: pull the remote state and preserve
+      // completed activities through the existing protected merge.
+      await cloudUseRemoteSnapshot(snapshot);
+    }else{
+      const original=structuredClone(state);
+      const changed=cloudApplyAssistantPatches(snapshot.state);
+      if(!changed)return;
+      try{await cloudArchiveRemoteSnapshot(snapshot,"Assistant updates merged with unsynced device changes")}
+      catch(error){state=original;throw error}
       cloudRemoteUpdatedAt=snapshot.updated_at||null;
-      cloudSetLastPushed(cloudRemoteUpdatedAt);
-      cloudSetLastSignature(cloudStateSignature());
-      cloudNeedsReview=false;cloudAutoCanPush=true;
-      if(typeof render==="function")render();
+      localStorage.setItem(cloudMetaKey("pendingConflictAt"),cloudRemoteUpdatedAt||"");
+      cloudNeedsReview=true;cloudAutoCanPush=false;
+      cloudError="ChatGPT changes were added on this phone, but a sync conflict needs your review. No local changes were discarded.";
     }
+    if(typeof render==="function")render();
   }catch(error){
     cloudError=error?.message||"Could not check for Daily Life updates.";
   }finally{cloudAssistantPatchPollBusy=false}
 }
+
 function cloudStartAssistantPatchPolling(){
   if(cloudAssistantPatchPollTimer)clearInterval(cloudAssistantPatchPollTimer);
   if(!cloudUser()||!cloudClient||!cloudAutoEnabled())return;
@@ -851,14 +878,19 @@ async function cloudPrepareAutoSync(){
     if(lastBeforePatch&&lastSignatureBeforePatch&&signatureBeforePatch===lastSignatureBeforePatch){
       await cloudUseRemoteSnapshot(snapshot);
     }else{
+      const previousState=structuredClone(state);
       const appliedCount=cloudApplyAssistantPatches(snapshot.state);
       if(appliedCount){
-        await cloudArchiveRemoteSnapshot(snapshot,"Assistant updates merged into this device");
-        await dbSet("state",state);
+        try{await cloudArchiveRemoteSnapshot(snapshot,"Assistant updates merged with unsynced local changes")}
+        catch(error){state=previousState;throw error}
         cloudRemoteUpdatedAt=snapshot.updated_at||null;
-        cloudSetLastPushed(cloudRemoteUpdatedAt);
-        cloudSetLastSignature(cloudStateSignature());
-        cloudNeedsReview=false;cloudAutoCanPush=true;
+        localStorage.setItem(conflictKey,cloudRemoteUpdatedAt||"");
+        // Keep original last-pushed signature. These local changes have NOT
+        // been uploaded and must never be labelled "synced" yet.
+        cloudNeedsReview=true;cloudAutoCanPush=false;
+        cloudError="ChatGPT changes were added to this device, but cloud syncing is paused because this device also has unsynced changes. Review which copy to keep.";
+        if(typeof render==="function")render();
+        return;
       }
     }
   }
@@ -939,14 +971,19 @@ async function cloudPushSnapshotInternal(forceOverwrite=false){
   }
   await cloudEnsureProfile();
   const now=new Date().toISOString();
+  const uploadedState=cloudStateForUpload();
+  // Capture the signature BEFORE the async write. Edits made while uploading
+  // must not be marked as if they were included in this cloud backup.
+  const uploadedSignature=cloudStateSignature();
   const {error}=await cloudClient.from("app_snapshots").upsert({
     owner_user_id:user.id,
     schema_version:Number(state.version)||1,
-    state:cloudStateForUpload(),
+    state:uploadedState,
     updated_at:now
   },{onConflict:"owner_user_id"});
   if(error)throw error;
-  cloudRemoteUpdatedAt=now;cloudSetLastPushed(now);cloudSetLastSignature(cloudStateSignature());cloudNeedsReview=false;
+  cloudRemoteUpdatedAt=now;cloudSetLastPushed(now);cloudSetLastSignature(uploadedSignature);cloudNeedsReview=false;
+  if(cloudStateSignature()!==uploadedSignature)cloudSchedulePush();
   return true;
 }
 
