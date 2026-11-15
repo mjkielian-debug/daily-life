@@ -367,6 +367,7 @@
       '<label>What is on your mind?<textarea id="lifeCaptureText" rows="7" placeholder="I drank 26 oz water\nbuy cat litter\ncall school about form"></textarea></label>'+
 // optional speech supported through device/browser; no microphone upload by Daily Life itself
       '<div class="row"><button type="button" class="btn small" id="lifeCaptureDictateButton">🎙️ Dictate</button><span class="muted small" id="lifeCaptureDictateStatus">Speech recognition depends on your phone or browser.</span></div>'+
+      '<div class="notice small" id="lifeCapturePreview" aria-live="polite">Your entries will appear here before saving.</div>'+ 
       '<div class="grid2"><label>When<select id="lifeCaptureWhen"><option value="'+ymd()+'">Today</option><option value="'+tomorrow+'">Tomorrow</option><option value="'+lifeShift(ymd(),3)+'">In the next few days</option><option value="'+lifeShift(ymd(),7)+'">Next week</option></select></label>'+
       '<label>Route<select id="lifeCaptureRoute"><option value="auto">Auto-sort</option><option value="task">Tasks</option><option value="shopping">Shopping list</option></select></label></div>'+
       '<label>Person (optional)<input id="lifeCapturePerson" list="lifeCapturePeople" placeholder="Leave blank if it is not for one person"><datalist id="lifeCapturePeople">'+(state.peopleProfiles||[]).map(p=>'<option value="'+esc(p.name)+'">').join("")+'</datalist></label>'+
@@ -374,30 +375,55 @@
         const lines=$("#lifeCaptureText").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),date=$("#lifeCaptureWhen").value||ymd(),
           route=$("#lifeCaptureRoute").value,person=$("#lifeCapturePerson").value.trim();
         if(!lines.length)return;
+        const snapshot={tasks:(state.tasks||[]).slice(),shopping:(state.shopping||[]).slice(),waterLogs:(state.waterLogs||[]).slice()};
+        let added=0;
         for(const line of lines){const oz=lifeCaptureWaterOunces(line);if(oz!==null&&(!Number.isFinite(oz)||oz<=0||oz>128)){alert("Check water amount: enter 1–128 oz per line.");return;}}
         for(const line of lines){
           const shoppingMatch=line.match(/^(?:buy|get|pick up|pickup)\s+(.+)/i),asShopping=route==="shopping"||(route==="auto"&&shoppingMatch);
           const waterOz=route==="auto"?lifeCaptureWaterOunces(line):null;
           if(waterOz!==null){
             state.waterLogs=Array.isArray(state.waterLogs)?state.waterLogs:[];
-            state.waterLogs.push({id:uid(),date:ymd(),oz:waterOz,source:"quick-capture"});
+            state.waterLogs.push({id:uid(),date:ymd(),oz:waterOz,source:"quick-capture"});added++;
           }else if(asShopping){
             const item=(shoppingMatch?shoppingMatch[1]:line).trim();
             state.shopping=state.shopping||[];
             if(!state.shopping.some(x=>String(x.item||"").trim().toLowerCase()===item.toLowerCase()&&String(x.status||"needed")==="needed"))
-              state.shopping.push({id:uid(),item:item,qty:"",store:"",status:"needed",source:"quick-capture",createdAt:new Date().toISOString()});
+              {state.shopping.push({id:uid(),item:item,qty:"",store:"",status:"needed",source:"quick-capture",createdAt:new Date().toISOString()});added++;}
           }else{
             const category=lifeInferCategory(line);
             if(!state.tasks.some(x=>!x.done&&x.generated==="quick-capture"&&x.date===date&&String(x.title||"").trim().toLowerCase()===line.toLowerCase()&&String(x.child||"")===person))
-              state.tasks.push({id:uid(),date:date,title:line,child:person,category:category,notes:"Quick capture",done:false,order:55,
-                itineraryMinutes:lifeTaskMinutesFor(line,category),itineraryPreference:category==="school"?"after-school":"",itineraryStart:"",generated:"quick-capture"});
+              {state.tasks.push({id:uid(),date:date,title:line,child:person,category:category,notes:"Quick capture",done:false,order:55,
+                itineraryMinutes:lifeTaskMinutesFor(line,category),itineraryPreference:category==="school"?"after-school":"",itineraryStart:"",generated:"quick-capture"});added++;}
           }
         }
-        await save();closeModal();render();
+        if(!added){alert("Those items are already on your list. Nothing new was saved.");return;}
+        try{await save()}catch(error){
+          state.tasks=snapshot.tasks;state.shopping=snapshot.shopping;state.waterLogs=snapshot.waterLogs;
+          alert("Daily Life could not save these entries. Your previous records were left unchanged. Try again.");
+          return;
+        }
+        closeModal();render();
       });
     const button=document.getElementById("lifeCaptureDictateButton"),field=document.getElementById("lifeCaptureText");
     const status=document.getElementById("lifeCaptureDictateStatus");
     if(!button||!field)return;
+    const preview=document.getElementById("lifeCapturePreview"),routeField=document.getElementById("lifeCaptureRoute");
+    const refreshPreview=()=>{
+      if(!preview)return;
+      const route=routeField?.value||"auto";
+      const lines=field.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      preview.style.whiteSpace="pre-line";
+      preview.textContent=lines.length?lines.map(line=>{
+        const water=route==="auto"?lifeCaptureWaterOunces(line):null;
+        if(water!==null)return "Water today: "+water+" oz"+(water>128?" (check amount)":"");
+        const shopping=line.match(/^(?:buy|get|pick up|pickup)\s+(.+)/i);
+        if(route==="shopping"||(route==="auto"&&shopping))return "Shopping: "+(shopping?shopping[1]:line);
+        return "Task: "+line;
+      }).join("\n"):"Your entries will appear here before saving.";
+    };
+    field.addEventListener("input",refreshPreview);
+    for(const id of ["lifeCaptureRoute","lifeCaptureWhen","lifeCapturePerson"])document.getElementById(id)?.addEventListener("change",refreshPreview);
+    refreshPreview();
     const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!Speech){button.remove();if(status)status.textContent="Use the microphone on your keyboard to dictate.";return;}
     let active=null;
@@ -407,7 +433,7 @@
       recognition.lang="en-US";recognition.interimResults=false;recognition.continuous=false;
       recognition.onresult=event=>{
         const words=Array.from(event.results||[]).map(x=>x[0]?.transcript||"").join(" ").trim();
-        if(words){field.value+=(field.value.trim()?"\n":"")+words;field.focus();}
+        if(words){field.value+=(field.value.trim()?"\n":"")+words;field.focus();refreshPreview();}
         if(status)status.textContent="Review what was heard, then tap Add.";
       };
       recognition.onerror=()=>{if(status)status.textContent="Speech unavailable. Try your keyboard microphone instead.";};
