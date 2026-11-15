@@ -1517,7 +1517,8 @@ function cloudApplyLifeEntry(row){
         // have the same title many times.
         const same=(state.tasks||[]).filter(x=>(targetId?String(x.id)===targetId:sameTask(x)));
         if(same.length){
-          const existing=same.find(x=>String(x.category||"").toLowerCase()===incomingCategory.toLowerCase())||same[0];
+          const genericCategory=value=>["","life","task","general"].includes(key(value));
+          const existing=(!genericCategory(incomingCategory)&&same.find(x=>key(x.category)===key(incomingCategory)))||same.find(x=>!genericCategory(x.category))||same[0];
           existing.date=String(p.date||date);existing.category=categoryFor(existing);
           if(p.done===true){existing.done=true;existing.completedAt=String(p.completedAt||row.created_at||new Date().toISOString())}
           if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
