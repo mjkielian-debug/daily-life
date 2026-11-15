@@ -19,7 +19,7 @@ function wardrobeSpriteThumb(item){
  const data=key&&sprites&&typeof sprites==="object"?sprites[key]:null;
  const source=String(data?.imageData||"");
  const columns=Number(data?.columns),rows=Number(data?.rows),index=Number(item?.wardrobeSpriteIndex);
- if(!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(source)||!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||columns>20||rows>20||!Number.isInteger(index)||index<0||index>=columns*rows)return "";
+ if(!/^data:image\/(?:jpeg|webp);base64,[a-z0-9+/=]+$/i.test(source)||!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||columns>20||rows>20||!Number.isInteger(index)||index<0||index>=columns*rows)return "";
  const x=index%columns,y=Math.floor(index/columns);
  const xPos=columns===1?0:(x/(columns-1))*100,yPos=rows===1?0:(y/(rows-1))*100;
  return '<span class="dl-clothing-thumb" role="img" aria-label="Illustration of '+esc(item?.name||"clothing")+'" style="background-image:url('+source+');background-size:'+(columns*100)+'% '+(rows*100)+'%;background-position:'+xPos+'% '+yPos+'%;background-repeat:no-repeat;background-color:#fff"></span>';
