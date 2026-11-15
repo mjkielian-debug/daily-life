@@ -509,7 +509,7 @@ function view(areaOverride,tasksOnly){
   const taskGroup=(title,items,subtitle)=>items.length?'<section class="lm-area-task-group"><div class="lm-area-section-heading"><b>'+h(title)+'</b><small>'+items.length+' task'+(items.length===1?"":"s")+(subtitle?' · '+h(subtitle):"")+'</small></div><div class="lm-list">'+items.map(taskRow).join("")+'</div></section>':"";
   const historyTaskGroup=(title,items,summary)=>items.length?'<details class="lm-area-task-history"><summary>'+h(title)+' · '+items.length+'</summary>'+(summary?'<p>'+h(summary)+'</p>':"")+'<div class="lm-list">'+items.map(taskRow).join("")+'</div></details>':"";
   const currentOpen=rows.filter(x=>!x.done).length;
-  const activeCount=currentOpen+anytimeTasks.length+upcomingTasks.length;
+  const activeCount=currentOpen; // Future and anytime work stays in the collapsed Other tasks section.
   const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
   const tracker=trackers[areaSelection];
   const todayGroup='<section class="lm-area-task-group" aria-label="Today and check-ins">'+
@@ -522,7 +522,7 @@ function view(areaOverride,tasksOnly){
   return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'">'+
    '<header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar & house</button>'+
    '<span class="lm-kicker">YOUR CATEGORY TASKS</span><h1>'+h(areaTitles[areaSelection])+'</h1>'+
-   '<div class="lm-area-task-lead"><span><strong>'+activeCount+'</strong><small>active today, anytime or upcoming</small></span>'+
+   '<div class="lm-area-task-lead"><span><strong>'+activeCount+'</strong><small>needs attention today</small></span>'+
    '<button type="button" class="lm-area-add-task" onclick="lifeMapOpenAreaTask(&#39;'+h(areaSelection)+'&#39;)">＋ Add task here</button></div></header>'+
    '<section class="lm-inline-panel lm-area-page-content lm-area-task-workspace" aria-label="'+h(areaTitles[areaSelection])+' task list">'+
    todayGroup+
