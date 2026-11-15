@@ -16,6 +16,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate main app scripts
-        run: node --check life-orchestrator.js && node --check holiday-gifts.js && node --check schedule-photo-import.js && node --check workday-focus.js && node --check ssd-route-capture.js && node --check workday-protection.js && node --check chat-checkin.js && node --check cloud.js && node --check sync-status.js
+        run: node --check life-orchestrator.js && node --check holiday-gifts.js && node --check schedule-photo-import.js && node --check workday-focus.js && node --check ssd-route-capture.js && node --check workday-protection.js && node --check chat-checkin.js && node --check chat-share.js && node --check sw.js && node --check cloud.js && node --check sync-status.js
       - name: Run dependency-free app regression tests
         run: node --test tests/*.test.cjs
