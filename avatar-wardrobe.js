@@ -487,7 +487,10 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    const localSprites=state.settings.wardrobeImageSprites&&typeof state.settings.wardrobeImageSprites==="object"?state.settings.wardrobeImageSprites:{};
    for(const id of needed){
     const sprite=sourceSprites[id],uri=String(sprite?.imageData||"");
-    if(!localSprites[id]&&/^data:image\/(?:jpeg|webp);base64,[a-z0-9+/=]+$/i.test(uri)&&uri.length<2500000){
+    const localLength=String(localSprites[id]?.imageData||"").length;
+    // Replace the old tiny thumbnail only when the private cloud image is
+    // strictly higher resolution (as represented by the larger encoded asset).
+    if((!localSprites[id]||uri.length>localLength)&&/^data:image\/(?:jpeg|webp);base64,[a-z0-9+/=]+$/i.test(uri)&&uri.length<2500000){
      localSprites[id]=structuredClone(sprite);changed++;
     }
    }
