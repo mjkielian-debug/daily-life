@@ -436,6 +436,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
  function kind(x){
   const t=String(x?.wardrobeType||"").toLowerCase(),n=String(x?.name||"").toLowerCase();
   if(t==="long_sleeve"||t==="short_sleeve"||/\b(top|shirt|blouse|tee|t-shirt)\b/.test(n))return"top";
+  if(t==="pajamas"||t==="sleepwear"||/\b(pajama|pyjama|sleepwear)\b/.test(n))return"sleep";
   if(t==="pants"||/\b(pants|jeans|shorts|leggings|skirt)\b/.test(n))return"bottom";
   if(/\b(dress|romper|jumpsuit)\b/.test(n)||t==="dress")return"dress";
   if(t==="hoodie_jacket"||t==="winter_coat"||/\b(hoodie|jacket|coat|cardigan|sweater|vest)\b/.test(n))return"layer";
