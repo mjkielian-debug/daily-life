@@ -14,13 +14,22 @@
   }
   function parseText(value){
     const s=String(value||"");
-    const times=s.match(/\b(\d{1,2}:[0-5]\d)\s*(?:to|through|until|[-–—])\s*(\d{1,2}:[0-5]\d)\b/i);
+    const pairs=[...s.matchAll(/\b(\d{1,2}:[0-5]\d)\s*(?:to|through|until|[-–—])\s*(\d{1,2}:[0-5]\d)\b/ig)];
+    // A message may contain preload AND SSD shifts. Never silently use the
+    // first time pair when the SSD route can be distinguished.
+    const tagged=pairs.find(pair=>{
+      const prefix=s.slice(Math.max(0,pair.index-48),pair.index);
+      return /\b(?:ssd|delivery|route)\b(?:[\s:=-]*\w+){0,3}[\s:=-]*$/i.test(prefix);
+    });
+    const ambiguous=pairs.length>1&&!tagged;
+    const times=tagged||(pairs.length===1?pairs[0]:null);
     const readings=s.match(/\b(\d{4,8})\s*(?:to|through|until|[-–—])\s*(\d{4,8})\b/i);
     return {
       start:times?timeValue(times[1]):"",
       end:times?timeValue(times[2]):"",
       odoStart:readings?readings[1]:"",
-      odoEnd:readings?readings[2]:""
+      odoEnd:readings?readings[2]:"",
+      ambiguousTimes:ambiguous
     };
   }
   function optionalNumber(raw,max,whole=false){
@@ -45,6 +54,7 @@
     if(odoStart.value!==null&&odoEnd.value<odoStart.value)return {error:"The ending odometer cannot be smaller than the starting reading."};
     const odometerMiles=odoStart.value===null?null:odoEnd.value-odoStart.value;
     if(odometerMiles!==null&&odometerMiles>2000)return {error:"The odometer change is unusually large. Check the readings."};
+    if(odometerMiles!==null&&miles.value!==null&&Math.abs(odometerMiles-miles.value)>0.05)return {error:"Entered miles differ from the odometer change. Clear the manual miles field or correct the readings."};
     if(elapsed===null&&odometerMiles===null&&hours.value===null&&miles.value===null)return {error:"Enter route times, odometer readings, hours, or miles."};
     return {
       start,end,elapsed,odoStart:odoStart.value,odoEnd:odoEnd.value,
@@ -52,7 +62,15 @@
       hours:hours.value,odometerMiles
     };
   }
-  window.dailyLifeSSDRouteParsing=Object.freeze({timeMinutes,parseText,calculate});
+  function summaryFor(date,route){
+    const rows=["SSD route · "+String(date)];
+    if(route.start&&route.end)rows.push("Delivery: "+route.start+"–"+route.end);
+    if(route.odoStart!==null&&route.odoEnd!==null)rows.push("Odometer: "+route.odoStart+" → "+route.odoEnd);
+    if(route.miles!==null)rows.push("Route miles: "+route.miles);
+    if(route.hours!==null)rows.push("Confirmed paid SSD hours: "+route.hours);
+    return rows.join("\n");
+  }
+  window.dailyLifeSSDRouteParsing=Object.freeze({timeMinutes,parseText,calculate,summaryFor});
   window.openSSDRouteQuickLog=function(date){
     date=String(date||(typeof ymd==="function"?ymd():new Date().toISOString().slice(0,10)));
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
@@ -69,6 +87,8 @@
       '<div class="grid2"><label>Paid SSD hours (optional)<input type="number" min="0" max="24" step=".01" id="ssdRouteHours" value="'+escapeText(previous.ssdHours??"")+'" placeholder="Confirm from UPS"></label>'+
       '<label>SSD miles if no odometer pair<input type="number" min="0" max="2000" step=".1" id="ssdRouteMiles" value="'+escapeText(previous.ssdMiles??"")+'" placeholder="Automatically calculated"></label></div>'+
       '<div class="notice small" id="ssdRoutePreview" aria-live="polite">Enter known route details to preview mileage.</div>'+
+      '<button type="button" id="ssdRouteCopy" class="btn">Copy SSD details for supervisor</button>'+
+      '<div class="muted small">Copying does not save or send a text. Check the details, save the route separately, then paste into your supervisor message.</div>'+
       '<div class="muted small">Time difference is elapsed time, not necessarily payable hours. Leave paid hours blank if unconfirmed. If both odometer readings are entered, their difference is used for mileage.</div>'+
     '</div>';
     modal("UPS · Record SSD route",body,"Save SSD route",async()=>{
@@ -113,8 +133,43 @@
     for(const id of ["ssdRouteStart","ssdRouteEnd","ssdRouteOdoStart","ssdRouteOdoEnd","ssdRouteHours","ssdRouteMiles"]){
       document.getElementById(id)?.addEventListener("input",refresh);
     }
+    // When selecting another date, restore THAT day's data, not the previously
+    // displayed day's route. Otherwise a single tap could copy miles to the wrong day.
+    document.getElementById("ssdRouteDate")?.addEventListener("change",()=>{
+      const selected=String(document.getElementById("ssdRouteDate")?.value||"");
+      const chosen=(state.workShifts||[]).find(row=>row.date===selected)||{};
+      for(const [id,entry] of [
+        ["ssdRouteStart",chosen.deliveryStart||""],
+        ["ssdRouteEnd",chosen.deliveryEnd||""],
+        ["ssdRouteOdoStart",chosen.ssdOdometerStart??""],
+        ["ssdRouteOdoEnd",chosen.ssdOdometerEnd??""],
+        ["ssdRouteHours",chosen.ssdHours??""],
+        ["ssdRouteMiles",chosen.ssdMiles??""],
+        ["ssdRouteText",""]
+      ]){
+        const input=document.getElementById(id);
+        if(input)input.value=String(entry);
+      }
+      refresh();
+    });
+    document.getElementById("ssdRouteCopy")?.addEventListener("click",async()=>{
+      const route=calculate(read());
+      if(route.error){alert(route.error);return}
+      const chosenDate=String(document.getElementById("ssdRouteDate")?.value||"");
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(chosenDate)){alert("Choose a valid route date.");return}
+      const report=summaryFor(chosenDate,route);
+      try{
+        if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
+        await navigator.clipboard.writeText(report);
+        alert("SSD details copied. Paste into your text to your supervisor. This did not send a message or save the route.");
+      }catch(error){
+        if(typeof window.prompt==="function")window.prompt("Copy this SSD report:",report);
+        else alert("Copy unavailable on this device. The report is still visible in your fields.");
+      }
+    });
     document.getElementById("ssdRouteParse")?.addEventListener("click",()=>{
       const parsed=parseText(document.getElementById("ssdRouteText")?.value);
+      if(parsed.ambiguousTimes){alert("I found multiple time ranges. Please specify which one is SSD/delivery, or enter the times manually.");return}
       if(!parsed.start&&!parsed.odoStart){alert("No recognizable route time or odometer pair. Try 9:42 to 13:59, 91372 to 91395.");return}
       for(const [id,value] of [["ssdRouteStart",parsed.start],["ssdRouteEnd",parsed.end],["ssdRouteOdoStart",parsed.odoStart],["ssdRouteOdoEnd",parsed.odoEnd]]){
         if(!value)continue;
