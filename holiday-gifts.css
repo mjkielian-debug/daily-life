@@ -22,3 +22,18 @@
 .holiday-gift-item-row input,.holiday-gift-item-row select{width:100%;min-width:0}
 .holiday-gift-item-row button{justify-self:start}
 .holiday-gift-editor{max-height:72vh;overflow:auto;overscroll-behavior:contain}
+
+/* Elfster shortcuts stay independent from gift completion and Christmas budgets. */
+.holiday-gift-person-row{display:grid;gap:3px;min-width:0;border-radius:15px}
+.holiday-gift-person-row>.holiday-gift-person{border-radius:13px 13px 7px 7px}
+.holiday-elfster-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:0 8px 7px}
+.holiday-elfster-actions button{border:1px solid rgba(151,108,165,.26);border-radius:10px;padding:7px 11px;min-height:34px;font:inherit;font-size:.79rem;cursor:pointer;background:rgba(249,232,255,.86);color:#683c7a}
+.holiday-elfster-actions .holiday-elfster-open{background:linear-gradient(115deg,#fce7f1,#ebebff);font-weight:700}
+.holiday-elfster-actions .holiday-elfster-edit{background:transparent;border-color:transparent;text-decoration:underline}
+.holiday-elfster-actions button:focus-visible{outline:2px solid #7749b4;outline-offset:2px}
+.holiday-gift-idea-suggestions{display:grid;gap:8px}
+.holiday-gift-idea-suggestions>small{opacity:.74}
+.holiday-gift-idea-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:7px}
+.holiday-gift-idea-choice{background:linear-gradient(145deg,rgba(255,231,246,.82),rgba(225,236,255,.84));border:1px solid rgba(139,94,148,.25);border-radius:12px;text-align:left;padding:10px;font:inherit;cursor:pointer;display:grid;gap:4px}
+.holiday-gift-idea-choice small{color:#824875;font-weight:700}
+.elfster-link-editor input[type=url]{width:100%;min-width:0}
