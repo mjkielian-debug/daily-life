@@ -427,7 +427,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
  "use strict";
  const people=["Michelle","Leo","Demitri","Dolly","Ambrose"];
  const categories=[["all","Everything"],["top","Tops"],["bottom","Bottoms"],["dress","Dresses"],["layer","Layers"],["shoes","Shoes"],["sleep","Sleepwear"],["other","Other"]];
- let wearer="Michelle",filter="all";
+ let wearer="Michelle",filter="all",flipIndex=0;
  let selected=new Set();
  let visibleItems=[];
  const escValue=v=>typeof window.esc==="function"?window.esc(String(v??"")):String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -435,7 +435,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
  function itemOwner(x){return String(x?.wardrobeOwner||x?.inventoryOwner||"")}
  function kind(x){
   const t=String(x?.wardrobeType||"").toLowerCase(),n=String(x?.name||"").toLowerCase();
-  if(t==="long_sleeve"||t==="short_sleeve"||/\b(top|shirt|blouse|tee|t-shirt)\b/.test(n))return"top";
+  if(t==="long_sleeve"||t==="short_sleeve"||t==="sports_bra"||/\b(top|shirt|blouse|tee|t-shirt|sports bra)\b/.test(n))return"top";
   if(t==="pajamas"||t==="sleepwear"||/\b(pajama|pyjama|sleepwear)\b/.test(n))return"sleep";
   if(t==="pants"||/\b(pants|jeans|shorts|leggings|skirt)\b/.test(n))return"bottom";
   if(/\b(dress|romper|jumpsuit)\b/.test(n)||t==="dress")return"dress";
@@ -523,13 +523,26 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
   const active=selectedRows();
   const looks=savedLooks().filter(x=>x.person===wearer).slice(-8).reverse();
   const filters=categories.map(([id,label])=>'<button type="button" class="'+(filter===id?"fc-filter fc-filter-on":"fc-filter")+'" aria-pressed="'+(filter===id)+'" onclick="familyClosetFilter(\''+id+'\')">'+label+'</button>').join("");
-  const cards=visibleItems.map(x=>{
-   const id=safeArg(x.id),on=selected.has(String(x.id));
-   return '<div class="fc-piece-with-care"><button type="button" class="'+(on?"fc-piece fc-piece-on":"fc-piece")+'" aria-pressed="'+on+'" onclick="familyClosetToggle(\''+id+'\')">'+
-    '<div class="fc-piece-photo">'+photoHtml(x)+'</div><b>'+escValue(x.name||"Clothing item")+'</b>'+
-    '<small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+' · ×'+Math.max(1,Number(x.quantity||1))+'</small>'+
-    (x.status==="Low"||x.status==="Need"?'<em>Needs more</em>':"")+'</button>'+window.wardrobeWearControls("inventory:"+x.id,false)+'</div>';
-  }).join("");
+  if(flipIndex>=visibleItems.length)flipIndex=0;
+  const current=visibleItems[flipIndex]||null;
+  const previous=visibleItems.length>1?visibleItems[(flipIndex-1+visibleItems.length)%visibleItems.length]:null;
+  const next=visibleItems.length>1?visibleItems[(flipIndex+1)%visibleItems.length]:null;
+  const currentOn=!!current&&selected.has(String(current.id));
+  const itemLabel= current?escValue(current.name||"Clothing item"):"";
+  const garmentScene=current?'<section class="fc-flip-closet" aria-label="Flip through '+escValue(wearer)+' clothing">'+
+    '<div class="fc-flip-topline"><span>✦ '+escValue(wearer)+'’s closet</span><span class="fc-flip-counter">'+(flipIndex+1)+' / '+visibleItems.length+'</span></div>'+
+    '<div class="fc-flip-scene" id="fcFlipScene"><div class="fc-flip-rail"></div>'+
+    (previous?'<span class="fc-flip-peek fc-flip-peek-left" aria-hidden="true">'+photoHtml(previous)+'</span>':"")+
+    '<div class="fc-flip-front"><div class="fc-hanger" aria-hidden="true"><svg viewBox="0 0 100 45"><path d="M47 12c-1-11 15-12 15-1 0 8-12 12-12 17L6 43h88L50 28" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
+    '<div class="fc-flip-photo" role="img" aria-label="'+itemLabel+'">'+photoHtml(current)+'</div></div>'+
+    (next?'<span class="fc-flip-peek fc-flip-peek-right" aria-hidden="true">'+photoHtml(next)+'</span>':"")+
+    '<button class="fc-flip-arrow fc-flip-arrow-prev" type="button" onclick="familyClosetStep(-1)" '+(previous?"":'disabled')+' aria-label="Previous clothing item">‹</button>'+
+    '<button class="fc-flip-arrow fc-flip-arrow-next" type="button" onclick="familyClosetStep(1)" '+(next?"":'disabled')+' aria-label="Next clothing item">›</button></div>'+
+    '<div class="fc-flip-caption"><b>'+itemLabel+'</b><span>'+escValue(categories.find(c=>c[0]===kind(current))?.[1]||"Other")+' · Swipe to browse</span></div>'+
+    '<div class="fc-flip-actions"><button type="button" class="btn '+(currentOn?'fc-flip-added':'primary')+'" aria-pressed="'+currentOn+'" onclick="familyClosetToggle(\''+safeArg(current.id)+'\')">'+(currentOn?'✓ Added to look':'+ Add to outfit')+'</button>'+
+    '<span class="fc-flip-wear">'+window.wardrobeWearControls("inventory:"+current.id,false)+'</span></div>'+
+    '<div class="fc-flip-pips" aria-label="Closet progress"><span class="fc-flip-track"><span style="width:'+(((flipIndex+1)/visibleItems.length)*100)+'%"></span></span></div>'+
+    '</section>':"";
   const preview=active.length?active.map(x=>'<div class="fc-look-piece"><span class="fc-look-thumb">'+photoHtml(x)+'</span><span><b>'+escValue(x.name||"Clothing item")+'</b><small>'+escValue(categories.find(c=>c[0]===kind(x))?.[1]||"Other")+'</small></span></div>').join(""):'<p class="fc-empty-look">Tap pieces above to build a look.</p>';
   const saved=looks.length?'<div class="fc-saved-looks">'+looks.map(x=>'<button type="button" onclick="familyClosetLoad(\''+safeArg(x.id)+'\')"><b>'+escValue(x.name||"Saved look")+'</b><small>'+escValue(x.date||"")+' · '+(x.itemIds||[]).length+' pieces</small></button>').join("")+'</div>':'<p class="fc-muted">Saved looks will show here.</p>';
   root.innerHTML=
@@ -537,17 +550,40 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
    '<p class="fc-intro">A Clueless-style closet built from confirmed clothing in your household inventory. Photos stay in your private photo inbox.</p>'+
    gapHtml(wearer)+
    '<div class="fc-filter-row">'+filters+'</div>'+
-   (visibleItems.length?'<div class="fc-grid">'+cards+'</div>':closetCloudLoading?'<div class="fc-empty"><b>Checking your saved wardrobe…</b><small>Loading clothing you already added to Daily Life.</small></div>':closetCloudError?'<div class="fc-empty"><b>Could not load saved clothes</b><small>'+escValue(closetCloudError)+'</small><button type="button" class="btn primary" onclick="familyClosetCloudRefresh()">Retry wardrobe sync</button></div>':'<div class="fc-empty"><span>🪞</span><b>'+escValue(wearer)+'’s visual closet is ready for clothes.</b><small>If you already saved clothing, sign in to Daily Life cloud and tap Refresh saved clothes. No need to photograph it again.</small><button type="button" class="btn primary" onclick="familyClosetCloudRefresh()">Refresh saved clothes</button><button type="button" class="btn" onclick="closeModal();openPhotoInbox(\'inventory\')">📷 Add new clothing photos</button></div>')+
+   (visibleItems.length?garmentScene:closetCloudLoading?'<div class="fc-empty"><b>Checking your saved wardrobe…</b><small>Loading clothing you already added to Daily Life.</small></div>':closetCloudError?'<div class="fc-empty"><b>Could not load saved clothes</b><small>'+escValue(closetCloudError)+'</small><button type="button" class="btn primary" onclick="familyClosetCloudRefresh()">Retry wardrobe sync</button></div>':'<div class="fc-empty"><span>🪞</span><b>'+escValue(wearer)+'’s visual closet is ready for clothes.</b><small>If you already saved clothing, sign in to Daily Life cloud and tap Refresh saved clothes. No need to photograph it again.</small><button type="button" class="btn primary" onclick="familyClosetCloudRefresh()">Refresh saved clothes</button><button type="button" class="btn" onclick="closeModal();openPhotoInbox(\'inventory\')">📷 Add new clothing photos</button></div>')+
       '<section class="fc-look"><div class="fc-look-head"><div><span class="fc-kicker">OUTFIT MIXER</span><b>Your selected look</b></div><span>'+active.length+' piece'+(active.length===1?"":"s")+'</span></div>'+
    '<div class="fc-look-pieces">'+preview+'</div>'+
 
    '<div class="fc-actions"><button type="button" class="btn primary" '+(!active.length?"disabled":"")+' onclick="familyClosetSave()">Save this look</button><button type="button" class="btn" onclick="familyClosetClear()">Clear selection</button><button type="button" class="btn" onclick="closeModal();openInventoryPhotoReview()">Review clothing photos</button></div></section>'+
    '<section class="fc-looks"><b>Saved looks for '+escValue(wearer)+'</b>'+saved+'</section>';
+  const swipe=root.querySelector("#fcFlipScene");
+  if(swipe&&visibleItems.length>1){
+   let startX=null,startY=null;
+   swipe.addEventListener("touchstart",event=>{
+    if(event.touches.length!==1)return;
+    startX=event.touches[0].clientX;startY=event.touches[0].clientY;
+   },{passive:true});
+   swipe.addEventListener("touchend",event=>{
+    if(startX===null||!event.changedTouches.length)return;
+    const dx=event.changedTouches[0].clientX-startX;
+    const dy=event.changedTouches[0].clientY-startY;
+    startX=null;startY=null;
+    if(Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.25){
+     if(event.cancelable)event.preventDefault();
+     window.familyClosetStep(dx<0?1:-1);
+    }
+   },{passive:false});
+  }
   if(typeof window.inventoryLoadSavedItemPhotos==="function")Promise.resolve().then(()=>window.inventoryLoadSavedItemPhotos());
  }
  window.refreshFamilyClosetWear=render;
- window.familyClosetPerson=function(person){if(!people.includes(person))return;wearer=person;filter="all";selected.clear();render()};
- window.familyClosetFilter=function(value){if(!categories.some(c=>c[0]===value))return;filter=value;render()};
+ window.familyClosetPerson=function(person){if(!people.includes(person))return;wearer=person;filter="all";flipIndex=0;selected.clear();render()};
+ window.familyClosetFilter=function(value){if(!categories.some(c=>c[0]===value))return;filter=value;flipIndex=0;render()};
+ window.familyClosetStep=function(delta){
+  if(!visibleItems.length)return;
+  flipIndex=(flipIndex+(delta<0?-1:1)+visibleItems.length)%visibleItems.length;
+  render();
+ };
  window.familyClosetToggle=function(id){if(!id)return;selected.has(id)?selected.delete(id):selected.add(id);render()};
  window.familyClosetClear=function(){selected.clear();render()};
  window.familyClosetSave=async function(){
@@ -560,7 +596,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
  };
  window.familyClosetLoad=function(id){const look=savedLooks().find(x=>x.id===id&&x.person===wearer);if(!look)return;selected=new Set((look.itemIds||[]).map(String));filter="all";render()};
  window.openFamilyCloset=function(person){
-  wearer=people.includes(person)?person:"Michelle";filter="all";selected.clear();
+  wearer=people.includes(person)?person:"Michelle";filter="all";flipIndex=0;selected.clear();
   modal("The Clueless Closet",'<div id="familyClosetBody"></div>',"Close",closeModal);render();
   // Cloud updates may have been saved while the app was already open.
   Promise.resolve().then(()=>window.familyClosetCloudRefresh()).catch(()=>{});
