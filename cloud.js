@@ -745,6 +745,9 @@ async function cloudPollAssistantPatches(){
       cloudError="ChatGPT changes were added on this phone, but a sync conflict needs your review. No local changes were discarded.";
     }
     if(typeof render==="function")render();
+    // The visual closet is a modal outside the main render tree.
+    // Refresh it immediately after confirmed clothing patches are applied.
+    if(typeof window.refreshFamilyClosetWear==="function")window.refreshFamilyClosetWear();
   }catch(error){
     cloudError=error?.message||"Could not check for Daily Life updates.";
   }finally{cloudAssistantPatchPollBusy=false}
