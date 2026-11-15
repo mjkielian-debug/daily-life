@@ -8,16 +8,17 @@ const vm=require("node:vm");
 const script=fs.readFileSync(path.join(__dirname,"..","ssd-route-capture.js"),"utf8");
 function setup(){
  const state={workShifts:[{id:"original",date:"2026-11-12",start:"04:45",end:"09:30",scheduled:"04:45",ssdHours:"",ssdMiles:"",notes:"Actual preload punches"}]};
- let form={},handler=null,saved=0,closed=0,message="",fail=false;
+ let form={},handler=null,saved=0,closed=0,message="",fail=false,copied="";
  for(const [id,value] of Object.entries({
   ssdRouteDate:"2026-11-12",ssdRouteText:"",
   ssdRouteStart:"09:42",ssdRouteEnd:"13:59",
   ssdRouteOdoStart:"91372",ssdRouteOdoEnd:"91395",
   ssdRouteHours:"",ssdRouteMiles:""
- })){form[id]={value,addEventListener:()=>{},style:{},textContent:""}}
- form.ssdRouteParse={addEventListener:()=>{}};
+ })){form[id]={value,listeners:{},addEventListener(name,fn){this.listeners[name]=fn},style:{},textContent:""}}
+ form.ssdRouteParse={listeners:{},addEventListener(name,fn){this.listeners[name]=fn}};
+ form.ssdRouteCopy={listeners:{},addEventListener(name,fn){this.listeners[name]=fn}};
  form.ssdRoutePreview={style:{},textContent:""};
- const ctx={window:{},state,console,
+ const ctx={window:{},state,console,navigator:{clipboard:{writeText:async text=>{copied=text}}},
    document:{getElementById:id=>form[id]||null},
    uid:()=>"new-route",ymd:()=>"2026-11-12",
    modal:(_title,_body,_label,callback)=>{handler=callback},
@@ -26,7 +27,10 @@ function setup(){
  };
  vm.runInNewContext(script,ctx,{filename:"ssd-route-capture.js"});
  return {ctx,state,form,run:()=>handler(),open:()=>ctx.window.openSSDRouteQuickLog("2026-11-12"),
-   setFail:value=>fail=!!value,saved:()=>saved,closed:()=>closed,message:()=>message};
+   setFail:value=>fail=!!value,saved:()=>saved,closed:()=>closed,message:()=>message,copied:()=>copied,
+   changeDate:date=>{form.ssdRouteDate.value=date;form.ssdRouteDate.listeners.change()},
+   paste:async value=>{form.ssdRouteText.value=value;return form.ssdRouteParse.listeners.click()},
+   copy:async()=>form.ssdRouteCopy.listeners.click()};
 }
 test("parses time and odometer shorthand without inventing hours",()=>{
  const p=setup().ctx.window.dailyLifeSSDRouteParsing;
@@ -64,4 +68,55 @@ test("duplicate route saves update the existing day instead of adding a new shif
  const x=setup();x.open();await x.run();
  x.open();await x.run();
  assert.equal(x.state.workShifts.length,1);
+});
+
+test("a multi-part shift message chooses the labeled SSD time",()=>{
+ const p=setup().ctx.window.dailyLifeSSDRouteParsing;
+ const a=p.parseText("Preload 4:45 to 9:30. SSD 9:42 to 13:59. Odometer 91372 to 91395");
+ assert.equal(a.start,"09:42");
+ assert.equal(a.end,"13:59");
+ assert.equal(a.ambiguousTimes,false);
+ const unclear=p.parseText("4:45 to 9:30 and 9:42 to 13:59");
+ assert.equal(unclear.start,"");
+ assert.equal(unclear.ambiguousTimes,true);
+});
+test("conflicting manual mileage and odometer readings require review",()=>{
+ const p=setup().ctx.window.dailyLifeSSDRouteParsing;
+ const check=p.calculate({start:"09:42",end:"13:59",odoStart:91372,odoEnd:91395,miles:30});
+ assert.match(check.error,/differ from the odometer/);
+ const good=p.calculate({start:"09:42",end:"13:59",odoStart:91372,odoEnd:91395,miles:23});
+ assert.equal(good.miles,23);
+});
+test("changing date loads only that day's existing route, preventing copied old mileage",async()=>{
+ const x=setup();
+ x.state.workShifts.push({id:"other",date:"2026-11-13",deliveryStart:"08:47",deliveryEnd:"13:57",ssdMiles:33,ssdOdometerStart:91395,ssdOdometerEnd:91428});
+ x.open();
+ x.changeDate("2026-11-13");
+ assert.equal(x.form.ssdRouteStart.value,"08:47");
+ assert.equal(x.form.ssdRouteEnd.value,"13:57");
+ assert.equal(x.form.ssdRouteOdoStart.value,"91395");
+ assert.equal(x.form.ssdRouteOdoEnd.value,"91428");
+ assert.equal(x.form.ssdRouteMiles.value,"33");
+ await x.run();
+ assert.equal(x.state.workShifts.length,2);
+ assert.equal(x.state.workShifts[0].ssdMiles,"");
+ assert.equal(x.state.workShifts[1].ssdMiles,33);
+ x.changeDate("2026-11-14");
+ assert.equal(x.form.ssdRouteOdoStart.value,"");
+ assert.equal(x.form.ssdRouteMiles.value,"");
+});
+test("copying the SSD report does not send or save a text",async()=>{
+ const x=setup();x.open();
+ await x.copy();
+ assert.match(x.copied(),/SSD route · 2026-11-12/);
+ assert.match(x.copied(),/Delivery: 09:42–13:59/);
+ assert.match(x.copied(),/Odometer: 91372 → 91395/);
+ assert.match(x.copied(),/Route miles: 23/);
+ assert.equal(x.saved(),0);
+ assert.match(x.message(),/did not send a message/);
+});
+test("ambiguous pasted work hours are not silently assigned to SSD",async()=>{
+ const x=setup();x.open();
+ await x.paste("Preload 04:45 to 09:30; 09:42 to 13:59");
+ assert.match(x.message(),/multiple time ranges/);
 });
