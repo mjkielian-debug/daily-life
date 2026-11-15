@@ -1502,26 +1502,38 @@ function cloudApplyLifeEntry(row){
       const child=typeof canonicalPersonName==="function"?canonicalPersonName(p.child):String(p.child||"");
       const key=v=>String(v||"").trim().toLocaleLowerCase().replace(/\s+/g," ");
       const targetId=String(p.taskId||"").trim();
+      const incomingCategory=String(p.category||"").trim();
+      // A generic chat note cannot accidentally move an existing Family, Home,
+      // Work, Money, or other specific task into the General category.
+      const categoryFor=existing=>{
+        const current=String(existing.category||"life");
+        const generic=value=>["","life","task","general"].includes(key(value));
+        return incomingCategory&&(!generic(incomingCategory)||generic(current)||p.reassignCategory===true)
+          ?incomingCategory:current;
+      };
+      const sameTask=(x)=>key(x.title)===key(title)&&key(x.child)===key(child)&&String(x.date||"")===String(p.date||date);
       if(p.dedupeMatching===true){
-        const same=(state.tasks||[]).filter(x=>key(x.title)===key(title));
+        // Never consolidate other dates or children: daily routines intentionally
+        // have the same title many times.
+        const same=(state.tasks||[]).filter(x=>(targetId?String(x.id)===targetId:sameTask(x)));
         if(same.length){
-          const existing=(targetId&&same.find(x=>String(x.id)===targetId))||same.find(x=>String(x.category||"").toLowerCase()===String(p.category||"").toLowerCase())||same[0];
-          existing.date=String(p.date||date);existing.category=String(p.category||existing.category||"life");
+          const existing=same.find(x=>String(x.category||"").toLowerCase()===incomingCategory.toLowerCase())||same[0];
+          existing.date=String(p.date||date);existing.category=categoryFor(existing);
           if(p.done===true){existing.done=true;existing.completedAt=String(p.completedAt||row.created_at||new Date().toISOString())}
-          if(p.notes&&String(p.notes).trim())existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
+          if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
           existing.cloudEntryId=row.id;
           const keepId=String(existing.id);
-          state.tasks=state.tasks.filter(x=>key(x.title)!==key(title)||String(x.id)===keepId);
+          state.tasks=state.tasks.filter(x=>!sameTask(x)||String(x.id)===keepId);
           return true;
         }
       }
-      const matches=targetId?(state.tasks||[]).filter(x=>String(x.id)===targetId):(state.tasks||[]).filter(x=>x.date===date&&key(x.title)===key(title)&&key(x.child)===key(child));
+      const matches=targetId?(state.tasks||[]).filter(x=>String(x.id)===targetId):(state.tasks||[]).filter(sameTask);
       if(matches.length){
         // A conversational update should check off an existing task, not
         // duplicate the scheduled row or overwrite a true value with unknown.
         const existing=matches.find(x=>x.generated)||matches[0];
         if(p.date&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(p.date)))existing.date=String(p.date);
-        if(p.category)existing.category=String(p.category);
+        existing.category=categoryFor(existing);
         if(p.done===true){existing.done=true;existing.completedAt=String(p.completedAt||row.created_at||new Date().toISOString())}
         if(p.notes&&String(p.notes).trim()&&!String(existing.notes||"").includes(String(p.notes).trim()))
           existing.notes=[String(existing.notes||"").trim(),String(p.notes).trim()].filter(Boolean).join(" · ");
