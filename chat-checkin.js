@@ -12,18 +12,27 @@
   if(h<17)return "afternoon";
   return "evening";
  }
+ function chatWorkdayFinished(shift){
+   if(!shift)return false;
+   // The regular end field is usually the PRELOAD punch, not SSD finish.
+   if(shift.deliveryStart&&shift.deliveryEnd)return true;
+   if(Number(shift.ssdHours||0)>0&&!shift.deliveryStart)return true;
+   if(shift.ssdNotScheduled===true&&shift.end)return true;
+   return false;
+ }
+ window.dailyLifeChatWorkdayFinished=chatWorkdayFinished;
  function prompts(){
   const part=dayPart(),workday=typeof isUsualWorkday==="function"?isUsualWorkday(ymd()):[2,3,4,5,6].includes(new Date().getDay()),
    date=typeof ymd==="function"?ymd():"",
    shift=(state.workShifts||[]).find(x=>x.date===date),
-   finishedShift=!!shift&&(typeof workEndConfirmed==="function"?workEndConfirmed(shift):!!shift.end),
+   finishedShift=chatWorkdayFinished(shift),
    sleep=(state.sleepLogs||[]).find(x=>x.date===date),
    foodCount=(state.foodLogs||[]).filter(x=>x.date===date).length,
    waterOz=(state.waterLogs||[]).filter(x=>x.date===date).reduce((n,x)=>n+Number(x.oz||0),0),
    chores=displayChoresForDate(date),
    dinner=typeof mealForDate==="function"?mealForDate(date):null;
   const sleepQuestion=sleep?"Your sleep was logged. How is your energy now, and has anything changed since then?":part==="early"?"How did you sleep, and how is your energy so far?":"How was your sleep last night, and how is your energy now?";
-  const workQuestion=workday?(finishedShift?"How did your UPS shift go, and was anything different?":shift?.start?"How is your UPS shift going so far? Anything important to record?":"Are you finished with UPS for today, still working, or heading in later? Anything important to record?"):"What have you been doing today?";
+  const workQuestion=workday?(finishedShift?"How did your UPS shift go, and was anything different?":shift?.end?"Your preload end is logged, but I don't know whether SSD is finished. Are you still delivering, or home?":"Are you finished with UPS for today, still working, or heading in later? Anything important to record?"):"What have you been doing today?";
   const foodQuestion=foodCount?"You have "+foodCount+" food or drink entries logged today. Anything else you've had since then?":"What have you eaten or had to drink so far? Approximate amounts are fine; I'll ask about anything important that is unclear.";
   const waterQuestion=waterOz>0?"You have "+waterOz+" oz of water logged today. Have you had any more?":"Have you had any water today, and roughly how much?";
   const kidsQuestion=chores.length?"What's happened with the kids today? Any chores, homework, reading, school updates, or plans to record?":"Any news about the kids, school, family plans, or the house?";
@@ -73,7 +82,7 @@
  function checkinStarter(){
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   const questions=prompts(),question=questions[promptIndex%questions.length];
-  return "Daily Life check-in for "+date+". Please ask me ONE question at a time about what happened today: work/sleep, food/drinks/water, children/chores, dinner, plans and completed tasks. Use the app snapshot below to avoid repeating things already logged. I will tell you updates naturally. Only write records through a connection you can actually access, and tell me exactly what synced; speaking alone does not update the app. If you cannot save directly, clearly say so and organize the confirmed updates for later entry. Never mark unlogged tasks as missed.\n\n"+checkinSnapshot()+"\n\nStart with this question: "+question;
+  return "Daily Life check-in for "+date+". Please ask me ONE question at a time about what happened today: work/sleep, food/drinks/water, children/chores, dinner, plans and completed tasks. Use the app snapshot below to avoid repeating things already logged. I will tell you updates naturally. When you have an authorized connection to my Daily Life Supabase project, save only updates I explicitly confirm, using the existing private life_entries feed with source chatgpt and unique external IDs; verify what saved. Never guess missing dates or quantities, create a duplicate, request secret keys, or mark unknown chores incomplete. If you cannot access an authorized writing connection, clearly say so and prepare the confirmed updates for later entry instead. Speaking alone does not update the app.\n\n"+checkinSnapshot()+"\n\nStart with this question: "+question;
  }
  function content(){
   const date=typeof ymd==="function"?ymd():"",
@@ -171,7 +180,7 @@
  }
  function chatCheckinNudge(){
   const p=prompts()[0],part=dayPart(),date=ymd(),shift=(state.workShifts||[]).find(x=>x.date===date),
-    finished=!!shift&&(typeof workEndConfirmed==="function"?workEndConfirmed(shift):!!shift.end),
+    finished=chatWorkdayFinished(shift),
     title=part==="early"?"Morning check-in":part==="after"?(finished?"After-work check-in":"Morning update"):part==="afternoon"?"Afternoon update":"Evening recap";
   return '<div class="dl-chat-checkin-wrap"><button type="button" class="dl-chat-nudge" onclick="openChatCheckin()" aria-label="'+esc(title)+' in ChatGPT">'+
    '<span class="dl-chat-nudge-icon" aria-hidden="true">🎙️</span>'+
