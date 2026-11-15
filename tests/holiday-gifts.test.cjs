@@ -11,18 +11,18 @@ function createApp(){
   christmasGifts2026:{dolly:{name:"Dolly",idea:"Craft kit",choice:"buy",status:"planned",budget:"25"}},
   tasks:[]
  };
- let active=null,values={},error="";
+ let active=null,values={},error="",failSave=false;
  const context={
   window:{},state,
   esc:value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),
   ymd:()=>"2026-11-14",ensurePeopleProfiles:()=>{},
   modal:(title,body,button,handler)=>{active={title,body,button,handler}},
   document:{getElementById:id=>({value:values[id]??""})},
-  save:async()=>{},closeModal:()=>{},openPeopleHubSection:()=>{},
+  save:async()=>{if(failSave)throw new Error("Simulated local storage failure")},closeModal:()=>{},openPeopleHubSection:()=>{},
   alert:message=>{error=message}
  };
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,"..","holiday-gifts.js"),"utf8"),context,{filename:"holiday-gifts.js"});
- return {state,context,setValues:v=>{values=v},getDialog:()=>active,getError:()=>error};
+ return {state,context,setValues:v=>{values=v},getDialog:()=>active,getError:()=>error,setFailSave:value=>{failSave=!!value}};
 }
 
 test("old name-keyed gift data remains visible for existing people",()=>{
@@ -67,4 +67,29 @@ test("invalid or unsafe spending input cannot be saved",async()=>{
  await app.getDialog().handler();
  assert.equal(app.state.christmasGifts2026["person-child-1"],undefined);
  assert.match(app.getError(),/non-negative/);
+});
+
+test("failure to save a gift never overwrites existing saved data",async()=>{
+ const app=createApp();
+ app.context.window.openHolidayGift("person-child-1");
+ app.setValues({
+  "holiday-gift-idea":"New gift that could not save",
+  "holiday-gift-choice":"buy",
+  "holiday-gift-status":"planned",
+  "holiday-gift-budget":"99",
+  "holiday-gift-spent":"12",
+  "holiday-gift-link":"",
+  "holiday-gift-notes":""
+ });
+ app.setFailSave(true);
+ await app.getDialog().handler();
+ assert.equal(app.state.christmasGifts2026["person-child-1"],undefined);
+ assert.equal(app.state.christmasGifts2026.dolly.idea,"Craft kit");
+ assert.match(app.getError(),/could not be saved/);
+});
+test("legacy records do not silently attach to two different people with the same name",()=>{
+ const app=createApp();
+ app.state.peopleProfiles.push({id:"relative-3",name:"Dolly",relationship:"niece"});
+ const board=app.context.window.holidayGiftBoard();
+ assert.equal((board.match(/Craft kit/g)||[]).length,1);
 });
