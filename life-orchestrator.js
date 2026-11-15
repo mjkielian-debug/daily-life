@@ -407,7 +407,7 @@
       recognition.lang="en-US";recognition.interimResults=false;recognition.continuous=false;
       recognition.onresult=event=>{
         const words=Array.from(event.results||[]).map(x=>x[0]?.transcript||"").join(" ").trim();
-        if(words){field.value+=(field.value.trim()?"\\n":"")+words;field.focus();}
+        if(words){field.value+=(field.value.trim()?"\n":"")+words;field.focus();}
         if(status)status.textContent="Review what was heard, then tap Add.";
       };
       recognition.onerror=()=>{if(status)status.textContent="Speech unavailable. Try your keyboard microphone instead.";};
