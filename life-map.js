@@ -9,18 +9,26 @@ window.lifeMapProgressDates=mapProgressDates;
 const floorNames=["Basement","First floor","Second floor","Third floor"];
 let activeArea="",activeRoom=null;
 
+// Keep kid reading and personal routines with People, not the house map.
+function lifeMapIsHouseholdChore(chore){
+ const title=String(chore?.chore||chore?.title||"").toLowerCase();
+ if(chore?.homeMapFloor||chore?.homeMapZoneId||chore?.homeRoomId||chore?.roomId)return true;
+ return /\b(clean (?:my |your |their )?room|room reset|make (?:the |my )?bed|dish(?:es|washing)?|laundry|counter(?:top)?s?|floor(?:s)?|vacuum|sweep|mop|trash|litter|bathroom|toilet|declutter|tidy|cleaning|housework|put away toys|playroom)\b/i.test(title);
+}
+window.lifeMapIsHouseholdChore=lifeMapIsHouseholdChore;
 window.lifeMapHouseholdRows=function(date){
  const wanted=String(date||day()),rows=[],seen=new Set();
  for(const task of list(state.tasks)){
   if(task.date!==wanted||task.paused||task.duplicateHidden||task.waitingForFunds)continue;
   if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",task.id,wanted)==="na")continue;
-  if(!(String(task.category||"").toLowerCase()==="home"||task.homeMapFloor||/house|room|kitchen|bathroom|laundry|dish|trash|declutter|organize|clean|litter|robot vacuum/i.test(String(task.title||""))))continue;
+  if(lifeMapAreaForTask(task)!=="home")continue;
   rows.push(task);
  }
  for(const chore of list(state.chores)){
   if(chore.date!==wanted||chore.paused||chore.duplicateHidden)continue;
   if((chore.generated==="rotation"||chore.generated==="daily-basics")&&typeof window.familyKidsHomeForChores==="function"&&!window.familyKidsHomeForChores(wanted))continue;
   if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("chore",chore.id,wanted)==="na")continue;
+  if(!lifeMapIsHouseholdChore(chore))continue;
   const key=[chore.child,chore.chore].map(x=>String(x||"").trim().toLowerCase()).join("|");
   if(seen.has(key))continue;
   seen.add(key);rows.push({...chore,title:String(chore.chore||"Daily routine"),_lifeChore:true,category:"home"});
@@ -70,11 +78,15 @@ function lifeMapAreaForTask(task){
   transport:"car",vehicle:"car",driving:"car",auto:"car",
   hobbies:"hobbies",spirituality:"spirituality",mind:"mind",money:"money",car:"car",body:"body",home:"home"
  };
- // Household work belongs to the house map even when a child is responsible for it.
- if(category==="home"||category==="household"||category==="cleaning"||task&&(task.homeMapFloor||task.homeMapZoneId||task.homeRoomId||task.roomId)||/\b(housework|household|chores?|room reset|room cleanup|clean room|cleaning|dishes|dishwashing|laundry|counters?|countertops?|floors?|vacuum|mop|sweep|litter box|trash|garbage|declutter|organize|tidy up|house reset|kitchen|bathroom|playroom|living room|bedroom)\b/i.test(title))return "home";
- if(child&&/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text))return "people";
+ // Explicit room links and home categories win. Bathroom mentions in personal
+ // health care ("shower in bathroom") must not turn into household work.
+ if(task&&(task.homeMapFloor||task.homeMapZoneId||task.homeRoomId||task.roomId))return "home";
+ if(["home","household","cleaning","house","inventory"].includes(category))return "home";
+ if(child&&/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|medical|stretch|workout|exercise|sleep|skin/i.test(title))return "people";
+ if(["health","wellness","fitness","selfcare","body"].includes(category))return "body";
  if(category==="library"&&child)return "people";
  if(categoryAreas[category])return categoryAreas[category];
+ if(/\b(housework|household|chores?|room reset|room cleanup|clean room|cleaning|dishes|dishwashing|laundry|counters?|countertops?|floors?|vacuum|mop|sweep|litter box|trash|garbage|declutter|organize|tidy up|house reset|kitchen|bathroom|playroom|living room|bedroom)\b/i.test(title))return "home";
  if(/mind|mental|journal|therapy|rest|breath|quiet/i.test(text)||category==="mind"||category==="self-care")return "mind";
  if(/water|tooth|teeth|brush|shower|hair|vitamin|medicine|dental|dentist|dentistry|medical|stretch|workout|exercise|sleep|skin/i.test(text)||category==="body"||category==="health")return "body";
  if(/spiritual|tarot|ritual|meditat|affirmation/i.test(text)||category==="spirituality")return "spirituality";
@@ -97,7 +109,10 @@ function lifeMapAreaForReview(item){
   const task=list(state&&state.tasks).find(x=>String(x.id)===String(item.key));
   if(task)return lifeMapAreaForTask(task);
  }
- if(item.kind==="chore")return "home";
+ if(item.kind==="chore"){
+  const saved=list(state&&state.chores).find(x=>String(x.id)===String(item.key));
+  return lifeMapIsHouseholdChore(saved||{chore:item.label})?"home":"people";
+ }
  if(item.kind==="routine")return "people";
  return lifeMapAreaForTask({title:item.label||"",category:item.group||""});
 }
@@ -365,6 +380,14 @@ function view(areaOverride,tasksOnly){
  const addDaily=(area,row)=>{if(dailyAreaRows[area]&&!dailyAreaRows[area].some(x=>x.id===row.id))dailyAreaRows[area].push(row)};
  for(const t of tasks)if(!t._lifeMapEvidence&&!(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",t.id,date)==="na"))addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
  for(const t of window.lifeMapHouseholdRows(date))if(t._lifeChore)addDaily("home",{id:"chore:"+t.id,kind:"chore",key:String(t.id),done:!!t.done,title:t.title,task:t});
+ // Reading and non-household child routines belong on the People avatar page.
+ for(const c of list(state&&state.chores)){
+  if(c.date!==date||c.paused||c.duplicateHidden||lifeMapIsHouseholdChore(c))continue;
+  if((c.generated==="rotation"||c.generated==="daily-basics")&&typeof window.familyKidsHomeForChores==="function"&&!window.familyKidsHomeForChores(date))continue;
+  if(typeof dailyReviewStatus==="function"&&dailyReviewStatus("chore",c.id,date)==="na")continue;
+  const row={...c,title:String(c.chore||"Family routine"),_lifeChore:true};
+  addDaily("people",{id:"chore:"+c.id,kind:"chore",key:String(c.id),done:!!c.done,title:row.title,task:row});
+ }
  for(const habit of careHabits){const area=mindCareHabits.includes(habit)?"mind":"body";addDaily(area,{id:"care:"+habit.key,kind:"care",key:String(habit.key),title:habit.label||habit.name||habit.key,done:typeof selfCareDone==="function"&&selfCareDone(habit.key,date),habit})}
  for(const item of typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[]){
   const area=lifeMapAreaForReview(item),rows=dailyAreaRows[area];if(!rows)continue;
