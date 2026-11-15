@@ -10,19 +10,20 @@
   }
   function people(){
     if(typeof ensurePeopleProfiles==="function") ensurePeopleProfiles();
-    const seen=new Set(),out=[];
+    const seen=new Set(),seenLegacy=new Set(),out=[];
     for(const p of state.peopleProfiles||[]){
       const name=String(p?.name||"").trim(),legacyKey=keyFor(name),rel=String(p?.relationship||"").trim().toLowerCase();
       if(!name||!legacyKey||rel==="self"||rel==="you")continue;
       const id=p?.id==null?"":String(p.id).trim();
       const key=id?"person-"+encodeURIComponent(id):"name-"+legacyKey;
       if(seen.has(key))continue;
-      seen.add(key);out.push({key,legacyKey,name,relationship:String(p.relationship||"Person")});
+      seen.add(key);const legacyOwner=!seenLegacy.has(legacyKey);seenLegacy.add(legacyKey);
+      out.push({key,legacyKey,legacyOwner,name,relationship:String(p.relationship||"Person")});
     }
     return out;
   }
   function giftFor(person,store=giftStore()){
-    return store[person.key]||store[person.legacyKey]||{};
+    return store[person.key]||(person.legacyOwner?store[person.legacyKey]:null)||{};
   }
   function money(value){
     if(value===null||value===undefined||String(value).trim()==="")return null;
@@ -91,8 +92,13 @@
         alert("Shopping links must begin with https:// or http://");return;
       }
       const notes=document.getElementById("holiday-gift-notes")?.value.trim()||"";
-      giftStore()[p.key]={...g,name:p.name,idea,choice,status,budget,spent,link,notes,updatedAt:new Date().toISOString()};
-      await save();
+      const store=giftStore(),hadOwn=Object.prototype.hasOwnProperty.call(store,p.key),previous=store[p.key];
+      store[p.key]={...g,name:p.name,idea,choice,status,budget,spent,link,notes,updatedAt:new Date().toISOString()};
+      try{await save()}catch(error){
+        if(hadOwn)store[p.key]=previous;else delete store[p.key];
+        alert("This gift update could not be saved. Please try again.");
+        return;
+      }
       closeModal();openPeopleHubSection("birthdays");
     });
   };
