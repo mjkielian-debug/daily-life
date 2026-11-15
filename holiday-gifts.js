@@ -33,6 +33,29 @@
   function dollars(value){
     return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(value);
   }
+  function giftItems(g){
+    return (Array.isArray(g?.items)?g.items:[]).filter(item=>item&&String(item.title||"").trim()).slice(0,30);
+  }
+  function giftItemRow(item){
+    const id=String(item?.id||"").trim();
+    return '<div class="holiday-gift-item-row" data-gift-id="'+esc(id)+'">'+
+      '<label>Additional gift<input data-field="title" type="text" maxlength="180" value="'+esc(item?.title||"")+'" placeholder="Gift or homemade project"></label>'+
+      '<div class="grid2"><label>Buy or make<select data-field="choice">'+optionHtml(choices,safeChoice(item?.choice))+'</select></label>'+
+      '<label>Progress<select data-field="status">'+optionHtml(statuses,safeStatus(item?.status))+'</select></label></div>'+
+      '<label>Shopping / instructions link<input data-field="link" type="url" value="'+esc(item?.link||"")+'" placeholder="https://..."></label>'+
+      '<label>Supplies or notes<input data-field="notes" type="text" maxlength="500" value="'+esc(item?.notes||"")+'" placeholder="Materials, size, colors"></label>'+
+      '<button class="btn small" type="button" onclick="holidayGiftRemoveItem(this)">Remove this extra gift</button>'+
+    '</div>';
+  }
+  window.holidayGiftAddItem=function(){
+    const host=document.getElementById("holidayGiftItemRows");
+    if(!host||host.children.length>=30)return;
+    const id=typeof uid==="function"?uid():"gift-"+Date.now()+"-"+Math.round(Math.random()*100000);
+    host.insertAdjacentHTML("beforeend",giftItemRow({id,title:"",choice:"undecided",status:"ideas"}));
+  };
+  window.holidayGiftRemoveItem=function(button){
+    button?.closest?.(".holiday-gift-item-row")?.remove();
+  };
   function optionHtml(options,selected){
     return options.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===selected?' selected':'')+'>'+esc(o[1])+'</option>';}).join("");
   }
@@ -41,7 +64,7 @@
   function labelFor(options,value){const item=options.find(x=>x[0]===value);return item?item[1]:"";}
   window.holidayGiftBoard=function(){
     const roster=people(), store=giftStore();
-    const planned=roster.filter(p=>!!String(giftFor(p,store).idea||"").trim()||safeChoice(giftFor(p,store).choice)!=="undecided").length;
+    const planned=roster.filter(p=>!!String(giftFor(p,store).idea||"").trim()||giftItems(giftFor(p,store)).length>0||safeChoice(giftFor(p,store).choice)!=="undecided").length;
     const completed=roster.filter(p=>["ready","wrapped","given"].includes(safeStatus(giftFor(p,store).status))).length;
     const need=roster.length-planned;
     const budgets=roster.map(p=>money(giftFor(p,store).budget)).filter(x=>x!==null);
@@ -50,8 +73,9 @@
     const spendingTotal=Math.round(spending.reduce((sum,x)=>sum+x,0)*100)/100;
     const rows=roster.map(function(p){
       const g=giftFor(p,store), choice=safeChoice(g.choice), status=safeStatus(g.status);
-      const label=String(g.idea||"").trim()||"Tap to add an idea";
-      const summary=[labelFor(choices,choice),labelFor(statuses,status),money(g.budget)!==null?"Budget "+dollars(money(g.budget)):"",money(g.spent)!==null?"Spent "+dollars(money(g.spent)):""].filter(Boolean).join(" · ");
+      const extras=giftItems(g),extraDone=extras.filter(x=>["ready","wrapped","given"].includes(safeStatus(x.status))).length;
+      const label=String(g.idea||"").trim()||(extras.length?extras[0].title:"Tap to add an idea");
+      const summary=[labelFor(choices,choice),labelFor(statuses,status),extras.length?extraDone+"/"+extras.length+" extra gifts ready":"",money(g.budget)!==null?"Budget "+dollars(money(g.budget)):"",money(g.spent)!==null?"Spent "+dollars(money(g.spent)):""].filter(Boolean).join(" · ");
       return '<button type="button" class="holiday-gift-person" onclick="openHolidayGift('+esc(JSON.stringify(p.key))+')">'
         +'<span class="holiday-person-initial">'+esc(p.name.charAt(0).toUpperCase())+'</span>'
         +'<span class="holiday-gift-main"><b>'+esc(p.name)+'</b><small>'+esc(p.relationship)+' · '+esc(label)+'</small></span>'
@@ -77,7 +101,10 @@
       +'<div class="grid2"><label>Budget (optional)<input id="holiday-gift-budget" type="number" step="0.01" min="0" value="'+esc(g.budget??"")+'" placeholder="0.00"></label>'
       +'<label>Actually spent (optional)<input id="holiday-gift-spent" type="number" step="0.01" min="0" value="'+esc(g.spent??"")+'" placeholder="Not entered"></label></div>'
       +'<label>Shopping link (optional)<input id="holiday-gift-link" type="url" value="'+esc(g.link||"")+'" placeholder="https://..."></label>'
-      +'<label>Notes / supplies / shop<textarea id="holiday-gift-notes" rows="3" placeholder="Supplies, link, sizes, instructions, or where to buy it">'+esc(g.notes||"")+'</textarea></label></div>';
+      +'<label>Notes / supplies / shop<textarea id="holiday-gift-notes" rows="3" placeholder="Supplies, link, sizes, instructions, or where to buy it">'+esc(g.notes||"")+'</textarea></label>'
+      +'<div class="holiday-gift-items"><h3>Additional gifts</h3><p class="muted small">Each extra gift has its own buy-or-make choice and progress. Your overall spending above stays a per-person total, so costs are not counted twice.</p>'
+      +'<div id="holidayGiftItemRows">'+giftItems(g).map(giftItemRow).join("")+'</div>'
+      +'<button type="button" class="btn small" onclick="holidayGiftAddItem()">＋ Add another gift</button></div></div>';
     modal('🎄 Christmas gift · '+p.name,body,"Save",async function(){
       const idea=document.getElementById("holiday-gift-idea")?.value.trim()||"";
       const choice=safeChoice(document.getElementById("holiday-gift-choice")?.value);
@@ -92,8 +119,22 @@
         alert("Shopping links must begin with https:// or http://");return;
       }
       const notes=document.getElementById("holiday-gift-notes")?.value.trim()||"";
+      const rows=Array.from(document.querySelectorAll?.("#holidayGiftItemRows .holiday-gift-item-row")||[]);
+      if(rows.length>30){alert("Please keep up to 30 additional gifts for each person.");return}
+      const originalItems=new Map(giftItems(g).map(x=>[String(x.id),x])),items=[];
+      for(const row of rows){
+        const read=field=>String(row.querySelector('[data-field="'+field+'"]')?.value||"").trim();
+        const title=read("title"),link=read("link"),itemNotes=read("notes");
+        if(!title){
+          if(link||itemNotes){alert("Name the additional gift, or remove its incomplete row.");return}
+          continue;
+        }
+        if(link&&!/^https?:\/\//i.test(link)){alert("Extra gift links must begin with https:// or http://");return}
+        const id=String(row.getAttribute("data-gift-id")||"").trim()||"gift-"+Date.now()+"-"+items.length;
+        items.push({...originalItems.get(id),id,title,choice:safeChoice(read("choice")),status:safeStatus(read("status")),link,notes:itemNotes});
+      }
       const store=giftStore(),hadOwn=Object.prototype.hasOwnProperty.call(store,p.key),previous=store[p.key];
-      store[p.key]={...g,name:p.name,idea,choice,status,budget,spent,link,notes,updatedAt:new Date().toISOString()};
+      store[p.key]={...g,name:p.name,idea,choice,status,budget,spent,link,notes,items,updatedAt:new Date().toISOString()};
       try{await save()}catch(error){
         if(hadOwn)store[p.key]=previous;else delete store[p.key];
         alert("This gift update could not be saved. Please try again.");
