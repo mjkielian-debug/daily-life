@@ -1,0 +1,15 @@
+
+.holiday-gifts-card{margin-block:16px}
+.holiday-gift-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.holiday-gift-stats>span{border-radius:14px;border:1px solid rgba(120,90,120,.17);padding:12px 8px;display:grid;gap:3px;text-align:center;background:rgba(255,255,255,.6)}
+.holiday-gift-stats b{font-size:1.2rem}.holiday-gift-stats small{font-size:.74rem;opacity:.72}
+.holiday-gift-people{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.holiday-gift-person{width:100%;display:flex;gap:10px;align-items:center;text-align:left;min-width:0;border-radius:13px;background:rgba(255,255,255,.75);border:1px solid rgba(125,96,119,.18);padding:10px 12px;color:inherit;cursor:pointer;font:inherit}
+.holiday-gift-person:focus-visible{outline:2px solid #8b547a;outline-offset:2px}
+.holiday-person-initial{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:#fce3ef;color:#7f3b65;font-weight:800}
+.holiday-gift-main{flex:1;min-width:0;display:grid;gap:2px}
+.holiday-gift-main small{font-size:.8rem;opacity:.78;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.holiday-gift-status{text-align:right;font-size:.71rem;line-height:1.3;opacity:.74;max-width:94px}
+.holiday-gift-birthday{margin-top:14px}.holiday-gift-birthday button{margin:6px 0 0}
+.holiday-gift-next{margin-top:14px}.holiday-gift-next .row{gap:12px;font-size:.85rem}
+@media(min-width:650px){.holiday-gift-people{grid-template-columns:repeat(2,minmax(0,1fr))}}
