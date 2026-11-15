@@ -86,7 +86,7 @@
   async function readShared(id){
     if(!idPattern.test(String(id||""))||!("caches" in window))return null;
     const cache=await caches.open(SHARED_CACHE);
-    const response=await cache.match(new URL(Q(id),location.href));
+    const response=await cache.match(new URL(Q(id),location.href).href);
     if(!response)return null;
     const record=await response.json();
     if(!record||typeof record.text!=="string"||record.text.length>10000)return null;
@@ -95,7 +95,7 @@
   async function removeShared(id){
     if(!idPattern.test(String(id||""))||!("caches" in window))return;
     const cache=await caches.open(SHARED_CACHE);
-    await cache.delete(new URL(Q(id),location.href));
+    await cache.delete(new URL(Q(id),location.href).href);
   }
   async function queuedShares(){
     if(!("caches" in window))return [];
