@@ -629,14 +629,19 @@ function approvedDollhouseProgressArt(f,z,settings,stats,prefix){
   '<g clip-path="url(#'+id+'-reveal)"><image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" /></g></g>';
 }
 function correctedStairArtwork(){
- return '<defs>'+
-  '<clipPath id="hvm-corrected-basement-flight"><path d="M65 918H201V1102H65Z"/></clipPath>'+
-  '<clipPath id="hvm-corrected-second-flight"><path d="M382 1058L466 943L506 978L423 1082Z"/></clipPath>'+
-  '</defs>'+
-  '<g class="hvm-corrected-stair-art" aria-label="Reoriented basement and second-floor stair artwork" pointer-events="none">'+
-   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" transform="translate(0 2016) scale(1 -1)" clip-path="url(#hvm-corrected-basement-flight)"/>'+
-   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" transform="rotate(180 444 1004)" clip-path="url(#hvm-corrected-second-flight)"/>'+
-  '</g>';
+ // Stay inside the original stair outlines. The approved kitchen, doorways,
+ // room dimensions and clickable zones remain exactly as saved.
+ const lower='<g clip-path="url(#hvm-lower-stair-clip)" pointer-events="none">'+
+  '<path d="M120 923H193V1038H166V1096H76V1053H120Z" fill="#ddc29f" stroke="#806352" stroke-width="4"/>'+
+  [940,957,974,991,1008,1025].map(y=>'<path d="M123 '+y+'H190" stroke="#8d6e58" stroke-width="4"/>').join('')+
+  [95,113,131,149].map(x=>'<path d="M'+x+' 1056V1093" stroke="#8d6e58" stroke-width="4"/>').join('')+
+  '<path d="M120 1038H166V1053H120Z" fill="#c7a984" stroke="#806352" stroke-width="2"/></g>';
+ const upper='<g clip-path="url(#hvm-upper-stair-clip)" pointer-events="none">'+
+  '<path d="M381 1063L460 939L515 977L435 1090Z" fill="#ddc29f" stroke="#806352" stroke-width="4"/>'+
+  Array.from({length:7},(_,i)=>'<path d="M'+(392+i*12)+' '+(1046-i*16)+'l47 27" stroke="#8d6e58" stroke-width="4"/>').join('')+'</g>';
+ return '<defs><clipPath id="hvm-lower-stair-clip"><path d="M65 918H201V1102H65Z"/></clipPath>'+
+  '<clipPath id="hvm-upper-stair-clip"><path d="M382 1058L466 943L506 978L423 1082Z"/></clipPath></defs>'+
+  '<g class="hvm-corrected-stair-art" aria-label="Basement stairs descend along the wall, turn left at a landing; second-floor stairs ascend" pointer-events="none">'+lower+upper+'</g>';
 }
 
 function approvedDollhouseMap(f,m,oldMap){
