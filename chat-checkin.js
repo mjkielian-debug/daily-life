@@ -105,13 +105,14 @@
    '<div class="chat-checkin-actions">'+
     '<button type="button" class="btn primary" onclick="chatCheckinCopy()">Copy app status for ChatGPT</button>'+
     '<button type="button" class="btn" onclick="chatCheckinOpenChat()">Open ChatGPT ↗</button>'+
+    (typeof window.openChatShareReview==="function"?'<button type="button" class="btn" onclick="closeModal();openChatShareReview()">Review shared ChatGPT text</button>':'')+
    '</div>'+
    '<div class="chat-checkin-secondary">'+
     (typeof window.openLifeCapture==="function"?'<button type="button" onclick="closeModal();openLifeCapture()">Record an update</button>':'')+
     (typeof window.openSSDRouteQuickLog==="function"?'<button type="button" onclick="closeModal();openSSDRouteQuickLog()">Log SSD route</button>':'')+
     '<button type="button" onclick="closeModal();openDailyReview()">Optional: review unknown activities</button>'+
    (typeof cloudUser==="function"&&cloudUser()?'<button type="button" onclick="chatCheckinSync()">Import connected life logs</button>':"")+'</div>'+
-   '<p class="chat-checkin-footnote">ChatGPT conversations do not automatically sync to the app. Only saved or imported entries appear as recorded. You can always enter information manually.</p>'+
+   '<p class="chat-checkin-footnote">For messages that aren’t already imported, use Share → Daily Life on an installed Android app, or Review shared ChatGPT text. Confirm the entry before saving; this is not an automatic conversation feed.</p>'+
    '</div>';
  }
  function show(){
