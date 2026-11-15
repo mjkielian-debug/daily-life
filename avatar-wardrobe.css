@@ -59,3 +59,52 @@
 /* Generated wardrobe sprite thumbnails remain private in the user's cloud snapshot. */
 .dl-clothing-thumb{display:block;width:54px;height:54px;flex:0 0 54px;border-radius:10px;background-color:#fff;overflow:hidden;}
 .fc-piece-photo .dl-clothing-thumb,.fc-look-thumb .dl-clothing-thumb{width:100%;height:100%;flex:1 1 auto;min-width:0;}
+
+/* Clueless-inspired visual closet: one hanging garment to flip through, not a tile grid. */
+#familyClosetBody .fc-people{margin:0 0 10px;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#familyClosetBody .fc-person{flex:0 0 auto;min-height:35px}
+#familyClosetBody .fc-intro,#familyClosetBody .fc-gaps{margin:6px 0;font-size:.72rem}
+#familyClosetBody .fc-filter-row{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:10px 0 12px;padding:0 1px 5px;gap:7px}
+#familyClosetBody .fc-filter{flex:0 0 auto;min-height:36px;padding:7px 12px;background:#fffafc}
+#familyClosetBody .fc-filter-on{background:#443449}
+.fc-flip-closet{display:grid;gap:7px;width:100%;min-width:0;margin:5px 0 10px}
+.fc-flip-topline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 9px;color:#76577e;font:700 .77rem/1.2 inherit;letter-spacing:.01em}
+.fc-flip-counter{font-weight:800;font-variant-numeric:tabular-nums}
+.fc-flip-scene{position:relative;isolation:isolate;overflow:hidden;min-height:300px;height:min(47vh,440px);border-radius:29px;background:radial-gradient(ellipse at 50% 39%,#fff 9%,#fbf6ee 65%,#f3e3eb 100%);touch-action:pan-y;user-select:none}
+.fc-flip-rail{position:absolute;z-index:0;top:43px;left:8%;right:8%;height:4px;border-radius:9px;background:linear-gradient(180deg,#b4a3a7,#776775,#e4d4d2);box-shadow:0 3px 4px #59435920}
+.fc-flip-front{position:absolute;z-index:2;inset:13px 16% 0;display:grid;place-items:center;animation:fc-float-in .23s ease-out}
+.fc-hanger{position:absolute;top:16px;width:88px;height:44px;color:#9b7a75;opacity:.8;pointer-events:none}
+.fc-hanger svg{width:100%;height:100%}
+.fc-flip-photo{position:absolute;top:58px;bottom:1px;left:0;right:0;overflow:hidden;display:grid;place-items:center}
+.fc-flip-photo>.dl-clothing-thumb{width:100%;height:100%;flex:auto;border-radius:0;background-color:transparent;mix-blend-mode:multiply;filter:contrast(1.035)}
+.fc-flip-photo>img{max-width:100%;max-height:100%;object-fit:contain}
+.fc-flip-photo>.fc-photo-fallback{font-size:6rem;background:transparent}
+.fc-flip-peek{position:absolute;z-index:1;top:104px;bottom:60px;width:32%;opacity:.29;filter:saturate(.8);pointer-events:none;overflow:hidden;transform:scale(.88)}
+.fc-flip-peek-left{left:-12%}.fc-flip-peek-right{right:-12%}
+.fc-flip-peek>.dl-clothing-thumb{width:100%;height:100%;flex:auto;border-radius:0;background-color:transparent;mix-blend-mode:multiply}
+.fc-flip-peek>img{width:100%;height:100%;object-fit:contain}
+.fc-flip-arrow{position:absolute;z-index:3;top:51%;transform:translateY(-50%);display:grid;place-items:center;width:45px;height:57px;border:1px solid #decddb;border-radius:20px;background:#fffdfaee;color:#563a5c;font:bold 2.3rem/1 inherit;box-shadow:0 5px 16px #54365a16;cursor:pointer}
+.fc-flip-arrow-prev{left:3px}.fc-flip-arrow-next{right:3px}
+.fc-flip-arrow:disabled{opacity:.25;cursor:default}
+.fc-flip-caption{display:grid;gap:3px;justify-items:center;text-align:center;padding:2px 12px}
+.fc-flip-caption b{font-size:1.08rem;color:#352b3b;line-height:1.3}
+.fc-flip-caption span{font-size:.75rem;color:#80717f}
+.fc-flip-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:9px;padding-top:3px}
+.fc-flip-actions .btn{min-height:43px;padding:8px 16px}
+.fc-flip-added{border:1px solid #a276a8;background:#efe1ee!important;color:#57315d!important}
+.fc-flip-wear{display:flex;align-items:center;justify-content:center}
+.fc-flip-wear button{min-height:43px;border-radius:100px}
+.fc-flip-pips{margin:2px auto 0;width:min(42%,170px)}
+.fc-flip-track{display:block;overflow:hidden;height:4px;background:#e5d7e3;border-radius:100px}
+.fc-flip-track span{display:block;height:100%;background:#9c6ca7;border-radius:100px;transition:width .22s ease-out}
+#familyClosetBody .fc-look{margin-top:7px;padding:12px;border:1px solid #ecdeea;background:#fffafc}
+#familyClosetBody .fc-looks{margin-top:8px}
+@keyframes fc-float-in{from{opacity:.65;transform:translateX(10px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
+@media(max-width:390px){
+ .fc-flip-scene{min-height:300px;height:44vh;border-radius:23px}
+ .fc-flip-front{left:14%;right:14%}
+ .fc-flip-photo{top:55px}
+ .fc-flip-arrow{width:39px;height:53px;border-radius:17px}
+ .fc-flip-actions .btn{padding:7px 11px}
+}
+@media(prefers-reduced-motion:reduce){.fc-flip-front{animation:none}}
