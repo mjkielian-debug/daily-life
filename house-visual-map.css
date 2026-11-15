@@ -435,7 +435,8 @@
 .hvm-approved-scene{position:relative;overflow:hidden;border:3px solid #875a78;border-radius:23px;
  background:#ead9da;box-shadow:0 0 0 4px #fff9ef,0 5px 11px #5b3d4d4b;isolation:isolate}
 .hvm-approved-svg{display:block;width:100%;height:auto;aspect-ratio:805/1040;overflow:hidden;touch-action:manipulation}
-.hvm-approved-muted-base{filter:saturate(.63) brightness(1.055)}
+.hvm-approved-muted-base{filter:grayscale(.98) saturate(.05) brightness(1.07);opacity:.92}
+.hvm-approved-color-reveal image{filter:saturate(1.18) contrast(1.04)}
 .hvm-approved-color-reveal{pointer-events:none;filter:drop-shadow(0 0 3px #ffe8ed)}
 .hvm-approved-room{cursor:pointer;touch-action:manipulation}
 .hvm-approved-room path{transition:fill-opacity .12s,stroke .12s,stroke-width .12s}
@@ -482,3 +483,25 @@
 .hvm-root[data-floor="Second floor"] .hvm-photo-room-accents,.hvm-root[data-floor="Third floor"] .hvm-photo-room-accents{filter:drop-shadow(0 2px 2px #593e5e42)}
 .hvm-root[data-floor="Second floor"] .hvm-stair-plan,.hvm-root[data-floor="Third floor"] .hvm-stair-plan{filter:drop-shadow(0 2px 1px #694c6040)}
 @media(max-width:420px){.hvm-connected-map{border-radius:17px;padding:8px 5px}}
+
+/* Room action-first layout: checkbox list, clear next-room navigation,
+   optional check-in, then artwork and details. Do not reposition maps. */
+.hvm-zone-detail>.hvm-tour-nav{order:-11}
+.hvm-zone-detail>.hvm-task-list{order:-10}
+.hvm-zone-detail>.hvm-task-progress{order:-9}
+.hvm-zone-detail>.hvm-daily-checkin{order:-8}
+.hvm-zone-detail>.hvm-approved-room-zoom,
+.hvm-zone-detail>.hvm-mini-room{order:-7}
+.hvm-zone-detail>.hvm-room-inventory{order:9}
+.hvm-zone-detail>.hvm-room-extra{order:12}
+.hvm-zone-detail>.hvm-task-list{border:2px solid rgba(146,85,129,.3);background:linear-gradient(130deg,#fffafc,#f0f7fb);border-radius:18px;padding:14px}
+.hvm-zone-detail>.hvm-task-list>b{display:block;margin-bottom:8px;font-size:1.04rem}
+.hvm-zone-detail>.hvm-task-list .hvm-task-row{min-height:48px}
+.hvm-zone-detail>.hvm-task-list .hvm-task-row button{min-height:40px}
+.hvm-zone-detail>.hvm-room-inventory{display:none}
+.hvm-zone-detail>.hvm-task-progress{padding:10px 14px}
+.hvm-zone-detail>.hvm-daily-checkin{padding:11px 12px}
+@media(max-width:420px){
+ .hvm-zone-detail>.hvm-daily-checkin .hvm-daily-checkin-actions{gap:7px}
+ .hvm-zone-detail>.hvm-daily-checkin .hvm-daily-checkin-actions button{font-size:.82rem;padding:8px 10px;min-height:39px}
+}
