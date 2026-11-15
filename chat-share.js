@@ -42,8 +42,22 @@
     return {category,local_date:data.date,payload};
   }
   function guess(text){
-    const oz=waterFrom(text);
-    return {category:oz===null?"task":"water",oz:oz===null?"":oz};
+    const line=String(text||"").trim();
+    const blank={category:"task",oz:"",name:"",child:"",chore:"",title:"",done:false};
+    // Suggestions are only made for short, explicit statements. Lengthy AI
+    // responses and quotes should not masquerade as completed activities.
+    if(!line||line.length>220||line.includes("\n"))return blank;
+    const oz=waterFrom(line);
+    if(oz!==null)return {...blank,category:"water",oz};
+    const childChore=/^(Leo|Demitri|Tree|Dolly|Ambrose)\s+(cleaned|washed|vacuumed|finished|did|completed|folded|put away)\s+(.+?)[.!]?\s*$/i.exec(line);
+    if(childChore)return {...blank,category:"chore",child:childChore[1],chore:(childChore[2]+" "+childChore[3]).replace(/[.!]+$/,"")};
+    const food=/^(?:I\s+)?(?:ate|drank|had)\s+(.+?)[.!]?\s*$/i.exec(line);
+    if(food&&food[1].length<=160)return {...blank,category:"food",name:food[1].replace(/[.!]+$/,"")};
+    const done=/^(?:I\s+)?(?:finished|completed)\s+(.+?)[.!]?\s*$/i.exec(line);
+    if(done)return {...blank,category:"task",title:done[1].replace(/[.!]+$/,""),done:true};
+    const upcoming=/^(?:I\s+)?(?:need to|plan to|remind me to)\s+(.+?)[.!]?\s*$/i.exec(line);
+    if(upcoming)return {...blank,category:"task",title:upcoming[1].replace(/[.!]+$/,"")};
+    return blank;
   }
   function showStatus(message){
     const node=document.getElementById("chatShareStatus");
@@ -83,6 +97,43 @@
     const cache=await caches.open(SHARED_CACHE);
     await cache.delete(new URL(Q(id),location.href));
   }
+  async function queuedShares(){
+    if(!("caches" in window))return [];
+    const cache=await caches.open(SHARED_CACHE);
+    const keys=await cache.keys(),out=[];
+    for(const request of keys){
+      const path=new URL(request.url).pathname;
+      const id=path.split("/__daily_life_share__/")[1];
+      if(!idPattern.test(id||""))continue;
+      try{
+        const response=await cache.match(request);
+        const data=response?await response.json():null;
+        if(typeof data?.text==="string"&&data.text.length<=10000){
+          out.push({id,text:data.text,createdAt:Number(data.createdAt)||0});
+        }
+      }catch(error){/* Damaged entries remain isolated, never auto-imported. */}
+    }
+    return out.sort((a,b)=>a.createdAt-b.createdAt);
+  }
+  window.chatShareReviewPending=async function(){
+    try{
+      const pending=await queuedShares();
+      if(!pending.length){alert("No shared messages are waiting for review.");return}
+      window.openChatShareReview(pending[0]);
+    }catch(error){alert("Could not open saved shared messages. Try again after updating Daily Life.")}
+  };
+  window.chatSharePendingCount=async function(){
+    try{return (await queuedShares()).length}catch(error){return null}
+  };
+  window.chatShareDiscard=async function(id){
+    if(!idPattern.test(String(id||"")))return;
+    if(!window.confirm("Discard this shared message from this device without saving anything?"))return;
+    try{
+      await removeShared(id);
+      closeModal();
+      alert("Unsaved shared message discarded.");
+    }catch(error){showStatus("Could not discard this message. It remains in the review queue.")}
+  };
   window.openChatShareReview=function(initial={}){
     if(typeof modal!=="function")return;
     const sharedId=String(initial.id||"");
@@ -91,7 +142,7 @@
     const ui='<div class="stack chat-share-review">'+
       '<p class="muted small">Share a message from ChatGPT, or paste what you said. <b>Nothing saves until you review and confirm it.</b> Only the confirmed fields below are sent to your private Daily Life account.</p>'+
       '<label>Message (for your review only)<textarea id="chatShareText" rows="3" maxlength="10000" placeholder="I drank 26 oz water">'+html(initial.text||"")+'</textarea></label>'+
-      '<button type="button" id="chatShareDetect" class="btn small">Detect water amount</button>'+
+      '<button type="button" id="chatShareDetect" class="btn small">Suggest fields from text</button>'+
       '<button type="button" id="chatSharePaste" class="btn small">Paste from clipboard</button>'+
       '<div class="grid2"><label>Record date<input id="chatShareDate" type="date" value="'+html(today())+'"></label>'+
       '<label>Save as<select id="chatShareCategory" onchange="chatShareCategoryChanged()">'+
@@ -99,10 +150,11 @@
         '<option value="'+value+'"'+(proposed.category===value?' selected':'')+'>'+label+'</option>').join("")+
       '</select></label></div>'+
       '<div id="chatShareGroup_water"><label>Confirmed water amount (oz)<input id="chatShareOz" type="number" min="1" max="128" step="0.5" value="'+html(proposed.oz)+'"></label></div>'+
-      '<div id="chatShareGroup_food"><label>Food or drink<input id="chatShareFood" maxlength="160" placeholder="What did you eat or drink?"></label></div>'+
-      '<div id="chatShareGroup_chore"><label>Child<input id="chatShareChild" maxlength="80" placeholder="Child’s name"></label><label>Completed chore<input id="chatShareChore" maxlength="180" placeholder="What did they finish?"></label></div>'+
-      '<div id="chatShareGroup_task"><label>Task or project<input id="chatShareTitle" maxlength="200" placeholder="What should be recorded?"></label><label><input id="chatShareDone" type="checkbox"> Already completed</label></div>'+
+      '<div id="chatShareGroup_food"><label>Food or drink<input id="chatShareFood" maxlength="160" value="'+html(proposed.name)+'" placeholder="What did you eat or drink?"></label></div>'+
+      '<div id="chatShareGroup_chore"><label>Child<input id="chatShareChild" maxlength="80" value="'+html(proposed.child)+'" placeholder="Child’s name"></label><label>Completed chore<input id="chatShareChore" maxlength="180" value="'+html(proposed.chore)+'" placeholder="What did they finish?"></label></div>'+
+      '<div id="chatShareGroup_task"><label>Task or project<input id="chatShareTitle" maxlength="200" value="'+html(proposed.title)+'" placeholder="What should be recorded?"></label><label><input id="chatShareDone" type="checkbox"'+(proposed.done?' checked':'')+'> Already completed</label></div>'+
       '<p class="muted small" id="chatShareStatus" role="status">Review the category, amount, and date before saving.</p>'+
+      (sharedId?'<button type="button" class="btn small" onclick="chatShareDiscard(\''+html(sharedId)+'\')">Discard this unsaved share</button>':'')+
       '</div>';
     modal("Review ChatGPT update",ui,"Confirm and save",async()=>{
       if(busy)return;
@@ -132,40 +184,54 @@
         }).select("id");
         if(error)throw error;
         const newlySaved=Array.isArray(data)&&data.length>0;
-        showStatus(newlySaved?"Saved to your private Daily Life cloud. Importing to this phone…":"Already saved before. Checking your phone…");
-        let imported=0;
-        if(typeof cloudPullLifeEntries==="function")imported=await cloudPullLifeEntries(false);
-        if(sharedId)await removeShared(sharedId);
+        showStatus(newlySaved?"Saved in your Daily Life cloud. Importing to this phone…":"Already saved before. Checking your phone…");
+        // A successful cloud response is not undone by a later phone import
+        // error. Keep the receipt and show exactly which step succeeded.
+        let imported=0,phoneImportError=false;
+        try{
+          if(typeof cloudPullLifeEntries==="function")imported=await cloudPullLifeEntries(false);
+          else phoneImportError=true;
+        }catch(error){phoneImportError=true}
+        if(sharedId){
+          try{await removeShared(sharedId)}
+          catch(error){/* Already saved to cloud, so don't imply data loss. */}
+        }
         closeModal();
         if(typeof render==="function")render();
-        alert(newlySaved
-          ?(imported>0?"Saved and imported into Daily Life.":"Saved to Daily Life cloud. If it isn't visible yet, use Import connected life logs.")
-          :"This shared entry was already recorded; no duplicate was added.");
+        alert(!newlySaved?"This shared entry was already recorded; no duplicate was added."
+          :imported>0?"Saved to cloud and imported into Daily Life on this phone."
+          :"Saved to your Daily Life cloud, but not confirmed on this phone yet. Use Import connected life logs.");
       }catch(error){
         showStatus("Couldn't confirm a cloud save. No success was recorded. Check your connection and try again.");
       }finally{busy=false}
     });
     categoryChanged();
-    document.getElementById("chatShareDetect")?.addEventListener("click",()=>{
-      const text=document.getElementById("chatShareText")?.value||"";
-      const oz=waterFrom(text);
-      if(oz===null){showStatus("No unambiguous water amount found. Choose a category and enter the confirmed details.");return}
-      document.getElementById("chatShareCategory").value="water";
-      document.getElementById("chatShareOz").value=String(oz);
+    function suggestFromText(text){
+      const proposed=guess(text);
+      if(!proposed.oz&&!proposed.name&&!proposed.chore&&!proposed.title){
+        showStatus("No clear activity detected. Choose a category and enter only what you can confirm.");
+        return;
+      }
+      document.getElementById("chatShareCategory").value=proposed.category;
+      for(const [id,value] of [
+        ["chatShareOz",proposed.oz],["chatShareFood",proposed.name],
+        ["chatShareChild",proposed.child],["chatShareChore",proposed.chore],
+        ["chatShareTitle",proposed.title]
+      ]){const input=document.getElementById(id);if(input)input.value=String(value??"")}
+      const done=document.getElementById("chatShareDone");
+      if(done)done.checked=!!proposed.done;
       categoryChanged();
-      showStatus("Water amount detected. Review it and the date before saving.");
+      showStatus("Fields suggested. Review the date, activity, and completion status before saving.");
+    }
+    document.getElementById("chatShareDetect")?.addEventListener("click",()=>{
+      suggestFromText(document.getElementById("chatShareText")?.value||"");
     });
     document.getElementById("chatSharePaste")?.addEventListener("click",async()=>{
       try{
         if(!navigator.clipboard?.readText)throw new Error("Clipboard unavailable");
         const text=(await navigator.clipboard.readText()).slice(0,10000);
         document.getElementById("chatShareText").value=text;
-        const oz=waterFrom(text);
-        if(oz!==null){
-          document.getElementById("chatShareCategory").value="water";
-          document.getElementById("chatShareOz").value=String(oz);
-        }
-        categoryChanged();
+        suggestFromText(text);
         showStatus("Pasted for review. Confirm or correct the fields before saving.");
       }catch(error){showStatus("Paste using your keyboard instead; your browser didn't grant clipboard access.")}
     });
@@ -175,10 +241,12 @@
   async function openPendingShare(){
     const url=new URL(location.href),id=url.searchParams.get("review_chat");
     if(!id)return;
-    url.searchParams.delete("review_chat");
-    history.replaceState(history.state,"",url.pathname+url.search+url.hash);
+    // The shared text remains recoverable from the on-device review queue
+    // if this page closes or reloads before the user confirms it.
     const shared=await readShared(id);
     if(!shared)return;
+    url.searchParams.delete("review_chat");
+    history.replaceState(history.state,"",url.pathname+url.search+url.hash);
     const wait=async(n)=>{
       if(typeof modal==="function"&&(typeof appStartupReady==="undefined"||appStartupReady)){
         window.openChatShareReview(shared);return
