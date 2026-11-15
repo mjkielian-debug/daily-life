@@ -13,3 +13,12 @@
 .holiday-gift-birthday{margin-top:14px}.holiday-gift-birthday button{margin:6px 0 0}
 .holiday-gift-next{margin-top:14px}.holiday-gift-next .row{gap:12px;font-size:.85rem}
 @media(min-width:650px){.holiday-gift-people{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.holiday-gift-items{display:grid;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(139,84,122,.2)}
+.holiday-gift-items h3{margin:0;font-size:1.02rem;color:#824875}
+#holidayGiftItemRows{display:grid;gap:10px}
+.holiday-gift-item-row{display:grid;gap:10px;border:1px solid rgba(140,105,167,.25);border-radius:15px;padding:12px;background:linear-gradient(135deg,rgba(255,236,247,.75),rgba(232,231,255,.8))}
+.holiday-gift-item-row>label,.holiday-gift-item-row .grid2 label{display:grid;gap:5px}
+.holiday-gift-item-row input,.holiday-gift-item-row select{width:100%;min-width:0}
+.holiday-gift-item-row button{justify-self:start}
+.holiday-gift-editor{max-height:72vh;overflow:auto;overscroll-behavior:contain}
