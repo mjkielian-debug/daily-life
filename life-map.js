@@ -251,7 +251,7 @@ function avatarHotspot(area,label,path){
  return `<path class="lm-avatar-hotspot" d="${path}" fill="transparent" stroke="transparent" stroke-width="12" stroke-linejoin="round" pointer-events="all" role="button" tabindex="0" aria-label="Open ${h(label)}" data-life-area="${h(area)}"/>`;
 }
 
-const lifeMapPages={map:"lifemap",today:"today",flow:"itinerary",people:"family",reading:"reading",food:"home",house:"household",money:"more",care:"selfcare",spirituality:"spirituality",hobbies:"gardenhobbies",vault:"vault",settings:"settings",inventory:"inventory",budget:"budget"};
+const lifeMapPages={map:"lifemap",today:"lifemap",flow:"itinerary",people:"family",reading:"reading",food:"home",house:"household",money:"more",care:"selfcare",spirituality:"spirituality",hobbies:"gardenhobbies",vault:"vault",settings:"settings",inventory:"inventory",budget:"budget"};
 const lifeMapDoors={
  home:[["⌂","House map","house"],["✦","Today","today"],["🍲","Meals & pantry","food"],["▦","Inventory","inventory"],["📖","Reading","reading"],["✿","Garden & hobbies","hobbies"],["▣","Private vault","vault"]],
  mind:[["✦","Today","today"],["◷","Day Flow","flow"],["♡","Self-care","care"],["📖","Reading","reading"],["⚙","Settings","settings"]],
@@ -551,41 +551,26 @@ function view(areaOverride,tasksOnly){
  const floors=floorNames.map(f=>'<button type="button" class="lm-floor '+(f===floor?"selected":"")+'" aria-pressed="'+(f===floor?"true":"false")+'" onclick="lifeMapSetFloor(\''+f+'\')">'+h(f)+'</button>').join("");
  const taskContent=tasks.length?'<div class="lm-list">'+open.map(taskRow).join("")+'</div><details class="lm-completed"><summary>Completed today · '+completed+'</summary><div class="lm-list">'+tasks.filter(t=>t.done).map(taskRow).join("")+'</div></details>':'<p class="lm-muted">No date-specific tasks are on today’s list.</p>';
  return '<section class="life-map-page">'+
- '<section class="lm-scene-card"><div class="lm-scene-heading"><div><h2>Your life map</h2><div class="lm-period" role="group" aria-label="Progress period">'+["today","week"].map(period=>'<button type="button" aria-pressed="'+(period===progressRange)+'" onclick="lifeMapSetProgressRange(&#39;'+period+'&#39;)">'+(period==="today"?"Today":"This week")+'</button>').join("")+'</div></div></div>'+
+ '<nav class="lm-map-jumps" aria-label="My avatar and my house"><button type="button" onclick="lifeMapJump(&#39;avatar&#39;)">♡ My avatar</button><button type="button" onclick="lifeMapJump(&#39;house&#39;)">⌂ House map</button></nav>'+
+ '<section class="lm-scene-card" id="lm-avatar-anchor"><div class="lm-scene-heading"><div><h2>Your life map</h2><div class="lm-period" role="group" aria-label="Progress period">'+["today","week"].map(period=>'<button type="button" aria-pressed="'+(period===progressRange)+'" onclick="lifeMapSetProgressRange(&#39;'+period+'&#39;)">'+(period==="today"?"Today":"This week")+'</button>').join("")+'</div></div></div>'+
  '<div class="lm-scene-grid lm-avatar-only"><div class="lm-avatar-wrap"><div class="lm-next-checkin-slot">'+nextCheckinPanel+'</div><div class="lm-avatar-stage lm-avatar-stage-with-habits">'+waterHabitPanel+'<svg class="lm-avatar"'+avatarLookStyle+' viewBox="0 0 220 510" role="group" aria-label="Michelle’s illustrated full-body avatar with clickable life areas">'+
  '<defs>'+avatarAreaDefs+'</defs>'+ '<image href="assets/michelle-ssd-avatar.webp?v=20261113-area-fill1" x="22" y="0" width="176" height="510" preserveAspectRatio="none" style="filter:grayscale(1);opacity:.52" pointer-events="none" aria-hidden="true"/>'+avatarAreaLayers+ '<g class="lm-avatar-hit-zones" aria-label="Tap a body area to open its page">'+ avatarHotspot("mind","Mind & self-care","M57 0 H163 V129 Q151 145 110 146 Q69 145 57 129Z")+ avatarHotspot("spirituality","Spirituality","M48 0 H172 V105 Q150 76 127 56 Q106 43 84 59 Q64 75 48 105Z")+ avatarHotspot("body","Body, health & safety","M57 120 H165 V270 H57Z")+ avatarHotspot("people","Relationships","M52 126 H98 V274 H28Z")+ avatarHotspot("hobbies","Hobbies & projects","M122 126 H168 V274 H194Z")+ avatarHotspot("money","Money & planning","M62 248 H158 V470 H62Z")+ '</g>'+avatarMarks+'</svg>'+teethHabitPanel+'</div>'+
  '<div class="lm-avatar-quick"><button type="button" onclick="lifeMapNavigate(&#39;capture&#39;)">＋ Log</button><button type="button" onclick="lifeMapNavigate(&#39;search&#39;)">⌕ Find</button><button type="button" onclick="lifeMapNavigate(&#39;settings&#39;)">⚙ Settings</button></div><p class="lm-avatar-caption">Tap the avatar to explore your life.</p>'+(typeof window.avatarWardrobePanelHtml==="function"?window.avatarWardrobePanelHtml():"")+'</div></div></section>'+
  '<section class="lm-lower-grid">'+
- '<section class="lm-panel lm-house"><div class="lm-panel-heading"><div><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor, then tap a room.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div>'+lifeMapDoorwaysHtml('home',true)+'<div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+(typeof window.houseVisualUnassignedTasksHtml==="function"?window.houseVisualUnassignedTasksHtml(floor):"")+'</section></section>'+
+ '<section class="lm-panel lm-house" id="lm-house-anchor"><div class="lm-panel-heading"><div><h2>House map</h2><button type="button" class="lm-text-button" onclick="setView(&#39;lifearea-home&#39;)">Whole-house tasks ›</button></div><button type="button" class="lm-text-button" onclick="setView(\'household\')">Open full map ›</button></div><p class="lm-muted">Choose a floor, then tap a room.</p><nav class="lm-floors" aria-label="Choose house floor">'+floors+'</nav><div class="lm-house-map">'+map+'</div>'+lifeMapDoorwaysHtml('home',true)+'<div class="lm-room-progress">'+roomProgress+'</div>'+activeRoomPanel+(typeof window.houseVisualUnassignedTasksHtml==="function"?window.houseVisualUnassignedTasksHtml(floor):"")+'</section></section>'+
  '</section>';
 }
 window.lifeMapSelectArea=async function(area){
  const allowed=["home","mind","body","people","spirituality","hobbies","money","car","work"];
  if(!allowed.includes(area))return;
- // A deliberate category tap can start one real, undated task if that area
- // has no open saved tasks. Never add it while rendering or after a reload.
- const ideas=lifeMapTaskIdeas[area]||[];
- if(state&&Array.isArray(state.tasks)&&ideas.length&&typeof save==="function"){
-  state.settings=state.settings||{};
-  const seeded=state.settings.lifeMapAreaStarters||{};
-  if(seeded[area]!==true){
-   const alreadyOpen=state.tasks.some(t=>!t.done&&!t.retiredAt&&!t.paused&&!t.duplicateHidden&&lifeMapAreaForTask(t)===area);
-   const selected=ideas[area==="spirituality"?1:0]||ideas[0];
-   const exists=state.tasks.some(t=>taskIdeaKey(t.title)===taskIdeaKey(selected[0])&&!t.retiredAt);
-   if(!alreadyOpen&&!exists&&typeof uid==="function"){
-    state.tasks.push({id:uid(),title:selected[0],category:selected[1],date:"",child:"",done:false,
-     notes:"Undated starter task for "+area+" · change or delete whenever you like",generated:"life-map-area-starter",order:100});
-   }
-   state.settings.lifeMapAreaStarters={...seeded,[area]:true};
-   try{await save()}catch(e){console.warn("Could not save category starter",e)}
-  }
- }
+ // Browsing is navigation only. No invented tasks.
  activeArea="";activeRoom=null;
  if(typeof setView==="function")setView("lifearea-"+area);
 };
 function avatarAreaFromEvent(event){const target=event.target&&event.target.closest?event.target.closest(".lm-avatar-mark[data-life-area],.lm-avatar-hotspot[data-life-area]"):null;if(!target)return;const area=target.getAttribute("data-life-area");if(!area)return;if(event.type==="keydown"&&event.key!=="Enter"&&event.key!==" ")return;if(event.type==="keydown")event.preventDefault();if(typeof window.lifeMapSelectArea==="function")window.lifeMapSelectArea(area)}
 document.addEventListener("click",avatarAreaFromEvent);
 document.addEventListener("keydown",avatarAreaFromEvent);
+window.lifeMapJump=function(which){const target=document.getElementById(which==="house"?"lm-house-anchor":"lm-avatar-anchor");if(target)target.scrollIntoView({behavior:window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?"auto":"smooth",block:"start"});};
 window.lifeMapCloseArea=function(){if(typeof setView==="function")setView("lifemap")};
 window.lifeMapSelectRoomInline=function(f,id){if(!floorNames.includes(f)||!id)return;activeRoom={floor:f,id:String(id)};activeArea="";if(typeof render==="function")render()};
 window.lifeMapCloseRoomInline=function(){activeRoom=null;if(typeof render==="function")render()};
