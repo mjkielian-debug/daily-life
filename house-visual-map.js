@@ -746,21 +746,31 @@ function approvedDollhouseObjectHotspots(f,z){
   // The playroom's keyboard and yellow mesh hanger are photo-confirmed, but
   // their exact positions were never surveyed. Display schematic symbols
   // instead of leaving these real objects invisible on the first-floor map.
-  const approximate=z.id==="playroom"&&p.mapX==null&&p.mapY==null&&
+  const derived=typeof window.houseRealismMarkerPlacement==="function"?window.houseRealismMarkerPlacement(f,z,p):null;
+  const oldIllustrative=z.id==="playroom"&&p.mapX==null&&p.mapY==null&&
    /playroom confirmed/i.test(str(p.status))&&(kind==="keyboard"||kind==="mesh");
-  const sketch=approximate?(kind==="keyboard"?[38,58]:[73,24]):null;
+  const approximate=derived?derived.approximate:oldIllustrative;
+  const sketch=derived?[derived.px,derived.py]:oldIllustrative?(kind==="keyboard"?[38,58]:[73,24]):null;
   if((p.mapX==null||p.mapY==null)&&!sketch)return "";
   const px=sketch?sketch[0]:Number(p.mapX),py=sketch?sketch[1]:Number(p.mapY);
   if(!Number.isFinite(px)||!Number.isFinite(py)||px<4||px>96||py<4||py>96)return "";
+  const hasSceneIllustration=!!derived;
   const art=lifelikeFurnitureSvg(kind)||fixtureSvg(kind);
-  if(!art)return "";
+  if(!art&&!hasSceneIllustration)return "";
   const x=(bounds.x+bounds.width*px/100).toFixed(1),y=(bounds.y+bounds.height*py/100).toFixed(1);
   const onclick="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
-  return '<g class="hvm-approved-object-marker'+(approximate?' hvm-approved-object-approx':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped room item")+(approximate?' · placement approximate':'')+'" transform="translate('+x+' '+y+')" '+
-   'onclick="event.stopPropagation();'+onclick+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+onclick+'}">'+
-   '<title>'+h(p.label||"Mapped object")+(approximate?' · placement illustrative':'')+'</title><circle r="39" fill="transparent" stroke="none" pointer-events="all"/>'+
+  const symbol=hasSceneIllustration?
+   '<circle r="37" fill="transparent" stroke="none" pointer-events="all"/>'+
+   '<circle class="hvm-scene-inspect-dot" r="10" fill="#fffaf5" stroke="#805d78" stroke-width="2"'+(approximate?' stroke-dasharray="4 2"':'')+'/>'+
+   '<path d="M-4 0H4M0 -4V4" stroke="#7b5270" stroke-width="2" stroke-linecap="round" pointer-events="none"/>':
+   '<circle r="39" fill="transparent" stroke="none" pointer-events="all"/>'+
    '<circle r="23" fill="#fffaf5" fill-opacity=".9" stroke="#8c7080" stroke-width="2"'+(approximate?' stroke-dasharray="5 4"':'')+'/>'+
-   '<g transform="scale(1.2)" pointer-events="none">'+art+'</g></g>';
+   '<g transform="scale(1.2)" pointer-events="none">'+art+'</g>';
+  return '<g class="hvm-approved-object-marker'+(approximate?' hvm-approved-object-approx':'')+
+   (hasSceneIllustration?' hvm-drawn-object-hotspot':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped room item")+
+   (approximate?' · placement illustrative, not measured':'')+'" transform="translate('+x+' '+y+')" '+
+   'onclick="event.stopPropagation();'+onclick+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+onclick+'}">'+
+   '<title>'+h(p.label||"Mapped object")+(approximate?' · placement illustrative':'')+'</title>'+symbol+'</g>';
  }).join("");
 }
 
