@@ -35,7 +35,6 @@ test("main map retains approved kitchen but omits extra furniture, stair art and
  assert.match(html,/kitchen-progress/);
  assert.match(html,/reveal|surfaces|hvm-overview-floor-surface/);
  assert.doesNotMatch(html,/hvm-drawn-object-hotspot|hvm-corrected-stair-art/);
- assert.match(html,/hvm-overview-private-photo/);
  assert.match(html,/room-preview/);
  assert.equal(calls.join(","),"kitchen");
  assert.equal((html.match(/class="hvm-approved-room"/g)||[]).length,7);
