@@ -28,3 +28,15 @@ test("photos are one tap from room details without adding a duplicate gallery",(
  assert.match(map,/actions\+roomPhotoDoor/);
  assert.match(map,/<summary>Inventory and room details<\/summary>/);
 });
+
+test("first-floor photos lead room views while the approved illustration remains unchanged",()=>{
+ assert.match(map,/const prioritizeRealPhotos=f==="First floor"&&photos\.length>0&&id!=="kitchen"/);
+ assert.match(map,/hvm-first-floor-reference/);
+ assert.match(map,/prioritizeRealPhotos\?' open':''/);
+ assert.match(map,/Real room photos · /);
+ assert.match(map,/Real photos saved · drawing in progress|Real photos saved/);
+ const css=read("house-visual-map.css");
+ assert.match(css,/\.hvm-zone-detail>\.hvm-real-room-photos\.hvm-first-floor-reference/);
+ assert.match(css,/order:-7\.5/);
+ assert.match(map,/approvedDollhouseAsset="assets\/approved-dollhouse-first-floor\.png\?v=20261114-approved1"/);
+});
