@@ -102,7 +102,7 @@ function zoneFloorGraphic(f,z,bounds){
    const x=left+i*step;
    return '<path d="M'+x.toFixed(1)+' '+top.toFixed(1)+'V'+bottom.toFixed(1)+'" stroke="#704e55" stroke-width="'+Math.max(2.6,Math.min(4,bounds.width*.055)).toFixed(1)+'" stroke-linecap="round"/>';
   }).join("");
-  return '<g class="hvm-stair-plan hvm-stair-plan-up-pivoted" aria-label="Stairs to the second floor turned sideways between dining and living rooms" pointer-events="none">'+
+  return '<g class="hvm-stair-plan hvm-stair-plan-up-pivoted" aria-label="Illustrated stair treads inside the saved staircase footprint" pointer-events="none">'+
    '<rect x="'+(left-5).toFixed(1)+'" y="'+(top-5).toFixed(1)+'" width="'+(width+10).toFixed(1)+'" height="'+(height+10).toFixed(1)+'" rx="6" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
  }
  const left=bounds.x+bounds.width*.19,right=bounds.x+bounds.width*.81;
@@ -249,18 +249,69 @@ function fixtureSvg(kind){
  if(k==="shelf")return '<path d="M-9 -9V9M9 -9V9M-9 -3H9M-9 4H9" stroke="#99717d" stroke-width="2"/><circle cx="-4" cy="-6" r="2" fill="#f0b891"/><rect x="2" y="0" width="4" height="4" rx="1" fill="#abd6c7"/>';
  return '<circle r="7" fill="#eed0e7" stroke="#a4759e"/><path d="M0 -5V5M-5 0H5" stroke="#fff" stroke-width="1.6"/>';
 }
+function mapConfirmedObjectKind(marker){
+ // Don't invent furniture for unknown or unconfirmed records.
+ const status=str(marker?.status).toLowerCase();
+ if(/unconfirmed|awaiting|unknown|historical|not verified/.test(status))return "";
+ const kind=str(marker?.kind).toLowerCase();
+ if(kind&&lifelikeFurnitureSvg(kind))return kind;
+ if(!kind&&/^bed\b/i.test(str(marker?.label))&&/\bconfirmed\b/i.test(status))return "bed";
+ return "";
+}
 function mappedFurniture(f,z,bounds){
  if(!bounds||bounds.width<55||bounds.height<55)return "";
- return arr(z.markers).map((p,i)=>{
-  const px=Number(p?.mapX),py=Number(p?.mapY);
-  if(p?.showOnMap===false||p?.mapX==null||p?.mapY==null||!Number.isFinite(px)||!Number.isFinite(py)||px<4||px>96||py<4||py>96)return "";
+ const markers=arr(z.markers),mapped=[],approximate=[];
+ // Fixed percentages in the private layout are used unchanged. On upper floors
+ // confirmed objects WITHOUT positions are shown as a small schematic,
+ // distributed within the existing traced zone, never persisted as coordinates.
+ for(let i=0;i<markers.length;i++){
+  const p=markers[i];
+  const mx=p?.mapX,my=p?.mapY,kind=str(p?.kind).toLowerCase();
+  const px=Number(mx),py=Number(my);
+  if(p?.showOnMap===false)continue;
+  if(mx!=null&&my!=null&&Number.isFinite(px)&&Number.isFinite(py)&&px>=4&&px<=96&&py>=4&&py<=96){
+   mapped.push({p,i,kind,px,py,approx:false});
+  }else if((f==="Second floor"||f==="Third floor")&&mapConfirmedObjectKind(p)){
+   approximate.push({p,i,kind:mapConfirmedObjectKind(p),approx:true});
+  }
+ }
+ const slots=[[24,24],[51,24],[78,24],[23,52],[51,52],[78,52],[24,73],[51,73],[78,73]];
+ const used=mapped.map(x=>({x:bounds.x+bounds.width*x.px/100,y:bounds.y+bounds.height*x.py/100}));
+ for(const marker of approximate){
+  if(!slots.length)break;
+  const desired=marker.kind==="bed"?[27,43]:
+   marker.kind==="vanity"?[43,69]:marker.kind==="dresser"?[52,26]:
+   marker.kind==="wood_opening"?[51,73]:marker.kind==="tv"?[75,43]:
+   marker.kind==="book_shelf"?[70,25]:[50,55];
+  let best=-1,top=-Infinity;
+  for(let i=0;i<slots.length;i++){
+   const [x,y]=slots[i],xx=bounds.x+bounds.width*x/100,yy=bounds.y+bounds.height*y/100;
+   const separation=used.length?Math.min(...used.map(u=>Math.hypot(xx-u.x,yy-u.y))):40;
+   // A generic art arrangement, not an inferred room measurement.
+   const preference=Math.hypot((x-desired[0])*bounds.width/100,(y-desired[1])*bounds.height/100);
+   const score=separation-Math.max(0,28-separation)*3-preference*.16;
+   if(score>top){top=score;best=i}
+  }
+  if(best<0)continue;
+  const [px,py]=slots.splice(best,1)[0];
+  marker.px=px;marker.py=py;used.push({x:bounds.x+bounds.width*px/100,y:bounds.y+bounds.height*py/100});
+  mapped.push(marker);
+ }
+ return mapped.map(({p,i,kind,px,py,approx})=>{
   const x=bounds.x+bounds.width*px/100,y=bounds.y+bounds.height*py/100;
   const on="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
-  const illustrated=!!lifelikeFurnitureSvg(str(p.kind).toLowerCase());
-  const art=illustrated?'<rect x="-17" y="-17" width="34" height="34" fill="transparent" stroke="none"/><g transform="scale(.88)">'+fixtureSvg(p.kind)+'</g>':
-   '<rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+fixtureSvg(p.kind)+'</g>';
-  return '<g class="hvm-map-fixture'+(illustrated?' hvm-map-fixture-illustrated':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped fixture")+'" onclick="event.stopPropagation();'+on+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+'}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
-   '<title>'+h(p.label||"Mapped fixture")+'</title><path class="hvm-map-hit" d="M-22 -22H22V22H-22Z" fill="transparent" stroke="none" pointer-events="all"/>'+art+'</g>';
+  const illustrated=!!lifelikeFurnitureSvg(kind);
+  const symbol=fixtureSvg(kind);
+  const art=illustrated?'<rect x="-17" y="-17" width="34" height="34" fill="transparent" stroke="none"/><g transform="scale(.88)">'+symbol+'</g>':
+   '<rect x="-13" y="-14" width="26" height="28" rx="6" fill="#fff9f6" stroke="#b57fa1" stroke-width="1.35"/><g transform="scale(.72)">'+symbol+'</g>';
+  const label=str(p.label||"Mapped furniture")+(approx?" · illustrative position":"");
+  return '<g class="hvm-map-fixture'+(illustrated?' hvm-map-fixture-illustrated':'')+(approx?' hvm-map-fixture-approx':'')+
+   '" role="button" tabindex="0" aria-label="Open '+h(label)+'" onclick="event.stopPropagation();'+on+
+   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+on+
+   '}" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+
+   '<title>'+h(label)+'</title><path class="hvm-map-hit" d="M-22 -22H22V22H-22Z" fill="transparent" stroke="none" pointer-events="all"/>'+
+   (approx?'<circle class="hvm-approx-ring" r="18" fill="#fff9f6" fill-opacity=".6" stroke="#987891" stroke-width="1.3" stroke-dasharray="3 3"/>':"")+
+   art+'</g>';
  }).join("");
 }
 
@@ -773,7 +824,7 @@ function mapSketch(f,m,skipApproved=false){
  const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="'+(f==='Second floor'||f==='Third floor'?'#f6e6f2':'#fff9fd')+'" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '':"";
- return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Rooms gain color as saved tasks are completed. Tap any illustrated room for its tasks.</span></div>'+
+ return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Rooms gain color as tasks are completed. Tap a room or object. Dotted furniture placements are illustrative, not measured.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M155 187V292H225V187" fill="#edd5bb" fill-opacity=".75" stroke="#a78390" stroke-width="2"/><path d="M160 212H220M160 235H220M160 258H220M160 280H220" stroke="#b99176" stroke-opacity=".58" stroke-width="2"/><path d="M186 193V286" stroke="#fff4e2" stroke-opacity=".66" stroke-width="1.5"/>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
@@ -1696,6 +1747,8 @@ window.houseVisualOpenZone=function(f,id){
  (z.notes?'<p>'+h(z.notes)+'</p>':"")+
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
+ const hasRoomPhotoReference=photos.length>0||f==="Second floor"||f==="Third floor"||z.id==="bath";
+ const roomPhotoDoor=hasRoomPhotoReference?'<details class="hvm-real-room-photos"><summary>See saved room photos'+(photos.length?' · '+photos.length:'')+'</summary>'+roomPhotos+'</details>':"";
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
  const roomTaskNotice=''; // Checklist itself is visible at the top; avoid a redundant jump card.
  const approvedZoom=approvedDollhouseRoomZoom(f,z);
@@ -1706,7 +1759,7 @@ window.houseVisualOpenZone=function(f,id){
   '</div></section>':"";
  // A room tap should immediately show actionable chores and direct room navigation.
  // Leave the approved illustrations, floor geometry, and task completion rules unchanged.
- const markup='<div class="hvm-zone-detail">'+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+'<details class="hvm-room-extra"><summary>Photos, inventory and room details</summary>'+roomPhotos+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+roomPhotoDoor+'<details class="hvm-room-extra"><summary>Inventory and room details</summary>'+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
