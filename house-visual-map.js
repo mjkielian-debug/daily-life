@@ -787,7 +787,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+correctedStairArtwork()+hotspots+objectHotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">✦ Kitchen: approved artwork. Dining room and living room: photo references documented; illustrated furniture is still being refined. Other rooms remain reference-pending. Tap a room or furniture symbol for its tasks and confirmed details. Progress coloring reflects completed tasks, not a claim that the room is clean.</div></section>'+
+  '<div class="hvm-approved-caption">✦ Kitchen artwork is approved. In other rooms, your saved photos appear first when you open a room; illustrated objects and positions still need refinement. Tap rooms for photos, tasks and confirmed details. Progress color measures completed tasks, not cleanliness.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
