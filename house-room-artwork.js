@@ -175,10 +175,14 @@ function illustration(kind){
  }
 }
 function backdrop(z,b){
- const wall=Math.min(84,Math.round(b.height*.26)),wood=z.id!=="bath";
- const bg='<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+b.height+'" fill="'+(wood?"#cfac89":"#e9e3d8")+'"/>'+
-  '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+wall+'" fill="'+(z.id==="playroom"?"#fff0df":"#f6e9d8")+'"/>'+
-  '<rect x="'+b.x+'" y="'+(b.y+wall-7)+'" width="'+b.width+'" height="9" fill="#7c5844"/>';
+ const wall=Math.min(84,Math.round(b.height*.26)),wood=z.id!=="bath",dining=z.id==="dining";
+ // Living/dining photo references show warm-white walls, dark stained wood
+ // trim and genuine brown wood floorboards, not beige wallpaper.
+ const wallColor=z.id==="living"||dining?"#f2efea":z.id==="playroom"?"#f4f1ec":"#f4eee6";
+ const bg='<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+b.height+'" fill="'+(wood?"#bf8c5f":"#e9e3d8")+'"/>'+
+  '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+wall+'" fill="'+wallColor+'"/>'+
+  (dining?Array.from({length:Math.ceil(b.width/24)},(_,i)=>'<path d="M'+(b.x+i*24)+' '+b.y+'v'+wall+'" stroke="#b6b4ad" stroke-width=".9" opacity=".45"/>').join(''):"")+
+  '<rect x="'+b.x+'" y="'+(b.y+wall-7)+'" width="'+b.width+'" height="9" fill="#6a432f"/>';
  const floor=wood?Array.from({length:Math.ceil(b.height/29)},(_,i)=>{
   const y=b.y+wall+i*29;return '<path d="M'+b.x+' '+y+'H'+(b.x+b.width)+'" stroke="#a47c59" stroke-width="2" opacity=".46"/>'+
   '<path d="M'+(b.x+((i%3)+1)*b.width/4)+' '+y+'v29" stroke="#af8461" stroke-width="1.5" opacity=".38"/>';
@@ -186,7 +190,7 @@ function backdrop(z,b){
   const y=b.y+wall+i*46;return '<path d="M'+b.x+' '+y+'H'+(b.x+b.width)+'" stroke="#d1ccc4" stroke-width="2" opacity=".63"/>';
  }).join('');
  return bg+floor+
-  '<path d="M'+b.x+' '+b.y+'V'+(b.y+b.height)+'M'+(b.x+b.width)+' '+b.y+'V'+(b.y+b.height)+'" stroke="#6d4d42" stroke-width="6"/>';
+  '<path d="M'+b.x+' '+b.y+'V'+(b.y+b.height)+'M'+(b.x+b.width)+' '+b.y+'V'+(b.y+b.height)+'" stroke="#65402e" stroke-width="6"/>';
 }
 function artwork(f,z,settings,stats,detail,bounds){
  if(f!=="First floor"||!rooms.has(String(z?.id))||!settings?.path)return "";
