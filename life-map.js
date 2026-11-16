@@ -199,9 +199,15 @@ window.lifeMapIsReviewSkipped=function(area,key,date){
 window.lifeMapAnswerReview=async function(kind,key,date,status){
  if(typeof applyDailyReview==="function")await applyDailyReview(kind,key,date,status,false);
 };
+// Auto-generated room steps are worked from the actual room, not a second
+// avatar checklist. Saved tasks and check-in history are unchanged.
+function lifeMapIsRoomOnlyReview(item){
+ if(!item||item.kind!=="task")return false;
+ return list(state&&state.tasks).some(t=>String(t.id)===String(item.key)&&t.generated==="room-daily");
+}
 function lifeMapReviewPanel(area,date){
  if(!area||typeof dailyReviewExpected!=="function")return "";
- const all=dailyReviewExpected(date).filter(item=>lifeMapAreaForReview(item)===area&&item.status==="unknown");
+ const all=dailyReviewExpected(date).filter(item=>lifeMapAreaForReview(item)===area&&item.status==="unknown"&&!lifeMapIsRoomOnlyReview(item));
  if(!all.length)return "";
  if(reviewSkipDate!==date){reviewSkipDate=date;reviewSkipKeys=new Set()}
  const item=all.find(row=>!reviewSkipKeys.has(String(area)+"|"+String(row.key)));
@@ -378,7 +384,7 @@ function view(areaOverride,tasksOnly){
  // One daily action source drives both the avatar and the destination lists.
  const dailyAreaRows=Object.fromEntries(areaKeys.map(key=>[key,[]]));
  const addDaily=(area,row)=>{if(dailyAreaRows[area]&&!dailyAreaRows[area].some(x=>x.id===row.id))dailyAreaRows[area].push(row)};
- for(const t of tasks)if(!t._lifeMapEvidence&&!(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",t.id,date)==="na"))addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
+ for(const t of tasks)if(!t._lifeMapEvidence&&t.generated!=="room-daily"&&!(typeof dailyReviewStatus==="function"&&dailyReviewStatus("task",t.id,date)==="na"))addDaily(lifeMapAreaForTask(t),{id:"task:"+t.id,kind:"task",key:String(t.id),done:!!t.done,title:t.title,task:t});
  for(const t of window.lifeMapHouseholdRows(date))if(t._lifeChore)addDaily("home",{id:"chore:"+t.id,kind:"chore",key:String(t.id),done:!!t.done,title:t.title,task:t});
  // Reading and non-household child routines belong on the People avatar page.
  for(const c of list(state&&state.chores)){
@@ -390,6 +396,7 @@ function view(areaOverride,tasksOnly){
  }
  for(const habit of careHabits){const area=mindCareHabits.includes(habit)?"mind":"body";addDaily(area,{id:"care:"+habit.key,kind:"care",key:String(habit.key),title:habit.label||habit.name||habit.key,done:typeof selfCareDone==="function"&&selfCareDone(habit.key,date),habit})}
  for(const item of typeof dailyReviewExpected==="function"?dailyReviewExpected(date):[]){
+  if(lifeMapIsRoomOnlyReview(item))continue;
   const area=lifeMapAreaForReview(item),rows=dailyAreaRows[area];if(!rows)continue;
   const existing=rows.find(x=>x.key===String(item.key));
   if(existing){if(item.status==="na")rows.splice(rows.indexOf(existing),1);continue}
@@ -441,7 +448,7 @@ function view(areaOverride,tasksOnly){
  const bottleSize=Math.max(1,waterGoal/3),waterBottlesDone=Math.min(3,Math.floor(waterOzToday/bottleSize));
  const waterRatio=waterBottlesDone/3,teethRatio=brushCount/2;
  const priorityOpen=waterBottlesDone<3||brushCount<2;
- const reviewNext=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).find(item=>item.status==="unknown"):null;
+ const reviewNext=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).find(item=>item.status==="unknown"&&!lifeMapIsRoomOnlyReview(item)):null;
  const nextReviewTask=reviewNext?(reviewNext.kind==="task"?list(state&&state.tasks).find(task=>String(task.id)===String(reviewNext.key)):reviewNext.kind==="chore"?Object.assign({},list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{},{title:(list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{}).chore,_lifeChore:true}):null):null;
  const nextReviewLastDone=nextReviewTask&&typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(nextReviewTask):"";
  let nextCheckinTitle="",nextCheckinQuestion="",nextCheckinArea="",nextCheckinType="";
@@ -523,7 +530,7 @@ function view(areaOverride,tasksOnly){
   const openRows=rows.filter(x=>!x.done).map(rowHtml).join(""),doneRows=rows.filter(x=>x.done).map(rowHtml).join("");
   // Existing tasks retain their real dates. No-date tasks are a visible
   // anytime queue, not silently excluded from the avatar category.
-  const areaTaskRows=allTasks.filter(t=>lifeMapAreaForTask(t)===areaSelection);
+  const areaTaskRows=allTasks.filter(t=>lifeMapAreaForTask(t)===areaSelection&&!(areaSelection==="home"&&t.generated==="room-daily"));
   const openAreaTasks=areaTaskRows.filter(t=>!t.done);
   const anytimeTasks=openAreaTasks.filter(t=>!/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||"")));
   const upcomingTasks=openAreaTasks.filter(t=>/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||""))&&String(t.date)>date).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -535,7 +542,9 @@ function view(areaOverride,tasksOnly){
   const activeCount=currentOpen; // Future and anytime work stays in the collapsed Other tasks section.
   const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
   const tracker=trackers[areaSelection];
-  const todayGroup='<section class="lm-area-task-group" aria-label="Today and check-ins">'+
+  const roomResetOpen=areaSelection==="home"?tasks.filter(t=>t.generated==="room-daily"&&!t.done).length:0;
+  const todayGroup=(roomResetOpen?'<div class="lm-room-task-route"><b>'+roomResetOpen+' room steps</b> are inside the house map. <button type="button" class="btn small" onclick="setView(&#39;lifemap&#39;);requestAnimationFrame(()=>window.lifeMapJump(&#39;house&#39;))">Open rooms ›</button></div>':"")+
+   '<section class="lm-area-task-group" aria-label="Today and check-ins">'+
     '<div class="lm-area-section-heading"><b>For today</b><small>'+currentOpen+' to do · '+stats.done+' done</small></div>'+
     (openRows?'<div class="lm-list">'+openRows+'</div>':'<p class="lm-area-clear">✓ Nothing waiting for today in this category.</p>')+'</section>';
   const todayCompleted=doneRows?'<details class="lm-area-task-history"><summary>Completed today · '+stats.done+'</summary><div class="lm-list">'+doneRows+'</div></details>':"";
