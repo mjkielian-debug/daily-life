@@ -788,14 +788,20 @@ function approvedOverviewRoom(f,z,settings,stats){
  const b=zoneBounds(settings.path);
  const hasRealPhoto=arr(z.photos).some(okPhoto)&&["living","dining","stairs_up"].includes(z.id);
  const photo=hasRealPhoto?'<image class="hvm-overview-private-photo" data-hvm-overview-photo="'+h(z.id)+'" x="'+(b.x+3)+'" y="'+(b.y+3)+'" width="'+Math.max(8,b.width-6)+'" height="'+Math.max(8,b.height-6)+'" preserveAspectRatio="xMidYMid slice" />':"";
- const illustrated= z.id==="playroom"?{...z,markers:arr(z.markers).filter(p=>["keyboard","mesh","desk","plant"].includes(p?.kind))}:z;
- const roomScene=["bath","playroom"].includes(z.id)&&typeof window.houseRealismRoomArtwork==="function"?
+ // Small, real-object scenes are immediate fallbacks while the private photos
+ // load. Once a photo is available it covers the illustrative scene entirely.
+ const previewKinds={
+  living:["futon","sofa","tv_dresser"],dining:["dining_table","desk_hutch"],
+  playroom:["keyboard","mesh","desk","plant"],bath:["sink","mirror","toilet"]
+ };
+ const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
+ const roomScene=previewKinds[z.id]&&typeof window.houseRealismRoomArtwork==="function"?
    window.houseRealismRoomArtwork(f,illustrated,settings,stats,true,b):"";
  const line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
   '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#725c62" stroke-width="4"/>'+
-  '<g clip-path="url(#'+token+')">'+photo+roomScene+line+'</g>'+
+  '<g clip-path="url(#'+token+')">'+roomScene+photo+line+'</g>'+
   (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
  '</g>';
 }
@@ -816,7 +822,7 @@ function overviewPreferredPhoto(room,photos){
 }
 function showCachedOverviewPhotos(scope){
  for(const node of where("First floor").flatMap(el=>Array.from(el.querySelectorAll("image[data-hvm-overview-photo]")))){
-  if(!node.isConnected)return;
+  if(!node.isConnected)continue;
   const url=overviewPhotoCache.get(scope+"|"+node.getAttribute("data-hvm-overview-photo"));
   if(url)node.setAttribute("href",url);
  }
