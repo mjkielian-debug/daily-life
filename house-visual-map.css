@@ -535,3 +535,21 @@
  .hvm-first-floor-reference .hvm-room-photo-picker{display:flex;gap:7px;justify-content:space-between;align-items:center;flex-wrap:wrap}
  .hvm-first-floor-reference .hvm-room-photo-picker button{min-height:44px}
 }
+
+/* Photo-referenced first floor: render furnishings inside exactly the old zone
+   boundaries; the kitchen and both flights of stairs are not overpainted.
+   Grayscale art is revealed in color by real room-task completion. */
+.hvm-room-artwork-map,.hvm-room-artwork-detail{pointer-events:none}
+.hvm-room-artwork-map .hvm-scene-muted{filter:grayscale(.9);opacity:.93}
+.hvm-room-artwork-map .hvm-scene-color{filter:saturate(1.08)}
+.hvm-room-artwork-detail .hvm-room-art-scene{filter:saturate(1.02)}
+.hvm-room-illustrated-object.is-approximate{opacity:.86}
+.hvm-approved-object-marker.hvm-drawn-object-hotspot{cursor:pointer;outline:none;touch-action:manipulation}
+.hvm-drawn-object-hotspot .hvm-scene-inspect-dot{opacity:.78;transition:opacity .15s,stroke-width .15s}
+.hvm-drawn-object-hotspot:hover .hvm-scene-inspect-dot,
+.hvm-drawn-object-hotspot:focus-visible .hvm-scene-inspect-dot{opacity:1;stroke-width:4;fill:#f5d9ec}
+.hvm-approx-legend{font-weight:700;color:#695469}
+@media(max-width:600px){
+ .hvm-approved-room-zoom svg{max-height:510px}
+ .hvm-approved-room-zoom .hvm-approx-legend{font-size:.72rem}
+}
