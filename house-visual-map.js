@@ -786,15 +786,16 @@ function approvedOverviewRoom(f,z,settings,stats){
  const progress=stats.total?Math.max(0,Math.min(1,stats.done/stats.total)):0;
  const token="hvm-overview-"+String(z.id).replace(/[^a-z0-9_-]/gi,"");
  const b=zoneBounds(settings.path);
- const hasRealPhoto=arr(z.photos).some(okPhoto)&&["living","dining","playroom","stairs_up"].includes(z.id);
+ const hasRealPhoto=arr(z.photos).some(okPhoto)&&["living","dining","stairs_up"].includes(z.id);
  const photo=hasRealPhoto?'<image class="hvm-overview-private-photo" data-hvm-overview-photo="'+h(z.id)+'" x="'+(b.x+3)+'" y="'+(b.y+3)+'" width="'+Math.max(8,b.width-6)+'" height="'+Math.max(8,b.height-6)+'" preserveAspectRatio="xMidYMid slice" />':"";
- const bathScene=z.id==="bath"&&typeof window.houseRealismRoomArtwork==="function"?
-   window.houseRealismRoomArtwork(f,z,settings,stats,true,b):"";
+ const illustrated= z.id==="playroom"?{...z,markers:arr(z.markers).filter(p=>["keyboard","mesh","desk","plant"].includes(p?.kind))}:z;
+ const roomScene=["bath","playroom"].includes(z.id)&&typeof window.houseRealismRoomArtwork==="function"?
+   window.houseRealismRoomArtwork(f,illustrated,settings,stats,true,b):"";
  const line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
   '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#725c62" stroke-width="4"/>'+
-  '<g clip-path="url(#'+token+')">'+photo+bathScene+line+'</g>'+
+  '<g clip-path="url(#'+token+')">'+photo+roomScene+line+'</g>'+
   (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
  '</g>';
 }
@@ -826,7 +827,7 @@ async function hydrateApprovedOverviewPhotos(f,m){
  showCachedOverviewPhotos(scope);
  if(!where(f).some(el=>el.querySelector("image[data-hvm-overview-photo]")))return;
  if(overviewPhotoPending.has(scope)){await overviewPhotoPending.get(scope);showCachedOverviewPhotos(scope);return}
- const rooms=arr(m.zones).filter(z=>["living","dining","playroom","stairs_up"].includes(z?.id)&&
+ const rooms=arr(m.zones).filter(z=>["living","dining","stairs_up"].includes(z?.id)&&
   arr(z.photos).some(okPhoto)&&!overviewPhotoCache.has(scope+"|"+z.id));
  if(!rooms.length)return;
  const job=(async()=>{
