@@ -13,9 +13,9 @@ const specs={
  basement_stairs:{path:"M31 906H316V1148H31Z",cx:171,cy:1024,badge:[240,929]},
  stairs_up:{path:"M320 900H581V1065H320Z",cx:451,cy:985,badge:[500,924]}
 };
-const calls=[];
+const calls=[],illustrations=[];
 const ctx={
- window:{houseRealismRoomArtwork:()=>{throw Error("overview must not render detailed furniture")}},
+ window:{houseRealismRoomArtwork:(f,z)=>{illustrations.push(z.id);return "<room-preview/>";}},
  approvedDollhouseRooms:specs,approvedDollhouseAsset:"assets/approved-dollhouse-first-floor.png?v=20261114-approved1",
  roomTaskColorStats:(f,z)=>z.id==="living"?{total:3,done:1}:{total:0,done:0},
  approvedDollhouseProgressArt:(f,z)=>{calls.push(z.id);return "<kitchen-progress/>"},
@@ -28,13 +28,15 @@ const ctx={
  h:x=>String(x).replace(/&/g,"&amp;").replace(/"/g,"&quot;"),
  act:(f,z)=>"houseVisualOpenZone('"+f+"','"+z.id+"')"
 };
-vm.runInNewContext(slices+"window.renderOverview=approvedDollhouseMap;window.surface=approvedOverviewRoom;",ctx);
+vm.runInNewContext(slices+"window.renderOverview=approvedDollhouseMap;window.surface=approvedOverviewRoom;window.selectOverviewPhoto=overviewPreferredPhoto;",ctx);
 test("main map retains approved kitchen but omits extra furniture, stair art and plus buttons",()=>{
  const html=ctx.window.renderOverview("First floor",{zones:Object.keys(specs).map(id=>({id,name:id}))},"legacy");
  assert.match(html,/assets\/approved-dollhouse-first-floor\.png/);
  assert.match(html,/kitchen-progress/);
  assert.match(html,/reveal|surfaces|hvm-overview-floor-surface/);
- assert.doesNotMatch(html,/hvm-room-illustrated-object|hvm-drawn-object-hotspot|hvm-corrected-stair-art/);
+ assert.doesNotMatch(html,/hvm-drawn-object-hotspot|hvm-corrected-stair-art/);
+ assert.match(html,/hvm-overview-private-photo/);
+ assert.match(html,/room-preview/);
  assert.equal(calls.join(","),"kitchen");
  assert.equal((html.match(/class="hvm-approved-room"/g)||[]).length,7);
 });
@@ -51,4 +53,22 @@ test("furniture detail functions remain available, but stay outside the overview
  assert.match(source,/function approvedDollhouseObjectHotspots\(f,z\)/);
  assert.match(source,/function correctedStairArtwork\(\)/);
  assert.doesNotMatch(slices,/correctedStairArtwork\(\)\+/);
+});
+
+test("real photo placeholders come from room records, without hardcoded personal image URLs",()=>{
+ const entries=Object.keys(specs).map(id=>({id,name:id,photos:id==="living"?["12345678-1234-1234-1234-123456789012"]:[]}));
+ const html=ctx.window.renderOverview("First floor",{zones:entries},"");
+ assert.match(html,/data-hvm-overview-photo="living"/);
+ assert.doesNotMatch(html,/data-hvm-overview-photo="playroom"/);
+ assert.doesNotMatch(html,/data:image\/jpeg;base64/);
+ assert.match(source,/cloudClient\.from\("photo_inbox"\)\.select\("id,image_data"\)/);
+ assert.match(source,/if\(f==="First floor"&&m\)void hydrateApprovedOverviewPhotos\(f,m\)/);
+});
+test("correctly identifies saved room photo subjects without changing photo identities",()=>{
+ const roomCandidates=[
+ {id:"futon",title:"Laundry · futon cleared"},
+ {id:"tv",title:"Living room · TV, speaker and stair doorway"},
+ {id:"door",title:"Living room · front door and futon"}];
+ assert.equal(ctx.window.selectOverviewPhoto("living",roomCandidates),"futon");
+ assert.equal(ctx.window.selectOverviewPhoto("dining",[{id:"round",title:"Dining room · round table and desk"},{id:"stairs",title:"Dining room · stairs"}]),"round");
 });
