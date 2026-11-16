@@ -42,7 +42,8 @@ test("room art never replaces the approved kitchen or stair connections",()=>{
  const house=read("house-visual-map.js");
  assert.match(house,/approvedDollhouseAsset="assets\/approved-dollhouse-first-floor\.png\?v=20261114-approved1"/);
  assert.match(house,/function correctedStairArtwork\(\)/);
- assert.match(house,/reveal\+revisedScenes\+correctedStairArtwork\(\)\+hotspots\+objectHotspots/);
+ assert.match(house,/reveal\+surfaces\+hotspots/);
+ assert.doesNotMatch(house.slice(house.indexOf("function approvedDollhouseMap("),house.indexOf("function approvedDollhouseRoomZoom(")),/revisedScenes|objectHotspots|correctedStairArtwork\(\)/);
 });
 test("dining, playroom and half-bath draw only objects actually present in markers",()=>{
  const zones=[
