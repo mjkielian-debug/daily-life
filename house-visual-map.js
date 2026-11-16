@@ -103,7 +103,13 @@ function zoneFloorGraphic(f,z,bounds){
    return '<path d="M'+x.toFixed(1)+' '+top.toFixed(1)+'V'+bottom.toFixed(1)+'" stroke="#704e55" stroke-width="'+Math.max(2.6,Math.min(4,bounds.width*.055)).toFixed(1)+'" stroke-linecap="round"/>';
   }).join("");
   return '<g class="hvm-stair-plan hvm-stair-plan-up-pivoted" aria-label="Illustrated stair treads inside the saved staircase footprint" pointer-events="none">'+
-   '<rect x="'+(left-5).toFixed(1)+'" y="'+(top-5).toFixed(1)+'" width="'+(width+10).toFixed(1)+'" height="'+(height+10).toFixed(1)+'" rx="6" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+'</g>';
+   '<rect x="'+(left-5).toFixed(1)+'" y="'+(top-5).toFixed(1)+'" width="'+(width+10).toFixed(1)+'" height="'+(height+10).toFixed(1)+'" rx="6" fill="#c9a17b" stroke="#8c6a55" stroke-width="2"/>'+treads+
+   (mainStairs?'<g aria-label="Window and plants at the confirmed middle landing">'+
+    '<rect x="'+(bounds.x+10).toFixed(1)+'" y="'+(bounds.y+7).toFixed(1)+'" width="19" height="15" rx="1" fill="#b6dce9" stroke="#fffdf5" stroke-width="2"/>'+
+    '<path d="M'+(bounds.x+19.5).toFixed(1)+' '+(bounds.y+8).toFixed(1)+'v13" stroke="#fffdf5" stroke-width="2"/>'+
+    '<path d="M'+(bounds.x+bounds.width-18).toFixed(1)+' '+(bounds.y+26).toFixed(1)+'v-12m0 9l-9-10m9 9l8-12" stroke="#668f68" stroke-width="3" fill="none" stroke-linecap="round"/>'+
+    '<path d="M'+(bounds.x+bounds.width-24).toFixed(1)+' '+(bounds.y+24).toFixed(1)+'h12l-2 9h-8Z" fill="#b98277" stroke="#816258" stroke-width="1"/>'+
+    '</g>':"")+'</g>';
  }
  const left=bounds.x+bounds.width*.19,right=bounds.x+bounds.width*.81;
  const topRatio=(firstUp||thirdStairs)?0.25:0.31;
@@ -826,7 +832,7 @@ function mapSketch(f,m,skipApproved=false){
   '':"";
  return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Rooms gain color as tasks are completed. Tap a room or object. Dotted furniture placements are illustrative, not measured.</span></div>'+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
-  '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path d="M155 187V292H225V187" fill="#edd5bb" fill-opacity=".75" stroke="#a78390" stroke-width="2"/><path d="M160 212H220M160 235H220M160 258H220M160 280H220" stroke="#b99176" stroke-opacity=".58" stroke-width="2"/><path d="M186 193V286" stroke="#fff4e2" stroke-opacity=".66" stroke-width="1.5"/>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
+  '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path class="hvm-third-floor-passage" d="M165 184H215V300H165Z" fill="#e6d1b8" stroke="#a78390" stroke-width="2"/><path d="M169 188V295M211 188V295" stroke="#fff9eb" stroke-width="3"/><path d="M165 190H215M165 295H215" stroke="#906f68" stroke-width="2"/><text x="190" y="248" text-anchor="middle" font-size="8" font-weight="800" fill="#694958">To bedroom</text>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';
 }
 document.addEventListener("click",event=>{const button=event.target?.closest?.("[data-hvm-local-room]");if(button)window.houseVisualOpenLocalRoom(button.dataset.hvmLocalRoom)});
@@ -1627,7 +1633,7 @@ window.houseVisualShowRoomPhoto=async function(photoId,index=0,total=activeRoomP
  stage.textContent="Loading saved room photo…";
  const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
  const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
- if(error||!data||!/^data:image\/jpeg;base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
+ if(error||!data||!/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
   current.textContent="This saved photo could not be displayed.";return;
  }
  const img=document.createElement("img");
