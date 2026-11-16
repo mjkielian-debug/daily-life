@@ -274,15 +274,15 @@ function avatarHotspot(area,label,path){
 
 const lifeMapPages={map:"lifemap",today:"lifemap",flow:"itinerary",people:"family",reading:"reading",food:"home",house:"household",money:"more",care:"selfcare",spirituality:"spirituality",hobbies:"gardenhobbies",vault:"vault",settings:"settings",inventory:"inventory",budget:"budget"};
 const lifeMapDoors={
- home:[["⌂","House map","house"],["✦","Today","today"],["🍲","Meals & pantry","food"],["▦","Inventory","inventory"],["📖","Reading","reading"],["✿","Garden & hobbies","hobbies"],["▣","Private vault","vault"]],
- mind:[["✦","Today","today"],["◷","Day Flow","flow"],["♡","Self-care","care"],["📖","Reading","reading"],["⚙","Settings","settings"]],
- body:[["♡","Health & care","care"],["✦","Today","today"],["◷","Day Flow","flow"],["🍲","Food & meals","food"]],
- people:[["♥","People & kids","people"],["✉","Texts","texts"],["📖","Reading","reading"],["◷","Family schedule","flow"],["✦","Today","today"]],
- spirituality:[["✧","Spirituality","spirituality"],["📖","Reading","reading"],["◷","Day Flow","flow"]],
- hobbies:[["✿","Garden & hobbies","hobbies"],["📖","Reading","reading"],["✦","Today","today"],["⌂","House projects","house"]],
- money:[["$","Money & bills","money"],["◫","Budget","budget"],["▣","Private vault","vault"],["⚙","Settings","settings"]],
- car:[["◷","Day Flow","flow"],["✦","Today","today"],["♥","People","people"]],
- work:[["◷","Work schedule","flow"],["✦","Today","today"],["$","Money","money"]]
+ home:[["⌂","Open house map","house"],["🍲","Meals & pantry","food"],["▦","Inventory","inventory"],["✿","Garden & hobbies","hobbies"]],
+ mind:[["♡","Self-care","care"],["◷","Day Flow","flow"],["📖","Reading","reading"]],
+ body:[["♡","Health & care","care"],["🍲","Food & meals","food"]],
+ people:[["♥","People & kids","people"],["✉","Texts","texts"],["📖","Reading","reading"],["◷","Family schedule","flow"]],
+ spirituality:[["✧","Spirituality","spirituality"],["📖","Reading","reading"]],
+ hobbies:[["✿","Garden & hobbies","hobbies"],["⌂","House projects","house"]],
+ money:[["$","Money & bills","money"],["◫","Budget","budget"],["▣","Private vault","vault"]],
+ car:[["◷","Driving schedule","flow"],["$","Money","money"]],
+ work:[["◷","Work schedule","flow"],["$","Money","money"]]
 };
 window.lifeMapNavigate=function(key){
  if(key==="capture"){if(typeof openLifeCapture==="function")openLifeCapture();return}
@@ -293,9 +293,9 @@ window.lifeMapNavigate=function(key){
 };
 function lifeMapDoorwaysHtml(area,compact){
  const entries=lifeMapDoors[area]||lifeMapDoors.home;
- const all=entries.concat([["＋","Quick capture","capture"],["⌕","Search everything","search"],["⚙","Settings","settings"],["↻","Check app version","version"]].filter(row=>!entries.some(x=>x[2]===row[2])));
+ const all=compact?entries.concat([["＋","Quick capture","capture"],["⌕","Search everything","search"]].filter(row=>!entries.some(x=>x[2]===row[2]))):entries;
  const links=all.map(([icon,label,key])=>'<button type="button" class="lm-doorway" onclick="lifeMapNavigate(&#39;'+key+'&#39;)"><span aria-hidden="true">'+icon+'</span>'+h(label)+'</button>').join("");
- return compact?'<details class="lm-house-doors"><summary>Explore more through the house</summary><div class="lm-door-grid">'+links+'</div></details>':'<section class="lm-avatar-doors"><div class="lm-area-section-heading"><b>Explore from here</b><small>Everything in one connected life map</small></div><div class="lm-door-grid">'+links+'</div></section>';
+ return compact?'<details class="lm-house-doors"><summary>More house links</summary><div class="lm-door-grid">'+links+'</div></details>':'<section class="lm-avatar-doors"><div class="lm-area-section-heading"><b>Related pages</b><small>Shortcuts for this category</small></div><div class="lm-door-grid">'+links+'</div></section>';
 }
 
 // Keep built-in optional care accessible without making it a daily debt.
@@ -443,7 +443,7 @@ function view(areaOverride,tasksOnly){
   avatarMark("Car & driving","C",47,425,dailyAreaStats.car.pct,"#e98cb0","car",dailyAreaStats.car.left),
   avatarMark("Work","W",175,425,dailyAreaStats.work.pct,"#82c6a4","work",dailyAreaStats.work.left)
  ].join("");
- const waterStatus=waterHasCheckin?Math.round(waterOzToday)+" / "+Math.round(waterGoal)+" oz":"0 / 3";
+ const waterStatus=Math.round(waterOzToday)+" / "+Math.round(waterGoal)+" oz";
  const waterMarks=[0,1,2].map(index=>{
   const portion=waterGoal/3,fill=waterHasCheckin?Math.max(0,Math.min(100,Math.round((waterOzToday-portion*index)/portion*100))):0;
   return '<span class="lm-priority-mark lm-priority-water-mark" style="--lm-fill:'+fill+'%"><span aria-hidden="true">💧</span></span>';
@@ -458,7 +458,7 @@ function view(areaOverride,tasksOnly){
  const reviewNext=typeof dailyReviewExpected==="function"?dailyReviewExpected(date).find(item=>item.status==="unknown"&&!lifeMapIsRoomOnlyReview(item)):null;
  const nextReviewTask=reviewNext?(reviewNext.kind==="task"?list(state&&state.tasks).find(task=>String(task.id)===String(reviewNext.key)):reviewNext.kind==="chore"?Object.assign({},list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{},{title:(list(state&&state.chores).find(task=>String(task.id)===String(reviewNext.key))||{}).chore,_lifeChore:true}):null):null;
  const nextReviewLastDone=nextReviewTask&&typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(nextReviewTask):"";
- let nextCheckinTitle="",nextCheckinQuestion="",nextCheckinArea="",nextCheckinType="";
+ let nextCheckinTitle="",nextCheckinQuestion="",nextCheckinArea="",nextCheckinType="",nextPriorityLogAction="",nextPriorityLogLabel="";
  if(priorityOpen){
   const chooseWater=waterBottlesDone<3&&(brushCount>=2||waterRatio<=teethRatio);
   nextCheckinType=chooseWater?"Priority habit · water":"Priority habit · teeth";
@@ -467,6 +467,8 @@ function view(areaOverride,tasksOnly){
    "Have you had your "+(["first","second","third"][waterBottlesDone]||"next")+" 26-ounce bottle of water today?":
    (brushCount===0?"Have you brushed your teeth yet today?":"Have you brushed a second time today?");
   nextCheckinArea="body";
+  nextPriorityLogAction=chooseWater?"addWater(26)":"logCareOccurrence(&#39;brush&#39;)";
+  nextPriorityLogLabel=chooseWater?"✓ I drank 26 oz":"✓ I brushed";
  }else if(reviewNext){
   nextCheckinType="Daily Review · "+String(reviewNext.group||"Today");
   nextCheckinTitle=String(reviewNext.label||"Check-in");
@@ -479,12 +481,12 @@ function view(areaOverride,tasksOnly){
  }
  const nextAreaTitle={body:"Body & health",home:"Home tasks",mind:"Mind & self-care",people:"Family & kids",spirituality:"Spirituality",hobbies:"Hobbies & projects",money:"Money & planning",car:"Car & driving",work:"Work"}[nextCheckinArea]||"Daily Review";
  const nextAction=nextCheckinArea?"lifeMapSelectArea(&#39;"+h(nextCheckinArea)+"&#39;)":"openDailyReview(&#39;"+h(date)+"&#39;)";
- const nextActionButton=priorityOpen||reviewNext?'<button type="button" class="lm-next-checkin-open" onclick="'+nextAction+'">Open '+h(nextAreaTitle)+' ›</button>':"";
+ const nextActionButton=priorityOpen?'<div class="lm-next-checkin-actions"><button type="button" class="lm-next-checkin-log" onclick="'+nextPriorityLogAction+'">'+h(nextPriorityLogLabel)+'</button><button type="button" class="lm-next-checkin-open" onclick="'+nextAction+'">More in '+h(nextAreaTitle)+' ›</button></div>':reviewNext?'<button type="button" class="lm-next-checkin-open" onclick="'+nextAction+'">Open '+h(nextAreaTitle)+' ›</button>':"";
  const nextCheckinPanel='<section class="lm-next-checkin" aria-label="Next check-in" aria-live="polite">'+
   '<div class="lm-next-checkin-head"><span>NEXT CHECK-IN</span><b>'+h(nextCheckinType)+'</b></div>'+
   '<div class="lm-next-checkin-question"><strong>'+h(nextCheckinTitle)+'</strong><span>'+h(nextCheckinQuestion)+'</span></div>'+
   (!priorityOpen&&nextReviewLastDone?'<small class="lm-next-checkin-last">Last done · '+h(nextReviewLastDone)+'</small>':"")+
-  '<div class="lm-next-checkin-foot"><small>Tell me out loud; I’ll log it and update your progress.</small><div class="lm-next-checkin-progress"><span>💧 '+waterBottlesDone+'/3</span><span>🦷 '+brushCount+'/2</span></div></div>'+
+  '<div class="lm-next-checkin-foot"><small>Only tap complete after doing it. You can tell ChatGPT, too.</small></div>'+
   nextActionButton+'</section>';
  const taskDateLabel=t=>{const value=String(t&&t.date||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";const parsed=new Date(value+"T12:00:00");return Number.isNaN(parsed.getTime())?"":parsed.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})};
  const taskRow=t=>{
@@ -570,7 +572,7 @@ function view(areaOverride,tasksOnly){
     '<button type="button" class="lm-region" onclick="setView(&#39;'+tracker[0]+'&#39;)">'+h(tracker[1])+' ›</button>';
   return '<section class="life-map-page lm-area-page" data-life-area-page="'+h(areaSelection)+'">'+
    '<header class="lm-area-page-heading"><button type="button" class="lm-area-back" onclick="setView(&#39;lifemap&#39;)">‹ Avatar & house</button>'+
-   '<span class="lm-kicker">YOUR CATEGORY TASKS</span><h1>'+h(areaTitles[areaSelection])+'</h1>'+
+   '<span class="lm-kicker">MY LIFE</span><h1>'+h(areaTitles[areaSelection])+'</h1>'+
    '<div class="lm-area-task-lead"><span><strong>'+activeCount+'</strong><small>needs attention today</small></span>'+
    '<button type="button" class="lm-area-add-task" onclick="lifeMapOpenAreaTask(&#39;'+h(areaSelection)+'&#39;)">＋ Add task here</button></div></header>'+
    '<section class="lm-inline-panel lm-area-page-content lm-area-task-workspace" aria-label="'+h(areaTitles[areaSelection])+' task list">'+
