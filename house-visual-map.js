@@ -785,14 +785,79 @@ function approvedOverviewRoom(f,z,settings,stats){
  const base=colors[z.id]||"#f5f1eb",fill=typeof color==="function"?color(z.color):"#cb91b6";
  const progress=stats.total?Math.max(0,Math.min(1,stats.done/stats.total)):0;
  const token="hvm-overview-"+String(z.id).replace(/[^a-z0-9_-]/gi,"");
- const b=zoneBounds(settings.path),line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
+ const b=zoneBounds(settings.path);
+ const hasRealPhoto=arr(z.photos).some(okPhoto)&&["living","dining","playroom","stairs_up"].includes(z.id);
+ const photo=hasRealPhoto?'<image class="hvm-overview-private-photo" data-hvm-overview-photo="'+h(z.id)+'" x="'+(b.x+3)+'" y="'+(b.y+3)+'" width="'+Math.max(8,b.width-6)+'" height="'+Math.max(8,b.height-6)+'" preserveAspectRatio="xMidYMid slice" />':"";
+ const bathScene=z.id==="bath"&&typeof window.houseRealismRoomArtwork==="function"?
+   window.houseRealismRoomArtwork(f,z,settings,stats,true,b):"";
+ const line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
-  '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity=".97" stroke="#725c62" stroke-width="4"/>'+
-  (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.14+.64*progress).toFixed(2)+'"/>':"")+
-  '<g clip-path="url(#'+token+')">'+line+'</g>'+
+  '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#725c62" stroke-width="4"/>'+
+  '<g clip-path="url(#'+token+')">'+photo+bathScene+line+'</g>'+
+  (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
  '</g>';
 }
+// Reference photographs never enter the public repository or persistent browser
+// storage. They are fetched through the signed-in user's existing private gallery.
+const overviewPhotoCache=new Map(),overviewPhotoPending=new Map();
+function overviewPreferredPhoto(room,photos){
+ const choices=arr(photos);
+ const score=title=>{
+  const t=str(title).toLowerCase();
+  if(room==="living")return /futon cleared/.test(t)?95:/front door and futon/.test(t)?90:/blue sofa/.test(t)?85:/living room/.test(t)?50:0;
+  if(room==="dining")return /round table/.test(t)?95:/dining room/.test(t)?75:0;
+  if(room==="playroom")return /playroom/.test(t)?90:0;
+  if(room==="stairs_up")return /first floor to second floor/.test(t)?95:/stairs toward upstairs/.test(t)?80:/dining room.*stairs/.test(t)?60:0;
+  return 0;
+ };
+ return choices.slice().sort((a,b)=>score(b.title)-score(a.title))[0]?.id||"";
+}
+function showCachedOverviewPhotos(scope){
+ for(const node of where("First floor").flatMap(el=>Array.from(el.querySelectorAll("image[data-hvm-overview-photo]")))){
+  if(!node.isConnected)return;
+  const url=overviewPhotoCache.get(scope+"|"+node.getAttribute("data-hvm-overview-photo"));
+  if(url)node.setAttribute("href",url);
+ }
+}
+async function hydrateApprovedOverviewPhotos(f,m){
+ if(f!=="First floor"||!m||!online())return;
+ const scope=key(f);
+ showCachedOverviewPhotos(scope);
+ if(!where(f).some(el=>el.querySelector("image[data-hvm-overview-photo]")))return;
+ if(overviewPhotoPending.has(scope)){await overviewPhotoPending.get(scope);showCachedOverviewPhotos(scope);return}
+ const rooms=arr(m.zones).filter(z=>["living","dining","playroom","stairs_up"].includes(z?.id)&&
+  arr(z.photos).some(okPhoto)&&!overviewPhotoCache.has(scope+"|"+z.id));
+ if(!rooms.length)return;
+ const job=(async()=>{
+  // Query metadata first, so we select the photo that actually depicts the room
+  // instead of relying on an arbitrary photo order.
+  const ids=[...new Set(rooms.flatMap(z=>arr(z.photos).filter(okPhoto)))].slice(0,32);
+  const {data:meta,error:metaError}=await cloudClient.from("photo_inbox").select("id,title").in("id",ids).limit(40);
+  if(metaError||scope!==key(f))return;
+  const picks=rooms.map(z=>({
+   room:z.id,id:overviewPreferredPhoto(z.id,arr(meta).filter(photo=>arr(z.photos).includes(photo.id)))
+  })).filter(row=>okPhoto(row.id));
+  if(!picks.length)return;
+  const chosen=[...new Set(picks.map(x=>x.id))];
+  const {data,error}=await cloudClient.from("photo_inbox").select("id,image_data").in("id",chosen).limit(6);
+  if(error||scope!==key(f))return;
+  const images=new Map(arr(data).filter(row=>/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(row.image_data||""))
+   .map(row=>[row.id,row.image_data]));
+  for(const pick of picks){
+   const uri=images.get(pick.id);
+   if(uri)overviewPhotoCache.set(scope+"|"+pick.room,uri);
+  }
+  // Keep previews in memory only, bounded if the user changes account.
+  if(overviewPhotoCache.size>18){
+   for(const k of overviewPhotoCache.keys())if(!k.startsWith(scope+"|"))overviewPhotoCache.delete(k);
+  }
+ })().catch(()=>{}).finally(()=>overviewPhotoPending.delete(scope));
+ overviewPhotoPending.set(scope,job);
+ await job;
+ showCachedOverviewPhotos(scope);
+}
+
 function approvedOverviewLabel(z,settings,stats){
  if(z.id==="kitchen")return approvedDollhouseCountBadge(settings,stats,z);
  const labels={bath:"Bathroom",dining:"Dining room",living:"Living room",playroom:"Playroom",
@@ -1404,6 +1469,7 @@ function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
  if(selectedRoomProfile())hydratePersonRoomPhotoTour();
+ if(f==="First floor"&&m)void hydrateApprovedOverviewPhotos(f,m);
  refreshRoomProgress(f);
 }
 window.houseVisualMapHtml=function(f){
