@@ -211,7 +211,7 @@ function lifeMapReviewPanel(area,date){
  if(!all.length)return "";
  if(reviewSkipDate!==date){reviewSkipDate=date;reviewSkipKeys=new Set()}
  const item=all.find(row=>!reviewSkipKeys.has(String(area)+"|"+String(row.key)));
- const reviewTask=item.kind==="task"?list(state&&state.tasks).find(row=>String(row.id)===String(item.key)):item.kind==="chore"?list(state&&state.chores).find(row=>String(row.id)===String(item.key)):null;
+ const reviewTask=item?.kind==="task"?list(state&&state.tasks).find(row=>String(row.id)===String(item.key)):item?.kind==="chore"?list(state&&state.chores).find(row=>String(row.id)===String(item.key)):null;
  const itemLastDone=typeof window.lifeMapTaskLastDoneLabel==="function"?window.lifeMapTaskLastDoneLabel(reviewTask):"";
  let content="";
  if(item){
