@@ -124,8 +124,8 @@
 #familyClosetBody .fc-people{padding-bottom:4px}
 #familyClosetBody .fc-filter-row{padding-bottom:6px}
 #familyClosetBody .fc-flip-photo{display:flex;justify-content:center;align-items:center}
-#familyClosetBody .fc-flip-photo>.dl-clothing-thumb{flex:none!important;width:min(100%,266px)!important;height:auto!important;aspect-ratio:1/1!important;min-height:0;align-self:center;border-radius:0!important;mix-blend-mode:multiply}
-#familyClosetBody .fc-flip-peek>.dl-clothing-thumb{aspect-ratio:1/1;width:100%;height:auto;max-height:100%}
+#familyClosetBody .fc-flip-photo>.dl-clothing-thumb{flex:none!important;width:min(100%,266px)!important;height:auto!important;aspect-ratio:19/21!important;min-height:0;align-self:center;border-radius:0!important;mix-blend-mode:multiply}
+#familyClosetBody .fc-flip-peek>.dl-clothing-thumb{aspect-ratio:19/21;width:100%;height:auto;max-height:100%}
 #familyClosetBody .fc-flip-scene{touch-action:pan-y}
 #familyClosetBody .fc-flip-scene:focus-visible{outline:3px solid #935892;outline-offset:-3px}
 #familyClosetBody .fc-flip-arrow:focus-visible,#familyClosetBody .fc-fold-trigger:focus-visible{outline:3px solid #935892;outline-offset:2px}
