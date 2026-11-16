@@ -35,7 +35,8 @@ test("kids' reading stays in People, not in house task completion",()=>{
 test("approved first-floor art keeps kitchen and adds map object interactions",()=>{
  assert.match(house,/function approvedDollhouseObjectHotspots\(f,z\)/);
  assert.match(house,/z\.id==="kitchen"\)return ""/);
- assert.match(house,/hotspots\+objectHotspots/);
+ assert.match(house,/reveal\+surfaces\+hotspots/);
+ assert.match(house,/function approvedOverviewLabel\(z,settings,stats\)/);
  assert.match(house,/houseVisualInteractMarker/);
  assert.match(house,/approvedDollhouseAsset="assets\/approved-dollhouse-first-floor\.png/);
 });
