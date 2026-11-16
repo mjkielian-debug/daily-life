@@ -545,16 +545,32 @@ function photoRoomAccents(f,z,b){
  if(f==="Second floor"||f==="Third floor"){
   const name=(str(z.id)+" "+str(z.name)).toLowerCase();
   if(/bed|bedroom|dolly|demitri|dimitri|ambrose|leo|michelle/.test(name)){
-   const quilt=/dolly/.test(name)?"#e5abc9":/ambrose/.test(name)?"#9fcebf":/leo/.test(name)?"#93b6d7":/demitri|dimitri/.test(name)?"#8eb7ce":"#d2a1a8";
+   // Use the saved bed description, not an invented color for a child's room.
+   const bedRecord=arr(z.markers).find(p=>/^bed(?:\b|\s*·)/i.test(str(p.label||""))||str(p.kind)==="bed");
+   const bedInfo=(str(bedRecord?.label)+" "+str(bedRecord?.status)).toLowerCase();
+   const quilt=/purple|lavender/.test(bedInfo)?"#c8b2e8":
+    /dinosaur|dino/.test(bedInfo)?"#a6c6a1":
+    /light blue|pale blue/.test(bedInfo)?"#a4cbe8":
+    /yellow/.test(bedInfo)?"#e6c970":"#c8b9d0";
+   const fold=/purple|lavender/.test(bedInfo)?"#e8ddf6":
+    /dinosaur|dino/.test(bedInfo)?"#d0e2bf":
+    /light blue|pale blue/.test(bedInfo)?"#dceff9":
+    /white floral quilt/.test(bedInfo)?"#fffaf1":"#efeaee";
+   const pillows=/blue pillows/.test(bedInfo)?"#a7c8e6":"#e1eaf2";
+   const beddingMarks=/dinosaur|dino/.test(bedInfo)?
+    '<path d="M42 65l3 -4 4 4-3 4zM61 73l3-4 4 4-3 4z" fill="#6d9d73" stroke="#ecf5e8" stroke-width="1"/>':
+    /floral/.test(bedInfo)?
+    '<g stroke="#d9b6cb" stroke-width=".8" fill="#efcadd"><circle cx="42" cy="65" r="2.2"/><circle cx="56" cy="76" r="2.2"/><circle cx="65" cy="64" r="2.2"/></g>':"";
    return T('<ellipse cx="53" cy="65" rx="34" ry="28" fill="#9c72a2" fill-opacity=".19"/><ellipse cx="52" cy="63" rx="31" ry="25" fill="#ead6e9" stroke="#c4a6c1" stroke-width="1.5"/>'+
     '<ellipse cx="52" cy="63" rx="27" ry="21" fill="none" stroke="#fff8fb" stroke-width="1.4"/>'+
     '<rect x="19" y="12" width="62" height="15" rx="2" fill="#f8f5f0" stroke="#b69d91" stroke-width="1.7"/>'+
     '<path d="M50 12V27M19 21H81" stroke="#b6d2df" stroke-width="2"/>'+
     '<rect x="29" y="38" width="48" height="51" rx="6" fill="#58434a" fill-opacity=".21"/><rect x="31" y="37" width="44" height="49" rx="5" fill="#89695c" stroke="#74545b" stroke-width="2"/>'+
     '<rect x="35" y="40" width="36" height="42" rx="4" fill="'+quilt+'" stroke="#f8e9e8" stroke-width="2"/>'+
-    '<path d="M35 56Q53 49 71 56V81H35Z" fill="#f3dce7" stroke="#fff3f5" stroke-width="1.5"/>'+ '<path d="M37 62Q52 67 69 62M38 70Q53 75 69 70" fill="none" stroke="#ffffff" stroke-opacity=".52" stroke-width="1.1"/>'+
-    '<rect x="38" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
-    '<rect x="54" y="41" width="13" height="9" rx="3" fill="#dcecf4" stroke="#fff" stroke-width="1.4"/>'+
+    '<path d="M35 56Q53 49 71 56V81H35Z" fill="'+fold+'" stroke="#fff3f5" stroke-width="1.5"/>'+beddingMarks+
+    '<path d="M37 62Q52 67 69 62M38 70Q53 75 69 70" fill="none" stroke="#ffffff" stroke-opacity=".52" stroke-width="1.1"/>'+
+    '<rect x="38" y="41" width="13" height="9" rx="3" fill="'+pillows+'" stroke="#fff" stroke-width="1.4"/>'+
+    '<rect x="54" y="41" width="13" height="9" rx="3" fill="'+pillows+'" stroke="#fff" stroke-width="1.4"/>'+
     '<rect x="7" y="42" width="19" height="24" rx="3" fill="#6d5364" fill-opacity=".22"/><rect x="7" y="40" width="17" height="25" rx="2" fill="#b2866c" stroke="#77595a" stroke-width="1.5"/>'+
     '<path d="M10 47H21M10 54H21" stroke="#edd9c1" stroke-width="1.5"/>'+
     '<path d="M82 37V55M76 43H88M76 49H88" stroke="#a97765" stroke-width="1.4"/>'+
