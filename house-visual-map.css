@@ -512,3 +512,6 @@
 .hvm-real-room-photos{margin:8px 0;padding:9px 12px;border:1px solid #d3b8c8;border-radius:14px;background:#fffaf9}
 .hvm-real-room-photos>summary{min-height:42px;cursor:pointer;font-weight:800;color:#60405e;display:flex;align-items:center}
 .hvm-real-room-photos[open]>summary{margin-bottom:8px}
+
+/* Symbols for confirmed playroom objects whose exact positions are unmeasured. */
+.hvm-approved-object-approx:focus-visible circle[stroke-dasharray]{stroke:#694768;stroke-width:4}

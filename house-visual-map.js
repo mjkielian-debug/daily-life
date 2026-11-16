@@ -542,6 +542,21 @@ function photoRoomAccents(f,z,b){
  const T=(body)=>'<g class="hvm-photo-room-accents" pointer-events="none">'+
  '<defs><clipPath id="'+id+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
  '<g clip-path="url(#'+id+')"><g transform="translate('+b.x.toFixed(1)+' '+b.y.toFixed(1)+') scale('+(b.width/100).toFixed(4)+' '+(b.height/100).toFixed(4)+')">'+body+'</g></g></g>';
+ if(f==="Third floor"&&k==="stairs_up"){
+  // Private photo notes confirm a sloped attic entry, a window landing and
+  // dark under-eave storage bins. This is a decorative sketch, not a survey.
+  return T('<g class="hvm-entry-eave"><path d="M3 17L36 2H98V98H3Z" fill="#e6dcd3" stroke="#c9afa0" stroke-width="2"/>'+
+   '<path d="M3 17L36 2L27 36H3Z" fill="#d5c4b9"/>'+
+   '<path d="M4 43H96V96H4Z" fill="#d7ccc5"/>'+
+   '<path d="M5 54H95M5 78H95" stroke="#f1e4da" stroke-width="2"/>'+
+   '<rect x="39" y="8" width="29" height="25" rx="2" fill="#b7dae7" stroke="#fffaf3" stroke-width="4"/>'+
+   '<path d="M53 9V32M40 20H67" stroke="#fffaf3" stroke-width="2"/>'+
+   '<rect x="7" y="64" width="28" height="25" rx="3" fill="#3a3a43" stroke="#847c80" stroke-width="1.4"/>'+
+   '<path d="M6 63H36M8 74H34" stroke="#68646c" stroke-width="2"/>'+
+   '<rect x="13" y="46" width="21" height="15" rx="2" fill="#44434d" stroke="#827a82"/>'+
+   '<path d="M12 45H35" stroke="#8a8285" stroke-width="2"/>'+
+   '</g>');
+ }
  if(f==="Second floor"||f==="Third floor"){
   const name=(str(z.id)+" "+str(z.name)).toLowerCase();
   if(/bed|bedroom|dolly|demitri|dimitri|ambrose|leo|michelle/.test(name)){
@@ -724,17 +739,25 @@ function approvedDollhouseObjectHotspots(f,z){
  const config=approvedDollhouseRooms[z.id],bounds=config&&zoneBounds(config.path);
  if(!bounds)return "";
  return arr(z.markers).map((p,i)=>{
-  if(!p||p.showOnMap===false||p.mapX==null||p.mapY==null)return "";
-  const px=Number(p.mapX),py=Number(p.mapY);
+  if(!p||p.showOnMap===false)return "";
+  const kind=str(p.kind).toLowerCase();
+  // The playroom's keyboard and yellow mesh hanger are photo-confirmed, but
+  // their exact positions were never surveyed. Display schematic symbols
+  // instead of leaving these real objects invisible on the first-floor map.
+  const approximate=z.id==="playroom"&&p.mapX==null&&p.mapY==null&&
+   /playroom confirmed/i.test(str(p.status))&&(kind==="keyboard"||kind==="mesh");
+  const sketch=approximate?(kind==="keyboard"?[38,58]:[73,24]):null;
+  if((p.mapX==null||p.mapY==null)&&!sketch)return "";
+  const px=sketch?sketch[0]:Number(p.mapX),py=sketch?sketch[1]:Number(p.mapY);
   if(!Number.isFinite(px)||!Number.isFinite(py)||px<4||px>96||py<4||py>96)return "";
-  const kind=str(p.kind).toLowerCase(),art=lifelikeFurnitureSvg(kind)||fixtureSvg(kind);
+  const art=lifelikeFurnitureSvg(kind)||fixtureSvg(kind);
   if(!art)return "";
   const x=(bounds.x+bounds.width*px/100).toFixed(1),y=(bounds.y+bounds.height*py/100).toFixed(1);
   const onclick="houseVisualInteractMarker(&#39;"+h(f)+"&#39;,&#39;"+h(z.id)+"&#39;,"+i+")";
-  return '<g class="hvm-approved-object-marker" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped room item")+'" transform="translate('+x+' '+y+')" '+
+  return '<g class="hvm-approved-object-marker'+(approximate?' hvm-approved-object-approx':'')+'" role="button" tabindex="0" aria-label="Open '+h(p.label||"mapped room item")+(approximate?' · placement approximate':'')+'" transform="translate('+x+' '+y+')" '+
    'onclick="event.stopPropagation();'+onclick+'" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+onclick+'}">'+
-   '<title>'+h(p.label||"Mapped object")+'</title><circle r="39" fill="transparent" stroke="none" pointer-events="all"/>'+
-   '<circle r="23" fill="#fffaf5" fill-opacity=".9" stroke="#8c7080" stroke-width="2"/>'+
+   '<title>'+h(p.label||"Mapped object")+(approximate?' · placement illustrative':'')+'</title><circle r="39" fill="transparent" stroke="none" pointer-events="all"/>'+
+   '<circle r="23" fill="#fffaf5" fill-opacity=".9" stroke="#8c7080" stroke-width="2"'+(approximate?' stroke-dasharray="5 4"':'')+'/>'+
    '<g transform="scale(1.2)" pointer-events="none">'+art+'</g></g>';
  }).join("");
 }
