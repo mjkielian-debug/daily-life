@@ -61,5 +61,6 @@ test("living and dining wood trim, furniture-bound previews, and kitchen preserv
  const visual=read("house-visual-map.js");
  assert.match(visual,/approvedDollhouseAsset="assets\/approved-dollhouse-first-floor\.png\?v=20261114-approved1"/);
  assert.match(visual,/function correctedStairArtwork\(\)/);
- assert.match(visual,/reveal\+revisedScenes\+correctedStairArtwork\(\)\+hotspots\+objectHotspots/);
+ assert.match(visual,/reveal\+surfaces\+hotspots/);
+ assert.doesNotMatch(visual.slice(visual.indexOf("function approvedDollhouseMap("),visual.indexOf("function approvedDollhouseRoomZoom(")),/revisedScenes|objectHotspots|correctedStairArtwork\(\)/);
 });
