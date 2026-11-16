@@ -5,9 +5,9 @@
   function user(){return typeof cloudUser==="function"?cloudUser():null}
   function status(){
     if(!navigator.onLine)return {label:"Saved on this phone · offline",kind:"local"};
-    if(typeof cloudNeedsReview!=="undefined"&&cloudNeedsReview)return {label:"Saved on this phone · cloud needs review",kind:"attention"};
-    if(typeof cloudError!=="undefined"&&cloudError&&user())return {label:"Saved on this phone · sync paused",kind:"attention"};
-    if(cloudSyncing||(typeof cloudPushTimer!=="undefined"&&cloudPushTimer))return {label:"Saved on this phone · syncing",kind:"syncing"};
+    if(typeof cloudNeedsReview!=="undefined"&&cloudNeedsReview)return {label:"Cloud needs review · saved on phone",kind:"attention"};
+    if(typeof cloudError!=="undefined"&&cloudError&&user())return {label:"Sync paused · saved on phone",kind:"attention"};
+    if(cloudSyncing||(typeof cloudPushTimer!=="undefined"&&cloudPushTimer))return {label:"Backing up to cloud…",kind:"syncing"};
     if(!user())return {label:"Saved on this phone",kind:"local"};
     if(typeof cloudAutoEnabled==="function"&&!cloudAutoEnabled())return {label:"Saved on this phone · cloud sync off",kind:"attention"};
     // This comparison survives reloads and catches a write made during
@@ -15,7 +15,7 @@
     const signaturePending=typeof cloudStateSignature==="function"&&typeof cloudLastSignature==="function"&&
       !!cloudLastSignature()&&cloudStateSignature()!==cloudLastSignature();
     if(localDirty||signaturePending)return {label:"Saved on this phone · cloud copy pending",kind:"syncing"};
-    if(lastCloudSuccess||((typeof cloudRemoteUpdatedAt!=="undefined")&&cloudRemoteUpdatedAt))return {label:"Saved on this phone · synced to cloud",kind:"synced"};
+    if(lastCloudSuccess||((typeof cloudRemoteUpdatedAt!=="undefined")&&cloudRemoteUpdatedAt))return {label:"Saved on phone & cloud",kind:"synced"};
     return {label:"Saved on this phone · no cloud backup yet",kind:"attention"};
   }
   function update(){
@@ -26,7 +26,7 @@
     var s=status();
     if(strip.dataset.label===s.label&&strip.dataset.status===s.kind)return;
     strip.dataset.label=s.label;strip.dataset.status=s.kind;
-    strip.innerHTML='<span class="dl-sync-dot" aria-hidden="true"></span><span>'+s.label+'</span><span class="dl-sync-action">Cloud details ›</span>';
+    strip.innerHTML='<span class="dl-sync-dot" aria-hidden="true"></span><span>'+s.label+'</span><span class="dl-sync-action">Details ›</span>';
   }
   function changed(){update()}
   if(typeof save==="function"){
