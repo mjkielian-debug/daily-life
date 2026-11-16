@@ -6,14 +6,14 @@
 "use strict";
 const rooms=new Set(["living","dining","playroom","bath"]);
 const illustrative={
- living:{sofa:[22,50],ottoman:[31,72],art:[72,15]},
- dining:{shelf:[20,23],robovac:[20,69]},
+ living:{sofa:[22,50],ottoman:[31,72],art:[75,10],curtains:[56,43],shelf_theracane:[52,25]},
+ dining:{shelf:[19,23],robovac:[19,69],desk_hutch:[29,38]},
  playroom:{keyboard:[38,58],mesh:[73,24],table:[70,77],desk:[23,27],shelf:[87,60],mat:[37,87],plant:[13,68]},
  bath:{mirror:[51,12],sink:[49,34],toilet:[51,75]}
 };
 const types=new Set(["futon","sofa","ottoman","door_front","wood_opening","tv_dresser","art",
-"dining_table","coat_hooks","pet_bowls","shelf","robovac","keyboard","mesh","table","desk","mat","plant",
-"mirror","sink","toilet"]);
+"dining_table","desk_hutch","coat_hooks","pet_bowls","shelf","robovac","keyboard","mesh","table","desk","mat","plant",
+"mirror","sink","toilet","curtains","shelf_theracane"]);
 const arr=x=>Array.isArray(x)?x:[];
 const h=x=>String(x==null?"":x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function placement(f,z,p){
@@ -31,30 +31,60 @@ function illustration(kind){
  const shadow='<ellipse cx="1" cy="31" rx="55" ry="11" fill="#584451" opacity=".16"/>';
  switch(kind){
  case "sofa":return shadow+
- '<rect x="-62" y="-28" width="124" height="67" rx="17" fill="#314f79" stroke="#27415c" stroke-width="4"/>'+
- '<rect x="-54" y="-40" width="108" height="32" rx="13" fill="#466d9a" stroke="#284562" stroke-width="3"/>'+
- '<rect x="-47" y="-8" width="43" height="35" rx="7" fill="#5983a9" stroke="#2c5378" stroke-width="2"/>'+
- '<rect x="4" y="-8" width="43" height="35" rx="7" fill="#5480a8" stroke="#2c5378" stroke-width="2"/>'+
- '<path d="M-51 0l21 -8 12 16-16 8zM15 -2l18 -8 14 15-13 12z" fill="#b7c2d4" opacity=".72"/>'+
- '<path d="M-39 -35l8 3-5 6m42-5 12 8-7 6" fill="none" stroke="#cfdde8" stroke-width="2"/>';
+ '<rect x="-62" y="-28" width="124" height="67" rx="16" fill="#202b41" stroke="#151e30" stroke-width="4"/>'+
+ '<rect x="-55" y="-42" width="110" height="36" rx="14" fill="#243149" stroke="#151e30" stroke-width="4"/>'+
+ '<path d="M-51 -7h47v33h-47zM5 -7h47v33H5z" fill="#27344c" stroke="#36445b" stroke-width="2"/>'+
+ '<path d="M-51 -35L-35 -29L-23 -38L-12 -28M9 -35L20 -25L37 -34L52 -23M-48 -2L-30 11L-8 4M12 7L31 -3L47 16M-45 23L-25 16L-11 26M9 26L25 14L43 24" fill="none" stroke="#c6d4e3" stroke-width="1.35" opacity=".81"/>'+
+ [-39,-24,-8,6,19,34,46].map((x,i)=>'<circle cx="'+x+'" cy="'+([-29,-24,-33,5,-12,-31,17][i])+'" r="'+(i%3===0?3:2)+'" fill="#b2bfdc" stroke="#dce6f1" stroke-width=".7"/>').join('')+
+ '<path d="M-54 5v20m108 -21v20" stroke="#111c2c" stroke-width="7" stroke-linecap="round"/>';
  case "futon":return shadow+
- '<rect x="-62" y="-28" width="124" height="69" rx="10" fill="#63b5bd" stroke="#3d7d8b" stroke-width="4"/>'+
- '<rect x="-60" y="-41" width="120" height="37" rx="9" fill="#8ad0d0" stroke="#3d8f9a" stroke-width="3"/>'+
- '<path d="M0 -39V33M-48 -4h96M-54 27h108" stroke="#3f929b" stroke-width="3" opacity=".64"/>'+
- '<rect x="-69" y="-18" width="12" height="57" rx="6" fill="#509fa8"/><rect x="57" y="-18" width="12" height="57" rx="6" fill="#509fa8"/>'+
- '<path d="M-52 42v8m104-8v8" stroke="#78584f" stroke-width="6"/>';
+ '<path d="M-63 -35H63V41H-63Z" fill="#75c5c8" stroke="#171d24" stroke-width="5"/>'+
+ '<rect x="-58" y="-40" width="116" height="34" rx="8" fill="#99d5d4" stroke="#5fa9b2" stroke-width="2"/>'+
+ '<path d="M-58 -6Q-47 -13 -32 -6Q-11 -1 0 -7Q15 -13 34 -6Q46 -3 57 -7V35Q44 39 26 35Q10 30 -6 36Q-27 41 -58 34Z" fill="#83cad0" stroke="#62adb5" stroke-width="2"/>'+
+ '<path d="M-57 8Q-38 1 -17 8T19 9T57 7M-56 27Q-41 24 -27 29T12 27T57 28" fill="none" stroke="#b2e1df" stroke-width="2" opacity=".55"/>'+
+ '<path d="M-62 -25Q-80 -36 -76 -11V36M62 -25Q80 -36 76 -11V36" fill="none" stroke="#1a1d23" stroke-width="7" stroke-linecap="round"/>'+
+ '<path d="M-77 36H-63M63 36H77M-60 43V49M60 43V49" stroke="#1a1d23" stroke-width="5" stroke-linecap="round"/>';
  case "ottoman":return shadow+
- '<rect x="-43" y="-18" width="87" height="57" rx="13" fill="#ecb7d5" stroke="#ae7795" stroke-width="3"/>'+
- '<path d="M-32 -5q21-15 45 4t21 25M-34 22q22-15 34 1t31-3" stroke="#b2a0d0" stroke-width="7" fill="none" opacity=".72"/>'+
- '<path d="M-26 -3l4-8 4 8 8 4-8 3-4 8-4-8-8-3zM21 14l3-6 3 6 6 3-6 3-3 6-3-6-6-3z" fill="#fff3c6"/>';
+ '<rect x="-43" y="-19" width="87" height="60" rx="11" fill="#1c2f42" stroke="#172235" stroke-width="4"/>'+
+ '<path d="M-41 -6Q-1 -18 41 -5V23Q0 17 -41 25Z" fill="#263d51"/>'+
+ [-29,-9,13,31].map((x,i)=>'<g transform="translate('+x+' '+([-4,20,-5,20][i])+')">'+
+ '<path d="M0 -10Q8 -12 8 -4Q16 0 8 5Q5 15 0 8Q-8 14 -9 5Q-16 0 -8 -5Q-9 -12 0 -10Z" fill="'+(["#dbb6be","#a7b8c9","#e7d1ad","#b6c0cb"][i])+'" stroke="#8f96a6" stroke-width="1"/>'+
+ '<circle cx="0" cy="0" r="3.7" fill="#dcaf69"/></g>').join('')+
+ '<path d="M-34 -12q15 -9 28 0m17 9q11 -8 20 -1M-27 32q9 -7 18 -3m18-3q9 -4 19 5" fill="none" stroke="#709b98" stroke-width="3"/>'+
+ '<path d="M-35 40v7M35 40v7" stroke="#715344" stroke-width="5"/>';
+ case "desk_hutch":return shadow+
+ '<rect x="-53" y="-65" width="106" height="116" rx="2" fill="#5b3826" stroke="#43291f" stroke-width="5"/>'+
+ '<rect x="-43" y="-56" width="86" height="39" fill="#846047" stroke="#3a251d" stroke-width="3"/>'+
+ '<path d="M-41 -34H42M-41 -15H42" stroke="#c39268" stroke-width="4"/>'+
+ '<rect x="-35" y="-50" width="14" height="15" fill="#d8c5a1"/><rect x="-12" y="-49" width="10" height="15" fill="#a9b9b2"/>'+
+ '<rect x="11" y="-49" width="23" height="13" fill="#ad9ccc"/>'+
+ '<rect x="-45" y="-4" width="90" height="10" fill="#ad805d" stroke="#61402b" stroke-width="3"/>'+
+ '<path d="M-39 9v36M39 9v36" stroke="#563824" stroke-width="7"/>'+
+ '<rect x="-26" y="9" width="52" height="19" rx="2" fill="#704934" stroke="#b18e65" stroke-width="2"/>'+
+ '<circle cx="0" cy="20" r="2.5" fill="#e6c98b"/>'+
+ '<path d="M-24 35h48v10h-48z" fill="#674b3d" stroke="#412d24" stroke-width="3"/>';
+ case "curtains":return '<rect x="-68" y="-63" width="136" height="118" fill="#744b35" stroke="#52382d" stroke-width="5"/>'+
+ '<rect x="-57" y="-52" width="114" height="95" fill="#e6f0ec" stroke="#d6d8d1" stroke-width="5"/>'+
+ '<path d="M0 -52V43M-57 -3H57" stroke="#e8e8df" stroke-width="5"/>'+
+ '<path d="M-63 -55Q-49 -49 -37 -54L-30 53H-67Z" fill="#d58d91" stroke="#ae666e" stroke-width="2"/>'+
+ '<path d="M63 -55Q48 -47 36 -53L30 53H67Z" fill="#d58d91" stroke="#ae666e" stroke-width="2"/>'+
+ '<path d="M-56 -43L-53 48M-42 -43L-41 50M55 -43L52 48M41 -43L42 50" stroke="#edb3af" stroke-width="2.5" opacity=".65"/>'+
+ '<path d="M-70 -59H70" stroke="#674b3c" stroke-width="4"/>'+
+ [-52,-34,0,34,52].map(x=>'<circle cx="'+x+'" cy="-59" r="3" fill="#c0aa91"/>').join('');
+ case "shelf_theracane":return '<path d="M-55 -29H55v12H-55z" fill="#2b2a30" stroke="#1d1d25" stroke-width="3"/>'+
+ '<path d="M-48 -17H48V8H-48Z" fill="#2b2a30" stroke="#171a21" stroke-width="3"/>'+
+ '<path d="M0 8Q-12 18 -7 29Q0 39 9 30L31 9Q42 -7 48 3Q49 10 42 16" fill="none" stroke="#294d89" stroke-width="7" stroke-linecap="round"/>'+
+ '<path d="M-18 10v12m-14-12v8" stroke="#284980" stroke-width="6" stroke-linecap="round"/>';
  case "door_front":return '<rect x="-36" y="-53" width="72" height="95" rx="3" fill="#f3f1ec" stroke="#644e43" stroke-width="7"/>'+
  '<rect x="-27" y="-45" width="54" height="36" rx="2" fill="#fbfaf8" stroke="#d0c8bd" stroke-width="3"/>'+
  '<rect x="-27" y="0" width="54" height="33" rx="2" fill="#f8f7f3" stroke="#d0c8bd" stroke-width="3"/>'+
  '<circle cx="18" cy="-2" r="4" fill="#c9a44d" stroke="#8e6c29"/>';
- case "wood_opening":return '<rect x="-72" y="-42" width="144" height="79" fill="#dfd4c5" stroke="#583829" stroke-width="9"/>'+
- '<rect x="-62" y="-30" width="124" height="57" rx="2" fill="#b3a5a0" opacity=".5"/>'+
- '<path d="M-70 -37H70M-70 38H70M-68 -38V38M68 -38V38" fill="none" stroke="#8f5d40" stroke-width="9"/>'+
- '<path d="M-57 -30H57M-57 28H57" stroke="#e0b989" stroke-width="2.5"/>';
+ case "wood_opening":return '<rect x="-72" y="-44" width="144" height="89" fill="#f5e9d8" stroke="#513523" stroke-width="8"/>'+
+ '<rect x="-62" y="-32" width="124" height="61" fill="#d4c6b5"/>'+
+ '<path d="M-62 13H62M-62 21H62" stroke="#b29072" stroke-width="2" opacity=".72"/>'+
+ '<path d="M-72 -41H72M-69 39H69M-66 -42V44M66 -42V44" stroke="#75492b" stroke-width="9" fill="none"/>'+
+ '<path d="M-72 -49H72M-59 -31H59M-59 33H59" stroke="#b88759" stroke-width="3" fill="none"/>'+
+ '<path d="M-58 -26V32M58 -26V32" stroke="#5d3826" stroke-width="3"/>';
  case "tv_dresser":return shadow+
  '<rect x="-57" y="-7" width="114" height="49" rx="3" fill="#916b4c" stroke="#64452f" stroke-width="4"/>'+
  '<path d="M-51 7h102M-51 25h102M-18 -2v40M18 -2v40" stroke="#bd946e" stroke-width="3"/>'+
@@ -70,10 +100,11 @@ function illustration(kind){
  '<rect x="-8" y="14" width="47" height="36" fill="#fcecca" stroke="#765442" stroke-width="4"/>'+
  '<circle cx="7" cy="28" r="7" fill="#f7bb73"/><path d="M18 38l12-16 4 16z" fill="#ac8fd4"/>';
  case "dining_table":return shadow+
- '<ellipse cx="0" cy="-1" rx="54" ry="46" fill="#8c5838" stroke="#553b2d" stroke-width="4"/>'+
- '<ellipse cx="0" cy="-7" rx="49" ry="40" fill="#b98055" stroke="#dfb18a" stroke-width="3"/>'+
- '<path d="M-25 -16q26 -12 52 6M-22 14q25 13 43 2" fill="none" stroke="#e2ad7e" stroke-width="3" opacity=".55"/>'+
- '<path d="M-74 -18q-19 18-2 41h13q7-11-1-26zM61-22q21 7 14 39l-13 2-9-27zM-19 41q19 22 41 4v-11h-41z" fill="#a47658" stroke="#624630" stroke-width="3"/>';
+ '<ellipse cx="0" cy="1" rx="54" ry="46" fill="#6e4830" stroke="#513523" stroke-width="5"/>'+
+ '<ellipse cx="0" cy="-5" rx="49" ry="41" fill="#986643" stroke="#c69a72" stroke-width="2"/>'+
+ '<path d="M-38 -13q31 -17 67 1M-42 5q38 -6 73 7M-15 -37q18 10 39 4M-21 31q25 -5 49 0" fill="none" stroke="#d6b188" stroke-width="1.8" opacity=".6"/>'+
+ '<path d="M-29 -20L-23 -16M17 4L25 7M-12 20L-5 26M29 -28l5 4" stroke="#6e4733" stroke-width="2" opacity=".5"/>'+
+ '<path d="M-75 -19q-13 19 -2 41h14q8 -8 0 -28zM61 -21q22 8 17 40l-15 3q-8-13 0-30zM-18 42q18 16 39 4v-13h-39z" fill="#87664d" stroke="#5d4636" stroke-width="3"/>';
  case "coat_hooks":return '<rect x="-54" y="-47" width="108" height="13" rx="4" fill="#80563e" stroke="#65452f" stroke-width="2"/>'+
  [-36,-10,17,40].map(x=>'<path d="M'+x+' -34v14q0 8 9 7" stroke="#ad9d83" stroke-width="3" fill="none"/>').join('')+
  '<path d="M-39 -21l-17 19 10 43h30l9-43-18-19z" fill="#7f8e8e" stroke="#516367" stroke-width="3"/>'+
