@@ -774,32 +774,68 @@ function approvedDollhouseObjectHotspots(f,z){
  }).join("");
 }
 
+/* Mobile overview must remain readable: this uses only the user's saved room
+   footprints, without painting furniture or invented stairs over those rooms.
+   Detailed furnishings and photos remain in the individual room view. */
+function approvedOverviewRoom(f,z,settings,stats){
+ if(f!=="First floor"||z.id==="kitchen"||!settings)return "";
+ const stair=z.id==="basement_stairs"||z.id==="stairs_up";
+ const colors={bath:"#e7eef0",dining:"#f5e9db",living:"#e7e8f2",playroom:"#eee7f2",
+  basement_stairs:"#ece5da",stairs_up:"#efe4df"};
+ const base=colors[z.id]||"#f5f1eb",fill=typeof color==="function"?color(z.color):"#cb91b6";
+ const progress=stats.total?Math.max(0,Math.min(1,stats.done/stats.total)):0;
+ const token="hvm-overview-"+String(z.id).replace(/[^a-z0-9_-]/gi,"");
+ const b=zoneBounds(settings.path),line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
+ return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
+  '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
+  '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity=".97" stroke="#725c62" stroke-width="4"/>'+
+  (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.14+.64*progress).toFixed(2)+'"/>':"")+
+  '<g clip-path="url(#'+token+')">'+line+'</g>'+
+ '</g>';
+}
+function approvedOverviewLabel(z,settings,stats){
+ if(z.id==="kitchen")return approvedDollhouseCountBadge(settings,stats,z);
+ const labels={bath:"Bathroom",dining:"Dining room",living:"Living room",playroom:"Playroom",
+   basement_stairs:"↓ Basement",stairs_up:"↑ Second floor"};
+ const text=labels[z.id]||str(z.name),stair=z.id==="basement_stairs"||z.id==="stairs_up";
+ const w={bath:184,dining:191,living:220,playroom:195,basement_stairs:215,stairs_up:235}[z.id]||205;
+ const y={bath:558,dining:881,living:1231,playroom:1282,basement_stairs:1026,stairs_up:987}[z.id]||settings.cy;
+ const x=settings.cx,hgt=stats.total?75:63;
+ const sub=stats.total?stats.done+" of "+stats.total+" tasks done":(stair?"Tap to change floor":"Tap to open");
+ return '<g class="hvm-overview-label" pointer-events="none" aria-hidden="true">'+
+  '<rect x="'+(x-w/2).toFixed(1)+'" y="'+(y-hgt/2).toFixed(1)+'" width="'+w+'" height="'+hgt+
+  '" rx="19" fill="#fffcf8" stroke="#8b6983" stroke-width="3" />'+
+  '<text x="'+x+'" y="'+(y-(stats.total?5:0)+1).toFixed(1)+'" text-anchor="middle" font-size="'+(stair?25:27)+'" font-weight="800" fill="#4a304a">'+h(text)+'</text>'+
+  '<text x="'+x+'" y="'+(y+(stats.total?23:22)).toFixed(1)+'" text-anchor="middle" font-size="18" fill="#795e75">'+h(sub)+'</text>'+
+ '</g>';
+}
+
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
- const reveal=zoneData.map(z=>{
-  const stats=roomTaskColorStats(f,z,localRoom(f,z));
-  return approvedDollhouseProgressArt(f,z,approvedDollhouseRooms[z.id],stats,"hvm-approved-map");
- }).join("");
- const revisedScenes=zoneData.map(z=>typeof window.houseRealismRoomArtwork==="function"?
-   window.houseRealismRoomArtwork(f,z,approvedDollhouseRooms[z.id],roomTaskColorStats(f,z,localRoom(f,z)),false,zoneBounds(approvedDollhouseRooms[z.id].path)):"").join("");
- const objectHotspots=zoneData.map(z=>approvedDollhouseObjectHotspots(f,z)).join("");
+ // The approved kitchen is the sole room whose detailed base art remains in
+ // the overview. Other rooms get an uncluttered, clickable overview surface.
+ const kitchen=zoneData.find(z=>z.id==="kitchen");
+ const reveal=kitchen?approvedDollhouseProgressArt(f,kitchen,approvedDollhouseRooms.kitchen,
+  roomTaskColorStats(f,kitchen,localRoom(f,kitchen)),"hvm-approved-map"):"";
+ const surfaces=zoneData.map(z=>approvedOverviewRoom(f,z,approvedDollhouseRooms[z.id],
+  roomTaskColorStats(f,z,localRoom(f,z)))).join("");
  const hotspots=zoneData.map(z=>{
   const settings=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
-  const label=z.name+" · "+(stats.total?stats.done+" of "+stats.total+" tasks complete":"no assigned room tasks");
+  const label=z.name+" · "+(stats.total?stats.done+" of "+stats.total+" tasks complete":"open room details");
   const onclick=act(f,z);
   return '<g class="hvm-approved-room" role="button" tabindex="0" aria-label="'+h(label)+'" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}">'+
    '<title>'+h(label)+'</title><path d="'+settings.path+'" fill="#fff" fill-opacity=".001" stroke="transparent" stroke-width="3" pointer-events="all"/>'+
-   approvedDollhouseCountBadge(settings,stats,z)+'</g>';
+   approvedOverviewLabel(z,settings,stats)+'</g>';
  }).join("");
  return '<div class="hvm-approved-wrap">'+
-  '<section class="hvm-approved-hero" aria-label="Detailed illustrated interactive first floor">'+
-  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Explore the illustrated rooms</strong></div><small>Tap a room to see its tasks and details</small></div>'+
+  '<section class="hvm-approved-hero" aria-label="Interactive first floor map">'+
+  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Choose a room</strong></div><small>Tap a room for its real photos and tasks</small></div>'+
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
-  '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
+  '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+revisedScenes+correctedStairArtwork()+hotspots+objectHotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">✦ Kitchen artwork is approved. In other rooms, your saved photos appear first when you open a room; illustrated objects and positions still need refinement. Tap rooms for photos, tasks and confirmed details. Progress color measures completed tasks, not cleanliness.</div></section>'+
+  reveal+surfaces+hotspots+'</svg></div>'+
+  '<div class="hvm-approved-caption">Kitchen artwork stays approved. Other rooms open to saved photos, furniture and tasks; this uncluttered view keeps their positions clear.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
