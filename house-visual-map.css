@@ -574,3 +574,19 @@
  .hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading strong{font-size:1rem}
  .hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-scene{border-width:2px}
 }
+
+/* Owner-only photo previews in the first-floor map */
+.hvm-overview-private-photo{
+ opacity:.98;
+ filter:saturate(1.03) contrast(1.03);
+ image-rendering:auto;
+}
+.hvm-overview-floor-surface .hvm-room-artwork-detail{pointer-events:none}
+.hvm-overview-floor-surface .hvm-room-illustrated-object.is-approximate ellipse[stroke-dasharray]{display:none}
+.hvm-overview-floor-surface .hvm-room-art-scene{filter:saturate(.95)}
+.hvm-approved-hero:has(.hvm-overview-private-photo) .hvm-overview-label rect{
+ fill:#fffcf8;fill-opacity:.96;stroke:#826476;
+}
+@media(prefers-reduced-motion:reduce){
+ .hvm-overview-private-photo{transition:none}
+}
