@@ -5,3 +5,16 @@ test("house-wide tasks can be marked done without a room",()=>{assert.match(hous
 test("object dialog is short; source notes remain accessible",()=>{assert.match(house,/hvm-object-view-compact/);assert.match(house,/hvm-object-primary-actions/);assert.match(house,/About this item/);});
 test("money goals are collapsed instead of filling the full page",()=>{assert.match(life,/lm-money-goals-compact/);assert.match(life,/See all '\+moneyGoals\.length\+' goals/);});
 test("avatar is not covered by redundant floating action buttons",()=>{assert.match(css,/body:has\(#app \.life-map-page\) \.life-tools-fab/);assert.match(css,/padding-bottom:calc\(92px/);});
+
+test("avatar category shortcuts no longer reintroduce standalone Today",()=>{
+ assert.doesNotMatch(life,/"✦","Today","today"/);
+ assert.match(life,/const all=compact\?entries\.concat/);
+ assert.match(life,/<b>Related pages<\/b>/);
+});
+test("starter habits log with one tap from the avatar",()=>{
+ assert.match(life,/nextPriorityLogAction=chooseWater\?"addWater\(26\)":"logCareOccurrence/);
+ assert.match(life,/lm-next-checkin-log/);
+ assert.match(life,/const waterStatus=Math\.round\(waterOzToday\)\+" \/ "\+Math\.round\(waterGoal\)\+" oz"/);
+ assert.match(css,/lm-next-checkin-actions/);
+ assert.match(css,/lm-next-checkin-log/);
+});
