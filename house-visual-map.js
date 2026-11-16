@@ -1691,9 +1691,13 @@ window.houseVisualShowRoomPhoto=async function(photoId,index=0,total=activeRoomP
  const stage=document.getElementById("hvmRoomPhotoStage");
  if(!stage||!okPhoto(photoId)||!online())return;
  activeRoomPhotoIndex=Math.max(0,Number(index)||0);
+ const requestedRoom=activeRoomPhotoRoom,requestedIndex=activeRoomPhotoIndex;
  stage.textContent="Loading saved room photo…";
  const {data,error}=await cloudClient.from("photo_inbox").select("image_data,title").eq("id",photoId).single();
- const current=document.getElementById("hvmRoomPhotoStage");if(!current)return;
+ const current=document.getElementById("hvmRoomPhotoStage");
+ // A previous room/photo response must never overwrite the photo the user is viewing.
+ if(!current||current!==stage||requestedRoom!==activeRoomPhotoRoom||
+    activeRoomPhotoIds[activeRoomPhotoIndex]!==photoId||activeRoomPhotoIndex!==requestedIndex)return;
  if(error||!data||!/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(data.image_data||"")){
   current.textContent="This saved photo could not be displayed.";return;
  }
