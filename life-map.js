@@ -298,6 +298,13 @@ function lifeMapDoorwaysHtml(area,compact){
  return compact?'<details class="lm-house-doors"><summary>Explore more through the house</summary><div class="lm-door-grid">'+links+'</div></details>':'<section class="lm-avatar-doors"><div class="lm-area-section-heading"><b>Explore from here</b><small>Everything in one connected life map</small></div><div class="lm-door-grid">'+links+'</div></section>';
 }
 
+// Keep built-in optional care accessible without making it a daily debt.
+function lifeMapOptionalCareRow(row,area){
+ if(row?.kind!=="care"||row.habit?.builtin!==true)return false;
+ if(area==="mind")return true;
+ if(area==="body")return !["brush","shower","deodorant"].includes(String(row.key||""));
+ return false;
+}
 function view(areaOverride,tasksOnly){
  const date=day(),progressDates=mapProgressDates(),progressRange=mapProgressRange(),profile=(state&&state.profile)||{},name=String(profile.name||"").trim().split(/\s+/)[0]||"there";
  const avatarLook=typeof window.avatarWardrobeGetActive==="function"?window.avatarWardrobeGetActive():null;
@@ -405,7 +412,7 @@ function view(areaOverride,tasksOnly){
  }
  const spiritualLog=typeof spiritualityLogFor==="function"?spiritualityLogFor(date):null;
  addDaily("spirituality",{id:"guided-class",kind:"lesson",title:"Today’s guided spiritual class",done:!!spiritualLog?.guidedPractice});
- const dailyAreaStats=Object.fromEntries(areaKeys.map(area=>{const rows=dailyAreaRows[area],done=rows.filter(x=>x.done).length;return[area,{total:rows.length,done,left:rows.length-done,pct:rows.length?Math.round(done/rows.length*100):0}]}));
+ const dailyAreaStats=Object.fromEntries(areaKeys.map(area=>{const rows=dailyAreaRows[area].filter(row=>!lifeMapOptionalCareRow(row,area)),done=rows.filter(x=>x.done).length;return[area,{total:rows.length,done,left:rows.length-done,pct:rows.length?Math.round(done/rows.length*100):0}]}));
 
  const avatarLifeAreas=[
   {key:"spirituality",path:"M79 2H141L158 35Q138 45 110 43Q82 45 62 35Z",cx:110,cy:22,r:57,pct:pctFor("spirituality")},
@@ -530,7 +537,11 @@ function view(areaOverride,tasksOnly){
    const item=row.review;
    return '<div class="lm-task '+(row.done?'is-done':'')+'"><span><b>'+h(row.title)+'</b>'+(item.detail?'<small>'+h(item.detail)+'</small>':'')+'</span><button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="'+(row.done?'unknown':'yes')+'">'+(row.done?'Undo':'Done')+'</button>'+(!row.done?'<button type="button" class="lm-text-button" data-life-review-action="answer" data-kind="'+h(item.kind)+'" data-key="'+h(item.key)+'" data-date="'+h(date)+'" data-status="na">Not applicable</button>':'')+'</div>';
   };
-  const openRows=rows.filter(x=>!x.done).map(rowHtml).join(""),doneRows=rows.filter(x=>x.done).map(rowHtml).join("");
+  const priorityRows=rows.filter(x=>!lifeMapOptionalCareRow(x,areaSelection));
+   const optionalRows=rows.filter(x=>lifeMapOptionalCareRow(x,areaSelection));
+   const openRows=priorityRows.filter(x=>!x.done).map(rowHtml).join(""),doneRows=rows.filter(x=>x.done).map(rowHtml).join("");
+   const optionalOpenRows=optionalRows.filter(x=>!x.done);
+   const optionalCareGroup=optionalOpenRows.length?'<details class="lm-area-task-history lm-optional-care"><summary>More self-care options · '+optionalOpenRows.length+'</summary><div class="lm-list">'+optionalOpenRows.map(rowHtml).join("")+'</div></details>':"";
   // Existing tasks retain their real dates. No-date tasks are a visible
   // anytime queue, not silently excluded from the avatar category.
   const areaTaskRows=allTasks.filter(t=>lifeMapAreaForTask(t)===areaSelection&&!(areaSelection==="home"&&t.generated==="room-daily"));
@@ -541,12 +552,15 @@ function view(areaOverride,tasksOnly){
   const unsorted=areaSelection==="home"?allTasks.filter(t=>!t.done&&!lifeMapAreaForTask(t)):[];
   const taskGroup=(title,items,subtitle)=>items.length?'<section class="lm-area-task-group"><div class="lm-area-section-heading"><b>'+h(title)+'</b><small>'+items.length+' task'+(items.length===1?"":"s")+(subtitle?' · '+h(subtitle):"")+'</small></div><div class="lm-list">'+items.map(taskRow).join("")+'</div></section>':"";
   const historyTaskGroup=(title,items,summary)=>items.length?'<details class="lm-area-task-history"><summary>'+h(title)+' · '+items.length+'</summary>'+(summary?'<p>'+h(summary)+'</p>':"")+'<div class="lm-list">'+items.map(taskRow).join("")+'</div></details>':"";
-  const currentOpen=rows.filter(x=>!x.done).length;
+  const currentOpen=priorityRows.filter(x=>!x.done).length;
   const activeCount=currentOpen; // Future and anytime work stays in the collapsed Other tasks section.
   const trackers={mind:["selfcare","Self-care history"],body:["log","Health logs"],home:["household","House map & rooms"],people:["family","Family details"],spirituality:["spirituality","Spirituality"],hobbies:["gardenhobbies","Projects & interests"],money:["budget","Budget & accounts"],car:["today","Driving schedule"],work:["today","Work schedule"]};
   const tracker=trackers[areaSelection];
   const roomResetOpen=areaSelection==="home"?tasks.filter(t=>t.generated==="room-daily"&&!t.done).length:0;
-  const todayGroup=(roomResetOpen?'<div class="lm-room-task-route"><b>'+roomResetOpen+' room steps</b> are inside the house map. <button type="button" class="btn small" onclick="setView(&#39;lifemap&#39;);requestAnimationFrame(()=>window.lifeMapJump(&#39;house&#39;))">Open rooms ›</button></div>':"")+
+  const essentialHabitButtons=areaSelection==="body"?'<section class="lm-priority-habits"><div class="lm-priority-head"><b>Start with your two habits</b><small>'+waterOzToday+' / '+waterGoal+' oz water · '+brushCount+' / 2 toothbrushing</small></div><div class="lm-priority-actions">'+
+    '<button type="button" onclick="addWater(26)">＋ 26 oz water</button>'+
+    '<button type="button" onclick="logCareOccurrence(&#39;brush&#39;)"'+(brushCount>=2?' disabled':'')+'>'+(brushCount>=2?'✓ Teeth done twice':'✓ Brushed teeth')+'</button></div></section>':"";
+   const todayGroup=(roomResetOpen?'<div class="lm-room-task-route"><b>'+roomResetOpen+' room steps</b> are inside the house map. <button type="button" class="btn small" onclick="setView(&#39;lifemap&#39;);requestAnimationFrame(()=>window.lifeMapJump(&#39;house&#39;))">Open rooms ›</button></div>':"")+
    '<section class="lm-area-task-group" aria-label="Today and check-ins">'+
     '<div class="lm-area-section-heading"><b>For today</b><small>'+currentOpen+' to do · '+stats.done+' done</small></div>'+
     (openRows?'<div class="lm-list">'+openRows+'</div>':'<p class="lm-area-clear">✓ Nothing waiting for today in this category.</p>')+'</section>';
@@ -560,7 +574,7 @@ function view(areaOverride,tasksOnly){
    '<div class="lm-area-task-lead"><span><strong>'+activeCount+'</strong><small>needs attention today</small></span>'+
    '<button type="button" class="lm-area-add-task" onclick="lifeMapOpenAreaTask(&#39;'+h(areaSelection)+'&#39;)">＋ Add task here</button></div></header>'+
    '<section class="lm-inline-panel lm-area-page-content lm-area-task-workspace" aria-label="'+h(areaTitles[areaSelection])+' task list">'+
-   todayGroup+
+   essentialHabitButtons+todayGroup+optionalCareGroup+
    ((anytimeTasks.length||upcomingTasks.length)?'<details class="lm-area-task-history"><summary>Other open tasks · '+(anytimeTasks.length+upcomingTasks.length)+'</summary>':"")+
    taskGroup("Anytime · no date",anytimeTasks,"Do these whenever they fit")+
    taskGroup("Coming up",upcomingTasks,"Already scheduled")+
