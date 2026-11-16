@@ -328,7 +328,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261115-room-photo-shortcut5";
+const APP_BUILD="20261115-pet-reminder-migration6";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -2322,19 +2322,31 @@ function ensureBirthdayEvents(){
     }
   }
 }
+function ensureCatsFleaMonthlyReminder(){
+  state.settings=state.settings||{};
+  // One-time repair: respect later pauses or edits once the correct plan
+  // has been saved. Both cats were treated in November; date is unknown.
+  if(Number(state.settings.petFleaReminderMigrationVersion||0)>=2)return false;
+  const title="Cats · Monthly flea treatment",dueDate="2026-12-01";
+  const notes="Indy and Paul already received November 2026 flea treatment; exact application dates were not recorded. Next due December 1, then the first each month if the product label permits.";
+  state.settings.recurringTasks=Array.isArray(state.settings.recurringTasks)?state.settings.recurringTasks:[];
+  const rules=state.settings.recurringTasks;
+  let rule=rules.find(r=>String(r.title||"").trim()===title);
+  if(!rule){rule={title,category:"pets",recurrence:"monthly",days:[],dayOfMonth:1,order:100,notes};rules.push(rule)}
+  else{rule.recurrence="monthly";rule.dayOfMonth=1;rule.days=[];rule.category="pets"}
+  for(const task of state.tasks||[]){
+   if(String(task.title||"").trim()!==title||!["2026-11-15",dueDate].includes(String(task.date||"")))continue;
+   if(task.date==="2026-11-15"||(task.paused===true&&task.duplicateHidden===true)){
+    task.date=dueDate;task.done=false;task.paused=false;task.duplicateHidden=false;
+    task.recurrence="monthly";task.dayOfMonth=1;task.notes=notes;
+   }
+  }
+  state.settings.petFleaReminderMigrationVersion=2;
+  return true;
+}
 function ensureToday(){
   applyConferencePrepCleanup();
-  // November flea treatments were reported completed for both cats. The next
-  // shared due date is December 1, not November 15; preserve the unknown dose date.
-  for(const rule of state.settings?.recurringTasks||[]){
-    if(/cats.*flea treatment|flea.*cats/i.test(String(rule.title||""))){rule.recurrence="monthly";rule.dayOfMonth=1;}
-  }
-  for(const task of state.tasks||[]){
-    if(/cats.*flea treatment|flea.*cats/i.test(String(task.title||""))&&String(task.date||"")==="2026-11-15"&&!task.done){
-      task.date="2026-12-01";task.recurrence="monthly";task.dayOfMonth=1;
-      task.notes="Indy and Paul received November 2026 flea treatment (exact application date not recorded). Next due December 1; repeat on the 1st of each month, subject to product label interval.";
-    }
-  }
+  ensureCatsFleaMonthlyReminder();
   for(const task of state.tasks||[]){if(/empty.*bathroom trash/i.test(task.title||'')){task.itineraryMinutes=2;task.notes=String(task.notes||'').replace(/About 10 minutes/gi,'About 2 minutes')}}
   if(typeof window.houseVisualEnsureDailyRoutines==='function')window.houseVisualEnsureDailyRoutines(ymd());
   const date=ymd(),wd=new Date(date+"T12:00:00").getDay();
