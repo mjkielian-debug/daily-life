@@ -420,7 +420,9 @@ function mappedRoomMiniature(f,z){
  '<p class="muted small">'+h(roomMessage)+'</p></section>';
 }
 window.houseVisualRevealRoomPhotos=function(){
- const panel=document.querySelector(".hvm-zone-detail .hvm-room-extra");
+ // The real-photo gallery has its own expandable section now. The old
+ // general details panel must not swallow the photograph shortcut.
+ const panel=document.querySelector(".hvm-zone-detail .hvm-real-room-photos");
  if(panel)panel.open=true;
  const photos=document.getElementById("hvmRoomPhotoGallery");
  if(photos)photos.scrollIntoView({behavior:"smooth",block:"nearest"});

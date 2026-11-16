@@ -17,6 +17,12 @@ test("confirmed furniture appears without saving guessed coordinates",()=>{
  assert.doesNotMatch(render,/Laundry/);
  assert.equal(room.markers[1].mapX,undefined);
 });
+test("the reference-photo shortcut opens the visible photo section",()=>{
+ assert.match(map,/window\.houseVisualRevealRoomPhotos=function\(\)/);
+ const block=map.split("window.houseVisualRevealRoomPhotos=function(){")[1].split("};")[0];
+ assert.match(block,/\.hvm-real-room-photos/);
+ assert.doesNotMatch(block,/\.hvm-room-extra/);
+});
 test("photos are one tap from room details without adding a duplicate gallery",()=>{
  assert.match(map,/const roomPhotoDoor=hasRoomPhotoReference/);
  assert.match(map,/actions\+roomPhotoDoor/);
