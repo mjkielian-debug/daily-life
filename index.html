@@ -253,7 +253,7 @@ window.__dailyLifeEarlyBootTimer=setTimeout(()=>{
 </script>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <input id="payrollFile" type="file" accept="application/pdf" hidden>
-<script src="visual-hubs.js?v=20261114-category-tasks-sparkle6"></script>
+<script src="visual-hubs.js?v=20261115-money-review1"></script>
 <script src="monster-high-collection.js?v=20261110-open-route-home2"></script>
 <script src="life-sim-ui.js?v=20261105-renderstats1"></script>
 <script>
@@ -304,7 +304,7 @@ async function dbClear(){
 <script src="chase-balance.js?v=20261014-chase2"></script>
 <script src="spirituality.js?v=20261114-recovery1"></script>
 <script src="vault.js?v=20261004-vaulthub2"></script>
-<script src="budget-coach.js?v=20261105-budgetunknown2"></script>
+<script src="budget-coach.js?v=20261115-money-review1"></script>
 <script>
 window.__dailyLifeCoreStarted=true;
 
@@ -329,7 +329,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261115-clean-floor-map4";
+const APP_BUILD="20261115-money-review1";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7258,6 +7258,10 @@ function moneyNextActionSummary(){
  if(renewal)return {title:"Review "+renewal.renewalName+" renewal",detail:"$"+Number(renewal.renewalPaidAmount||0).toFixed(2)+" posted "+(renewal.renewalPaidDate||"recently")+" from "+(renewal.renewalPaymentAccountLabel||"the recorded payment account")+"; next renewal estimated "+(renewal.renewalDate||"date not set")+".",bankExit:true};
  const likelyBillCount=typeof cloudLikelyBillTransactions!=="undefined"?cloudLikelyBillTransactions.length:0;
  if(likelyBillCount)return{title:"Confirm possible bill payment",detail:likelyBillCount+" bank transaction"+(likelyBillCount===1?" may":"s may")+" already cover a bill.",reviewBill:true};
+ if(typeof window.moneyBillActions==="function"){
+   const action=window.moneyBillActions()[0];
+   return action?{title:action.title,detail:action.detail,index:action.index}:{title:"No bill action found",detail:"No overdue or near-term issue found in recorded bills."};
+ }
  const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)),urgent=rows.find(r=>["Transfer needed","Projected short","Needs account","Balance unavailable","Check bill"].includes(r.status));
  if(!urgent)return{title:"No money move needed",detail:"Upcoming bills look covered."};
  if(urgent.status==="Transfer needed"){const instruction=typeof transferInstruction==="function"?transferInstruction(urgent):"";return{title:"Move money for "+urgent.bill.name,detail:instruction||("Due "+dl(urgent.bill.due)),index:urgent.index};}
@@ -8392,9 +8396,9 @@ function accountSweepPlan(a,days=45){
     if(x.accountKey===a.key)events.push({date:x.date,kind:"income",amount:Number(x.amount||0),name:x.name});
   }
   for(const b of state.bills||[]){
-    if(!billForecastIncluded(b)||b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due<today||b.due>until)continue;
+    if(!billForecastIncluded(b)||b.status==="paid"||b.paymentAccountKey!==a.key||!validBillDate(b.due)||b.due>until)continue;
     const amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0)continue;
-    events.push({date:b.due,kind:"bill",amount:-amount,name:b.name});
+    events.push({date:b.due<today?today:b.due,kind:"bill",amount:-amount,name:b.name});
   }
   events.sort((x,y)=>x.date.localeCompare(y.date)||(x.kind==="bill"?-1:1));
   let running=0,minRunning=0;
@@ -8665,9 +8669,9 @@ function billReadiness(){
     if(b.status==="paid")return {...result,status:b.paymentPending?"Payment pending":"Paid"};
     if(!account)return {...result,status:"Needs account"};
     const balance=Number(account.balance);
-    if(!["checking","savings"].includes(account.type)||account.balance===null||account.balance===""||!Number.isFinite(balance))return {...result,status:"Balance unavailable"};
+    if(!["checking","savings"].includes(account.type)||account.balance==null||String(account.balance).trim()===""||!Number.isFinite(balance))return {...result,status:"Balance unavailable"};
     const amount=Number(b.amount),due=String(b.due||"");
-    if(b.amount===null||b.amount===""||!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(due))return {...result,status:"Check bill"};
+    if(b.amount==null||String(b.amount).trim()===""||!Number.isFinite(amount)||amount<0||!validBillDate(due))return {...result,status:"Check bill"};
     const amountC=Math.round(amount*100),prior=spentByAccount.get(account.key)||0,
           plannedOut=transferOutByAccount.get(account.key)||0,plannedIn=transferInByAccount.get(account.key)||0,
           currentBefore=Math.round(balance*100)-prior-plannedOut,currentAfter=currentBefore-amountC,
@@ -9949,7 +9953,7 @@ async function registerAppWorker(){
 <script src="electricity-insights.js?v=20261014-electricity1"></script>
 <script src="life-insights.js?v=20261027-trendclarity3"></script>
 <script src="bank-exit-plan.js?v=20261111-cute-avatar-map1"></script>
-<script src="money-fix.js?v=20261007-action3"></script>
+<script src="money-fix.js?v=20261115-money-review1"></script>
 <script src="budget-forecast-2026.js?v=20261015-2"></script>
 <script src="finance-roadmap.js?v=20261015-grounded-progress4"></script>
 <script src="action-first.js?v=20261016-guided20"></script>

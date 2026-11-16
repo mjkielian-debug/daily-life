@@ -1,47 +1,80 @@
-// Daily Life Money display hotfix: keep current-cash reserve separate from due-date projections.
+// Shared Money calculations and review queue. Private records stay in app state.
 (function(){
-  const oldMoneyNextStepsCard=window.moneyNextStepsCard;
+  "use strict";
+  const knownAmount=value=>value!==null&&value!==undefined&&String(value).trim()!==""&&Number.isFinite(Number(value));
+  const billAmount=value=>knownAmount(value)&&Number(value)>=0;
+  const cents=value=>Math.round(Number(value)*100);
+  const protectedAccount=a=>!!a.protectFromSpending||a.key==="house_fund"||a.strategy==="Protected reserve";
+  function throughDate(days){const date=new Date(ymd()+"T12:00:00");date.setDate(date.getDate()+days);return ymd(date);}
+
+  window.moneyBillReviewRows=function(days=45){
+    const through=throughDate(days);
+    return billReadiness().filter(r=>r.bill.status!=="paid"&&(!validBillDate(r.bill.due)||r.bill.due<=through))
+      .sort((a,b)=>{
+        const rank=r=>!validBillDate(r.bill.due)?1:r.bill.due<ymd()?0:2;
+        return rank(a)-rank(b)||String(a.bill.due||"").localeCompare(String(b.bill.due||""))||a.index-b.index;
+      });
+  };
+  window.moneyBillActions=function(){
+    const actions=[],today=ymd();
+    for(const r of moneyBillReviewRows()){
+      const b=r.bill,name=b.name||"Unnamed bill",validDate=validBillDate(b.due),due=validDate?dl(b.due):"date needed";
+      let action;
+      if(validDate&&b.due<today)action={kind:"overdue",title:"Review overdue "+name,detail:"Was due "+due+" · confirm whether it was paid; it is still recorded unpaid."};
+      else if(!validDate||!billAmount(b.amount))action={kind:"setup",title:"Fix details for "+name,detail:!validDate?"A valid due date is needed.":"The bill amount is missing or invalid."};
+      else if(r.status==="Transfer needed")action={kind:"transfer",title:transferInstruction(r)||("Move money for "+name),detail:name+" · due "+due};
+      else if(r.status==="Projected short")action={kind:"short",title:"Short "+money(Math.max(0,-Number(r.projectedAfter||0))/100)+" for "+name,detail:"Needs attention by "+due};
+      else if(r.status==="Needs account")action={kind:"setup",title:"Choose payment account",detail:name+" · due "+due};
+      else if(r.status==="Balance unavailable")action={kind:"setup",title:"Update account balance",detail:name+" · due "+due};
+      else if(["Check bill","Check earlier bill"].includes(r.status))action={kind:"setup",title:"Review bill details",detail:name+" · the projection needs review."};
+      if(action)actions.push({...action,index:r.index});
+    }
+    return actions;
+  };
+
   window.safeToSpendSnapshot=function(){
-    const today=ymd(),endDateObj=new Date(today+"T12:00:00");endDateObj.setDate(endDateObj.getDate()+30);const through=ymd(endDateObj);
-    const allCash=(state.accounts||[]).filter(a=>["checking","savings"].includes(a.type)&&a.balance!==null&&a.balance!==""&&Number.isFinite(Number(a.balance)));
-    const protectedCash=allCash.filter(a=>a.protectFromSpending||a.key==="house_fund");
-    const cash=allCash.filter(a=>!a.protectFromSpending&&a.key!=="house_fund");
-    const cashKeys=new Set(cash.map(a=>a.key));
-    const total=cash.reduce((sum,a)=>sum+Number(a.balance||0),0);
-    const protectedTotal=protectedCash.reduce((sum,a)=>sum+Number(a.balance||0),0);
-    const rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=today&&r.bill.due<=through);
-    const reserved=rows.filter(r=>r.account&&cashKeys.has(r.account.key)).reduce((sum,r)=>{const amount=Number(r.bill.amount);return sum+(Number.isFinite(amount)&&amount>=0?amount:0)},0);
-    const cushion=budgetCents(budgetPlan().limits?.cushion)/100;
-    const raw=total-reserved-cushion;
-    return{today,through,total,protectedTotal,reserved,cushion,safe:Math.max(0,raw),gap:Math.max(0,-raw),incomplete:rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status)),count:rows.length};
+    const today=ymd(),through=throughDate(30),rows=moneyBillReviewRows(30);
+    const accounts=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase()));
+    const cash=accounts.filter(a=>!protectedAccount(a)),protectedCash=accounts.filter(protectedAccount);
+    const totalC=cash.filter(a=>knownAmount(a.balance)).reduce((sum,a)=>sum+cents(a.balance),0);
+    const protectedC=protectedCash.filter(a=>knownAmount(a.balance)).reduce((sum,a)=>sum+cents(a.balance),0);
+    const protectedRemaining=new Map(protectedCash.filter(a=>knownAmount(a.balance)).map(a=>[a.key,Math.max(0,cents(a.balance))]));
+    let reservedC=0;
+    for(const r of rows){
+      if(!billAmount(r.bill.amount))continue;
+      let amount=cents(r.bill.amount);
+      // Only the funded portion of a bill assigned to protected cash can stay
+      // outside the ordinary reserve. Unassigned bills still reserve their cost.
+      if(r.account&&protectedRemaining.has(r.account.key)){
+        const remaining=protectedRemaining.get(r.account.key),funded=Math.min(amount,remaining);
+        amount-=funded;protectedRemaining.set(r.account.key,remaining-funded);
+      }
+      reservedC+=amount;
+    }
+    const issues=[];
+    if(!cash.length)issues.push("Add an account available for everyday spending.");
+    if(cash.some(a=>!knownAmount(a.balance)))issues.push("An everyday account balance is missing.");
+    if(rows.some(r=>!billAmount(r.bill.amount)))issues.push("An unpaid bill amount is missing or invalid.");
+    if(rows.some(r=>!validBillDate(r.bill.due)))issues.push("An unpaid bill needs a valid due date.");
+    if(rows.some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status)))issues.push("Review the payment accounts and bill details.");
+    const cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"";
+    if(cloudStatus)issues.push(cloudStatus);
+    const cushionC=budgetCents(budgetPlan(today.slice(0,7)).limits?.cushion),rawC=totalC-reservedC-cushionC,incomplete=issues.length>0;
+    return {today,through,total:totalC/100,protectedTotal:protectedC/100,reserved:reservedC/100,cushion:cushionC/100,
+      safe:incomplete?null:Math.max(0,rawC)/100,gap:Math.max(0,-rawC)/100,incomplete,issues,count:rows.length,
+      overdueCount:rows.filter(r=>validBillDate(r.bill.due)&&r.bill.due<today).length};
   };
   window.safeToSpendCard=function(){
     const x=safeToSpendSnapshot();
-    return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">🛡 Available now after near-term reserves</div><h2>${money(x.safe)}</h2></div><span class="tag">${x.incomplete?"provisional":"current cash"}</span></div><div class="row"><span>Spendable cash accounts</span><b>${money(x.total)}</b></div>${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}<div class="row"><span>Bills due in next 30 days</span><b>− ${money(x.reserved)}</b></div><div class="row"><span>Budget cushion</span><b>− ${money(x.cushion)}</b></div>${x.gap?`<div class="row"><span>Current-cash gap before future deposits</span><b class="budget-negative">${money(x.gap)}</b></div>`:""}<p class="muted small">Conservative current-cash view. Future deposits are not spent before they arrive. Use Due-date outlook for projected coverage that includes expected income and transfer timing.</p></div>`;
+    return `<div class="card priority-card safe-spend"><div class="section-title"><div><div class="eyebrow">After recorded bill reserves</div><h2>${x.incomplete?"Needs review":money(x.safe)}</h2></div><span class="tag">${x.incomplete?"incomplete details":"recorded balances"}</span></div>
+      <div class="row"><span>Known everyday account balances</span><b>${money(x.total)}</b></div>
+      ${x.protectedTotal?`<div class="row"><span>Protected / earmarked cash</span><b>${money(x.protectedTotal)}</b></div>`:""}
+      <div class="row"><span>Known unpaid bills through ${esc(dl(x.through))}${x.overdueCount?" · includes overdue":""}</span><b>− ${money(x.reserved)}</b></div>
+      <div class="row"><span>This month’s budget cushion</span><b>− ${money(x.cushion)}</b></div>
+      ${x.gap?`<div class="row"><span>Gap in recorded cash before future deposits</span><b class="budget-negative">${money(x.gap)}</b></div>`:""}
+      ${x.incomplete?'<div class="notice">'+x.issues.map(issue=>'<div>'+esc(issue)+'</div>').join("")+'</div><button class="btn" type="button" onclick="openMoneyHubSection(\'bills\')">Review bills</button><button class="btn" type="button" onclick="openMoneyHubSection(\'accounts\')">Review accounts</button>':""}
+      <p class="muted small">Uses recorded balances and unpaid bills, including overdue bills and known amounts without a payment account. Future deposits are excluded. Protected cash stays separate; verify balances before spending.</p></div>`;
   };
-  const moneyDateLabel=function(date){const x=new Date(date+"T12:00:00"),sameYear=x.getFullYear()===new Date().getFullYear();return x.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",...(sameYear?{}:{year:"numeric"})})};
-  window.moneyNextStepsCard=function(){
-    const today=ymd(),endObj=new Date(today+"T12:00:00");endObj.setDate(endObj.getDate()+45);const through=ymd(endObj);
-    const all=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=today&&r.bill.due<=through).slice(0,12),actions=[];
-    for(const r of all){
-      const b=r.bill,due=dl(b.due);
-      if(r.status==="Transfer needed")actions.push({kind:"transfer",title:transferInstruction(r),detail:`${b.name} · due ${due}`,index:r.index});
-      else if(r.status==="Projected short"){const short=Math.max(0,-Number(r.projectedAfter||0))/100;actions.push({kind:"short",title:`Still short ${money(short)} for ${b.name}`,detail:`Projected shortage by ${due} after earlier bills and expected income.`,index:r.index})}
-      else if(r.status==="Needs account")actions.push({kind:"setup",title:`Choose a payment account for ${b.name}`,detail:`Due ${due} · Daily Life cannot project this bill until an account is assigned.`,index:r.index});
-      else if(r.status==="Balance unavailable")actions.push({kind:"setup",title:`Update the balance used for ${b.name}`,detail:`Due ${due} · readiness needs a checking or savings balance.`,index:r.index});
-      else if(r.status==="Check bill")actions.push({kind:"setup",title:`Check ${b.name} amount or due date`,detail:"The bill needs valid details before Daily Life can rely on the projection.",index:r.index});
-    }
-    const covered=all.filter(r=>["Covered now","Covered by due date"].includes(r.status)).length;
-    return `<div class="card money-actions-card"><div class="section-title"><div><div class="eyebrow">Next steps · 45 days</div><h2>${actions.length?actions.length+" money action"+(actions.length===1?"":"s"):"Nothing urgent to move"}</h2></div><span class="tag">${covered} covered</span></div><div class="muted small">Only near-term bills appear here, so Daily Life does not tell you to move money months or years early.</div>${actions.length?actions.slice(0,7).map(a=>`<div class="money-action ${a.kind}" onclick="openBill(${a.index})"><div class="money-action-mark">${a.kind==="transfer"?"↔":a.kind==="short"?"!":"·"}</div><div class="grow"><b>${esc(a.title)}</b><div class="muted small">${esc(a.detail)}</div></div><span class="money-action-chevron">›</span></div>`).join(""):`<div class="money-all-clear">✦ No near-term transfer or setup action is needed from the bills currently entered.</div>`}</div>`;
-  };
-  window.dueDateOutlookCard=function(){
-    const today=ymd(),rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=today).slice(0,8);
-    if(!rows.length)return"";
-    const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
-          short=rows.filter(r=>r.status==="Projected short").length;
-    return `<div class="card"><div class="section-title"><div><div class="eyebrow">Due-date outlook</div><h2>${covered} of ${rows.length} upcoming bills currently covered</h2></div>${short?`<span class="bill-status short">${short} short</span>`:`<span class="bill-status covered">on track</span>`}</div><p class="muted small">This projection uses recorded balances plus expected income arriving on or before each bill date. It is different from Available now, which does not spend future deposits before they arrive.</p>${rows.map(r=>{const b=r.bill,totalIncome=expectedIncomeTotalBefore(b.due),cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown",instruction=transferInstruction(r);return `<div class="row"><span><b>${esc(b.name)}</b><div class="muted small">Due ${esc(moneyDateLabel(b.due))} · ${money(Number(b.amount||0))} · expected income by then ${money(totalIncome)}</div>${instruction?`<div class="small"><b>${esc(instruction)}</b> by ${esc(moneyDateLabel(b.due))}.</div>`:""}</span><span class="bill-status ${cls}">${esc(r.status)}</span></div>`}).join("")}</div>`;
-  };
-  if(typeof render==="function")render();
 })();
 
 // Vehicle service duplicate cleanup
@@ -79,36 +112,28 @@
 })();
 
 
-/* Compact action-first Money surface. Keep explanation available, but out of the way. */
+/* Compact action-first Money surface. All review entry points use the same queue. */
 (function compactMoneyActionSurface(){
-  function actionRows(){
-    const today=ymd(),endObj=new Date(today+"T12:00:00");endObj.setDate(endObj.getDate()+45);const through=ymd(endObj),actions=[];
-    for(const r of billReadiness().filter(x=>x.bill.status!=="paid"&&validBillDate(x.bill.due)&&x.bill.due>=today&&x.bill.due<=through)){
-      const b=r.bill,due=dl(b.due);
-      if(r.status==="Transfer needed")actions.push({kind:"transfer",title:transferInstruction(r)||("Move money for "+b.name),detail:b.name+" · due "+due,index:r.index});
-      else if(r.status==="Projected short"){const short=Math.max(0,-Number(r.projectedAfter||0))/100;actions.push({kind:"short",title:"Short "+money(short)+" for "+b.name,detail:"Needs attention by "+due,index:r.index})}
-      else if(r.status==="Needs account")actions.push({kind:"setup",title:"Choose payment account",detail:b.name+" · due "+due,index:r.index});
-      else if(r.status==="Balance unavailable")actions.push({kind:"setup",title:"Update account balance",detail:b.name+" · due "+due,index:r.index});
-      else if(r.status==="Check bill")actions.push({kind:"setup",title:"Fix bill details",detail:b.name+" · amount or due date needs review",index:r.index});
-    }
-    return actions;
-  }
   window.moneyNextStepsCard=function(){
-    const actions=actionRows(),first=actions[0];
-    if(!first)return '<div class="card money-do-next"><div class="eyebrow">Do this next</div><h2>No money move needed</h2><div class="money-all-clear">✦ Your entered bills do not need a transfer or setup fix in the next 45 days.</div></div>';
-    const rest=actions.slice(1,5);
-    return '<div class="card money-do-next"><div class="eyebrow">Do this next</div><button class="money-primary-action" type="button" onclick="openBill('+first.index+')"><span><b>'+esc(first.title)+'</b><small>'+esc(first.detail)+'</small></span><strong>Open ›</strong></button>'+
-      (rest.length?'<details class="money-other-actions"><summary>'+rest.length+' more money action'+(rest.length===1?'':'s')+'</summary>'+rest.map(a=>'<button type="button" class="money-action compact" onclick="openBill('+a.index+')"><span><b>'+esc(a.title)+'</b><small>'+esc(a.detail)+'</small></span><span>›</span></button>').join('')+'</details>':'')+
-      '</div>';
+    const actions=moneyBillActions(),first=actions[0];
+    if(!first)return '<div class="card money-do-next"><div class="eyebrow">Do this next</div><h2>No bill action found</h2><div class="money-all-clear">No overdue or near-term issue was found in your recorded bills.</div><button class="btn" type="button" onclick="openBill()">Add a bill</button></div>';
+    const row=a=>'<button type="button" class="money-action compact" onclick="openBill('+a.index+')"><span><b>'+esc(a.title)+'</b><small>'+esc(a.detail)+'</small></span><span>›</span></button>';
+    return '<div class="card money-do-next"><div class="eyebrow">Do this next · overdue + next 45 days</div><button class="money-primary-action" type="button" onclick="openBill('+first.index+')"><span><b>'+esc(first.title)+'</b><small>'+esc(first.detail)+'</small></span><strong>Open ›</strong></button>'+
+      (actions.length>1?'<details class="money-other-actions"><summary>'+ (actions.length-1)+' more money action'+(actions.length===2?'':'s')+'</summary>'+actions.slice(1).map(row).join('')+'</details>':'')+'</div>';
   };
   window.dueDateOutlookCard=function(){
-    const today=ymd(),rows=billReadiness().filter(r=>r.bill.status!=="paid"&&validBillDate(r.bill.due)&&r.bill.due>=today).slice(0,8);
+    const all=moneyBillReviewRows(),rows=all.slice(0,8),today=ymd();
     if(!rows.length)return "";
-    const covered=rows.filter(r=>["Covered now","Covered by due date","Transfer needed"].includes(r.status)).length,
-          short=rows.filter(r=>r.status==="Projected short").length;
-    return '<div class="card money-outlook-compact"><div class="section-title"><div><div class="eyebrow">Bill outlook</div><h2>'+covered+' of '+rows.length+' covered</h2></div><span class="bill-status '+(short?'short':'covered')+'">'+(short?short+' short':'on track')+'</span></div>'+
-      rows.map(r=>{const b=r.bill,cls=["Covered now","Covered by due date","Transfer needed"].includes(r.status)?"covered":r.status==="Projected short"?"short":"unknown",instruction=typeof transferInstruction==="function"?transferInstruction(r):"";return '<button type="button" class="money-outlook-row" onclick="openBill('+r.index+')"><span><b>'+esc(b.name)+'</b><small>'+esc(dl(b.due))+' · '+money(Number(b.amount||0))+(instruction?' · '+esc(instruction):'')+'</small></span><span class="bill-status '+cls+'">'+esc(r.status)+'</span></button>'}).join('')+
-      '<details class="reading-details"><summary>How this is calculated</summary><p class="muted small">Uses entered balances, earlier unpaid bills, enabled expected income before each due date, and any needed transfer support.</p></details></div>';
+    const ready=r=>validBillDate(r.bill.due)&&r.bill.due>=today&&["Covered now","Covered by due date"].includes(r.status);
+    const covered=all.filter(ready).length,review=all.length-covered;
+    return '<div class="card money-outlook-compact"><div class="section-title"><div><div class="eyebrow">Bill outlook · next 45 days + overdue</div><h2>'+covered+' of '+all.length+' projected covered</h2></div><span class="bill-status '+(review?'unknown':'covered')+'">'+(review?review+' to review':'on track')+'</span></div>'+
+      rows.map(r=>{
+        const b=r.bill,validDate=validBillDate(b.due),overdue=validDate&&b.due<today;
+        const status=overdue?'Overdue · review':!validDate?'Date needed':r.status;
+        const amount=b.amount!==null&&b.amount!==undefined&&String(b.amount).trim()!==""&&Number.isFinite(Number(b.amount))&&Number(b.amount)>=0?money(Number(b.amount)):'Amount needed';
+        return '<button type="button" class="money-outlook-row" onclick="openBill('+r.index+')"><span><b>'+esc(b.name||'Unnamed bill')+'</b><small>'+esc(validDate?dl(b.due):'Due date needed')+' · '+esc(amount)+'</small></span><span class="bill-status '+(ready(r)?'covered':r.status==='Projected short'||overdue?'short':'unknown')+'">'+esc(status)+'</span></button>';
+      }).join('')+(all.length>rows.length?'<p class="muted small">Showing '+rows.length+' of '+all.length+' bills. Open the full bill list below for the rest.</p>':'')+
+      '<details class="reading-details"><summary>How this is calculated</summary><p class="muted small">Uses entered balances, earlier unpaid bills and expected income before each due date. A required transfer still needs action. Overdue entries need payment confirmation even when enough money is recorded.</p></details></div>';
   };
   window.moneyTransfersCard=function(){
     const coach=typeof budgetCoachCard==="function"?budgetCoachCard():"";

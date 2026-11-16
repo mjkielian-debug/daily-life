@@ -104,7 +104,7 @@ function budgetCoachSnapshot(){
   const safe=typeof safeToSpendSnapshot==="function"
     ? safeToSpendSnapshot()
     : {safe:0,incomplete:true,horizon:"",reserved:0,cushion:0};
-  const totals=typeof budgetTotals==="function"?budgetTotals():null;
+  const totals=typeof budgetTotals==="function"?budgetTotals(ymd().slice(0,7)):null;
   const balanceCount=(state.accounts||[]).filter(a=>["checking","savings"].includes(String(a.type||"").toLowerCase())&&a.balance!==null&&a.balance!==undefined&&a.balance!==""&&Number.isFinite(Number(a.balance))).length;
   const cash=(state.accounts||[]).filter(a=>
     ["checking","savings"].includes(a.type)&&
@@ -161,6 +161,7 @@ function budgetCoachSnapshot(){
         futureBills=budgetCoachFutureBillPlans(),
         transferIssues=[];
   if(safe.incomplete)transferIssues.push("Some bill/account setup is incomplete, so the bill reserve may change.");
+  if(typeof window.moneyBillReviewRows==="function"&&window.moneyBillReviewRows(45).some(r=>["Needs account","Balance unavailable","Check bill","Check earlier bill"].includes(r.status)))transferIssues.push("A bill in the 45-day transfer plan still needs account or amount details.");
   const movableSources=sourceRows.filter(r=>r.amount>0);
   if(movableSources.some(r=>r.needsFloor))transferIssues.push("A deposit-landing checking account has no minimum operating balance set.");
   if(movableSources.some(r=>r.staleSynced))transferIssues.push("At least one synced checking balance is more than 3 days old.");
@@ -174,7 +175,7 @@ function budgetCoachSnapshot(){
 function budgetCoachGoalPlan(x){
   const planUnassigned=x.totals?Math.max(0,Number(x.totals.left||0)/100):0,
         currentSafe=Math.max(0,Number(x.safe.safe||0)),
-        assignNow=Math.min(planUnassigned,currentSafe),
+        assignNow=x.safe.incomplete?0:Math.min(planUnassigned,currentSafe),
         later=Math.max(0,planUnassigned-assignNow),
         goals=[...(state.savingsGoals||[])]
           .filter(g=>!g.done)
@@ -203,8 +204,8 @@ function budgetCoachCategoryGuide(x,limit=4){
 
 function budgetCoachActionList(x,goalPlan){
   const actions=[];
-  if(Number(x.safe.safe||0)<0){
-    actions.push({mark:"1",title:"Protect bills first",detail:`Pause optional spending until the entered cash shortfall of ${money(Math.abs(Number(x.safe.safe||0)))} is covered.`});
+  if(Number(x.safe.gap||0)>0){
+    actions.push({mark:"1",title:"Protect bills first",detail:`Pause optional spending until the entered cash shortfall of ${money(Number(x.safe.gap))} is covered.`});
   }
   if(x.over.length){
     const r=x.over[0];
@@ -271,10 +272,16 @@ function budgetCoachTransferIssues(x){
 }
 
 function budgetCoachPrimaryAction(x,goalPlan){
-  const safe=Number(x.safe.safe||0);
-  if(safe<0)return{
+  const cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"";
+  if(x.safe.incomplete||cloudStatus)return{
+    tone:"review",kicker:"Check the recorded details",title:"Review money details first",
+    detail:cloudStatus||(x.safe.issues||[]).join(" ")||"A balance or bill detail is missing. Spending and savings suggestions need that information.",
+    button:"Review Money",action:"closeModal();setView('more');openMoneyHubSection('transfers')"
+  };
+  const gap=Number(x.safe.gap||0);
+  if(gap>0)return{
     tone:"stop",kicker:"Protect bills first",title:"Pause optional spending",
-    detail:`The entered plan is short ${money(Math.abs(safe))} after bill reserves and cushion.`,
+    detail:`The entered plan is short ${money(gap)} after bill reserves and cushion.`,
     button:"Review bills",action:"closeModal();setView('more');openMoneyHubSection('bills')"
   };
 
@@ -320,9 +327,9 @@ function budgetCoachPrimaryAction(x,goalPlan){
 function budgetCoachCard(){
   const x=budgetCoachSnapshot(),goalPlan=budgetCoachGoalPlan(x),primary=budgetCoachPrimaryAction(x,goalPlan),
         cloudStatus=typeof window.moneyCloudStatusText==="function"?window.moneyCloudStatusText():"",
-        amountsKnown=x.balanceCount>0&&!cloudStatus,
+        amountsKnown=x.balanceCount>0&&!cloudStatus&&!x.safe.incomplete,
         planIncomeKnown=x.totals?.plan?.income!==null&&x.totals?.plan?.income!==undefined&&!cloudStatus,
-        transferReady=x.transferConfidence==="ready",
+        transferReady=x.transferConfidence==="ready"&&!cloudStatus&&!x.safe.incomplete,
         transferLabel=x.movable>0?(transferReady?money(x.movable)+" ready":money(x.movable)+" review"):"None",
         setupWarning=x.safe.incomplete
           ?`<div class="coach-mini-warning"><b>One setup check is still affecting the answer.</b><button class="btn small" type="button" onclick="closeModal();setView('more');openMoneyHubSection('accounts')">Fix it</button></div>`
