@@ -794,18 +794,22 @@ function approvedDollhouseRoomZoom(f,z){
  if(f!=="First floor"||!approvedDollhouseRooms[z?.id])return "";
  const config=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
  const kitchen=z.id==="kitchen",photoMapped=z.id==="dining"||z.id==="living";
+ const savedPhotoCount=arr(z.photos).filter(okPhoto).length;
+ const hasPhotoEvidence=savedPhotoCount>0;
  const note=kitchen
   ?"Approved kitchen illustration based on your room photos. The kitchen artwork stays unchanged."
   :photoMapped
    ?"Photo-mapped room: the photos establish where the real furniture, doorways and decorations go. The picture above is still an illustration draft, not an exact representation. No more room photographs are needed right now."
-   :"Illustration reference only: furniture and room details still need photo verification.";
+   :(hasPhotoEvidence
+    ?"Saved room photos are available below. The illustrated scene is only a draft and should not override the photos."
+    :"This illustrated scene is approximate. Only positions verified in saved room records are treated as mapped.");
  const evidence=photoMapped?[z.photoReference20261114,z.photoReference20261114Additional].filter(Boolean):[];
  const details=evidence.length?'<details class="hvm-photo-verified-notes"><summary>Photo-confirmed room details</summary>'+
   evidence.map(entry=>'<p>'+h(entry)+'</p>').join("")+'</details>':"";
- const status=kitchen?"Approved kitchen":photoMapped?"Photos reviewed · illustration in progress":"Needs room references";
+ const status=kitchen?"Approved kitchen":hasPhotoEvidence?"Real photos saved · drawing in progress":"Illustration is approximate";
  return '<section class="hvm-approved-room-zoom" aria-label="Illustration reference for '+h(z.name)+'">'+
   '<div class="hvm-approved-room-zoom-header"><strong>✦ '+h(z.name)+' · '+h(status)+'</strong><span>'+stats.done+' / '+stats.total+' tasks done</span></div>'+
-  '<svg viewBox="'+config.zoom+'" role="img" aria-label="'+h(z.name)+' reference artwork; actual details may differ from photos">'+
+  '<svg viewBox="'+config.zoom+'" role="img" aria-label="'+h(z.name)+' illustrated draft; actual details are established by saved photos and room notes">'+
   '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0"/>'+
   '</svg><p>'+h(note)+'</p>'+details+'</section>';
 }
@@ -1811,7 +1815,8 @@ window.houseVisualOpenZone=function(f,id){
  '</details>';
  const roomPhotos='<section id="hvmRoomPhotoGallery" class="hvm-room-photo-gallery"><p>Loading your saved room photos…</p></section>';
  const hasRoomPhotoReference=photos.length>0||f==="Second floor"||f==="Third floor"||z.id==="bath";
- const roomPhotoDoor=hasRoomPhotoReference?'<details class="hvm-real-room-photos"><summary>See saved room photos'+(photos.length?' · '+photos.length:'')+'</summary>'+roomPhotos+'</details>':"";
+ const prioritizeRealPhotos=f==="First floor"&&photos.length>0&&id!=="kitchen";
+ const roomPhotoDoor=hasRoomPhotoReference?'<details class="hvm-real-room-photos'+(prioritizeRealPhotos?' hvm-first-floor-reference':'')+'"'+(prioritizeRealPhotos?' open':'')+'><summary>'+(prioritizeRealPhotos?'Real room photos · ':'See saved room photos')+(photos.length?photos.length:'')+'</summary>'+roomPhotos+'</details>':"";
  const objectPanel=spots?'<div class="hvm-detail-markers"><strong>Tap an object to interact</strong>'+spots+'</div>':"";
  const roomTaskNotice=''; // Checklist itself is visible at the top; avoid a redundant jump card.
  const approvedZoom=approvedDollhouseRoomZoom(f,z);
