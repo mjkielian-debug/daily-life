@@ -907,7 +907,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+surfaces+hotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">Kitchen artwork stays approved. Other rooms open to saved photos, furniture and tasks; this uncluttered view keeps their positions clear.</div></section>'+
+  '<div class="hvm-approved-caption">Saved photos are references, not a live view. Tap a room for its tasks and details.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
