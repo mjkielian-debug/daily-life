@@ -50,6 +50,7 @@ const APP_SHELL=[
   "./life-insights.js",
   "./life-map.js",
   "./life-map.css",
+  "./ui-quiet-mobile.css",
   "./home-hub.css",
   "./home-hub.js",
   "./assets/michelle-equestria-avatar.webp?v=20261112-facepony1",
