@@ -226,7 +226,7 @@ dialog,
 <link rel="stylesheet" href="sync-status.css?v=20261110-open-route-home2">
 <link rel="stylesheet" href="completion-feedback.css?v=20261110-open-route-home2">
 <link rel="stylesheet" href="candy-theme.css?v=20261113-candy-doodles1">
-<link rel="stylesheet" href="ui-quiet-mobile.css?v=20261115-water-brushing-priority2">
+<link rel="stylesheet" href="ui-quiet-mobile.css?v=20261115-avatar-one-tap-shortcuts3">
 </head>
 <body>
 <div id="app"><main class="app" role="status" aria-live="polite" style="padding:25px 16px;text-align:center"><div class="brand-lockup" style="justify-content:center"><img class="brand-mark" src="daily-life-colorful-icon.svg?v=20261012-rainbow9" alt=""><div class="title">Daily Life</div></div><p>Opening your Daily Life…</p><p class="muted small">Checking saved information and your existing sign-in.</p><p class="muted small">Starting build 20261111-volvo-task-dedupe1…</p></main></div>
@@ -329,7 +329,7 @@ const blankState=()=>({
   tasks:[],workShifts:[],sleepLogs:[],waterLogs:[],stretchLogs:[],selfCare:[],selfCareActivities:[],wellnessLogs:[],dailyReviews:[],tarotDraws:[],spiritualityPracticeLogs:[],spiritualityJournal:[],foodLogs:[],readingLogs:[],chores:[],
   peopleProfiles:[],birthdaySuggestions:[],kidsMoneyAccounts:[],kidsMoneyTransactions:[],kidsMoneyReconciliations:[],schoolGrades:[],kidSchoolPortfolio:[],schoolAssignments:[],itineraryBlocks:[],dayFlowChecks:[],dayFlowFinishedTasks:[],itineraryNotes:{},inventoryItems:[],houseRooms:[],inventoryLocations:[],paperItems:[],kidArtworks:[],optionalPracticeSessions:[],optionalPracticeProofs:[],paperRewardsRedeemed:[],utilityBillHistory:[],pets:[],petLogs:[],petRecords:[],petCareRoutines:[],plants:[],plantLogs:[],plantCareRoutines:[],gardenTasks:[],gardenJournal:[],gardenSeeds:[],projects:[],hobbyProjects:[],vehicles:[],vehicleServices:[],orders:[],deliveries:[],workouts:[],relationshipCheckins:[],meals:[],mealSuggestions:[],mealFeedback:[],pantryScans:[],pantry:{items:[],updatedAt:"",scanId:""},shopping:[],homeLogs:[],outfits:[],tireLogs:[],events:[],paychecks:[],expectedIncome:[],employmentProfiles:[],incomeSeasonality:[],accounts:[],bills:[],retirement:[],savingsGoals:[],budget:{months:{},spending:[]}
 });
-const APP_BUILD="20261115-water-brushing-priority2";
+const APP_BUILD="20261115-avatar-one-tap-shortcuts3";
 let appStartupReady=false;
 let startupRenderCompleted=false;
 let appHydrating=true;
@@ -7013,7 +7013,7 @@ function inventoryDetailedView(){
   const tabs=`<div class="segmented"><button class="${inventoryTab==="items"?"active":""}" onclick="inventorySetTab('items')">Items</button><button class="${inventoryTab==="map"?"active":""}" onclick="inventorySetTab('map')">House map</button><button onclick="openHomeGoals()">✦ Goals</button><button onclick="openPaperStudio()">✎ Papers</button><button onclick="openArtLibrary()">📚 Kids' books</button></div>`;
   if(inventoryTab==="map"){
     if(typeof window.photoInboxLoadInlineMap==="function")Promise.resolve().then(()=>window.photoInboxLoadInlineMap());
-    return `${typeof window.houseMapInlineHtml==="function"?window.houseMapInlineHtml():""}<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('today')">Back to Today</button></div>${tabs}</div>
+    return `${typeof window.houseMapInlineHtml==="function"?window.houseMapInlineHtml():""}<div class="card glow inventory-hero"><div class="section-title"><div><div class="eyebrow">▦ Inventory</div><h2>Where everything lives</h2><div class="muted small">Rooms, shelves, bins and the things stored in them.</div></div><button class="btn" onclick="setView('lifemap')">Back to avatar &amp; house</button></div>${tabs}</div>
     <div class="card inventory-storage-card"><div class="section-title"><div><h2>Rooms + storage</h2><div class="muted small">${rooms.length} room${rooms.length===1?"":"s"} · ${locations.length} storage location${locations.length===1?"":"s"}</div></div><div class="actions"><button class="btn primary" onclick="openInventoryRoom()">+ Room</button><button class="btn" onclick="openInventoryLocation()">+ Location</button></div></div>
     ${rooms.length?rooms.map(room=>{
       const locs=locations.filter(x=>x.roomId===room.id),roomItems=all.filter(x=>x.roomId===room.id||locs.some(l=>l.id===x.locationId));
@@ -7628,7 +7628,7 @@ function settingsView(){
         ],
         centerTitle=remote&&lastExport?"2 recovery paths":remote||lastExport?"1 recovery path":"Create backup",
         centerDetail=user?(remote?"Private cloud copy exists":"Cloud needs first snapshot"):"Local-first";
-  return `<section class="settings-one-screen"><div class="settings-one-topline"><div><div class="eyebrow">Daily Life settings</div><b>Setup + data safety</b></div><button class="btn small primary" onclick="setView('today')">Done</button></div>
+  return `<section class="settings-one-screen"><div class="settings-one-topline"><div><div class="eyebrow">Daily Life settings</div><b>Setup + data safety</b></div><button class="btn small primary" onclick="setView('lifemap')">Done</button></div>
     <div class="life-wheel settings-wheel" role="group" aria-label="Settings dashboard">
       ${segments.map((x,i)=>`<button type="button" class="life-wheel-segment" style="--i:${i};--seg:${i}" onclick="openSettingsHubSection('${x.section}')" aria-label="${esc(x.title)}: ${esc(x.detail)}"><span><i>${x.icon}</i><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join("")}
       <button type="button" class="life-wheel-center settings-wheel-center" onclick="event.stopPropagation();openSettingsHubSection('backup');return false;"><span class="eyebrow">DATA SAFETY</span><b>${esc(centerTitle)}</b><strong>${esc(centerDetail)}</strong><small>Tap for backup</small></button>
@@ -9972,7 +9972,7 @@ window.addEventListener("load",()=>{
 <script src="schedule-photo-import.js?v=20261114-reliability-capture2"></script>
 <script src="sync-status.js?v=20261115-screenshot-mobile-cleanup1"></script>
 <script src="workday-protection.js?v=20261115-workday-cloud-safety1"></script>
-<script src="life-map.js?v=20261115-water-brushing-priority2"></script>
+<script src="life-map.js?v=20261115-avatar-one-tap-shortcuts3"></script>
 <script src="avatar-wardrobe.js?v=20261116-house-confirmed-furniture1-clueless-sharp2"></script>
 <script src="home-hub.js?v=20261112-home-hub-sparkles1"></script>
 <script src="hobby-weekly.js?v=20261110-hobbyweekly3"></script>
