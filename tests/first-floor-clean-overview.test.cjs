@@ -24,7 +24,7 @@ const ctx={
  approvedDollhouseObjectHotspots:()=>{throw Error("overview must not draw furniture plus buttons")},
  zoneBounds:()=>({x:10,y:10,width:120,height:180}),
  localRoom:()=>null,houseCareFill:()=>"<house-progress/>",
- arr:x=>Array.isArray(x)?x:[],okId:()=>true,str:String,color:()=>"#cf88af",
+ arr:x=>Array.isArray(x)?x:[],okId:()=>true,okPhoto:x=>/^[a-f0-9-]{36}$/i.test(String(x)),str:String,color:()=>"#cf88af",
  h:x=>String(x).replace(/&/g,"&amp;").replace(/"/g,"&quot;"),
  act:(f,z)=>"houseVisualOpenZone('"+f+"','"+z.id+"')"
 };
