@@ -157,15 +157,12 @@ function backdrop(z,b){
  return bg+floor+
   '<path d="M'+b.x+' '+b.y+'V'+(b.y+b.height)+'M'+(b.x+b.width)+' '+b.y+'V'+(b.y+b.height)+'" stroke="#6d4d42" stroke-width="6"/>';
 }
-function artwork(f,z,settings,stats,detail){
+function artwork(f,z,settings,stats,detail,bounds){
  if(f!=="First floor"||!rooms.has(String(z?.id))||!settings?.path)return "";
  const markers=arr(z.markers).map((p,i)=>({p,i,placement:placement(f,z,p)})).filter(x=>x.placement);
  if(!markers.length)return "";
- const b={x:0,y:0,width:0,height:0};
- const nums=Array.from(String(settings.path).matchAll(/([ML])(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)).map(m=>[Number(m[2]),Number(m[3])]);
- if(nums.length<2)return "";
- const xs=nums.map(p=>p[0]),ys=nums.map(p=>p[1]);b.x=Math.min(...xs);b.y=Math.min(...ys);
- b.width=Math.max(...xs)-b.x;b.height=Math.max(...ys)-b.y;
+ const b=bounds;
+ if(!b||![b.x,b.y,b.width,b.height].every(Number.isFinite)||b.width<=0||b.height<=0)return "";
  const scale={living:1.09,dining:.76,playroom:.76,bath:.74}[z.id]||.8;
  const small={door_front:.7,wood_opening:.75,coat_hooks:.65,pet_bowls:.62,robovac:.52,art:.65,mesh:.64,
   mat:.79,mirror:.84,toilet:.76,sink:.76,plant:.60,shelf:.67,ottoman:.69,table:.67,keyboard:.81,desk:.75};
