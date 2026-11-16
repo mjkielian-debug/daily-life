@@ -1602,7 +1602,22 @@ window.houseVisualUnassignedTasksHtml=function(f){
  const chores=dates.flatMap(date=>typeof window.lifeMapHouseholdRows==="function"?window.lifeMapHouseholdRows(date):[]).filter(task=>task._lifeChore&&!task.done&&!task.paused&&!task.duplicateHidden&&!window.houseVisualTaskHasRoomMatch(task));
  const unassigned=tasks.concat(chores);
  if(!unassigned.length)return "";
- return '<section class="hvm-unassigned-tasks"><div><span class="eyebrow">HOUSE MAP · TASK PLACEMENT</span><h3>House tasks without a room</h3><p>Room-specific work appears in its room. Choose a floor and room for these remaining household tasks.</p></div><details><summary>Assign rooms · '+unassigned.length+' task'+(unassigned.length===1?'':'s')+'</summary><div class="hvm-unassigned-task-list">'+unassigned.map(task=>'<article class="hvm-unassigned-task"><b>'+h(task.title||"Home task")+'</b><small>'+(task.child?h(task.child)+" · ":"")+(task.date?h(task.date):"No date")+'</small><label>Floor<select data-house-task-floor="'+h(task.id)+'"><option value="">Choose a floor</option>'+floors.map(floor=>'<option value="'+h(floor)+'">'+h(floor)+'</option>').join("")+'</select></label><label>Room<select data-house-task-room="'+h(task.id)+'" disabled><option value="">Choose a floor first</option></select></label><button type="button" class="btn small primary" data-house-assign-task="'+h(task.id)+'">Assign to room</button></article>').join("")+'</div></details></section>';
+ return '<section class="hvm-unassigned-tasks hvm-housewide"><details><summary><strong>House-wide & outside</strong> · '+unassigned.length+' to do</summary>'+
+  '<p>Not every household job belongs to one room. Finish it here; room assignment is optional.</p><div class="hvm-housewide-list">'+
+  unassigned.map(task=>'<article class="hvm-housewide-row"><div class="hvm-housewide-main"><span><b>'+h(task.title||"Home task")+'</b>'+
+  (task.date?'<small>'+h(task.date)+'</small>':"")+'</span><button type="button" class="btn small primary" onclick="houseVisualFinishHousewide(&#39;'+h(task.id)+'&#39;,'+(task._lifeChore?'true':'false')+')">✓ Done</button></div>'+
+  '<details class="hvm-housewide-move"><summary>Place in a room</summary><div><label>Floor<select data-house-task-floor="'+h(task.id)+'"><option value="">Choose a floor</option>'+
+  floors.map(floor=>'<option value="'+h(floor)+'">'+h(floor)+'</option>').join("")+'</select></label>'+
+  '<label>Room<select data-house-task-room="'+h(task.id)+'" disabled><option value="">Choose a floor first</option></select></label>'+
+  '<button type="button" class="btn small" data-house-assign-task="'+h(task.id)+'">Assign to room</button></div></details></article>').join("")+
+  '</div></details></section>';
+
+};
+window.houseVisualFinishHousewide=async function(taskId,isChore){
+ const task=isChore?arr(state.chores).find(t=>str(t.id)===str(taskId)):arr(state.tasks).find(t=>str(t.id)===str(taskId));
+ if(!task||task.done)return;
+ if(isChore&&typeof toggleChore==="function")await toggleChore(taskId,true);
+ else if(!isChore&&typeof toggleTask==="function")await toggleTask(taskId,true);
 };
 document.addEventListener("change",function(event){
  const select=event.target&&event.target.closest?event.target.closest("[data-house-task-floor]"):null;
@@ -1648,16 +1663,17 @@ window.houseVisualInteractMarker=function(f,id,index){
  const z=zone(f,id),p=arr(z?.markers)[Number(index)];if(!z||!p)return;
  const objectName=str(p.label||"Mapped object"),objectKey=markerTaskKey(p,index);
  const objectTasks=(state.tasks||[]).filter(t=>!t.duplicateHidden&&!t.paused&&String(t.homeMapFloor||"")===f&&String(t.homeMapZoneId||"")===id&&String(t.homeObjectKey||"")===objectKey);
- const taskList=objectTasks.length?objectTasks.map(t=>'<div class="hvm-object-task-row"><span><b>'+h(t.title||"Task")+'</b><small>'+(t.done?"✓ Complete":"Still to do")+'</small></span>'+(t.done?'':'<button class="btn small primary" type="button" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button>')+'</div>').join(""):'<p class="muted small">No tasks are linked to this object yet.</p>';
- const details='<section class="hvm-object-detail"><span class="hvm-object-icon" aria-hidden="true">✦</span><div><small>IN THIS ROOM</small><h2>'+h(p.label||"Mapped object")+'</h2></div></section>'+
- (p.status?'<p class="hvm-object-status">'+h(p.status)+'</p>':"")+
- (p.note?'<div class="hvm-object-note">'+h(p.note)+'</div>':"")+
- '<section class="hvm-object-tasks"><div><b>Actions for '+h(objectName)+'</b><small>'+objectTasks.length+' linked task'+(objectTasks.length===1?"":"s")+'</small></div>'+taskList+'</section>'+
- '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualAddMarkerTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+Number(index)+')">＋ Add task for this object</button>'+
- '<button class="btn" type="button" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Open room inventory</button></div>'+
- '<div class="hvm-detail-actions"><button class="btn primary" type="button" onclick="houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">← Back to room</button>'+
- '<button class="btn" type="button" onclick="houseVisualReturnToFloor(&#39;'+f+'&#39;)">⌂ House map</button></div>';
- modal(h(p.label||"Mapped object")+" · "+h(z.name),'<div class="hvm-object-view">'+details+'</div>',"Close",closeModal);
+ const taskList=objectTasks.length?'<section class="hvm-object-tasks"><strong>Tasks</strong>'+objectTasks.map(t=>
+  '<div class="hvm-object-task-row"><span>'+h(t.title||"Task")+'</span>'+(t.done?'<small>✓ Done</small>':
+  '<button type="button" class="btn small primary" onclick="houseVisualCompleteTask(&#39;'+h(t.id)+'&#39;,&#39;'+f+'&#39;,&#39;'+id+'&#39;)">✓ Done</button>')+'</div>').join("")+'</section>':"";
+ const status=str(p.status||""),note=str(p.note||"");
+ const detail=status||note?'<details class="hvm-object-source"><summary>About this item</summary>'+
+  (status?'<p>'+h(status)+'</p>':"")+(note?'<p>'+h(note)+'</p>':"")+'</details>':"";
+ const details='<p class="hvm-object-mini-label">📍 '+h(z.name||"Room")+'</p>'+taskList+
+  '<div class="hvm-object-primary-actions"><button type="button" class="btn primary" onclick="houseVisualAddMarkerTask(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+Number(index)+')">＋ Add a task</button>'+
+  '<button type="button" class="btn" onclick="houseVisualOpenZone(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Back to room</button></div>'+
+  '<button type="button" class="hvm-object-inventory-link" onclick="houseVisualInventoryOpen(&#39;'+f+'&#39;,&#39;'+id+'&#39;)">Room inventory ›</button>'+detail;
+ modal(h(p.label||"Mapped object"),'<div class="hvm-object-view hvm-object-view-compact">'+details+'</div>',"Close",closeModal);
 };
 
 
