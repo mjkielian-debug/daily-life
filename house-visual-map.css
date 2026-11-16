@@ -515,3 +515,23 @@
 
 /* Symbols for confirmed playroom objects whose exact positions are unmeasured. */
 .hvm-approved-object-approx:focus-visible circle[stroke-dasharray]{stroke:#694768;stroke-width:4}
+
+/* First-floor realism: show the owner's actual reference photos ahead of
+   the still-approximate illustrated zoom. Keep all approved paths/doors intact. */
+.hvm-zone-detail>.hvm-real-room-photos.hvm-first-floor-reference{
+ order:-7.5;margin:0;border:2px solid #bf9bb1;border-radius:17px;
+ background:#fffaf8;padding:10px 12px;min-width:0;
+}
+.hvm-first-floor-reference>summary{font-size:.95rem;min-height:46px;color:#563f54}
+.hvm-first-floor-reference .hvm-room-photo-gallery{margin:7px 0 2px}
+.hvm-first-floor-reference .hvm-room-photo-stage{max-height:62vh;min-height:165px}
+.hvm-first-floor-reference .hvm-room-photo-stage img{max-height:62vh;object-fit:contain}
+.hvm-zone-detail:has(>.hvm-first-floor-reference)>.hvm-approved-room-zoom{
+ border:1px solid #dcc7d5;background:#fff9fc;
+}
+.hvm-zone-detail:has(>.hvm-first-floor-reference)>.hvm-approved-room-zoom .hvm-approved-room-zoom-header strong{font-size:.85rem}
+@media(max-width:600px){
+ .hvm-zone-detail>.hvm-first-floor-reference{padding:9px;gap:7px}
+ .hvm-first-floor-reference .hvm-room-photo-picker{display:flex;gap:7px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+ .hvm-first-floor-reference .hvm-room-photo-picker button{min-height:44px}
+}
