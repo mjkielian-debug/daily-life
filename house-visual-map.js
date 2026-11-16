@@ -770,6 +770,8 @@ function approvedDollhouseMap(f,m,oldMap){
   const stats=roomTaskColorStats(f,z,localRoom(f,z));
   return approvedDollhouseProgressArt(f,z,approvedDollhouseRooms[z.id],stats,"hvm-approved-map");
  }).join("");
+ const revisedScenes=zoneData.map(z=>typeof window.houseRealismRoomArtwork==="function"?
+   window.houseRealismRoomArtwork(f,z,approvedDollhouseRooms[z.id],roomTaskColorStats(f,z,localRoom(f,z)),false,zoneBounds(approvedDollhouseRooms[z.id].path)):"").join("");
  const objectHotspots=zoneData.map(z=>approvedDollhouseObjectHotspots(f,z)).join("");
  const hotspots=zoneData.map(z=>{
   const settings=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
@@ -786,7 +788,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="Detailed dollhouse-style first floor, with clickable kitchen, dining room, living room, bathroom, playroom and stairways">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+correctedStairArtwork()+hotspots+objectHotspots+'</svg></div>'+
+  reveal+revisedScenes+correctedStairArtwork()+hotspots+objectHotspots+'</svg></div>'+
   '<div class="hvm-approved-caption">✦ Kitchen artwork is approved. In other rooms, your saved photos appear first when you open a room; illustrated objects and positions still need refinement. Tap rooms for photos, tasks and confirmed details. Progress color measures completed tasks, not cleanliness.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
@@ -795,6 +797,8 @@ function approvedDollhouseRoomZoom(f,z){
  const config=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
  const kitchen=z.id==="kitchen",photoMapped=z.id==="dining"||z.id==="living";
  const savedPhotoCount=arr(z.photos).filter(okPhoto).length;
+ const revisedDetail=typeof window.houseRealismRoomArtwork==="function"?
+   window.houseRealismRoomArtwork(f,z,config,stats,true,zoneBounds(config.path)):"";
  const hasPhotoEvidence=savedPhotoCount>0;
  const note=kitchen
   ?"Approved kitchen illustration based on your room photos. The kitchen artwork stays unchanged."
@@ -810,8 +814,8 @@ function approvedDollhouseRoomZoom(f,z){
  return '<section class="hvm-approved-room-zoom" aria-label="Illustration reference for '+h(z.name)+'">'+
   '<div class="hvm-approved-room-zoom-header"><strong>✦ '+h(z.name)+' · '+h(status)+'</strong><span>'+stats.done+' / '+stats.total+' tasks done</span></div>'+
   '<svg viewBox="'+config.zoom+'" role="img" aria-label="'+h(z.name)+' illustrated draft; actual details are established by saved photos and room notes">'+
-  '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0"/>'+
-  '</svg><p>'+h(note)+'</p>'+details+'</section>';
+  '<image href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0"/>'+revisedDetail+
+  '</svg><p>'+h(note)+'</p>'+(revisedDetail?'<p class="hvm-approx-legend">Dashed furniture outlines = illustrative location, not measured placement.</p>':"")+details+'</section>';
 }
 
 function mapSketch(f,m,skipApproved=false){
