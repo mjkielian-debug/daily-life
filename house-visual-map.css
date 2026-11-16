@@ -553,3 +553,24 @@
  .hvm-approved-room-zoom svg{max-height:510px}
  .hvm-approved-room-zoom .hvm-approx-legend{font-size:.72rem}
 }
+
+/* Clean room-first floor overview after owner screenshot review.
+   Detail furniture remains in the room; these surfaces never shift paths. */
+.hvm-overview-floor-surface{pointer-events:none}
+.hvm-overview-label rect{filter:drop-shadow(0 2px 3px #5a456c36)}
+.hvm-overview-label text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;paint-order:stroke;stroke:#fffcf8;stroke-width:.5px}
+.hvm-approved-hero:has(.hvm-overview-floor-surface){gap:8px;padding:9px;border-radius:19px}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading{padding:0 4px;gap:3px 8px}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading>div{gap:1px}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading strong{font-size:1.08rem;line-height:1.2}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading small{font-size:.72rem}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-house-progress{min-height:14px}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-scene{box-shadow:0 0 0 3px #fff9ef}
+.hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-caption{
+ font-size:.72rem;line-height:1.36;margin:1px 3px 0;max-width:54ch
+}
+@media(max-width:420px){
+ .hvm-approved-hero:has(.hvm-overview-floor-surface){padding:7px;gap:6px}
+ .hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-heading strong{font-size:1rem}
+ .hvm-approved-hero:has(.hvm-overview-floor-surface) .hvm-approved-scene{border-width:2px}
+}
