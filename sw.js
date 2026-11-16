@@ -35,6 +35,7 @@ const APP_SHELL=[
   "./inventory-goals.js",
   "./paper-studio.js",
   "./paper-import.js",
+  "./house-room-artwork.js",
   "./house-visual-map.js",
   "./photo-inbox.js",
   "./home-area-projects.js",
