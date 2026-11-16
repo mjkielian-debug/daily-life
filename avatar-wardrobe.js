@@ -474,6 +474,13 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="piMode"&&e.ta
     const newItem=structuredClone(item);
     state.inventoryItems.push(newItem);byId.set(id,newItem);changed++;continue;
    }
+   // Confirmed new garment artwork can replace a lower-resolution thumbnail.
+   // Keep local wear/clean statuses and other personal edits unchanged.
+   if(Number(item.imageRevision||0)>Number(local.imageRevision||0)){
+    for(const key of ["wardrobeSpriteId","wardrobeSpriteIndex","imageKind","imageRevision"]){
+     if(item[key]!==undefined){local[key]=structuredClone(item[key]);changed++}
+    }
+   }
    // Preserve local status and edits; add missing cloud image and owner details.
    for(const key of ["wardrobeSpriteId","wardrobeSpriteIndex","imageKind","wardrobeOwner","inventoryOwner"]){
     if((local[key]===undefined||local[key]===null||local[key]==="")&&item[key]!==undefined){
