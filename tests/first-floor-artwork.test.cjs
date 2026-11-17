@@ -116,3 +116,27 @@ test("bathroom tiles, natural room dimensions and distinct clip IDs are preserve
  const html=read("house-visual-map.js");
  assert.match(html,/const y=\{bath:679,dining:1035,living:1374,playroom:1373/);
 });
+
+test("narrow rooms automatically use smaller overview furniture without changing measured positions",()=>{
+ const zone={id:"living",markers:[{kind:"futon",label:"Turquoise futon",mapX:56,mapY:72}]};
+ const large=render("First floor",zone,livingConfig,{total:0,done:0},true,livingBounds,"overview");
+ const narrow={x:326,y:1063,width:205,height:300};
+ const smaller=render("First floor",zone,livingConfig,{total:0,done:0},true,narrow,"overview");
+ const detail=render("First floor",zone,livingConfig,{total:0,done:0},true,livingBounds);
+ const factor=svg=>Number(svg.match(/data-kind="futon" transform="translate\([^)]*\) scale\(([\d.]+)\)"/)?.[1]);
+ assert.ok(Number.isFinite(factor(large)));
+ assert.ok(factor(smaller)<factor(large));
+ assert.ok(factor(large)<factor(detail));
+ assert.match(large,/translate\(595\.36 1305\.64\)/);
+ assert.equal(zone.markers[0].mapX,56);
+ assert.equal(zone.markers[0].mapY,72);
+});
+test("main map keeps approved exact footprints and wood-like shared trim",()=>{
+ const house=read("house-visual-map.js");
+ assert.match(house,/kitchen:\{path:"M32 407H573V899H333V908H32Z"/);
+ assert.match(house,/living:\{path:"M326 1063H807V1400H326Z"/);
+ assert.match(house,/playroom:\{path:"M30 1147H326V1400H30Z"/);
+ assert.match(house,/stroke="#3e302c" stroke-width="5" stroke-linejoin="round"/);
+ assert.match(house,/stroke="#c39a78" stroke-width="1\.6" stroke-linejoin="round"/);
+ assert.match(house,/const y=\{bath:679,dining:1035,living:1374,playroom:1373/);
+});
