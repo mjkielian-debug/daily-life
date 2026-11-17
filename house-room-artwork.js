@@ -192,7 +192,7 @@ function backdrop(z,b){
  return bg+floor+
   '<path d="M'+b.x+' '+b.y+'V'+(b.y+b.height)+'M'+(b.x+b.width)+' '+b.y+'V'+(b.y+b.height)+'" stroke="#65402e" stroke-width="6"/>';
 }
-function artwork(f,z,settings,stats,detail,bounds){
+function artwork(f,z,settings,stats,detail,bounds,variant){
  if(f!=="First floor"||!rooms.has(String(z?.id))||!settings?.path)return "";
  const markers=arr(z.markers).map((p,i)=>({p,i,placement:placement(f,z,p)})).filter(x=>x.placement);
  if(!markers.length)return "";
@@ -210,7 +210,7 @@ function artwork(f,z,settings,stats,detail,bounds){
    '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+pic+border+'</g>';
  }).join('');
  const scene='<g class="hvm-room-art-scene" pointer-events="none">'+backdrop(z,b)+shapes+'</g>';
- const key='hvm-scene-'+(detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
+ const key='hvm-scene-'+(variant?String(variant).replace(/[^a-z0-9_-]/gi,"").slice(0,25)+"-":detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
  const defs='<defs><clipPath id="'+zoneId+'"><path d="'+h(settings.path)+'"/></clipPath>'+
   '<clipPath id="'+colorId+'"><circle cx="'+(Number(settings.cx)||b.x+b.width/2)+'" cy="'+(Number(settings.cy)||b.y+b.height/2)+
   '" r="'+(Math.max(0,Math.min(1,(Number(stats?.done)||0)/Math.max(1,Number(stats?.total)||0)))*Math.max(b.width,b.height)*1.75).toFixed(2)+'"/></clipPath></defs>';
