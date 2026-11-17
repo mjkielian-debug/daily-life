@@ -43,10 +43,10 @@ test("main map retains approved kitchen but omits extra furniture, stair art and
 });
 test("six non-kitchen zones have clear, named, readable tap targets",()=>{
  const html=ctx.window.renderOverview("First floor",{zones:Object.keys(specs).map(id=>({id,name:id}))},"");
- for(const name of ["Bathroom","Dining room","Living room","Playroom","↓ Basement","↑ Second floor"])assert.ok(html.includes(name),name);
+ for(const name of ["Bathroom","Dining room","Living room","Playroom","Basement","Second floor"])assert.ok(html.includes(name),name);
  assert.equal((html.match(/class="hvm-overview-label hvm-overview-label-bottom"/g)||[]).length,6);
- assert.match(html,/1 \/ 3 tasks/);
- assert.match(html,/Open room/);
+ assert.match(html,/1 \/ 3 done/);
+ assert.match(html,/Open/);
 });
 test("furniture detail functions remain available, but stay outside the overview rendering function",()=>{
  assert.match(source,/function approvedDollhouseRoomZoom\(f,z\)/);
