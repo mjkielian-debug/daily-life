@@ -240,9 +240,11 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
  const b=bounds;
  if(!b||![b.x,b.y,b.width,b.height].every(Number.isFinite)||b.width<=0||b.height<=0)return "";
  const baseScale={living:1.09,dining:.76,playroom:.76,bath:.74}[z.id]||.8;
- // The overview is substantially smaller than a room zoom. Keep each object
- // readable without letting seating/furniture swallow adjoining pieces.
- const scale=baseScale*(variant==="overview"?.88:1);
+ // Do not base miniatures on a nominal room size: the bathroom and dining room
+ // are much narrower than the living room. Fit the actual user-saved footprint.
+ // Detail zoom stays full scale; this changes presentation only, not map data.
+ const overviewFit=Math.min(.84,b.width/420,b.height/310);
+ const scale=baseScale*(variant==="overview"?Math.max(.32,overviewFit):1);
  const small={door_front:.7,wood_opening:.75,coat_hooks:.65,pet_bowls:.62,robovac:.52,art:.65,mesh:.64,
   mat:.79,mirror:.84,toilet:.76,sink:.76,plant:.60,shelf:.67,ottoman:.69,table:.67,keyboard:.81,desk:.75};
  const key='hvm-scene-'+(variant?String(variant).replace(/[^a-z0-9_-]/gi,"").slice(0,25)+"-":detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
