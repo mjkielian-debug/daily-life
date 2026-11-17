@@ -174,23 +174,45 @@ function illustration(kind){
  default:return "";
  }
 }
-function backdrop(z,b,overview=false){
- const wall=overview?0:Math.min(84,Math.round(b.height*.26)),wood=z.id!=="bath",dining=z.id==="dining";
- // Living/dining photo references show warm-white walls, dark stained wood
- // trim and genuine brown wood floorboards, not beige wallpaper.
- const wallColor=z.id==="living"||dining?"#f2efea":z.id==="playroom"?"#f4f1ec":"#f4eee6";
- const bg='<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+b.height+'" fill="'+(wood?"#bf8c5f":"#e9e3d8")+'"/>'+
-  (overview?"":'<rect x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+wall+'" fill="'+wallColor+'"/>'+
-  (dining?Array.from({length:Math.ceil(b.width/24)},(_,i)=>'<path d="M'+(b.x+i*24)+' '+b.y+'v'+wall+'" stroke="#b6b4ad" stroke-width=".9" opacity=".45"/>').join(''):"")+
-  '<rect x="'+b.x+'" y="'+(b.y+wall-7)+'" width="'+b.width+'" height="9" fill="#6a432f"/>');
- const floor=wood?Array.from({length:Math.ceil(b.height/29)},(_,i)=>{
-  const y=b.y+wall+i*29;return '<path d="M'+b.x+' '+y+'H'+(b.x+b.width)+'" stroke="#a47c59" stroke-width="2" opacity=".46"/>'+
-  '<path d="M'+(b.x+((i%3)+1)*b.width/4)+' '+y+'v29" stroke="#af8461" stroke-width="1.5" opacity=".38"/>';
- }).join(''):Array.from({length:Math.ceil(b.height/46)},(_,i)=>{
-  const y=b.y+wall+i*46;return '<path d="M'+b.x+' '+y+'H'+(b.x+b.width)+'" stroke="#d1ccc4" stroke-width="2" opacity=".63"/>';
- }).join('');
- return bg+floor+
-  (overview?"":'<path d="M'+b.x+' '+b.y+'V'+(b.y+b.height)+'M'+(b.x+b.width)+' '+b.y+'V'+(b.y+b.height)+'" stroke="#65402e" stroke-width="6"/>');
+function backdrop(z,b,overview=false,key="hvm-room"){
+ // All perimeter and doorway geometry belongs to the saved map. Light, wood
+ // grain and tiles are surface finishes only; no invented interior walls.
+ const x=b.x,y=b.y,w=b.width,hh=b.height,wood=z.id!=="bath";
+ const g=key+"-floor-light",p=key+"-floor-pattern",sun=key+"-daylight";
+ const wallH=overview?0:Math.min(72,Math.round(hh*.22));
+ const wallColor=z.id==="living"||z.id==="dining"?"#f2efea":z.id==="playroom"?"#f4f1ec":"#f4eee6";
+ const woodTexture='<pattern id="'+p+'" width="92" height="38" patternUnits="userSpaceOnUse">'+
+  '<rect width="92" height="38" fill="transparent"/>'+
+  '<path d="M0 0H92M0 37H92M0 19H32M51 19H92M33 19H49" stroke="#674a39" stroke-width="1.5" opacity=".37"/>'+
+  '<path d="M0 3H92M0 35H92M0 22H32M51 22H92" stroke="#f6d9ad" stroke-width="1.2" opacity=".42"/>'+
+  '<path d="M11 6q17 1 31-1t31 0M19 29q17-2 40 0M59 12q16 2 23 0" fill="none" stroke="#7d513b" opacity=".13"/>'+
+  '</pattern>';
+ const tileTexture='<pattern id="'+p+'" width="34" height="34" patternUnits="userSpaceOnUse">'+
+  '<rect width="34" height="34" fill="#ede7df" stroke="#cbc0b2" stroke-width="1.5"/>'+
+  '<rect x="3" y="3" width="28" height="28" fill="#f7f3eb" opacity=".7"/>'+
+  '<path d="M4 8l5-3M15 23l3 3M24 14l3-3" stroke="#c6bdb1" stroke-width="1.2" opacity=".45"/>'+
+  '</pattern>';
+ const defs='<defs><linearGradient id="'+g+'" x1="0" y1="0" x2=".85" y2="1">'+
+  '<stop offset="0" stop-color="'+(wood?"#987057":"#e8e2dc")+'"/>'+
+  '<stop offset=".48" stop-color="'+(wood?"#c69b73":"#f5f1ec")+'"/>'+
+  '<stop offset="1" stop-color="'+(wood?"#e1b58a":"#dad3ca")+'"/></linearGradient>'+
+  '<radialGradient id="'+sun+'" cx=".24" cy=".13" r=".95">'+
+  '<stop offset="0" stop-color="#fff7df" stop-opacity=".38"/>'+
+  '<stop offset=".55" stop-color="#fff8e6" stop-opacity=".04"/>'+
+  '<stop offset="1" stop-color="#49362b" stop-opacity=".24"/></radialGradient>'+
+  (wood?woodTexture:tileTexture)+'</defs>';
+ const flooring='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" fill="url(#'+g+')"/>'+
+  '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" fill="url(#'+p+')" opacity="'+(wood?".88":".9")+'"/>'+
+  '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" fill="url(#'+sun+')"/>';
+ if(overview)return defs+flooring;
+ // This narrow decorative wall band is limited to an individual room zoom;
+ // it is not a mapped partition or an alteration to the overview footprint.
+ const wall='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+wallH+'" fill="'+wallColor+'"/>'+
+  (z.id==="dining"?Array.from({length:Math.ceil(w/25)},(_,i)=>
+   '<path d="M'+(x+i*25)+' '+y+'v'+wallH+'" stroke="#b6b4ad" stroke-width=".9" opacity=".35"/>').join(""):"")+
+  '<rect x="'+x+'" y="'+(y+wallH-8)+'" width="'+w+'" height="8" fill="#6a432f"/>'+
+  '<path d="M'+x+' '+y+'V'+(y+hh)+'M'+(x+w)+' '+y+'V'+(y+hh)+'" stroke="#65402e" stroke-width="6"/>';
+ return defs+flooring+wall;
 }
 function artwork(f,z,settings,stats,detail,bounds,variant){
  if(f!=="First floor"||!rooms.has(String(z?.id))||!settings?.path)return "";
@@ -209,8 +231,8 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
    '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')" pointer-events="none">'+
    '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+pic+border+'</g>';
  }).join('');
- const scene='<g class="hvm-room-art-scene" pointer-events="none">'+backdrop(z,b,variant==="overview")+shapes+'</g>';
  const key='hvm-scene-'+(variant?String(variant).replace(/[^a-z0-9_-]/gi,"").slice(0,25)+"-":detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
+ const scene='<g class="hvm-room-art-scene" pointer-events="none">'+backdrop(z,b,variant==="overview",key)+shapes+'</g>';
  const defs='<defs><clipPath id="'+zoneId+'"><path d="'+h(settings.path)+'"/></clipPath>'+
   '<clipPath id="'+colorId+'"><circle cx="'+(Number(settings.cx)||b.x+b.width/2)+'" cy="'+(Number(settings.cy)||b.y+b.height/2)+
   '" r="'+(Math.max(0,Math.min(1,(Number(stats?.done)||0)/Math.max(1,Number(stats?.total)||0)))*Math.max(b.width,b.height)*1.75).toFixed(2)+'"/></clipPath></defs>';
