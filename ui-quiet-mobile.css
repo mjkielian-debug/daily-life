@@ -74,3 +74,24 @@ body:has(#app .life-map-page) .life-tools-fab{display:none!important}
  #app .lm-avatar-doors .lm-door-grid{gap:7px}
  #app .lm-avatar-doors .lm-doorway{min-height:42px;padding:8px 10px}
 }
+
+
+/* All four floor links fit on a phone; the Third floor must never hide offscreen.
+   This changes only their layout, not the underlying floor navigation. */
+@media(max-width:620px){
+ #app .life-map-page .lm-house .lm-floors{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;
+  width:100%;max-width:100%;box-sizing:border-box;overflow:visible;
+  padding:5px 0 10px;
+ }
+ #app .life-map-page .lm-house .lm-floors>.lm-floor{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-width:0;max-width:100%;width:100%;min-height:44px;
+  padding:7px 3px;line-height:1.15;white-space:normal;
+  box-sizing:border-box;font-size:clamp(.66rem,2.45vw,.82rem);
+  overflow-wrap:normal;word-break:normal;border-radius:16px;
+ }
+ #app .life-map-page .lm-house .lm-floors>.lm-floor:focus-visible{
+  outline:3px solid #a35888;outline-offset:2px;
+ }
+}
