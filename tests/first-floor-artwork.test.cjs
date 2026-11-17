@@ -89,3 +89,30 @@ test("overview artwork uses unique clipping and does not invent wall edges",()=>
  assert.doesNotMatch(house.slice(house.indexOf("function approvedOverviewRoom("),house.indexOf("function approvedOverviewLabel(")),/const line=stair/);
  assert.match(house,/window\.houseRealismRoomArtwork\(f,illustrated,settings,stats,true,b,"overview"\)/);
 });
+
+test("illustrated overview uses textured wood floor with directional light and furniture relief",()=>{
+ const svg=render("First floor",room,livingConfig,{total:0,done:0},true,livingBounds,"overview");
+ assert.match(svg,/<linearGradient id="hvm-scene-overview-living-floor-light"/);
+ assert.match(svg,/<radialGradient id="hvm-scene-overview-living-daylight"/);
+ assert.match(svg,/<pattern id="hvm-scene-overview-living-floor-pattern"/);
+ assert.match(svg,/url\(#hvm-scene-overview-living-floor-pattern\)/);
+ assert.match(svg,/<feDropShadow dx="3\.5" dy="5\.5"/);
+ assert.match(svg,/filter="url\(#hvm-scene-overview-living-furniture-depth\)"/);
+ assert.match(svg,/fill="#182335"/); // navy sofa depth
+ assert.match(svg,/fill="#4c929d"/); // turquoise futon depth
+ assert.doesNotMatch(svg,/stroke="#65402e" stroke-width="6"/); // no invented walls
+});
+test("bathroom tiles, natural room dimensions and distinct clip IDs are preserved",()=>{
+ const bath={id:"bath",markers:[{kind:"sink",label:"Cream vanity"},{kind:"toilet",label:"Toilet"}]};
+ const cfg={path:"M578 409H805V713H578Z",cx:692,cy:558},b={x:578,y:409,width:227,height:304};
+ const svg=render("First floor",bath,cfg,{done:0,total:0},true,b,"overview");
+ assert.match(svg,/hvm-scene-overview-bath-floor-pattern/);
+ assert.match(svg,/fill="#ede7df"/);
+ assert.match(svg,/data-kind="sink"/);
+ assert.match(svg,/data-kind="toilet"/);
+ assert.doesNotMatch(svg,/data-kind="sofa"/);
+ assert.equal(b.width,227);
+ assert.equal(bath.markers[0].mapX,undefined);
+ const html=read("house-visual-map.js");
+ assert.match(html,/const y=\{bath:658,dining:1013,living:1352,playroom:1353/);
+});
