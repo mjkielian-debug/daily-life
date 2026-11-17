@@ -817,7 +817,7 @@ function approvedOverviewRoom(f,z,settings,stats){
  };
  const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
  const roomScene=previewKinds[z.id]&&typeof window.houseRealismRoomArtwork==="function"?
-   window.houseRealismRoomArtwork(f,illustrated,settings,stats,true,b):"";
+   window.houseRealismRoomArtwork(f,illustrated,settings,stats,true,b,"overview"):"";
  const line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
@@ -833,7 +833,7 @@ function overviewPreferredPhoto(room,photos){
  const choices=arr(photos);
  const score=title=>{
   const t=str(title).toLowerCase();
-  if(room==="living")return /futon cleared/.test(t)?95:/front door and futon/.test(t)?90:/blue sofa/.test(t)?85:/living room/.test(t)?50:0;
+  if(room==="living")return /view toward playroom doorway/.test(t)?120:/tv, speaker and stair doorway/.test(t)?115:/front door and futon/.test(t)?105:/blue sofa/.test(t)?95:/futon cleared/.test(t)?40:/living room/.test(t)?45:0;
   if(room==="dining")return /round table/.test(t)?95:/dining room/.test(t)?75:0;
   if(room==="playroom")return /playroom/.test(t)?90:0;
   if(room==="stairs_up")return /first floor to second floor/.test(t)?95:/stairs toward upstairs/.test(t)?80:/dining room.*stairs/.test(t)?60:0;
@@ -851,6 +851,7 @@ function showCachedOverviewPhotos(scope){
 async function hydrateApprovedOverviewPhotos(f,m){
  if(f!=="First floor"||!m||!online()||approvedOverviewMode()!=="photos")return;
  const scope=key(f);
+ for(const k of overviewPhotoCache.keys())if(!k.startsWith(scope+"|"))overviewPhotoCache.delete(k);
  showCachedOverviewPhotos(scope);
  if(!where(f).some(el=>el.querySelector("image[data-hvm-overview-photo]")))return;
  if(overviewPhotoPending.has(scope)){await overviewPhotoPending.get(scope);showCachedOverviewPhotos(scope);return}
@@ -1504,7 +1505,10 @@ function paint(f){
  const m=get(f),view=m?floorView(f,m):(online()?"Loading your private layout…":"Sign in to Daily Life cloud to view your private map.");
  where(f).forEach(el=>{el.innerHTML=view;el.dataset.viewKey=key(f)});
  if(selectedRoomProfile())hydratePersonRoomPhotoTour();
- if(f==="First floor"&&m)void hydrateApprovedOverviewPhotos(f,m);
+ if(f==="First floor"){
+  if(!online())overviewPhotoCache.clear();
+  else if(m)void hydrateApprovedOverviewPhotos(f,m);
+ }
  refreshRoomProgress(f);
 }
 window.houseVisualMapHtml=function(f){
