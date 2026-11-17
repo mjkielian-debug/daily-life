@@ -76,3 +76,16 @@ test("illustrations and their touch targets are wired into the app",()=>{
  assert.match(house,/hvm-drawn-object-hotspot/);
  assert.match(sw,/"\.\/house-room-artwork\.js"/);
 });
+
+test("overview artwork uses unique clipping and does not invent wall edges",()=>{
+ const z={id:"living",markers:[{kind:"futon",label:"Turquoise futon",mapX:56,mapY:72,status:"confirmed"}]};
+ const art=render("First floor",z,livingConfig,{total:0,done:0},true,livingBounds,"overview");
+ const detail=render("First floor",z,livingConfig,{total:0,done:0},true,livingBounds);
+ assert.match(art,/hvm-scene-overview-living-clip/);
+ assert.match(detail,/hvm-scene-detail-living-clip/);
+ assert.doesNotMatch(art,/stroke="#65402e" stroke-width="6"/);
+ assert.match(detail,/stroke="#65402e" stroke-width="6"/);
+ const house=read("house-visual-map.js");
+ assert.doesNotMatch(house.slice(house.indexOf("function approvedOverviewRoom("),house.indexOf("function approvedOverviewLabel(")),/const line=stair/);
+ assert.match(house,/window\.houseRealismRoomArtwork\(f,illustrated,settings,stats,true,b,"overview"\)/);
+});
