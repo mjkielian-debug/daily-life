@@ -114,5 +114,5 @@ test("bathroom tiles, natural room dimensions and distinct clip IDs are preserve
  assert.equal(b.width,227);
  assert.equal(bath.markers[0].mapX,undefined);
  const html=read("house-visual-map.js");
- assert.match(html,/const y=\{bath:658,dining:1013,living:1352,playroom:1353/);
+ assert.match(html,/const y=\{bath:679,dining:1035,living:1374,playroom:1373/);
 });
