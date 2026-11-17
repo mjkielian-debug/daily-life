@@ -72,7 +72,7 @@ test("correctly identifies saved room photo subjects without changing photo iden
  {id:"futon",title:"Laundry · futon cleared"},
  {id:"tv",title:"Living room · TV, speaker and stair doorway"},
  {id:"door",title:"Living room · front door and futon"}];
- assert.equal(ctx.window.selectOverviewPhoto("living",roomCandidates),"futon");
+ assert.equal(ctx.window.selectOverviewPhoto("living",roomCandidates),"tv");
  assert.equal(ctx.window.selectOverviewPhoto("dining",[{id:"round",title:"Dining room · round table and desk"},{id:"stairs",title:"Dining room · stairs"}]),"round");
 });
 
@@ -96,4 +96,13 @@ test("photo selection survives redraws without changing saved map geometry",()=>
  assert.match(html,/aria-pressed="true" onclick="houseVisualSetOverviewMode\(&#39;photos&#39;\)"/);
  assert.equal(specs.living.path,"M326 1063H807V1400H326Z");
  viewState.delete("dailyLifeFirstFloorPreviewMode");
+});
+
+test("room-view selection avoids changing geometry and does not fetch private images by default",()=>{
+ viewState.delete("dailyLifeFirstFloorPreviewMode");
+ const html=ctx.window.renderOverview("First floor",{zones:[{id:"living",name:"Living room",photos:["12345678-1234-1234-1234-123456789012"]}]},"");
+ assert.doesNotMatch(html,/data-hvm-overview-photo=/);
+ assert.match(html,/data-room="living"|room-preview/);
+ assert.match(source,/approvedOverviewMode\(\)!=="photos"\)return/);
+ assert.match(source,/if\(!online\(\)\)overviewPhotoCache\.clear\(\)/);
 });
