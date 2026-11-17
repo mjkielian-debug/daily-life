@@ -18,3 +18,13 @@ test("starter habits log with one tap from the avatar",()=>{
  assert.match(css,/lm-next-checkin-actions/);
  assert.match(css,/lm-next-checkin-log/);
 });
+
+test("all four house floors remain visible and tappable on phone widths",()=>{
+ assert.match(life,/const floorNames=\["Basement","First floor","Second floor","Third floor"\]/);
+ assert.match(life,/class="lm-floor /);
+ assert.match(css,/@media\(max-width:620px\)/);
+ assert.match(css,/\.lm-house \.lm-floors\{/);
+ assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(css,/min-height:44px/);
+ assert.match(css,/white-space:normal/);
+});
