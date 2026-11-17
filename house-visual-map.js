@@ -898,8 +898,9 @@ function approvedOverviewLabel(z,settings,stats){
  const width={bath:150,dining:164,living:169,playroom:146,basement_stairs:151,stairs_up:169}[z.id]||162;
  const y={bath:679,dining:1035,living:1374,playroom:1373,basement_stairs:1116,stairs_up:1038}[z.id]||settings.cy;
  const x=settings.cx,height=46;
- const sub=stats.total?stats.done+" / "+stats.total+" done":
-  z.id==="basement_stairs"?"Stairs down":z.id==="stairs_up"?"Stairs up":"Open";
+ const direction=z.id==="basement_stairs"?"Down":z.id==="stairs_up"?"Up":"";
+ const sub=direction?(direction+" · "+(stats.total?stats.done+"/"+stats.total+" done":"stairs")):
+  stats.total?stats.done+" / "+stats.total+" done":"Open";
  return '<g class="hvm-overview-label hvm-overview-label-bottom" pointer-events="none" aria-hidden="true">'+
   '<rect x="'+(x-width/2).toFixed(1)+'" y="'+(y-height/2).toFixed(1)+'" width="'+width+'" height="'+height+
   '" rx="14" fill="#fff9fb" fill-opacity=".96" stroke="#a47b9a" stroke-width="2.5"/>'+
