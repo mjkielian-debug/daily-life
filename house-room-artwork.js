@@ -174,6 +174,25 @@ function illustration(kind){
  default:return "";
  }
 }
+// Side faces and small edge highlights give otherwise-flat furniture a shallow
+// cutaway-dollhouse appearance. Colors are drawn from the owner's photo notes.
+function furnitureRelief(kind){
+ switch(kind){
+ case "sofa":return '<path d="M-62 27l7 11h110l7-11v13l-7 8H-55l-7-8z" fill="#182335" stroke="#111c2b" stroke-width="2"/>'+
+  '<path d="M-55 38h110" stroke="#58657e" stroke-width="2" opacity=".5"/>';
+ case "futon":return '<path d="M-61 34l8 9h106l8-9v10l-7 6H-54l-7-6z" fill="#4c929d" stroke="#2d737f" stroke-width="2"/>'+
+  '<path d="M-52 44H52" stroke="#c8ece7" stroke-width="2" opacity=".65"/>';
+ case "ottoman":return '<path d="M-42 29l8 9h68l8-9v10l-7 6h-70l-7-6z" fill="#142535" stroke="#172434" stroke-width="2"/>';
+ case "desk_hutch":return '<path d="M53-65l11 9v105l-11 2z" fill="#3b271e" stroke="#332218" stroke-width="2"/>'+
+  '<path d="M-53 51h106l11-2-10 10H-54z" fill="#674630" stroke="#3b291e" stroke-width="2"/>';
+ case "dining_table":return '<path d="M-49 6q13 45 49 44t49-44q-4 34-49 42t-49-42z" fill="#744932" stroke="#62402c" stroke-width="2"/>'+
+  '<path d="M-40 28q36 22 80 0" stroke="#c99d74" stroke-width="2" opacity=".55" fill="none"/>';
+ case "tv_dresser":return '<path d="M-57 37h114l7-6v14l-7 6H-56l-7-6V31z" fill="#765338" stroke="#503726" stroke-width="2"/>';
+ case "sink":return '<path d="M-55 38h110l7-9v16l-9 7H-53l-9-7V29z" fill="#78533b" stroke="#60412f" stroke-width="2"/>';
+ case "keyboard":return '<path d="M-65 25h130l7-6v13l-7 7H-65l-7-7V19z" fill="#20272f" stroke="#161d24" stroke-width="2"/>';
+ default:return "";
+ }
+}
 function backdrop(z,b,overview=false,key="hvm-room"){
  // All perimeter and doorway geometry belongs to the saved map. Light, wood
  // grain and tiles are surface finishes only; no invented interior walls.
@@ -235,7 +254,7 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
   return '<g class="hvm-room-illustrated-object'+(pos.approximate?' is-approximate':'')+
    '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')" pointer-events="none">'+
    '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+
-   '<g filter="url(#'+depthId+')">'+pic+'</g>'+border+'</g>';
+   '<g filter="url(#'+depthId+')">'+pic+furnitureRelief(kind)+'</g>'+border+'</g>';
  }).join('');
  const scene='<g class="hvm-room-art-scene" pointer-events="none">'+backdrop(z,b,variant==="overview",key)+shapes+'</g>';
  const defs='<defs><clipPath id="'+zoneId+'"><path d="'+h(settings.path)+'"/></clipPath>'+
