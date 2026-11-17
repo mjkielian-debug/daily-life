@@ -892,18 +892,19 @@ function approvedOverviewLabel(z,settings,stats){
  const labels={bath:"Bathroom",dining:"Dining room",living:"Living room",playroom:"Playroom",
    basement_stairs:"↓ Basement",stairs_up:"↑ Second floor"};
  const text=labels[z.id]||str(z.name),stair=z.id==="basement_stairs"||z.id==="stairs_up";
- const w={bath:184,dining:191,living:220,playroom:195,basement_stairs:215,stairs_up:235}[z.id]||205;
- const y={bath:558,dining:881,living:1231,playroom:1282,basement_stairs:1026,stairs_up:987}[z.id]||settings.cy;
- const x=settings.cx,hgt=stats.total?75:63;
- const sub=stats.total?stats.done+" of "+stats.total+" tasks done":(stair?"Tap to change floor":"Tap to open");
- return '<g class="hvm-overview-label" pointer-events="none" aria-hidden="true">'+
-  '<rect x="'+(x-w/2).toFixed(1)+'" y="'+(y-hgt/2).toFixed(1)+'" width="'+w+'" height="'+hgt+
-  '" rx="19" fill="#fffcf8" stroke="#8b6983" stroke-width="3" />'+
-  '<text x="'+x+'" y="'+(y-(stats.total?5:0)+1).toFixed(1)+'" text-anchor="middle" font-size="'+(stair?25:27)+'" font-weight="800" fill="#4a304a">'+h(text)+'</text>'+
-  '<text x="'+x+'" y="'+(y+(stats.total?23:22)).toFixed(1)+'" text-anchor="middle" font-size="18" fill="#795e75">'+h(sub)+'</text>'+
+ // Plaques hug the room's near edge, leaving its furniture and warm floor
+ // visible. They do not claim any furniture or wall coordinates.
+ const width={bath:164,dining:178,living:190,playroom:176,basement_stairs:203,stairs_up:209}[z.id]||184;
+ const y={bath:658,dining:1013,living:1352,playroom:1353,basement_stairs:1023,stairs_up:983}[z.id]||settings.cy;
+ const x=settings.cx,height=stats.total?62:56;
+ const sub=stats.total?stats.done+" / "+stats.total+" tasks":(stair?"Change floor":"Open room");
+ return '<g class="hvm-overview-label hvm-overview-label-bottom" pointer-events="none" aria-hidden="true">'+
+  '<rect x="'+(x-width/2).toFixed(1)+'" y="'+(y-height/2).toFixed(1)+'" width="'+width+'" height="'+height+
+  '" rx="18" fill="#fff5fa" fill-opacity=".95" stroke="#9e7291" stroke-width="2.8"/>'+
+  '<text x="'+x+'" y="'+(y-(stats.total?4:0)+1).toFixed(1)+'" text-anchor="middle" font-size="'+(stair?23:25)+'" font-weight="800" fill="#4a304a">'+h(text)+'</text>'+
+  '<text x="'+x+'" y="'+(y+(stats.total?20:20)).toFixed(1)+'" text-anchor="middle" font-size="17" fill="#795e75">'+h(sub)+'</text>'+
  '</g>';
 }
-
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  // The approved kitchen is the sole room whose detailed base art remains in
