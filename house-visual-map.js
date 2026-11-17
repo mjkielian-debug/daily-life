@@ -812,7 +812,7 @@ function approvedOverviewRoom(f,z,settings,stats){
  // Small, real-object scenes are immediate fallbacks while the private photos
  // load. Once a photo is available it covers the illustrative scene entirely.
  const previewKinds={
-  living:["futon","sofa","tv_dresser"],dining:["dining_table","desk_hutch"],
+  living:["futon","sofa","ottoman","curtains","tv_dresser"],dining:["dining_table","desk_hutch","coat_hooks"],
   playroom:["keyboard","mesh","desk","plant"],bath:["sink","mirror","toilet"]
  };
  const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
