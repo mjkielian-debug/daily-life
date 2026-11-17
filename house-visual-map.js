@@ -821,9 +821,11 @@ function approvedOverviewRoom(f,z,settings,stats){
  // No decorative line crosses the room: it could be mistaken for a real wall.
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
-  '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#725c62" stroke-width="4"/>'+
+  '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#644538" stroke-width="4.5"/>'+
   '<g clip-path="url(#'+token+')">'+roomScene+photo+'</g>'+
   (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
+  '<path d="'+h(settings.path)+'" fill="none" stroke="#3e302c" stroke-width="5" stroke-linejoin="round" opacity=".86"/>'+
+  '<path d="'+h(settings.path)+'" fill="none" stroke="#c39a78" stroke-width="1.6" stroke-linejoin="round" opacity=".84"/>'+
  '</g>';
 }
 // Reference photographs never enter the public repository or persistent browser
