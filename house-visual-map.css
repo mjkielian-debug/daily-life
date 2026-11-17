@@ -625,3 +625,19 @@
  .hvm-approved-scene.is-enlarged>.hvm-approved-svg{width:740px;min-width:740px}
 }
 @media(prefers-reduced-motion:reduce){.hvm-approved-scene.is-enlarged{scroll-behavior:auto}}
+
+
+/* Cohesive dollhouse finish for the photo-grounded non-kitchen rooms.
+   All renderings are clipped by original owner-reviewed room paths. */
+.hvm-approved-scene .hvm-overview-floor-surface .hvm-room-art-scene{opacity:1}
+.hvm-approved-scene .hvm-overview-floor-surface .hvm-room-illustrated-object{
+ paint-order:normal;shape-rendering:geometricPrecision
+}
+.hvm-approved-scene .hvm-overview-label-bottom rect{
+ filter:drop-shadow(0 2px 3px #50354142)
+}
+.hvm-approved-scene .hvm-overview-label-bottom text{
+ font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+ letter-spacing:-.25px
+}
+.hvm-approved-scene .hvm-overview-floor-surface>path{vector-effect:none}
