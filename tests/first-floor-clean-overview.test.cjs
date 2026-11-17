@@ -64,7 +64,7 @@ test("real photo placeholders come from room records, without hardcoded personal
  assert.doesNotMatch(html,/data-hvm-overview-photo="playroom"/);
  assert.doesNotMatch(html,/data:image\/jpeg;base64/);
  assert.match(source,/cloudClient\.from\("photo_inbox"\)\.select\("id,image_data"\)/);
- assert.match(source,/if\(f==="First floor"&&m\)void hydrateApprovedOverviewPhotos\(f,m\)/);
+ assert.match(source,/else if\(m\)void hydrateApprovedOverviewPhotos\(f,m\)/);
  viewState.delete("dailyLifeFirstFloorPreviewMode");
 });
 test("correctly identifies saved room photo subjects without changing photo identities",()=>{
