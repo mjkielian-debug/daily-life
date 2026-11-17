@@ -220,20 +220,27 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
  if(!markers.length)return "";
  const b=bounds;
  if(!b||![b.x,b.y,b.width,b.height].every(Number.isFinite)||b.width<=0||b.height<=0)return "";
- const scale={living:1.09,dining:.76,playroom:.76,bath:.74}[z.id]||.8;
+ const baseScale={living:1.09,dining:.76,playroom:.76,bath:.74}[z.id]||.8;
+ // The overview is substantially smaller than a room zoom. Keep each object
+ // readable without letting seating/furniture swallow adjoining pieces.
+ const scale=baseScale*(variant==="overview"?.88:1);
  const small={door_front:.7,wood_opening:.75,coat_hooks:.65,pet_bowls:.62,robovac:.52,art:.65,mesh:.64,
   mat:.79,mirror:.84,toilet:.76,sink:.76,plant:.60,shelf:.67,ottoman:.69,table:.67,keyboard:.81,desk:.75};
+ const key='hvm-scene-'+(variant?String(variant).replace(/[^a-z0-9_-]/gi,"").slice(0,25)+"-":detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
+ const depthId=key+"-furniture-depth";
  const shapes=markers.slice().sort((a,b)=>a.placement.py-b.placement.py).map(({p,placement:pos})=>{
   const kind=String(p.kind||"").toLowerCase(),x=(b.x+b.width*pos.px/100).toFixed(2),y=(b.y+b.height*pos.py/100).toFixed(2);
   const k=(scale*(small[kind]||1)).toFixed(3),pic=illustration(kind);
   const border=pos.approximate?'<ellipse cx="0" cy="5" rx="64" ry="53" fill="none" stroke="#80657e" stroke-width="2" stroke-dasharray="5 5" opacity=".85"/>':"";
   return '<g class="hvm-room-illustrated-object'+(pos.approximate?' is-approximate':'')+
    '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')" pointer-events="none">'+
-   '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+pic+border+'</g>';
+   '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+
+   '<g filter="url(#'+depthId+')">'+pic+'</g>'+border+'</g>';
  }).join('');
- const key='hvm-scene-'+(variant?String(variant).replace(/[^a-z0-9_-]/gi,"").slice(0,25)+"-":detail?'detail-':'map-')+z.id,zoneId=key+'-clip',colorId=key+'-color';
  const scene='<g class="hvm-room-art-scene" pointer-events="none">'+backdrop(z,b,variant==="overview",key)+shapes+'</g>';
  const defs='<defs><clipPath id="'+zoneId+'"><path d="'+h(settings.path)+'"/></clipPath>'+
+  '<filter id="'+depthId+'" x="-45%" y="-55%" width="200%" height="225%">'+
+  '<feDropShadow dx="3.5" dy="5.5" stdDeviation="3" flood-color="#473027" flood-opacity=".42"/></filter>'+
   '<clipPath id="'+colorId+'"><circle cx="'+(Number(settings.cx)||b.x+b.width/2)+'" cy="'+(Number(settings.cy)||b.y+b.height/2)+
   '" r="'+(Math.max(0,Math.min(1,(Number(stats?.done)||0)/Math.max(1,Number(stats?.total)||0)))*Math.max(b.width,b.height)*1.75).toFixed(2)+'"/></clipPath></defs>';
  if(detail)return '<g class="hvm-room-artwork-detail" aria-label="Photo-informed illustration; dashed objects have illustrative placement">'+defs+
