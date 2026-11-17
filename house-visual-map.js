@@ -777,6 +777,27 @@ function approvedDollhouseObjectHotspots(f,z){
 /* Mobile overview must remain readable: this uses only the user's saved room
    footprints, without painting furniture or invented stairs over those rooms.
    Detailed furnishings and photos remain in the individual room view. */
+// The map stays an illustrated floor plan by default; real camera photos are
+// available as an optional reference mode, not misleading floor textures.
+function approvedOverviewMode(){
+ try{return localStorage.getItem("dailyLifeFirstFloorPreviewMode")==="photos"?"photos":"illustrated"}catch(_){return "illustrated"}
+}
+window.houseVisualSetOverviewMode=function(mode){
+ if(mode!=="illustrated"&&mode!=="photos")return;
+ try{localStorage.setItem("dailyLifeFirstFloorPreviewMode",mode)}catch(_){}
+ const m=get("First floor");
+ if(m)paint("First floor");
+};
+window.houseVisualToggleOverviewZoom=function(button){
+ const wrap=button?.closest?.(".hvm-approved-wrap"),scene=wrap?.querySelector?.(".hvm-approved-scene");
+ if(!scene)return;
+ const enlarged=!scene.classList.contains("is-enlarged");
+ scene.classList.toggle("is-enlarged",enlarged);
+ button.setAttribute("aria-pressed",String(enlarged));
+ button.textContent=enlarged?"− Normal size":"+ Enlarge";
+ if(!enlarged)scene.scrollLeft=0;
+};
+
 function approvedOverviewRoom(f,z,settings,stats){
  if(f!=="First floor"||z.id==="kitchen"||!settings)return "";
  const stair=z.id==="basement_stairs"||z.id==="stairs_up";
@@ -786,7 +807,7 @@ function approvedOverviewRoom(f,z,settings,stats){
  const progress=stats.total?Math.max(0,Math.min(1,stats.done/stats.total)):0;
  const token="hvm-overview-"+String(z.id).replace(/[^a-z0-9_-]/gi,"");
  const b=zoneBounds(settings.path);
- const hasRealPhoto=arr(z.photos).some(okPhoto)&&["living","dining","stairs_up"].includes(z.id);
+ const hasRealPhoto=approvedOverviewMode()==="photos"&&arr(z.photos).some(okPhoto)&&["living","dining","stairs_up"].includes(z.id);
  const photo=hasRealPhoto?'<image class="hvm-overview-private-photo" data-hvm-overview-photo="'+h(z.id)+'" x="'+(b.x+3)+'" y="'+(b.y+3)+'" width="'+Math.max(8,b.width-6)+'" height="'+Math.max(8,b.height-6)+'" preserveAspectRatio="xMidYMid slice" />':"";
  // Small, real-object scenes are immediate fallbacks while the private photos
  // load. Once a photo is available it covers the illustrative scene entirely.
@@ -828,7 +849,7 @@ function showCachedOverviewPhotos(scope){
  }
 }
 async function hydrateApprovedOverviewPhotos(f,m){
- if(f!=="First floor"||!m||!online())return;
+ if(f!=="First floor"||!m||!online()||approvedOverviewMode()!=="photos")return;
  const scope=key(f);
  showCachedOverviewPhotos(scope);
  if(!where(f).some(el=>el.querySelector("image[data-hvm-overview-photo]")))return;
@@ -902,12 +923,19 @@ function approvedDollhouseMap(f,m,oldMap){
  }).join("");
  return '<div class="hvm-approved-wrap">'+
   '<section class="hvm-approved-hero" aria-label="Interactive first floor map">'+
-  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Choose a room</strong></div><small>Tap a room for its real photos and tasks</small></div>'+
+  '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Choose a room</strong></div><small>Tap a room to see details</small></div>'+
+  '<div class="hvm-overview-controls" aria-label="First-floor map controls">'+
+   '<div class="hvm-overview-mode" role="group" aria-label="Map appearance">'+
+    '<button type="button" class="hvm-map-mode-btn'+(approvedOverviewMode()==="illustrated"?' is-selected':'')+'" aria-pressed="'+(approvedOverviewMode()==="illustrated")+'" onclick="houseVisualSetOverviewMode(&#39;illustrated&#39;)">Illustrated</button>'+
+    '<button type="button" class="hvm-map-mode-btn'+(approvedOverviewMode()==="photos"?' is-selected':'')+'" aria-pressed="'+(approvedOverviewMode()==="photos")+'" onclick="houseVisualSetOverviewMode(&#39;photos&#39;)">Real photos</button>'+
+   '</div><button type="button" class="hvm-overview-zoom-btn" aria-pressed="false" onclick="houseVisualToggleOverviewZoom(this)">+ Enlarge</button></div>'+
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
   reveal+surfaces+hotspots+'</svg></div>'+
-  '<div class="hvm-approved-caption">Saved photos are references, not a live view. Tap a room for its tasks and details.</div></section>'+
+  '<div class="hvm-approved-caption">'+(approvedOverviewMode()==="photos"?
+   'Photos show saved reference angles, not an overhead view or the current state.':'Illustrations show known objects; unmeasured positions are approximate.')+
+   ' Tap a room to open photos, furniture and tasks.</div></section>'+
   '<div class="hvm-approved-legacy" aria-label="Fallback room map">'+oldMap+'</div></div>';
 }
 function approvedDollhouseRoomZoom(f,z){
