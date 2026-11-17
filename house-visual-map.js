@@ -890,19 +890,21 @@ async function hydrateApprovedOverviewPhotos(f,m){
 function approvedOverviewLabel(z,settings,stats){
  if(z.id==="kitchen")return approvedDollhouseCountBadge(settings,stats,z);
  const labels={bath:"Bathroom",dining:"Dining room",living:"Living room",playroom:"Playroom",
-   basement_stairs:"↓ Basement",stairs_up:"↑ Second floor"};
- const text=labels[z.id]||str(z.name),stair=z.id==="basement_stairs"||z.id==="stairs_up";
- // Plaques hug the room's near edge, leaving its furniture and warm floor
- // visible. They do not claim any furniture or wall coordinates.
- const width={bath:164,dining:178,living:190,playroom:176,basement_stairs:203,stairs_up:209}[z.id]||184;
- const y={bath:658,dining:1013,living:1352,playroom:1353,basement_stairs:1023,stairs_up:983}[z.id]||settings.cy;
- const x=settings.cx,height=stats.total?62:56;
- const sub=stats.total?stats.done+" / "+stats.total+" tasks":(stair?"Change floor":"Open room");
+   basement_stairs:"Basement",stairs_up:"Second floor"};
+ const text=labels[z.id]||str(z.name);
+ // A small edge tab preserves room visibility without a giant floating
+ // status badge on top of the furniture. These are presentation coordinates,
+ // not wall / furniture coordinates and never touch the owner's floor record.
+ const width={bath:150,dining:164,living:169,playroom:146,basement_stairs:151,stairs_up:169}[z.id]||162;
+ const y={bath:679,dining:1035,living:1374,playroom:1373,basement_stairs:1116,stairs_up:1038}[z.id]||settings.cy;
+ const x=settings.cx,height=46;
+ const sub=stats.total?stats.done+" / "+stats.total+" done":
+  z.id==="basement_stairs"?"Stairs down":z.id==="stairs_up"?"Stairs up":"Open";
  return '<g class="hvm-overview-label hvm-overview-label-bottom" pointer-events="none" aria-hidden="true">'+
   '<rect x="'+(x-width/2).toFixed(1)+'" y="'+(y-height/2).toFixed(1)+'" width="'+width+'" height="'+height+
-  '" rx="18" fill="#fff5fa" fill-opacity=".95" stroke="#9e7291" stroke-width="2.8"/>'+
-  '<text x="'+x+'" y="'+(y-(stats.total?4:0)+1).toFixed(1)+'" text-anchor="middle" font-size="'+(stair?23:25)+'" font-weight="800" fill="#4a304a">'+h(text)+'</text>'+
-  '<text x="'+x+'" y="'+(y+(stats.total?20:20)).toFixed(1)+'" text-anchor="middle" font-size="17" fill="#795e75">'+h(sub)+'</text>'+
+  '" rx="14" fill="#fff9fb" fill-opacity=".96" stroke="#a47b9a" stroke-width="2.5"/>'+
+  '<text x="'+x+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="22" font-weight="800" fill="#493247">'+h(text)+'</text>'+
+  '<text x="'+x+'" y="'+(y+14).toFixed(1)+'" text-anchor="middle" font-size="15" fill="#795e75">'+h(sub)+'</text>'+
  '</g>';
 }
 function approvedDollhouseMap(f,m,oldMap){
