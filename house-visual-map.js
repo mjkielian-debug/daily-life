@@ -818,11 +818,11 @@ function approvedOverviewRoom(f,z,settings,stats){
  const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
  const roomScene=previewKinds[z.id]&&typeof window.houseRealismRoomArtwork==="function"?
    window.houseRealismRoomArtwork(f,illustrated,settings,stats,true,b,"overview"):"";
- const line=stair?"":"<path d=\"M"+b.x+" "+(b.y+b.height*.67).toFixed(1)+"H"+(b.x+b.width)+"\" stroke=\"#a99c94\" stroke-width=\"2\" opacity=\".2\"/>";
+ // No decorative line crosses the room: it could be mistaken for a real wall.
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
   '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#725c62" stroke-width="4"/>'+
-  '<g clip-path="url(#'+token+')">'+roomScene+photo+line+'</g>'+
+  '<g clip-path="url(#'+token+')">'+roomScene+photo+'</g>'+
   (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
  '</g>';
 }
