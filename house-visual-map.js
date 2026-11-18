@@ -962,6 +962,56 @@ function approvedKitchenAndStairDoorOpenings(zones){
    '" stroke="#c39a78" stroke-width="1.6" stroke-linecap="round"/>'+
   '</g>').join("")+'</g>';
 }
+// Short, touch-sized portals atop the already drawn passage thresholds.
+// They never edit or infer private floor geometry. The real destination
+// comes from the existing verified room IDs, not from room ordering.
+function approvedFirstFloorDoorwayRoutes(zones){
+ const ids=new Set(arr(zones).map(z=>z?.id));
+ return [
+  {id:"kitchen-bath",a:"kitchen",b:"bath",label:"Bathroom",x:568,y:625,w:20,h:68,dest:"bath"},
+  {id:"kitchen-dining",a:"kitchen",b:"dining",label:"Dining room",x:568,y:755,w:20,h:90,dest:"dining"},
+  {id:"dining-living",a:"dining",b:"living",label:"Living room",x:645,y:1054,w:96,h:18,dest:"living"},
+  {id:"playroom-living",a:"playroom",b:"living",label:"Playroom",x:317,y:1208,w:18,h:116,dest:"playroom"},
+  {id:"dining-upstairs",a:"dining",b:"stairs_up",label:"Second floor",x:571,y:940,w:19,h:82,floor:"Second floor"}
+ ].filter(route=>ids.has(route.a)&&ids.has(route.b));
+}
+function approvedDollhouseDoorwayTargets(zones){
+ const targets=approvedFirstFloorDoorwayRoutes(zones);
+ if(!targets.length)return "";
+ return '<g class="hvm-doorway-portals">'+targets.map(route=>{
+  const width=Math.max(44,route.w),height=Math.max(44,route.h);
+  const x=(route.x+(route.w-width)/2).toFixed(1),y=(route.y+(route.h-height)/2).toFixed(1);
+  const go=route.floor?"houseVisualFollowLink(&#39;"+route.floor+"&#39;)":
+   "houseVisualOpenZone(&#39;First floor&#39;,&#39;"+route.dest+"&#39;)";
+  return '<g class="hvm-doorway-portal" data-passage-link="'+route.id+'" role="button" tabindex="0" aria-label="Passage to '+h(route.label)+
+   '" onclick="event.stopPropagation();'+go+
+   '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+go+'}">'+
+   '<title>Go to '+h(route.label)+'</title>'+
+   '<rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" rx="5" fill="#fff" fill-opacity=".001" pointer-events="all"/>'+
+   '</g>';
+ }).join("")+'</g>';
+}
+function approvedConnectedRoomNav(f,roomId){
+ if(f!=="First floor")return "";
+ const map=get(f),known=arr(map?.zones),ids=new Set(known.map(z=>z?.id));
+ if(!ids.has(roomId))return "";
+ const links={
+  kitchen:[["bath","Bathroom"],["dining","Dining room"]],
+  bath:[["kitchen","Kitchen"]],
+  dining:[["kitchen","Kitchen"],["living","Living room"],["upstairs","Upstairs"]],
+  living:[["dining","Dining room"],["playroom","Playroom"]],
+  playroom:[["living","Living room"]],
+  stairs_up:[["dining","Dining room"]]
+ }[roomId]||[];
+ const valid=links.filter(([id])=>id==="upstairs"?ids.has("stairs_up"):ids.has(id));
+ if(!valid.length)return "";
+ return '<nav class="hvm-connected-rooms" aria-label="Connected rooms"><b>Through the doorway</b><div>'+
+ valid.map(([id,label])=>{
+  const on=id==="upstairs"?"houseVisualFollowLink(&#39;Second floor&#39;)":
+   "houseVisualOpenZone(&#39;First floor&#39;,&#39;"+id+"&#39;)";
+  return '<button type="button" onclick="'+on+'">'+h(label)+' <span aria-hidden="true">›</span></button>';
+ }).join("")+'</div></nav>';
+}
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  // The approved kitchen is the sole room whose detailed base art remains in
@@ -991,7 +1041,7 @@ function approvedDollhouseMap(f,m,oldMap){
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+surfaces+hotspots+'</svg></div>'+
+  reveal+surfaces+hotspots+approvedDollhouseDoorwayTargets(zoneData)+'</svg></div>'+
   '<div class="hvm-approved-caption">'+(approvedOverviewMode()==="photos"?
    'Photos show saved reference angles, not an overhead view or the current state.':'Illustrations show known objects; unmeasured positions are approximate.')+
    ' Tap a room to open photos, furniture and tasks.</div></section>'+
@@ -2044,7 +2094,7 @@ window.houseVisualOpenZone=function(f,id){
   '</div></section>':"";
  // A room tap should immediately show actionable chores and direct room navigation.
  // Leave the approved illustrations, floor geometry, and task completion rules unchanged.
- const markup='<div class="hvm-zone-detail">'+tour+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+roomPhotoDoor+'<details class="hvm-room-extra"><summary>Inventory and room details</summary>'+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
+ const markup='<div class="hvm-zone-detail">'+tour+approvedConnectedRoomNav(f,id)+progress+(approvedZoom||miniRoom)+houseVisualRoomDoorways(f,z)+approvedObjectChoices+actions+roomPhotoDoor+'<details class="hvm-room-extra"><summary>Inventory and room details</summary>'+roomCareControls(f,z)+interactiveRoom+objectPanel+roomInsights+references+'</details>'+'</div>';
 
  modal(z.name+" · "+f,markup,"Close",closeModal);
  Promise.resolve().then(()=>hydrateRoomPhotoGallery(f,z));
