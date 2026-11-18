@@ -106,3 +106,22 @@ test("room-view selection avoids changing geometry and does not fetch private im
  assert.match(source,/approvedOverviewMode\(\)!=="photos"\)return/);
  assert.match(source,/if\(!online\(\)\)overviewPhotoCache\.clear\(\)/);
 });
+
+
+test("saved playroom reference photo is available in optional photo mode",()=>{
+ viewState.set("dailyLifeFirstFloorPreviewMode","photos");
+ const zones=Object.keys(specs).map(id=>({
+  id,name:id,photos:id==="playroom"?["12345678-1234-1234-1234-123456789012"]:[]
+ }));
+ const html=ctx.window.renderOverview("First floor",{zones},"");
+ assert.match(html,/data-hvm-overview-photo="playroom"/);
+ assert.match(source,/\["living","dining","playroom","bath","stairs_up"\]\.includes\(z\?\.id\)/);
+ assert.doesNotMatch(html,/data-hvm-overview-photo="bath"/);
+ viewState.delete("dailyLifeFirstFloorPreviewMode");
+});
+test("front door is illustrated only when present in the saved living-room markers",()=>{
+ assert.match(source,/living:\["door_front","futon","sofa","ottoman","curtains","tv_dresser"\]/);
+ assert.match(source,/markers:arr\(z\.markers\)\.filter\(p=>previewKinds\[z\.id\]\.includes\(str\(p\.kind\)\)\)/);
+ const art=fs.readFileSync(path.join(__dirname,"..","house-room-artwork.js"),"utf8");
+ assert.match(art,/case "door_front":return/);
+});
