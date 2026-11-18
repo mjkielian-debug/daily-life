@@ -28,7 +28,7 @@ const doorMap={zones:["kitchen","bath","dining","living","playroom","stairs_up"]
 const portalCtx={window:{},arr:x=>Array.isArray(x)?x:[],h:value=>String(value),
  get:f=>f==="First floor"?doorMap:null};
 vm.runInNewContext(mapSource.slice(portalStart,portalEnd)+
- "\\nwindow.routes=approvedFirstFloorDoorwayRoutes;window.targets=approvedDollhouseDoorwayTargets;window.connected=approvedConnectedRoomNav;",portalCtx);
+ "\nwindow.routes=approvedFirstFloorDoorwayRoutes;window.targets=approvedDollhouseDoorwayTargets;window.connected=approvedConnectedRoomNav;",portalCtx);
 const portals=portalCtx.window.targets,connected=portalCtx.window.connected;
 const artworkCtx={window:{},Math,Number,Object,String,Array,Set};
 vm.runInNewContext(read("house-room-artwork.js"),artworkCtx);
