@@ -11,9 +11,10 @@ const room=source.slice(roomStart,roomEnd);
 const line=room.split("\n").find(row=>row.includes("const markup='<div class=\"hvm-zone-detail\">'"))||"";
 
 test("the room opens with the chore checklist and room navigation before illustrations",()=>{
- assert.ok(line.includes("'+tour+progress+(approvedZoom||miniRoom)"));
+ assert.ok(line.includes("'+tour+approvedConnectedRoomNav(f,id)+progress+(approvedZoom||miniRoom)"));
  assert.ok(!line.includes("roomTaskNotice"),"do not show a redundant jump card");
  assert.ok(line.indexOf("tour")<line.indexOf("progress"));
+ assert.ok(line.indexOf("approvedConnectedRoomNav")<line.indexOf("progress"));
  assert.ok(line.indexOf("progress")<line.indexOf("(approvedZoom||miniRoom)"));
 });
 test("previous and next room are always visible, not hidden in photos and inventory",()=>{
