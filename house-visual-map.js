@@ -807,12 +807,12 @@ function approvedOverviewRoom(f,z,settings,stats){
  const progress=stats.total?Math.max(0,Math.min(1,stats.done/stats.total)):0;
  const token="hvm-overview-"+String(z.id).replace(/[^a-z0-9_-]/gi,"");
  const b=zoneBounds(settings.path);
- const hasRealPhoto=approvedOverviewMode()==="photos"&&arr(z.photos).some(okPhoto)&&["living","dining","stairs_up"].includes(z.id);
+ const hasRealPhoto=approvedOverviewMode()==="photos"&&arr(z.photos).some(okPhoto)&&["living","dining","playroom","bath","stairs_up"].includes(z.id);
  const photo=hasRealPhoto?'<image class="hvm-overview-private-photo" data-hvm-overview-photo="'+h(z.id)+'" x="'+(b.x+3)+'" y="'+(b.y+3)+'" width="'+Math.max(8,b.width-6)+'" height="'+Math.max(8,b.height-6)+'" preserveAspectRatio="xMidYMid slice" />':"";
  // Small, real-object scenes are immediate fallbacks while the private photos
  // load. Once a photo is available it covers the illustrative scene entirely.
  const previewKinds={
-  living:["futon","sofa","ottoman","curtains","tv_dresser"],dining:["dining_table","desk_hutch","coat_hooks"],
+  living:["door_front","futon","sofa","ottoman","curtains","tv_dresser"],dining:["dining_table","desk_hutch","coat_hooks"],
   playroom:["keyboard","mesh","desk","plant"],bath:["sink","mirror","toilet"]
  };
  const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
@@ -857,7 +857,7 @@ async function hydrateApprovedOverviewPhotos(f,m){
  showCachedOverviewPhotos(scope);
  if(!where(f).some(el=>el.querySelector("image[data-hvm-overview-photo]")))return;
  if(overviewPhotoPending.has(scope)){await overviewPhotoPending.get(scope);showCachedOverviewPhotos(scope);return}
- const rooms=arr(m.zones).filter(z=>["living","dining","stairs_up"].includes(z?.id)&&
+ const rooms=arr(m.zones).filter(z=>["living","dining","playroom","bath","stairs_up"].includes(z?.id)&&
   arr(z.photos).some(okPhoto)&&!overviewPhotoCache.has(scope+"|"+z.id));
  if(!rooms.length)return;
  const job=(async()=>{
