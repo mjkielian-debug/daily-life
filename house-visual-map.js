@@ -526,16 +526,6 @@ function joinedFloorDisplay(m){
 /* The approved first-floor picture defines the soft-realistic My Little Pony-inspired
  * materials: soft lavender outlines, dimensional joinery and warm natural light.
  * Private zone paths remain the geometry; all artwork is clipped inside them. */
-// Offset strokes inside the existing outline give the walls a lit face and
-// a shaded face. Keep the relief proportional on small phone-sized rooms.
-function roomWallRelief(path, bounds, clipId){
- if(!bounds || Math.min(bounds.width,bounds.height)<25)return "";
- const depth=Math.min(5,Math.min(bounds.width,bounds.height)*.028);
- const edge=' fill="none" stroke-linejoin="round" d="'+h(path)+'"';
- return '<g pointer-events="none" aria-hidden="true" clip-path="url(#'+clipId+')">'+
-  '<path'+edge+' transform="translate('+depth+' '+depth+')" stroke="#463346" stroke-width="'+(depth*2.8)+'" opacity=".16"/>'+
-  '<path'+edge+' transform="translate('+(-depth*.55)+' '+(-depth*.55)+')" stroke="#fff5dc" stroke-width="'+(depth*1.5)+'" opacity=".60"/></g>';
-}
 function realisticFloorRoomFinish(f,z,b,shade){
  if(!b||b.width<25||b.height<25)return "";
  const key=(f+"-"+z.id).toLowerCase().replace(/[^a-z0-9-]/g,""),clip="hvm-pony-clip-"+key,light="hvm-pony-light-"+key;
@@ -811,6 +801,16 @@ window.houseVisualToggleOverviewZoom=function(button){
  if(!enlarged)scene.scrollLeft=0;
 };
 
+// Offset strokes inside the existing outline give the walls a lit face and
+// a shaded face. Keep the relief proportional on small phone-sized rooms.
+function roomWallRelief(path, bounds, clipId){
+ if(!bounds || Math.min(bounds.width,bounds.height)<25)return "";
+ const depth=Math.min(5,Math.min(bounds.width,bounds.height)*.028);
+ const edge=' fill="none" stroke-linejoin="round" d="'+h(path)+'"';
+ return '<g pointer-events="none" aria-hidden="true" clip-path="url(#'+clipId+')">'+
+  '<path'+edge+' transform="translate('+depth+' '+depth+')" stroke="#463346" stroke-width="'+(depth*2.8)+'" opacity=".16"/>'+
+  '<path'+edge+' transform="translate('+(-depth*.55)+' '+(-depth*.55)+')" stroke="#fff5dc" stroke-width="'+(depth*1.5)+'" opacity=".60"/></g>';
+}
 function approvedOverviewRoom(f,z,settings,stats){
  if(f!=="First floor"||z.id==="kitchen"||!settings)return "";
  const stair=z.id==="basement_stairs"||z.id==="stairs_up";
