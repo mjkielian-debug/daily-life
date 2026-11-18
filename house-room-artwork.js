@@ -274,6 +274,11 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
   '<g clip-path="url(#'+zoneId+')" class="hvm-scene-muted">'+scene+'</g>'+
   (filled?'<g clip-path="url(#'+zoneId+')"><g clip-path="url(#'+colorId+')" class="hvm-scene-color">'+scene+'</g></g>':"")+'</g>';
 }
+// Room detail buttons share the same object drawing as their floor overview.
+window.houseRoomFixtureArt=function(floor,roomId,kind){
+ if(floor!=="First floor"||!rooms.has(roomId)||!types.has(kind))return "";
+ return '<g transform="scale(.20)">'+illustration(kind)+furnitureRelief(kind)+'</g>';
+};
 window.houseRealismMarkerPlacement=placement;
 window.houseRealismRoomArtwork=artwork;
 })();
