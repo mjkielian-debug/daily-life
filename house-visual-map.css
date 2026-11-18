@@ -706,3 +706,37 @@
  fill:#ffe9aa;fill-opacity:.29;stroke:#7c5f49;stroke-width:3;
  stroke-dasharray:5 3
 }
+
+
+/* Clear, thumb-friendly placement controls. Live map preview appears below. */
+.hvm-door-editor-title{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:5px}
+.hvm-door-editor-title strong{font-size:1rem}
+.hvm-door-editor-title small{font-size:.78rem}
+.hvm-door-step-size{display:flex;gap:8px}
+.hvm-door-step-size button{
+ min-height:44px;min-width:100px;border:1px solid #a88a9f;border-radius:11px;
+ background:#fff;padding:9px;color:#553b53;font-weight:800;font-size:.83rem
+}
+.hvm-door-step-size button.is-selected{background:#694d77;color:#fff}
+.hvm-door-direction-pad{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:6px;max-width:425px;margin:0 auto;width:100%;align-items:stretch
+}
+.hvm-door-direction-pad .hvm-door-shift{
+ min-height:48px;padding:9px 5px;white-space:normal;
+ font-size:.85rem;background:#fffdf9;border:1px solid #9b8296;border-radius:12px
+}
+.hvm-door-direction-pad .hvm-door-shift:nth-child(5){
+ background:#eee4f0;color:#4a3450;font-size:.76rem
+}
+.hvm-door-sliders{display:grid;gap:8px}
+.hvm-door-slider{display:grid;grid-template-columns:80px minmax(0,1fr) 34px;gap:9px;align-items:center;font-size:.8rem;font-weight:800}
+.hvm-door-slider input{width:100%;accent-color:#7d5b7d;min-height:44px;touch-action:pan-y}
+.hvm-door-slider output{font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
+.hvm-doorway-portal.is-aligning .hvm-doorway-grip{filter:drop-shadow(0 2px 3px #50383d66)}
+.hvm-doorway-portal.is-aligning rect{stroke:#6c4b39;stroke-width:2;stroke-dasharray:6 4}
+@media(max-width:430px){
+ .hvm-door-editor-title small{display:block;flex-basis:100%}
+ .hvm-door-direction-pad{gap:5px}
+ .hvm-door-slider{grid-template-columns:68px minmax(0,1fr) 28px;gap:5px}
+}
