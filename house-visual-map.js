@@ -1654,20 +1654,20 @@ function personRoomHome(f,z){
 }
 function floorView(f,m){
  const person=selectedRoomProfile();
- const hasLayout=arr(m.zones).some(z=>z&&okId(z.id)&&okPath(z.path));
- const layout=mapSketch(f,m);
- let browsing=false;try{browsing=localStorage.getItem("dailyLifeMapBrowseRooms")==="1"}catch(e){}
- if(person&&!browsing&&localStorage.getItem("dailyLifeMapBrowseRooms")==="0"){
+ let mode=null;
+ try{mode=localStorage.getItem("dailyLifeMapBrowseRooms")}catch(e){}
+ if(person&&mode==="0"){
   let z=null;
   try{const saved=JSON.parse(localStorage.getItem("dailyLifeMapTourRoom")||"null");if(saved?.floor===f&&saved?.profileId===String(person.id||person.name))z=arr(m.zones).find(item=>item&&item.id===saved.id)||null}catch(e){}
   z=z||personRoomZone(f,person.name,!!person.isSelf);
   if(z)return personRoomHome(f,z)
  }
- if(person&&browsing){const ownRoom=personRoomZone(f,person.name,!!person.isSelf);if(ownRoom)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualGoToPersonRoom()">Go to '+h(person.name)+'’s room · '+h(person.isSelf?"Third floor":"Second floor")+' →</button>'+layout+'</div>'}
+ const layout=mapSketch(f,m);
+ if(person&&mode==="1"){const ownRoom=personRoomZone(f,person.name,!!person.isSelf);if(ownRoom)return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualFocusPersonRoom()">← '+h(person.name)+'’s room</button>'+layout+'</div>';return '<div class="hvm-person-room-browse"><button type="button" class="btn small" onclick="houseVisualGoToPersonRoom()">Go to '+h(person.name)+'’s room · '+h(person.isSelf?"Third floor":"Second floor")+' →</button>'+layout+'</div>'}
  return layout;
 }
 window.houseVisualBrowseFloor=function(){try{localStorage.setItem("dailyLifeMapBrowseRooms","1")}catch(e){};render()};
-window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapBrowseRooms")}catch(e){};render()};
+window.houseVisualFocusPersonRoom=function(){try{localStorage.removeItem("dailyLifeMapTourRoom");localStorage.setItem("dailyLifeMapBrowseRooms","0")}catch(e){};render()};
 window.houseVisualSelectTourRoom=function(f,id){
  if(!floors.includes(f)||!okId(id))return;
  const person=selectedRoomProfile();
@@ -1803,7 +1803,7 @@ window.houseVisualGoToPersonRoom=async function(name,isSelf){
  const selected=selectedRoomProfile();name=name||selected?.name||"";isSelf=isSelf==null?!!selected?.isSelf:!!isSelf;
  const floor=isSelf?"Third floor":"Second floor";
  try{
-  localStorage.removeItem("dailyLifeMapBrowseRooms");
+  localStorage.setItem("dailyLifeMapBrowseRooms","0");
   localStorage.setItem("dailyLifeMapFirstFloor",floor);
   localStorage.setItem("dailyLifeMapTourRoom",JSON.stringify({profileId:String(selectedRoomProfile()?.id||selectedRoomProfile()?.name||""),floor,id:""}));
  }catch(e){}
