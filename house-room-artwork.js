@@ -257,7 +257,7 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
    const facing=z.id==="bath"&&pos.approximate&&(kind==="sink"||kind==="mirror")?" rotate(-90)":"";
   const border=pos.approximate?'<ellipse cx="0" cy="5" rx="64" ry="53" fill="none" stroke="#80657e" stroke-width="2" stroke-dasharray="5 5" opacity=".85"/>':"";
   return '<g class="hvm-room-illustrated-object'+(pos.approximate?' is-approximate':'')+
-   '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')'+facing+'" pointer-events="none>'+
+   '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')'+facing+'" pointer-events="none">'+
    '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+
    '<g filter="url(#'+depthId+')">'+pic+furnitureRelief(kind)+'</g>'+border+'</g>';
  }).join('');
