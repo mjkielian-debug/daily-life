@@ -403,6 +403,22 @@ function illustratedRoomBackdrop(f,z){
   '<path d="M0 0V300M360 0V300" stroke="#9c7b75" stroke-width="9"/>'+decorations+'</svg>';
 }
 
+function bedroomPlanDetail(f,z){
+ if(!((f==="Second floor"&&["dolly","demitri","ambrose","leo"].includes(z.id))||
+      (f==="Third floor"&&z.id==="bedroom")))return "";
+ const map=get(f);
+ if(!map)return "";
+ const plotted=arr(illustratedLayout(f,map).zones).find(room=>room.id===z.id);
+ if(!plotted||!okPath(plotted.path))return "";
+ const b=zoneBounds(plotted.path);
+ if(!b)return "";
+ const art=inlineRoomPreview(f,plotted,b)||mappedFurniture(f,plotted,b);
+ if(!art)return "";
+ const box=[b.x-4,b.y-4,b.width+8,b.height+8].join(" ");
+ return '<svg viewBox="'+box+'" role="group" aria-label="'+h(z.name)+' furniture plan" style="display:block;width:100%;max-height:360px">'+
+  '<path d="'+h(plotted.path)+'" fill="#f5ebe3" stroke="#82647e" stroke-width="2"/>'+
+  realisticFloorRoomFinish(f,plotted,b,color(z.color))+roomColorBloomSvg(f,plotted,b,color(z.color),roomTaskColorStats(f,z,localRoom(f,z)))+art+'</svg>';
+}
 function mappedRoomMiniature(f,z){
  const all=arr(z.markers).map((p,i)=>({p,i})).filter(({p})=>p&&str(p.label));
  if(/stairs|landing|hallway|corridor/i.test(str(z.id)+" "+str(z.name)))return "";
@@ -422,13 +438,14 @@ function mappedRoomMiniature(f,z){
  const photoCount=arr(z.photos).filter(okPhoto).length;
  const showPhotos=photoCount?'<button class="btn small" type="button" onclick="houseVisualRevealRoomPhotos()">View '+photoCount+' saved reference photo'+(photoCount===1?'':'s')+' ›</button>':"";
  const bloom=progress.done?'<div class="hvm-mini-color-bloom" aria-hidden="true" style="--hvm-bloom-radius:'+bloomRadius+';--hvm-room-tint:'+h(tint)+'"></div>':"";
- const roomMessage=all.length?'From saved photos and confirmed room notes. Positions are approximate.':'Furniture not mapped yet. Add room tasks to track progress; no furniture has been invented.';
+ const plan=bedroomPlanDetail(f,z);
+ const roomMessage=plan?"Dotted outlines show approximate furniture positions.":all.length?'From saved photos and confirmed room notes. Positions are approximate.':'Furniture not mapped yet. Add room tasks to track progress; no furniture has been invented.';
  return '<section class="hvm-mini-room" aria-label="Interactive room fixtures"><header><strong>Explore this room</strong>'+showPhotos+'</header>'+
  '<div class="hvm-mini-progress-message" aria-label="'+progress.done+' of '+progress.total+' room tasks complete">'+
  '<b>✦ '+(progress.total?progress.done+' / '+progress.total+' tasks completed':'No room tasks assigned yet')+'</b>'+
  '<small>'+(progress.total?progress.pct+'% of today’s tracked room tasks · color grows as you finish':'Add a room task to begin coloring this space')+'</small></div>'+
- '<div class="hvm-mini-room-canvas is-illustrated" data-room-task-progress="'+progress.pct+'">'+illustratedRoomBackdrop(f,all.length?z:{...z,name:"Unmapped interior"})+bloom+placed.map(p=>action(p,true)).join("")+'</div>'+
- (unplaced.length?'<div class="hvm-mini-unplaced"><b>Known furniture · exact spot not mapped</b><div>'+unplaced.map(p=>action(p,false)).join("")+'</div></div>':"")+
+ (plan||'<div class="hvm-mini-room-canvas is-illustrated" data-room-task-progress="'+progress.pct+'">'+illustratedRoomBackdrop(f,all.length?z:{...z,name:"Unmapped interior"})+bloom+placed.map(p=>action(p,true)).join("")+'</div>')+
+ ((plan?all:unplaced).length?'<div class="hvm-mini-unplaced"><b>'+(plan?'Room items':'Known furniture · exact spot not mapped')+'</b><div>'+(plan?all:unplaced).map(p=>action(p,false)).join("")+'</div></div>':"")+
  '<p class="muted small">'+h(roomMessage)+'</p></section>';
 }
 window.houseVisualRevealRoomPhotos=function(){
