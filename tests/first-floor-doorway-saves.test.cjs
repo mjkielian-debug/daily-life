@@ -40,7 +40,7 @@ function harness(options={}){
   online:()=>true,who:()=>({id:"user-1"}),
   paint:()=>renderCount++,str:String,cache,cloudClient:client
  };
- vm.runInNewContext(snippet,ctx);
+ vm.runInNewContext(snippet+'\nwindow.editor=approvedDoorwayEditor;',ctx);
  return {ctx,cache,payload,filters,stats:()=>({submitted,readCount,writeCount,renderCount})};
 }
 
