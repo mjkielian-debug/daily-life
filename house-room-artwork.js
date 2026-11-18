@@ -9,7 +9,7 @@ const illustrative={
  living:{sofa:[22,50],ottoman:[31,72],art:[75,10],curtains:[56,43],shelf_theracane:[52,25]},
  dining:{shelf:[19,23],robovac:[19,69],desk_hutch:[29,38]},
  playroom:{keyboard:[38,58],mesh:[73,24],table:[70,77],desk:[23,27],shelf:[87,60],mat:[37,87],plant:[13,68]},
- bath:{mirror:[51,12],sink:[49,34],toilet:[51,75]}
+ bath:{mirror:[12,40],sink:[30,40],toilet:[69,75]}
 };
 const types=new Set(["futon","sofa","ottoman","door_front","wood_opening","tv_dresser","art",
 "dining_table","desk_hutch","coat_hooks","pet_bowls","shelf","robovac","keyboard","mesh","table","desk","mat","plant",
@@ -252,9 +252,12 @@ function artwork(f,z,settings,stats,detail,bounds,variant){
  const shapes=markers.slice().sort((a,b)=>a.placement.py-b.placement.py).map(({p,placement:pos})=>{
   const kind=String(p.kind||"").toLowerCase(),x=(b.x+b.width*pos.px/100).toFixed(2),y=(b.y+b.height*pos.py/100).toFixed(2);
   const k=(scale*(small[kind]||1)).toFixed(3),pic=illustration(kind);
+   // Photo-grounded wall relationship: the unmeasured bathroom vanity and mirror
+   // face the kitchen/back-door-side wall. Saved marker coordinates always win.
+   const facing=z.id==="bath"&&pos.approximate&&(kind==="sink"||kind==="mirror")?" rotate(-90)":"";
   const border=pos.approximate?'<ellipse cx="0" cy="5" rx="64" ry="53" fill="none" stroke="#80657e" stroke-width="2" stroke-dasharray="5 5" opacity=".85"/>':"";
   return '<g class="hvm-room-illustrated-object'+(pos.approximate?' is-approximate':'')+
-   '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')" pointer-events="none">'+
+   '" data-kind="'+h(kind)+'" transform="translate('+x+' '+y+') scale('+k+')'+facing+'" pointer-events="none>'+
    '<title>'+h(p.label||"Room object")+(pos.approximate?" · placement illustrative":" · placement from saved map")+'</title>'+
    '<g filter="url(#'+depthId+')">'+pic+furnitureRelief(kind)+'</g>'+border+'</g>';
  }).join('');
