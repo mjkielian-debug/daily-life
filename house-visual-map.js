@@ -996,18 +996,20 @@ function approvedConnectedRoomNav(f,roomId){
  const map=get(f),known=arr(map?.zones),ids=new Set(known.map(z=>z?.id));
  if(!ids.has(roomId))return "";
  const links={
-  kitchen:[["bath","Bathroom"],["dining","Dining room"]],
+  kitchen:[["bath","Bathroom"],["dining","Dining room"],["downstairs","Basement ↓"]],
   bath:[["kitchen","Kitchen"]],
   dining:[["kitchen","Kitchen"],["living","Living room"],["upstairs","Upstairs"]],
   living:[["dining","Dining room"],["playroom","Playroom"]],
   playroom:[["living","Living room"]],
-  stairs_up:[["dining","Dining room"]]
+  stairs_up:[["dining","Dining room"]],
+  basement_stairs:[["kitchen","Kitchen"]]
  }[roomId]||[];
- const valid=links.filter(([id])=>id==="upstairs"?ids.has("stairs_up"):ids.has(id));
+ const valid=links.filter(([id])=>id==="upstairs"?ids.has("stairs_up"):id==="downstairs"?ids.has("basement_stairs"):ids.has(id));
  if(!valid.length)return "";
  return '<nav class="hvm-connected-rooms" aria-label="Connected rooms"><b>Through the doorway</b><div>'+
  valid.map(([id,label])=>{
   const on=id==="upstairs"?"houseVisualFollowLink(&#39;Second floor&#39;)":
+   id==="downstairs"?"houseVisualFollowLink(&#39;Basement&#39;)":
    "houseVisualOpenZone(&#39;First floor&#39;,&#39;"+id+"&#39;)";
   return '<button type="button" onclick="'+on+'">'+h(label)+' <span aria-hidden="true">›</span></button>';
  }).join("")+'</div></nav>';
