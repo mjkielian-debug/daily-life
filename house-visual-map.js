@@ -1044,12 +1044,14 @@ function approvedDollhouseDoorwayTargets(zones,adjustments){
  return '<g class="hvm-doorway-portals">'+targets.map(route=>{
   const width=Math.max(44,route.w),height=Math.max(44,route.h);
   const x=(route.x+(route.w-width)/2).toFixed(1),y=(route.y+(route.h-height)/2).toFixed(1);
-  const go=route.floor?"houseVisualFollowLink(&#39;"+route.floor+"&#39;)":
+  const navigate=route.floor?"houseVisualFollowLink(&#39;"+route.floor+"&#39;)":
    "houseVisualOpenZone(&#39;First floor&#39;,&#39;"+route.dest+"&#39;)";
-  return '<g class="hvm-doorway-portal'+(doorAdjustOpen&&route.id===doorAdjustSelected?' is-aligning':'')+'" data-passage-link="'+route.id+'" role="button" tabindex="0" aria-label="Passage to '+h(route.label)+
+  const go=doorAdjustOpen?"houseVisualSelectDoorway(&#39;"+route.id+"&#39;)":navigate;
+  const label=(doorAdjustOpen?"Select ":"Passage to ")+route.label;
+  return '<g class="hvm-doorway-portal'+(doorAdjustOpen&&route.id===doorAdjustSelected?' is-aligning':'')+'" data-passage-link="'+route.id+'" role="button" tabindex="0" aria-label="'+h(label)+
    '" onclick="event.stopPropagation();'+go+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+go+'}">'+
-   '<title>Go to '+h(route.label)+'</title>'+
+   '<title>'+h(label)+'</title>'+
    '<rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" rx="5" fill="#fff" fill-opacity=".001" pointer-events="all"/>'+
    '</g>';
  }).join("")+'</g>';
@@ -1085,7 +1087,7 @@ function approvedDoorwayEditor(zones,adjustments){
  const active=routes.find(route=>route.id===doorAdjustSelected)||routes[0];
  if(!active)return "";
  const axis=approvedDoorwayLimits[active.id].axis;
- const status=doorAdjustSaving?"Saving doorway…":doorAdjustMessage||"Move one opening; changes save privately.";
+ const status=doorAdjustSaving?"Saving doorway…":doorAdjustMessage||"Select an opening, then use the arrows. Changes save automatically.";
  const options=routes.map(route=>'<button type="button" class="hvm-door-option'+
   (route.id===active.id?' is-selected':'')+'" aria-pressed="'+(route.id===active.id)+
   '" onclick="houseVisualSelectDoorway(&#39;'+route.id+'&#39;)">'+h(route.label)+'</button>').join("");
@@ -1096,7 +1098,6 @@ function approvedDoorwayEditor(zones,adjustments){
   '<strong>One doorway at a time</strong><div class="hvm-door-options">'+options+'</div>'+
   '<div class="hvm-door-nudges">'+adjust(-8)+adjust(8)+adjust(0)+'</div>'+
   '<small role="status">'+h(status)+'</small>'+
-  '<small>These are drawing adjustments, not measured walls. Your approved kitchen stays unchanged.</small>'+
  '</section>';
 }
 window.houseVisualToggleDoorwayEditor=function(){
@@ -1113,7 +1114,7 @@ window.houseVisualNudgeDoorway=async function(id,amount){
  if(!m||!arr(m.zones).length)return;
  const previous=approvedDoorwayOffset(id,m.doorwayAdjustments);
  const wanted=delta===0?0:Math.max(rules.min,Math.min(rules.max,previous+delta));
- if(wanted===previous){doorAdjustMessage="Already at the limit.";paint(floor);return}
+ if(wanted===previous){doorAdjustMessage=delta===0?"This opening is already at its original position.":"Already at the limit.";paint(floor);return}
  doorAdjustSaving=true;doorAdjustMessage="";paint(floor);
  try{
   const identity=who()?.id;
@@ -1192,10 +1193,11 @@ function approvedDollhouseMap(f,m,oldMap){
     '<button type="button" class="hvm-map-mode-btn'+(approvedOverviewMode()==="illustrated"?' is-selected':'')+'" aria-pressed="'+(approvedOverviewMode()==="illustrated")+'" onclick="houseVisualSetOverviewMode(&#39;illustrated&#39;)">Illustrated</button>'+
     '<button type="button" class="hvm-map-mode-btn'+(approvedOverviewMode()==="photos"?' is-selected':'')+'" aria-pressed="'+(approvedOverviewMode()==="photos")+'" onclick="houseVisualSetOverviewMode(&#39;photos&#39;)">Real photos</button>'+
    '</div><button type="button" class="hvm-overview-zoom-btn" aria-pressed="false" onclick="houseVisualToggleOverviewZoom(this)">+ Enlarge</button><button type="button" class="hvm-door-edit-toggle" aria-pressed="'+(doorAdjustOpen?'true':'false')+'" onclick="houseVisualToggleDoorwayEditor()">'+(doorAdjustOpen?'Close doorway adjustment':'Adjust doorways')+'</button></div>'+
+  approvedDoorwayEditor(zoneData,m.doorwayAdjustments)+
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
   '<div class="hvm-approved-scene">'+(study||'<svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+surfaces+hotspots+approvedDollhouseDoorwayTargets(zoneData,m.doorwayAdjustments)+'</svg>')+'</div>'+approvedDoorwayEditor(zoneData,m.doorwayAdjustments)+
+  reveal+surfaces+hotspots+approvedDollhouseDoorwayTargets(zoneData,m.doorwayAdjustments)+'</svg>')+'</div>'+
   '<div class="hvm-approved-caption">'+(approvedOverviewMode()==="photos"?
    'Photos show saved reference angles, not an overhead view or the current state.':'Illustrations show known objects; unmeasured positions are approximate.')+
    ' Tap a room to open photos, furniture and tasks.</div></section>'+
