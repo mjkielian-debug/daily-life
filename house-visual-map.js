@@ -968,9 +968,41 @@ function approvedDoorwayOffset(id,settings){
  if(!Number.isFinite(n))return 0;
  return Math.max(rules.min,Math.min(rules.max,Math.round(n)));
 }
+// When a doorway is in the wrong place altogether, allow a draft position
+// anywhere inside the overview. This moves the illustration overlay only;
+// the owner's room paths remain unchanged and measurements are not asserted.
+const approvedDoorwayOrigins={
+ "kitchen-bath":{x:568,y:625,w:20,h:68},
+ "kitchen-dining":{x:568,y:755,w:20,h:90},
+ "dining-living":{x:645,y:1054,w:96,h:18},
+ "playroom-living":{x:317,y:1208,w:18,h:116},
+ "dining-upstairs":{x:571,y:940,w:19,h:82}
+};
+function approvedDoorwayRange(id,axis){
+ const base=approvedDoorwayOrigins[id];
+ if(!base)return {min:0,max:0};
+ return axis==="x"?{min:20-base.x,max:825-base.x-base.w}:
+  {min:385-base.y,max:1425-base.y-base.h};
+}
+function approvedDoorwayVector(id,settings){
+ const base=approvedDoorwayOrigins[id],rules=approvedDoorwayLimits[id];
+ if(!base||!rules)return {x:0,y:0};
+ const raw=settings&&typeof settings==="object"?settings[id]:null;
+ const legacy=approvedDoorwayOffset(id,settings);
+ const obj=raw&&typeof raw==="object"&&!Array.isArray(raw);
+ const candidate=obj?{x:raw.x,y:raw.y}:
+  rules.axis==="x"?{x:legacy,y:0}:{x:0,y:legacy};
+ const clamped={};
+ for(const axis of ["x","y"]){
+  const range=approvedDoorwayRange(id,axis);
+  const value=Number(candidate[axis]);
+  clamped[axis]=Number.isFinite(value)?Math.max(range.min,Math.min(range.max,Math.round(value))):0;
+ }
+ return clamped;
+}
 function approvedPassageTransform(id,settings){
- const axis=approvedDoorwayLimits[id]?.axis,value=approvedDoorwayOffset(id,settings);
- return value?' transform="translate('+(axis==="x"?value:0)+' '+(axis==="y"?value:0)+')"':"";
+ const value=approvedDoorwayVector(id,settings);
+ return value.x||value.y?' transform="translate('+value.x+' '+value.y+')"':"";
 }
 function approvedConnectedDoorOpenings(zoneData,adjustments){
  const ids=new Set(arr(zoneData).map(z=>z.id));
@@ -1033,9 +1065,8 @@ function approvedFirstFloorDoorwayRoutes(zones,adjustments){
   {id:"playroom-living",a:"playroom",b:"living",label:"Playroom",x:317,y:1208,w:18,h:116,dest:"playroom"},
   {id:"dining-upstairs",a:"dining",b:"stairs_up",label:"Second floor",x:571,y:940,w:19,h:82,floor:"Second floor"}
  ].filter(route=>ids.has(route.a)&&ids.has(route.b)).map(route=>{
-  const delta=approvedDoorwayOffset(route.id,adjustments);
-  return {...route,x:route.x+(approvedDoorwayLimits[route.id].axis==="x"?delta:0),
-   y:route.y+(approvedDoorwayLimits[route.id].axis==="y"?delta:0)};
+  const shift=approvedDoorwayVector(route.id,adjustments);
+  return {...route,x:route.x+shift.x,y:route.y+shift.y};
  });
 }
 function approvedDollhouseDoorwayTargets(zones,adjustments){
