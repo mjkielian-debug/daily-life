@@ -812,8 +812,8 @@ function approvedOverviewRoom(f,z,settings,stats){
  // Small, real-object scenes are immediate fallbacks while the private photos
  // load. Once a photo is available it covers the illustrative scene entirely.
  const previewKinds={
-  living:["door_front","futon","sofa","ottoman","curtains","tv_dresser"],dining:["dining_table","desk_hutch","coat_hooks"],
-  playroom:["keyboard","mesh","desk","plant"],bath:["sink","mirror","toilet"]
+  living:["door_front","futon","sofa","ottoman","curtains","tv_dresser","art","shelf_theracane"],dining:["dining_table","desk_hutch","coat_hooks","pet_bowls","shelf","robovac"],
+  playroom:["keyboard","mesh","desk","plant","mat","table","shelf"],bath:["sink","mirror","toilet"]
  };
  const illustrated=previewKinds[z.id]?{...z,markers:arr(z.markers).filter(p=>previewKinds[z.id].includes(str(p.kind)))}:z;
  const roomScene=previewKinds[z.id]&&typeof window.houseRealismRoomArtwork==="function"?
@@ -1057,7 +1057,9 @@ function approvedDollhouseRoomZoom(f,z){
  const hasPhotoEvidence=savedPhotoCount>0;
  const note=kitchen
   ?"Approved kitchen illustration based on your room photos. The kitchen artwork stays unchanged."
-  :photoMapped
+  :z.id==="bath"
+   ?"Bathroom door is off the kitchen beside the back-door area. Sink and mirror face that same wall. Doorway position on this drawing is approximate."
+   :photoMapped
    ?"Photo-mapped room: the photos establish where the real furniture, doorways and decorations go. The picture above is still an illustration draft, not an exact representation. No more room photographs are needed right now."
    :(hasPhotoEvidence
     ?"Saved room photos are available below. The illustrated scene is only a draft and should not override the photos."
