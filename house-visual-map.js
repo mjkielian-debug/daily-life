@@ -910,6 +910,34 @@ function approvedOverviewLabel(z,settings,stats){
   '<text x="'+x+'" y="'+(y+14).toFixed(1)+'" text-anchor="middle" font-size="15" fill="#795e75">'+h(sub)+'</text>'+
  '</g>';
 }
+// These are visible passage gaps, not new floor-plan walls. Their edges follow
+// the owner's confirmed room relationships. Widths are illustrative, never
+// written back to the private measured/robot-vacuum floor map.
+function approvedConnectedDoorOpenings(zoneData){
+ const ids=new Set(arr(zoneData).map(z=>z.id));
+ const diningLiving=ids.has("dining")&&ids.has("living")?
+  '<g data-door-connection="dining-living">'+
+   '<rect x="645" y="1054" width="96" height="18" fill="url(#hvm-dining-living-open)"/>'+
+   '<path d="M645 1053V1073M741 1053V1073" stroke="#3e302c" stroke-width="5" stroke-linecap="round"/>'+
+   '<path d="M645 1054V1072M741 1054V1072" stroke="#c39a78" stroke-width="1.5"/>'+
+  '</g>':"";
+ const playroomLiving=ids.has("playroom")&&ids.has("living")?
+  '<g data-door-connection="playroom-living">'+
+   '<rect x="317" y="1208" width="18" height="116" fill="url(#hvm-playroom-living-open)"/>'+
+   '<path d="M317 1208H335M317 1324H335" stroke="#3e302c" stroke-width="5" stroke-linecap="round"/>'+
+   '<path d="M318 1208H334M318 1324H334" stroke="#c39a78" stroke-width="1.5"/>'+
+  '</g>':"";
+ if(!diningLiving&&!playroomLiving)return "";
+ return '<g class="hvm-confirmed-passages" pointer-events="none" aria-hidden="true">'+
+  '<defs>'+
+   '<linearGradient id="hvm-dining-living-open" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="#aa896f"/><stop offset="50%" stop-color="#d0c0b8"/><stop offset="100%" stop-color="#9490a2"/>'+
+   '</linearGradient>'+
+   '<linearGradient id="hvm-playroom-living-open" x1="0" y1="0" x2="1" y2="0">'+
+    '<stop offset="0%" stop-color="#9990a3"/><stop offset="50%" stop-color="#cbc3cc"/><stop offset="100%" stop-color="#9490a2"/>'+
+   '</linearGradient>'+
+  '</defs>'+diningLiving+playroomLiving+'</g>';
+}
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  // The approved kitchen is the sole room whose detailed base art remains in
@@ -918,7 +946,7 @@ function approvedDollhouseMap(f,m,oldMap){
  const reveal=kitchen?approvedDollhouseProgressArt(f,kitchen,approvedDollhouseRooms.kitchen,
   roomTaskColorStats(f,kitchen,localRoom(f,kitchen)),"hvm-approved-map"):"";
  const surfaces=zoneData.map(z=>approvedOverviewRoom(f,z,approvedDollhouseRooms[z.id],
-  roomTaskColorStats(f,z,localRoom(f,z)))).join("");
+  roomTaskColorStats(f,z,localRoom(f,z)))).join("")+approvedConnectedDoorOpenings(zoneData);
  const hotspots=zoneData.map(z=>{
   const settings=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
   const label=z.name+" · "+(stats.total?stats.done+" of "+stats.total+" tasks complete":"open room details");
