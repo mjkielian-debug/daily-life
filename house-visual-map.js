@@ -58,7 +58,16 @@ function zoneBounds(path){
  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
  return {x:minX,y:minY,width:maxX-minX,height:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
 }
+function upstairsSceneKind(f,z){
+ if(f!=="Second floor")return "";
+ return z.id==="upstairs_bath"?"bathroom":z.id==="hallway"?"hallway":"";
+}
 function previewSource(f,z){
+ const kind=upstairsSceneKind(f,z);
+ if(kind&&typeof window.dailyLifeMiniatureSvg==="function"){
+  const scene=window.dailyLifeMiniatureSvg(kind);
+  if(scene)return {...scene,kind,markup:scene.markup.replace(/ tabindex="0" role="button"/g,"")};
+ }
  if(f!=="Second floor"||z.id!=="dolly"||typeof window.dollyRoomMapPreviewSvg!=="function")return null;
  const match=window.dollyRoomMapPreviewSvg().match(/<svg\b[^>]*viewBox=["']([^"']+)["'][^>]*>([\s\S]*?)<\/svg>/i);
  if(!match)return null;
@@ -83,7 +92,7 @@ function inlineRoomPreview(f,z,bounds){
  if(!Number.isFinite(scale)||scale<.16)return "";
  const width=view[2]*scale,height=view[3]*scale;
  const x=bounds.cx-width/2,y=bounds.cy-height/2;
- return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="Dolly bedroom saved furniture layout" focusable="false" pointer-events="auto">'+source.markup+'</svg>';
+ return '<svg class="hvm-inline-room-preview" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+width.toFixed(1)+'" height="'+height.toFixed(1)+'" viewBox="'+h(source.viewBox)+'" preserveAspectRatio="xMidYMid meet" aria-label="'+h(z.name)+' illustrated layout" focusable="false" pointer-events="'+(source.kind==="dolly"?"auto":"none")+'">'+source.markup+'</svg>';
 }
 function zoneFloorGraphic(f,z,bounds){
  if(!bounds)return "";
@@ -2197,7 +2206,9 @@ window.houseVisualOpenZone=function(f,id){
  '<details class="hvm-room-inventory"><summary>Room inventory · '+inventory.length+' item types</summary>'+
  (inventory.length?inventory.slice(0,14).map(x=>'<button type="button" class="hvm-object-row" onclick="openInventoryItem(&#39;'+h(x.id)+'&#39;)"><span>▧</span><span><b>'+h(x.name)+'</b><small>'+(x.quantity!=null?h(x.quantity)+' · ':'')+'Open item details</small></span><span>›</span></button>').join(""):'<p>No local inventory recorded here yet; this does not mean the room is empty.</p>')+'</details>';
 
- const miniRoom=mappedRoomMiniature(f,z);
+ const sceneKind=upstairsSceneKind(f,z);
+ const miniRoom=sceneKind&&typeof window.dailyLifeMiniScene==="function"
+  ?window.dailyLifeMiniScene(sceneKind):mappedRoomMiniature(f,z);
  const spots=arr(z.markers).map((p,i)=>'<button type="button" class="hvm-object-row" onclick="houseVisualInteractMarker(&#39;'+f+'&#39;,&#39;'+id+'&#39;,'+i+')"><span>✦</span><span><b>'+h(p.label||"Mapped object")+'</b><small>'+h(p.status||"Tap to inspect this mapped object")+'</small></span><span>›</span></button>').join("");
  const zones=arr(get(f)?.zones).filter(item=>item&&okId(item.id)),zoneIndex=zones.findIndex(item=>item.id===id);
  const tour='<section class="hvm-tour-nav" aria-label="Room tour"><div><b>Room tour</b><small>'+(zoneIndex+1)+' of '+zones.length+' rooms · tap mapped items to inspect them</small></div><div class="hvm-detail-actions"><button class="btn" type="button" '+(zoneIndex<=0?'disabled':'')+' onclick="houseVisualTourStep(&#39;'+f+'&#39;,&#39;'+id+'&#39;,-1)">‹ Previous room</button><button class="btn" type="button" '+(zoneIndex<0||zoneIndex>=zones.length-1?'disabled':'')+' onclick="houseVisualTourStep(&#39;'+f+'&#39;,&#39;'+id+'&#39;,1)">Next room ›</button></div></section>';
