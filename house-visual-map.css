@@ -641,3 +641,31 @@
  letter-spacing:-.25px
 }
 .hvm-approved-scene .hvm-overview-floor-surface>path{vector-effect:none}
+
+
+/* Only the narrow, confirmed connecting thresholds are interactive here.
+   They sit above room hit areas without swallowing taps elsewhere. */
+.hvm-doorway-portal{cursor:pointer;touch-action:manipulation}
+.hvm-doorway-portal:focus-visible{outline:none}
+.hvm-doorway-portal:hover rect,
+.hvm-doorway-portal:focus-visible rect{
+ fill:#fff8ed;
+ fill-opacity:.26;
+ stroke:#74533e;
+ stroke-width:2;
+ stroke-dasharray:4 3
+}
+.hvm-connected-rooms{
+ display:grid;gap:6px;padding:8px 10px;border:1px solid #c6acaa;
+ background:#fff9f2;border-radius:12px
+}
+.hvm-connected-rooms>b{font-size:.83rem;color:#634f46}
+.hvm-connected-rooms>div{display:flex;flex-wrap:wrap;gap:6px}
+.hvm-connected-rooms button{
+ min-height:44px;padding:8px 12px;border-radius:12px;
+ border:1px solid #b89b89;background:#fffefd;color:#493c3c;
+ font-weight:750;cursor:pointer
+}
+.hvm-connected-rooms button:focus-visible{
+ outline:3px solid #795378;outline-offset:2px
+}
