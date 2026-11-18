@@ -24,7 +24,7 @@ const more=ctx.window.additionalPassages;
 const portalStart=mapSource.indexOf("function approvedFirstFloorDoorwayRoutes(");
 const portalEnd=mapSource.indexOf("function approvedDollhouseMap(",portalStart);
 assert.ok(portalStart>=0&&portalEnd>portalStart,"doorway navigation functions exist");
-const doorMap={zones:["kitchen","bath","dining","living","playroom","stairs_up"].map(id=>({id}))};
+const doorMap={zones:["kitchen","bath","dining","living","playroom","stairs_up","basement_stairs"].map(id=>({id}))};
 const portalCtx={window:{},arr:x=>Array.isArray(x)?x:[],h:value=>String(value),
  get:f=>f==="First floor"?doorMap:null};
 vm.runInNewContext(mapSource.slice(portalStart,portalEnd)+
@@ -160,18 +160,21 @@ test("doorway portals have touch-sized targets but do not change room polygons",
 
 test("room detail navigation is based on adjoining rooms, not arbitrary tour order",()=>{
  const kitchen=connected("First floor","kitchen");
- assert.match(kitchen,/Bathroom/);assert.match(kitchen,/Dining room/);
+ assert.match(kitchen,/Bathroom/);assert.match(kitchen,/Dining room/);assert.match(kitchen,/Basement/);
  assert.doesNotMatch(kitchen,/Playroom/);
  const dining=connected("First floor","dining");
  assert.match(dining,/Kitchen/);
  assert.match(dining,/Living room/);
  assert.match(dining,/Upstairs/);
  assert.match(dining,/houseVisualFollowLink\(&#39;Second floor&#39;\)/);
+ assert.doesNotMatch(dining,/houseVisualFollowLink\(&#39;Basement&#39;\)/);
+ assert.match(kitchen,/houseVisualFollowLink\(&#39;Basement&#39;\)/);
+ assert.doesNotMatch(more([{id:"kitchen"},{id:"basement_stairs"}]),/data-door-connection/);
  const bath=connected("First floor","bath");
  assert.match(bath,/Kitchen/);
  assert.doesNotMatch(bath,/Living room/);
  assert.equal(connected("Basement","kitchen"),"");
- assert.equal(connected("First floor","basement_stairs"),"");
+ assert.match(connected("First floor","basement_stairs"),/Kitchen/);
 });
 
 test("doorway styling preserves visible room art and displays keyboard focus",()=>{
@@ -179,4 +182,13 @@ test("doorway styling preserves visible room art and displays keyboard focus",()
  assert.match(css,/\.hvm-doorway-portal:focus-visible rect/);
  assert.match(css,/\.hvm-connected-rooms button:focus-visible/);
  assert.match(css,/min-height:44px/);
+});
+
+test("kitchen-to-basement stairs stays navigable even though doorway width is not measured",()=>{
+ const saved=doorMap.zones;
+ assert.match(connected("First floor","kitchen"),/Basement ↓/);
+ assert.match(connected("First floor","kitchen"),/houseVisualFollowLink\(&#39;Basement&#39;\)/);
+ doorMap.zones=saved.filter(z=>z.id!=="basement_stairs");
+ try{assert.doesNotMatch(connected("First floor","kitchen"),/Basement ↓/)}
+ finally{doorMap.zones=saved}
 });
