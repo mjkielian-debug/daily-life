@@ -6,30 +6,18 @@ const path=require("node:path");
 const vm=require("node:vm");
 const read=file=>fs.readFileSync(path.join(__dirname,"..",file),"utf8");
 const mapSource=read("house-visual-map.js");
-const start=mapSource.indexOf("function approvedConnectedDoorOpenings(");
+const start=mapSource.indexOf("const approvedDoorwayLimits=");
 const end=mapSource.indexOf("function approvedDollhouseMap(",start);
-assert.ok(start>=0&&end>start,"confirmed passage renderer is present");
-const ctx={window:{},arr:x=>Array.isArray(x)?x:[]};
-vm.runInNewContext(mapSource.slice(start,end)+"\nwindow.passages=approvedConnectedDoorOpenings;",ctx);
-const join=ctx.window.passages;
-const moreStart=mapSource.indexOf("function approvedKitchenAndStairDoorOpenings(");
-const moreEnd=mapSource.indexOf("function approvedDollhouseMap(",moreStart);
-assert.ok(moreStart>=0&&moreEnd>moreStart,"additional passages renderer is present");
-vm.runInNewContext(mapSource.slice(moreStart,moreEnd)+
- "\nwindow.additionalPassages=approvedKitchenAndStairDoorOpenings;",
- {...ctx,h:value=>String(value)});
-const more=ctx.window.additionalPassages;
-
-
-const portalStart=mapSource.indexOf("function approvedFirstFloorDoorwayRoutes(");
-const portalEnd=mapSource.indexOf("function approvedDollhouseMap(",portalStart);
-assert.ok(portalStart>=0&&portalEnd>portalStart,"doorway navigation functions exist");
+assert.ok(start>=0&&end>start,"private doorway adjustment and passage renderers exist");
 const doorMap={zones:["kitchen","bath","dining","living","playroom","stairs_up","basement_stairs"].map(id=>({id}))};
-const portalCtx={window:{},arr:x=>Array.isArray(x)?x:[],h:value=>String(value),
+const ctx={window:{},arr:x=>Array.isArray(x)?x:[],h:value=>String(value),
  get:f=>f==="First floor"?doorMap:null};
-vm.runInNewContext(mapSource.slice(portalStart,portalEnd)+
- "\nwindow.routes=approvedFirstFloorDoorwayRoutes;window.targets=approvedDollhouseDoorwayTargets;window.connected=approvedConnectedRoomNav;",portalCtx);
-const portals=portalCtx.window.targets,connected=portalCtx.window.connected;
+vm.runInNewContext(mapSource.slice(start,end)+
+ "\nwindow.passages=approvedConnectedDoorOpenings;window.additionalPassages=approvedKitchenAndStairDoorOpenings;window.routes=approvedFirstFloorDoorwayRoutes;window.targets=approvedDollhouseDoorwayTargets;window.connected=approvedConnectedRoomNav;window.offset=approvedDoorwayOffset;window.editor=approvedDoorwayEditor;",ctx);
+const join=ctx.window.passages,more=ctx.window.additionalPassages;
+const portals=ctx.window.targets,connected=ctx.window.connected;
+const routes=ctx.window.routes,offset=ctx.window.offset;
+
 const artworkCtx={window:{},Math,Number,Object,String,Array,Set};
 vm.runInNewContext(read("house-room-artwork.js"),artworkCtx);
 const render=artworkCtx.window.houseRealismRoomArtwork;
@@ -57,7 +45,7 @@ test("no passage is invented when either connected room is absent",()=>{
  assert.equal(join([{id:"dining"}]),"");
  assert.equal(join([{id:"bath"},{id:"kitchen"}]),"");
  assert.match(mapSource,/reveal\+surfaces\+hotspots/);
- assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData\)/);
+ assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData,m\.doorwayAdjustments\)/);
 });
 
 test("approved floor-plan geometry and original kitchen artwork stay unchanged",()=>{
@@ -127,7 +115,7 @@ test("stairs from the dining room open to the second floor, not basement",()=>{
 test("the extra passage cutouts are illustrative overlays, never changes to zone paths",()=>{
  const svg=more(["kitchen","bath","dining","stairs_up"].map(id=>({id})));
  assert.equal((svg.match(/data-door-connection=/g)||[]).length,3);
- assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData\)\+approvedKitchenAndStairDoorOpenings\(zoneData\)/);
+ assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData,m\.doorwayAdjustments\)\+approvedKitchenAndStairDoorOpenings\(zoneData,m\.doorwayAdjustments\)/);
  assert.doesNotMatch(svg,/href=|xlink:href=/);
 });
 
@@ -154,7 +142,7 @@ test("doorway portals have touch-sized targets but do not change room polygons",
  const rects=[...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)];
  assert.equal(rects.length,5);
  for(const [,x,y,w,h] of rects)assert.ok(Number(w)>=44&&Number(h)>=44,'target must reach 44px');
- assert.match(mapSource,/reveal\+surfaces\+hotspots\+approvedDollhouseDoorwayTargets\(zoneData\)/);
+ assert.match(mapSource,/reveal\+surfaces\+hotspots\+approvedDollhouseDoorwayTargets\(zoneData,m\.doorwayAdjustments\)/);
  assert.equal(portals([{id:"bath"}]),"");
 });
 
@@ -191,4 +179,49 @@ test("kitchen-to-basement stairs stays navigable even though doorway width is no
  doorMap.zones=saved.filter(z=>z.id!=="basement_stairs");
  try{assert.doesNotMatch(connected("First floor","kitchen"),/Basement ↓/)}
  finally{doorMap.zones=saved}
+});
+
+test("saved doorway corrections move visuals and tap targets together",()=>{
+ const bath=[{id:"kitchen"},{id:"bath"}],shift={"kitchen-bath":-24};
+ const visual=more(bath,shift),tappable=portals(bath,shift);
+ assert.match(visual,/data-door-connection="kitchen-bath" transform="translate\(0 -24\)"/);
+ assert.match(tappable,/data-passage-link="kitchen-bath"/);
+ assert.match(tappable,/y="613.0"/); // 625 - 24 + (68-68)/2
+ assert.equal(routes(bath,shift)[0].y,601);
+ assert.equal(routes(bath)[0].y,625);
+ assert.equal(offset("kitchen-bath",shift),-24);
+});
+test("each doorway can shift only along its actual shared wall",()=>{
+ const all=doorMap.zones;
+ const settings={"dining-living":30,"playroom-living":24,"dining-upstairs":-8};
+ assert.match(join(all,settings),/data-door-connection="dining-living" transform="translate\(30 0\)"/);
+ assert.match(join(all,settings),/data-door-connection="playroom-living" transform="translate\(0 24\)"/);
+ assert.match(more(all,settings),/data-door-connection="dining-upstairs" transform="translate\(0 -8\)"/);
+ const r=routes(all,settings);
+ assert.equal(r.find(x=>x.id==="dining-living").x,675);
+ assert.equal(r.find(x=>x.id==="playroom-living").y,1232);
+ assert.equal(r.find(x=>x.id==="dining-upstairs").y,932);
+});
+test("doorway offsets cannot leave room edge or inject SVG markup",()=>{
+ const ids=["kitchen-bath","kitchen-dining","dining-living","playroom-living","dining-upstairs"];
+ for(const id of ids){
+  assert.equal(offset(id,{[id]:Number.POSITIVE_INFINITY}),0);
+  assert.equal(offset(id,{[id]:'10\" onclick=\"oops'}),0);
+ }
+ assert.equal(offset("kitchen-bath",{"kitchen-bath":-900}),-170);
+ assert.equal(offset("kitchen-bath",{"kitchen-bath":700}),12);
+ assert.equal(offset("dining-living",{"dining-living":500}),57);
+ assert.equal(offset("kitchen-dining",{"kitchen-dining":-99}),-34);
+ const html=more(doorMap.zones,{"kitchen-bath":'<script>bad</script>'});
+ assert.doesNotMatch(html,/<script|bad/);
+});
+test("one-door-at-a-time edit controls stay hidden unless requested and use private optimistic saving",()=>{
+ assert.equal(ctx.window.editor(doorMap.zones,{}),"");
+ assert.match(mapSource,/window\.houseVisualNudgeDoorway=async function/);
+ assert.match(mapSource,/\.eq\("owner_user_id",identity\)/);
+ assert.match(mapSource,/\.eq\("updated_at",record\.updated_at\)\.select\("id"\)\.maybeSingle\(\)/);
+ assert.match(mapSource,/if\(!written\?\.id\)throw new Error/);
+ const css=read("house-visual-map.css");
+ assert.match(css,/\.hvm-door-adjuster/);
+ assert.match(css,/\.hvm-doorway-portal\.is-aligning/);
 });
