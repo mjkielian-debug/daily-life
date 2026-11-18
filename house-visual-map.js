@@ -1206,6 +1206,10 @@ window.houseVisualNudgeDoorway=async function(id,dx,dy){
    "This doorway is already at its original position.":"Already at this edge. Try the other direction.";
   paint(floor);return;
  }
+ const stored=legacy?newScalar:{x:proposed.x,y:proposed.y};
+ // Render the draft immediately. If the cloud update fails we restore the old map.
+ const draft={...m,doorwayAdjustments:{...m.doorwayAdjustments,[id]:stored}};
+ cache.set(k,draft);
  doorAdjustSaving=true;doorAdjustMessage="";paint(floor);
  try{
   const identity=who()?.id;
@@ -1221,7 +1225,6 @@ window.houseVisualNudgeDoorway=async function(id,dx,dy){
   const fresh=approvedDoorwayVector(id,record.payload.doorwayAdjustments);
   if(fresh.x!==previous.x||fresh.y!==previous.y)
    throw new Error("The doorway changed on another device. Reload and try again.");
-  const stored=legacy?newScalar:{x:proposed.x,y:proposed.y};
   const nextPayload={...record.payload,doorwayAdjustments:{...record.payload.doorwayAdjustments,[id]:stored}};
   const {data:written,error:writeError}=await cloudClient.from("life_entries")
    .update({payload:nextPayload}).eq("id",record.id).eq("owner_user_id",identity)
@@ -1232,6 +1235,7 @@ window.houseVisualNudgeDoorway=async function(id,dx,dy){
   cache.set(k,nextPayload);
   doorAdjustMessage=proposed.x===0&&proposed.y===0?"Reset and saved.":"Doorway moved and saved.";
  }catch(error){
+  if(key(floor)===k)cache.set(k,m);
   doorAdjustMessage="Not saved: "+str(error?.message||"Please try again.");
  }finally{
   doorAdjustSaving=false;paint(floor);
