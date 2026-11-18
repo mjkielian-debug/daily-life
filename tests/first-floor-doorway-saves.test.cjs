@@ -136,3 +136,25 @@ test("unsaved new positions revert on failed writes",async()=>{
  assert.equal(h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"],8);
  assert.match(h.ctx.window.editor(h.payload.zones,{}),/Not saved:/);
 });
+
+test("a big move is visibly previewed before the private save resolves",async()=>{
+ const h=harness();
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ const saving=h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",96,-96);
+ const pending=h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"];
+ assert.equal(pending.x,96);assert.equal(pending.y,-96);
+ assert.ok(h.stats().renderCount>=2);
+ assert.match(h.ctx.window.editor(h.payload.zones,h.cache.get("user-1|First floor").doorwayAdjustments),/Saving doorway/);
+ await saving;
+ assert.equal(h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"].x,96);
+});
+test("failed cloud save rolls back a visible draft instead of claiming success",async()=>{
+ const h=harness({existing:{"kitchen-bath":8},failWrite:true});
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ const saving=h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",96,0);
+ const draft=h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"];
+ assert.equal(draft.x,96);assert.equal(draft.y,8);
+ await saving;
+ assert.equal(h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"],8);
+ assert.match(h.ctx.window.editor(h.payload.zones,{}),/Not saved/);
+});
