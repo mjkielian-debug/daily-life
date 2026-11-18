@@ -17,7 +17,7 @@ const calls=[],illustrations=[],viewState=new Map();
 const ctx={
  localStorage:{getItem:key=>viewState.get(key)||null,setItem:(key,value)=>viewState.set(key,value)},
  get:()=>null,
- window:{houseRealismRoomArtwork:(f,z)=>{illustrations.push(z.id);return "<room-preview/>";}},
+ window:{houseRealismRoomArtwork:(f,z)=>{illustrations.push({id:z.id,kinds:(z.markers||[]).map(p=>p.kind)});return "<room-preview/>";}},
  approvedDollhouseRooms:specs,approvedDollhouseAsset:"assets/approved-dollhouse-first-floor.png?v=20261114-approved1",
  roomTaskColorStats:(f,z)=>z.id==="living"?{total:3,done:1}:{total:0,done:0},
  approvedDollhouseProgressArt:(f,z)=>{calls.push(z.id);return "<kitchen-progress/>"},
@@ -120,8 +120,29 @@ test("saved playroom reference photo is available in optional photo mode",()=>{
  viewState.delete("dailyLifeFirstFloorPreviewMode");
 });
 test("front door is illustrated only when present in the saved living-room markers",()=>{
- assert.match(source,/living:\["door_front","futon","sofa","ottoman","curtains","tv_dresser"\]/);
+ assert.ok(source.includes('living:["door_front","futon","sofa","ottoman","curtains","tv_dresser","art","shelf_theracane"]'));
  assert.match(source,/markers:arr\(z\.markers\)\.filter\(p=>previewKinds\[z\.id\]\.includes\(str\(p\.kind\)\)\)/);
  const art=fs.readFileSync(path.join(__dirname,"..","house-room-artwork.js"),"utf8");
  assert.match(art,/case "door_front":return/);
+});
+
+test("overview shows documented furniture without adding a made-up wall",()=>{
+ viewState.delete("dailyLifeFirstFloorPreviewMode");
+ illustrations.length=0;
+ const kinds={
+  living:["door_front","futon","sofa","ottoman","tv_dresser","art","shelf_theracane","wood_opening"],
+  dining:["dining_table","desk_hutch","coat_hooks","pet_bowls","shelf","robovac"],
+  playroom:["keyboard","mesh","desk","plant","mat","table","shelf"],
+  bath:["sink","mirror","toilet"]
+ };
+ ctx.window.renderOverview("First floor",{zones:Object.keys(kinds).map(id=>({
+  id,name:id,markers:kinds[id].map(kind=>({kind,label:kind,status:"Owner-confirmed"}))
+ }))},"");
+ const scenes=new Map(illustrations.map(x=>[x.id,x.kinds]));
+ for(const [id,list]of Object.entries(kinds)){
+  assert.ok(scenes.has(id),id);
+  for(const kind of list.filter(k=>k!=="wood_opening"))assert.ok(scenes.get(id).includes(kind),id+": "+kind);
+ }
+ assert.ok(!scenes.get("living").includes("wood_opening"),"never draw an invented internal wall");
+ assert.match(source,/Bathroom door is off the kitchen beside the back-door area/);
 });
