@@ -523,8 +523,18 @@ function joinedFloorDisplay(m){
 /* The approved first-floor picture defines the soft-realistic My Little Pony-inspired
  * materials: soft lavender outlines, dimensional joinery and warm natural light.
  * Private zone paths remain the geometry; all artwork is clipped inside them. */
+// Offset strokes inside the existing outline give the walls a lit face and
+// a shaded face. Keep the relief proportional on small phone-sized rooms.
+function roomWallRelief(path, bounds, clipId){
+ if(!bounds || Math.min(bounds.width,bounds.height)<25)return "";
+ const depth=Math.min(5,Math.min(bounds.width,bounds.height)*.028);
+ const edge=' fill="none" stroke-linejoin="round" d="'+h(path)+'"';
+ return '<g pointer-events="none" aria-hidden="true" clip-path="url(#'+clipId+')">'+
+  '<path'+edge+' transform="translate('+depth+' '+depth+')" stroke="#463346" stroke-width="'+(depth*2.8)+'" opacity=".16"/>'+
+  '<path'+edge+' transform="translate('+(-depth*.55)+' '+(-depth*.55)+')" stroke="#fff5dc" stroke-width="'+(depth*1.5)+'" opacity=".60"/></g>';
+}
 function realisticFloorRoomFinish(f,z,b,shade){
- if((f!=="Second floor"&&f!=="Third floor")||!b||b.width<25||b.height<25)return "";
+ if(!b||b.width<25||b.height<25)return "";
  const key=(f+"-"+z.id).toLowerCase().replace(/[^a-z0-9-]/g,""),clip="hvm-pony-clip-"+key,light="hvm-pony-light-"+key;
  const wall="#866084",p=""+z.path;
  return '<g class="hvm-pony-room-finish" pointer-events="none" aria-hidden="true"><defs>'+
@@ -535,7 +545,7 @@ function realisticFloorRoomFinish(f,z,b,shade){
   '<path d="'+h(p)+'" fill="none" stroke="#6a4d65" stroke-opacity=".27" stroke-width="12"/>'+
   '<path d="'+h(p)+'" fill="none" stroke="#fff6e9" stroke-opacity=".8" stroke-width="5"/>'+
   '<path d="'+h(p)+'" fill="none" stroke="#cba6cd" stroke-opacity=".87" stroke-width="2.2"/>'+
-  '</g><path d="'+h(p)+'" fill="none" stroke="#5e405c" stroke-opacity=".72" stroke-width="2.2" stroke-linejoin="round"/></g>';
+  '</g>'+roomWallRelief(p,b,clip)+'<path d="'+h(p)+'" fill="none" stroke="#5e405c" stroke-opacity=".72" stroke-width="2.2" stroke-linejoin="round"/></g>';
 }
 
 function photoRoomAccents(f,z,b){
@@ -822,7 +832,7 @@ function approvedOverviewRoom(f,z,settings,stats){
  return '<g class="hvm-overview-floor-surface" pointer-events="none" aria-hidden="true">'+
   '<defs><clipPath id="'+token+'"><path d="'+h(settings.path)+'"/></clipPath></defs>'+
   '<path d="'+h(settings.path)+'" fill="'+base+'" fill-opacity="1" stroke="#644538" stroke-width="4.5"/>'+
-  '<g clip-path="url(#'+token+')">'+roomScene+photo+'</g>'+
+  '<g clip-path="url(#'+token+')">'+roomScene+photo+'</g>'+roomWallRelief(settings.path,b,token)+
   (progress?'<path d="'+h(settings.path)+'" fill="'+h(fill)+'" fill-opacity="'+(.09+.22*progress).toFixed(2)+'"/>':"")+
   '<path d="'+h(settings.path)+'" fill="none" stroke="#3e302c" stroke-width="5" stroke-linejoin="round" opacity=".86"/>'+
   '<path d="'+h(settings.path)+'" fill="none" stroke="#c39a78" stroke-width="1.6" stroke-linejoin="round" opacity=".84"/>'+
