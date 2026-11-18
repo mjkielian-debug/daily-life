@@ -47,7 +47,7 @@ function harness(options={}){
 test("one doorway movement saves a private patch and keeps all other room information",async()=>{
  const h=harness();
  h.ctx.window.houseVisualToggleDoorwayEditor();
- assert.match(h.ctx.window.editor(h.payload.zones,{}),/One doorway at a time/);
+ assert.match(h.ctx.window.editor(h.payload.zones,{}),/Move one doorway/);
  await h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",-8);
  const saved=h.cache.get("user-1|First floor");
  assert.equal(saved.doorwayAdjustments["kitchen-bath"],-8);
@@ -58,7 +58,7 @@ test("one doorway movement saves a private patch and keeps all other room inform
  assert.equal(h.stats().submitted.payload.doorwayAdjustments["kitchen-bath"],-8);
  assert.ok(h.filters.some(([k,v])=>k==="owner_user_id"&&v==="user-1"));
  assert.ok(h.filters.some(([k,v])=>k==="updated_at"&&v==="2026-11-18T11:30:00Z"));
- assert.match(h.ctx.window.editor(h.payload.zones,saved.doorwayAdjustments),/Saved doorway position/);
+ assert.match(h.ctx.window.editor(h.payload.zones,saved.doorwayAdjustments),/Doorway moved and saved/);
 });
 test("failed save leaves original offsets intact and reports failure",async()=>{
  const h=harness({existing:{"kitchen-bath":8},failWrite:true});
@@ -84,4 +84,55 @@ test("reset sends an offset of zero and non-editable ids cannot be used",async()
  await h.ctx.window.houseVisualNudgeDoorway("not-a-door",8);
  await h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",99999);
  assert.equal(h.stats().writeCount,count);
+});
+
+test("big steps move doorway drawings 96 units sideways without moving other rooms",async()=>{
+ const h=harness();
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ const editor=h.ctx.window.editor(h.payload.zones,{});
+ assert.match(editor,/Big moves/);
+ assert.match(editor,/Fine-tune/);
+ assert.match(editor,/Sideways/);
+ assert.match(editor,/Up \/ down/);
+ assert.match(editor,/houseVisualNudgeDoorway\(&#39;kitchen-bath&#39;,96,0\)/);
+ await h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",96,0);
+ const saved=h.cache.get("user-1|First floor");
+ assert.equal(saved.doorwayAdjustments["kitchen-bath"].x,96);
+ assert.equal(saved.doorwayAdjustments["kitchen-bath"].y,0);
+ assert.deepEqual(saved.zones.map(x=>x.id),h.payload.zones.map(x=>x.id));
+ assert.equal(saved.notes,h.payload.notes);
+});
+test("new editor moves up and down beyond old one-axis limits",async()=>{
+ const h=harness({existing:{"kitchen-dining":48}});
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ await h.ctx.window.houseVisualNudgeDoorway("kitchen-dining",0,96);
+ const saved=h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-dining"];
+ assert.equal(saved.x,0);
+ assert.equal(saved.y,144);
+ assert.ok(saved.y>48);
+});
+test("two-axis reset returns a saved correction to its original illustration",async()=>{
+ const h=harness({existing:{"kitchen-bath":{x:80,y:-120}}});
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ await h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",0,0);
+ const saved=h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"];
+ assert.equal(saved.x,0);assert.equal(saved.y,0);
+ assert.match(h.ctx.window.editor(h.payload.zones,h.cache.get("user-1|First floor").doorwayAdjustments),/Reset and saved/);
+});
+test("range slider saves absolute horizontal or vertical position after visual preview",async()=>{
+ const h=harness({existing:{"kitchen-bath":8}});
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ await h.ctx.window.houseVisualSetDoorwayAxis("kitchen-bath","x",-275);
+ const saved=h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"];
+ assert.equal(saved.x,-275);assert.equal(saved.y,8);
+ const editor=h.ctx.window.editor(h.payload.zones,h.cache.get("user-1|First floor").doorwayAdjustments);
+ assert.match(editor,/value="-275"/);
+ assert.match(editor,/value="8"/);
+});
+test("unsaved new positions revert on failed writes",async()=>{
+ const h=harness({existing:{"kitchen-bath":8},failWrite:true});
+ h.ctx.window.houseVisualToggleDoorwayEditor();
+ await h.ctx.window.houseVisualNudgeDoorway("kitchen-bath",96,-96);
+ assert.equal(h.cache.get("user-1|First floor").doorwayAdjustments["kitchen-bath"],8);
+ assert.match(h.ctx.window.editor(h.payload.zones,{}),/Not saved:/);
 });
