@@ -993,7 +993,11 @@ function approvedFirstFloorDoorwayRoutes(zones,adjustments){
   {id:"dining-living",a:"dining",b:"living",label:"Living room",x:645,y:1054,w:96,h:18,dest:"living"},
   {id:"playroom-living",a:"playroom",b:"living",label:"Playroom",x:317,y:1208,w:18,h:116,dest:"playroom"},
   {id:"dining-upstairs",a:"dining",b:"stairs_up",label:"Second floor",x:571,y:940,w:19,h:82,floor:"Second floor"}
- ].filter(route=>ids.has(route.a)&&ids.has(route.b)).map(route=>{\n  const delta=approvedDoorwayOffset(route.id,adjustments);\n  return {...route,x:route.x+(approvedDoorwayLimits[route.id].axis==="x"?delta:0),\n   y:route.y+(approvedDoorwayLimits[route.id].axis==="y"?delta:0)};\n });
+ ].filter(route=>ids.has(route.a)&&ids.has(route.b)).map(route=>{
+  const delta=approvedDoorwayOffset(route.id,adjustments);
+  return {...route,x:route.x+(approvedDoorwayLimits[route.id].axis==="x"?delta:0),
+   y:route.y+(approvedDoorwayLimits[route.id].axis==="y"?delta:0)};
+ });
 }
 function approvedDollhouseDoorwayTargets(zones,adjustments){
  const targets=approvedFirstFloorDoorwayRoutes(zones,adjustments);
