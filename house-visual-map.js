@@ -402,7 +402,10 @@ function mappedRoomMiniature(f,z){
  const tint=color(z.color);
  const placed=all.filter(({p})=>p.showOnMap!==false&&p.mapX!=null&&p.mapY!=null&&Number.isFinite(Number(p.mapX))&&Number.isFinite(Number(p.mapY)));
  const unplaced=all.filter(({p})=>p.showOnMap===false||p.mapX==null||p.mapY==null||!Number.isFinite(Number(p.mapX))||!Number.isFinite(Number(p.mapY)));
- const picture=({p})=>'<svg viewBox="-19 -19 38 38" role="img" aria-label="'+h(p.label)+'"><g>'+fixtureSvg(p.kind)+'</g></svg>';
+ const picture=({p})=>{
+  const art=window.houseRoomFixtureArt?.(f,z.id,str(p.kind).toLowerCase())||fixtureSvg(p.kind);
+  return '<svg viewBox="-19 -19 38 38" aria-hidden="true"><g>'+art+'</g></svg>';
+ };
  const action=({p,i},isPositioned)=>{
   const position=isPositioned?' style="left:'+Math.max(12,Math.min(88,Number(p.mapX))).toFixed(1)+'%;top:'+Math.max(14,Math.min(86,Number(p.mapY))).toFixed(1)+'%"':'';
   return '<button type="button" class="'+(isPositioned?'hvm-mini-fixture':'hvm-mini-landmark')+'"'+position+' title="'+h(p.label)+'" aria-label="Inspect '+h(p.label)+'" onclick="houseVisualInteractMarker(&#39;'+h(f)+'&#39;,&#39;'+h(z.id)+'&#39;,'+i+')">'+picture({p})+'<small>'+h(str(p.short||p.label||"Item"))+'</small></button>';
