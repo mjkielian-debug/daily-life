@@ -938,6 +938,30 @@ function approvedConnectedDoorOpenings(zoneData){
    '</linearGradient>'+
   '</defs>'+diningLiving+playroomLiving+'</g>';
 }
+// Display confirmed neighboring rooms as connected, without altering any
+// privately saved room polygon. Door widths and unmeasured positions stay
+// illustrative; the user-marked bathroom photograph is the final authority.
+function approvedKitchenAndStairDoorOpenings(zones){
+ const ids=new Set(arr(zones).map(z=>z.id));
+ const passages=[
+  {id:"kitchen-bath",rooms:["kitchen","bath"],x:568,y:625,w:20,h:68,fill:"#d7d3cd",
+   label:"Bathroom entrance beside kitchen/back-door area, illustrative position"},
+  {id:"kitchen-dining",rooms:["kitchen","dining"],x:568,y:755,w:20,h:90,fill:"#cdb19a",
+   label:"Kitchen to dining room opening, aligned within their shared edge"},
+  {id:"dining-upstairs",rooms:["dining","stairs_up"],x:571,y:940,w:19,h:82,fill:"#c5ae94",
+   label:"Dining room entrance to second-floor stairway, not basement"}
+ ].filter(p=>p.rooms.every(id=>ids.has(id)));
+ if(!passages.length)return "";
+ return '<g class="hvm-confirmed-passages hvm-additional-passages" pointer-events="none" aria-hidden="true">'+
+  passages.map(p=>'<g data-door-connection="'+p.id+'">'+
+   '<title>'+h(p.label)+'</title>'+
+   '<rect x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" fill="'+p.fill+'"/>'+
+   '<path d="M'+p.x+' '+p.y+'h'+p.w+'M'+p.x+' '+(p.y+p.h)+'h'+p.w+
+   '" stroke="#3e302c" stroke-width="5" stroke-linecap="round"/>'+
+   '<path d="M'+p.x+' '+p.y+'h'+p.w+'M'+p.x+' '+(p.y+p.h)+'h'+p.w+
+   '" stroke="#c39a78" stroke-width="1.6" stroke-linecap="round"/>'+
+  '</g>').join("")+'</g>';
+}
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  // The approved kitchen is the sole room whose detailed base art remains in
@@ -946,7 +970,7 @@ function approvedDollhouseMap(f,m,oldMap){
  const reveal=kitchen?approvedDollhouseProgressArt(f,kitchen,approvedDollhouseRooms.kitchen,
   roomTaskColorStats(f,kitchen,localRoom(f,kitchen)),"hvm-approved-map"):"";
  const surfaces=zoneData.map(z=>approvedOverviewRoom(f,z,approvedDollhouseRooms[z.id],
-  roomTaskColorStats(f,z,localRoom(f,z)))).join("")+approvedConnectedDoorOpenings(zoneData);
+  roomTaskColorStats(f,z,localRoom(f,z)))).join("")+approvedConnectedDoorOpenings(zoneData)+approvedKitchenAndStairDoorOpenings(zoneData);
  const hotspots=zoneData.map(z=>{
   const settings=approvedDollhouseRooms[z.id],stats=roomTaskColorStats(f,z,localRoom(f,z));
   const label=z.name+" · "+(stats.total?stats.done+" of "+stats.total+" tasks complete":"open room details");
