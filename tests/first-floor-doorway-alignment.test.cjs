@@ -12,6 +12,14 @@ assert.ok(start>=0&&end>start,"confirmed passage renderer is present");
 const ctx={window:{},arr:x=>Array.isArray(x)?x:[]};
 vm.runInNewContext(mapSource.slice(start,end)+"\nwindow.passages=approvedConnectedDoorOpenings;",ctx);
 const join=ctx.window.passages;
+const moreStart=mapSource.indexOf("function approvedKitchenAndStairDoorOpenings(");
+const moreEnd=mapSource.indexOf("function approvedDollhouseMap(",moreStart);
+assert.ok(moreStart>=0&&moreEnd>moreStart,"additional passages renderer is present");
+vm.runInNewContext(mapSource.slice(moreStart,moreEnd)+
+ "\nwindow.additionalPassages=approvedKitchenAndStairDoorOpenings;",
+ {...ctx,h:value=>String(value)});
+const more=ctx.window.additionalPassages;
+
 const artworkCtx={window:{},Math,Number,Object,String,Array,Set};
 vm.runInNewContext(read("house-room-artwork.js"),artworkCtx);
 const render=artworkCtx.window.houseRealismRoomArtwork;
@@ -79,4 +87,36 @@ test("saved measured bathroom coordinates always win over illustrative orientati
  assert.match(result,/data-kind="sink" transform="translate\([^"]+\) scale\([\d.]+\)"/);
  assert.doesNotMatch(result,/data-kind="sink" transform="[^"]* rotate\(-90\)"/);
  assert.equal(bath.markers[0].mapX,73);
+});
+
+test("kitchen bathroom doorway is shown beside kitchen edge, with approximate width",()=>{
+ const svg=more([{id:"kitchen"},{id:"bath"}]);
+ assert.match(svg,/data-door-connection="kitchen-bath"/);
+ assert.match(svg,/<rect x="568" y="625" width="20" height="68"/);
+ assert.doesNotMatch(svg,/data-door-connection="kitchen-dining"/);
+ assert.ok(625>409&&625+68<713,"bath passage stays within the existing bathroom edge");
+ assert.equal(more([{id:"bath"}]),"");
+});
+
+test("dining room entry lies inside the true shared kitchen/dining overlap",()=>{
+ const svg=more([{id:"kitchen"},{id:"dining"}]);
+ assert.match(svg,/data-door-connection="kitchen-dining"/);
+ assert.match(svg,/<rect x="568" y="755" width="20" height="90"/);
+ assert.ok(755>713&&755+90<899,"kitchen and dining both exist along this section");
+ assert.doesNotMatch(svg,/data-door-connection="dining-upstairs"/);
+});
+
+test("stairs from the dining room open to the second floor, not basement",()=>{
+ const svg=more([{id:"dining"},{id:"stairs_up"}]);
+ assert.match(svg,/data-door-connection="dining-upstairs"/);
+ assert.match(svg,/<rect x="571" y="940" width="19" height="82"/);
+ assert.ok(940>900&&940+82<1064,"stair entrance remains within the shared dining/stair wall");
+ assert.equal(more([{id:"basement_stairs"},{id:"dining"}]),"");
+});
+
+test("the extra passage cutouts are illustrative overlays, never changes to zone paths",()=>{
+ const svg=more(["kitchen","bath","dining","stairs_up"].map(id=>({id})));
+ assert.equal((svg.match(/data-door-connection=/g)||[]).length,3);
+ assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData\)\+approvedKitchenAndStairDoorOpenings\(zoneData\)/);
+ assert.doesNotMatch(svg,/href=|xlink:href=/);
 });
