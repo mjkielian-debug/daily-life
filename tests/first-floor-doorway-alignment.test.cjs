@@ -186,7 +186,7 @@ test("saved doorway corrections move visuals and tap targets together",()=>{
  const visual=more(bath,shift),tappable=portals(bath,shift);
  assert.match(visual,/data-door-connection="kitchen-bath" transform="translate\(0 -24\)"/);
  assert.match(tappable,/data-passage-link="kitchen-bath"/);
- assert.match(tappable,/y="613.0"/); // 625 - 24 + (68-68)/2
+ assert.match(tappable,/y="601.0"/); // 625 - 24, same 68-unit target height
  assert.equal(routes(bath,shift)[0].y,601);
  assert.equal(routes(bath)[0].y,625);
  assert.equal(offset("kitchen-bath",shift),-24);
