@@ -20,6 +20,16 @@ vm.runInNewContext(mapSource.slice(moreStart,moreEnd)+
  {...ctx,h:value=>String(value)});
 const more=ctx.window.additionalPassages;
 
+
+const portalStart=mapSource.indexOf("function approvedFirstFloorDoorwayRoutes(");
+const portalEnd=mapSource.indexOf("function approvedDollhouseMap(",portalStart);
+assert.ok(portalStart>=0&&portalEnd>portalStart,"doorway navigation functions exist");
+const doorMap={zones:["kitchen","bath","dining","living","playroom","stairs_up"].map(id=>({id}))};
+const portalCtx={window:{},arr:x=>Array.isArray(x)?x:[],h:value=>String(value),
+ get:f=>f==="First floor"?doorMap:null};
+vm.runInNewContext(mapSource.slice(portalStart,portalEnd)+
+ "\\nwindow.routes=approvedFirstFloorDoorwayRoutes;window.targets=approvedDollhouseDoorwayTargets;window.connected=approvedConnectedRoomNav;",portalCtx);
+const portals=portalCtx.window.targets,connected=portalCtx.window.connected;
 const artworkCtx={window:{},Math,Number,Object,String,Array,Set};
 vm.runInNewContext(read("house-room-artwork.js"),artworkCtx);
 const render=artworkCtx.window.houseRealismRoomArtwork;
@@ -119,4 +129,54 @@ test("the extra passage cutouts are illustrative overlays, never changes to zone
  assert.equal((svg.match(/data-door-connection=/g)||[]).length,3);
  assert.match(mapSource,/approvedConnectedDoorOpenings\(zoneData\)\+approvedKitchenAndStairDoorOpenings\(zoneData\)/);
  assert.doesNotMatch(svg,/href=|xlink:href=/);
+});
+
+test("each previously rendered connecting passage has a working touch and keyboard route",()=>{
+ const zones=doorMap.zones;
+ const svg=portals(zones);
+ for(const id of ["kitchen-bath","kitchen-dining","dining-living","playroom-living","dining-upstairs"]){
+  assert.ok(svg.includes('data-passage-link="'+id+'"'),id);
+ }
+ assert.equal((svg.match(/data-passage-link=/g)||[]).length,5);
+ assert.equal((svg.match(/role="button"/g)||[]).length,5);
+ assert.equal((svg.match(/tabindex="0"/g)||[]).length,5);
+ assert.equal((svg.match(/onkeydown=/g)||[]).length,5);
+ assert.match(svg,/houseVisualFollowLink\(&#39;Second floor&#39;\)/);
+ assert.match(svg,/houseVisualOpenZone\(&#39;First floor&#39;,&#39;bath&#39;\)/);
+ assert.match(svg,/houseVisualOpenZone\(&#39;First floor&#39;,&#39;dining&#39;\)/);
+ assert.match(svg,/houseVisualOpenZone\(&#39;First floor&#39;,&#39;living&#39;\)/);
+ assert.match(svg,/houseVisualOpenZone\(&#39;First floor&#39;,&#39;playroom&#39;\)/);
+ assert.ok(svg.includes('pointer-events="all"'));
+});
+
+test("doorway portals have touch-sized targets but do not change room polygons",()=>{
+ const svg=portals(doorMap.zones);
+ const rects=[...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)];
+ assert.equal(rects.length,5);
+ for(const [,x,y,w,h] of rects)assert.ok(Number(w)>=44&&Number(h)>=44,'target must reach 44px');
+ assert.match(mapSource,/reveal\+surfaces\+hotspots\+approvedDollhouseDoorwayTargets\(zoneData\)/);
+ assert.equal(portals([{id:"bath"}]),"");
+});
+
+test("room detail navigation is based on adjoining rooms, not arbitrary tour order",()=>{
+ const kitchen=connected("First floor","kitchen");
+ assert.match(kitchen,/Bathroom/);assert.match(kitchen,/Dining room/);
+ assert.doesNotMatch(kitchen,/Playroom/);
+ const dining=connected("First floor","dining");
+ assert.match(dining,/Kitchen/);
+ assert.match(dining,/Living room/);
+ assert.match(dining,/Upstairs/);
+ assert.match(dining,/houseVisualFollowLink\(&#39;Second floor&#39;\)/);
+ const bath=connected("First floor","bath");
+ assert.match(bath,/Kitchen/);
+ assert.doesNotMatch(bath,/Living room/);
+ assert.equal(connected("Basement","kitchen"),"");
+ assert.equal(connected("First floor","basement_stairs"),"");
+});
+
+test("doorway styling preserves visible room art and displays keyboard focus",()=>{
+ const css=read("house-visual-map.css");
+ assert.match(css,/\.hvm-doorway-portal:focus-visible rect/);
+ assert.match(css,/\.hvm-connected-rooms button:focus-visible/);
+ assert.match(css,/min-height:44px/);
 });
