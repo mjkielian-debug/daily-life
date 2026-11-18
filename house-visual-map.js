@@ -1187,14 +1187,25 @@ window.houseVisualSetDoorwayAxis=function(id,axis,value){
  return window.houseVisualNudgeDoorway(id,axis==="x"?delta:0,axis==="y"?delta:0);
 };
 
-window.houseVisualNudgeDoorway=async function(id,amount){
- const floor="First floor",rules=approvedDoorwayLimits[id],delta=Number(amount);
- if(!doorAdjustOpen||doorAdjustSaving||!online()||!rules||![0,-8,8].includes(delta))return;
+window.houseVisualNudgeDoorway=async function(id,dx,dy){
+ const floor="First floor",rules=approvedDoorwayLimits[id],legacy=dy===undefined;
+ const moveX=Number(dx),moveY=Number(dy);
+ if(!doorAdjustOpen||doorAdjustSaving||!online()||!rules||
+  !Number.isFinite(moveX)||(legacy?![0,-8,8].includes(moveX):
+   !Number.isFinite(moveY)||Math.abs(moveX)>1200||Math.abs(moveY)>1200))return;
  const k=key(floor),m=get(floor);
  if(!m||!arr(m.zones).length)return;
- const previous=approvedDoorwayOffset(id,m.doorwayAdjustments);
- const wanted=delta===0?0:Math.max(rules.min,Math.min(rules.max,previous+delta));
- if(wanted===previous){doorAdjustMessage=delta===0?"This opening is already at its original position.":"Already at the limit.";paint(floor);return}
+ const previous=approvedDoorwayVector(id,m.doorwayAdjustments);
+ const oldScalar=approvedDoorwayOffset(id,m.doorwayAdjustments);
+ const newScalar=legacy?(moveX===0?0:Math.max(rules.min,Math.min(rules.max,oldScalar+moveX))):null;
+ const proposed=legacy?approvedDoorwayVector(id,{[id]:newScalar}):
+  moveX===0&&moveY===0?{x:0,y:0}:
+   approvedDoorwayVector(id,{[id]:{x:previous.x+moveX,y:previous.y+moveY}});
+ if(previous.x===proposed.x&&previous.y===proposed.y){
+  doorAdjustMessage=moveX===0&&(legacy||moveY===0)?
+   "This doorway is already at its original position.":"Already at this edge. Try the other direction.";
+  paint(floor);return;
+ }
  doorAdjustSaving=true;doorAdjustMessage="";paint(floor);
  try{
   const identity=who()?.id;
@@ -1207,11 +1218,11 @@ window.houseVisualNudgeDoorway=async function(id,amount){
   if(!record||!Array.isArray(record.payload?.zones))throw new Error("The saved floor map could not be loaded.");
   if(!approvedFirstFloorDoorwayRoutes(record.payload.zones).some(route=>route.id===id))
    throw new Error("The saved floor plan changed. Reload before editing.");
-  const freshPrevious=approvedDoorwayOffset(id,record.payload.doorwayAdjustments);
-  // Concurrent updates must not silently overwrite another device's floor record.
-  if(freshPrevious!==previous)throw new Error("The doorway changed on another device. Reload and try again.");
-  const next=Math.max(rules.min,Math.min(rules.max,delta===0?0:freshPrevious+delta));
-  const nextPayload={...record.payload,doorwayAdjustments:{...record.payload.doorwayAdjustments,[id]:next}};
+  const fresh=approvedDoorwayVector(id,record.payload.doorwayAdjustments);
+  if(fresh.x!==previous.x||fresh.y!==previous.y)
+   throw new Error("The doorway changed on another device. Reload and try again.");
+  const stored=legacy?newScalar:{x:proposed.x,y:proposed.y};
+  const nextPayload={...record.payload,doorwayAdjustments:{...record.payload.doorwayAdjustments,[id]:stored}};
   const {data:written,error:writeError}=await cloudClient.from("life_entries")
    .update({payload:nextPayload}).eq("id",record.id).eq("owner_user_id",identity)
    .eq("updated_at",record.updated_at).select("id").maybeSingle();
@@ -1219,7 +1230,7 @@ window.houseVisualNudgeDoorway=async function(id,amount){
   if(!written?.id)throw new Error("The map changed before saving. Reload and try again.");
   if(key(floor)!==k)return;
   cache.set(k,nextPayload);
-  doorAdjustMessage=next===0?"Reset and saved.":"Saved doorway position.";
+  doorAdjustMessage=proposed.x===0&&proposed.y===0?"Reset and saved.":"Doorway moved and saved.";
  }catch(error){
   doorAdjustMessage="Not saved: "+str(error?.message||"Please try again.");
  }finally{
