@@ -1119,6 +1119,26 @@ window.houseVisualNudgeDoorway=async function(id,amount){
   doorAdjustSaving=false;paint(floor);
  }
 };
+// Coordinates refer to the illustration canvas, independent of the measured floor plan.
+function roomStudyMap(f,m,zones){
+ const src=m.illustratedRoomStudy;
+ if(typeof src!=="string"||!/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(src))return "";
+ const paths={
+  kitchen:"M14 8H247V143H151V240H14Z",
+  bath:"M250 35H305V129H250Z",
+  dining:"M152 146H305V241H152Z",
+  living:"M139 245H343V372H166V320H137Z",
+  playroom:"M14 245H129V369H14Z"
+ };
+ const links=zones.filter(z=>paths[z.id]).map(z=>{
+  const action=act(f,z),stats=roomTaskColorStats(f,z,localRoom(f,z));
+  const label=z.name+(stats.total?" · "+stats.done+" of "+stats.total+" tasks complete":"");
+  return '<a href="#" aria-label="'+h(label)+'" onclick="event.preventDefault();'+action+'"><title>'+h(label)+'</title><path d="'+paths[z.id]+'" fill="transparent" stroke="none"/></a>';
+ });
+ return '<svg class="hvm-approved-svg" viewBox="0 0 360 394" role="group" aria-label="Illustrated first floor rooms">'+
+  '<image href="'+src+'" width="360" height="394"/>'+links.join("")+'</svg>'+
+  floorLinks(f,m);
+}
 function approvedDollhouseMap(f,m,oldMap){
  const zoneData=arr(m.zones).filter(z=>z&&approvedDollhouseRooms[z.id]&&okId(z.id));
  // The approved kitchen is the sole room whose detailed base art remains in
@@ -1137,6 +1157,7 @@ function approvedDollhouseMap(f,m,oldMap){
    '<title>'+h(label)+'</title><path d="'+settings.path+'" fill="#fff" fill-opacity=".001" stroke="transparent" stroke-width="3" pointer-events="all"/>'+
    approvedOverviewLabel(z,settings,stats)+'</g>';
  }).join("");
+ const study=approvedOverviewMode()==="illustrated"&&!doorAdjustOpen&&m.illustratedRoomStudy?roomStudyMap(f,m,zoneData):"";
  return '<div class="hvm-approved-wrap">'+
   '<section class="hvm-approved-hero" aria-label="Interactive first floor map">'+
   '<div class="hvm-approved-heading"><div><span class="hvm-approved-eyebrow">YOUR FIRST FLOOR</span><strong>Choose a room</strong></div><small>Tap a room to see details</small></div>'+
@@ -1146,9 +1167,9 @@ function approvedDollhouseMap(f,m,oldMap){
     '<button type="button" class="hvm-map-mode-btn'+(approvedOverviewMode()==="photos"?' is-selected':'')+'" aria-pressed="'+(approvedOverviewMode()==="photos")+'" onclick="houseVisualSetOverviewMode(&#39;photos&#39;)">Real photos</button>'+
    '</div><button type="button" class="hvm-overview-zoom-btn" aria-pressed="false" onclick="houseVisualToggleOverviewZoom(this)">+ Enlarge</button><button type="button" class="hvm-door-edit-toggle" aria-pressed="'+(doorAdjustOpen?'true':'false')+'" onclick="houseVisualToggleDoorwayEditor()">'+(doorAdjustOpen?'Close doorway adjustment':'Adjust doorways')+'</button></div>'+
   '<div class="hvm-approved-house-progress">'+houseCareFill(f)+'</div>'+
-  '<div class="hvm-approved-scene"><svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
+  '<div class="hvm-approved-scene">'+(study||'<svg class="hvm-approved-svg" viewBox="20 385 805 1040" role="group" aria-label="First-floor room map with readable kitchen, dining room, living room, bathroom, playroom and stairway links">'+
   '<image class="hvm-approved-muted-base" href="'+approvedDollhouseAsset+'" width="852" height="1846" x="0" y="0" onerror="this.closest(&#39;.hvm-approved-wrap&#39;).classList.add(&#39;hvm-image-failed&#39;)" />'+
-  reveal+surfaces+hotspots+approvedDollhouseDoorwayTargets(zoneData,m.doorwayAdjustments)+'</svg></div>'+approvedDoorwayEditor(zoneData,m.doorwayAdjustments)+
+  reveal+surfaces+hotspots+approvedDollhouseDoorwayTargets(zoneData,m.doorwayAdjustments)+'</svg>')+'</div>'+approvedDoorwayEditor(zoneData,m.doorwayAdjustments)+
   '<div class="hvm-approved-caption">'+(approvedOverviewMode()==="photos"?
    'Photos show saved reference angles, not an overhead view or the current state.':'Illustrations show known objects; unmeasured positions are approximate.')+
    ' Tap a room to open photos, furniture and tasks.</div></section>'+
