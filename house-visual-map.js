@@ -1084,6 +1084,8 @@ function approvedDollhouseDoorwayTargets(zones,adjustments){
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();event.stopPropagation();'+go+'}">'+
    '<title>'+h(label)+'</title>'+
    '<rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" rx="5" fill="#fff" fill-opacity=".001" pointer-events="all"/>'+
+   (doorAdjustOpen&&route.id===doorAdjustSelected?
+    '<circle class="hvm-doorway-grip" cx="'+(Number(x)+width/2).toFixed(1)+'" cy="'+(Number(y)+height/2).toFixed(1)+'" r="39" fill="#ffe3a1" fill-opacity=".85" stroke="#704b39" stroke-width="4" stroke-dasharray="6 4" pointer-events="none"/>':"")+
    '</g>';
  }).join("")+'</g>';
 }
@@ -1112,23 +1114,42 @@ function approvedConnectedRoomNav(f,roomId){
 }
 // One opening at a time. Editing never changes any room or furniture path.
 let doorAdjustOpen=false,doorAdjustSelected="kitchen-bath",doorAdjustSaving=false,doorAdjustMessage="";
+let doorAdjustStep=96;
 function approvedDoorwayEditor(zones,adjustments){
  if(!doorAdjustOpen)return "";
  const routes=approvedFirstFloorDoorwayRoutes(zones,adjustments);
  const active=routes.find(route=>route.id===doorAdjustSelected)||routes[0];
  if(!active)return "";
- const axis=approvedDoorwayLimits[active.id].axis;
- const status=doorAdjustSaving?"Saving doorway…":doorAdjustMessage||"Select an opening, then use the arrows. Changes save automatically.";
- const options=routes.map(route=>'<button type="button" class="hvm-door-option'+
+ const vec=approvedDoorwayVector(active.id,adjustments);
+ const status=doorAdjustSaving?"Saving doorway…":doorAdjustMessage||"Move the yellow-highlighted doorway. Big moves are 12 times larger than before.";
+ const opts=routes.map(route=>'<button type="button" class="hvm-door-option'+
   (route.id===active.id?' is-selected':'')+'" aria-pressed="'+(route.id===active.id)+
   '" onclick="houseVisualSelectDoorway(&#39;'+route.id+'&#39;)">'+h(route.label)+'</button>').join("");
- const adjust=n=>'<button type="button" class="hvm-door-shift"'+(doorAdjustSaving?' disabled':'')+
-  ' onclick="houseVisualNudgeDoorway(&#39;'+active.id+'&#39;,'+n+')">'+
-  (n===0?'Reset this opening':n<0?(axis==="x"?'← Left':'↑ Up'):(axis==="x"?'Right →':'Down ↓'))+'</button>';
+ const arrow=(label,dx,dy)=>'<button type="button" class="hvm-door-shift"'+(doorAdjustSaving?' disabled':'')+
+  ' aria-label="'+h(label)+'" onclick="houseVisualNudgeDoorway(&#39;'+active.id+'&#39;,'+dx+','+dy+')">'+h(label)+'</button>';
+ const slider=(axis,label)=>{
+  const range=approvedDoorwayRange(active.id,axis),value=vec[axis];
+  return '<label class="hvm-door-slider"><span>'+h(label)+'</span>'+
+   '<input type="range" min="'+range.min+'" max="'+range.max+'" step="1" value="'+value+'"'+
+   (doorAdjustSaving?' disabled':'')+' aria-label="'+h(label)+'"'+
+   ' oninput="houseVisualPreviewDoorway(this,&#39;'+active.id+'&#39;,&#39;'+axis+'&#39;)"'+
+   ' onchange="houseVisualSetDoorwayAxis(&#39;'+active.id+'&#39;,&#39;'+axis+'&#39;,this.value)" />'+
+   '<output data-hvm-door-value="'+axis+'">'+value+'</output></label>';
+ };
+ const step=doorAdjustStep;
  return '<section class="hvm-door-adjuster" aria-label="Adjust first-floor doorways">'+
-  '<strong>One doorway at a time</strong><div class="hvm-door-options">'+options+'</div>'+
-  '<div class="hvm-door-nudges">'+adjust(-8)+adjust(8)+adjust(0)+'</div>'+
+  '<div class="hvm-door-editor-title"><strong>Move one doorway</strong><small>Choose the doorway, then move it a lot or a little</small></div>'+
+  '<div class="hvm-door-options">'+opts+'</div>'+
+  '<div class="hvm-door-step-size" role="group" aria-label="Movement size">'+
+   '<button type="button" class="'+(step===96?'is-selected':'')+'" aria-pressed="'+(step===96)+'" onclick="houseVisualSetDoorStep(96)">Big moves</button>'+
+   '<button type="button" class="'+(step===16?'is-selected':'')+'" aria-pressed="'+(step===16)+'" onclick="houseVisualSetDoorStep(16)">Fine-tune</button></div>'+
+  '<div class="hvm-door-direction-pad">'+
+   '<span></span>'+arrow("↑ Up",0,-step)+'<span></span>'+
+   arrow("← Left",-step,0)+arrow("Reset doorway",0,0)+arrow("Right →",step,0)+
+   '<span></span>'+arrow("↓ Down",0,step)+'<span></span>'+
+  '</div><div class="hvm-door-sliders">'+slider("x","Sideways")+slider("y","Up / down")+'</div>'+
   '<small role="status">'+h(status)+'</small>'+
+  '<small>These are approximate placements, not surveyed walls. Existing rooms and furniture stay unchanged.</small>'+
  '</section>';
 }
 window.houseVisualToggleDoorwayEditor=function(){
@@ -1138,6 +1159,34 @@ window.houseVisualSelectDoorway=function(id){
  if(!Object.hasOwn(approvedDoorwayLimits,id))return;
  doorAdjustSelected=id;doorAdjustMessage="";paint("First floor");
 };
+window.houseVisualSetDoorStep=function(step){
+ if(!doorAdjustOpen||![16,96].includes(Number(step)))return;
+ doorAdjustStep=Number(step);paint("First floor");
+};
+window.houseVisualPreviewDoorway=function(node,id,axis){
+ if(!doorAdjustOpen||doorAdjustSaving||!Object.hasOwn(approvedDoorwayOrigins,id)||!["x","y"].includes(axis))return;
+ const previous=approvedDoorwayVector(id,get("First floor")?.doorwayAdjustments);
+ const requested=Number(node?.value);
+ if(!Number.isFinite(requested))return;
+ const next=approvedDoorwayVector(id,{[id]:{...previous,[axis]:requested}});
+ const svg=node.closest(".hvm-approved-hero")?.querySelector(".hvm-approved-svg");
+ if(!svg)return;
+ const visual=svg.querySelector('[data-door-connection="'+id+'"]');
+ if(visual)visual.setAttribute("transform","translate("+next.x+" "+next.y+")");
+ const portal=Array.from(svg.querySelectorAll("[data-passage-link]")).find(el=>el.getAttribute("data-passage-link")===id);
+ if(portal)portal.setAttribute("transform","translate("+(next.x-previous.x)+" "+(next.y-previous.y)+")");
+ const output=node.closest(".hvm-door-slider")?.querySelector("output");
+ if(output)output.textContent=String(next[axis]);
+};
+window.houseVisualSetDoorwayAxis=function(id,axis,value){
+ if(!["x","y"].includes(axis)||!Object.hasOwn(approvedDoorwayOrigins,id))return;
+ const previous=approvedDoorwayVector(id,get("First floor")?.doorwayAdjustments);
+ const requested=Number(value);
+ if(!Number.isFinite(requested))return;
+ const delta=Math.round(requested)-previous[axis];
+ return window.houseVisualNudgeDoorway(id,axis==="x"?delta:0,axis==="y"?delta:0);
+};
+
 window.houseVisualNudgeDoorway=async function(id,amount){
  const floor="First floor",rules=approvedDoorwayLimits[id],delta=Number(amount);
  if(!doorAdjustOpen||doorAdjustSaving||!online()||!rules||![0,-8,8].includes(delta))return;
