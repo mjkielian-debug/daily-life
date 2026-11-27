@@ -1326,6 +1326,23 @@ function approvedDollhouseRoomZoom(f,z){
   '</svg><p>'+h(note)+'</p>'+(revisedDetail?'<p class="hvm-approx-legend">Dashed furniture outlines = illustrative location, not measured placement.</p>':"")+details+'</section>';
 }
 
+// Painted room studies use the existing zone geometry. The furniture plan
+// remains available for inspecting individual saved objects and positions.
+const upperRoomStudies = {
+ "Second floor": {dolly:0, demitri:1, upstairs_bath:2, ambrose:3, hallway:4, leo:5, stairs:6, stairs_to_third:6},
+ "Third floor": {bedroom:7, stairs_up:8}
+};
+function upperRoomStudy(f,z,b){
+ const tile=upperRoomStudies[f]?.[z.id];
+ if(!Number.isInteger(tile)||!b||b.width<=0||b.height<=0)return "";
+ const clip="hvm-study-"+(f==="Second floor"?"2-":"3-")+z.id;
+ // Inset each source cell so adjacent paintings cannot bleed at the edge.
+ const view=[(tile%3)*320+2,Math.floor(tile/3)*320+2,316,316].join(" ");
+ return '<g class="hvm-painted-room" pointer-events="none" aria-hidden="true"><defs><clipPath id="'+clip+'"><path d="'+h(z.path)+'"/></clipPath></defs>'+
+  '<g clip-path="url(#'+clip+')"><svg x="'+b.x+'" y="'+b.y+'" width="'+b.width+'" height="'+b.height+'" viewBox="'+view+'" preserveAspectRatio="xMidYMid slice" overflow="hidden">'+
+  '<image href="assets/upper-room-studies.webp" width="960" height="960" onerror="this.closest(&#39;.hvm-zone&#39;)?.classList.add(&#39;hvm-study-unavailable&#39;)"/></svg></g>'+
+  roomWallRelief(z.path,b,clip)+'<path d="'+h(z.path)+'" fill="none" stroke="#70536c" stroke-width="2" stroke-linejoin="round"/></g>';
+}
 function mapSketch(f,m,skipApproved=false){
  if(f==="First floor"&&!skipApproved)return approvedDollhouseMap(f,m,mapSketch(f,m,true));
  m=illustratedLayout(f,m);
@@ -1369,10 +1386,11 @@ function mapSketch(f,m,skipApproved=false){
   const reviewBadge=pendingReviewCount&&bounds?'<g class="hvm-review-badge" pointer-events="none"><circle cx="'+(bounds.x+12).toFixed(1)+'" cy="'+(bounds.y+12).toFixed(1)+'" r="10" fill="#a9648d" stroke="#fff" stroke-width="2"/><text x="'+(bounds.x+12).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="900" fill="#fff">'+Math.min(pendingReviewCount,9)+(pendingReviewCount>9?"+":"")+'</text></g>':"";
   const declutterBadge=organized&&bounds&&bounds.width>38&&bounds.height>34?'<g class="hvm-map-declutter-badge" pointer-events="none"><rect x="'+(bounds.x+bounds.width-37).toFixed(1)+'" y="'+(bounds.y+3).toFixed(1)+'" width="34" height="17" rx="8" fill="#fff9fd" stroke="#d87fa9" stroke-width="1.5"/><text x="'+(bounds.x+bounds.width-20).toFixed(1)+'" y="'+(bounds.y+15).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#70425e">✦ '+organized+'</text></g>':"";
   const floorGraphic=zoneFloorGraphic(f,z,bounds);
+  const painting=upperRoomStudy(f,z,bounds);
   return '<g class="hvm-zone'+(isStair?' hvm-stair-zone':'')+'" role="button" tabindex="0" onclick="'+onclick+
    '" onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39; &#39;){event.preventDefault();'+onclick+'}" aria-label="Open '+h(displayLabel)+' · '+h(taskCountLabel)+(organized?' · '+organized+' areas organized':'')+'">'+
-   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+realisticFloorRoomFinish(f,z,bounds,sourceColor)+accents+taskOverlay+declutterOverlay+
-   floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+reviewBadge+declutterBadge+taskCountBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
+   '<path d="'+h(z.path)+'" fill="'+baseFill+'" stroke="#64445a" stroke-width="2" stroke-linejoin="round"/>'+floorTexture+realisticFloorRoomFinish(f,z,bounds,sourceColor)+(painting||accents)+taskOverlay+declutterOverlay+
+   '<g'+(painting?' class="hvm-furniture-plan"':'')+'>'+(painting?accents:'')+floorGraphic+(savedRoomMiniature||furniture||roomSymbol(z,bounds,f))+'</g>'+reviewBadge+declutterBadge+taskCountBadge+'<text class="hvm-room-name" text-anchor="middle" x="'+labelX.toFixed(1)+'" y="'+labelY.toFixed(1)+'">'+h(displayLabel)+'</text></g>';
  }).join("");
  const pins=arr(m.annotations).filter(a=>a&&okId(a.id)&&Number.isFinite(Number(a.x))&&Number.isFinite(Number(a.y))&&floors.includes(a.targetFloor)&&
   !arr(m.zones).some(z=>z&&z.linkedFloor===a.targetFloor&&/stairs|landing/i.test(str(z.name)+" "+str(z.id)))).map(a=>{
@@ -1387,7 +1405,8 @@ function mapSketch(f,m,skipApproved=false){
  const backing='<rect x="'+frameX+'" y="'+frameY+'" width="'+frameW+'" height="'+frameH+'" rx="18" fill="'+(f==='Second floor'||f==='Third floor'?'#f6e6f2':'#fff9fd')+'" stroke="#64445a" stroke-width="2.5"/>';
  const doorY=limits[1]+limits[3]-37,entry=isFirst?'<path d="M'+(limits[0]+limits[2]*.46)+' '+(doorY+13)+'v-13m0 13h'+(limits[2]*.12)+'" stroke="#64445a" stroke-width="3" stroke-linecap="round"/>'+
   '':"";
- return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>Rooms gain color as tasks are completed. Tap a room or object. Dotted furniture placements are illustrative, not measured.</span></div>'+
+ return '<div class="hvm-sketch hvm-connected-map"><div class="hvm-sketch-heading">'+houseCareFill(f)+'<strong>⌂ '+h(f)+'</strong><span>'+(upperRoomStudies[f]?'Tap a painted room to open it. Furniture and décor in the artwork are illustrative.':'Rooms gain color as tasks are completed. Tap a room or object. Dotted furniture placements are illustrative, not measured.')+'</span></div>'+ 
+  (upperRoomStudies[f]?'<label class="hvm-plan-switch"><input type="checkbox"> Show interactive furniture plan</label>':'')+
   '<svg class="hvm-drawing" viewBox="'+viewBox+'" role="group" aria-label="Illustrated house floor map with clickable pastel rooms.">'+
   '<defs><pattern id="hvm-floor-tile" width="20" height="18" patternUnits="userSpaceOnUse"><path d="M5 0H15L20 9L15 18H5L0 9Z" fill="#fff" fill-opacity=".15" stroke="#90959d" stroke-opacity=".2" stroke-width="1"/><path d="M5 0H15L20 9L15 18H5L0 9Z" transform="translate(10 9)" fill="#c4c9cc" fill-opacity=".08"/></pattern><pattern id="hvm-floor-wood" width="48" height="18" patternUnits="userSpaceOnUse"><path d="M0 1H48M0 17H48M21 1V17" fill="none" stroke="#7e625b" stroke-opacity=".26" stroke-width=".9"/><path d="M4 9q8 -3 16 0M28 11q7 -2 15 1" fill="none" stroke="#fff3d9" stroke-opacity=".45" stroke-width=".7"/></pattern><pattern id="hvm-floor-linen" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#fff" fill-opacity=".4"/><circle cx="8" cy="8" r=".8" fill="#7b6b82" fill-opacity=".13"/></pattern></defs>'+backing+(f==='Basement'?'<path d="M40 250H340V455H40Z" fill="#f7f0f8" stroke="#b79cb9" stroke-width="3" stroke-dasharray="8 8"/><text x="190" y="345" text-anchor="middle" fill="#725c78" font-size="17">Unmapped basement area</text>':'')+(f==="Third floor"?'<path class="hvm-third-floor-passage" d="M165 184H215V300H165Z" fill="#e6d1b8" stroke="#a78390" stroke-width="2"/><path d="M169 188V295M211 188V295" stroke="#fff9eb" stroke-width="3"/><path d="M165 190H215M165 295H215" stroke="#906f68" stroke-width="2"/><text x="190" y="248" text-anchor="middle" font-size="8" font-weight="800" fill="#694958">To bedroom</text>':'')+paths+pins+entry+'</svg>'+(isFirst?'<div class="hvm-front-door-label">↓ Front door · street</div>':'')+
   '<details class="hvm-map-notes"><summary>About this map</summary><p class="hvm-disclaimer">'+h(m.layoutNotice||'Room outlines follow your saved vacuum map. Furniture symbols identify room types; they do not show exact furniture positions.')+'</p></details>'+unmappedRoomPicker(f,m)+floorLinks(f,m)+'</div>';

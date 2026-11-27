@@ -740,3 +740,13 @@
  .hvm-door-direction-pad{gap:5px}
  .hvm-door-slider{grid-template-columns:68px minmax(0,1fr) 28px;gap:5px}
 }
+
+.hvm-plan-switch{display:inline-flex;align-items:center;gap:.6rem;min-height:44px;margin:0 .5rem;color:#503e53;cursor:pointer}
+.hvm-plan-switch input{width:1.15rem;height:1.15rem;accent-color:#913764}
+.hvm-furniture-plan{display:none}
+.hvm-connected-map:has(>.hvm-plan-switch input:checked) .hvm-painted-room{display:none}
+.hvm-connected-map:has(>.hvm-plan-switch input:checked) .hvm-furniture-plan{display:inline}
+.hvm-zone:has(>.hvm-painted-room)>.hvm-room-name{stroke:#fffbef;stroke-width:3.5px;stroke-linejoin:round;paint-order:stroke}
+
+.hvm-study-unavailable>.hvm-painted-room{display:none}
+.hvm-study-unavailable>.hvm-furniture-plan{display:inline}

@@ -1,6 +1,7 @@
 const CACHE_VERSION=new URL(self.location.href).searchParams.get("v")||"unversioned";
 const CACHE_NAME="daily-life-shell-"+CACHE_VERSION;
 const APP_SHELL=[  "./",
+  "./assets/upper-room-studies.webp",
   "./action-first.css",
   "./action-first.js",
   "./assets/michelle-equestria-avatar.webp?v=20261112-facepony1",
