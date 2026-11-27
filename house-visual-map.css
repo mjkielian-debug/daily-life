@@ -750,3 +750,5 @@
 
 .hvm-study-unavailable>.hvm-painted-room{display:none}
 .hvm-study-unavailable>.hvm-furniture-plan{display:inline}
+
+.hvm-connected-map .hvm-zone:has(>.hvm-painted-room)>.hvm-room-name{font-family:Georgia,serif;font-weight:700;fill:#5a324b;stroke:#fff1d9;stroke-width:4px}

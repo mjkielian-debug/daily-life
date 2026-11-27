@@ -1,6 +1,6 @@
 {
-  "build": "20261127-pony-upper-floors1",
+  "build": "20261127-matched-dollhouse2",
   "released": "2026-11-27",
-  "ui": "Second- and third-floor rooms open in a painted dollhouse view. Switch to the furniture plan to inspect mapped objects.",
+  "ui": "Upper floors now use room illustrations modeled on the first-floor dollhouse reference, with matching timber edges and warm lighting. The interactive furniture plan is available on both floors.",
   "data_version": "Digital wardrobe item colors, types, and SSD outfit selection are stored in the existing settings snapshot. Existing photos, tasks, habits, inventory, and cloud records are unchanged. Wardrobe garment-analysis results sync in settings; the optional Google API key stays in encrypted Supabase Vault. Cartoon copies are stored as new photo-inbox rows; original uploads remain unchanged. Each wardrobe item can now store daypart, season, and SSD usage rules alongside its reviewed garment details. Manual wardrobe selections store a date and daypart override in existing settings."
 }
